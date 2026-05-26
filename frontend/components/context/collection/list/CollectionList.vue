@@ -193,6 +193,14 @@ function onPageChange(page: number) {
         <template #[`item.updatedAt`]>
           <span data-testid="collection-row-updated-at">
             {{ toShortDateString(rowProps.item.updatedAt ?? rowProps.item.createdAt) }}
+            <!-- UI-011d: when updatedAt is null, the date shown is the
+                 creation date — annotate it so the reader isn't confused
+                 into thinking the collection was modified at creation time. -->
+            <span
+              v-if="!rowProps.item.updatedAt"
+              class="text-caption text-medium-emphasis ml-1"
+              data-testid="collection-row-created-suffix"
+            >(created)</span>
           </span>
         </template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSearchCollections } from "./useSearchCollections";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 const router = useRouter();
 
@@ -37,6 +38,10 @@ function setViewMode(mode: ViewMode) {
     localStorage.setItem(VIEW_MODE_KEY, mode);
   }
 }
+
+// UI-011a: per-page advanced-mode toggle so users can flip the mode
+// directly from the collections header without opening their profile.
+const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
 </script>
 
 <template>
@@ -100,6 +105,23 @@ function setViewMode(mode: ViewMode) {
             <CollectionSearchField :search-result-hint="searchResultHint" />
           </v-col>
           <v-spacer />
+          <!-- UI-011a: per-page advanced-mode toggle chip -->
+          <v-col cols="auto" class="pb-4 d-flex align-center">
+            <v-chip
+              :prepend-icon="advancedMode ? 'mdi-tune' : 'mdi-tune-variant'"
+              :color="advancedMode ? 'primary' : undefined"
+              :disabled="isSaving"
+              :loading="isSaving"
+              variant="tonal"
+              size="small"
+              class="mr-2"
+              data-testid="collection-advanced-mode-chip"
+              :title="advancedMode ? 'Advanced mode on — click to disable' : 'Advanced mode off — click to enable'"
+              @click="setAdvancedMode(!advancedMode)"
+            >
+              {{ advancedMode ? "Advanced" : "Basic" }}
+            </v-chip>
+          </v-col>
           <!-- #36: view-mode toggle — list ↔ gallery -->
           <v-col cols="auto" class="pb-4 d-flex align-center">
             <v-btn-toggle

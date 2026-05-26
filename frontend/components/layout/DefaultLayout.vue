@@ -1,3 +1,25 @@
+<script setup lang="ts">
+import { useEventListener } from "@vueuse/core";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { emitSuccess } from "~/utils/successBus";
+
+const { advancedMode, toggleAdvancedMode } = useAdvancedMode();
+
+// UX-AM1: Ctrl+Shift+D global shortcut to toggle advanced mode.
+// Fires from anywhere in the app; skips when focus is inside an <input>
+// or <textarea> so typing "D" inside a form field never triggers it.
+useEventListener(window, "keydown", (e: KeyboardEvent) => {
+  const tag = (e.target as HTMLElement)?.tagName?.toUpperCase();
+  if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;
+  if (e.ctrlKey && e.shiftKey && e.key === "D") {
+    e.preventDefault();
+    toggleAdvancedMode().then(() => {
+      emitSuccess(advancedMode.value ? "Advanced mode enabled" : "Advanced mode disabled");
+    });
+  }
+});
+</script>
+
 <template>
   <v-app>
     <!-- A11y: skip-to-main-content link. Visually hidden until focused;

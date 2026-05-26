@@ -50,6 +50,10 @@ export function useAdvancedMode() {
     }
   }
 
+  function toggleAdvancedMode() {
+    return setAdvancedMode(!advancedMode.value);
+  }
+
   load();
-  return { advancedMode, isSaving, setAdvancedMode };
+  return { advancedMode, isSaving, setAdvancedMode, toggleAdvancedMode };
 }

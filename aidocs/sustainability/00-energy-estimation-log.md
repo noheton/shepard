@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| Wave12a | 2026-05-26 | code | 20k | 6k | 2.30 | 0 | 0 | 2.30 | 0.84 | MEDIUM | feat(ux): Wave12a — sidebar superset fix + keyboard shortcut + collection page improvements |
 | UI-DEEP-LINK | 2026-05-26 | code | 8k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | MEDIUM | feat(frontend): UI-DEEP-LINK-TYPED-LISTS — /containers/[type] redirect shim |
 | PERF7 | 2026-05-26 | code | 25k | 8k | 2.90 | 5 | 2 | 9.90 | 3.59 | MEDIUM | perf(frontend): PERF7 — lazy channel preview via IntersectionObserver + in-flight dedup |
 | PERF6 | 2026-05-26 | code | 18k | 5k | 2.10 | 5 | 2 | 9.10 | 3.30 | MEDIUM | perf(frontend): PERF6 — singleton DataObject fetch across lineage + prov graphs |
