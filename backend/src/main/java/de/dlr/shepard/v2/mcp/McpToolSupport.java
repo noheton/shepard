@@ -3,9 +3,14 @@ package de.dlr.shepard.v2.mcp;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
+import de.dlr.shepard.v2.ai.AiActivityType;
+import de.dlr.shepard.v2.ai.AiProvenanceCapture;
 import io.quarkiverse.mcp.server.McpException;
 import io.quarkus.logging.Log;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import jakarta.ws.rs.ForbiddenException;
@@ -44,9 +49,29 @@ import java.util.concurrent.Callable;
  *   <li>{@code -32001} — Custom: authentication required.</li>
  *   <li>{@code -32002} — Custom: permission denied.</li>
  * </ul>
+ *
+ * <p><b>TPL9 AI provenance</b> ({@code aidocs/platform/89}): when the
+ * caller includes an {@code X-AI-Agent} header, {@link #run} records a
+ * supplementary {@code :Activity} node with
+ * {@code actionKind = "AI_ACTION"} via {@link AiProvenanceCapture}.
+ * This is the EU AI Act Article 50 transparency hook for inbound
+ * AI-agent MCP calls. Capture is best-effort — a write failure does
+ * not affect the tool call outcome.
  */
 @ApplicationScoped
 public class McpToolSupport {
+
+  /** TPL9 header: identifies the calling AI agent or framework. */
+  static final String HEADER_AI_AGENT = "X-AI-Agent";
+
+  /** TPL9 header: model identifier reported by the calling agent. */
+  static final String HEADER_AI_MODEL = "X-AI-Model";
+
+  /** TPL9 header: SHA-256 of the user instruction (privacy default). */
+  static final String HEADER_AI_PROMPT_HASH = "X-AI-Prompt-Hash";
+
+  /** TPL9 header: {@link AiActivityType} value for this tool call. */
+  static final String HEADER_AI_ACTIVITY_TYPE = "X-AI-Activity-Type";
 
   static final int INVALID_PARAMS = -32602;
   static final int INTERNAL_ERROR = -32603;
@@ -58,6 +83,12 @@ public class McpToolSupport {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  AiProvenanceCapture aiProvenanceCapture;
+
+  @Inject
+  Instance<CurrentVertxRequest> currentVertxRequest;
 
   /**
    * Resolve {@code appId} and assert the matched node carries
@@ -110,10 +141,20 @@ public class McpToolSupport {
    * Wrap a tool body so caller-facing exceptions become clean MCP errors and
    * unexpected exceptions become a logged INTERNAL_ERROR with the exception
    * class name preserved in the message.
+   *
+   * <p><b>TPL9:</b> on successful execution, inspects the current Vert.x
+   * routing context for the {@code X-AI-Agent} header. When present,
+   * delegates to {@link AiProvenanceCapture#record} to stamp a supplementary
+   * {@code :Activity} node with {@code actionKind = "AI_ACTION"} and
+   * f(ai)²r metadata. Capture is best-effort — any failure is swallowed
+   * so the tool result is never blocked by a provenance write.
    */
   <T> T run(String toolName, Callable<T> body) {
     try {
-      return body.call();
+      T result = body.call();
+      // TPL9: record AI provenance when X-AI-Agent header is present.
+      captureAiProvenance(toolName);
+      return result;
     } catch (McpException e) {
       throw e;
     } catch (NotAuthorizedException e) {
@@ -135,6 +176,38 @@ public class McpToolSupport {
         toolName + " failed (" + e.getClass().getSimpleName() + "): " + safeMsg(e),
         INTERNAL_ERROR
       );
+    }
+  }
+
+  /**
+   * TPL9: inspect the current routing context for {@code X-AI-Agent}.
+   * When present, record the inbound AI action via {@link AiProvenanceCapture}.
+   * Never throws — provenance capture is observability, not contract.
+   */
+  private void captureAiProvenance(String toolName) {
+    try {
+      RoutingContext rc = currentRoutingContext();
+      if (rc == null) return;
+      String agentId = rc.request().getHeader(HEADER_AI_AGENT);
+      if (agentId == null || agentId.isBlank()) return;
+
+      String modelId = rc.request().getHeader(HEADER_AI_MODEL);
+      String promptHash = rc.request().getHeader(HEADER_AI_PROMPT_HASH);
+      AiActivityType activityType =
+        AiActivityType.fromHeader(rc.request().getHeader(HEADER_AI_ACTIVITY_TYPE));
+
+      aiProvenanceCapture.record(activityType, modelId, promptHash, null, null, toolName, agentId);
+    } catch (RuntimeException e) {
+      Log.debugf(e, "TPL9: AI provenance capture skipped for tool=%s", toolName);
+    }
+  }
+
+  private RoutingContext currentRoutingContext() {
+    try {
+      CurrentVertxRequest cvr = currentVertxRequest.get();
+      return cvr == null ? null : cvr.getCurrent();
+    } catch (RuntimeException e) {
+      return null;
     }
   }
 
