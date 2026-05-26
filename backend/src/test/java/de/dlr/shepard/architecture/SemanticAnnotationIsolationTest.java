@@ -198,7 +198,7 @@ class SemanticAnnotationIsolationTest {
           .forEach(call -> {
             JavaMethod target = null;
             try {
-              target = call.getTarget().resolve().stream().findFirst().orElse(null);
+              target = call.getTarget().resolveMember().orElse(null);
             } catch (Exception ignored) {
               // unresolvable; still flag by owner package
             }
