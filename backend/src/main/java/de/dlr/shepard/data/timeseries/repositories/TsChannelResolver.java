@@ -80,6 +80,20 @@ public class TsChannelResolver implements PanacheRepositoryBase<TimeseriesEntity
   }
 
   /**
+   * List channels for a container with pagination. {@code containerId} lives on
+   * the primary {@code timeseries} table so the JPQL predicate works without a
+   * secondary-table join.
+   *
+   * @param containerId the owning timeseries container's numeric id
+   * @param page        zero-based page index
+   * @param size        page size (caller must clamp to a safe max before passing)
+   * @return one page of channel rows
+   */
+  public List<TimeseriesEntity> listPaged(long containerId, int page, int size) {
+    return this.find("containerId = ?1", containerId).page(page, size).list();
+  }
+
+  /**
    * Convenience: resolve a shepardId to its 5-tuple representation. The
    * caller usually wants the 5-tuple to plug into the existing data-point
    * query layer (which is still 5-tuple addressed) without needing the

@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -61,6 +62,9 @@ public class TimeseriesContainerChannelsRest {
   @Inject
   TimeseriesService timeseriesService;
 
+  private static final int DEFAULT_PAGE_SIZE = 200;
+  private static final int MAX_PAGE_SIZE     = 1000;
+
   @GET
   @Path("/{containerId}/channels")
   @Operation(
@@ -78,11 +82,15 @@ public class TimeseriesContainerChannelsRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
   @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
-  public Response listChannels(@PathParam("containerId") long containerId) {
-    // Permission check — throws 403/404 if not accessible.
+  public Response listChannels(
+    @PathParam("containerId") long containerId,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("size") @DefaultValue("200") @PositiveOrZero int size
+  ) {
     timeseriesContainerService.getContainer(containerId);
 
-    List<TimeseriesEntity> rows = tsChannelResolver.list("containerId", containerId);
+    int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+    List<TimeseriesEntity> rows = tsChannelResolver.listPaged(containerId, page, safeSize);
     List<TimeseriesChannelV2IO> body = rows.stream().map(TimeseriesChannelV2IO::from).toList();
     return Response.ok(body).build();
   }
