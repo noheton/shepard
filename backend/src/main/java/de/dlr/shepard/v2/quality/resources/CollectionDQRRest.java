@@ -1,0 +1,188 @@
+package de.dlr.shepard.v2.quality.resources;
+
+import de.dlr.shepard.v2.quality.io.CreateDQRIO;
+import de.dlr.shepard.v2.quality.io.DQRIO;
+import de.dlr.shepard.v2.quality.io.DQRResultIO;
+import de.dlr.shepard.v2.quality.services.DataQualityRequirementService;
+import io.quarkus.security.Authenticated;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * TPL10 — Data Quality Requirements REST surface for Collections.
+ *
+ * <p>Endpoints:
+ * <ul>
+ *   <li>{@code GET    /v2/collections/{collectionAppId}/dqr}             — list DQRs (Read).</li>
+ *   <li>{@code POST   /v2/collections/{collectionAppId}/dqr}             — assign DQR (Write).</li>
+ *   <li>{@code DELETE /v2/collections/{collectionAppId}/dqr/{dqrAppId}}  — remove DQR (Write).</li>
+ *   <li>{@code POST   /v2/collections/{collectionAppId}/dqr/evaluate}    — evaluate DQRs (Read).</li>
+ * </ul>
+ *
+ * <p>All endpoints require authentication. Permission requirements are enforced
+ * by {@link DataQualityRequirementService}.
+ */
+@Path("/v2/collections/{collectionAppId}/dqr")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@RequestScoped
+@Authenticated
+@Tag(name = "Data Quality Requirements (TPL10)")
+public class CollectionDQRRest {
+
+  @Inject
+  DataQualityRequirementService service;
+
+  // ─── List ─────────────────────────────────────────────────────────────────
+
+  @GET
+  @Operation(
+    summary = "List DQRs assigned to this Collection (TPL10).",
+    description =
+      "Returns all Data Quality Requirements that have been assigned to this Collection " +
+      "via the APPLIES_TO relationship. Results are unordered and unfiltered — include " +
+      "both enabled and disabled DQRs.\n\n" +
+      "Auth: Read permission on the Collection."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "List of DQRIO records (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DQRIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response list(
+    @PathParam("collectionAppId") String collectionAppId,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = caller(securityContext);
+    if (caller == null) return unauthorized();
+    List<DQRIO> result = service.list(collectionAppId, caller);
+    return Response.ok(result).build();
+  }
+
+  // ─── Assign ───────────────────────────────────────────────────────────────
+
+  @POST
+  @Operation(
+    summary = "Assign a new DQR to this Collection (TPL10).",
+    description =
+      "Creates a new Data Quality Requirement node and attaches it to the Collection " +
+      "via an APPLIES_TO relationship. The DQR applies to all DataObjects in the Collection " +
+      "when evaluation is triggered.\n\n" +
+      "Supported ruleTypes:\n" +
+      "- `ANNOTATION_REQUIRED` — DataObject must have a non-null attribute for the key in `ruleParam`. **Implemented.**\n" +
+      "- `NO_TIMESERIES_GAP`   — no timeseries gap > `ruleParam` seconds. **Stub (always PASS).**\n" +
+      "- `FILE_COUNT_MIN`      — file container must have >= `ruleParam` files. **Stub (always PASS).**\n" +
+      "- `CUSTOM_CYPHER`       — arbitrary Cypher predicate. **Stub (always PASS).**\n\n" +
+      "Auth: Write permission on the Collection."
+  )
+  @APIResponse(
+    responseCode = "201",
+    description = "DQR created and assigned.",
+    content = @Content(schema = @Schema(implementation = DQRIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Validation error — bad ruleType or missing required field.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response assign(
+    @PathParam("collectionAppId") String collectionAppId,
+    @Valid CreateDQRIO body,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = caller(securityContext);
+    if (caller == null) return unauthorized();
+    DQRIO result = service.assign(collectionAppId, body, caller);
+    return Response.status(Response.Status.CREATED).entity(result).build();
+  }
+
+  // ─── Remove ───────────────────────────────────────────────────────────────
+
+  @DELETE
+  @Path("{dqrAppId}")
+  @Operation(
+    summary = "Remove a DQR from this Collection (TPL10).",
+    description =
+      "Deletes the Data Quality Requirement node and detaches all its relationships. " +
+      "Returns 404 when the DQR does not exist or is not assigned to this Collection.\n\n" +
+      "Auth: Write permission on the Collection."
+  )
+  @APIResponse(responseCode = "204", description = "DQR removed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
+  @APIResponse(responseCode = "404", description = "No such DQR or not assigned to this Collection.")
+  public Response remove(
+    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("dqrAppId") String dqrAppId,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = caller(securityContext);
+    if (caller == null) return unauthorized();
+    service.remove(collectionAppId, dqrAppId, caller);
+    return Response.noContent().build();
+  }
+
+  // ─── Evaluate ─────────────────────────────────────────────────────────────
+
+  @POST
+  @Path("evaluate")
+  @Operation(
+    summary = "Evaluate all enabled DQRs for this Collection (TPL10).",
+    description =
+      "Runs every enabled Data Quality Requirement assigned to this Collection and " +
+      "returns one result per (DQR, DataObject) pair. A result with `passed == false` " +
+      "carries a human-readable `message` describing the violation.\n\n" +
+      "Only DQRs with `enabled == true` are evaluated. Disabled DQRs are silently skipped.\n\n" +
+      "Evaluation is synchronous and may be slow on large Collections. A future version " +
+      "will add an async variant.\n\n" +
+      "Auth: Read permission on the Collection."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Evaluation results. Empty array when no DQRs are enabled.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DQRResultIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response evaluate(
+    @PathParam("collectionAppId") String collectionAppId,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = caller(securityContext);
+    if (caller == null) return unauthorized();
+    List<DQRResultIO> results = service.evaluate(collectionAppId, caller);
+    return Response.ok(results).build();
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  private static String caller(SecurityContext sc) {
+    return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+  }
+
+  private static Response unauthorized() {
+    return Response.status(Response.Status.UNAUTHORIZED).build();
+  }
+}
