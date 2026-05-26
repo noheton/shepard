@@ -429,6 +429,11 @@ watch(timeseriesReference, () => {
                   }}
                 </div>
               </v-col>
+              <!-- AI1c — quality score chip (per-reference, background-computed) -->
+              <v-col cols="auto" class="d-flex align-center ga-2">
+                <span class="text-caption text-medium-emphasis">Quality:</span>
+                <QualityScoreChip :score="timeseriesReference.qualityScore" />
+              </v-col>
               <v-col class="text-right" cols="auto">
                 <div class="text-caption text-medium-emphasis">
                   Tick to compare — {{ numberOfSelectedItems }} / {{ MaxSelectableItems }} selected

@@ -9,6 +9,8 @@ export type DataTableElement = {
     interval?: string;
     fileCount?: number;
     payloadCount?: number;
+    /** AI1c — quality score in [0.0, 1.0]; null = not yet scored; only set for TimeSeries rows. */
+    qualityScore?: number | null;
   } & ReferencedContainerMeta;
   created: {
     createdBy: string;

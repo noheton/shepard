@@ -31,6 +31,14 @@ defineProps<{
   <div v-if="meta.interval" class="text-textbody2 text-body-2 meta-information">
     Interval: {{ meta.interval }}
   </div>
+  <!-- AI1c — quality score chip; only set for TimeSeries references -->
+  <div
+    v-if="'qualityScore' in meta"
+    class="d-flex align-center ga-1 meta-information mt-1"
+  >
+    <span class="text-textbody2 text-body-2">Quality:</span>
+    <QualityScoreChip :score="meta.qualityScore" />
+  </div>
   <div
     v-if="meta.fileCount"
     class="text-textbody2 text-body-2 meta-information"

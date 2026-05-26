@@ -212,7 +212,14 @@ function toggleAllMetrics() {
     <v-card>
       <template #title>
         <div class="d-flex justify-space-between align-baseline">
-          <div class="text-h4">Graph &amp; Metrics</div>
+          <div class="d-flex align-center ga-2">
+            <div class="text-h4">Graph &amp; Metrics</div>
+            <!-- AI1c — quality score chip for this reference -->
+            <QualityScoreChip
+              v-if="timeseriesReference"
+              :score="timeseriesReference.qualityScore"
+            />
+          </div>
           <v-btn
             variant="plain"
             density="compact"

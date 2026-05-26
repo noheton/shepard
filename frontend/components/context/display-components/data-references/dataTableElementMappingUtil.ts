@@ -31,6 +31,8 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
       containerId: ref.timeseriesContainerId,
       ...mapNameAndAvailability(ref),
       interval: `${toShortDateTimeString(parseDateFromNanos(ref.start))} - ${toShortDateTimeString(parseDateFromNanos(ref.end))}`,
+      // AI1c — carry the quality score so the table can show a chip
+      qualityScore: ref.qualityScore ?? null,
     };
   }
   if (instanceOfFileReference(ref))
