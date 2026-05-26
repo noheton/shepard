@@ -1,0 +1,103 @@
+name: Doc stage check
+
+# Guards two invariants on every PR / push that touches aidocs:
+#
+#   1. Drift gate  — `aidocs/01-doc-stage-index.md` must match what
+#      `scripts/regenerate-doc-stage-index.py` would generate.
+#      Fix:  python3 scripts/regenerate-doc-stage-index.py
+#
+#   2. New-file gate — newly added aidocs/**/*.md files must carry a
+#      `stage:` front-matter field (per aidocs/00-doc-stages.md).
+#      Fix:  add `stage: <token>` to the offending file's YAML block.
+#
+# Taxonomy: aidocs/00-doc-stages.md
+# Maturity: docs/contributing/maturity-stages.md
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+      - "hourly-bot/**"
+    paths:
+      - "aidocs/**"
+      - "scripts/regenerate-doc-stage-index.py"
+      - ".github/workflows/doc-stage-check.yml"
+  pull_request:
+    paths:
+      - "aidocs/**"
+      - "scripts/regenerate-doc-stage-index.py"
+      - ".github/workflows/doc-stage-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doc-stage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doc-stage:
+    name: Doc stage index + new-file gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so git log -1 (used by the script) works correctly.
+          fetch-depth: 0
+
+      - name: Drift gate — index must match generated output
+        # Fails when aidocs/01-doc-stage-index.md is stale.
+        # Fix: python3 scripts/regenerate-doc-stage-index.py
+        run: python3 scripts/regenerate-doc-stage-index.py --check
+
+      - name: "New-file gate — newly added aidocs files must have stage: field"
+        # Only checks files added in this push / PR, not pre-existing
+        # untagged files, so the gate can be green even while legacy
+        # untagged files are worked down over time.
+        run: |
+          set -e
+          # On a pull_request event the base SHA is available directly.
+          # On a push event compare against the parent commit.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+
+          # Newly added (A) aidocs .md files in this delta.
+          NEW_FILES=$(git diff --name-only --diff-filter=A "$BASE" HEAD \
+            -- 'aidocs/**/*.md' 2>/dev/null || true)
+
+          if [ -z "$NEW_FILES" ]; then
+            echo "No new aidocs/*.md files — gate passes."
+            exit 0
+          fi
+
+          MISSING=""
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if [ -f "$f" ] && ! grep -q '^stage:' "$f"; then
+              MISSING="$MISSING\n  $f"
+            fi
+          done <<< "$NEW_FILES"
+
+          if [ -n "$MISSING" ]; then
+            echo "ERROR: New aidocs file(s) missing 'stage:' front-matter field:"
+            printf '%b\n' "$MISSING"
+            echo ""
+            echo "Add a stage: token per aidocs/00-doc-stages.md."
+            echo "Canonical tokens: fragment concept idea feature-defined"
+            echo "  audited-by-personas feedback-implemented tests-implemented"
+            echo "  deployed decommissioned"
+            echo ""
+            echo "Example front-matter block:"
+            echo "---"
+            echo "stage: fragment"
+            echo "last-stage-change: $(date -u +%Y-%m-%d)"
+            echo "---"
+            exit 1
+          fi
+
+          echo "All $(echo "$NEW_FILES" | wc -l | tr -d ' ') new aidocs file(s) carry stage: — gate passes."
