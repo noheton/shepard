@@ -205,6 +205,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- IMPL2: Lombok annotation processor — provided by backend runtime classpath. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.44</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- ====== test scope ====== -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

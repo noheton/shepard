@@ -1,4 +1,4 @@
-// V84 — HdfReference: uniqueness constraint on appId + index on datasetPath
+// V86 — HdfReference: uniqueness constraint on appId + index on datasetPath
 //
 // Operator runbook: this migration creates two index structures on the
 // new :HdfReference node label (introduced by plugin A5c).
@@ -15,7 +15,7 @@
 //      all DataObjects". Non-unique because multiple DataObjects may
 //      pin the same path in different containers.
 //
-// Rollback: V84_R__HdfReference_indexes.cypher
+// Rollback: V86_R__HdfReference_indexes.cypher
 // Idempotent: IF NOT EXISTS guards make both calls safe to re-run.
 
 CREATE CONSTRAINT hdf_reference_appId_unique IF NOT EXISTS

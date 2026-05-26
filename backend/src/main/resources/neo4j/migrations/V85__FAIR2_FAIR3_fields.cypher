@@ -1,4 +1,4 @@
-// V84__FAIR2_FAIR3_fields.cypher
+// V85__FAIR2_FAIR3_fields.cypher
 //
 // FAIR2 + FAIR3 additive fields on :DataObject (and subclasses).
 //
@@ -18,7 +18,7 @@
 // Operator runbook:
 //   - Run automatically on startup via MigrationsRunner.
 //   - No data loss risk — purely additive property + index.
-//   - Rollback: V84_R__FAIR2_FAIR3_fields.cypher drops the index.
+//   - Rollback: V85_R__FAIR2_FAIR3_fields.cypher drops the index.
 //
 // Tests: DataObjectServiceFair2Test (FAIR2 stamp), PublishServiceFair3Test
 //        (FAIR3 enforcement) — both in de.dlr.shepard package.
