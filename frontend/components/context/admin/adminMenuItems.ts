@@ -6,6 +6,8 @@ export enum AdminFragments {
   INSTANCE_HEALTH = "instance-health",
   TEMPLATES = "templates",
   SEMANTIC_REPOSITORIES = "semantic-repositories",
+  ONTOLOGY_BUNDLES = "ontology-bundles",
+  SPARQL_PLAYGROUND = "sparql-playground",
   USER_GROUPS = "user-groups",
   INSTANCE_ROR = "instance-ror",
   STORAGE_OVERVIEW = "storage-overview",
@@ -54,6 +56,16 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Semantic Repositories",
     fragment: AdminFragments.SEMANTIC_REPOSITORIES,
     icon: "mdi-library-outline",
+  },
+  {
+    name: "Ontology Bundles",
+    fragment: AdminFragments.ONTOLOGY_BUNDLES,
+    icon: "mdi-owl",
+  },
+  {
+    name: "SPARQL Playground",
+    fragment: AdminFragments.SPARQL_PLAYGROUND,
+    icon: "mdi-database-search-outline",
   },
   {
     name: "User Groups",

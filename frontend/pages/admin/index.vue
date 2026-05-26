@@ -13,6 +13,9 @@ import AdminActivityLogPane from "~/components/context/admin/AdminActivityLogPan
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
 import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
+import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
+import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
+import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -80,6 +83,20 @@ const landingCards = [
     description: "Manage ontologies seeded into the internal Fuseki store.",
   },
   {
+    fragment: AdminFragments.ONTOLOGY_BUNDLES,
+    icon: "mdi-owl",
+    title: "Ontology Bundles",
+    description:
+      "Enable, disable, upload, or remove Turtle ontology bundles seeded into the internal n10s store.",
+  },
+  {
+    fragment: AdminFragments.SPARQL_PLAYGROUND,
+    icon: "mdi-database-search-outline",
+    title: "SPARQL Playground",
+    description:
+      "Run read-only SELECT / ASK queries against any semantic repository. Results as a structured table.",
+  },
+  {
     fragment: AdminFragments.USER_GROUPS,
     icon: "mdi-account-multiple-outline",
     title: "User Groups",
@@ -104,6 +121,13 @@ const landingCards = [
     description: "Full provenance activity stream — who accessed or mutated what, when.",
   },
   {
+    fragment: "provenance-dashboard",
+    icon: "mdi-chart-timeline-variant-shimmer",
+    title: "Provenance Dashboard",
+    description: "Instance-wide activity stats, sparkline, content census, and activity feed (PROV1e).",
+    path: "/admin/provenance",
+  },
+  {
     fragment: AdminFragments.UNHIDE,
     icon: "mdi-web-sync",
     title: "Unhide",
@@ -120,7 +144,7 @@ const landingCards = [
     fragment: AdminFragments.FILE_MIGRATION,
     icon: "mdi-database-arrow-right-outline",
     title: "File migration",
-    description: "Move file payloads between storage backends (placeholder).",
+    description: "Move file payloads between storage backends (e.g. GridFS → Garage S3).",
   },
   {
     fragment: AdminFragments.SQL_TIMESERIES,
@@ -194,6 +218,12 @@ const landingCards = [
     <SemanticRepositoryPane
       v-if="routeFragment === AdminFragments.SEMANTIC_REPOSITORIES"
     />
+    <OntologyBundlesAdminPane
+      v-if="routeFragment === AdminFragments.ONTOLOGY_BUNDLES"
+    />
+    <SparqlPlaygroundPane
+      v-if="routeFragment === AdminFragments.SPARQL_PLAYGROUND"
+    />
     <UserGroupsPane
       v-if="routeFragment === AdminFragments.USER_GROUPS"
     />
@@ -214,11 +244,11 @@ const landingCards = [
     <AdminSqlTimeseriesPane
       v-if="routeFragment === AdminFragments.SQL_TIMESERIES"
     />
-    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
+    <!-- FS1e: file migration pane -->
+    <AdminFileMigrationPane
       v-if="routeFragment === AdminFragments.FILE_MIGRATION"
-      slug="file-migration"
     />
+    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
       slug="notifications-admin"
