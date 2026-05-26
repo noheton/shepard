@@ -10,6 +10,8 @@ import PublicationStatusBadge from "~/components/context/publish/PublicationStat
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
+import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 definePageMeta({ layout: "collection" });
 
@@ -506,7 +508,7 @@ async function saveEmbargoEdit() {
               <AnnotationDialog
                 v-if="showAnnotationDialog && isAllowedToEditCollection"
                 v-model:show-dialog="showAnnotationDialog"
-                :subject-app-id="dataObject?.appId"
+                :subject-app-id="dataObject?.appId ?? undefined"
                 subject-kind="DataObject"
                 :annotated="new AnnotatedDataObject(collectionId, dataObjectId)"
                 @annotation-created="handleAnnotationListUpdate"

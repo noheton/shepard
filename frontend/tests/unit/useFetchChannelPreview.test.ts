@@ -62,6 +62,7 @@ const ch = {
   location: "turbopump",
   symbolicName: "vib_x",
   field: "rms",
+  valueType: "Double" as const,
 };
 
 beforeEach(() => {

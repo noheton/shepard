@@ -44,3 +44,4 @@ export * from './ProvenanceApi';
 export * from './UserApi';
 export * from './UserGroupApi';
 export * from './VersionzApi';
+export * from './IndependenceProofApi';

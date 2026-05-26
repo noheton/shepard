@@ -38,8 +38,8 @@ describe("parseBuffer — single complete event", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(1);
-    expect(events[0].eventType).toBe("DATA_OBJECT_CREATED");
-    expect(events[0].entityAppId).toBe("test-app-id");
+    expect(events[0]!.eventType).toBe("DATA_OBJECT_CREATED");
+    expect(events[0]!.entityAppId).toBe("test-app-id");
     expect(remaining).toBe("");
   });
 
@@ -52,7 +52,7 @@ describe("parseBuffer — single complete event", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(1);
-    expect(events[0].eventType).toBe("DATA_OBJECT_DELETED");
+    expect(events[0]!.eventType).toBe("DATA_OBJECT_DELETED");
     expect(remaining).toBe("");
   });
 
@@ -63,7 +63,7 @@ describe("parseBuffer — single complete event", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(1);
-    expect(events[0].eventType).toBe("HEARTBEAT");
+    expect(events[0]!.eventType).toBe("HEARTBEAT");
     expect(remaining).toBe("");
   });
 });
@@ -81,8 +81,8 @@ describe("parseBuffer — multiple events in one buffer", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(2);
-    expect(events[0].entityAppId).toBe("do-1");
-    expect(events[1].entityAppId).toBe("do-2");
+    expect(events[0]!.entityAppId).toBe("do-1");
+    expect(events[1]!.entityAppId).toBe("do-2");
     expect(remaining).toBe("");
   });
 });
@@ -118,7 +118,7 @@ describe("parseBuffer — multi-chunk streaming", () => {
     // Feed remaining back in with the second chunk appended
     const result2 = parseBuffer(result1.remaining + chunk2);
     expect(result2.events).toHaveLength(1);
-    expect(result2.events[0].eventType).toBe("COLLECTION_UPDATED");
+    expect(result2.events[0]!.eventType).toBe("COLLECTION_UPDATED");
     expect(result2.remaining).toBe("");
   });
 
@@ -130,14 +130,14 @@ describe("parseBuffer — multi-chunk streaming", () => {
     const firstBuf = `data: ${p1}\n\ndata: ${p2.slice(0, 10)}`;
     const r1 = parseBuffer(firstBuf);
     expect(r1.events).toHaveLength(1);
-    expect(r1.events[0].entityAppId).toBe("do-A");
+    expect(r1.events[0]!.entityAppId).toBe("do-A");
     expect(r1.remaining).toContain("data: ");
 
     // Second call: feed remaining + rest of p2
     const secondBuf = r1.remaining + p2.slice(10) + "\n\n";
     const r2 = parseBuffer(secondBuf);
     expect(r2.events).toHaveLength(1);
-    expect(r2.events[0].entityAppId).toBe("do-B");
+    expect(r2.events[0]!.entityAppId).toBe("do-B");
     expect(r2.remaining).toBe("");
   });
 });
@@ -173,7 +173,7 @@ describe("parseBuffer — comment-only blocks", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(1);
-    expect(events[0].eventType).toBe("DATA_OBJECT_CREATED");
+    expect(events[0]!.eventType).toBe("DATA_OBJECT_CREATED");
     expect(remaining).toBe("");
   });
 });
@@ -204,7 +204,7 @@ describe("parseBuffer — malformed JSON", () => {
     const { events, remaining } = parseBuffer(buffer);
 
     expect(events).toHaveLength(1);
-    expect(events[0].eventType).toBe("DATA_OBJECT_CREATED");
+    expect(events[0]!.eventType).toBe("DATA_OBJECT_CREATED");
     expect(remaining).toBe("");
   });
 });

@@ -49,8 +49,9 @@ describe("useAnnotations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset the global handleError stub between tests
-    if (typeof globalThis.handleError === "function") {
-      (globalThis.handleError as ReturnType<typeof vi.fn>).mockReset?.();
+    const g = globalThis as Record<string, unknown>;
+    if (typeof g.handleError === "function") {
+      (g.handleError as ReturnType<typeof vi.fn>).mockReset?.();
     }
   });
 
@@ -69,7 +70,7 @@ describe("useAnnotations", () => {
     await flush();
 
     expect(annotations.value).toHaveLength(1);
-    expect(annotations.value[0].id).toBe(1);
+    expect(annotations.value[0]!.id).toBe(1);
     expect(loading.value).toBe(false);
     expect(error.value).toBeNull();
   });

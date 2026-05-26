@@ -76,15 +76,18 @@ async function patchConfig(patch: Partial<SemanticConfigIO>) {
   }
 }
 
-async function onPersonalVocabToggle(newValue: boolean) {
+async function onPersonalVocabToggle(newValue: boolean | null) {
+  if (newValue === null) return;
   await patchConfig({ personalVocabulariesEnabled: newValue });
 }
 
-async function onPreseedToggle(newValue: boolean) {
+async function onPreseedToggle(newValue: boolean | null) {
+  if (newValue === null) return;
   await patchConfig({ preseedEnabled: newValue });
 }
 
-async function onSuggestionToggle(newValue: boolean) {
+async function onSuggestionToggle(newValue: boolean | null) {
+  if (newValue === null) return;
   await patchConfig({ suggestionEnabled: newValue });
 }
 
