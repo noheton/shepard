@@ -22,10 +22,13 @@
 // Operator runbook: see aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md.
 
 // ── Uniqueness constraint ────────────────────────────────────────────────────
+// Single-property constraint on appId (Community Edition compatible).
+// Idempotency relies on MERGE keyed on (shepardConcept, upperOntologyUri) —
+// no composite NODE KEY needed (that requires Enterprise Edition).
 
-CREATE CONSTRAINT OntologyAlignment_concept_uri_unique IF NOT EXISTS
+CREATE CONSTRAINT OntologyAlignment_appId_unique IF NOT EXISTS
 FOR (n:OntologyAlignment)
-REQUIRE (n.shepardConcept, n.upperOntologyUri) IS NODE KEY;
+REQUIRE n.appId IS UNIQUE;
 
 // ── Alignment rows ───────────────────────────────────────────────────────────
 
