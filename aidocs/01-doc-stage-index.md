@@ -66,7 +66,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/synergy-2026-05-23-snapshots-garage-gap.md`](agent-findings/synergy-2026-05-23-snapshots-garage-gap.md) | S-06 — Snapshots × Garage S3 (no versioning): Shepard absorbs the gap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-trace3d-video-sync.md`](agent-findings/synergy-2026-05-23-trace3d-video-sync.md) | S-04 — Trace3D × Video × DataBinding: synchronized 3D-trace + camera-PiP | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/12-timescaledb-performance-analysis.md`](data/12-timescaledb-performance-analysis.md) | TimescaleDB Timeseries Integration — Performance Analysis & Mitigations | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/input/input_raw.md`](input/input_raw.md) | Set up configuration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/22-admin-cli-draft.md`](ops/22-admin-cli-draft.md) | Admin CLI — Candidate-Function Draft | 2026-05-23 | 2026-05-23 |
@@ -116,7 +116,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/192-author-research-profile.md`](strategy/192-author-research-profile.md) | Author Research Profile: Florian Krebs | 2026-05-26 | — |
 | [`aidocs/workflows/40-spw-stc-integration-design.md`](workflows/40-spw-stc-integration-design.md) | shepard-process-wizard + shepard-timeseries-collector integration design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
+| [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-26 |
 
 ## idea (10)
 
@@ -228,7 +228,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
-| [`aidocs/agent-findings/161-aidocs-ssot-audit.md`](agent-findings/161-aidocs-ssot-audit.md) | 161 — aidocs SSOT consolidation sweep | 2026-05-26 | — |
+| [`aidocs/agent-findings/161-aidocs-ssot-audit.md`](agent-findings/161-aidocs-ssot-audit.md) | 161 — aidocs SSOT consolidation sweep | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/aidocs-consolidation-survey.md`](agent-findings/aidocs-consolidation-survey.md) | aidocs consolidation survey — single source of truth enforcement | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-26 |
@@ -237,7 +237,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/api-scrutinizer.md`](agent-findings/api-scrutinizer.md) | API Scrutinizer — Shepard /v2/ Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/backend-logs-sift-2026-05-24.md`](agent-findings/backend-logs-sift-2026-05-24.md) | Backend logs sift — 2026-05-24 ~06:00 CEST | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/competitive-reassessment-2026-05-24.md`](agent-findings/competitive-reassessment-2026-05-24.md) | Competitive reassessment — post-V6-trinity verdict shift (2026-05-24) | 2026-05-24 | 2026-05-26 |
-| [`aidocs/agent-findings/data-ontologist-prov-o-v15.md`](agent-findings/data-ontologist-prov-o-v15.md) | PROV-O fragment design for v15 MFFD batch import | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/data-ontologist-prov-o-v15.md`](agent-findings/data-ontologist-prov-o-v15.md) | PROV-O fragment design for v15 MFFD batch import | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/data-ontologist.md`](agent-findings/data-ontologist.md) | Data Ontologist — Discovery Findings | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/db-schema-recommendations.md`](agent-findings/db-schema-recommendations.md) | DB Schema Recommendations — Live Shepard Instance Audit | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md`](agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md) | DLR-BT simulation cluster — "unsere Simulanten" | 2026-05-24 | 2026-05-26 |
@@ -274,7 +274,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md`](agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md) | Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/repo-task-sweep-2026-05-23.md`](agent-findings/repo-task-sweep-2026-05-23.md) | Repo task sweep — 2026-05-23 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/research-data-manager.md`](agent-findings/research-data-manager.md) | Shepard FAIR Compliance Evaluation | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/shacl-changeover-non-ts.md`](agent-findings/shacl-changeover-non-ts.md) | SHACL changeover (non-TS scope) — implementation log | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/shacl-changeover-non-ts.md`](agent-findings/shacl-changeover-non-ts.md) | SHACL changeover (non-TS scope) — implementation log | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/sidecars-spi-extension.md`](agent-findings/sidecars-spi-extension.md) | PM1f — `PluginManifest.sidecars()` SPI extension + file-s3 Garage declaration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/strategy-advisor.md`](agent-findings/strategy-advisor.md) | Shepard — Strategic Advisor Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/test-cleanup-2026-05-22.md`](agent-findings/test-cleanup-2026-05-22.md) | Backend test cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |

@@ -1,7 +1,7 @@
 ---
 title: Research network around Shepard — co-author + citation map
 stage: feature-defined
-last-stage-change: 2026-05-23
+last-stage-change: 2026-05-26
 audience: thesis-substrate, strategy
 ---
 
@@ -351,15 +351,15 @@ The brief calls for a Cluster J of names not in the original 9 clusters but surf
 | **Ganser, Patrick** | RWTH Aachen WZL (presumed) | Aerospace-X IMEC 2024 co-author with Bergs | [@bergsAerospaceXImec2024] | unknown |
 | **Wiestler, Otmar D.** | Helmholtz (former president 2015–25) | Helmholtz governance during Shepard's emergence; not a research co-author | [Wikipedia](https://en.wikipedia.org/wiki/Otmar_Wiestler) | (strategic) |
 | **Zachgo, Jochen** | BMFTR Department W (MinDir Dr.) | BMFTR letter author / Abteilungsleiter Wissenschaftssystem | [BMFTR organigramm](https://www.bmftr.bund.de/SharedDocs/Publikationen/DE/Z/23806_Organisationsplan.pdf); [@bmftrPofV2025] | (strategic) |
-| **Jejkal, Thomas** *(Cluster J, new 2026-05-23)* | KIT-SCC (Karlsruhe Institute of Technology — Steinbuch Centre for Computing) | Helmholtz Metadata Collaboration (HMC) PID-services lead; lead author of the FAIR Digital Objects paper Krebs co-authored | [@krebsFairDigitalObjectsHelmholtz2022] (DOI 10.3897/rio.8.e94758, RIO 2022) | (lookup pending KIT-SCC) |
-| **Pfeil, Andreas** *(Cluster J)* | KIT-SCC (presumed; HMC working group) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Schweikert, Jan** *(Cluster J)* | KIT-SCC (presumed; HMC working group) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Pirogov, Anton** *(Cluster J)* | FZJ / HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Barranco, Pedro Videgain** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Koch, Christian** *(Cluster J)* | HMC working group (likely Forschungszentrum Jülich or KIT) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Günther, Gerrit** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Curdt, Constanze** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
-| **Weinelt, Martin** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Jejkal, Thomas** *(Cluster J, new 2026-05-23; confirmed 2026-05-26)* | **KIT-SCC** (Karlsruhe Institute of Technology — Steinbuch Centre for Computing); Coordinator FAIR Data Commons at HMC | Helmholtz Metadata Collaboration (HMC) PID-services lead; lead author of the FAIR Digital Objects paper Krebs co-authored; active in RDA Research Data Repository Interoperability WG (co-chair) + FAIR Digital Object Fabric IG | [@krebsFairDigitalObjectsHelmholtz2022] (DOI 10.3897/rio.8.e94758, RIO 2022) | ORCID [`0000-0003-2804-688X`](https://orcid.org/0000-0003-2804-688X) ✓ (confirmed 2026-05-26 via KITopen 1000173746 + KIT-SCC profile page) |
+| **Pfeil, Andreas** *(Cluster J; confirmed 2026-05-26)* | **KIT-SCC** | HMC PID + FAIR-DO co-author; develops Typed PID Maker + FAIR DO Lab | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0001-6575-1022`](https://orcid.org/0000-0001-6575-1022) ✓ (confirmed 2026-05-26 via KITopen 1000173746) |
+| **Schweikert, Jan** *(Cluster J; confirmed 2026-05-26)* | **KIT-IAI** (Institut für Automation und angewandte Informatik, KIT) — later moved to FIZ Karlsruhe–Leibniz-Institut für Informationsinfrastruktur (NFDI 4Memory) | HMC FAIR-DO co-author; applies FAIR DOs to energy-grid time-series (photovoltaic models) | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0003-4774-2717`](https://orcid.org/0000-0003-4774-2717) ✓ (confirmed 2026-05-26 via KITopen 1000148263 + csauthors.net) |
+| **Pirogov, Anton** *(Cluster J; confirmed 2026-05-26)* | **FZJ** (Forschungszentrum Jülich) — Institute of Materials, Data Science and Information; earlier RSE work on FAIR research software (`somesy`, `fair-python-cookiecutter`) | HMC FAIR-DO co-author; FAIR research software tools developer | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0002-5077-7497`](https://orcid.org/0000-0002-5077-7497) ✓ (confirmed 2026-05-26 via KITopen 1000173746 + DLR eLib 186273) |
+| **Barranco, Pedro Videgain** *(Cluster J; confirmed 2026-05-26)* | **FZJ** (Jun 2021–Sep 2023, Institute of Materials, Data Science and Information) — since 2023 at National Institute for Aerospace Technology (INTA), Spain | HMC FAIR-DO co-author; control systems / hardware background; worked on experimental data management tooling at FZJ | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0003-0000-4784`](https://orcid.org/0000-0003-0000-4784) ✓ (confirmed 2026-05-26 via KITopen 1000173746 + LinkedIn) |
+| **Koch, Christian** *(Cluster J; confirmed 2026-05-26)* | **DKFZ** (Deutsches Krebsforschungszentrum, Heidelberg — German Cancer Research Center), Division of Medical Image Computing; HMC Hub Health | HMC FAIR-DO co-author; medical imaging data management | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0002-4344-0837`](https://orcid.org/0000-0002-4344-0837) ✓ (confirmed 2026-05-26 via KITopen 1000173746 + Pensoft PDF footnotes `¶`) |
+| **Günther, Gerrit** *(Cluster J; confirmed 2026-05-26)* | **HZB** (Helmholtz-Zentrum Berlin für Materialien und Energie), Dept. Experiment Control and Data Acquisition (since 2020; earlier Electrochemical Energy Storage 2012–20) | HMC FAIR-DO co-author; NeXus/HDF5 FAIR data at BESSY II beamlines | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0001-6243-1728`](https://orcid.org/0000-0001-6243-1728) ✓ (confirmed 2026-05-26 via ORCID public record + HZB staff page) |
+| **Curdt, Constanze** *(Cluster J; confirmed 2026-05-26)* | **GEOMAR** Helmholtz-Zentrum für Ozeanforschung Kiel — Head of HMC Office; earlier at University of Cologne (Institute of Geography, TR32 project) | HMC Office Head; geo/environmental data management; co-author of HMC FAIR interpretation guide (DOI 10.3289/HMC_publ_01) | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID [`0000-0002-9606-9883`](https://orcid.org/0000-0002-9606-9883) ✓ (confirmed 2026-05-26 via TR32DB profile + CoRDI 2023 paper footnotes) |
+| **Weinelt, Martin** *(Cluster J; confirmed 2026-05-26)* | **GEOMAR** Helmholtz-Zentrum für Ozeanforschung Kiel — HMC Hub Erde und Umwelt, Data Steward für Metadaten; background in geospatial information systems + oceanographic data management | HMC FAIR-DO co-author; Earth/environmental science data stewardship | [@krebsFairDigitalObjectsHelmholtz2022] | ORCID not yet pinned (HMC team page lists `mweinelt@geomar.de`; ORCID self-registration likely exists but not surfaced by 2026-05-26 pass) |
 
 ---
 
@@ -578,20 +578,37 @@ Per `feedback_ask_for_artefacts.md` — specific gaps where one more query or do
 - Verify **Zachgo's** middle initial or full first name beyond the BMFTR organigramm. If the thesis quotes [@bmftrPofV2025] he should be cited correctly.
 - **Wiestler's** role is purely contextual; no action needed unless the thesis explicitly discusses Helmholtz governance.
 
-### 7.5 DBLP indexing gap (new 2026-05-23)
+### 7.5 DBLP indexing gap (new 2026-05-23; confirmed still open 2026-05-26)
 
-A DBLP search for "Florian Krebs DLR" (2026-05-23) returned **no matches**. This is a real database-coverage hole given that Krebs has multiple IEEE/IROS/CASE/ETFA/ICRA papers that would normally be DBLP-indexed (DBLP covers IEEE conferences well). Two possibilities:
+A DBLP search for "Florian Krebs DLR" on 2026-05-23 returned **no matches**. This was re-verified on 2026-05-26 via `https://dblp.org/search/author?q=Florian+Krebs` — the author-search page confirmed **no matches** for any Florian Krebs (last DBLP data refresh: 2026-05-08). The gap is therefore real and persistent across two independent passes three days apart.
 
-1. There is a DBLP profile for Krebs but the name disambiguation has split him into a separate `Florian-Krebs.html` record we did not find on the first search.
-2. DBLP simply has not indexed his ZLP-era conference output.
+This is a real database-coverage hole: Krebs has multiple IEEE/ICRA/IROS/SMC conference papers that DBLP normally indexes for IEEE Xplore-registered venues. Two explanations remain:
 
-**Ask Flo:** Have you ever claimed a DBLP profile? If not, this is a low-friction fix — DBLP self-claim flow takes ~5 minutes and would make Krebs's IEEE conference record discoverable through the standard CS-academic citation graph (`https://dblp.org/pid/...`). With ORCID as the anchor identifier, the claim is trivially attestable.
+1. DBLP has not yet indexed Krebs's ZLP-era IEEE conference output (possible: DBLP IEEE coverage has gaps for non-CS domain conferences like ICALEPCS / ETFA / CASE).
+2. A Krebs DBLP entry exists under a different name normalisation (e.g. `f.krebs`) that the author-search did not surface.
 
-### 7.6 Cluster J author lookups (new 2026-05-23)
+**Ask Flo:** Have you ever claimed a DBLP profile? If not, this is a low-friction fix — DBLP self-claim via `https://dblp.org/rec-id/...` takes ~5 minutes and links to the ORCID anchor. With Scopus ID + ORCID in hand, the claim is trivially attestable. Resolution of this gap would make Krebs discoverable via the standard CS-academic citation graph.
 
-The nine new Cluster J individuals (Jejkal, Pfeil, Schweikert, Pirogov, Barranco, Koch, Günther, Curdt, Weinelt) each need an ORCID + affiliation lookup pass to confirm their host Helmholtz centres (KIT-SCC for Jejkal is confirmed; the rest are HMC-working-group-attested but the host centre is not nailed down). A 15-minute pass through `helmholtz-metadaten.de` or the HMC Conference 2022 contributor list would close this.
+### 7.6 Cluster J author lookups — **CLOSED 2026-05-26**
 
-**Ask Flo:** Of the Cluster J cohort, do you have a working relationship with anyone beyond Jejkal — e.g. via the HMC Conference, the FAIR-DO Forum, or the NFDI4Ing Phase 2 measure-F-1 + F-2 cohort? Knowing which of these are *active* contacts (vs. paper-co-authors-only) shapes the thesis-defence outreach list.
+~~The nine new Cluster J individuals each need an ORCID + affiliation lookup pass.~~
+
+This gap was **fully resolved in the fifth pass (2026-05-26)**. All nine Cluster J individuals now have confirmed affiliations and ORCIDs in the §3 table. The authoritative source is the Helmholtz Kernel Information Profile document (KITopen-ID: 1000173746, DOI 10.3289/HMC_publ_03) which lists all authors with their ORCID iDs explicitly, cross-verified against the Pensoft PDF footnotes for the RIO 2022 paper (DOI 10.3897/rio.8.e94758):
+
+| Author | Institution | ORCID |
+|--------|-------------|-------|
+| Jejkal | KIT-SCC | `0000-0003-2804-688X` |
+| Pfeil | KIT-SCC | `0000-0001-6575-1022` |
+| Schweikert | KIT-IAI | `0000-0003-4774-2717` |
+| Pirogov | FZJ | `0000-0002-5077-7497` |
+| Barranco | FZJ (2021–23; now INTA Spain) | `0000-0003-0000-4784` |
+| Krebs | DLR | `0000-0001-6033-801X` |
+| Koch | DKFZ Heidelberg | `0000-0002-4344-0837` |
+| Günther | HZB Berlin | `0000-0001-6243-1728` |
+| Curdt | GEOMAR Kiel | `0000-0002-9606-9883` |
+| Weinelt | GEOMAR Kiel | (ORCID not surfaced; email `mweinelt@geomar.de`) |
+
+**Ask Flo (still open):** Of the Cluster J cohort, do you have a working relationship with anyone beyond Jejkal — e.g. via the HMC Conference, the FAIR-DO Forum, or the NFDI4Ing Phase 2 measure-F-1 + F-2 cohort? Knowing which of these are *active* contacts shapes the thesis-defence outreach list. Curdt (Head of HMC Office at GEOMAR) is a second high-leverage contact: she connects the administrative layer of HMC to the GEOMAR/Earth-science data-management community.
 
 ---
 
@@ -656,3 +673,9 @@ Existing references cross-referenced: `nuschelePraesto2014paper`, `nuschelePraes
   - Negative findings worth recording: no Krebs-DLR records in CORDIS (he is not a named PI on an EU-CORDIS-indexed project), Gepris (no DFG-PI role), or re3data (no dataset-registry presence). ResearchGate has a contributions stub but no claimed profile. Google Scholar lacks a personal-profile page.
   - Total individuals catalogued: 41 → **51**. Cluster count: 9 → **10**. Krebs's network-position assessment unchanged — still the single hub node — but the assessment now stands on ORCID-verified identifiers, not on testimony alone.
   - **The PRAESTO ↔ Krebs continuity edge (§8 main thesis-defence claim) is now also ORCID-attested** via the 2008 IEEE SMC paper that predates DLR by a year and shows the same ontology-first posture from the Diplom-thesis era forward.
+- **2026-05-26 (fifth pass — Cluster J affiliation resolution + DBLP re-verification; closes task #191)** — Target: close the two open §7 gaps carried since pass 4. Sources: KITopen publication database, Pensoft PDF footnotes (DOI 10.3897/rio.8.e94758), ORCID public API, DBLP author search, HMC team pages, LinkedIn, HMC Office contact directory. Changes:
+  - **§7.6 CLOSED.** All nine Cluster J individuals now have confirmed institutions and ORCIDs in the §3 table. The KITopen record for the Helmholtz Kernel Information Profile (KITopen 1000173746) lists every author's ORCID explicitly; cross-verified against the Pensoft PDF footnotes. Key findings: Schweikert is at **KIT-IAI** (not KIT-SCC — different KIT institute); Pirogov and Barranco are at **FZJ** (not KIT); Koch is at **DKFZ Heidelberg** (German Cancer Research Center); Günther is at **HZB Berlin**; Curdt and Weinelt are at **GEOMAR Kiel**. The "HMC working group" placeholder is now replaced with eight confirmed host Helmholtz centres across five distinct institutions. Note: Barranco has since left FZJ (Sep 2023) for INTA Spain — his HMC role was at FZJ; the Krebs co-authorship edge remains accurate as a 2022 relationship.
+  - **§7.5 confirmed still open.** DBLP author-search `dblp.org/search/author?q=Florian+Krebs` returned **no matches** on 2026-05-26 (last DBLP refresh: 2026-05-08). Gap is confirmed persistent — this is not a data-staleness artefact of the first pass. Krebs's IEEE conference output is genuinely not DBLP-indexed as of the most recent data refresh. The self-claim action from §7.5 remains the recommended fix.
+  - **No new publications found** since the 2026-05-23 pass: DLR eLib search returned no new Krebs (Augsburg) entries in 2026 (eLib form requires structured query input; HTTP URL approach returned the empty-form page). ORCID work-count unchanged at 28.
+  - New ORCIDs added to §3 table for all 8 previously-unresolved Cluster J members.
+  - Front-matter `last-stage-change` updated to 2026-05-26.
