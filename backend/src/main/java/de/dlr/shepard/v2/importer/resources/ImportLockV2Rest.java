@@ -1,0 +1,281 @@
+package de.dlr.shepard.v2.importer.resources;
+
+import de.dlr.shepard.v2.importer.entities.ImportLock;
+import de.dlr.shepard.v2.importer.io.ImportLockIO;
+import de.dlr.shepard.v2.importer.io.ImportLockIO.AbandonRequestIO;
+import de.dlr.shepard.v2.importer.io.ImportLockIO.AcquireRequestIO;
+import de.dlr.shepard.v2.importer.io.ImportLockIO.LockStatusIO;
+import de.dlr.shepard.v2.importer.services.ImportLockService;
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * IMP-LOCK — {@code /v2/import/lock}: persistent import-in-progress lock.
+ *
+ * <p>Endpoints:
+ * <ul>
+ *   <li>{@code GET /v2/import/lock} — read current lock status; 204 when no lock exists.</li>
+ *   <li>{@code POST /v2/import/lock} — acquire a new lock (start import).</li>
+ *   <li>{@code POST /v2/import/lock/{lockId}/heartbeat} — extend heartbeat while running.</li>
+ *   <li>{@code POST /v2/import/lock/{lockId}/release} — normal completion (→ COMPLETED).</li>
+ *   <li>{@code POST /v2/import/lock/{lockId}/abandon} — error termination (→ FAILED).</li>
+ *   <li>{@code DELETE /v2/import/lock/{lockId}} — admin cancel (→ CANCELLED); requires
+ *       {@code instance-admin} role.</li>
+ * </ul>
+ *
+ * <p>Intended callers: client-side importer scripts (e.g. {@code mffd-import-v15.py}).
+ * The lock persists across server restarts so a restarted backend can surface
+ * "an import was in progress" rather than silently losing state.
+ *
+ * <p>Auth: all endpoints require authentication.  Only {@code DELETE} requires the
+ * {@code instance-admin} role.
+ */
+@Path("/v2/import/lock")
+@Authenticated
+@RequestScoped
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Import (IMP1)")
+public class ImportLockV2Rest {
+
+  @Inject
+  ImportLockService lockService;
+
+  // ─── GET /v2/import/lock ──────────────────────────────────────────────────
+
+  @GET
+  @Operation(
+    summary = "Get current import lock status (IMP-LOCK)",
+    description =
+      "Returns the most recent import lock regardless of status, so callers can tell " +
+      "whether an import is currently running or what the last import's outcome was. " +
+      "Returns 204 when no lock has ever been created."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Lock status",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "204", description = "No lock exists")
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  public Response getCurrent(@Context SecurityContext sc) {
+    if (caller(sc) == null) return unauthorized();
+
+    ImportLock lock = lockService.findCurrent();
+    if (lock == null) return Response.noContent().build();
+    return Response.ok(LockStatusIO.from(lock)).build();
+  }
+
+  // ─── POST /v2/import/lock ─────────────────────────────────────────────────
+
+  @POST
+  @Operation(
+    summary = "Acquire an import lock (IMP-LOCK)",
+    description =
+      "Creates a new RUNNING import lock for the specified collection. " +
+      "Returns 409 if a fresh lock already exists (heartbeat within the last 5 minutes). " +
+      "If the existing lock is stale (> 5 min without heartbeat), it is automatically " +
+      "transitioned to ABANDONED and a new lock is created."
+  )
+  @APIResponse(
+    responseCode = "201",
+    description = "Lock acquired",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing targetCollectionAppId")
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  @APIResponse(responseCode = "409", description = "A fresh import lock already exists")
+  public Response acquire(AcquireRequestIO body, @Context SecurityContext sc) {
+    String caller = caller(sc);
+    if (caller == null) return unauthorized();
+
+    if (body == null || body.targetCollectionAppId() == null
+        || body.targetCollectionAppId().isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("targetCollectionAppId is required")
+        .build();
+    }
+
+    ImportLock lock = lockService.acquire(body.targetCollectionAppId(), caller);
+    if (lock == null) {
+      return Response.status(Response.Status.CONFLICT)
+        .entity("A fresh import lock already exists — wait for it to complete or become stale")
+        .build();
+    }
+    return Response.status(Response.Status.CREATED)
+      .entity(LockStatusIO.from(lock))
+      .build();
+  }
+
+  // ─── POST /v2/import/lock/{lockId}/heartbeat ──────────────────────────────
+
+  @POST
+  @Path("/{lockId}/heartbeat")
+  @Operation(
+    summary = "Extend import lock heartbeat (IMP-LOCK)",
+    description =
+      "Updates lastHeartbeatAt to now for the specified RUNNING lock. " +
+      "Call approximately every 30 s while the import is running. " +
+      "Returns 404 if the lock does not exist; returns 409 if the lock is not in RUNNING status."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Heartbeat recorded",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  @APIResponse(responseCode = "404", description = "Lock not found")
+  @APIResponse(responseCode = "409", description = "Lock is not in RUNNING status")
+  public Response heartbeat(
+    @PathParam("lockId") String lockId,
+    @Context SecurityContext sc
+  ) {
+    if (caller(sc) == null) return unauthorized();
+
+    ImportLock lock = lockService.heartbeat(lockId);
+    if (lock == null) {
+      // Could be not-found or wrong-status — return 404 as the more useful signal.
+      return Response.status(Response.Status.NOT_FOUND)
+        .entity("Lock not found or not in RUNNING status: " + lockId)
+        .build();
+    }
+    return Response.ok(LockStatusIO.from(lock)).build();
+  }
+
+  // ─── POST /v2/import/lock/{lockId}/release ────────────────────────────────
+
+  @POST
+  @Path("/{lockId}/release")
+  @Operation(
+    summary = "Release import lock on completion (IMP-LOCK)",
+    description =
+      "Transitions a RUNNING lock to COMPLETED status (normal import completion). " +
+      "Returns 404 if the lock does not exist; returns 409 if the lock is not in RUNNING status."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Lock released (COMPLETED)",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  @APIResponse(responseCode = "404", description = "Lock not found or not in RUNNING status")
+  public Response release(
+    @PathParam("lockId") String lockId,
+    @Context SecurityContext sc
+  ) {
+    if (caller(sc) == null) return unauthorized();
+
+    ImportLock lock = lockService.release(lockId);
+    if (lock == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+        .entity("Lock not found or not in RUNNING status: " + lockId)
+        .build();
+    }
+    return Response.ok(LockStatusIO.from(lock)).build();
+  }
+
+  // ─── POST /v2/import/lock/{lockId}/abandon ────────────────────────────────
+
+  @POST
+  @Path("/{lockId}/abandon")
+  @Operation(
+    summary = "Abandon import lock on error (IMP-LOCK)",
+    description =
+      "Transitions a RUNNING lock to FAILED status with an error description. " +
+      "Use this when the import terminates abnormally. " +
+      "Returns 404 if the lock does not exist; returns 409 if the lock is not in RUNNING status."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Lock marked FAILED",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing errorMessage")
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  @APIResponse(responseCode = "404", description = "Lock not found or not in RUNNING status")
+  public Response abandon(
+    @PathParam("lockId") String lockId,
+    AbandonRequestIO body,
+    @Context SecurityContext sc
+  ) {
+    if (caller(sc) == null) return unauthorized();
+
+    if (body == null || body.errorMessage() == null || body.errorMessage().isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("errorMessage is required")
+        .build();
+    }
+
+    ImportLock lock = lockService.abandon(lockId, body.errorMessage());
+    if (lock == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+        .entity("Lock not found or not in RUNNING status: " + lockId)
+        .build();
+    }
+    return Response.ok(LockStatusIO.from(lock)).build();
+  }
+
+  // ─── DELETE /v2/import/lock/{lockId} ─────────────────────────────────────
+
+  @DELETE
+  @Path("/{lockId}")
+  @RolesAllowed("instance-admin")
+  @Operation(
+    summary = "Admin cancel an import lock (IMP-LOCK)",
+    description =
+      "Transitions a RUNNING lock to CANCELLED status. " +
+      "Terminal locks (COMPLETED, FAILED, CANCELLED, ABANDONED) are returned as-is — " +
+      "the operation is idempotent with respect to admin intent. " +
+      "Requires instance-admin role."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Lock cancelled (or already terminal)",
+    content = @Content(schema = @Schema(implementation = LockStatusIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required")
+  @APIResponse(responseCode = "403", description = "Requires instance-admin role")
+  @APIResponse(responseCode = "404", description = "Lock not found")
+  public Response cancel(
+    @PathParam("lockId") String lockId,
+    @Context SecurityContext sc
+  ) {
+    if (caller(sc) == null) return unauthorized();
+
+    ImportLock lock = lockService.cancel(lockId);
+    if (lock == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+        .entity("Lock not found: " + lockId)
+        .build();
+    }
+    return Response.ok(LockStatusIO.from(lock)).build();
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  private static String caller(SecurityContext sc) {
+    return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+  }
+
+  private static Response unauthorized() {
+    return Response.status(Response.Status.UNAUTHORIZED).build();
+  }
+}

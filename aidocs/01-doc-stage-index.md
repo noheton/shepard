@@ -112,7 +112,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
-| [`aidocs/strategy/190-thesis-idea-timeline.md`](strategy/190-thesis-idea-timeline.md) | Thesis Idea Timeline | 2026-05-26 | — |
+| [`aidocs/strategy/190-thesis-idea-timeline.md`](strategy/190-thesis-idea-timeline.md) | Thesis Idea Timeline | 2026-05-26 | 2026-05-26 |
 | [`aidocs/workflows/40-spw-stc-integration-design.md`](workflows/40-spw-stc-integration-design.md) | shepard-process-wizard + shepard-timeseries-collector integration design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
