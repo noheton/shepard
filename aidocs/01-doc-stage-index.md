@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 16 |
 | `idea` | 10 |
-| `feature-defined` | 85 |
+| `feature-defined` | 86 |
 | `audited-by-personas` | 69 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 61 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **334** |
+| **total docs** | **335** |
 | **UNTAGGED** | **0** |
 
 ## fragment (39)
@@ -64,25 +64,25 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/22-admin-cli-draft.md`](ops/22-admin-cli-draft.md) | Admin CLI — Candidate-Function Draft | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/27-convenience-clients-design.md`](ops/27-convenience-clients-design.md) | Convenience Clients — `shepard-py` and `shepard-ts` (P16) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/28-paradigms-and-clients-synthesis.md`](ops/28-paradigms-and-clients-synthesis.md) | 28. Paradigms-and-Clients Synthesis — The Integrated Proposal | 2026-05-23 | 2026-05-23 |
-| [`aidocs/ops/33-frontend-workflow-analysis.md`](ops/33-frontend-workflow-analysis.md) | 33 — Frontend / UI Workflow Analysis + Suggestions | 2026-05-23 | 2026-05-23 |
+| [`aidocs/ops/33-frontend-workflow-analysis.md`](ops/33-frontend-workflow-analysis.md) | 33 — Frontend / UI Workflow Analysis + Suggestions | 2026-05-23 | 2026-05-26 |
 | [`aidocs/ops/86-ui-changelog.md`](ops/86-ui-changelog.md) | 86 — UI Change Log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/11-implementation-plan.md`](platform/11-implementation-plan.md) | Implementation Plan — shepard | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/19-architecture-feedback.md`](platform/19-architecture-feedback.md) | 19 — Critical Architectural Feedback | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/19-architecture-feedback.md`](platform/19-architecture-feedback.md) | 19 — Critical Architectural Feedback | 2026-05-23 | 2026-05-26 |
 | [`aidocs/platform/20-epic-roadmap.md`](platform/20-epic-roadmap.md) | Epic Roadmap — shepard | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/23-api-critique.md`](platform/23-api-critique.md) | API Critique — Usability, Redundancies, Paradigms, Client Generation | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/23-api-critique.md`](platform/23-api-critique.md) | API Critique — Usability, Redundancies, Paradigms, Client Generation | 2026-05-23 | 2026-05-26 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/26-crud-consistency.md`](platform/26-crud-consistency.md) | 26. REST API CRUD Consistency Inventory | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/29-p10-implementation-design.md`](platform/29-p10-implementation-design.md) | P10 — `POST /sql/timeseries` Implementation Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/32-long-running-process-pattern.md`](platform/32-long-running-process-pattern.md) | Long-Running Process Pattern — Async Jobs | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/A3c-namespace-migration.md`](platform/A3c-namespace-migration.md) | A3c: infrastructure-vs-feature toggle namespace split | 2026-05-23 | 2026-05-23 |
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/70-competitor-landscape-and-feature-ideas.md`](strategy/70-competitor-landscape-and-feature-ideas.md) | aidocs/70 — Competitor landscape & feature ideas for shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/71-fork-adoption-as-upstream.md`](strategy/71-fork-adoption-as-upstream.md) | aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/74-dlr-bt-stakeholder.md`](strategy/74-dlr-bt-stakeholder.md) | aidocs/74 — shepard: Stakeholder brief for DLR-BT (Stuttgart) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/82-zlp-augsburg-stakeholder.md`](strategy/82-zlp-augsburg-stakeholder.md) | aidocs/82 — shepard: Stakeholder brief for DLR ZLP Augsburg | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/86-shepard-predecessor-systems.md`](strategy/86-shepard-predecessor-systems.md) | Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/86-shepard-predecessor-systems.md`](strategy/86-shepard-predecessor-systems.md) | Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/95-damast-space-transport-data-management.md`](strategy/95-damast-space-transport-data-management.md) | DaMaST — Data Management for Space Transport | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
@@ -103,7 +103,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/57-openapi-client-generator-evaluation.md`](ops/57-openapi-client-generator-evaluation.md) | OpenAPI Client Generator Evaluation — `/v2/` Codegen | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
 | [`aidocs/workflows/40-spw-stc-integration-design.md`](workflows/40-spw-stc-integration-design.md) | shepard-process-wizard + shepard-timeseries-collector integration design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
@@ -121,9 +121,9 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
-| [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
+| [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (85)
+## feature-defined (86)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -132,6 +132,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`](agent-findings/no-ui-gap-survey-2026-05-24.md) | No-UI gap survey + placeholder roll-out — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -150,7 +151,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-ingestion-plan.md) | MFFD Dump Ingestion Plan | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/79-cpacs-annotator.md`](data/79-cpacs-annotator.md) | aidocs/79 — CPACS Annotator (shepard-plugin-cpacs) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/81-spatial-data-binding.md`](data/81-spatial-data-binding.md) | aidocs/81 — Spatial Data Binding: Linking Geometry to Measurements | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/82-spatial-perf-evaluation.md`](data/82-spatial-perf-evaluation.md) | Spatial-data performance evaluation (PostGIS reassessment) | 2026-05-23 | 2026-05-23 |
@@ -175,7 +176,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/92-mffd-real-data-import-strategy.md`](integrations/92-mffd-real-data-import-strategy.md) | 92 — MFFD real-data import strategy | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
-| [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-24 |
+| [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-26 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
@@ -185,7 +186,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/88-quarkus-mcp-server-migration.md`](platform/88-quarkus-mcp-server-migration.md) | 88 — Native Quarkus MCP Server: Replacing the Python Sidecar | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
@@ -217,16 +218,16 @@ section and the `upgrade-overlay` section.
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
-| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/aidocs-consolidation-survey.md`](agent-findings/aidocs-consolidation-survey.md) | aidocs consolidation survey — single source of truth enforcement | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-scrutinizer-v14-import.md`](agent-findings/api-scrutinizer-v14-import.md) | API Scrutinizer — v14 → v15 import-script review | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-scrutinizer.md`](agent-findings/api-scrutinizer.md) | API Scrutinizer — Shepard /v2/ Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/backend-logs-sift-2026-05-24.md`](agent-findings/backend-logs-sift-2026-05-24.md) | Backend logs sift — 2026-05-24 ~06:00 CEST | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/competitive-reassessment-2026-05-24.md`](agent-findings/competitive-reassessment-2026-05-24.md) | Competitive reassessment — post-V6-trinity verdict shift (2026-05-24) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/data-ontologist-prov-o-v15.md`](agent-findings/data-ontologist-prov-o-v15.md) | PROV-O fragment design for v15 MFFD batch import | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/data-ontologist.md`](agent-findings/data-ontologist.md) | Data Ontologist — Discovery Findings | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/data-ontologist.md`](agent-findings/data-ontologist.md) | Data Ontologist — Discovery Findings | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/db-schema-recommendations.md`](agent-findings/db-schema-recommendations.md) | DB Schema Recommendations — Live Shepard Instance Audit | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md`](agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md) | DLR-BT simulation cluster — "unsere Simulanten" | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/dlr-ontology-catalog.md`](agent-findings/dlr-ontology-catalog.md) | DLR Ontology & Model Initiative Catalogue | 2026-05-23 | 2026-05-23 |
@@ -307,11 +308,11 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-23 |
+| [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-26 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-26 |
-| [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-23 |
+| [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-26 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-22 |
 | [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-26 |
@@ -353,7 +354,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/77-k6-performance-metrics.md`](ops/77-k6-performance-metrics.md) | k6 Per-Endpoint SLO Matrix + `/v2/` Coverage | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/85-ui-overhaul-design.md`](ops/85-ui-overhaul-design.md) | 85 — UI Overhaul: Critique, Opportunities, and Roadmap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/87-collection-container-duality.md`](ops/87-collection-container-duality.md) | 87 — Collection / Container Duality: Design Discussion | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/25-neo4j-id-migration-design.md`](platform/25-neo4j-id-migration-design.md) | Neo4j ID Migration — Design (L2) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/25-neo4j-id-migration-design.md`](platform/25-neo4j-id-migration-design.md) | Neo4j ID Migration — Design (L2) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/platform/47-dev-experience-and-plugin-system.md`](platform/47-dev-experience-and-plugin-system.md) | Dev Experience + Storage-Backend Plugin System — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/85-openapi-llm-readable.md`](platform/85-openapi-llm-readable.md) | OpenAPI documentation standard — LLM-readable | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/87-timeseries-appid-migration.md`](platform/87-timeseries-appid-migration.md) | 87 — Timeseries appId Migration (TS-ID) | 2026-05-23 | 2026-05-23 |
@@ -417,7 +418,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-debate.md`](archive/agent-findings-sessions-2026-05/ux-auditor-debate.md) | UX Auditor Debate — Core Tech & UX Lens | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md`](archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md) | UX Auditor — Feature Proposals | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md`](archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md) | V1COMPAT.0 Phase 1 — live validation findings | 2026-05-23 | 2026-05-23 |
-| [`aidocs/archive/agent-findings/predecessor-history-correction-2026-05-23.md`](archive/agent-findings/predecessor-history-correction-2026-05-23.md) | Predecessor history — standing correction | 2026-05-23 | — |
+| [`aidocs/archive/agent-findings/predecessor-history-correction-2026-05-23.md`](archive/agent-findings/predecessor-history-correction-2026-05-23.md) | Predecessor history — standing correction | 2026-05-23 | 2026-05-26 |
 | [`aidocs/archive/platform/68-v2-baseline-v1-compat-layer.md`](archive/platform/68-v2-baseline-v1-compat-layer.md) | V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/archive/platform/86-ai-plugin-design.md`](archive/platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | — |
-| [`aidocs/archive/semantics/14-semantic-improvements.md`](archive/semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path (DECOMMISSIONED) | 2026-05-24 | — |
+| [`aidocs/archive/platform/86-ai-plugin-design.md`](archive/platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | 2026-05-26 |
+| [`aidocs/archive/semantics/14-semantic-improvements.md`](archive/semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path (DECOMMISSIONED) | 2026-05-24 | 2026-05-26 |
