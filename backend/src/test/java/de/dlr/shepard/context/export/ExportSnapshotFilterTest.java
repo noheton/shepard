@@ -39,7 +39,13 @@ import org.junit.jupiter.api.Test;
  *   <li>{@code snapshotAppId} absent (null) — full export, all DataObjects included.</li>
  * </ol>
  */
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  BasicReferenceExportHandler.class,
+  FileReferenceExportHandler.class,
+  StructuredDataReferenceExportHandler.class,
+  TimeseriesReferenceExportHandler.class,
+  URIReferenceExportHandler.class,
+})
 public class ExportSnapshotFilterTest {
 
   DateHelper dateHelper = new DateHelper();

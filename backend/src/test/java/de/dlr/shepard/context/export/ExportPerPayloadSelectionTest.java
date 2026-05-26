@@ -60,7 +60,13 @@ import java.util.zip.ZipInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  BasicReferenceExportHandler.class,
+  FileReferenceExportHandler.class,
+  StructuredDataReferenceExportHandler.class,
+  TimeseriesReferenceExportHandler.class,
+  URIReferenceExportHandler.class,
+})
 public class ExportPerPayloadSelectionTest {
 
   DateHelper dateHelper = new DateHelper();

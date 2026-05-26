@@ -47,7 +47,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  BasicReferenceExportHandler.class,
+  FileReferenceExportHandler.class,
+  StructuredDataReferenceExportHandler.class,
+  TimeseriesReferenceExportHandler.class,
+  URIReferenceExportHandler.class,
+})
 public class ExportMetadataBundleTest {
 
   DateHelper dateHelper = new DateHelper();

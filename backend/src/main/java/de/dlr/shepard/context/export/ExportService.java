@@ -5,8 +5,6 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.common.exceptions.ShepardException;
-import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.subscription.io.SubscriptionIO;
 import de.dlr.shepard.common.subscription.services.SubscriptionService;
@@ -19,41 +17,20 @@ import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
-import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileBundleReference;
-import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
-import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
-import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
-import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
-import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
-import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import de.dlr.shepard.context.version.io.VersionIO;
 import de.dlr.shepard.context.version.services.VersionService;
-import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
-import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.stream.StreamSupport;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,22 +45,7 @@ public class ExportService {
   DataObjectService dataObjectService;
 
   @Inject
-  BasicReferenceService basicReferenceService;
-
-  @Inject
   LabJournalEntryService labJournalEntryService;
-
-  @Inject
-  TimeseriesReferenceService timeseriesReferenceService;
-
-  @Inject
-  FileBundleReferenceService fileReferenceService;
-
-  @Inject
-  StructuredDataReferenceService structuredDataReferenceService;
-
-  @Inject
-  URIReferenceService uriReferenceService;
 
   @Inject
   AuthenticationContext authenticationContext;
@@ -104,11 +66,25 @@ public class ExportService {
    * Plugin-supplied export contributors (G1c SPI). Each contributor claims
    * one or more reference types; the first match (by {@link ExportContributor#priority()})
    * handles the reference. Types not claimed by any contributor fall through to the
-   * built-in {@code switch} in {@link #fetchAndWriteDataObject}.
+   * built-in {@link PayloadExportHandler} dispatch.
    */
   @Inject
   @Any
   Instance<ExportContributor> exportContributors;
+
+  /**
+   * Built-in payload-kind handlers (internal SPI). Carry the richer dispatch context
+   * ({@link ExportContext}) that the plugin-facing {@link ExportContributor} signature
+   * does not expose. Collected via CDI; first match by
+   * {@link PayloadExportHandler#priority()} handles the reference.
+   *
+   * <p>The {@link BasicReferenceExportHandler} has {@code priority() = Integer.MAX_VALUE}
+   * and {@code handles()} returning {@code true} for every type, so it acts as the
+   * catch-all when no more-specific handler matches.
+   */
+  @Inject
+  @Any
+  Instance<PayloadExportHandler> payloadHandlers;
 
   /**
    * Exports collection by shepard Id
@@ -233,7 +209,6 @@ public class ExportService {
     builder.addDataObject(dataObject);
     writeEntityMetadata(builder, dataObject, selection, false);
 
-    // TODO: Add more types, maybe improve (StrategyPattern?)
     for (BasicReference reference : dataObject.getReferences()) {
       ExportSelection.PayloadKind kind = mapKind(reference.getType());
       if (selection != null && !selection.includesKind(kind)) continue;
@@ -241,47 +216,33 @@ public class ExportService {
       if (selection != null && selection.excludesId(idAsString)) continue;
       writeEntityMetadata(builder, reference, selection, false);
       ExportSelection.PerPayloadSelection perPayload = selection == null ? null : selection.perPayloadFor(idAsString);
+      String username = authenticationContext.getCurrentUserName();
       // Check plugin-supplied contributors first (G1c ExportContributor SPI).
       Optional<ExportContributor> contributor = StreamSupport
         .stream(exportContributors.spliterator(), false)
         .filter(c -> c.handles(reference.getType()))
         .min(Comparator.comparingInt(ExportContributor::priority));
       if (contributor.isPresent()) {
-        contributor.get().contribute(builder, reference, authenticationContext.getCurrentUserName());
+        contributor.get().contribute(builder, reference, username);
       } else {
-        switch (reference.getType()) {
-          case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
-            collectionId,
-            dataObjectId,
-            builder,
-            reference.getShepardId(),
-            authenticationContext.getCurrentUserName(),
-            perPayload,
-            selection != null && selection.isStrictPerPayload()
-          );
-          case "FileReference" -> fetchAndWriteFileReference(
-            collectionId,
-            dataObjectId,
-            builder,
-            reference.getShepardId(),
-            perPayload,
-            selection != null && selection.isStrictPerPayload()
-          );
-          case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
-            collectionId,
-            dataObjectId,
-            builder,
-            reference.getShepardId()
-          );
-          case "URIReference" -> fetchAndWriteUriReference(
-            collectionId,
-            dataObjectId,
-            builder,
-            reference.getShepardId(),
-            authenticationContext.getCurrentUserName()
-          );
-          default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
-        }
+        // Dispatch to the first matching built-in PayloadExportHandler (ordered by priority).
+        // BasicReferenceExportHandler is the catch-all fallback (priority = Integer.MAX_VALUE).
+        ExportContext ctx = new ExportContext(
+          collectionId,
+          dataObjectId,
+          username,
+          perPayload,
+          selection != null && selection.isStrictPerPayload()
+        );
+        PayloadExportHandler handler = StreamSupport
+          .stream(payloadHandlers.spliterator(), false)
+          .filter(h -> h.handles(reference.getType()))
+          .min(Comparator.comparingInt(PayloadExportHandler::priority))
+          .orElseThrow(() -> new IllegalStateException(
+            "No PayloadExportHandler found for type: " + reference.getType() +
+            " — BasicReferenceExportHandler should always be present as catch-all"
+          ));
+        handler.export(builder, reference, ctx);
       }
     }
     if (selection == null || selection.includeLabJournal()) {
@@ -312,214 +273,4 @@ public class ExportService {
     builder.addLabJournalEntry(new LabJournalEntryIO(entry), entry.getCreatedBy());
   }
 
-  private void fetchAndWriteTimeseriesReference(
-    long collectionShepardId,
-    long dataObjectShepardId,
-    ExportBuilder builder,
-    long referenceId,
-    String username,
-    ExportSelection.PerPayloadSelection perPayload,
-    boolean strict
-  ) throws IOException {
-    var reference = timeseriesReferenceService.getReference(
-      collectionShepardId,
-      dataObjectShepardId,
-      referenceId,
-      null
-    );
-    builder.addReference(new TimeseriesReferenceIO(reference), reference.getCreatedBy());
-
-    Set<String> requestedColumns = perPayload != null && perPayload.columns() != null
-      ? new LinkedHashSet<>(perPayload.columns())
-      : Collections.emptySet();
-    Long startNanosOverride = null;
-    Long endNanosOverride = null;
-    if (perPayload != null && perPayload.timeRange() != null) {
-      var tr = perPayload.timeRange();
-      if (tr.start() != null) startNanosOverride = nanosFromInstant(tr.start());
-      if (tr.end() != null) endNanosOverride = nanosFromInstant(tr.end());
-    }
-
-    // R2b: validate requested columns against the reference's known fields. Unknown columns are
-    // silently dropped (recorded as warnings) unless strict mode flips the contract to 400.
-    Set<String> effectiveFieldFilter = Collections.emptySet();
-    if (!requestedColumns.isEmpty()) {
-      Set<String> knownFields = new HashSet<>();
-      for (var ts : reference.getReferencedTimeseriesList()) {
-        var f = ts.toTimeseries().getField();
-        if (f != null) knownFields.add(f);
-      }
-      Set<String> unknown = new LinkedHashSet<>();
-      Set<String> matched = new LinkedHashSet<>();
-      for (String c : requestedColumns) {
-        if (knownFields.contains(c)) matched.add(c);
-        else unknown.add(c);
-      }
-      if (!unknown.isEmpty()) {
-        if (strict) {
-          throw new BadRequestException(
-            "Unknown column(s) for TimeseriesReference id=" + referenceId + ": " + unknown
-          );
-        }
-        builder.addSelectionWarning(
-          "TimeseriesReference id=" + referenceId + ": unknown columns skipped " + unknown
-        );
-      }
-      effectiveFieldFilter = matched;
-    }
-
-    InputStream timeseriesPayload = null;
-    try {
-      timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
-        collectionShepardId,
-        dataObjectShepardId,
-        referenceId,
-        null,
-        null,
-        null,
-        Collections.emptySet(),
-        Collections.emptySet(),
-        Collections.emptySet(),
-        Collections.emptySet(),
-        effectiveFieldFilter,
-        CsvFormat.ROW,
-        startNanosOverride,
-        endNanosOverride
-      );
-    } catch (ShepardException e) {
-      Log.warn("Cannot access timeseries payload during export");
-    }
-    if (timeseriesPayload != null) {
-      writeTimeseriesPayload(builder, timeseriesPayload, reference);
-    }
-  }
-
-  private void fetchAndWriteFileReference(
-    long collectionShepardId,
-    long dataObjectShepardId,
-    ExportBuilder builder,
-    long referenceId,
-    ExportSelection.PerPayloadSelection perPayload,
-    boolean strict
-  ) throws IOException {
-    FileBundleReference reference = fileReferenceService.getReference(
-      collectionShepardId,
-      dataObjectShepardId,
-      referenceId,
-      null
-    );
-
-    builder.addReference(new FileReferenceIO(reference), reference.getCreatedBy());
-
-    List<String> requestedOids = perPayload == null ? null : perPayload.fileOids();
-    if (requestedOids == null || requestedOids.isEmpty()) {
-      // No per-payload pick ⇒ keep R2 Phase 1 behaviour: fetch everything in bulk.
-      List<NamedInputStream> payloads = Collections.emptyList();
-      try {
-        payloads = fileReferenceService.getAllPayloads(collectionShepardId, dataObjectShepardId, referenceId);
-      } catch (ShepardException e) {
-        Log.warn("Cannot access file payload during export");
-      }
-      for (var nis : payloads) {
-        if (nis.getInputStream() != null) writeFilePayload(builder, nis);
-      }
-      return;
-    }
-
-    // R2b per-payload pick: fetch only the requested OIDs via the per-OID API. Stale OIDs (not on
-    // the reference) are silently skipped unless strict.
-    Set<String> knownOids = new HashSet<>();
-    for (ShepardFile f : reference.getFiles()) {
-      if (f.getOid() != null) knownOids.add(f.getOid());
-    }
-    List<String> stale = new ArrayList<>();
-    List<String> hits = new ArrayList<>();
-    for (String oid : requestedOids) {
-      if (knownOids.contains(oid)) hits.add(oid);
-      else stale.add(oid);
-    }
-    if (!stale.isEmpty()) {
-      if (strict) {
-        throw new BadRequestException("Unknown file OID(s) for FileReference id=" + referenceId + ": " + stale);
-      }
-      builder.addSelectionWarning("FileReference id=" + referenceId + ": stale file OIDs skipped " + stale);
-    }
-    for (String oid : hits) {
-      try {
-        var nis = fileReferenceService.getPayload(collectionShepardId, dataObjectShepardId, referenceId, oid, null);
-        if (nis != null && nis.getInputStream() != null) writeFilePayload(builder, nis);
-      } catch (ShepardException e) {
-        Log.warnf("Cannot access file payload oid=%s during export", oid);
-      }
-    }
-  }
-
-  private static long nanosFromInstant(java.time.Instant instant) {
-    return Math.addExact(Math.multiplyExact(instant.getEpochSecond(), 1_000_000_000L), instant.getNano());
-  }
-
-  private void fetchAndWriteStructuredDataReference(
-    long collectionId,
-    long dataObjectId,
-    ExportBuilder builder,
-    long referenceId
-  ) throws IOException {
-    var reference = structuredDataReferenceService.getReference(collectionId, dataObjectId, referenceId, null);
-
-    builder.addReference(new StructuredDataReferenceIO(reference), reference.getCreatedBy());
-
-    List<StructuredDataPayload> payloads = Collections.emptyList();
-    try {
-      payloads = structuredDataReferenceService.getAllPayloads(collectionId, dataObjectId, referenceId);
-    } catch (ShepardException e) {
-      Log.warn("Cannot access structured data payload during export");
-    }
-
-    for (var sdp : payloads) {
-      if (sdp.getPayload() != null) writeStructuredDataPayload(builder, sdp);
-    }
-  }
-
-  private void fetchAndWriteUriReference(
-    long collectionShepardId,
-    long dataObjectShepardId,
-    ExportBuilder builder,
-    long referenceId,
-    String username
-  ) throws IOException {
-    var reference = uriReferenceService.getReference(collectionShepardId, dataObjectShepardId, referenceId, null);
-
-    builder.addReference(new URIReferenceIO(reference), reference.getCreatedBy());
-  }
-
-  private void fetchAndWriteBasicReference(
-    long collectionShepardId,
-    long dataObjectShepardId,
-    ExportBuilder builder,
-    long referenceId
-  ) throws IOException {
-    var reference = basicReferenceService.getReference(collectionShepardId, dataObjectShepardId, referenceId);
-
-    builder.addReference(new BasicReferenceIO(reference), reference.getCreatedBy());
-  }
-
-  private void writeFilePayload(ExportBuilder builder, NamedInputStream nis) throws IOException {
-    var nameSplitted = nis.getName().split("\\.", 2);
-    var filename = nameSplitted.length > 1 ? nis.getOid() + "." + nameSplitted[1] : nis.getOid();
-
-    builder.addPayload(nis.getInputStream().readAllBytes(), filename, nis.getName());
-  }
-
-  private void writeStructuredDataPayload(ExportBuilder builder, StructuredDataPayload sdp) throws IOException {
-    var filename = sdp.getStructuredData().getOid() + ExportConstants.JSON_FILE_EXTENSION;
-
-    builder.addPayload(sdp.getPayload().getBytes(), filename, sdp.getStructuredData().getName(), "application/json");
-  }
-
-  private void writeTimeseriesPayload(ExportBuilder builder, InputStream payload, TimeseriesReference reference)
-    throws IOException {
-    var filename = reference.getUniqueId() + ExportConstants.CSV_FILE_EXTENSION;
-
-    builder.addPayload(payload.readAllBytes(), filename, reference.getName(), "text/csv");
-  }
 }

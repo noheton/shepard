@@ -51,7 +51,13 @@ import org.mockito.ArgumentCaptor;
  * {@link SubscriptionIO} list to {@link ExportBuilder#addSubscriptionsFor}. Companion to
  * {@link ExportMetadataBundleTest} which covered the other three metadata kinds.
  */
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  BasicReferenceExportHandler.class,
+  FileReferenceExportHandler.class,
+  StructuredDataReferenceExportHandler.class,
+  TimeseriesReferenceExportHandler.class,
+  URIReferenceExportHandler.class,
+})
 public class ExportSubscriptionsBundleTest {
 
   DateHelper dateHelper = new DateHelper();

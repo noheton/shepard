@@ -104,7 +104,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/49-in-app-user-docs.md`](ops/49-in-app-user-docs.md) | In-App User Docs — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/57-openapi-client-generator-evaluation.md`](ops/57-openapi-client-generator-evaluation.md) | OpenAPI Client Generator Evaluation — `/v2/` Codegen | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-05-23 |
-| [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | — |
+| [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/190-thesis-idea-timeline.md`](strategy/190-thesis-idea-timeline.md) | Thesis Idea Timeline | 2026-05-26 | 2026-05-26 |
@@ -248,7 +248,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ecosystem-tools.md`](agent-findings/ecosystem-tools.md) | Ecosystem Tools — Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/elib-bt-project-sweep-2026-05-24.md`](agent-findings/elib-bt-project-sweep-2026-05-24.md) | eLib BT-project sweep + 5 user-flagged papers — Braunschweig / Stuttgart / Augsburg deep-dive | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/eu-machinery-regulation-2023-1230.md`](agent-findings/eu-machinery-regulation-2023-1230.md) | EU Machinery Regulation 2023/1230 — Shepard implications | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/garage-activation-runbook.md`](agent-findings/garage-activation-runbook.md) | Garage activation runbook — findings & gotchas | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/garage-activation-runbook.md`](agent-findings/garage-activation-runbook.md) | Garage activation runbook — findings & gotchas | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |

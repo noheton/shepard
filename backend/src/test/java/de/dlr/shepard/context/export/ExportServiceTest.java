@@ -38,7 +38,13 @@ import java.io.InputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  BasicReferenceExportHandler.class,
+  FileReferenceExportHandler.class,
+  StructuredDataReferenceExportHandler.class,
+  TimeseriesReferenceExportHandler.class,
+  URIReferenceExportHandler.class,
+})
 public class ExportServiceTest {
 
   // Hint: DateHelper is used in constructor and therefore cannot be injected.
