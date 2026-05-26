@@ -298,7 +298,7 @@ shp:PromptRunShape
   sh:property [ sh:path prov:endedAtTime         ; sh:datatype xsd:dateTime ; sh:order 13 ] ;
   sh:property [ sh:path prov:wasInformedBy       ; sh:class fair2r:AuthoringPass ; sh:order 14 ] ;  # parent run (chain link)
   sh:property [ sh:path prov:generated           ; sh:nodeKind sh:IRI       ; sh:order 15 ] ;     # the DataObject / Claim it produced
-  sh:property [ sh:path fair2r:claimStatus       ; sh:in (fair2r:unverified fair2r:ai-confirmed fair2r:human-confirmed) ; sh:order 16 ] .
+  sh:property [ sh:path fair2r:verificationState  ; sh:in (fair2r:unverified fair2r:ai-confirmed fair2r:human-confirmed) ; sh:order 16 ] .
 ```
 
 #### `shp:PromptChainShape` (a *multi-step DAG* — one user session)
@@ -339,7 +339,7 @@ named source — *no field is invented from scratch*:
 | `costCents` | derived | Operator-facing — answers "what did this Collection cost in AI fees?" |
 | `wasInformedBy` | PROV-O native | Chain link — multi-turn conversations |
 | `generated` | PROV-O native | The artefact produced (DataObject, Claim, Block) |
-| `claimStatus` | F(AI)²R | The verification ladder — TPL9f closes the loop |
+| `verificationState` | F(AI)²R | The verification ladder — TPL9f closes the loop |
 
 **Lens citation:** API Scrutinizer (no field is decorative;
 everything has a named caller). Data Ontologist (vocabulary is
@@ -484,7 +484,7 @@ A block in the editor carries a single field:
   "generatedBy": {            // optional — only if AI-touched
     "promptRunAppId": "0192fd02-7000-...",
     "agent": "agent:claude-opus-4-7",
-    "claimStatus": "unverified"
+    "verificationState": "unverified"
   }
 }
 ```
@@ -562,7 +562,7 @@ contract:
 | `costCents` | (derived) | `run.facets.cost` | numeric property of `fair2r:AuthoringPass` |
 | `startedAt`, `endedAt` | span `start_time` / `end_time` | `eventTime`, `runStart`/`runComplete` | `prov:startedAtTime`, `prov:endedAtTime` |
 | `wasInformedBy` (parent run) | OTel `parent_span_id` | RunEvent `parentRunFacet` | `prov:wasInformedBy` |
-| `claimStatus` | (Shepard extension) | (none) | `fair2r:claimStatus` |
+| `verificationState` | (Shepard extension) | (none) | `fair2r:verificationState` |
 | Generated DataObject IRI | (Shepard extension) | `outputs[]` | `prov:generated` |
 
 ### 7.1 What this delivers
@@ -586,7 +586,7 @@ WHERE {
   ?promptRun a fair2r:AuthoringPass ;
              prov:wasAssociatedWith ?agent ;
              prov:used ?prompt ;
-             fair2r:claimStatus ?status .
+             fair2r:verificationState ?status .
   ?agent fair2r:realizesModel ?model .
   ?prompt schema:text ?promptText .
   FILTER (?status != fair2r:human-confirmed)
@@ -722,7 +722,7 @@ public void onMcpAuthenticated(McpInvocation inv, Activity activity) {
         .outputMessages(inv.toolResultAsOtelMessages())
         .startedAt(activity.startedAt())
         .endedAt(activity.endedAt())
-        .claimStatus(headerStatus(inv).orElse(fair2r.unverified))
+        .verificationState(headerStatus(inv).orElse(fair2r.unverified))
         .build();
     promptLogService.record(run);                 // Postgres + Neo4j edge + Garage body
 }

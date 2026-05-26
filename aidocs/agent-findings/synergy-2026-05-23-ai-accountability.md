@@ -28,7 +28,7 @@ Assurance + DLR FAIR mandate all consume the same dataset.
   OIDC-authenticated; agent identity is in the token.
 - **Ontology (designed):** F(AI)²R (TPL9 in `aidocs/semantics/95`
   Part 15) — `fair2r:AIActivity`, `fair2r:hasAgent`,
-  `fair2r:claimStatus` ladder.
+  `fair2r:verificationState` ladder.
 - **Regulatory frame:** EU AI Act Art. 50 (August 2026 deadline),
   EASA AI Roadmap 2.0, DLR D4 mandate (MCP/Claude as first-class
   interface).
@@ -75,10 +75,10 @@ MERGE (ledger:AgentActivityLedger {agent: agent.actorUrn, day: day})
 SET ledger.activityCount    = size(activities),
     ledger.permissionEvents = size(perms),
     ledger.grantedClaims    = size([a IN activities
-                                    WHERE a.claimStatus
+                                    WHERE a.verificationState
                                     = 'fair2r:human-confirmed']),
     ledger.unverifiedClaims = size([a IN activities
-                                    WHERE a.claimStatus
+                                    WHERE a.verificationState
                                     = 'fair2r:unverified'])
 ```
 

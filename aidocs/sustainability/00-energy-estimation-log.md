@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| FAIR4-PRED-RENAME-pending | 2026-05-26 | code | 5k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | LOW | refactor(aidocs): FAIR4-PREDICATE-RENAME — claimStatus → verificationState |
 | RDM-002-E2E-FIX-pending | 2026-05-26 | code | 8k | 3k | 1.25 | 0 | 0 | 1.25 | 0.45 | LOW | fix(e2e): RDM-002-E2E-FIX — waitForSelector guard on profile-identity-section |
 | DOC-STAGE2-pending | 2026-05-26 | code | 30k | 10k | 4.55 | 0 | 0 | 4.55 | 1.65 | LOW | fix(ci): DOC-STAGE2 — pre-commit hook + CI step for doc-stage index drift |
 | PROV1j-pending | 2026-05-26 | code | 90k | 30k | 13.55 | 20 | 5 | 38.55 | 14.01 | MEDIUM | feat(prov): PROV1j — X-AI-Agent header + _provenanceMode on Activity |

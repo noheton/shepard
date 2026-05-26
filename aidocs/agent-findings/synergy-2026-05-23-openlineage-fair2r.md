@@ -94,7 +94,7 @@ public class ProducerClassifier {
 
 shp:activity/0192fd01-7000-… a prov:Activity, fair2r:AIActivity ;
     fair2r:hasAgent     shp:agent/openai-gpt-4o-2024-11-20 ;
-    fair2r:claimStatus  fair2r:unverified ;
+    fair2r:verificationState  fair2r:unverified ;
     m4i:realizesMethod  m4i:method/anomaly-detection-v3 ;
     prov:used           shp:dataobject/tr-004-vibration ;
     prov:generated      shp:annotation/anomaly-flag-tr004 ;
@@ -113,7 +113,7 @@ SELECT ?activity ?agent ?model ?status ?in ?out
 WHERE {
   ?activity a fair2r:AIActivity ;
             fair2r:hasAgent      ?agent ;
-            fair2r:claimStatus   ?status ;
+            fair2r:verificationState   ?status ;
             prov:used            ?in ;
             prov:generated       ?out .
   OPTIONAL { ?agent  fair2r:realizesModel ?model }
@@ -145,14 +145,14 @@ when EASA asks "what produced this annotation?" the answer is a
 free-text note. After this synergy: the Airflow OpenLineage event
 arrives at Shepard, the receiver classifies the GPT/HuggingFace
 producer as `fair2r:AIActivity`, the `:Annotation` node is born
-with `fair2r:claimStatus fair2r:unverified`, and the
+with `fair2r:verificationState fair2r:unverified`, and the
 provenance-export endpoint emits a JSON-LD shape that an EASA
 auditor can ingest verbatim.
 
 For PLUTO (DLR satellite mission, Welzmüller et al. 2024
 eLib 215120): the same shape covers ground-station automation —
 every command an AI agent suggested before a human operator
-approved is a typed AI Activity with `claimStatus
+approved is a typed AI Activity with `verificationState
 unverified` until the operator confirms.
 
 ## External evidence
@@ -188,7 +188,7 @@ unverified` until the operator confirms.
 - `ProducerClassifier` rule table (1–2 days; iterative).
 - F(AI)²R N1c2 pre-seed (TPL9a from aidocs/95 Part 15, ~3 days).
 - Provenance-export endpoint extension to surface the new
-  `fair2r:claimStatus` field — additive, 1 day.
+  `fair2r:verificationState` field — additive, 1 day.
 
 Net incremental over the mlops baseline + TPL9a baseline: ~5 days.
 The synergy delivers EASA evidence WITHOUT requiring any DAG

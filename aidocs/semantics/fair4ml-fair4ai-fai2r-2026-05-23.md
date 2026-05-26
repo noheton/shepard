@@ -215,7 +215,7 @@ repo**):
 
 | Predicate (fork-internal) | Status | Purpose |
 |---|---|---|
-| `fair2r:claimStatus` (verif:unverified / ai-confirmed / human-confirmed) | Used in fork; should be `fair2r:verificationState` per the canonical repo | The fork has used `claimStatus` historically; rename in the next refactor |
+| `fair2r:verificationState` (verif:unverified / ai-confirmed / human-confirmed) | Aligned with canonical `noheton/f-ai-r` repo | Renamed from `claimStatus` per FAIR4-PREDICATE-RENAME (2026-05-26) |
 | `fair2r:modeOfProduction` (`"ai"` / `"human"` / `"hybrid"`) | Fork-internal; not in canonical repo | Per-artefact mode-of-production; lifted in `aidocs/strategy/86` and `aidocs/16 HTML-TO-MD-MIGRATION` |
 | `fair2r:syntheticBackfill` (boolean) | Fork-internal; not in canonical repo | Flag for backfilled-after-the-fact synthetic provenance |
 | `fair2r:realizesModel` | Fork-internal | Identifies the model an `AIAgent` realises (e.g., Claude Opus 4.7) |
@@ -468,13 +468,15 @@ can additionally read FAIR4ML predicates from any Collection tagged as an
 MLModel (per §5.2). The dashboard then becomes the **single UI surface that
 proves f(ai)²r + FAIR4ML compose**. Backlog row: `FAIR4-DASHBOARD-INTEGRATE`.
 
-### 5.5 The `fair2r:claimStatus` → `fair2r:verificationState` rename
+### 5.5 The `fair2r:claimStatus` → `fair2r:verificationState` rename (DONE 2026-05-26)
 
-The fork uses `fair2r:claimStatus` historically (per `aidocs/semantics/99`
-line 301), but the canonical f-ai-r repo uses `fair2r:verificationState`
-(per `doc/provenance.ttl`). **The fork has diverged from canonical.** This
-is a coordinated rename pass in a single PR. Backlog row:
-`FAIR4-PREDICATE-RENAME`.
+The fork used `fair2r:claimStatus` historically (per `aidocs/semantics/99`),
+but the canonical f-ai-r repo uses `fair2r:verificationState`
+(per `doc/provenance.ttl`). **The divergence has been resolved** by
+FAIR4-PREDICATE-RENAME (2026-05-26): all `aidocs/` occurrences of
+`claimStatus` renamed to `verificationState` in one atomic pass. The
+predicates were docs-only (not on any wire surface), so no migration
+script was required.
 
 ### 5.6 Lift the fork-extension predicates back into canonical f-ai-r
 
