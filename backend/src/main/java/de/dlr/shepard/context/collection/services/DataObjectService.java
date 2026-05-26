@@ -85,6 +85,10 @@ public class DataObjectService {
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
     User user = userService.getCurrentUser();
+
+    // MFG5: enforce closed-enum status on create.
+    StatusTransitionGuard.validateOnCreate(dataObject.getStatus());
+
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
     if (
       dataObject.getSuccessorIds() != null && dataObject.getSuccessorIds().length != 0
@@ -303,6 +307,9 @@ public class DataObjectService {
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    // MFG5: enforce closed-enum status and forbid downgrade transitions on update.
+    StatusTransitionGuard.validateOnUpdate(old.getStatus(), dataObject.getStatus());
 
     User user = userService.getCurrentUser();
 

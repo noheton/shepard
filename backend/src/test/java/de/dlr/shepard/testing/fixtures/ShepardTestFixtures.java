@@ -271,6 +271,7 @@ public final class ShepardTestFixtures {
     private Collection collection;
     private DataObject parent;
     private List<DataObject> predecessors = new ArrayList<>();
+    private String status;
 
     public DataObjectBuilder id(long id) {
       this.id = id;
@@ -342,6 +343,11 @@ public final class ShepardTestFixtures {
       return this;
     }
 
+    public DataObjectBuilder withStatus(String status) {
+      this.status = status;
+      return this;
+    }
+
     public DataObject build() {
       DataObject dataObject = new DataObject(id);
       dataObject.setShepardId(shepardId != null ? shepardId : id);
@@ -357,6 +363,7 @@ public final class ShepardTestFixtures {
       dataObject.setCollection(collection);
       dataObject.setParent(parent);
       dataObject.setPredecessors(predecessors);
+      dataObject.setStatus(status);
       return dataObject;
     }
   }

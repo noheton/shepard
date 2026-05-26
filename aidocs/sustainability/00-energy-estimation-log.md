@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| V5-META-SURVEY | 2026-05-26 | research | 60k | 8k | 7.78 | 0 | 0 | 7.78 | 2.82 | LOW | docs(v5-survey): V5-METADATA-SURVEY — metadata enrichment opportunities from v5 OpenAPI surface |
 | PROV1i-pending | 2026-05-26 | code | 18k | 5k | 2.17 | 0 | 5 | 7.17 | 2.60 | MEDIUM | feat(prov): PROV1i — SnapshotService auto-emits prov:Entity typing on creation |
 | `3e2350f6` | 2026-05-26 | mixed | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | fix(NEO-AUDIT-003): V82 backfill 596 :Timeseries.appId NULL rows + aidocs/16/34/44 |
 | `fbeadaf5` | 2026-05-23 | code | 45k | 15k | 6.67 | 20 | 5 | 31.67 | 11.50 | MEDIUM | fix(frontend/landing): toEl() helper — ref on Vuetify component is instance, ... |
@@ -434,6 +435,7 @@ following ship, the log gets re-grounded:
 |------------|-----------------------------------------------------------------------|----|
 | 2026-05-23 | Initial creation. Backfill 2026-05-20 → 2026-05-23 (214 commits).     | Claude Opus 4.7 (1M context) + Flo |
 | 2026-05-26 | Added `dc43bfdc` (SEMA-V6-001/002/003) entry.                         | Claude Sonnet 4.6 |
+| 2026-05-26 | Added V5-META-SURVEY (research kind) entry.                           | Claude Sonnet 4.6 |
 | 2026-05-26 | Added PROV1i entry (SnapshotService prov:Entity auto-typing).          | Claude Sonnet 4.6 |
 | 2026-05-26 | Added IMPL3 entry (importer plugin credential guard).                  | Claude Sonnet 4.6 |
 
