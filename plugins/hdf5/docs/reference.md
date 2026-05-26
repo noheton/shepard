@@ -7,14 +7,13 @@ permalink: /reference/hdf-container/
 # HDF container reference
 
 An **`HdfContainer`** is the payload kind for **HDF5** scientific data,
-backed by the [HSDS sidecar](https://github.com/HDFGroup/hsds). Phase
-1 of the rollout (this slice — backlog ID **A5a**) ships
-**create / read / delete** of containers; the data-path mirroring of
-HSDS's dataset / value / attribute surface, the per-DataObject
-`HdfReference`, the byte-identical download fallback, and the
-shared-Keycloak token relay all arrive in later phases (A5b – A5e —
-see [`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md)
-for the rollout plan).
+backed by the [HSDS sidecar](https://github.com/HDFGroup/hsds). Phases
+A5a–A5d have shipped: container create/read/delete (A5a), permission bridge
+(A5b), per-DataObject `HdfReference` anchors at specific dataset paths (A5c),
+and byte-identical offline HDF5 download (A5d). The shared-Keycloak token
+relay arrives in A5e — see
+[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md)
+for the rollout plan.
 
 ## Opt-in feature
 
@@ -82,6 +81,9 @@ Upstream shepard 5.2.0 has no HDF support; nothing lands on
 | `POST` | `/v2/hdf-containers` | Create a new container. Provisions the HSDS domain via the sidecar; rolls back the HSDS side if the Neo4j commit fails. | 201 / 400 / 401 / 503 |
 | `DELETE` | `/v2/hdf-containers/{appId}` | Soft-delete the container + drop the HSDS domain. Owner-only. | 204 / 401 / 403 / 404 / 503 |
 | `GET` | `/v2/hdf-containers/{appId}/file` | Download the raw HDF5 file from HSDS (A5d offline fallback — see below). | 200 / 206 / 401 / 403 / 404 / 503 |
+| `GET` | `/v2/data-objects/{dataObjectAppId}/hdf-references` | List all HdfReferences anchored to a DataObject. Caller needs READ. | 200 / 401 / 403 / 404 |
+| `POST` | `/v2/data-objects/{dataObjectAppId}/hdf-references` | Create a new HdfReference. Caller needs WRITE. Body: `{hdfContainerAppId, datasetPath, description?}`. | 201 / 400 / 401 / 403 / 404 |
+| `DELETE` | `/v2/data-objects/{dataObjectAppId}/hdf-references/{referenceAppId}` | Delete an HdfReference. Caller needs WRITE. | 204 / 401 / 403 / 404 |
 
 `POST /v2/hdf-containers` request body:
 
@@ -107,6 +109,48 @@ Response (201):
   "attributes": { "project": "rocket-x", "instrument": "thrust-bench" }
 }
 ```
+
+### HdfReference — per-DataObject dataset anchor (A5c)
+
+An **`HdfReference`** is a lightweight Neo4j node that anchors a DataObject to a
+specific HDF5 dataset path within an `HdfContainer`. It is a sub-type of
+`BasicReference` and inherits the standard `(DataObject)-[:HAS_REFERENCE]->(HdfReference)`
+graph edge so it appears alongside file and timeseries references in the DataObject
+graph.
+
+Fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| `appId` | string (UUID v7) | Server-minted. |
+| `hdfContainerAppId` | string (UUID v7) | The container this reference points into. |
+| `datasetPath` | string | HDF5 dataset path, e.g. `/sensor_data/channel_A`. |
+| `description` | string? | Optional free-form description. |
+
+`POST /v2/data-objects/{dataObjectAppId}/hdf-references` request body:
+
+```json
+{
+  "hdfContainerAppId": "019e1cee-654f-7554-8543-0ba62ae14113",
+  "datasetPath": "/sensor_data/channel_A",
+  "description": "Primary vibration channel"
+}
+```
+
+Response (201):
+
+```json
+{
+  "appId": "01900000-0000-7000-8000-000000000099",
+  "hdfContainerAppId": "019e1cee-654f-7554-8543-0ba62ae14113",
+  "datasetPath": "/sensor_data/channel_A",
+  "description": "Primary vibration channel"
+}
+```
+
+Permissions: the caller needs **WRITE** on the DataObject's parent Collection.
+The HDF container does **not** need to be accessible to the caller — the reference
+only records the appId, not the bytes. Annotation hookup (E6) is deferred.
 
 ### `GET /v2/hdf-containers/{appId}/file` — offline HDF5 download
 
@@ -203,7 +247,7 @@ The full E7 vision is rolling out across A5a – A5e:
 |---|---|---|
 | **A5a** | shipped | HSDS sidecar + `HdfContainer` create/read/delete + V25 migration. HTTP Basic auth (admin-managed). |
 | **A5b** | shipped | Permission bridge — shepard permission changes flow to HSDS ACLs via a `PermissionsService` post-commit hook. |
-| A5c | queued | `HdfReference` per-DataObject anchor at a specific dataset path; annotation hookup via E6 (`AnnotatableHdfDataset`). |
+| **A5c** | shipped | `HdfReference` per-DataObject anchor at a specific dataset path. `GET/POST /v2/data-objects/{appId}/hdf-references` + `DELETE .../hdf-references/{refAppId}`. V84 migration. `HdfReferencesPane.vue` on DataObject detail. Annotation hookup via E6 (`AnnotatableHdfDataset`) deferred. |
 | **A5d** | shipped | Download-original-file fallback — `GET /v2/hdf-containers/{appId}/file` returns the byte-identical HDF5 via HSDS bulk-export. Unblocks the offline `h5py.File(local)` path. |
 | A5e | queued | Auth bridge — shepard API keys mint short-lived JWTs signed by a shared Keycloak realm. Three-line `clients/python` helper that returns an `h5pyd.File`. |
 

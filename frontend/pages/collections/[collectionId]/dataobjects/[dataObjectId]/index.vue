@@ -2,6 +2,7 @@
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import DataObjectNotebooksPane from "~/components/context/lab-journal/DataObjectNotebooksPane.vue";
 import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
+import HdfReferencesPane from "~/components/context/dataobject/HdfReferencesPane.vue";
 import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
@@ -583,6 +584,13 @@ async function saveEmbargoEdit() {
                     <VideoStreamReferencesPane
                       :data-object-app-id="dataObject.appId"
                       :can-upload="!!isAllowedToEditCollection"
+                    />
+                    <v-divider class="my-6" />
+                    <!-- A5c: HDF5 dataset references. Panel handles 404
+                         gracefully when shepard.hdf.enabled=false. -->
+                    <HdfReferencesPane
+                      :data-object-app-id="dataObject.appId"
+                      :can-edit="!!isAllowedToEditCollection"
                     />
                   </template>
                 </ExpansionPanelItem>

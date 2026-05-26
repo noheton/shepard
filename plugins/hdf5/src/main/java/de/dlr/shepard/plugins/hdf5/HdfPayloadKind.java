@@ -30,6 +30,10 @@ public final class HdfPayloadKind implements PayloadKind {
 
   @Override
   public List<String> entityPackages() {
+    // HdfContainer and HdfReference both live in
+    // de.dlr.shepard.data.hdf.entities — one registration covers both.
+    // The comment guards against accidental future package splits:
+    // if HdfReference moves, add its package here.
     return List.of(HdfContainer.class.getPackageName());
   }
 }

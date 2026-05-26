@@ -127,6 +127,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
 | PROV1k-pending | 2026-05-26 | code | 120k | 40k | 17.78 | 20 | 5 | 42.78 | 15.53 | MEDIUM | feat(prov): PROV1k — typed predecessor relationships (prov:wasRevisionOf / fair2r:repairs) |
+| A5c-pending | 2026-05-26 | code | 55k | 18k | 8.28 | 20 | 5 | 33.28 | 12.08 | MEDIUM | feat(hdf5): A5c — HdfReference per-DataObject anchor at dataset path |
 | V5-META-SURVEY | 2026-05-26 | research | 60k | 8k | 7.78 | 0 | 0 | 7.78 | 2.82 | LOW | docs(v5-survey): V5-METADATA-SURVEY — metadata enrichment opportunities from v5 OpenAPI surface |
 | PROV1i-pending | 2026-05-26 | code | 18k | 5k | 2.17 | 0 | 5 | 7.17 | 2.60 | MEDIUM | feat(prov): PROV1i — SnapshotService auto-emits prov:Entity typing on creation |
 | `3e2350f6` | 2026-05-26 | mixed | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | fix(NEO-AUDIT-003): V82 backfill 596 :Timeseries.appId NULL rows + aidocs/16/34/44 |
