@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 @RequestScoped
@@ -232,21 +232,33 @@ public class TimeseriesService {
     TimeseriesDataPointsQueryParams queryParams
   ) {
     timeseriesContainerService.getContainer(containerId);
+    return timeseriesList.stream()
+      .map(timeseries -> new TimeseriesWithDataPoints(
+        timeseries,
+        getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
+      ))
+      .collect(Collectors.toList());
+  }
 
-    ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<
-      TimeseriesWithDataPoints
-    >();
-    timeseriesList
-      .parallelStream()
-      .forEach(timeseries -> {
-        timeseriesWithDataPointsQueue.add(
-          new TimeseriesWithDataPoints(
-            timeseries,
-            getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
-          )
-        );
-      });
-    return new ArrayList<TimeseriesWithDataPoints>(timeseriesWithDataPointsQueue);
+  /**
+   * Fetch data points for a list of already-resolved channel entities.
+   * Skips the per-channel {@code findTimeseries} lookup — callers that
+   * already hold {@link TimeseriesEntity} objects (e.g. after a single
+   * bulk ID-resolution query) should prefer this over
+   * {@link #getManyTimeseriesWithDataPoints} to avoid a redundant round-trip.
+   */
+  public List<TimeseriesWithDataPoints> getManyDataPointsByEntities(
+    long containerId,
+    List<TimeseriesEntity> entities,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+    return entities.stream()
+      .map(entity -> new TimeseriesWithDataPoints(
+        new Timeseries(entity),
+        timeseriesDataPointRepository.queryDataPoints(entity.getId(), entity.getValueType(), queryParams)
+      ))
+      .collect(Collectors.toList());
   }
 
   /**

@@ -162,13 +162,11 @@ public class TimeseriesContainerChannelsRest {
   ) {
     timeseriesContainerService.getContainer(containerId);
 
-    List<Timeseries> tuples = body.shepardIds().stream()
-      .map(id -> tsChannelResolver.resolveTuple(id).orElse(null))
-      .filter(t -> t != null)
-      .collect(Collectors.toList());
-
-    List<TimeseriesWithDataPoints> results = timeseriesService.getManyTimeseriesWithDataPoints(
-      containerId, tuples,
+    // Single bulk query resolves all shepardIds → entities; unknown ids are silently absent.
+    // Then fetch data points sequentially — avoids the parallelStream connection-pool storm.
+    var entities = tsChannelResolver.bulkFindByShepardIds(body.shepardIds());
+    List<TimeseriesWithDataPoints> results = timeseriesService.getManyDataPointsByEntities(
+      containerId, entities,
       new TimeseriesDataPointsQueryParams(body.start(), body.end(), null, null, null));
 
     return Response.ok(results).build();

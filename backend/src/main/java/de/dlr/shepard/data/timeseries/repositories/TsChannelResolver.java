@@ -4,6 +4,7 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,6 +64,19 @@ public class TsChannelResolver implements PanacheRepositoryBase<TimeseriesEntity
         ts.getLocation()
       )
       .firstResultOptional();
+  }
+
+  /**
+   * Resolve a list of shepardIds to their channel rows in a single query.
+   * Unknown ids are silently absent from the returned list; ordering is
+   * not guaranteed to match the input list.
+   *
+   * @param ids list of shepardId UUIDs to look up
+   * @return all matching channel entities (may be smaller than ids.size())
+   */
+  public List<TimeseriesEntity> bulkFindByShepardIds(List<UUID> ids) {
+    if (ids == null || ids.isEmpty()) return List.of();
+    return this.find("shepardId IN ?1", ids).list();
   }
 
   /**
