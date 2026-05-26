@@ -306,6 +306,21 @@
     </template>
   </v-app-bar>
 
+  <!-- U-03: search scrim — dims content below the header while the search
+       dropdown is open so the user has a clear focus signal. Positioned to
+       start below the app-bar (top: 64px) so the header itself stays
+       interactive. z-index: 1999 lands above the sticky sidebar (z: 1) but
+       below Vuetify's overlay manager base (2000+), so the dropdown panel
+       stays on top. Clicking it closes the dropdown. -->
+  <Transition name="search-scrim">
+    <div
+      v-if="dropdownOpen"
+      class="header-search-scrim"
+      aria-hidden="true"
+      @click="closeDropdown"
+    />
+  </Transition>
+
   <!-- NTF1a: notification panel -->
   <NotificationPanel
     v-model="notificationPanelOpen"
@@ -688,6 +703,27 @@ function onEnterPressed() {
   justify-content: center;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   pointer-events: none; // the parent v-btn is the click target
+}
+
+// U-03: search scrim — full-viewport backdrop below the app-bar.
+.header-search-scrim {
+  position: fixed;
+  top: 64px; // app-bar height
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  z-index: 1999; // above sidebar (z:1), below Vuetify overlay base (2000+)
+  cursor: default;
+}
+
+.search-scrim-enter-active,
+.search-scrim-leave-active {
+  transition: opacity 120ms ease;
+}
+.search-scrim-enter-from,
+.search-scrim-leave-to {
+  opacity: 0;
 }
 
 // DLR institutional mark — subordinate to the shepard wordmark, with a
