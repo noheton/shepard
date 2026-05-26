@@ -57,7 +57,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     try {
       let batch: DataObjectListItemV2[];
       if (appId) {
-        batch = await v2Api.value.listDataObjects({
+        const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
           collectionAppId: appId,
           name: nameFilter,
           status: statusFilter,
@@ -65,12 +65,15 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
           size: pageSize,
           include: includeTimeBounds ? 'time-bounds' : undefined,
         });
+        batch = fetched;
+        totalItems.value = fetchedTotal;
       } else {
         batch = (await v1Api.value.getAllDataObjects({
           collectionId,
           page: currentPage,
           size: pageSize,
         })) as DataObjectListItemV2[];
+        totalItems.value = null;
       }
       items.value = batch;
       hasMore.value = batch.length >= pageSize;
@@ -78,6 +81,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
       handleError(e, "fetchDataObjects");
       items.value = [];
       hasMore.value = false;
+      totalItems.value = null;
     } finally {
       loading.value = false;
     }

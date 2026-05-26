@@ -65,4 +65,34 @@ export class DataObjectV2Api extends runtime.BaseAPI {
     const response = await this.listDataObjectsRaw(requestParameters, initOverrides);
     return await response.value();
   }
+
+  /**
+   * Same as {@link listDataObjects} but also returns the total count extracted
+   * from the {@code X-Total-Count} response header (or parsed from
+   * {@code Content-Range} as a fallback). Returns {@code null} when neither
+   * header is present (e.g. against an older backend).
+   */
+  async listDataObjectsWithCount(
+    requestParameters: ListDataObjectsV2Request,
+    initOverrides?: RequestInit | runtime.InitOverrideFunction,
+  ): Promise<{ items: DataObjectListItemV2[]; total: number | null }> {
+    const raw = await this.listDataObjectsRaw(requestParameters, initOverrides);
+    const items = await raw.value();
+
+    // Prefer X-Total-Count; fall back to parsing Content-Range "unit 0-24/8514".
+    let total: number | null = null;
+    const xTotal = raw.raw.headers.get('X-Total-Count');
+    if (xTotal != null) {
+      const parsed = parseInt(xTotal, 10);
+      if (!isNaN(parsed)) total = parsed;
+    }
+    if (total == null) {
+      const contentRange = raw.raw.headers.get('Content-Range');
+      if (contentRange != null) {
+        const m = contentRange.match(/\/(\d+)$/);
+        if (m) total = parseInt(m[1], 10);
+      }
+    }
+    return { items, total };
+  }
 }

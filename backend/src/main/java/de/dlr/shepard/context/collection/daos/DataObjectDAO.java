@@ -278,6 +278,83 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * Returns the total number of non-deleted DataObjects in the given Collection
+   * that match the supplied filter parameters (name, status, parent, predecessor,
+   * successor). Uses the same WHERE clause as
+   * {@link #findByCollectionByShepardIds(long, QueryParamHelper)} but
+   * returns {@code RETURN count(d)} instead of the full entity graph, so it
+   * completes in a single lightweight Cypher round-trip.
+   *
+   * <p>Used by {@code DataObjectV2Rest.list()} to populate
+   * {@code Content-Range} and {@code X-Total-Count} response headers.
+   *
+   * @param collectionShepardId the OGM long id of the parent Collection
+   * @param params              filter parameters (name, status, pagination
+   *                            is ignored for counting purposes)
+   * @return total count of matching DataObjects
+   */
+  public long countByCollectionByShepardIds(long collectionShepardId, QueryParamHelper params) {
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", params.getName());
+    String match =
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->" +
+      CypherQueryHelper.getObjectPart("d", "DataObject", params.hasName());
+    String where = " WHERE c." + Constants.SHEPARD_ID + "=" + collectionShepardId + " AND ";
+    where = where + CypherQueryHelper.getVersionHeadPart("v");
+
+    if (params.hasParentId()) {
+      if (params.getParentId() == -1) {
+        where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
+      } else {
+        match +=
+          "<-[:has_child]-(parent:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          params.getParentId() +
+          "})";
+      }
+    }
+
+    if (params.hasPredecessorId()) {
+      if (params.getPredecessorId() == -1) {
+        where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
+      } else {
+        match +=
+          "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          params.getPredecessorId() +
+          "})";
+      }
+    }
+    if (params.hasSuccessorId()) {
+      if (params.getSuccessorId() == -1) {
+        where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
+      } else {
+        match +=
+          "-[:has_successor]->(successor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          params.getSuccessorId() +
+          "})";
+      }
+    }
+    if (params.hasStatus()) {
+      paramsMap.put("status", params.getStatus());
+      where += " AND d.status = $status";
+    }
+
+    String query = match + where + " RETURN count(d) AS total";
+    var results = session.query(query, paramsMap).queryResults();
+    var iter = results.iterator();
+    if (iter.hasNext()) {
+      Object val = iter.next().get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
+  /**
    * Delete dataObject and all related references
    *
    * @param id        identifies the dataObject

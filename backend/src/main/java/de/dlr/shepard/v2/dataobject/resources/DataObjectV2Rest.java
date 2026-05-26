@@ -225,7 +225,17 @@ public class DataObjectV2Rest {
       }
       result.add(item);
     }
+
+    // Count total matching DataObjects for Content-Range / X-Total-Count headers.
+    // Use the same params (minus pagination) so filters are consistent with the page.
+    long total = dataObjectDAO.countByCollectionByShepardIds(collectionOgmId, params);
+    int firstIndex = safePage * safeSize;
+    int lastIndex = result.isEmpty() ? -1 : firstIndex + result.size() - 1;
+    String contentRange = "dataobjects " + firstIndex + "-" + lastIndex + "/" + total;
+
     return Response.ok(result)
+      .header("Content-Range", contentRange)
+      .header("X-Total-Count", total)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }

@@ -1973,4 +1973,67 @@ public class DataObjectDAOTest extends BaseTestCase {
     verify(session).query(DataObject.class, query, paramsMap);
     assertEquals(List.of(d1), actual);
   }
+
+  // ── UX-DOPANEL-TOTAL-COUNT: countByCollectionByShepardIds ────────────────
+
+  /**
+   * UX-DOPANEL-TOTAL-COUNT — without any status filter the count query must use
+   * the version-head WHERE clause and {@code RETURN count(d) AS total}.
+   */
+  @Test
+  public void countByCollectionByShepardIds_noFilter() {
+    var c1 = new Collection(100L);
+    c1.setShepardId(1001L);
+
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", null);
+
+    String expectedQuery =
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " RETURN count(d) AS total";
+
+    Map<String, Object> resultRow = new LinkedHashMap<>();
+    resultRow.put("total", 42L);
+    Result mockResult = mock(Result.class);
+    when(mockResult.queryResults()).thenReturn(List.of(resultRow));
+    when(session.query(expectedQuery, paramsMap)).thenReturn(mockResult);
+
+    var params = new QueryParamHelper();
+    long count = dao.countByCollectionByShepardIds(c1.getShepardId(), params);
+
+    verify(session).query(expectedQuery, paramsMap);
+    assertEquals(42L, count);
+  }
+
+  /**
+   * UX-DOPANEL-TOTAL-COUNT — with a {@code withStatus("READY")} filter the count
+   * query must include {@code AND d.status = $status}.
+   */
+  @Test
+  public void countByCollectionByShepardIds_withStatusFilter() {
+    var c1 = new Collection(100L);
+    c1.setShepardId(1001L);
+
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", null);
+    paramsMap.put("status", "READY");
+
+    String expectedQuery =
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " AND d.status = $status RETURN count(d) AS total";
+
+    Map<String, Object> resultRow = new LinkedHashMap<>();
+    resultRow.put("total", 7L);
+    Result mockResult = mock(Result.class);
+    when(mockResult.queryResults()).thenReturn(List.of(resultRow));
+    when(session.query(expectedQuery, paramsMap)).thenReturn(mockResult);
+
+    var params = new QueryParamHelper().withStatus("READY");
+    long count = dao.countByCollectionByShepardIds(c1.getShepardId(), params);
+
+    verify(session).query(expectedQuery, paramsMap);
+    assertEquals(7L, count);
+  }
 }

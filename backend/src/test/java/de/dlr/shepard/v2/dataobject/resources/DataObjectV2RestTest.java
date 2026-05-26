@@ -114,6 +114,9 @@ class DataObjectV2RestTest {
     // Default: container-by-appId Cypher query returns empty-row map so
     // buildContainersFromCypher() does not NPE on a null row.
     when(dataObjectDAO.findContainersByDataObjectAppId(any())).thenReturn(Collections.emptyMap());
+    // Default: total-count query returns 0 (long primitive — Mockito would also default to 0,
+    // but explicit stub avoids accidental any()-vs-specific-arg conflicts in count tests).
+    when(dataObjectDAO.countByCollectionByShepardIds(anyLong(), any())).thenReturn(0L);
   }
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -201,6 +204,52 @@ class DataObjectV2RestTest {
     DataObjectListItemV2IO item = body.get(0);
     assertEquals(1_000_000L, item.getTimeBoundsStart());
     assertEquals(9_000_000L, item.getTimeBoundsEnd());
+  }
+
+  @Test
+  void listReturnsContentRangeHeader() {
+    // UX-DOPANEL-TOTAL-COUNT: list() must emit Content-Range and X-Total-Count headers.
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d));
+    when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(8514L);
+
+    // page=3, size=25 → firstIndex=75, lastIndex=75 (1 item)
+    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    // Content-Range must be present with format "dataobjects firstIndex-lastIndex/total"
+    String contentRange = (String) r.getHeaders().getFirst("Content-Range");
+    assertNotNull(contentRange);
+    assertEquals("dataobjects 75-75/8514", contentRange);
+    // X-Total-Count convenience header
+    Object xTotalCount = r.getHeaders().getFirst("X-Total-Count");
+    assertNotNull(xTotalCount);
+    assertEquals(8514L, ((Number) xTotalCount).longValue());
+  }
+
+  @Test
+  void listContentRangeEmptyPageWhenNoResults() {
+    // UX-DOPANEL-TOTAL-COUNT: when no items are returned lastIndex must be -1.
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(Collections.emptyList());
+    when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(0L);
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    String contentRange = (String) r.getHeaders().getFirst("Content-Range");
+    assertNotNull(contentRange);
+    assertEquals("dataobjects 0--1/0", contentRange);
+    Object xTotalCount = r.getHeaders().getFirst("X-Total-Count");
+    assertNotNull(xTotalCount);
+    assertEquals(0L, ((Number) xTotalCount).longValue());
   }
 
   @Test

@@ -120,23 +120,52 @@
       </tbody>
     </v-table>
 
-    <!-- Prev / Next — no total count available yet from the backend -->
-    <div v-if="page > 0 || hasMore" class="d-flex align-center justify-center ga-2 pt-3">
-      <v-btn
-        variant="text"
-        size="small"
-        prepend-icon="mdi-chevron-left"
-        :disabled="page === 0 || loading"
-        @click="page--"
-      >Prev</v-btn>
-      <span class="text-body-2 text-medium-emphasis">Page {{ page + 1 }}</span>
-      <v-btn
-        variant="text"
-        size="small"
-        append-icon="mdi-chevron-right"
-        :disabled="!hasMore || loading"
-        @click="page++"
-      >Next</v-btn>
+    <!-- Pagination bar: summary + prev/next + jump-to-page -->
+    <div v-if="page > 0 || hasMore || totalItems != null" class="d-flex align-center justify-space-between flex-wrap ga-2 pt-3">
+      <!-- "Showing X–Y of Z" summary -->
+      <span class="text-body-2 text-medium-emphasis">
+        <template v-if="totalItems != null && totalItems > 0">
+          Showing {{ page * pageSize + 1 }}–{{ Math.min((page + 1) * pageSize, totalItems) }} of {{ totalItems }}
+        </template>
+        <template v-else-if="totalItems === 0">
+          No DataObjects
+        </template>
+        <template v-else>
+          Page {{ page + 1 }}
+        </template>
+      </span>
+
+      <!-- Prev / Next + jump-to-page -->
+      <div class="d-flex align-center ga-2">
+        <v-btn
+          variant="text"
+          size="small"
+          prepend-icon="mdi-chevron-left"
+          :disabled="page === 0 || loading"
+          @click="page--"
+        >Prev</v-btn>
+        <v-btn
+          variant="text"
+          size="small"
+          append-icon="mdi-chevron-right"
+          :disabled="!hasMore || loading"
+          @click="page++"
+        >Next</v-btn>
+        <v-text-field
+          v-if="totalItems != null && totalPages > 1"
+          v-model.number="jumpToPageInput"
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+          :min="1"
+          :max="totalPages"
+          style="width: 80px"
+          label="Page"
+          @keydown.enter="onJumpToPage"
+          @blur="onJumpToPage"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -176,15 +205,32 @@ function onSearchChange() {
 // Reset page when status filter changes and trigger a server-side refetch
 watch(statusFilter, () => { page.value = 0; });
 
-const { items: rawItems, loading, hasMore } = usePagedDataObjects({
+const pageSize = 25;
+
+const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   collectionId: props.collectionId,
   collectionAppId,
   name: serverName,
   status: statusFilter,
   page,
-  pageSize: 25,
+  pageSize,
   includeTimeBounds: true,
 });
+
+// Computed total pages for the page-jump widget
+const totalPages = computed(() => (totalItems.value != null ? Math.ceil(totalItems.value / pageSize) : 0));
+
+// Page-jump input: 1-indexed for display; clamp + convert to 0-indexed on commit
+const jumpToPageInput = ref<number>(1);
+watch(page, (p) => { jumpToPageInput.value = p + 1; });
+
+function onJumpToPage() {
+  const raw = jumpToPageInput.value;
+  if (!Number.isFinite(raw)) return;
+  const clamped = Math.max(1, Math.min(Math.round(raw), totalPages.value || 1));
+  jumpToPageInput.value = clamped;
+  page.value = clamped - 1;
+}
 
 interface Row {
   id: number;
