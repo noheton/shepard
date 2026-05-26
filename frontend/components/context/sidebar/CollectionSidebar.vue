@@ -308,28 +308,24 @@ const { mobile } = useDisplay();
           </template>
         </v-treeview>
 
+        <!-- Filter empty state: tree has items but none match the current filter.
+             The filter is client-side (loaded nodes only), so unexpanded subtrees
+             are not searched — we surface that limitation here. -->
+        <div
+          v-if="!loading && treeviewItems && treeviewItems.length > 0 && filterText.trim() && filteredItems.length === 0"
+          class="px-6 py-4 text-medium-emphasis text-body-2"
+          style="max-width: 240px"
+        >
+          <v-icon size="small" class="mr-1">mdi-magnify-remove-outline</v-icon>
+          No loaded items match "{{ filterText.trim() }}". Expand more tree branches and search again.
+        </div>
+
         <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
 
         <StartHereIntro
           v-if="treeviewItems && treeviewItems.length === 0"
           class="mb-8"
         />
-
-        <div v-if="isAllowedToEditCollection" class="mt-0 mb-6 d-flex">
-          <v-btn
-            height="36"
-            density="compact"
-            variant="text"
-            color="primary"
-            class="ml-3"
-            @click="createDataObjectDialogOpened = true"
-          >
-            <template #prepend>
-              <v-icon size="24" icon="mdi-plus-circle" />
-            </template>
-            Add new data object
-          </v-btn>
-        </div>
       </div>
     </div>
 
