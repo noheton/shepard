@@ -1,8 +1,10 @@
 package de.dlr.shepard.provenance.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -168,5 +170,35 @@ class ProvenanceServiceTest {
     assertNull(result);
     // createOrUpdate threw before wireEdges was reached
     verify(activityDAO, never()).wireEdges(any(), any(), any(), any());
+  }
+
+  // NEO-AUDIT-015: app-layer actionKind validation
+
+  @Test
+  void invalidActionKindThrowsIllegalArgumentException() {
+    // Unknown actionKind must be rejected before any DAO call.
+    assertThrows(IllegalArgumentException.class,
+      () -> service.record("TYPO_KIND", null, null, "alice", "s", "POST", "p", 201, 1L, 2L),
+      "Expected an unknown actionKind to throw IllegalArgumentException");
+    verify(activityDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void nullActionKindThrowsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class,
+      () -> service.record((String) null, null, null, "alice", "s", "POST", "p", 201, 1L, 2L),
+      "Expected null actionKind to throw IllegalArgumentException");
+    verify(activityDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void allCanonicalActionKindsAreAccepted() {
+    // Smoke-check: every canonical value must reach the DAO without throwing.
+    for (String kind : new String[]{"CREATE", "READ", "UPDATE", "DELETE", "EXECUTE"}) {
+      assertDoesNotThrow(
+        () -> service.record(kind, null, null, "alice", "s", "POST", "p", 200, 1L, 2L),
+        "Expected canonical actionKind '" + kind + "' to be accepted"
+      );
+    }
   }
 }

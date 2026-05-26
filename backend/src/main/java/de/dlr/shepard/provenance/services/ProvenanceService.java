@@ -2,6 +2,7 @@ package de.dlr.shepard.provenance.services;
 
 import de.dlr.shepard.provenance.daos.ActivityDAO;
 import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.entities.ActivityActionKind;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -108,6 +109,9 @@ public class ProvenanceService {
     String mirroredUserAppId
   ) {
     if (!enabled) return null;
+    // NEO-AUDIT-015: app-layer validation — Community Edition cannot enforce
+    // value constraints in the DB; reject unknown actionKind early.
+    ActivityActionKind.validate(actionKind);
     try {
       Activity a = new Activity();
       a.setActionKind(actionKind);
