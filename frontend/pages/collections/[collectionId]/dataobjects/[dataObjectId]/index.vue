@@ -45,6 +45,12 @@ const showAttributeEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
 
+// SEMA-V6-017: unified "Annotate" button replaces the legacy "Add annotation" button.
+// Both basic and advanced mode show this button (superset rule — never hide basic content).
+// Advanced mode additionally shows the legacy "Add raw attribute" button with deprecation note.
+const showAnnotationDialog = ref(false);
+const { advancedMode } = useAdvancedMode();
+
 // Provenance sub-view: structured log (default) vs force-directed graph.
 const provView = ref<"log" | "graph">("log");
 
@@ -244,27 +250,66 @@ const dataObjectAccessRights = computed<string | null>(() => {
               </div>
             </section>
 
-            <!-- Always-visible: Semantic Annotation chips. -->
+            <!-- Always-visible: Semantic Annotation chips.
+                 SEMA-V6-017: single "Annotate" button visible in basic AND
+                 advanced mode (superset rule). Advanced mode adds the legacy
+                 "Add raw attribute" button with a deprecation tooltip. -->
             <section class="page-section">
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">
-                  Semantic Annotations
-                  <!-- UX Pattern D: low-emphasis count badge — matches the
-                       ExpansionPanelItem convention so the section title is
-                       scannable without expanding/scrolling. -->
+                  Annotations
+                  <!-- UX Pattern D: low-emphasis count badge -->
                   <span
                     v-if="numberOfSemanticAnnotations !== undefined"
                     class="text-low-emphasis ml-1"
                     data-testid="semantic-annotations-count"
                   >({{ numberOfSemanticAnnotations }})</span>
                 </div>
-                <AddAnnotationButton
+                <!-- SEMA-V6-017: primary "Annotate" button — always visible -->
+                <v-btn
                   v-if="isAllowedToEditCollection"
-                  :annotated="
-                    new AnnotatedDataObject(collectionId, dataObjectId)
-                  "
-                />
+                  color="primary"
+                  density="comfortable"
+                  prepend-icon="mdi-tag-plus-outline"
+                  size="small"
+                  variant="tonal"
+                  data-testid="annotate-button"
+                  @click="showAnnotationDialog = true"
+                >
+                  Annotate
+                </v-btn>
+                <!-- SEMA-V6-017: legacy "Add raw attribute" — advanced mode only,
+                     with deprecation tooltip pointing at the §11 Phase 2/3 migration. -->
+                <v-tooltip
+                  v-if="advancedMode && isAllowedToEditCollection"
+                  text="Legacy path — prefer Annotate for new annotations. Will be removed in §11 Phase 3 (SEMA-V6-012)."
+                  location="top"
+                  max-width="320"
+                >
+                  <template #activator="{ props: tip }">
+                    <ExpansionPanelTitleButton
+                      v-bind="tip"
+                      icon="mdi-plus-circle"
+                      text="Add/Edit attributes (legacy)"
+                      @click="() => (showAttributeEditDialog = true)"
+                    />
+                  </template>
+                </v-tooltip>
               </div>
+
+              <!-- New AnnotationDialog (SEMA-V6-005).
+                   Prefers the SEMA-V6-004 polymorphic path when dataObject.appId
+                   is available (DataObjects always have appId). Falls back to the
+                   Annotated interface for legacy contexts. -->
+              <AnnotationDialog
+                v-if="showAnnotationDialog && isAllowedToEditCollection"
+                v-model:show-dialog="showAnnotationDialog"
+                :subject-app-id="dataObject?.appId"
+                subject-kind="DataObject"
+                :annotated="new AnnotatedDataObject(collectionId, dataObjectId)"
+                @annotation-created="handleAnnotationListUpdate"
+              />
+
               <SemanticAnnotationList
                 :annotated="
                   new AnnotatedDataObject(collection.id, dataObject.id)
