@@ -575,6 +575,27 @@ public class OntologyConfigService {
   }
 
   // ──────────────────────────────────────────────────────────────────────
+  //  SEMA-V6-003: Persist a merge-patched SemanticConfig singleton
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-003 — persist a merge-patched {@link de.dlr.shepard.context.semantic.entities.SemanticConfig}
+   * entity. The caller (typically {@code SemanticConfigRest}) applies the
+   * merge-patch fields in-memory before calling this method; this method
+   * simply saves the result and returns the persisted entity.
+   *
+   * <p>Guarantees: {@code updatedAt} and {@code updatedBy} must already be
+   * set by the caller before invoking this method.
+   *
+   * @param cfg the mutated singleton entity (must have a non-null id from
+   *            {@link #loadSingleton()})
+   * @return the persisted entity after {@code createOrUpdate}
+   */
+  public SemanticConfig patchConfig(SemanticConfig cfg) {
+    return configDAO.createOrUpdate(cfg);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
   //  Helpers
   // ──────────────────────────────────────────────────────────────────────
 

@@ -97,6 +97,12 @@ class V2NamespaceTest {
       .that(are(inV2Package()).or(are(inPluginsPackage())))
       .and()
       .areAnnotatedWith(Path.class)
+      // MicroProfile REST *client* interfaces are annotated with @Path for
+      // client-side URI templates (e.g. OpenAiCompatClient with @Path("/")).
+      // They are not JAX-RS server resources and must be excluded from this
+      // server-path namespace fence.
+      .and()
+      .areNotAnnotatedWith("org.eclipse.microprofile.rest.client.inject.RegisterRestClient")
       .should(haveJaxRsPathStartingWith(V2_PREFIX_WITH_SLASH, V2_PREFIX_NO_SLASH))
       .allowEmptyShould(true)
       .check(shepardClasses);

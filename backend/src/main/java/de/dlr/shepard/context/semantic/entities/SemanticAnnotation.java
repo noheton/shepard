@@ -67,6 +67,74 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
   @Property("source")
   private String source;
 
+  // ─── SEMA-V6-001 fields ──────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-001 — kind label of the annotated entity
+   * (e.g. {@code "Collection"}, {@code "DataObject"}, {@code "FileReference"}).
+   * Nullable; null on legacy annotations created before v6.
+   */
+  @Property("subjectKind")
+  private String subjectKind;
+
+  /**
+   * SEMA-V6-001 — {@code appId} of the entity this annotation is about.
+   * Together with {@link #subjectKind} this replaces the legacy graph-edge
+   * approach for tracking annotation ownership. Indexed (V71).
+   * Nullable on legacy rows.
+   */
+  @Property("subjectAppId")
+  private String subjectAppId;
+
+  /**
+   * SEMA-V6-001 — {@code appId} of the {@link de.dlr.shepard.context.semantic.entities.Vocabulary}
+   * that defines the predicate used by this annotation. Indexed (V71).
+   * Nullable; null means "free-form / no controlled vocabulary".
+   */
+  @Property("vocabularyId")
+  private String vocabularyId;
+
+  /**
+   * SEMA-V6-001 — f(ai)²r provenance mode.
+   * Valid values: {@code "human"}, {@code "ai"}, {@code "collaborative"}.
+   * Nullable; null means "not recorded" (legacy row).
+   *
+   * <p>Distinct from {@link #source} which carries the TPL4 "attributes-backfill"
+   * tag and is orthogonal to the provenance mode concept.
+   */
+  @Property("sourceMode")
+  private String sourceMode;
+
+  /**
+   * SEMA-V6-001 — {@code appId} of the {@code :Activity} node that created
+   * or last modified this annotation (SEMA-V6-007 back-pointer).
+   * Nullable; null means "no activity captured".
+   */
+  @Property("sourceActivityAppId")
+  private String sourceActivityAppId;
+
+  /**
+   * SEMA-V6-001 — epoch-millis at which this annotation became / becomes valid.
+   * Null means "valid from the moment it was created" (no lower temporal bound).
+   */
+  @Property("validFromMillis")
+  private Long validFromMillis;
+
+  /**
+   * SEMA-V6-001 — epoch-millis at which this annotation expires.
+   * Null means "no expiry" (temporally unbounded).
+   */
+  @Property("validUntilMillis")
+  private Long validUntilMillis;
+
+  /**
+   * SEMA-V6-001 — confidence score in [0.0, 1.0].
+   * Meaningful primarily for AI-generated annotations ({@link #sourceMode}{@code = "ai"}).
+   * Null means "confidence not specified".
+   */
+  @Property("confidence")
+  private Double confidence;
+
   @ToString.Exclude
   @Relationship(type = Constants.PROPERTY_REPOSITORY)
   private SemanticRepository propertyRepository;
@@ -87,7 +155,13 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
   @Override
   public int hashCode() {
     final int prime = 31;
-    var result = Objects.hash(id, propertyName, valueName, propertyIRI, valueIRI, numericValue, unitIRI, source);
+    var result = Objects.hash(
+      id, propertyName, valueName, propertyIRI, valueIRI,
+      numericValue, unitIRI, source,
+      // SEMA-V6-001 fields
+      subjectKind, subjectAppId, vocabularyId, sourceMode,
+      sourceActivityAppId, validFromMillis, validUntilMillis, confidence
+    );
     result = prime * result + HasId.hashcodeHelper(propertyRepository);
     result = prime * result + HasId.hashcodeHelper(valueRepository);
     return result;
@@ -107,6 +181,15 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
       Objects.equals(numericValue, other.numericValue) &&
       Objects.equals(unitIRI, other.unitIRI) &&
       Objects.equals(source, other.source) &&
+      // SEMA-V6-001 fields
+      Objects.equals(subjectKind, other.subjectKind) &&
+      Objects.equals(subjectAppId, other.subjectAppId) &&
+      Objects.equals(vocabularyId, other.vocabularyId) &&
+      Objects.equals(sourceMode, other.sourceMode) &&
+      Objects.equals(sourceActivityAppId, other.sourceActivityAppId) &&
+      Objects.equals(validFromMillis, other.validFromMillis) &&
+      Objects.equals(validUntilMillis, other.validUntilMillis) &&
+      Objects.equals(confidence, other.confidence) &&
       HasId.equalsHelper(propertyRepository, other.propertyRepository) &&
       HasId.equalsHelper(valueRepository, other.valueRepository)
     );

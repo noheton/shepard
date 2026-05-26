@@ -89,6 +89,46 @@ public class SemanticConfig implements HasId, HasAppId {
   @Property("updatedBy")
   private String updatedBy;
 
+  // ─── SEMA-V6-003 fields ──────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-003 — {@code appId} of the {@link Vocabulary} node that should
+   * be pre-selected in the annotation dialog when a user creates a new annotation
+   * without an explicit vocabulary context. Nullable; null means "no default".
+   */
+  @Property("defaultVocabularyAppId")
+  private String defaultVocabularyAppId;
+
+  /**
+   * SEMA-V6-003 — annotation validation mode.
+   * <ul>
+   *   <li>{@code "STRICT"} — every annotation must use a predicate that exists
+   *       in a registered {@link Vocabulary}; free-form annotations are rejected.</li>
+   *   <li>{@code "PERMISSIVE"} (default) — free-form annotations are allowed;
+   *       vocabulary-backed annotations are preferred but not required.</li>
+   * </ul>
+   * Stored as a plain string so schema evolution is safe.
+   */
+  @Property("annotationMode")
+  private String annotationMode = "PERMISSIVE";
+
+  /**
+   * SEMA-V6-003 — when {@code true}, the AI suggestion flow
+   * (SEMA-V6-004 / AI1h) is enabled and the "Suggest annotations" button
+   * is shown in the annotation dialog. Default: {@code false}.
+   */
+  @Property("suggestionEnabled")
+  private boolean suggestionEnabled = false;
+
+  /**
+   * SEMA-V6-003 — identifier of the AI model used for annotation suggestions
+   * (e.g. {@code "saia-llm-default"}, {@code "openai-gpt-4o"}).
+   * Only meaningful when {@link #suggestionEnabled} is {@code true}.
+   * Nullable; null means "use the server default model".
+   */
+  @Property("suggestionModelId")
+  private String suggestionModelId;
+
   @Override
   public String getUniqueId() {
     return id == null ? null : id.toString();
