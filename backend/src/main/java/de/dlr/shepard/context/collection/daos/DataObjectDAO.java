@@ -6,6 +6,7 @@ import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -573,6 +574,72 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       out.put(appId, ids);
     }
     return out;
+  }
+
+  /**
+   * NEO-AUDIT-004 — time-bucketed Agent index for the `:User` supernode.
+   *
+   * <p>Writes a {@code (:User)-[:created_in_month {ym: "YYYYMM"}]->(:DataObject)}
+   * relationship immediately after a DataObject is persisted. This lets queries
+   * like "list DataObjects created by user X in month Y" avoid walking all
+   * 33k+ {@code created_by} edges on the operator `:User` supernode — they
+   * target the bounded {@code [:created_in_month]} rel set instead, typically
+   * reducing dbHits by 100-1000x (Neo4j supernode KB:
+   * https://neo4j.com/developer/kb/understanding-the-design-of-supernodes/).
+   *
+   * <p>Uses MERGE so the call is idempotent — re-runs (e.g. on retry) produce
+   * no duplicates. The {@code ym} property is derived from
+   * {@link DataObject#getCreatedAt()} and formatted as a 6-char
+   * {@code "YYYYMM"} string (e.g. {@code "202605"} for May 2026).
+   *
+   * <p>This method is best-effort — it logs a warning and continues if the
+   * DataObject or User node cannot be resolved, so a write failure here never
+   * blocks DataObject creation.
+   *
+   * @param dataObject the newly-created DataObject (must have a non-null
+   *                   {@code appId} and {@code createdAt}; {@code createdBy}
+   *                   must be a non-null User with a non-null {@code username})
+   */
+  public void writeCreatedInMonth(DataObject dataObject) {
+    if (dataObject == null) return;
+    User createdBy = dataObject.getCreatedBy();
+    String dataObjectAppId = dataObject.getAppId();
+    Date createdAt = dataObject.getCreatedAt();
+    if (createdBy == null || createdBy.getUsername() == null) {
+      Log.warnf(
+        "NEO-AUDIT-004: skipping created_in_month write — DataObject %s has no createdBy user",
+        dataObjectAppId
+      );
+      return;
+    }
+    if (dataObjectAppId == null) {
+      Log.warnf("NEO-AUDIT-004: skipping created_in_month write — DataObject has null appId");
+      return;
+    }
+    if (createdAt == null) {
+      Log.warnf(
+        "NEO-AUDIT-004: skipping created_in_month write — DataObject %s has null createdAt",
+        dataObjectAppId
+      );
+      return;
+    }
+    // Format as "YYYYMM" — %1$tY = 4-digit year, %1$tm = 2-digit month (zero-padded).
+    String ym = String.format("%1$tY%1$tm", createdAt);
+    String cypher =
+      "MATCH (u:User {username: $username}) " +
+      "MATCH (d:DataObject {appId: $dataObjectAppId}) " +
+      "MERGE (u)-[:created_in_month {ym: $ym}]->(d)";
+    try {
+      session.query(cypher, Map.of("username", createdBy.getUsername(), "dataObjectAppId", dataObjectAppId, "ym", ym));
+    } catch (Exception e) {
+      Log.warnf(
+        "NEO-AUDIT-004: failed to write created_in_month rel for DataObject %s (user=%s, ym=%s): %s",
+        dataObjectAppId,
+        createdBy.getUsername(),
+        ym,
+        e.getMessage()
+      );
+    }
   }
 
 }
