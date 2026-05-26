@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 18 |
 | `idea` | 9 |
-| `feature-defined` | 90 |
+| `feature-defined` | 91 |
 | `audited-by-personas` | 71 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 62 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **344** |
+| **total docs** | **345** |
 | **UNTAGGED** | **1** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -132,7 +132,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (90)
+## feature-defined (91)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -165,7 +165,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/data/79-cpacs-annotator.md`](data/79-cpacs-annotator.md) | aidocs/79 — CPACS Annotator (shepard-plugin-cpacs) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/81-spatial-data-binding.md`](data/81-spatial-data-binding.md) | aidocs/81 — Spatial Data Binding: Linking Geometry to Measurements | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/82-spatial-perf-evaluation.md`](data/82-spatial-perf-evaluation.md) | Spatial-data performance evaluation (PostGIS reassessment) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/83-pointcloud-and-live-overlay.md`](data/83-pointcloud-and-live-overlay.md) | aidocs/83 — Point Cloud Integration and Live Overlay Modalities | 2026-05-26 | 2026-05-23 |
+| [`aidocs/data/83-pointcloud-and-live-overlay.md`](data/83-pointcloud-and-live-overlay.md) | aidocs/83 — Point Cloud Integration and Live Overlay Modalities | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/84-live-digital-twin.md`](data/84-live-digital-twin.md) | aidocs/84 — Live Digital Twin: Moving Objects, Production Cell Scene, and State Streaming | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | aidocs/85 — Coordinate Frame Tree (CST1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
@@ -189,6 +189,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-26 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | — |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-23 |
@@ -196,7 +197,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md`](platform/83-tpl1-tpl2-shapes-templates-views.md) | TPL1+TPL2: Shapes as Templates + Views — M1 milestone tracker | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/88-quarkus-mcp-server-migration.md`](platform/88-quarkus-mcp-server-migration.md) | 88 — Native Quarkus MCP Server: Replacing the Python Sidecar | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/89-tpl9-fair2r-ai-provenance.md`](platform/89-tpl9-fair2r-ai-provenance.md) | TPL9 — f(ai)²r AI provenance capture (PROV-O extension for AI transparency) | 2026-05-26 | — |
+| [`aidocs/platform/89-tpl9-fair2r-ai-provenance.md`](platform/89-tpl9-fair2r-ai-provenance.md) | TPL9 — f(ai)²r AI provenance capture (PROV-O extension for AI transparency) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
