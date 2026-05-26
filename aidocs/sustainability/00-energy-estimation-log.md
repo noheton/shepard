@@ -342,6 +342,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `878e3338` | 2026-05-20 | code | 16k | 4k | 2.00 | 20 | 5 | 27.00 | 9.80 | LOW | fix(UI): align collection page section headers with content edge |
 | `ee50a8f1` | 2026-05-20 | code | 45k | 15k | 6.67 | 20 | 5 | 31.67 | 11.50 | LOW | feat(UX): warn on expired session and prompt re-auth (#49) |
 | `dc43bfdc` | 2026-05-26 | code | 150k | 45k | 22.22 | 20 | 5 | 47.22 | 17.14 | LOW | feat(sema-v6): SEMA-V6-001/002/003 — SemanticAnnotation v6 columns, Vocab... |
+| *(IMP1-TODO)* | 2026-05-26 | code | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | feat(import): IMP1 — collection-scoped annotation query for import context |
 
 ---
 
@@ -430,4 +431,5 @@ following ship, the log gets re-grounded:
 |------------|-----------------------------------------------------------------------|----|
 | 2026-05-23 | Initial creation. Backfill 2026-05-20 → 2026-05-23 (214 commits).     | Claude Opus 4.7 (1M context) + Flo |
 | 2026-05-26 | Added `dc43bfdc` (SEMA-V6-001/002/003) entry.                         | Claude Sonnet 4.6 |
+| 2026-05-26 | Added IMP1-TODO closure entry (import context annotation query).       | Claude Sonnet 4.6 |
 

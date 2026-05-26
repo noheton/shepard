@@ -158,6 +158,36 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
     return out;
   }
 
+  /**
+   * IMP1 — collect all distinct {@link SemanticAnnotation} nodes attached to
+   * non-deleted {@code DataObject} nodes that belong to the given Collection.
+   *
+   * <p>The query uses the graph-edge pattern
+   * {@code (Collection)-[:has_dataobject]->(DataObject)-[:has_annotation]->(SemanticAnnotation)}
+   * and returns {@code DISTINCT} annotations to avoid duplicates when multiple
+   * DataObjects share the same annotation node (e.g. after the V69 backfill).
+   *
+   * <p>Permission enforcement is the caller's responsibility — the collection
+   * scope already constrains the result set to annotations the caller has Read
+   * access to (they passed the permission check in {@code ImportV2Rest}).
+   *
+   * @param collectionAppId the {@code appId} of the target Collection
+   * @return distinct annotations on DataObjects in this Collection; empty list when none found
+   */
+  public List<SemanticAnnotation> findByCollectionAppId(String collectionAppId) {
+    if (collectionAppId == null || collectionAppId.isBlank()) return List.of();
+    String query =
+      "MATCH (c:Collection {appId: $cAppId})-[:has_dataobject]->(d:DataObject)-[:has_annotation]->(a:SemanticAnnotation) " +
+      "WHERE (d.deleted IS NULL OR d.deleted = false) " +
+      "WITH DISTINCT a " +
+      CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING);
+    List<SemanticAnnotation> out = new ArrayList<>();
+    for (SemanticAnnotation a : findByQuery(query, Map.of("cAppId", collectionAppId))) {
+      out.add(a);
+    }
+    return out;
+  }
+
   @Override
   public Class<SemanticAnnotation> getEntityType() {
     return SemanticAnnotation.class;
