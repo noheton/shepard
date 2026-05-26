@@ -1,6 +1,6 @@
 ---
 stage: feature-defined
-last-stage-change: 2026-05-23
+last-stage-change: 2026-05-26
 ---
 
 # aidocs/83 — Point Cloud Integration and Live Overlay Modalities
@@ -61,12 +61,14 @@ Streaming delivery: chunked Potree format tiles via
 ```cypher
 (:PointCloudReference {
   appId          String
-  sourceFormat   String   -- "PLY" | "E57" | "LAS" | "LAZ" | "XYZ"
-  pointCount     long     -- populated after ingest
-  boundingBoxMin [double] -- [xmin, ymin, zmin]
-  boundingBoxMax [double] -- [xmax, ymax, zmax]
-  coordinateFrame String  -- "world" | "part" | "sensor"
-  tiledAt        ZonedDateTime
+  sourceFormat   String        -- "PLY" | "E57" | "LAS" | "LAZ" | "XYZ"
+  pointCount     long          -- populated after ingest
+  boundingBoxMin [double]      -- [xmin, ymin, zmin]
+  boundingBoxMax [double]      -- [xmax, ymax, zmax]
+  coordinateFrame String       -- "world" | "part" | "sensor"
+  lodFormat      String        -- "COPC" | "POTREE" | "NONE"  (set at ingest by PC-LOD1a)
+  lodConvertedAt ZonedDateTime -- timestamp of last LOD conversion; null = pending
+  tiledAt        ZonedDateTime -- populated when lodFormat = "POTREE" (Phase 2)
 })
 ```
 
@@ -200,6 +202,202 @@ The viewer subscribes to the SSE stream at
 `GET /v2/pointcloud-references/{appId}/live-chunks` and appends new point batches to
 the Three.js PointsMaterial scene without a full reload. Chunk format: binary LAS 1.4
 frames, ~1 Hz flush rate.
+
+---
+
+### LOD Strategy (PC-LOD1)
+
+Large point clouds — AFP fibre-placement scans (50–200 M pts), lidar environment maps
+(1–50 M pts/s), and photogrammetry captures (10–500 M pts) — cannot be sent to the browser
+as a single file. An LOD pipeline is required so the Three.js viewer stays interactive (≥30 fps)
+at any dataset size. This section defines the LOD strategy for `PointCloudReference` inside
+`shepard-plugin-spatial`.
+
+**Quality gate:** a 50 M-point cloud must render at ≥30 fps on a laptop integrated GPU
+(Intel Iris Xe or AMD Radeon Integrated — baseline: ZLP engineer workstation / student laptop)
+in the LOD viewer. Test artefact: a synthetic 50 M-point LAS generated via `pdal generate`
+and converted to COPC.
+
+#### LOD Option A — Potree Octree Tiling (sidecar)
+
+Potree uses a **spatial octree** subdivided until each leaf node holds a configurable maximum
+number of points. The viewer uses **screen-space-error (SSE)** to decide which octree nodes to
+load: if a node's projected bounding-sphere covers fewer than `screenSpaceError` pixels on screen,
+only that node's LOD tile is loaded; finer children are deferred until the camera zooms closer.
+This gives predictable frame times regardless of total point count — the in-flight point budget
+is a fixed function of screen resolution and `screenSpaceError`, not of the cloud's total size.
+
+**Pipeline:**
+
+```
+raw LAS/LAZ/PLY/E57 (Garage S3)
+  ↓  shepard-sidecar-potree-convert Docker service
+  ↓  PDAL / Potree Converter 2.x
+octree tile tree (JSON hierarchy + .bin tiles)
+  → stored in Garage under  shepard-tiles/{appId}/
+  → PointCloudReference.lodFormat = "POTREE"
+                          .tiledAt  = <timestamp>
+```
+
+**Streaming endpoint (planned, Phase 2):**
+
+```
+GET /v2/pointcloud-references/{appId}/tiles/{octree-path}
+→ 302 redirect to signed Garage URL for the requested tile
+```
+
+The viewer fetches tile URLs, caches them, and renders progressively. `screenSpaceError`
+is configurable as a query parameter (default 2.0, lower = higher fidelity).
+
+**Viewer:** Potree.js (MIT, npm `potree`) or `potree-web-viewer` embedded inside
+`frontend/components/container/spatial/PointCloudViewer.vue`. The viewer calls the
+Shepard streaming endpoint in place of a direct Potree server.
+
+**Pros:**
+- Battle-tested: Potree serves 100 M+ point clouds interactively in production (Entwine, Cesium,
+  national LiDAR repositories). Browser performance on 100 M pts is proven at ≥30 fps on
+  mid-range GPUs.
+- Full format support: `shepard-sidecar-potree-convert` accepts PLY, E57, LAS/LAZ, and XYZ
+  via PDAL preprocessing — no source-format lock-in.
+- Geospatial ecosystem: integrates with COPC/EPT/3D Tiles pipelines used by Helmholtz
+  geoscience groups.
+
+**Cons:**
+- Additional sidecar service (image, memory, CPU) required at all times.
+- Async tile generation: upload → tile → ready introduces a delay; a status/progress
+  endpoint is needed (`GET /v2/pointcloud-references/{appId}/lod-status`).
+- Storage duplication: raw file remains in Garage; tile tree occupies ~0.5–2× the raw
+  file size depending on octree depth.
+- Re-tile on every update (source file changed): the tile tree must be invalidated and
+  regenerated.
+
+---
+
+#### LOD Option B — COPC (Cloud Optimised Point Cloud)
+
+**What COPC is:** COPC is a LAZ file variant whose internal structure encodes a
+**copc VoxelLayer octree index** directly in the LAZ file header and extra bytes. The
+index maps spatial octree cells to byte offsets within the single file. A viewer that
+wants only the LOD-1 overview requests a range of bytes from the file covering the root
+octree cell; if the user zooms in, it requests the child cell's byte range. No tile server
+is needed — the browser issues HTTP `Range:` requests against the raw object in Garage,
+and Garage S3 supports range requests natively.
+
+**Specification:** COPC 1.0 is a formal open standard (<https://copc.io>). The copc.js
+viewer (MIT, npm `copc`) is the reference browser implementation.
+
+**Pipeline:**
+
+```
+raw LAS/LAZ (Garage S3)
+  ↓  PDAL 2.6+ with `writers.copc` driver
+  ↓  (runs inside shepard-sidecar-pdal at upload time)
+single COPC LAZ file
+  → replaces raw file as primary stored object in Garage
+  → PointCloudReference.lodFormat = "COPC"
+                        .lodConvertedAt = <timestamp>
+
+GET /v2/pointcloud-references/{appId}/stream
+  → 302 redirect to signed Garage presigned URL (Range: header forwarded by client)
+```
+
+The viewer issues range requests through the presigned Garage URL. No per-tile routing
+logic in Shepard — the Garage S3 URL handles it end-to-end.
+
+**PLY / E57 inputs:** PDAL can convert PLY, E57, and XYZ to LAZ before writing COPC.
+The conversion happens inside the same `shepard-sidecar-pdal` step. The source format
+is preserved in `PointCloudReference.sourceFormat`; only the stored primary file
+transitions to COPC LAZ.
+
+**Viewer:** `copc.js` v1.3+ (MIT, < 50 KB, canvas-based, no server-side component).
+Drop-in `<CopcViewer>` component at
+`frontend/components/container/spatial/PointCloudViewer.vue`.
+Tested up to ~500 M points in browser benchmarks (copc.js v1.3 release notes,
+[copc/copc.js#142](https://github.com/connormanning/copc.js/issues/142)).
+
+**Pros:**
+- No tiling server at runtime: the only new infrastructure is a one-off conversion sidecar
+  (`shepard-sidecar-pdal`) that runs at upload time, not continuously.
+- Single file in Garage: no storage duplication; the COPC file replaces the raw upload.
+- Garage S3 natively handles range requests per the S3 `GetObject` `Range` header — no
+  proxy logic needed.
+- CDN-friendly: any standard HTTP CDN or edge cache honours range requests, making COPC
+  suitable for public dataset delivery.
+- Simpler ops: `docker compose down shepard-sidecar-pdal` removes the feature entirely;
+  no tile-tree management, no stale-tile invalidation.
+
+**Cons:**
+- LAZ-format lock-in for the stored LOD file: PLY/E57 must be converted at ingest.
+  The original format is preserved as `sourceFormat` but the stored primary object is LAZ.
+- Less mature tooling than Potree for the > 500 M point scale: copc.js has been benchmarked
+  at ~500 M pts but not at the multi-billion-point scale of national LiDAR repositories.
+- Re-convert on source update (same cost as Potree re-tile, but simpler because there is
+  no tile tree to invalidate — just overwrite the single COPC file).
+- `shepard-sidecar-pdal` must be present at ingest time; if it is down, LOD conversion is
+  deferred and `lodFormat = "NONE"` until the next retry.
+
+---
+
+#### Decision Matrix
+
+| Criterion | Potree tiles (Option A) | COPC (Option B) |
+|---|---|---|
+| Ops complexity | Continuous sidecar service + async tile jobs + status endpoint | One-time conversion sidecar at upload; no runtime sidecar |
+| Browser perf (50 M pts) | Proven ≥30 fps (Potree 2.x, many deployments) | ~30 fps (copc.js v1.3 benchmarks; validated on desktop; ZLP acceptance test required) |
+| Storage overhead | ~1.5–2× (tiles + original file) | ~1× (COPC replaces original; ~5 % LAZ overhead vs raw LAS) |
+| Format support | Any (PLY/E57/LAS/LAZ/XYZ via PDAL preprocessing) | LAZ native; PLY/E57/XYZ converted at ingest via PDAL |
+| Re-process on update | Re-tile: invalidate tile tree + full retile run | Re-convert: overwrite single COPC file |
+| Scale ceiling | Billions of points (production-tested) | ~500 M pts (copc.js v1.3; larger scales untested in browser) |
+| Shepard plugin fit | Sidecar pattern matches ADR-0024 precedent (Open3D, HSDS) | Upload-time transform only; no sidecar at query time |
+| Garage integration | Tiles served via signed URL redirect | Single presigned URL + Range header (native S3 GET Object) |
+| Viewer library | Potree.js (mature, 3D web standard) | copc.js (MIT, lightweight, actively maintained) |
+| Time to first render (cold) | Depends on async tile job completion (~10 s–5 min) | Immediate after upload conversion (~30 s for 50 M pts on PDAL) |
+
+---
+
+#### Recommendation — COPC for Phase 1 (PC-LOD1a–c), Potree for Phase 2 (PC-LOD1d)
+
+**Adopt COPC as the Phase 1 LOD format.** The decisive factors:
+
+1. **Ops simplicity at ZLP scale.** ZLP point clouds are 5–200 M pts per scan — well within
+   COPC's validated range. A continuous Potree sidecar adds infra overhead that is not
+   justified until the scale ceiling is reached.
+2. **Garage is the differentiating infrastructure.** COPC turns every Garage-stored LAZ object
+   into a self-describing LOD pyramid. The viewer becomes a thin HTTP range-request client —
+   no per-tile routing in Shepard, no tile cache, no tile-generation queue.
+3. **Plugin-first sidecar discipline.** The `shepard-sidecar-pdal` conversion sidecar follows
+   the ADR-0024 sidecar pattern exactly, consistent with the `shepard-sidecar-open3d` (PC1b)
+   and `shepard-hsds` (A5a) precedents. It runs only during ingest; it is declared in the
+   plugin's compose manifest, not in the core infrastructure stack.
+4. **copc.js is small and MIT-licensed.** Adding a < 50 KB viewer library to the frontend is
+   a one-PR change; adding the Potree viewer ecosystem is a larger dependency surface.
+
+**Potree (Phase 2, PC-LOD1d)** is deferred but not cancelled. It activates automatically
+when `PointCloudReference.pointCount > 500_000_000` or when the operator sets
+`shepard.spatial.lod.strategy = POTREE` as an admin config override. At that scale the
+continuous sidecar is justified and the Potree ecosystem tooling (cloud-to-cloud registration,
+Potree Desktop, Potree Exporter integration with GIS workflows) is an asset.
+
+---
+
+#### Phase Plan
+
+| ID | Scope | Gated on | Priority |
+|---|---|---|---|
+| PC-LOD1a | PDAL COPC conversion at upload time in `shepard-plugin-spatial`; `shepard-sidecar-pdal` Docker service (PDAL 2.6+ binary; declared in plugin compose manifest, not core stack); `PointCloudReference.lodFormat="COPC"` field; `PointCloudReference.lodConvertedAt` timestamp; retry on sidecar-down → `lodFormat="NONE"` with scheduled retry; `GET /v2/pointcloud-references/{appId}/lod-status` returns `{lodFormat, lodConvertedAt, pointCount}`. Note: PDAL is a C++ binary — it runs in the sidecar container, not inside the JVM process; the Java plugin calls the sidecar over HTTP (same pattern as `shepard-sidecar-open3d` for PC1b). | PC1a (PointCloudReference entity) | High |
+| PC-LOD1b | Streaming endpoint: `GET /v2/pointcloud-references/{appId}/stream` → 302 to signed Garage presigned URL; `Range:` header forwarded so copc.js range requests resolve against Garage directly. Auth: same Read permission check as other reference payload endpoints. | PC-LOD1a + L2d (appId routing) | High |
+| PC-LOD1c | `copc.js` frontend viewer component at `frontend/components/container/spatial/PointCloudViewer.vue`; replaces the placeholder `<v-alert>` stub in the `PointCloudReference` detail view; progressive LOD loading using `PointCloudReference.lodFormat` to select code path (COPC path active; NONE path shows a "conversion in progress" spinner polling `lod-status`). | PC-LOD1b | High |
+| PC-LOD1d | (Deferred) Potree sidecar (`shepard-sidecar-potree-convert`) for `pointCount > 500_000_000` or `shepard.spatial.lod.strategy = POTREE`; Potree tile streaming via `GET /v2/pointcloud-references/{appId}/tiles/{octree-path}`; Potree.js viewer as the render path when `lodFormat = "POTREE"`. Activates automatically by `pointCount` threshold or by admin config override. | PC-LOD1c + operator need | Low (deferred) |
+
+---
+
+#### REST Surface Summary (PC-LOD1)
+
+| Method | Path | Purpose | Auth |
+|---|---|---|---|
+| `GET` | `/v2/pointcloud-references/{appId}/lod-status` | Returns `{lodFormat, lodConvertedAt, pointCount}` | Read |
+| `GET` | `/v2/pointcloud-references/{appId}/stream` | 302 → signed Garage URL for COPC file; Range: forwarded | Read |
+| `GET` | `/v2/pointcloud-references/{appId}/tiles/{path}` | (Phase 2) 302 → signed Garage URL for Potree tile | Read |
 
 ---
 
@@ -433,6 +631,8 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 | URDF joint animation | JOINT_ANGLE | Timeseries | ✓ | Already in SB1 |
 | FEM node displacement | DEFORMATION | Structured (multi-frame) | — | Already in SB1 |
 | Dense point cloud | (PC1a–PC1d) | PointCloudReference | ✓ (PC1d) | New — §1 |
+| LOD point cloud streaming (COPC) | (PC-LOD1b/c) | PointCloudReference (COPC) | — | New — PC-LOD1; copc.js viewer |
+| LOD point cloud streaming (Potree) | (PC-LOD1d) | PointCloudReference (POTREE) | — | Deferred Phase 2 — PC-LOD1d |
 | Deviation heat map (CAD vs cloud) | HEATMAP auto | PC + CAD | — | New — §1 PC1c |
 | Camera frustum + PiP video | CAMERA_FRUSTUM | VideoReference + URDF | ✓ | New — SB2a |
 | AE event cloud | AE_EVENT_CLOUD | Structured | ✓ | New — SB2b |
@@ -451,7 +651,11 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 
 | ID | Scope | Gated on | Priority |
 |---|---|---|---|
-| PC1a | `PointCloudReference` payload kind; PLY/E57 ingest; Potree tile serving | CAD1a (FS1a, plugin scaffolding) | High — enables dimensional inspection workflow |
+| PC1a | `PointCloudReference` payload kind; PLY/E57/LAS/LAZ ingest; `lodFormat` + `lodConvertedAt` fields; LOD conversion triggers PC-LOD1a at upload | CAD1a (FS1a, plugin scaffolding) | High — enables dimensional inspection workflow |
+| PC-LOD1a | PDAL COPC conversion sidecar; `lodFormat="COPC"` + retry/status; `GET /v2/pointcloud-references/{appId}/lod-status` | PC1a | High |
+| PC-LOD1b | Streaming endpoint → signed Garage URL with Range forwarding | PC-LOD1a + L2d | High |
+| PC-LOD1c | `copc.js` viewer component in `frontend/components/container/spatial/` | PC-LOD1b | High |
+| PC-LOD1d | Potree sidecar + tiles endpoint for `pointCount > 500_000_000` | PC-LOD1c + operator need | Low (deferred) |
 | PC1b | CAD–Cloud ICP alignment; `[:ALIGNED_TO]` edge; Open3D sidecar | CAD1b (annotation model) + PC1a | High |
 | PC1c | Deviation map auto-HEATMAP binding | PC1b + SB1b (HEATMAP mode) | Medium |
 | PC1e | Surface-annotation matching; per-annotation deviation stats; matched-point subsets; tolerance pass/fail; `toleranceMm` annotation field | PC1b + CAD1b (face-index encoding) | High — feature-aware inspection, T-Scan primary use case |
