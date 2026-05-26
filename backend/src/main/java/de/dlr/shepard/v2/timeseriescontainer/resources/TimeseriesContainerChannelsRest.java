@@ -7,13 +7,16 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -22,6 +25,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -130,5 +134,43 @@ public class TimeseriesContainerChannelsRest {
           containerId, tuple, new TimeseriesDataPointsQueryParams(start, end, null, null, null));
 
     return Response.ok(new TimeseriesWithDataPoints(tuple, points)).build();
+  }
+
+  // ── TS-OPT2: multi-channel bulk raw fetch ─────────────────────────────────
+
+  @POST
+  @Path("/{containerId}/channels/data/bulk")
+  @Operation(
+    summary = "Fetch raw data for multiple channels in one call (TS-OPT2).",
+    description = "Accepts a list of shepardIds (max 200) plus a shared time window and returns " +
+      "raw data points — one TimeseriesWithDataPoints entry per resolved channel. " +
+      "Unknown IDs are silently skipped. No downsampling is applied; use the single-channel " +
+      "endpoint with ?downsample=lttb when a reduced point count is needed."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Raw data for all resolved channels.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesWithDataPoints.class))
+  )
+  @APIResponse(responseCode = "400", description = "Validation error on request body.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  public Response getBulkChannelData(
+    @PathParam("containerId") long containerId,
+    @NotNull @Valid BulkChannelDataRequestIO body
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    List<Timeseries> tuples = body.shepardIds().stream()
+      .map(id -> tsChannelResolver.resolveTuple(id).orElse(null))
+      .filter(t -> t != null)
+      .collect(Collectors.toList());
+
+    List<TimeseriesWithDataPoints> results = timeseriesService.getManyTimeseriesWithDataPoints(
+      containerId, tuples,
+      new TimeseriesDataPointsQueryParams(body.start(), body.end(), null, null, null));
+
+    return Response.ok(results).build();
   }
 }
