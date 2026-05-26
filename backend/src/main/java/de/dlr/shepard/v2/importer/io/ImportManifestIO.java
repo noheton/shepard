@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP1 — request body for {@code POST /v2/import/validate}.
@@ -26,11 +27,11 @@ import java.util.Map;
  * </ul>
  */
 public record ImportManifestIO(
-  @NotBlank String collectionAppId,
-  @NotNull @Valid List<ManifestDataObjectIO> dataObjects,
-  @Valid List<ManifestContainerIO> containers,
-  @Valid List<ManifestReferenceIO> references,
-  @Valid AgentContextIO agentContext
+  @NotBlank @Schema(description = "appId (UUID v7) of the target Collection.", example = "01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f") String collectionAppId,
+  @NotNull @Valid @Schema(description = "DataObjects to create in this batch.") List<ManifestDataObjectIO> dataObjects,
+  @Valid @Schema(description = "Containers to create (timeseries, file, or structured-data).") List<ManifestContainerIO> containers,
+  @Valid @Schema(description = "Container-to-DataObject attachment declarations.") List<ManifestReferenceIO> references,
+  @Valid @Schema(description = "Optional agent-context provenance hint.") AgentContextIO agentContext
 ) {
 
   /**
@@ -70,13 +71,13 @@ public record ImportManifestIO(
    * @param predecessorRefs localRefs of DataObjects in this manifest to set as predecessors
    */
   public record ManifestDataObjectIO(
-    @NotBlank String localRef,
-    @NotBlank String name,
-    String description,
-    String status,
-    Map<String, String> attributes,
-    String parentRef,
-    List<String> predecessorRefs
+    @NotBlank @Schema(description = "Caller-scoped manifest key (not persisted).", example = "do-tr004") String localRef,
+    @NotBlank @Schema(description = "Display name for the DataObject.", example = "TR-004 Anomaly Investigation") String name,
+    @Schema(description = "Optional free-text description.", example = "Post-hotfire analysis: turbopump vibration spike at t=8s") String description,
+    @Schema(description = "Lifecycle status.", enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"}, example = "IN_REVIEW") String status,
+    @Schema(description = "Key/value metadata attributes.", example = "{\"propellant\":\"LOX/LH2\",\"test_engineer\":\"j.mueller\"}") Map<String, String> attributes,
+    @Schema(description = "localRef of parent DataObject in this manifest.", example = "do-campaign") String parentRef,
+    @Schema(description = "localRefs of predecessor DataObjects in this manifest.") List<String> predecessorRefs
   ) {}
 
   /**
@@ -87,9 +88,9 @@ public record ImportManifestIO(
    * @param name     the Container's display name
    */
   public record ManifestContainerIO(
-    @NotBlank String localRef,
-    @NotBlank String type,
-    @NotBlank String name
+    @NotBlank @Schema(description = "Caller-scoped manifest key (not persisted).", example = "c-vibration-ts") String localRef,
+    @NotBlank @Schema(description = "Container kind.", enumeration = {"TIMESERIES", "FILE", "STRUCTURED_DATA"}, example = "TIMESERIES") String type,
+    @NotBlank @Schema(description = "Display name for the Container.", example = "Turbopump Vibration Channels") String name
   ) {}
 
   /**
@@ -99,7 +100,7 @@ public record ImportManifestIO(
    * @param containerRef  localRef of the container to attach
    */
   public record ManifestReferenceIO(
-    @NotBlank String dataObjectRef,
-    @NotBlank String containerRef
+    @NotBlank @Schema(description = "localRef of the owning DataObject.", example = "do-tr004") String dataObjectRef,
+    @NotBlank @Schema(description = "localRef of the Container to attach.", example = "c-vibration-ts") String containerRef
   ) {}
 }

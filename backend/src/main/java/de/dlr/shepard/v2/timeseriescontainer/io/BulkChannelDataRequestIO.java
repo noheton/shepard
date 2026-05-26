@@ -29,17 +29,18 @@ public record BulkChannelDataRequestIO(
   @Size(max = 200)
   @Schema(
     description = "Channel shepardIds to fetch. Unknown IDs are silently skipped. Max 200 per call.",
-    required = true
+    required = true,
+    example = "[\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f\",\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e60\"]"
   )
   List<@NotNull UUID> shepardIds,
 
   @NotNull
   @PositiveOrZero
-  @Schema(description = "Window start, nanoseconds since epoch.", required = true)
+  @Schema(description = "Window start, nanoseconds since epoch.", required = true, example = "1700000000000000000")
   Long start,
 
   @NotNull
   @PositiveOrZero
-  @Schema(description = "Window end, nanoseconds since epoch.", required = true)
+  @Schema(description = "Window end, nanoseconds since epoch.", required = true, example = "1700003600000000000")
   Long end
 ) {}

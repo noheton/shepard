@@ -19,11 +19,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class TimeseriesReferenceIO extends BasicReferenceIO {
 
   @NotNull
-  @Schema(required = true)
+  @Schema(required = true, description = "Start of time window in nanoseconds since Unix epoch.", example = "1700000000000000000")
   private long start;
 
   @NotNull
-  @Schema(required = true)
+  @Schema(required = true, description = "End of time window in nanoseconds since Unix epoch.", example = "1700003600000000000")
   private long end;
 
   @NotEmpty

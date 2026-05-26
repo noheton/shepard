@@ -42,7 +42,7 @@ public class BasicEntityIO implements HasId {
   private String updatedBy;
 
   @NotBlank
-  @Schema(required = true)
+  @Schema(required = true, example = "LUMEN Hotfire Campaign 2024")
   private String name;
 
   @Schema(readOnly = true, nullable = true, description = "Application-level UUID v7 identifier.")

@@ -25,7 +25,7 @@ public record TimeseriesChannelV2IO(
    * Postgres {@code timeseries} row via {@code TsChannelResolver}. Always
    * present on persisted rows.
    */
-  @Schema(description = "Channel shepardId — the new single-field identity for this channel.", required = true)
+  @Schema(description = "Channel shepardId — the new single-field identity for this channel.", required = true, example = "01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f")
   UUID shepardId,
 
   /**
@@ -40,19 +40,19 @@ public record TimeseriesChannelV2IO(
   @Schema(required = true)
   long containerId,
 
-  @Schema(required = true)
+  @Schema(required = true, example = "turbopump_vibration")
   String measurement,
 
-  @Schema(required = true)
+  @Schema(required = true, example = "LPT-001")
   String device,
 
-  @Schema(required = true)
+  @Schema(required = true, example = "lampoldshausen_p8")
   String location,
 
-  @Schema(required = true)
+  @Schema(required = true, example = "vib_axial_rms")
   String symbolicName,
 
-  @Schema(required = true)
+  @Schema(required = true, example = "rms_g")
   String field,
 
   @Schema(required = true)

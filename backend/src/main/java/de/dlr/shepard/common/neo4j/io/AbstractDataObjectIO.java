@@ -15,14 +15,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "AbstractDataObject")
 public abstract class AbstractDataObjectIO extends BasicEntityIO {
 
-  @Schema(nullable = true)
+  @Schema(nullable = true, example = "Post-hotfire analysis of turbopump vibration anomaly at t=8s (TR-004)")
   private String description;
 
   @NoDelimiterInMapKeys
   private Map<String, String> attributes = new HashMap<>();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Schema(nullable = true, enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"})
+  @Schema(nullable = true, enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"}, example = "IN_REVIEW")
   private String status;
 
   /**
