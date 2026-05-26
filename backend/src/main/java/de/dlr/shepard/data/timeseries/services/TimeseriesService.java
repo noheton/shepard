@@ -185,6 +185,47 @@ public class TimeseriesService {
     return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
   }
 
+  /**
+   * Fetch channel data with LTTB-optimised query routing (TS-OPT1).
+   *
+   * <p>For large windows (bucket ≥ 1 ms after dividing window by target×5),
+   * issues a SQL {@code time_bucket()} pre-aggregation query that returns only
+   * {@code target*5} rows, then applies LTTB in Java on that reduced set.
+   * For small windows or non-numeric types, falls back to raw point fetch + LTTB.
+   *
+   * <p>Result: DB→Java transfer is reduced by up to rawRowCount/numBuckets
+   * (e.g. 360× for a 1-hour 100 Hz channel with target=200).
+   */
+  @ActivateRequestContext
+  public List<TimeseriesDataPoint> getDataPointsLttbOptimised(
+    long containerId,
+    Timeseries timeseries,
+    long startNs,
+    long endNs,
+    int lttbTarget
+  ) {
+    Optional<TimeseriesEntity> entityOpt = timeseriesRepository.findTimeseries(containerId, timeseries);
+    if (entityOpt.isEmpty()) return Collections.emptyList();
+
+    TimeseriesEntity entity = entityOpt.get();
+    int tsId = entity.getId();
+    DataPointValueType valueType = entity.getValueType();
+
+    long bucketNs = TimeseriesDataPointRepository.choosePreaggBucketNs(endNs - startNs, lttbTarget);
+    List<TimeseriesDataPoint> points;
+
+    if (bucketNs > 0 && (valueType == DataPointValueType.Double || valueType == DataPointValueType.Integer)) {
+      Log.debugf("TS-OPT1 preagg: tsId=%d window=%dms bucketMs=%d target=%d",
+        tsId, (endNs - startNs) / 1_000_000, bucketNs / 1_000_000, lttbTarget);
+      points = timeseriesDataPointRepository.queryPreAggregated(tsId, valueType, startNs, endNs, bucketNs);
+    } else {
+      var queryParams = new TimeseriesDataPointsQueryParams(startNs, endNs, null, null, null);
+      points = timeseriesDataPointRepository.queryDataPoints(tsId, valueType, queryParams);
+    }
+
+    return de.dlr.shepard.data.timeseries.util.Lttb.downsample(points, lttbTarget);
+  }
+
   public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
     Long containerId,
     List<Timeseries> timeseriesList,

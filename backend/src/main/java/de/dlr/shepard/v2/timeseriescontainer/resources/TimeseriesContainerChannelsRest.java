@@ -7,7 +7,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import de.dlr.shepard.data.timeseries.util.Lttb;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -123,15 +122,12 @@ public class TimeseriesContainerChannelsRest {
         .build();
     }
 
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      start, end, null, null, null
-    );
-    var points = timeseriesService.getDataPointsByTimeseries(containerId, tuple, queryParams);
-
-    if (points != null && downsample != null && "lttb".equalsIgnoreCase(downsample.trim())) {
-      int target = maxPoints == null ? DEFAULT_MAX_POINTS : Math.min(Math.max(maxPoints, 1), HARD_MAX_POINTS);
-      points = Lttb.downsample(points, target);
-    }
+    var points = downsample != null && "lttb".equalsIgnoreCase(downsample.trim())
+      ? timeseriesService.getDataPointsLttbOptimised(
+          containerId, tuple, start, end,
+          maxPoints == null ? DEFAULT_MAX_POINTS : Math.min(Math.max(maxPoints, 1), HARD_MAX_POINTS))
+      : timeseriesService.getDataPointsByTimeseries(
+          containerId, tuple, new TimeseriesDataPointsQueryParams(start, end, null, null, null));
 
     return Response.ok(new TimeseriesWithDataPoints(tuple, points)).build();
   }

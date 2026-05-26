@@ -401,6 +401,52 @@ public class TimeseriesDataPointRepository {
     return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
   }
 
+  /**
+   * Pre-aggregation query for LTTB pre-reduction on large windows.
+   * Buckets the time range into {@code (endNs-startNs)/bucketNs} buckets and returns
+   * AVG per bucket. Only meaningful for numeric types (Double, Integer).
+   * Reduces DB→Java data transfer by (rawRowCount / numBuckets) before LTTB runs.
+   */
+  @Timed(value = "shepard.timeseries-data-point.preagg-query")
+  @SuppressWarnings("unchecked")
+  public List<TimeseriesDataPoint> queryPreAggregated(
+    int timeseriesId,
+    DataPointValueType valueType,
+    long startNs,
+    long endNs,
+    long bucketNs
+  ) {
+    String col = getColumnName(valueType);
+    String sql = """
+      SELECT time_bucket(:bucketNs, time) AS timestamp,
+             AVG(%s) AS value
+      FROM timeseries_data_points
+      WHERE timeseries_id = :timeseriesId
+        AND time >= :startNs
+        AND time <= :endNs
+      GROUP BY timestamp
+      ORDER BY timestamp
+      """.formatted(col);
+    return entityManager
+      .createNativeQuery(sql, TimeseriesDataPoint.class)
+      .setParameter("bucketNs", bucketNs)
+      .setParameter("timeseriesId", timeseriesId)
+      .setParameter("startNs", startNs)
+      .setParameter("endNs", endNs)
+      .getResultList();
+  }
+
+  /**
+   * Returns the time_bucket interval (ns) to use for pre-aggregation before LTTB,
+   * targeting {@code target*5} buckets so LTTB has 5× visual headroom.
+   * Returns 0 when the window is too small to benefit (bucket < 1 ms).
+   */
+  public static long choosePreaggBucketNs(long windowNs, int target) {
+    if (target <= 0 || windowNs <= 0) return 0L;
+    long bucketNs = windowNs / ((long) target * 5);
+    return bucketNs >= 1_000_000L ? bucketNs : 0L;
+  }
+
   private String getColumnName(DataPointValueType valueType) {
     return switch (valueType) {
       case Double -> "double_value";

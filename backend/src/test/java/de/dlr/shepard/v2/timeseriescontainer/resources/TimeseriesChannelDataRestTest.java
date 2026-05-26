@@ -2,7 +2,12 @@ package de.dlr.shepard.v2.timeseriescontainer.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -113,8 +118,9 @@ public class TimeseriesChannelDataRestTest {
   void lttbDownsample_isSilentlySkipped_whenPointListIsNull() {
     Timeseries tuple = aTuple();
     when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
-    when(serviceMock.getDataPointsByTimeseries(
-        CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
+    // With downsample=lttb, the optimised path is taken — stub that, not the raw fetch.
+    when(serviceMock.getDataPointsLttbOptimised(
+        anyLong(), eq(tuple), anyLong(), anyLong(), anyInt()))
       .thenReturn(null);
 
     // should not NPE even when points == null and downsample requested
@@ -141,6 +147,69 @@ public class TimeseriesChannelDataRestTest {
     @SuppressWarnings("unchecked")
     TimeseriesWithDataPoints body = (TimeseriesWithDataPoints) resp.getEntity();
     assertEquals(3, body.getPoints().size(), "points must be unmodified when downsample is absent");
+  }
+
+  // ── LTTB optimised path (TS-OPT1) ─────────────────────────────────────────
+
+  @Test
+  void lttbPath_callsOptimisedService_notRawFetch() {
+    Timeseries tuple = aTuple();
+    List<TimeseriesDataPoint> pts = List.of(
+      new TimeseriesDataPoint(START_NS, 1.0),
+      new TimeseriesDataPoint(END_NS, 2.0)
+    );
+    when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
+    when(serviceMock.getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), anyInt()))
+      .thenReturn(pts);
+
+    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", 200);
+
+    assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
+    // Verify LTTB-optimised path was used
+    verify(serviceMock).getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), anyInt());
+    // Verify raw-fetch was NOT called
+    verify(serviceMock, never()).getDataPointsByTimeseries(anyLong(), any(), any());
+  }
+
+  @Test
+  void lttbPath_clampsMaxPoints_toHardMax() {
+    Timeseries tuple = aTuple();
+    when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
+    when(serviceMock.getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000)))
+      .thenReturn(List.of());
+
+    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", 99_999);
+
+    verify(serviceMock).getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000));
+  }
+
+  @Test
+  void lttbPath_usesDefault_whenMaxPointsAbsent() {
+    Timeseries tuple = aTuple();
+    when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
+    when(serviceMock.getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000)))
+      .thenReturn(List.of());
+
+    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", null);
+
+    verify(serviceMock).getDataPointsLttbOptimised(
+        eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000));
+  }
+
+  @Test
+  void noLttb_callsRawFetch_notOptimised() {
+    Timeseries tuple = aTuple();
+    when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
+    when(serviceMock.getDataPointsByTimeseries(anyLong(), any(), any())).thenReturn(List.of());
+
+    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, null, null);
+
+    verify(serviceMock, never()).getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt());
   }
 
   // ── container permission check is always called ────────────────────────────
