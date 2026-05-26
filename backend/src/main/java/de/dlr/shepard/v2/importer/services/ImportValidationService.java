@@ -230,6 +230,7 @@ public class ImportValidationService {
     plan.setStatus("VALID");
     plan.setSummaryJson(toJson(summary));
     plan.setWarningsJson(toJson(warnings));
+    plan.setManifestJson(manifestJson);
 
     return importPlanDAO.createOrUpdate(plan);
   }

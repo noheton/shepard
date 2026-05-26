@@ -42,6 +42,24 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  *       annotations.</li>
  * </ul>
  *
+ * <h2>SEMA-V6-011 — full SEMA-V6 field population</h2>
+ * Since SEMA-V6-011, the new annotation shape fields are also populated:
+ * <ul>
+ *   <li>{@code subjectKind} = {@code "DataObject"}</li>
+ *   <li>{@code subjectAppId} = the DataObject's UUID v7 (from {@link DataObject#getAppId()})</li>
+ *   <li>{@code vocabularyId} = {@code null} — legacy attributes have no controlled vocabulary</li>
+ *   <li>{@code sourceMode} = {@code "human"} — all legacy attributes are treated as human-authored</li>
+ *   <li>{@code sourceActivityAppId}, {@code validFromMillis}, {@code validUntilMillis},
+ *       {@code confidence} = {@code null}</li>
+ * </ul>
+ *
+ * <h2>SEMA-V6-011 — import-marker key filtering</h2>
+ * Keys that are transient ingest markers are NOT dual-written as annotations.
+ * Filtered prefixes/values: {@code source_*}, {@code v15_*}, {@code v16_*},
+ * {@code import_*}, {@code _import_*}, and exact values
+ * {@code v16_pass1}, {@code v16_pass2}, {@code import_ready}.
+ * A TRACE log is emitted for each skipped key.
+ *
  * <h2>Idempotency</h2>
  * On update, all existing backfill-sourced annotations for the DataObject are
  * deleted and replaced with the current attributes map.  This keeps the backfill
@@ -97,6 +115,11 @@ public class AttributeAnnotationDualWriteService {
    *   <li>{@code dataObject.id} is null (pre-persist state)</li>
    * </ul>
    *
+   * <p>SEMA-V6-011: import-marker keys are silently skipped (see
+   * {@link #isImportMarkerKey(String)}). All other keys get the full SEMA-V6
+   * annotation shape populated ({@code subjectKind}, {@code subjectAppId},
+   * {@code sourceMode}).
+   *
    * @param dataObject the just-persisted DataObject whose attributes should be
    *                   mirrored as semantic annotations
    */
@@ -125,11 +148,21 @@ public class AttributeAnnotationDualWriteService {
       return;
     }
 
+    // SEMA-V6-011: capture subjectAppId once for all annotations in this batch.
+    String subjectAppId = dataObject.getAppId();
+
     List<SemanticAnnotation> created = new ArrayList<>();
     for (Map.Entry<String, String> entry : attrs.entrySet()) {
       String key = entry.getKey();
       String value = entry.getValue();
       if (key == null || value == null) continue;
+
+      // SEMA-V6-011: skip transient ingest-marker keys (source_*, v16_*, import_*, etc.)
+      if (isImportMarkerKey(key)) {
+        Log.tracef("TPL4 dual-write: skipping import-marker attribute key '%s' for DataObject neo4jId=%d",
+          key, dataObject.getId());
+        continue;
+      }
 
       SemanticAnnotation annotation = new SemanticAnnotation();
       annotation.setPropertyIRI(PREDICATE_PREFIX + key);
@@ -137,6 +170,16 @@ public class AttributeAnnotationDualWriteService {
       annotation.setValueName(value);
       // No valueIRI, no repositories — synthetic predicate, uncontrolled value.
       annotation.setSource(BACKFILL_SOURCE);
+
+      // SEMA-V6-011: populate full SEMA-V6 annotation shape fields.
+      annotation.setSubjectKind("DataObject");
+      annotation.setSubjectAppId(subjectAppId);
+      annotation.setVocabularyId(null);      // no controlled vocabulary for legacy attributes
+      annotation.setSourceMode("human");     // all legacy attributes treated as human-authored
+      annotation.setSourceActivityAppId(null);
+      annotation.setValidFromMillis(null);
+      annotation.setValidUntilMillis(null);
+      annotation.setConfidence(null);
 
       SemanticAnnotation saved = semanticAnnotationDAO.createOrUpdate(annotation);
       entity.addAnnotation(saved);
@@ -148,6 +191,31 @@ public class AttributeAnnotationDualWriteService {
       Log.debugf("TPL4 dual-write: DataObject neo4jId=%s — wrote %s backfill annotation(s) from attributes.",
         (Object) dataObject.getId().toString(), (Object) String.valueOf(created.size()));
     }
+  }
+
+  /**
+   * SEMA-V6-011 — returns {@code true} for transient ingest-marker attribute keys
+   * that should NOT be dual-written as semantic annotations.
+   *
+   * <p>Filtered patterns:
+   * <ul>
+   *   <li>Starts with {@code source_} (e.g. {@code source_file}, {@code source_collection})</li>
+   *   <li>Starts with {@code v15_} or {@code v16_} (e.g. {@code v16_pass1}, {@code v16_pass2})</li>
+   *   <li>Starts with {@code import_} or {@code _import_}
+   *       (e.g. {@code import_ready}, {@code _import_batch})</li>
+   *   <li>Exact match: {@code v16_pass1}, {@code v16_pass2}, {@code import_ready}</li>
+   * </ul>
+   *
+   * @param key the attribute key to test
+   * @return {@code true} if the key should be filtered out of the dual-write path
+   */
+  static boolean isImportMarkerKey(String key) {
+    if (key == null) return false;
+    return key.startsWith("source_")
+      || key.startsWith("v15_")
+      || key.startsWith("v16_")
+      || key.startsWith("import_")
+      || key.startsWith("_import_");
   }
 
   /**

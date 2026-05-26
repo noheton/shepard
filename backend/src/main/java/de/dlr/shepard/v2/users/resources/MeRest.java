@@ -85,9 +85,11 @@ public class MeRest {
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "Partial-update the caller's User record.",
-    description = "RFC 7396 JSON Merge Patch. Accepts `orcid` (U1a) and `displayName` (U1b). " +
+    description = "RFC 7396 JSON Merge Patch. Accepts `orcid` (U1a), `displayName` (U1b), and " +
+    "`anonymizeInProvenance` (PROV1l, GDPR opt-out — when true, identity is omitted from :Activity records). " +
     "ORCID format: `NNNN-NNNN-NNNN-NNN[N|X]` (ISO 7064 mod 11-2 checked). " +
-    "Empty-string on either clears the field. Unknown body fields are ignored."
+    "Empty-string on orcid/displayName clears the field. Null on any field = leave unchanged. " +
+    "Unknown body fields are ignored."
   )
   @APIResponse(
     responseCode = "200",
@@ -141,6 +143,20 @@ public class MeRest {
         return Response.status(Response.Status.BAD_REQUEST).entity("displayName must be a string or null").build();
       }
     }
+    // PROV1l: anonymizeInProvenance opt-in/out.
+    if (patch.has("anonymizeInProvenance")) {
+      JsonNode anon = patch.get("anonymizeInProvenance");
+      if (anon.isNull()) {
+        // null = leave unchanged per RFC 7396.
+      } else if (anon.isBoolean()) {
+        current.setAnonymizeInProvenance(anon.asBoolean());
+      } else {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("anonymizeInProvenance must be a boolean or null")
+          .build();
+      }
+    }
+
     // Other patchable fields land in later U1 sub-slices; unknown
     // body keys are ignored per RFC 7396's open-world semantics.
 

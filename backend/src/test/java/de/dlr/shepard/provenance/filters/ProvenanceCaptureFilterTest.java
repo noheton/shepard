@@ -1,6 +1,7 @@
 package de.dlr.shepard.provenance.filters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.daos.MirroredUserDAO;
 import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -294,5 +296,150 @@ class ProvenanceCaptureFilterTest {
     assertEquals("READ", ProvenanceCaptureFilter.actionKindFor("GET"));
     assertEquals("READ", ProvenanceCaptureFilter.actionKindFor("HEAD"));
     assertEquals("EXECUTE", ProvenanceCaptureFilter.actionKindFor("CUSTOM"));
+  }
+
+  // ── PROV1l: anonymizeInProvenance ─────────────────────────────────────────
+
+  /**
+   * PROV1l test 1: default behaviour — when {@code anonymizeInProvenance=false}
+   * (or the :User node is absent), the {@code agentUsername} is included in the
+   * captured :Activity row.
+   */
+  @Test
+  void anonymizeOff_defaultBehaviour_identityIncluded() throws IOException {
+    User alice = new User("alice");
+    alice.setAnonymizeInProvenance(false);
+    when(userDAO.find("alice")).thenReturn(alice);
+
+    when(request.getMethod()).thenReturn("POST");
+    when(response.getStatus()).thenReturn(201);
+
+    filter.filter(request, response);
+
+    verify(provenance).record(
+      eq("CREATE"),
+      eq(null),
+      eq(null),
+      eq("alice"),           // identity IS included
+      eq("POST /v2/collections"),
+      eq("POST"),
+      eq("v2/collections"),
+      eq(201),
+      anyLong(),
+      anyLong(),
+      isNull()
+    );
+  }
+
+  /**
+   * PROV1l test 2: when {@code anonymizeInProvenance=true}, {@code agentUsername}
+   * is null on the captured :Activity row (identity suppressed).
+   */
+  @Test
+  void anonymizeOn_identitySuppressedInActivityRow() throws IOException {
+    User alice = new User("alice");
+    alice.setAnonymizeInProvenance(true);
+    when(userDAO.find("alice")).thenReturn(alice);
+
+    when(request.getMethod()).thenReturn("POST");
+    when(response.getStatus()).thenReturn(201);
+
+    filter.filter(request, response);
+
+    verify(provenance).record(
+      eq("CREATE"),
+      eq(null),
+      eq(null),
+      isNull(),              // identity suppressed
+      eq("POST /v2/collections"),
+      eq("POST"),
+      eq("v2/collections"),
+      eq(201),
+      anyLong(),
+      anyLong(),
+      isNull()               // mirroredUserAppId also suppressed
+    );
+  }
+
+  /**
+   * PROV1l test 3: when {@code anonymizeInProvenance=true} AND the request carries
+   * {@code X-Source-User-*} headers (cross-instance importer), both
+   * {@code agentUsername} AND {@code mirroredUserAppId} are null on the activity —
+   * no personal identifier leaks via either channel.
+   */
+  @Test
+  void anonymizeOn_suppressesMirroredUserAppIdToo() throws IOException {
+    User alice = new User("alice");
+    alice.setAnonymizeInProvenance(true);
+    when(userDAO.find("alice")).thenReturn(alice);
+
+    // Simulate X-Source-User-* headers being present (importer scenario).
+    when(request.getHeaderString(ProvenanceCaptureFilter.HDR_SOURCE_USERNAME)).thenReturn("ext_user");
+    when(request.getHeaderString(ProvenanceCaptureFilter.HDR_SOURCE_INSTANCE)).thenReturn("https://other.instance");
+    // Return a cached mirroredUserAppId from the enrichment cache.
+    when(enrichmentCache.get("https://other.instance", "ext_user"))
+      .thenReturn(java.util.Optional.of("mirrored-app-id-123"));
+
+    when(request.getMethod()).thenReturn("PUT");
+    when(response.getStatus()).thenReturn(200);
+
+    filter.filter(request, response);
+
+    verify(provenance).record(
+      eq("UPDATE"),
+      eq(null),
+      eq(null),
+      isNull(),              // agentUsername suppressed
+      eq("PUT /v2/collections"),
+      eq("PUT"),
+      eq("v2/collections"),
+      eq(200),
+      anyLong(),
+      anyLong(),
+      isNull()               // mirroredUserAppId also suppressed
+    );
+  }
+
+  /**
+   * PROV1l test 4: {@code resolveAgentUsername} returns the principal name when
+   * the :User node cannot be found (first-login race / DB hiccup) — fail-open
+   * to non-anonymized behaviour, never silently drop identity on DB error.
+   */
+  @Test
+  void resolveAgentUsername_defaultsToNonAnonymized_onUserNotFound() {
+    when(userDAO.find("alice")).thenReturn(null); // user not yet in DB
+
+    String result = filter.resolveAgentUsername("alice");
+
+    assertEquals("alice", result);
+  }
+
+  /**
+   * PROV1l test 5: {@code resolveAgentUsername} returns the principal name
+   * when a DB exception occurs — fail-safe, never blocks the request.
+   */
+  @Test
+  void resolveAgentUsername_defaultsToNonAnonymized_onDAOException() {
+    when(userDAO.find("alice")).thenThrow(new RuntimeException("Neo4j timeout"));
+
+    // Must not throw; must return the principal name (fail-open).
+    String result = filter.resolveAgentUsername("alice");
+
+    assertEquals("alice", result);
+  }
+
+  /**
+   * PROV1l test 6: {@code resolveAgentUsername} returns {@code null}
+   * when {@code anonymizeInProvenance=true}.
+   */
+  @Test
+  void resolveAgentUsername_returnsNull_whenAnonymizeEnabled() {
+    User alice = new User("alice");
+    alice.setAnonymizeInProvenance(true);
+    when(userDAO.find("alice")).thenReturn(alice);
+
+    String result = filter.resolveAgentUsername("alice");
+
+    assertNull(result);
   }
 }

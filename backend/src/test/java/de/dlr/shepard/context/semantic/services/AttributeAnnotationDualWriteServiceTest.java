@@ -1,7 +1,10 @@
 package de.dlr.shepard.context.semantic.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,6 +57,12 @@ public class AttributeAnnotationDualWriteServiceTest {
     DataObject do1 = new DataObject(42L);
     do1.setShepardId(99L);
     do1.setAttributes(attrs);
+    return do1;
+  }
+
+  private DataObject dataObjectWithAttrsAndAppId(Map<String, String> attrs, String appId) {
+    DataObject do1 = dataObjectWithAttrs(attrs);
+    do1.setAppId(appId);
     return do1;
   }
 
@@ -238,5 +247,124 @@ public class AttributeAnnotationDualWriteServiceTest {
 
     verify(semanticAnnotationDAO, never()).createOrUpdate(any());
     verify(semanticAnnotationDAO, never()).findAllSemanticAnnotationsByNeo4jId(any(Long.class));
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEMA-V6-011 Test 6: subjectKind, subjectAppId, sourceMode populated correctly
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void semaV6011_v6FieldsPopulatedOnDualWrite() {
+    String testAppId = "01900000-0000-7000-8000-000000000042";
+    DataObject do1 = dataObjectWithAttrsAndAppId(Map.of("propellant", "LOX/LH2"), testAppId);
+
+    when(semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(42L)).thenReturn(List.of());
+    when(versionableEntityConcreteDAO.findByNeo4jId(42L)).thenReturn(do1);
+    when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      SemanticAnnotation out = new SemanticAnnotation();
+      out.setId(200L);
+      out.setPropertyIRI(in.getPropertyIRI());
+      out.setPropertyName(in.getPropertyName());
+      out.setValueName(in.getValueName());
+      out.setSource(in.getSource());
+      out.setSubjectKind(in.getSubjectKind());
+      out.setSubjectAppId(in.getSubjectAppId());
+      out.setSourceMode(in.getSourceMode());
+      out.setVocabularyId(in.getVocabularyId());
+      out.setSourceActivityAppId(in.getSourceActivityAppId());
+      out.setConfidence(in.getConfidence());
+      return out;
+    });
+
+    service.backfillFromAttributes(do1);
+
+    ArgumentCaptor<SemanticAnnotation> captor = ArgumentCaptor.forClass(SemanticAnnotation.class);
+    verify(semanticAnnotationDAO, times(1)).createOrUpdate(captor.capture());
+
+    SemanticAnnotation written = captor.getValue();
+    assertEquals("DataObject", written.getSubjectKind(), "subjectKind must be 'DataObject'");
+    assertEquals(testAppId, written.getSubjectAppId(), "subjectAppId must match the DataObject's appId");
+    assertEquals("human", written.getSourceMode(), "sourceMode must be 'human' for legacy attributes");
+    assertNull(written.getVocabularyId(), "vocabularyId must be null — no controlled vocabulary");
+    assertNull(written.getSourceActivityAppId(), "sourceActivityAppId must be null");
+    assertNull(written.getConfidence(), "confidence must be null");
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEMA-V6-011 Test 7: import-marker keys are NOT dual-written
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void semaV6011_importMarkerKeysNotDualWritten() {
+    // Mix of import-marker keys (should be filtered) and domain keys (should be written)
+    DataObject do1 = dataObjectWithAttrs(Map.of(
+      "v16_pass1", "done",
+      "source_file", "/data/run004.h5",
+      "import_ready", "true",
+      "_import_batch", "batch-42",
+      "v15_migrate_flag", "1",
+      "propellant", "LOX/LH2",    // legitimate domain key — should be written
+      "test_engineer", "J.Smith"  // legitimate domain key — should be written
+    ));
+
+    when(semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(42L)).thenReturn(List.of());
+    when(versionableEntityConcreteDAO.findByNeo4jId(42L)).thenReturn(do1);
+    when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      SemanticAnnotation out = new SemanticAnnotation();
+      out.setId(201L);
+      out.setPropertyIRI(in.getPropertyIRI());
+      out.setPropertyName(in.getPropertyName());
+      out.setValueName(in.getValueName());
+      out.setSource(in.getSource());
+      return out;
+    });
+
+    service.backfillFromAttributes(do1);
+
+    // Only the 2 domain keys should have been written; 5 import-marker keys filtered.
+    ArgumentCaptor<SemanticAnnotation> captor = ArgumentCaptor.forClass(SemanticAnnotation.class);
+    verify(semanticAnnotationDAO, times(2)).createOrUpdate(captor.capture());
+
+    List<String> writtenKeys = captor.getAllValues().stream()
+      .map(SemanticAnnotation::getPropertyName)
+      .toList();
+    assertTrue(writtenKeys.contains("propellant"), "propellant must be written");
+    assertTrue(writtenKeys.contains("test_engineer"), "test_engineer must be written");
+    assertFalse(writtenKeys.contains("v16_pass1"), "v16_pass1 must be filtered");
+    assertFalse(writtenKeys.contains("source_file"), "source_file must be filtered");
+    assertFalse(writtenKeys.contains("import_ready"), "import_ready must be filtered");
+    assertFalse(writtenKeys.contains("_import_batch"), "_import_batch must be filtered");
+    assertFalse(writtenKeys.contains("v15_migrate_flag"), "v15_migrate_flag must be filtered");
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEMA-V6-011 Test 8: isImportMarkerKey() unit test — all filter patterns
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void semaV6011_isImportMarkerKey_filterPatterns() {
+    // Keys that MUST be filtered
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("source_file"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("source_collection"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("source_"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("v15_anything"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("v16_pass1"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("v16_pass2"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("v16_custom"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("import_ready"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("import_batch"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("_import_batch"));
+    assertTrue(AttributeAnnotationDualWriteService.isImportMarkerKey("_import_anything"));
+
+    // Keys that must NOT be filtered (legitimate domain keys)
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("bench"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("propellant"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("test_engineer"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("phase"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("description"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey("operator_id"));
+    assertFalse(AttributeAnnotationDualWriteService.isImportMarkerKey(null));
   }
 }
