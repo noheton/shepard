@@ -6,7 +6,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
@@ -14,16 +13,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.neo4j.ogm.session.Session;
 
 /**
  * Mirrors {@code FileContainerDAOTest} — the Cypher payload is the
  * load-bearing contract, so we snapshot the expected query strings
  * exactly. Same {@code @InjectMocks} idiom as the upstream DAO tests.
+ *
+ * <p>Uses {@code @ExtendWith(MockitoExtension.class)} instead of the
+ * backend-internal {@code BaseTestCase} (which requires the backend's
+ * test-jar on the classpath) — the two are functionally identical.
  */
-public class HdfContainerDAOTest extends BaseTestCase {
+@ExtendWith(MockitoExtension.class)
+public class HdfContainerDAOTest {
 
   @Mock
   private Session session;
