@@ -178,10 +178,11 @@ function relativeTime(date: Date | null | undefined): string {
 
     <!-- Empty state (authenticated but no collections) -->
     <div v-if="!error && isEmpty" class="d-flex flex-column align-center py-16">
-      <v-icon icon="mdi-folder-open-outline" size="72" color="textbody2" class="mb-4" />
-      <div class="text-h5 font-weight-medium mb-2">No collections yet</div>
-      <div class="text-body-1 text-medium-emphasis mb-6">
-        Create your first collection to start organising your research data.
+      <v-icon icon="mdi-folder-heart-outline" size="72" color="primary" class="mb-4" />
+      <div class="text-h5 font-weight-medium mb-2">Welcome to Shepard</div>
+      <div class="text-body-1 text-medium-emphasis mb-6 text-center" style="max-width: 420px">
+        Create your first collection to get started — group related datasets,
+        annotate them, and build a traceable research record.
       </div>
       <v-btn
         class="bg-primary text-canvas"
@@ -190,7 +191,7 @@ function relativeTime(date: Date | null | undefined): string {
         prepend-icon="mdi-plus-circle"
         @click="showCreateDialog = true"
       >
-        Create collection
+        Create your first collection
       </v-btn>
     </div>
 
