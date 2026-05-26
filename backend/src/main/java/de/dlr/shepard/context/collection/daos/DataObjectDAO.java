@@ -623,8 +623,13 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       );
       return;
     }
-    // Format as "YYYYMM" — %1$tY = 4-digit year, %1$tm = 2-digit month (zero-padded).
-    String ym = String.format("%1$tY%1$tm", createdAt);
+    // Format as "YYYYMM" using UTC explicitly so the result aligns with the
+    // Cypher backfill migration which uses datetime({epochMillis: x}).year/month (UTC).
+    // Using JVM-default TZ would cause divergence for DataObjects created near midnight
+    // in timezones east of UTC (e.g. CEST = UTC+2: 2026-06-01T00:30 CEST is
+    // 2026-05-31T22:30 UTC — Java TZ-naive would produce "202606", Cypher "202605").
+    var utc = createdAt.toInstant().atZone(java.time.ZoneOffset.UTC);
+    String ym = String.format("%04d%02d", utc.getYear(), utc.getMonthValue());
     String cypher =
       "MATCH (u:User {username: $username}) " +
       "MATCH (d:DataObject {appId: $dataObjectAppId}) " +
