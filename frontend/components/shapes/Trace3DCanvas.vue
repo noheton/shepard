@@ -84,7 +84,7 @@ function buildScene(canvas: HTMLCanvasElement) {
       positions[i * 3 + 1] = (p.y - cy) / range;
       positions[i * 3 + 2] = (p.z - cz) / range;
 
-      const t = allNaN ? i / (pts.length - 1) : normVals[i];
+      const t = allNaN ? i / (pts.length - 1) : (normVals[i] ?? 0);
       const [r, g, b] = colormapRgb(t, props.colormap ?? "inferno");
       colors[i * 3]     = r;
       colors[i * 3 + 1] = g;
@@ -103,9 +103,11 @@ function buildScene(canvas: HTMLCanvasElement) {
     const endMat   = new THREE.MeshBasicMaterial({ color: 0xff4444 });
     const startDot = new THREE.Mesh(dotGeo, startMat);
     const endDot   = new THREE.Mesh(dotGeo, endMat);
-    startDot.position.set(positions[0], positions[1], positions[2]);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    startDot.position.set(positions[0]!, positions[1]!, positions[2]!);
     const last = (pts.length - 1) * 3;
-    endDot.position.set(positions[last], positions[last + 1], positions[last + 2]);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    endDot.position.set(positions[last]!, positions[last + 1]!, positions[last + 2]!);
     scene.add(startDot, endDot);
   }
 
