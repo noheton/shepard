@@ -105,7 +105,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/49-in-app-user-docs.md`](ops/49-in-app-user-docs.md) | In-App User Docs — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/57-openapi-client-generator-evaluation.md`](ops/57-openapi-client-generator-evaluation.md) | OpenAPI Client Generator Evaluation — `/v2/` Codegen | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-05-23 |
-| [`aidocs/ops/p22-sse-proxy-compat-findings.md`](ops/p22-sse-proxy-compat-findings.md) | P22 — SSE proxy-compatibility findings | 2026-05-26 | — |
+| [`aidocs/ops/p22-sse-proxy-compat-findings.md`](ops/p22-sse-proxy-compat-findings.md) | P22 — SSE proxy-compatibility findings | 2026-05-26 | 2026-05-26 |
 | [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
