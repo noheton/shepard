@@ -1,6 +1,7 @@
 package de.dlr.shepard.data.timeseries.utilities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -130,6 +131,105 @@ public class CsvConverterTest {
     InputStream timeseriesDataStream = new ByteArrayInputStream(actualCsvString.getBytes(StandardCharsets.UTF_8));
     var actualTimeseriesDataIOMap = CsvConverter.convertToTimeseriesWithData(timeseriesDataStream);
     assertEquals(0, actualTimeseriesDataIOMap.size());
+  }
+
+  // ── Binary channel detection (TS-BINARY1) ─────────────────────────────────
+
+  @Test
+  void isBinaryChannel_nameContainsDigital_returnsTrue() {
+    var ts = new Timeseries("digital_valve", "device", "location", "sym", "field");
+    var pts = List.of(new TimeseriesDataPoint(1L, 0.0), new TimeseriesDataPoint(2L, 1.0));
+    assertTrue(CsvConverter.isBinaryChannel(ts, pts));
+  }
+
+  @Test
+  void isBinaryChannel_fieldContainsStatus_returnsTrue() {
+    var ts = new Timeseries("temperature", "device", "location", "sym", "valve_status");
+    var pts = List.of(new TimeseriesDataPoint(1L, 0.0), new TimeseriesDataPoint(2L, 1.0));
+    assertTrue(CsvConverter.isBinaryChannel(ts, pts));
+  }
+
+  @Test
+  void isBinaryChannel_onlyZeroAndOne_returnsTrue() {
+    var ts = new Timeseries("temperature", "device", "location", "sym", "field");
+    var pts = List.of(
+      new TimeseriesDataPoint(1L, 0.0),
+      new TimeseriesDataPoint(2L, 1.0),
+      new TimeseriesDataPoint(3L, 0.0)
+    );
+    assertTrue(CsvConverter.isBinaryChannel(ts, pts));
+  }
+
+  @Test
+  void isBinaryChannel_mixedValues_returnsFalse() {
+    var ts = new Timeseries("temperature", "device", "location", "sym", "field");
+    var pts = List.of(
+      new TimeseriesDataPoint(1L, 0.0),
+      new TimeseriesDataPoint(2L, 22.5),
+      new TimeseriesDataPoint(3L, 1.0)
+    );
+    assertFalse(CsvConverter.isBinaryChannel(ts, pts));
+  }
+
+  @Test
+  void isBinaryChannel_ordinaryName_returnsFalse() {
+    var ts = new Timeseries("temperature", "device", "location", "sym", "celsius");
+    var pts = List.of(
+      new TimeseriesDataPoint(1L, 20.5),
+      new TimeseriesDataPoint(2L, 21.0)
+    );
+    assertFalse(CsvConverter.isBinaryChannel(ts, pts));
+  }
+
+  @Test
+  void convertToTimeseriesWithData_binaryByName_coercedToBoolean() {
+    String csv =
+      """
+      DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
+      device,field,location,digital_valve,sym,1000000,0.0
+      device,field,location,digital_valve,sym,2000000,1.0
+      device,field,location,digital_valve,sym,3000000,0.0
+      """;
+    InputStream stream = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+    List<TimeseriesWithDataPoints> result = CsvConverter.convertToTimeseriesWithData(stream);
+    assertEquals(1, result.size());
+    var pts = result.get(0).getPoints();
+    assertEquals(Boolean.FALSE, pts.get(0).getValue());
+    assertEquals(Boolean.TRUE, pts.get(1).getValue());
+    assertEquals(Boolean.FALSE, pts.get(2).getValue());
+  }
+
+  @Test
+  void convertToTimeseriesWithData_binaryByValueSpread_coercedToBoolean() {
+    String csv =
+      """
+      DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
+      device,field,location,sensor_x,sym,1000000,0.0
+      device,field,location,sensor_x,sym,2000000,1.0
+      device,field,location,sensor_x,sym,3000000,1.0
+      """;
+    InputStream stream = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+    List<TimeseriesWithDataPoints> result = CsvConverter.convertToTimeseriesWithData(stream);
+    assertEquals(1, result.size());
+    for (var pt : result.get(0).getPoints()) {
+      assertTrue(pt.getValue() instanceof Boolean, "coerced value must be Boolean");
+    }
+  }
+
+  @Test
+  void convertToTimeseriesWithData_nonBinaryChannel_remainsDouble() {
+    String csv =
+      """
+      DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
+      device,field,location,temperature,sym,1000000,20.5
+      device,field,location,temperature,sym,2000000,21.3
+      """;
+    InputStream stream = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+    List<TimeseriesWithDataPoints> result = CsvConverter.convertToTimeseriesWithData(stream);
+    assertEquals(1, result.size());
+    for (var pt : result.get(0).getPoints()) {
+      assertTrue(pt.getValue() instanceof Double, "non-binary value must remain Double");
+    }
   }
 
   @Test

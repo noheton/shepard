@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -92,9 +93,77 @@ public final class CsvConverter {
     List<TimeseriesWithDataPoints> timeseriesWithDataPointsList = result
       .entrySet()
       .stream()
-      .map(entry -> new TimeseriesWithDataPoints(entry.getKey(), entry.getValue()))
+      .map(entry -> {
+        Timeseries ts = entry.getKey();
+        List<TimeseriesDataPoint> pts = entry.getValue();
+        if (isBinaryChannel(ts, pts)) {
+          pts = coerceToBooleanPoints(pts);
+          Log.infof("[ts-import] binary channel detected — coercing to Boolean: %s / %s", ts.getMeasurement(), ts.getField());
+        }
+        return new TimeseriesWithDataPoints(ts, pts);
+      })
       .collect(Collectors.toList());
     return timeseriesWithDataPointsList;
+  }
+
+  // Keywords in measurement or field that signal a binary (on/off) channel.
+  private static final Set<String> BINARY_NAME_TOKENS = Set.of(
+    "digital", "binary", "bool", "boolean", "status", "flag",
+    "enable", "enabled", "active", "switch", "relay", "on_off", "onoff", "state"
+  );
+
+  // Returns true if the channel looks like a binary (0/1) signal.
+  // Primary: measurement or field name contains a binary-indicative token.
+  // Fallback: all non-null Double values are exactly 0.0 or 1.0 and both appear.
+  static boolean isBinaryChannel(Timeseries ts, List<TimeseriesDataPoint> pts) {
+    String measurement = ts.getMeasurement() == null ? "" : ts.getMeasurement().toLowerCase(Locale.ROOT);
+    String field = ts.getField() == null ? "" : ts.getField().toLowerCase(Locale.ROOT);
+    for (String token : BINARY_NAME_TOKENS) {
+      if (measurement.contains(token) || field.contains(token)) {
+        return true;
+      }
+    }
+    // Value-spread fallback: all numeric values are in {0.0, 1.0} with both present.
+    boolean hasZero = false;
+    boolean hasOne = false;
+    boolean hasOther = false;
+    int nonNullCount = 0;
+    for (TimeseriesDataPoint dp : pts) {
+      Object v = dp.getValue();
+      if (v == null) continue;
+      nonNullCount++;
+      if (v instanceof Double d) {
+        if (d == 0.0) { hasZero = true; }
+        else if (d == 1.0) { hasOne = true; }
+        else { hasOther = true; break; }
+      } else if (v instanceof Integer i) {
+        if (i == 0) { hasZero = true; }
+        else if (i == 1) { hasOne = true; }
+        else { hasOther = true; break; }
+      } else {
+        hasOther = true;
+        break;
+      }
+    }
+    return !hasOther && nonNullCount >= 2 && (hasZero || hasOne);
+  }
+
+  // Converts Double/Integer 0→false and 1→true; leaves nulls as null.
+  private static List<TimeseriesDataPoint> coerceToBooleanPoints(List<TimeseriesDataPoint> pts) {
+    List<TimeseriesDataPoint> out = new ArrayList<>(pts.size());
+    for (TimeseriesDataPoint dp : pts) {
+      Object v = dp.getValue();
+      Boolean bVal = null;
+      if (v instanceof Double d) {
+        bVal = d != 0.0;
+      } else if (v instanceof Integer i) {
+        bVal = i != 0;
+      } else if (v instanceof Boolean b) {
+        bVal = b; // already boolean
+      }
+      out.add(new TimeseriesDataPoint(dp.getTimestamp(), bVal));
+    }
+    return out;
   }
 
   private static Object parseValue(Object input) {
