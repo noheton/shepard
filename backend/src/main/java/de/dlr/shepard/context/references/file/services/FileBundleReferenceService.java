@@ -315,16 +315,11 @@ public class FileBundleReferenceService implements IReferenceService<FileBundleR
       throw new NotFoundException(errorMsg);
     }
 
-    try {
-      // check that FileContainer is actually accessible and user has permissions to read from it
-      fileContainerService.getContainer(reference.getFileContainer().getId());
-    } catch (InvalidPathException e) {
-      Log.error(e.getMessage());
-      throw new NotFoundException(e.getMessage());
-    }
-
-    String mongoId = reference.getFileContainer().getMongoId();
-    return fileService.getPayload(mongoId, oid);
+    // FS1a: route through the storage SPI adapter. getFile() checks
+    // auth internally and handles both GridFS (hex OIDs) and Garage
+    // (UUID OIDs) — directly calling fileService.getPayload() here
+    // was broken for Garage because ObjectId rejects UUID-shaped OIDs.
+    return fileContainerService.getFile(reference.getFileContainer().getId(), oid);
   }
 
   /**
@@ -367,7 +362,8 @@ public class FileBundleReferenceService implements IReferenceService<FileBundleR
     for (var file : files) {
       NamedInputStream nis;
       try {
-        nis = fileService.getPayload(reference.getFileContainer().getMongoId(), file.getOid());
+        // FS1a: same SPI-routing fix as getPayload() above.
+        nis = fileContainerService.getFile(reference.getFileContainer().getId(), file.getOid());
         result.add(nis);
       } catch (NotFoundException e) {
         result.add(new NamedInputStream(file.getOid(), null, file.getFilename(), 0L));
