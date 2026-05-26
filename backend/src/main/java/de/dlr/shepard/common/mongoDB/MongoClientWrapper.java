@@ -27,8 +27,6 @@ public class MongoClientWrapper {
 
   private MongoDatabase mongoDatabase;
 
-  private static final String DEFAULT_DATABASE_NAME = "database";
-
   /**
    * Retrieve MongoDB database name from connection string and initialize a MongoDatabase object after injection.
    *
@@ -48,10 +46,11 @@ public class MongoClientWrapper {
   protected static String determineDatabaseName(String connectionString) {
     String dbName = new ConnectionString(connectionString).getDatabase();
     if (dbName == null || dbName.isBlank()) {
-      Log.warn(
-        "Could not retrieve a MongoDB database name from the connection string. Using fallback default database name: 'database'."
+      throw new IllegalStateException(
+        "MongoDB connection string has no database name. "
+          + "Set quarkus.mongodb.connection-string to include the database segment, "
+          + "e.g. mongodb://mongo@mongodb:27017/shepard"
       );
-      return DEFAULT_DATABASE_NAME;
     }
     return dbName;
   }
