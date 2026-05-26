@@ -707,8 +707,28 @@ with a "duplicate plugin id" message. Rename one of the
 plugins (the `id()` method, not the JAR filename — the JAR
 filename is irrelevant to discovery).
 
+## For plugin developers
+
+Writing a new `shepard-plugin-*` module? Start with the
+**[Plugin Development reference]({{ '/reference/plugin-development/' | relative_url }})**.
+It covers:
+
+- The two SPI mechanisms: `PluginManifest` + `PayloadKind` via `META-INF/services/`,
+  and `@ApplicationScoped` beans via Quarkus CDI scanning.
+- The Maven two-pass build sequence (`-DnoPlugins` bootstrap → plugin install →
+  `mvn package`).
+- Minimal working `PluginManifest` and `PayloadKind` implementations (grounded in
+  the shipped in-tree plugins).
+- The `:*Config` + `PATCH /v2/admin/<id>/config` pattern for admin-configurable
+  runtime knobs.
+- Testing requirements (manifest smoke test, REST resource tests, ≥ 70% coverage).
+- The three documentation artefacts every plugin must ship:
+  `plugins/<id>/docs/{reference,quickstart,install}.md`.
+- A PR checklist.
+
 ## See also
 
+- [Plugin Development reference]({{ '/reference/plugin-development/' | relative_url }}) — how to write a plugin.
 - [ADR-0023]({{ '/aidocs/63-architecture-decision-log#adr-0023' | relative_url }}) — plugin distribution decision (drop-in JARs via `ServiceLoader`).
 - [aidocs/47]({{ '/aidocs/47-dev-experience-and-plugin-system' | relative_url }}) — the SPI design + future registries.
 - [aidocs/68]({{ '/aidocs/68-plugin-vs-core-overview' | relative_url }}) — plugin-vs-core decision matrix.
