@@ -277,6 +277,102 @@ location, established date, and primary website. An admin sets the
 ROR id once via `PATCH /v2/admin/instance/ror` and every authenticated
 user can read it through `GET /v2/instance/identity`.
 
+### TS-IDc — single-key channel addressing (AFP thermal trail demo)
+
+A second demo Collection — **"TS-IDc demo — AFP TCP thermal trail"**
+— shows the new channel-identity endpoint in action. Open it, click the
+DataObject, and open its TimeseriesContainer. The v2 channel listing at
+`GET /v2/timeseries-containers/{id}/channels` returns each channel with
+a stable UUID (`shepardId`) alongside the legacy 5-tuple. The data
+endpoint then accepts that UUID directly:
+
+```
+GET /v2/timeseries-containers/{id}/channels/{shepardId}/data
+    ?start=…&end=…&downsample=lttb&max_points=200
+```
+
+LTTB (Largest-Triangle-Three-Buckets) downsampling is opt-in via
+`?downsample=lttb` — the server clips the raw trace to `max_points`
+visually-faithful samples, typically reducing 1000-point payloads to
+50 points for chart rendering without losing the peak/trough shape.
+The seed script at `examples/ts-id-demo/seed.py` seeds 4 channels
+(AFP tool-centre-point XYZ + pyrometer head temperature, 25 Hz for
+40 s) and exercises both endpoints end-to-end with `--demo`.
+
+### Personal landing page
+
+Sign in and click the Shepard logo to reach the personal home page.
+The digest shows collections you can access sorted by last-changed,
+each with a live sparkline of its data-object count over time. The
+"Recently changed" panel and the "Watched" panel use the same endpoint
+(`GET /v2/users/me/collections`) and update automatically.
+
+### Collection hero image + contributor badges
+
+Open any Collection. If a hero image was uploaded (`PATCH /v2/collections/{id}/hero`),
+it fills the top banner. Avatar badges for every contributor who has
+written to the Collection appear beside the title. Click any badge to
+reach that contributor's profile. The completeness score widget (below)
+lives in the same header row.
+
+### Metadata completeness score
+
+The Collection landing page carries a **Completeness** badge
+(RDM-005). It reflects how many of the recommended FAIR metadata
+fields (`name`, `description`, `license`, `accessRights`, contact
+information) are populated. Hover the badge for a per-field
+breakdown and a direct link to the missing fields. Target green
+(≥ 80 %) before publishing a Collection via the Unhide/Databus
+plugin.
+
+### License and access rights
+
+Every Collection and DataObject has `license` and `accessRights` fields
+(LIC1). Set them via the detail-page edit form or via the API:
+`PATCH /v2/collections/{appId}` / `PATCH /v2/data-objects/{appId}`.
+The metadata completeness score counts both fields; the planned
+export plugin will embed them into DataCite and schema.org
+records automatically.
+
+### Payload version history
+
+Open any FileContainer, StructuredDataContainer, or
+TimeseriesContainer and click **History** in the tab bar. The
+version viewer (PV1a/PV1b) shows every payload snapshot with who
+uploaded it, when, and the payload size delta. You can download
+any earlier version directly. The diff viewer for structured data
+(JSON payloads) shows field-level changes inline.
+
+### "Cite this dataset" card
+
+Click **Cite** on a Collection landing page to open the citation card
+(RDM-001). It generates a formatted APA/BibTeX/DataCite citation block
+from the Collection's metadata. The DataCite record is the basis for the
+Helmholtz Databus publish flow; if the Collection has no DOI yet, the card
+shows the `appId` UUID as the provisional identifier. Copy-to-clipboard
+works with one click.
+
+### View recipes — 3D visualization playground
+
+Navigate to `/shapes/render` (or follow the **View Recipes** link in the
+admin sidebar). The VIEW_RECIPE playground accepts a JSON template that
+maps timeseries channel IDs to spatial axes and a colour map. Paste in:
+
+```json
+{
+  "kind": "VIEW_RECIPE",
+  "axes": {"x": "tcp_x-shepardId", "y": "tcp_y-shepardId", "z": "tcp_z-shepardId"},
+  "value": "head_temp-shepardId",
+  "colormap": "inferno"
+}
+```
+
+and hit **Render** to see the AFP TCP thermal trail as a colour-mapped
+3D helical path (Trace3D, powered by Three.js). The channel IDs above
+are the `shepardId` values from the TS-IDc demo Collection. This is the
+first V_RECIPE implementation and the acceptance test for the M1
+milestone (TS-IDc + shapes/render + Trace3D).
+
 ---
 
 ## Where to next

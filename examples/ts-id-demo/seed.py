@@ -191,14 +191,28 @@ def _ensure_tsc(v1: str, headers: dict) -> int:
     return body["id"]
 
 
-def _ensure_ts_reference(v1: str, headers: dict, cid: int, do_id: int, tsc_id: int) -> None:
+def _ensure_ts_reference(v1: str, headers: dict, cid: int, do_id: int, tsc_id: int, t0_ns: int, t_end_ns: int) -> None:
     _, refs = _req("GET", f"{v1}/collections/{cid}/dataObjects/{do_id}/timeseriesReferences", headers)
     for r in refs if isinstance(refs, list) else []:
-        if r.get("datacontainerId") == tsc_id:
+        if r.get("timeseriesContainerId") == tsc_id:
             print(f"  SKIP  timeseriesReference → tsc {tsc_id}")
             return
+    ts_list = [
+        {
+            "measurement":  ch["measurement"],
+            "device":       ch["device"],
+            "location":     ch["location"],
+            "symbolicName": ch["symbolicName"],
+            "field":        ch["field"],
+        }
+        for ch in CHANNELS
+    ]
     _req("POST", f"{v1}/collections/{cid}/dataObjects/{do_id}/timeseriesReferences", headers, {
-        "datacontainerId": tsc_id,
+        "name":                  TSC_NAME,
+        "start":                 t0_ns,
+        "end":                   t_end_ns,
+        "timeseries":            ts_list,
+        "timeseriesContainerId": tsc_id,
     })
     print(f"  OK    timeseriesReference coll={cid} do={do_id} → tsc={tsc_id}")
 
@@ -208,18 +222,21 @@ def _seed_channel(v1: str, headers: dict, tsc_id: int, ch: dict, t0_ns: int) -> 
     sym = ch["symbolicName"]
     pts = _generate_points(sym, N_SAMPLES, t0_ns)
 
-    # Insert first batch (creates the timeseries row if it doesn't exist)
+    # Insert first batch (creates the timeseries row if it doesn't exist).
+    # v1 upload endpoint is /{containerId}/payload (not /timeseries).
     chunk = [{"timestamp": ts, "value": v} for ts, v in pts[:200]]
-    url = f"{v1}/timeseriesContainers/{tsc_id}/timeseries"
+    url = f"{v1}/timeseriesContainers/{tsc_id}/payload"
     try:
         _req("POST", url, headers, {
-            "measurement":  ch["measurement"],
-            "device":       ch["device"],
-            "location":     ch["location"],
-            "symbolicName": ch["symbolicName"],
-            "field":        ch["field"],
-            "valueType":    ch["valueType"],
-            "dataPoints":   chunk,
+            "timeseries": {
+                "measurement":  ch["measurement"],
+                "device":       ch["device"],
+                "location":     ch["location"],
+                "symbolicName": ch["symbolicName"],
+                "field":        ch["field"],
+                "valueType":    ch["valueType"],
+            },
+            "points": chunk,
         })
     except RuntimeError as e:
         if "already exists" in str(e) or "409" in str(e):
@@ -230,13 +247,16 @@ def _seed_channel(v1: str, headers: dict, tsc_id: int, ch: dict, t0_ns: int) -> 
     # Upload remaining chunks
     for start in range(200, len(pts), 200):
         sub = [{"timestamp": ts, "value": v} for ts, v in pts[start : start + 200]]
-        _req("PUT", url, headers, {
-            "measurement":  ch["measurement"],
-            "device":       ch["device"],
-            "location":     ch["location"],
-            "symbolicName": ch["symbolicName"],
-            "field":        ch["field"],
-            "dataPoints":   sub,
+        _req("POST", url, headers, {
+            "timeseries": {
+                "measurement":  ch["measurement"],
+                "device":       ch["device"],
+                "location":     ch["location"],
+                "symbolicName": ch["symbolicName"],
+                "field":        ch["field"],
+                "valueType":    ch["valueType"],
+            },
+            "points": sub,
         })
     print(f"  OK    channel {sym} ({len(pts)} points)")
 
@@ -338,13 +358,17 @@ def main() -> None:
     cid    = _ensure_collection(v1, hdrs)
     do_id  = _ensure_dataobject(v1, hdrs, cid)
     tsc_id = _ensure_tsc(v1, hdrs)
-    _ensure_ts_reference(v1, hdrs, cid, do_id, tsc_id)
 
     # Reference time: place data at "1 hour ago" so it's within the default
     # query window of any v2 caller using ?start=now-1h&end=now.
-    t0_ns = int((time.time() - 3600) * 1e9)
+    t0_ns   = int((time.time() - 3600) * 1e9)
+    t_end_ns = t0_ns + int(DURATION_S * 1e9)
+
+    # Seed channels first — the TS reference body requires non-empty timeseries list.
     for ch in CHANNELS:
         _seed_channel(v1, hdrs, tsc_id, ch, t0_ns)
+
+    _ensure_ts_reference(v1, hdrs, cid, do_id, tsc_id, t0_ns, t_end_ns)
 
     print(f"\n  Dataset live: Collection id={cid}  DO id={do_id}  TSC id={tsc_id}")
     print(f"  UI: /collections/{cid}/dataobjects/{do_id}")
