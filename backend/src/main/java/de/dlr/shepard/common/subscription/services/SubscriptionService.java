@@ -110,6 +110,7 @@ public class SubscriptionService {
    * @return A list of matching subscriptions
    */
   public List<Subscription> getMatchingSubscriptions(RequestMethod method) {
+    if (subscriptionDAO.countAll() == 0L) return List.of();
     Filter methodFilter = new Filter("requestMethod", ComparisonOperator.EQUALS, method);
     var subscriptions = subscriptionDAO.findMatching(methodFilter);
     var result = new ArrayList<Subscription>(subscriptions.size());

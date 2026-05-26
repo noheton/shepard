@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.entities.User;
@@ -70,12 +72,23 @@ public class SubscriptionServiceTest {
   public void getMatchingSubscriptionsTest() {
     var sub = new Subscription(1L);
 
+    when(dao.countAll()).thenReturn(1L);
     // unfortunately two equally created filters are not equal,
     // so we have to use any here
     when(dao.findMatching(any(Filter.class))).thenReturn(List.of(sub));
     var actual = service.getMatchingSubscriptions(RequestMethod.GET);
 
     assertEquals(List.of(sub), actual);
+  }
+
+  @Test
+  public void getMatchingSubscriptions_emptyRegistry_skipsIndexScan() {
+    when(dao.countAll()).thenReturn(0L);
+
+    var actual = service.getMatchingSubscriptions(RequestMethod.GET);
+
+    assertEquals(List.of(), actual);
+    verify(dao, never()).findMatching(any(Filter.class));
   }
 
   @Test
