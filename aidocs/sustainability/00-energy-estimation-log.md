@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| UI-DEEP-LINK | 2026-05-26 | code | 8k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | MEDIUM | feat(frontend): UI-DEEP-LINK-TYPED-LISTS — /containers/[type] redirect shim |
 | PERF7 | 2026-05-26 | code | 25k | 8k | 2.90 | 5 | 2 | 9.90 | 3.59 | MEDIUM | perf(frontend): PERF7 — lazy channel preview via IntersectionObserver + in-flight dedup |
 | PERF6 | 2026-05-26 | code | 18k | 5k | 2.10 | 5 | 2 | 9.10 | 3.30 | MEDIUM | perf(frontend): PERF6 — singleton DataObject fetch across lineage + prov graphs |
 | KIP1l-pending | 2026-05-26 | code | 20k | 6k | 2.30 | 5 | 2 | 9.30 | 3.38 | MEDIUM | feat(kip): KIP1l — existing-publication confirmation on re-publish |
@@ -478,4 +479,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added FAIR2+FAIR3 entry (createdByOrcid stamp + embargoEndDate + PublishService enforcement). | Claude Sonnet 4.6 |
 | 2026-05-26 | V1C2 — v5 wire-fidelity fixture corpus: 5 new fixture types (FileRef, TSRef, Subscription, UserGroup, SemanticAnnotation) + 5 IT test classes. | Claude Sonnet 4.6 |
 | 2026-05-26 | Added UH1e entry (Unhide ?validate=true structural validation endpoint). | Claude Sonnet 4.6 |
+| 2026-05-26 | Added UI-DEEP-LINK-TYPED-LISTS entry (/containers/[type] redirect shim). | Claude Sonnet 4.6 |
 
