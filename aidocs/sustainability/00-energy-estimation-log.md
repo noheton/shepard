@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| `3e2350f6` | 2026-05-26 | mixed | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | fix(NEO-AUDIT-003): V82 backfill 596 :Timeseries.appId NULL rows + aidocs/16/34/44 |
 | `fbeadaf5` | 2026-05-23 | code | 45k | 15k | 6.67 | 20 | 5 | 31.67 | 11.50 | MEDIUM | fix(frontend/landing): toEl() helper — ref on Vuetify component is instance, ... |
 | `87d98f34` | 2026-05-23 | doc | 4k | 1k | 0.50 | 0 | 0 | 0.50 | 0.18 | MEDIUM | docs(backlog): NETCDF1 — shepard-plugin-netcdf payload kind |
 | `613866a0` | 2026-05-23 | doc | 4k | 1k | 0.50 | 0 | 0 | 0.50 | 0.18 | MEDIUM | docs(backlog): PERSONA-ISSUES-FROM-AUDIT — persona-audit findings become GH I... |
