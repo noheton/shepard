@@ -201,11 +201,22 @@ watch(fileReference, () => {
                 <template
                   #[`item.name`]="{
                     value,
+                    item,
                   }: {
                     value: ShepardFileDataTableItem['name'];
+                    item: ShepardFileDataTableItem;
                   }"
                 >
-                  {{ value.filename }}
+                  <a
+                    v-if="
+                      item.actions.showDetails.enabled &&
+                      item.actions.showDetails.fileType !== 'unknown'
+                    "
+                    href="#"
+                    class="file-name-link"
+                    @click.prevent="() => onShowFileContentDialog(item.actions.showDetails)"
+                  >{{ value.filename }}</a>
+                  <span v-else>{{ value.filename }}</span>
                   <span
                     v-if="value.availability !== 'available'"
                     class="text-error"
@@ -279,6 +290,16 @@ watch(fileReference, () => {
 
   :deep(tbody) > tr > td {
     padding: 20px 24px !important;
+  }
+}
+
+.file-name-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 </style>

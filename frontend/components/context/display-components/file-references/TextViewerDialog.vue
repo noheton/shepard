@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FileReferenceApi } from "@dlr-shepard/backend-client";
+import { marked } from "marked";
 import InformationDialog from "~/components/common/dialog/InformationDialog.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapFileNameToCodeType } from "./shepardFileMappingUtil";
@@ -20,6 +21,14 @@ const showDialog = defineModel<boolean>("showDialog", {
 
 const textContent = ref<string>("");
 
+const isMarkdown = computed(() =>
+  props.fileName.split(".").pop()?.toLowerCase() === "md",
+);
+
+const codeType = computed(() =>
+  isMarkdown.value ? undefined : mapFileNameToCodeType(props.fileName),
+);
+
 function loadTextFile() {
   useShepardApi(FileReferenceApi)
     .value.getFilePayload({
@@ -32,7 +41,9 @@ function loadTextFile() {
       response
         .text()
         .then(value => {
-          textContent.value = value;
+          textContent.value = isMarkdown.value
+            ? (marked.parse(value) as string)
+            : value;
         })
         .catch(error => {
           handleError(error, "Loading text content");
@@ -56,7 +67,7 @@ loadTextFile();
       <RichTextEditor
         v-model="textContent"
         :is-editable="false"
-        :code-type="mapFileNameToCodeType(fileName)"
+        :code-type="codeType"
       />
     </template>
   </InformationDialog>
