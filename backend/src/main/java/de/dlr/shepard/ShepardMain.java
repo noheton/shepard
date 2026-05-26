@@ -65,6 +65,33 @@ public class ShepardMain implements QuarkusApplication {
     // zero instance-admins exist; logs the path for the operator.
     new BootstrapTokenInitializer().runIfNeeded();
 
+    // NEO-AUDIT-010 — belt-and-suspenders: warn if duplicate emails survived V81.
+    // V81 reconciles existing duplicates and adds a uniqueness constraint, so
+    // post-migration this count is always 0. A non-zero value here means either
+    // V81 has not yet run (e.g. migration was skipped) or the constraint failed to
+    // apply, leaving the system vulnerable to the OIDC duplicate-user failure mode.
+    if (session != null) {
+      var dupResult = session.query(
+        "MATCH (u:User) WHERE u.email IS NOT NULL AND u.email <> '' " +
+        "WITH u.email AS email, count(*) AS c WHERE c > 1 RETURN count(email) AS n",
+        java.util.Map.of()
+      );
+      var dupIter = dupResult.iterator();
+      if (dupIter.hasNext()) {
+        Object val = dupIter.next().get("n");
+        long dupCount = val instanceof Number num ? num.longValue() : 0L;
+        if (dupCount > 0) {
+          Log.warnf(
+            "NEO-AUDIT-010: %d email address(es) are shared by multiple :User nodes. " +
+            "V81__user_email_unique_constraint.cypher should have reconciled these. " +
+            "Run MATCH (u:User) WITH u.email AS e, collect(u.username) AS us " +
+            "WHERE size(us) > 1 RETURN e, us to investigate.",
+            dupCount
+          );
+        }
+      }
+    }
+
     // N1a — initialise the neosemantics graph config for
     // SemanticRepositoryType.INTERNAL repositories. Runs post-A1e
     // (after MigrationsRunner.apply) so the n10s_unique_uri
