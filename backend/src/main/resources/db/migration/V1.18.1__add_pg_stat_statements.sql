@@ -1,0 +1,39 @@
+-- V1.18.1__add_pg_stat_statements.sql
+--
+-- TS-AUDIT-2026-05-24-005: enable pg_stat_statements for query observability.
+--
+-- BACKGROUND
+-- ----------
+-- Without pg_stat_statements there is zero query-shape observability: no way to
+-- identify slow query patterns, count call frequencies, or measure planning vs.
+-- execution time ratios.  TimescaleDB's own tuning guide recommends it for every
+-- production instance.  This migration enables it.
+--
+-- PREREQUISITE: shared_preload_libraries
+-- ---------------------------------------
+-- pg_stat_statements must be listed in shared_preload_libraries before the
+-- CREATE EXTENSION call has any effect.  The compose stack
+-- (infrastructure/docker-compose.yml, timescaledb service) has been updated to
+-- pass:
+--   -c shared_preload_libraries='timescaledb,pg_stat_statements'
+-- If you run PostgreSQL outside the compose stack, add this to postgresql.conf
+-- and restart before applying this migration.
+--
+-- If pg_stat_statements is NOT in shared_preload_libraries when this migration
+-- runs, CREATE EXTENSION will succeed (the extension is installable) but the
+-- view will be empty until the next restart with the preload library set.
+-- This is safe — no data loss, no startup failure.
+--
+-- IDEMPOTENT
+-- ----------
+-- CREATE EXTENSION IF NOT EXISTS is idempotent by definition.
+--
+-- Operator verification (after migration + restart):
+--   SELECT extname FROM pg_extension WHERE extname = 'pg_stat_statements';
+--   -- returns 1 row if installed
+--
+--   SELECT query, calls, total_exec_time FROM pg_stat_statements
+--   ORDER BY total_exec_time DESC LIMIT 10;
+--   -- returns top 10 slowest query shapes (empty until first queries run)
+
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
