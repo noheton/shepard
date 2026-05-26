@@ -272,7 +272,27 @@ public class DataObjectV2Rest {
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
     DataObjectDetailV2IO io = new DataObjectDetailV2IO(d);
-    io.setContainers(buildContainersFromCypher(dataObjectAppId));
+    DataObjectDetailV2IO.Containers containers = buildContainersFromCypher(dataObjectAppId);
+    io.setContainers(containers);
+
+    // API1 — populate per-kind reference appId arrays so MCP agents and REST
+    // clients can navigate to containers without dereferencing opaque OGM long IDs.
+    List<String> tsRefIds = containers.getTimeseries().stream()
+      .map(de.dlr.shepard.v2.dataobject.io.ContainerRefIO::getReferenceAppId)
+      .filter(s -> s != null)
+      .collect(Collectors.toList());
+    List<String> fileRefIds = containers.getFiles().stream()
+      .map(de.dlr.shepard.v2.dataobject.io.ContainerRefIO::getReferenceAppId)
+      .filter(s -> s != null)
+      .collect(Collectors.toList());
+    List<String> sdRefIds = containers.getStructuredData().stream()
+      .map(de.dlr.shepard.v2.dataobject.io.ContainerRefIO::getReferenceAppId)
+      .filter(s -> s != null)
+      .collect(Collectors.toList());
+    io.setTimeseriesReferenceAppIds(tsRefIds.isEmpty() ? null : tsRefIds);
+    io.setFileReferenceAppIds(fileRefIds.isEmpty() ? null : fileRefIds);
+    io.setStructuredDataReferenceAppIds(sdRefIds.isEmpty() ? null : sdRefIds);
+
     return Response.ok(io)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();

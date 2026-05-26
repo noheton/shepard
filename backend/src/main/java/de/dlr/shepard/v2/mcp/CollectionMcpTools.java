@@ -178,20 +178,26 @@ public class CollectionMcpTools {
       "  \"description\": \"…\", \"status\": \"READY\",\n" +
       "  \"attributes\": { \"propellant\": \"LOX/LH2\", \"bench\": \"P8.1\", … },\n" +
       "  \"containers\": {\n" +
-      "    \"timeseries\":     [{containerAppId, containerName, containerId, referenceId}, …],\n" +
-      "    \"files\":          [{containerAppId, containerName, containerId, referenceId}, …],\n" +
-      "    \"structuredData\": [{containerAppId, containerName, containerId, referenceId}, …]\n" +
+      "    \"timeseries\":     [{containerAppId, containerName, containerId, referenceId, referenceAppId}, …],\n" +
+      "    \"files\":          [{containerAppId, containerName, containerId, referenceId, referenceAppId}, …],\n" +
+      "    \"structuredData\": [{containerAppId, containerName, containerId, referenceId, referenceAppId}, …]\n" +
       "  },\n" +
+      "  \"timeseriesReferenceAppIds\":     [\"<UUID v7>\", …] | null,\n" +
+      "  \"fileReferenceAppIds\":           [\"<UUID v7>\", …] | null,\n" +
+      "  \"structuredDataReferenceAppIds\": [\"<UUID v7>\", …] | null,\n" +
       "  \"predecessorSummaries\": [{appId, id, name, status}, …],\n" +
       "  \"successorSummaries\":   [...],\n" +
       "  \"childSummaries\":       [...],\n" +
       "  \"parentSummary\":        {appId, id, name, status} | null\n" +
       "}\n\n" +
+      "IMPORTANT — how to reach timeseries data:\n" +
+      "  Use `containers.timeseries[i].containerAppId` when calling `list_channels`.\n" +
+      "  `timeseriesReferenceAppIds` are the appIds of the REFERENCE NODES (graph edges),\n" +
+      "  NOT container appIds. Passing a referenceAppId to `list_channels` will 404.\n\n" +
       "Common next calls:\n" +
-      "  • For timeseries: take a `containers.timeseries[].containerAppId` and call " +
-      "    `list_channels(containerAppId)` to enumerate the 5-tuple channel " +
-      "    descriptors. (Channel POINTS are not yet exposed in Phase 1 — see " +
-      "    the legacy /shepard/api/… endpoints with `containers.timeseries[].containerId`.)\n" +
+      "  • For timeseries: take `containers.timeseries[].containerAppId` and call " +
+      "    `list_channels(containerAppId)`. Then call `get_channel_data` with the " +
+      "    5-tuple from `list_channels` to retrieve samples with optional LTTB downsampling.\n" +
       "  • For lineage: follow `predecessorSummaries[].appId` or `successorSummaries[].appId` " +
       "    by recursing into `get_data_object`. predecessor = the DataObject this " +
       "    one was produced from / depends on; successor = a DataObject produced FROM this one.\n" +

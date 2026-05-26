@@ -110,6 +110,9 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findRefCountsByAppIds(any())).thenReturn(Collections.emptyMap());
     // Default: time-bounds DAO returns empty map (no TS containers).
     when(dataObjectDAO.findTsContainerIdsByDataObjectAppIds(any())).thenReturn(Collections.emptyMap());
+    // Default: container-by-appId Cypher query returns empty-row map so
+    // buildContainersFromCypher() does not NPE on a null row.
+    when(dataObjectDAO.findContainersByDataObjectAppId(any())).thenReturn(Collections.emptyMap());
   }
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -417,6 +420,73 @@ class DataObjectV2RestTest {
     assertEquals(0, detail.getSuccessorSummaries().size());
     assertEquals(0, detail.getChildSummaries().size());
     assertNull(detail.getParentSummary());
+    // API1: no containers → typed refAppId arrays are null (omitted from JSON).
+    assertNull(detail.getTimeseriesReferenceAppIds());
+    assertNull(detail.getFileReferenceAppIds());
+    assertNull(detail.getStructuredDataReferenceAppIds());
+  }
+
+  /**
+   * API1 — typed reference appId arrays are populated when the Cypher query
+   * returns container rows carrying {@code refAppId} values.
+   */
+  @Test
+  void getDataObject_returnsTimeseriesReferenceAppIds() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "tr-004");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    // Simulate Cypher returning one TS reference with a known refAppId.
+    String tsRefAppId = "01900000-0000-7000-aaaa-000000000001";
+    String tsContainerAppId = "01900000-0000-7000-bbbb-000000000002";
+    Map<String, Object> tsRef = Map.of(
+      "refShepardId", 55L,
+      "refAppId", tsRefAppId,
+      "containerAppId", tsContainerAppId,
+      "containerName", "vibration-ts",
+      "containerId", 66L
+    );
+    when(dataObjectDAO.findContainersByDataObjectAppId(DO_APP_ID))
+      .thenReturn(Map.of("tsRefs", List.of(tsRef), "fileRefs", List.of(), "sdRefs", List.of()));
+
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    DataObjectDetailV2IO detail = (DataObjectDetailV2IO) r.getEntity();
+    assertNotNull(detail.getTimeseriesReferenceAppIds());
+    assertEquals(1, detail.getTimeseriesReferenceAppIds().size());
+    assertEquals(tsRefAppId, detail.getTimeseriesReferenceAppIds().get(0));
+    // Typed container list also correctly populated.
+    assertEquals(1, detail.getContainers().getTimeseries().size());
+    assertEquals(tsContainerAppId, detail.getContainers().getTimeseries().get(0).getContainerAppId());
+    // File and SD arrays null (no refs).
+    assertNull(detail.getFileReferenceAppIds());
+    assertNull(detail.getStructuredDataReferenceAppIds());
+  }
+
+  /**
+   * API1 — the legacy {@code referenceIds} long array from the frozen v1 parent
+   * class must still be present in the response (backward compat guard).
+   */
+  @Test
+  void getDataObject_legacyReferenceIdsArrayStillPresent() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    DataObjectDetailV2IO detail = (DataObjectDetailV2IO) r.getEntity();
+    // The legacy field from DataObjectIO must be present (non-null, empty array for
+    // a stub DO with no references) — confirms v1 wire shape is intact.
+    assertNotNull(detail.getReferenceIds());
   }
 
   // ── ANC-1: predecessors / successors / children ───────────────────────────
