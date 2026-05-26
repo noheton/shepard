@@ -36,6 +36,20 @@
 		}
 	}
 
+	# P22: SSE streaming endpoint — must flush immediately or Caddy buffers events.
+	# Caddy does NOT honour X-Accel-Buffering: no (that's an nginx convention);
+	# flush_interval -1 is the Caddy equivalent. Without this block the
+	# handle /v2/* catch-all would buffer and clients would receive events late.
+	handle /v2/collections/*/events {
+		reverse_proxy backend:8080 {
+			flush_interval -1
+			transport http {
+				read_timeout 2h
+				write_timeout 2h
+			}
+		}
+	}
+
 	# v2 development surface (this fork's additions) — direct to backend so
 	# programmatic callers can authenticate with X-API-KEY / Bearer at this
 	# hostname instead of hopping through NextAuth.
