@@ -40,6 +40,23 @@ async function clearOrcid(page: import("@playwright/test").Page) {
   // state. Best-effort — if the field already exists and is editable we
   // wipe it via the inline form, otherwise we just continue.
   await page.goto("/me#profile");
+  // Wait for the profile-identity-section to appear before touching the
+  // ORCID input — hash-based navigation via useRouteFragment means the
+  // section may not be visible immediately after goto resolves.
+  // If it never appears (e.g. the page is broken), skip the clear rather
+  // than failing teardown (RDM-002-E2E-FIX).
+  const sectionVisible = await page
+    .waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    })
+    .then(() => true)
+    .catch(() => {
+      console.warn(
+        "clearOrcid: profile-identity-section did not appear within 8s — skipping ORCID clear",
+      );
+      return false;
+    });
+  if (!sectionVisible) return;
   const input = page.getByTestId("profile-orcid-input").locator("input");
   if (await input.count()) {
     await input.first().fill("");
@@ -73,6 +90,12 @@ test.describe("RDM-002: ORCID inline input on /me/profile", () => {
 
   test("ORCID input is visible without clicking Edit", async ({ page }) => {
     await page.goto("/me#profile");
+    // Guard: wait for the Identity section before asserting — hash-based
+    // navigation via useRouteFragment may not have resolved yet when goto
+    // returns (RDM-002-E2E-FIX).
+    await page.waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    });
     // The "Identity" section + ORCID input must be in the DOM and
     // visible on first paint — no dialog open, no Edit click needed.
     const identity = page.getByTestId("profile-identity-section");
@@ -89,6 +112,10 @@ test.describe("RDM-002: ORCID inline input on /me/profile", () => {
     page,
   }) => {
     await page.goto("/me#profile");
+    // Guard: ensure section is rendered before interacting (RDM-002-E2E-FIX).
+    await page.waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    });
     const orcidInput = page.getByTestId("profile-orcid-input").locator("input");
     await orcidInput.fill(VALID_ORCID);
     await page.getByTestId("profile-identity-save").click();
@@ -112,6 +139,10 @@ test.describe("RDM-002: ORCID inline input on /me/profile", () => {
     page,
   }) => {
     await page.goto("/me#profile");
+    // Guard: ensure section is rendered before interacting (RDM-002-E2E-FIX).
+    await page.waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    });
     const orcidInput = page.getByTestId("profile-orcid-input").locator("input");
     await orcidInput.fill(INVALID_ORCID);
     // Vuetify renders error-messages inside a .v-messages slot under
@@ -125,6 +156,10 @@ test.describe("RDM-002: ORCID inline input on /me/profile", () => {
 
   test("the alternate X-checksum ORCID is accepted", async ({ page }) => {
     await page.goto("/me#profile");
+    // Guard: ensure section is rendered before interacting (RDM-002-E2E-FIX).
+    await page.waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    });
     const orcidInput = page.getByTestId("profile-orcid-input").locator("input");
     await orcidInput.fill(VALID_ORCID_ALT);
     const save = page.getByTestId("profile-identity-save");
@@ -140,6 +175,10 @@ test.describe("RDM-002: ORCID inline input on /me/profile", () => {
     page,
   }) => {
     await page.goto("/me#profile");
+    // Guard: ensure section is rendered before interacting (RDM-002-E2E-FIX).
+    await page.waitForSelector('[data-testid="profile-identity-section"]', {
+      timeout: 8000,
+    });
     const orcidInput = page.getByTestId("profile-orcid-input").locator("input");
     await orcidInput.fill(VALID_ORCID);
     await page.getByTestId("profile-identity-save").click();
