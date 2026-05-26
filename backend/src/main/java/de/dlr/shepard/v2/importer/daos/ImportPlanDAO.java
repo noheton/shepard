@@ -102,6 +102,50 @@ public class ImportPlanDAO extends GenericDAO<ImportPlan> {
     return count + "|" + last;
   }
 
+  // ─── IMP-STATS-01 metric queries ─────────────────────────────────────────
+
+  /**
+   * Count of all non-deleted DataObjects across every Collection.
+   *
+   * <p>Used by {@link de.dlr.shepard.v2.importer.services.ImportStatsCollector}
+   * to report system-wide ingest progress. Runs a single Cypher COUNT with no
+   * graph load.
+   *
+   * @return total non-deleted DataObject count
+   */
+  public long countAllDataObjects() {
+    String query =
+      "MATCH (d:DataObject) " +
+      "WHERE d.deleted IS NULL OR d.deleted = false " +
+      "RETURN count(d) AS cnt";
+    var result = session.query(query, Map.of());
+    var iter   = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object cnt = iter.next().get("cnt");
+    return cnt != null ? ((Number) cnt).longValue() : 0L;
+  }
+
+  /**
+   * Sum of {@code ShepardFile.fileSize} for all files where the field is
+   * non-null (files uploaded before FB1a have {@code null} — excluded from sum).
+   *
+   * <p>Used by {@link de.dlr.shepard.v2.importer.services.ImportStatsCollector}
+   * to report total bytes stored via file containers.
+   *
+   * @return total bytes from all sized files, or 0 when no sized files exist
+   */
+  public long sumFileSizeBytes() {
+    String query =
+      "MATCH (f:ShepardFile) " +
+      "WHERE f.fileSize IS NOT NULL " +
+      "RETURN sum(f.fileSize) AS total";
+    var result = session.query(query, Map.of());
+    var iter   = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object total = iter.next().get("total");
+    return total != null ? ((Number) total).longValue() : 0L;
+  }
+
   /**
    * Find DataObject names in the given Collection that clash with the
    * supplied list of candidate names.
