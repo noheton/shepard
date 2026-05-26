@@ -67,6 +67,8 @@ Swagger UI at <https://shepard-api.nuclide.systems/shepard/api/q/swagger-ui>.
 > demonstrator at Lampoldshausen but contains no real measurement data.
 > See `examples/lumen-showcase/seed.py` for the generation logic.
 
+**DLR SEA:** Florian Krebs (fkrebs@nucli.de) — per SE-Rahmenrichtlinie §4.1.5
+
 ## Quick test / evaluation setup
 
 There is a Docker Compose configuration in `infrastructure-local` which you can use to quickly try out shepard.

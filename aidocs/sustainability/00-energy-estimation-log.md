@@ -504,4 +504,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK entry (lazy DO map, three honest lineage states, NuxtLink rows + 2 test files). | Claude Sonnet 4.6 |
 | 2026-05-26 | UX-SPATIAL-VIEWER-OR-BANNER + UX-SIDEBAR-COLLAPSE: spatial banner, video scaffold page + test, sidebar desktop collapse toggle. ~0.003 kWh / ~1.1 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | PERF5 — batch DataObjectService N+1 Neo4j loop into single `WHERE d.shepardId IN $ids` query via `DataObjectDAO.findByCollectionAndShepardIds`; 2 unit tests. ~0.002 kWh / ~0.8 gCO₂e (inference only; net runtime savings: up to N-1 Neo4j round-trips per create/update at MFFD scale). | Claude Sonnet 4.6 |
+| 2026-05-26 | COMP-SE-ROLES + COMP-SE-DOCS + API3 — DLR SE compliance docs (SEA naming, AK classification) + container safe-delete design doc. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 

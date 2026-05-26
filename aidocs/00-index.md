@@ -149,6 +149,24 @@ Design notes, analysis docs, and strategy docs for this fork of
 
 ---
 
+## DLR SE Compliance
+
+**Software-Engineering-Ansprechperson (SEA):** Florian Krebs (fkrebs@nucli.de)  
+*Per DLR SE-Rahmenrichtlinie §4.1.5 — nominated 2026-05-26.*
+
+## DLR Software Classification
+
+| Attribute | Value | Reference |
+|---|---|---|
+| Anwendungsklasse | AK 1 (aspirational AK 2) | SE-Rahmenrichtlinie §4.2 |
+| Reifegrad self-assessment | Based on `aidocs/44-fork-vs-upstream-feature-matrix.md` | |
+| SEA | Florian Krebs (fkrebs@nucli.de) | §4.1.5 |
+| First assessed | 2026-05-26 | |
+
+Shepard is classified as **Anwendungsklasse 1** (research software with long-term Weiterentwicklungsperspektive). The aspirational target is **AK 2** as the plugin ecosystem matures and external institute adoption grows. The Reifegrad is tracked via the feature matrix (`aidocs/44`).
+
+---
+
 ## `archive/` — Historical snapshots & superseded docs
 
 Early-phase analysis snapshots and superseded plans. Kept for auditability.
