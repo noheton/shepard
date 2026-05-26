@@ -12,6 +12,7 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 
 definePageMeta({ layout: "collection" });
 
@@ -667,6 +668,21 @@ async function saveEmbargoEdit() {
                       :collection-id="collectionId"
                     />
                   </div>
+                </ExpansionPanelItem>
+                <!-- UX-PROV1: Ancestor chain — advanced mode only.
+                     Shows the upstream predecessor chain as a vertical
+                     timeline using the ANC-1 predecessor-chain endpoint.
+                     Strict superset rule: this panel is additive; it
+                     never hides anything shown in basic mode. -->
+                <ExpansionPanelItem
+                  v-if="advancedMode && dataObject.appId && collection.appId"
+                  title="Ancestor Chain"
+                >
+                  <AncestorChainPanel
+                    :collection-id="collectionId"
+                    :collection-app-id="collection.appId"
+                    :data-object-app-id="dataObject.appId"
+                  />
                 </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>
