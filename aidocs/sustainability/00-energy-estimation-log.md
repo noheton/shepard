@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| KIP1k-pending | 2026-05-26 | code | 40k | 15k | 6.30 | 20 | 5 | 31.30 | 11.36 | MEDIUM | feat(kip): KIP1k — publication-status badge on Collection + DataObject pages |
 | V1C1 | 2026-05-26 | feat | 120k | 18k | 12.6 | 20 | 5 | 37.6 | 13.65 | MEDIUM | feat(v1compat): V1C1 — suppressDeprecationHeaders Phase 2 runtime toggle |
 | UH1f-pending | 2026-05-26 | code | 10k | 4k | 1.65 | 20 | 5 | 26.65 | 9.68 | MEDIUM | feat(unhide): UH1f — instance-admin auth fallback on private-feed endpoint |
 | M4Ia-pending | 2026-05-26 | mixed | 30k | 8k | 3.65 | 20 | 5 | 28.65 | 10.40 | MEDIUM | feat(semantics): M4I-a — canonical URL + fetchOnSeed for metadata4ing vocabulary |

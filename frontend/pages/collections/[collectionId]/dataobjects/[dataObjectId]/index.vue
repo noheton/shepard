@@ -6,6 +6,7 @@ import HdfReferencesPane from "~/components/context/dataobject/HdfReferencesPane
 import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
+import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
@@ -273,11 +274,11 @@ async function saveEmbargoEdit() {
                 id-label="Data Object ID"
               />
             </v-row>
-            <!-- LIC1/FAIR2/FAIR3: FAIR metadata strip — license + accessRights
-                 + embargoEndDate + createdByOrcid. Same affordance pattern
-                 as the Collection detail page. -->
+            <!-- LIC1/FAIR2/FAIR3/KIP1k: FAIR metadata strip — license + accessRights
+                 + embargoEndDate + createdByOrcid + publication status. Same affordance
+                 pattern as the Collection detail page. -->
             <v-row
-              v-if="dataObjectLicense || dataObjectAccessRights || dataObjectEmbargoEndDate || dataObjectCreatedByOrcid"
+              v-if="dataObjectLicense || dataObjectAccessRights || dataObjectEmbargoEndDate || dataObjectCreatedByOrcid || dataObject.appId"
               no-gutters
               class="pb-3 ga-2 align-center flex-wrap"
               data-testid="fair-metadata-strip"
@@ -289,6 +290,12 @@ async function saveEmbargoEdit() {
               <AccessRightsChip
                 v-if="dataObjectAccessRights"
                 :access-rights="dataObjectAccessRights"
+              />
+              <!-- KIP1k: publication-status badge — informational only. -->
+              <PublicationStatusBadge
+                v-if="dataObject.appId"
+                entity-kind="data-objects"
+                :entity-app-id="dataObject.appId"
               />
               <!-- FAIR3: embargoEndDate — shown when set; editable by Write users. -->
               <span

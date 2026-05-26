@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 23 |
 | `idea` | 9 |
-| `feature-defined` | 92 |
+| `feature-defined` | 94 |
 | `audited-by-personas` | 71 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 66 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **354** |
+| **total docs** | **356** |
 | **UNTAGGED** | **0** |
 
 ## fragment (39)
@@ -129,7 +129,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (92)
+## feature-defined (94)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -139,6 +139,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | — |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -205,6 +206,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/102-thesis-timeline-of-ideas.md`](strategy/102-thesis-timeline-of-ideas.md) | Timeline of ideas across Shepard's intellectual trajectory | 2026-05-23 | — |
 | [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-26 | 2026-05-26 |
 | [`aidocs/strategy/104-author-research-profile.md`](strategy/104-author-research-profile.md) | Author research profile — Florian Krebs, DLR ZLP Augsburg | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/105-postgres-multitenant-decision.md`](strategy/105-postgres-multitenant-decision.md) | aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED | 2026-05-24 | 2026-05-24 |

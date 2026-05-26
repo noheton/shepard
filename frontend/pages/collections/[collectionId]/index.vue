@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
+import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
@@ -264,7 +265,7 @@ useHead({
                  target — the completeness widget scrolls here on the
                  "Add license" / "Set access rights" actions. -->
             <v-row
-              v-if="collectionLicense || collectionAccessRights"
+              v-if="collectionLicense || collectionAccessRights || collectionAppId"
               id="metadata-license-edit"
               no-gutters
               class="pb-3 ga-2 align-center"
@@ -277,12 +278,21 @@ useHead({
                 v-if="collectionAccessRights"
                 :access-rights="collectionAccessRights"
               />
+              <!-- KIP1k: publication-status badge — shows "Published" chip when
+                   a :Publication row exists for this Collection. Informational;
+                   the PublishButton below is the action affordance. -->
+              <PublicationStatusBadge
+                v-if="collectionAppId"
+                entity-kind="collections"
+                :entity-app-id="collectionAppId"
+              />
             </v-row>
-            <!-- RDM-005 deep-link anchor — also placed unconditionally so
-                 the scrollIntoView target exists even when both fields
-                 are unset (the most common "needs fixing" state). -->
+            <!-- RDM-005 deep-link anchor — rendered only when collectionAppId is null
+                 (very rare: fallback for pre-L2 collections without an appId).
+                 When appId is present the v-row above is always shown
+                 (at minimum with the PublicationStatusBadge). -->
             <div
-              v-else
+              v-if="!collectionAppId && !collectionLicense && !collectionAccessRights"
               id="metadata-license-edit"
               class="pb-1 text-caption text-medium-emphasis"
             >
