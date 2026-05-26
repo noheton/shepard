@@ -54,7 +54,7 @@ describe("useFetchAdminActivities — initial load", () => {
     const { activities } = useFetchAdminActivities();
     await flush();
     expect(activities.value).toHaveLength(2);
-    expect(activities.value[0].appId).toBe("act-1");
+    expect(activities.value[0]?.appId).toBe("act-1");
   });
 
   it("sets hasMore=true when response length equals limit", async () => {

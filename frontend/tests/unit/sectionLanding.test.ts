@@ -61,7 +61,9 @@ describe("SectionIndexLanding helpers", () => {
     // (which compares against route.hash.slice(1)) keeps working.
     const out = buildSectionLandingCards(sampleCards);
     for (const card of out) {
-      expect(card.to.hash.startsWith("#")).toBe(true);
+      // Narrow the union — sample cards have no `path`, so `to` is always the hash object.
+      const to = card.to as { hash: string };
+      expect(to.hash.startsWith("#")).toBe(true);
       expect(card.to).not.toHaveProperty("path");
       expect(card.to).not.toHaveProperty("name");
     }
