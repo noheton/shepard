@@ -18,9 +18,13 @@ import org.neo4j.ogm.annotation.Property;
  *
  * <p>Designed in {@code aidocs/55-provenance-and-activity-overhaul.md}.
  * Persisted as {@code (:Activity)} Neo4j nodes; the
- * {@code (:User)-[:WAS_ASSOCIATED_WITH]->(:Activity)} edge ties the
- * activity to the acting Agent; {@code :USED} / {@code :GENERATED}
- * edges (not yet wired in this slice) tie to the target Entity.
+ * {@code (:Activity)-[:WAS_ASSOCIATED_WITH]->(:User)} edge ties the
+ * activity to the acting Agent (PROV-O canonical OUTGOING direction);
+ * {@code (:Activity)-[:GENERATED]->(:BasicEntity)} for CREATE actions
+ * and {@code (:Activity)-[:USED]->(:BasicEntity)} for READ/UPDATE/DELETE
+ * actions tie to the target Entity.
+ * Edges are wired at write time via {@code ActivityDAO.wireEdges} and
+ * backfilled by {@code V77__backfill_activity_prov_edges.cypher}.
  *
  * <p>v1 captures POST / PUT / PATCH / DELETE on 2xx responses; read
  * capture is opt-in via {@code shepard.provenance.capture-reads}.

@@ -124,7 +124,12 @@ public class ProvenanceService {
       a.setMirroredUserAppId(mirroredUserAppId);
       // PR-3 audit-chain stamp — best-effort, never blocks the write.
       hmacChainService.stamp(a);
-      return activityDAO.createOrUpdate(a);
+      Activity saved = activityDAO.createOrUpdate(a);
+      // NEO-AUDIT-001: wire PROV-O edges (WAS_ASSOCIATED_WITH / GENERATED / USED)
+      // best-effort — failures are already swallowed inside wireEdges, but any
+      // RuntimeException propagating here is also caught by the outer try/catch.
+      activityDAO.wireEdges(saved, agentUsername, targetAppId, actionKind);
+      return saved;
     } catch (RuntimeException e) {
       // Provenance is observability; never block the request on it.
       Log.debugf(e, "Provenance capture failed for %s %s -> %s", method, path, status);
