@@ -25,8 +25,8 @@ const props = defineProps<{
 }>();
 
 const { chain, isLoading, hasError } = useFetchPredecessorChain(
-  computed(() => props.collectionAppId),
-  computed(() => props.dataObjectAppId),
+  props.collectionAppId,
+  props.dataObjectAppId,
   10,
 );
 </script>
