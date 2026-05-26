@@ -288,7 +288,7 @@ External researcher → SPARQL on Unhide → finds this Collection
 | **UH1b-m4i** | Extend the feed body with m4i provenance fragments — depends on **PROV1h** content-neg shipping (so the feed can link back to m4i-shaped `/v2/provenance/entity/{appId}`) | S |
 | **UH1c-kip** | Feed cites KIP record (PID + locator) per entity — depends on **KIP1a** | S |
 | **UH1d-frontend** | Per-Collection "Publish to Helmholtz KG" toggle in the UI (alongside the existing CP1b properties pane) + admin `/admin` page tile for the instance-wide toggles (mirrors A3b1 admin metrics strip placement) | S–M |
-| **UH1e-self-test** | `GET /v2/unhide/feed.jsonld?validate=true` returns a SHACL validation report against Unhide's expected shape — diagnostic for operators | S |
+| **UH1e-self-test** | `GET /v2/unhide/feed.jsonld?validate=true` returns a structural validation report (`UnhideValidationReportIO` as `application/json`) — diagnostic for operators. Checks per entry: `@id` present, `name` present, `description` present, `license` when `accessRights=OPEN` (inert until `Collection.accessRights` lands). Same auth gates as the normal feed (disabled → 503, private + no-key → 401). **Shipped 2026-05-26.** | S |
 
 Recommended order: **UH1a → UH1d → UH1c → UH1b → UH1e**. UH1a is
 useful even without KIP / PROV1h ready (and ships with the

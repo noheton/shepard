@@ -4,18 +4,21 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
+import de.dlr.shepard.plugins.unhide.io.UnhideValidationReportIO;
 import de.dlr.shepard.plugins.unhide.services.UnhideConfigService;
 import de.dlr.shepard.plugins.unhide.services.UnhideFeedService;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
@@ -26,7 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * UH1a — public feed endpoint for the Helmholtz Unhide harvester.
+ * UH1a / UH1e — public feed endpoint for the Helmholtz Unhide harvester.
  *
  * <p>Path: {@code GET /v2/unhide/feed.jsonld}. Listed in
  * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} so
@@ -45,6 +48,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>Otherwise → 401 RFC 7807 {@code unhide.harvest-key.absent}.</li>
  * </ol>
  *
+ * <p><b>UH1e — {@code ?validate=true} diagnostic mode.</b> When
+ * {@code validate=true} is passed the same auth gates above apply
+ * (disabled → 503, private+no-key → 401). The feed is built as
+ * normal, then structural validation runs on the page's entries.
+ * The response is an {@link UnhideValidationReportIO} as
+ * {@code application/json} (not {@code application/ld+json} — the
+ * report is not a JSON-LD document). Page semantics are preserved:
+ * {@code ?validate=true&page=N} validates page N only.
+ *
  * <p><b>Auth-fallback simplification.</b> The {@code aidocs/67} design
  * mentions "OR caller has instance-admin role" as a private-feed
  * fallback. Phase 1 omits the instance-admin shortcut and surfaces
@@ -52,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * cleaner (one auth model for the harvest path) and the admin
  * inspection path is "mint a harvest key, then curl it" which is
  * what the CLI does anyway. The instance-admin fallback can be
- * grafted on in UH1b if operator feedback wants it.
+ * grafted on in UH1f if operator feedback wants it.
  *
  * @see UnhideConfigService
  * @see UnhideFeedService
@@ -84,11 +96,15 @@ public class UnhideFeedRest {
     "metadata4ing JSON-LD shape that Unhide's inward-mappings consume. Cursor-paginated " +
     "via ?page=N&page-size=N (page-size capped at 1000). When :UnhideConfig.enabled=false " +
     "the endpoint returns 503 unhide.feed.disabled; when feedPublic=false, a matching " +
-    "X-API-KEY header is required (use POST /v2/admin/unhide/harvest-key/rotate to mint)."
+    "X-API-KEY header is required (use POST /v2/admin/unhide/harvest-key/rotate to mint). " +
+    "UH1e: pass ?validate=true to receive a structural validation report (application/json) " +
+    "instead of the feed — useful for operators diagnosing feed correctness before " +
+    "registering with Unhide. Auth gates (enabled/feedPublic) still apply."
   )
   @APIResponse(
     responseCode = "200",
-    description = "The current feed page.",
+    description = "The current feed page (application/ld+json), " +
+    "or a structural validation report (application/json) when ?validate=true.",
     content = @Content(schema = @Schema(implementation = FeedIO.class))
   )
   @APIResponse(
@@ -104,6 +120,7 @@ public class UnhideFeedRest {
   public Response feed(
     @QueryParam("page") Integer page,
     @QueryParam("page-size") Integer pageSize,
+    @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
     @Context UriInfo uriInfo
   ) {
@@ -140,6 +157,13 @@ public class UnhideFeedRest {
     int ps = pageSize == null ? UnhideFeedService.DEFAULT_PAGE_SIZE : pageSize;
     String baseUrl = uriInfo == null ? "" : uriInfo.getBaseUri().toString();
     FeedIO body = feedService.buildFeed(cfg, baseUrl, p, ps);
+
+    if (validate) {
+      Log.debugf("UH1e: validate=true — running structural validation on feed page=%d", p);
+      UnhideValidationReportIO report = feedService.validateFeed(body);
+      return Response.ok(report).type(MediaType.APPLICATION_JSON).build();
+    }
+
     return Response.ok(body).type(MediaType_JSON_LD).build();
   }
 

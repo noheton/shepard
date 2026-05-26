@@ -332,6 +332,22 @@
           <compilerArgs>
             <arg>-parameters</arg>
           </compilerArgs>
+          <!--
+            Lombok annotation processor — required for @Getter/@Setter
+            on Neo4j OGM entity classes (e.g. UnhideConfig).  The backend
+            pom lists this via its own annotationProcessorPaths; the plugin
+            pom must mirror it so the plugin can be built standalone via
+            the two-pass (cd backend && mvn -DnoPlugins install; cd
+            plugins/unhide && mvn install) flow described in the header
+            comment.
+          -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.44</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>

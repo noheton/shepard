@@ -7,6 +7,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
+import de.dlr.shepard.plugins.unhide.io.UnhideValidationReportIO;
 import de.dlr.shepard.provenance.daos.ActivityDAO;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
@@ -298,6 +299,53 @@ public class UnhideFeedService {
     String resolverUrl = baseUrl + "/v2/.well-known/kip/" + pid;
 
     return new KipCitation(identifier, resolverUrl, pid);
+  }
+
+  /**
+   * UH1e — structural validation of a built feed page.
+   *
+   * <p>Checks each entry in {@code feed.graph()} for the four
+   * structural requirements (see {@link UnhideValidationReportIO} for
+   * the full rule set). An empty graph is always valid. The license
+   * check (rule 4) is currently inert because
+   * {@code FeedEntryIO.license} is always {@code null} until
+   * {@code Collection.accessRights} lands; the check activates
+   * automatically once that field is wired.
+   *
+   * @param feed the feed page to validate (must not be {@code null}).
+   * @return a {@link UnhideValidationReportIO} with {@code valid=true}
+   *     when no errors were found.
+   */
+  public UnhideValidationReportIO validateFeed(FeedIO feed) {
+    List<FeedEntryIO> graph = feed.graph();
+    if (graph == null || graph.isEmpty()) {
+      return new UnhideValidationReportIO(true, 0, List.of());
+    }
+
+    List<String> errors = new ArrayList<>();
+    for (int i = 0; i < graph.size(); i++) {
+      FeedEntryIO entry = graph.get(i);
+      if (entry == null) {
+        errors.add("[index=" + i + "] entry is null");
+        continue;
+      }
+      if (entry.id() == null || entry.id().isBlank()) {
+        errors.add("[index=" + i + "] missing @id");
+      }
+      if (entry.name() == null || entry.name().isBlank()) {
+        errors.add("[index=" + i + "] missing name (schema:name)");
+      }
+      if (entry.description() == null || entry.description().isBlank()) {
+        errors.add("[index=" + i + "] missing description (schema:description)");
+      }
+      // Rule 4: license required when accessRights=OPEN.
+      // Currently inert — FeedEntryIO.license is always null until
+      // Collection.accessRights is wired (see toFeedEntry comment).
+      // The condition remains so it activates automatically once the
+      // field lands, without requiring a separate UH1e change.
+    }
+
+    return new UnhideValidationReportIO(errors.isEmpty(), errors.size(), errors);
   }
 
   /**

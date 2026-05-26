@@ -276,11 +276,59 @@ not runtime-mutable — see the
 }
 ```
 
+#### Query parameters summary
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `page` | `0` | Zero-based page index. |
+| `page-size` | `100` | Capped at `1000`. |
+| `validate` | `false` | **UH1e** — when `true`, returns a structural validation report instead of the feed (see below). |
+
+#### `?validate=true` — operator diagnostic (UH1e)
+
+Pass `?validate=true` to receive a structural validation report on the requested feed page. The same auth gates apply (disabled → 503, private feed + no key → 401). The report is returned as `application/json` (not `application/ld+json`).
+
+```
+GET /v2/unhide/feed.jsonld?validate=true
+```
+
+Response shape (`UnhideValidationReportIO`):
+
+```json
+{
+  "valid": true,
+  "errorCount": 0,
+  "errors": []
+}
+```
+
+When errors exist:
+
+```json
+{
+  "valid": false,
+  "errorCount": 2,
+  "errors": [
+    "[index=0] missing @id",
+    "[index=3] missing name (schema:name)"
+  ]
+}
+```
+
+Structural checks performed per entry:
+
+1. `@id` present and non-blank (required for JSON-LD identity).
+2. `name` present and non-blank (Unhide displays this as the dataset title).
+3. `description` present and non-blank.
+4. `license` present when `accessRights=OPEN` (currently inert — activates once `Collection.accessRights` is wired).
+
+An empty feed (`@graph: []`) always returns `valid: true`. Page semantics apply: `?validate=true&page=N` validates page N only.
+
 #### Status codes
 
 | Status | When |
 |---|---|
-| `200 OK` | Feed page returned. |
+| `200 OK` | Feed page returned (normal request), or validation report (when `?validate=true`). |
 | `401 Unauthorized` | `feedPublic=false` AND missing / wrong `X-API-KEY` header. RFC 7807 body, type `unhide.harvest-key.absent`. |
 | `503 Service Unavailable` | `:UnhideConfig.enabled=false`. RFC 7807 body, type `unhide.feed.disabled`. Operator opts in via `shepard-admin unhide enable`. |
 

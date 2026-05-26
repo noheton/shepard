@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| UH1e-pending | 2026-05-26 | code | 20k | 7k | 3.10 | 20 | 5 | 28.10 | 10.20 | MEDIUM | feat(unhide): UH1e — ?validate=true structural validation report on feed endpoint |
 | A5c-ann-pending | 2026-05-26 | mixed | 25k | 8k | 3.65 | 20 | 5 | 28.65 | 10.40 | MEDIUM | feat(hdf): A5c-annotation — SHACL shape + vocabulary term + Annotate button |
 | R4-pending | 2026-05-26 | doc | 8k | 3k | 1.42 | 0 | 0 | 1.42 | 0.52 | LOW | docs(data): R4 — NovaCrate RO-Crate evaluation verdict |
 | EXP1o-pending | 2026-05-26 | code | 30k | 10k | 4.55 | 0 | 0 | 4.55 | 1.65 | LOW | refactor(backend): EXP1o — ExportService strategy pattern for payload-kind dispatch |
@@ -466,4 +467,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added SEMA-V6-014 entry (personal vocabulary minting + admin toggle).  | Claude Sonnet 4.6 |
 | 2026-05-26 | Added FAIR2+FAIR3 entry (createdByOrcid stamp + embargoEndDate + PublishService enforcement). | Claude Sonnet 4.6 |
 | 2026-05-26 | V1C2 — v5 wire-fidelity fixture corpus: 5 new fixture types (FileRef, TSRef, Subscription, UserGroup, SemanticAnnotation) + 5 IT test classes. | Claude Sonnet 4.6 |
+| 2026-05-26 | Added UH1e entry (Unhide ?validate=true structural validation endpoint). | Claude Sonnet 4.6 |
 

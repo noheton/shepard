@@ -75,7 +75,7 @@ class UnhideFeedRestTest {
     cfg.setEnabled(false);
     when(configService.current()).thenReturn(cfg);
 
-    Response r = rest.feed(null, null, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo);
 
     assertEquals(503, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
@@ -95,7 +95,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    Response r = rest.feed(null, null, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo);
 
     assertEquals(200, r.getStatus());
     assertTrue(r.getMediaType().toString().contains("ld+json"));
@@ -112,7 +112,7 @@ class UnhideFeedRestTest {
     when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn(null);
     when(configService.verifyHarvestKey(null)).thenReturn(false);
 
-    Response r = rest.feed(null, null, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo);
 
     assertEquals(401, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
@@ -130,7 +130,7 @@ class UnhideFeedRestTest {
     when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn("wrong-key");
     when(configService.verifyHarvestKey("wrong-key")).thenReturn(false);
 
-    Response r = rest.feed(null, null, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo);
 
     assertEquals(401, r.getStatus());
     verify(feedService, never()).buildFeed(any(), anyString(), anyInt(), anyInt());
@@ -147,7 +147,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    Response r = rest.feed(null, null, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo);
 
     assertEquals(200, r.getStatus());
     verify(feedService).buildFeed(any(), anyString(), anyInt(), anyInt());
@@ -162,7 +162,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    rest.feed(2, 50, headers, uriInfo);
+    rest.feed(2, 50, false, headers, uriInfo);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 2, 50);
   }
@@ -176,7 +176,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    rest.feed(null, null, headers, uriInfo);
+    rest.feed(null, null, false, headers, uriInfo);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 0, UnhideFeedService.DEFAULT_PAGE_SIZE);
   }
