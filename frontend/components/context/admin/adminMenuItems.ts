@@ -10,6 +10,7 @@ export enum AdminFragments {
   INSTANCE_ROR = "instance-ror",
   STORAGE_OVERVIEW = "storage-overview",
   PERMISSION_AUDIT_LOG = "permission-audit-log",
+  ACTIVITY_LOG = "activity-log",
   UNHIDE = "unhide",
   LEGACY_V1 = "legacy-v1",
   // ----- placeholder fragments (no-UI-gap roll-out 2026-05-24) -----
@@ -68,6 +69,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Permission Audit Log",
     fragment: AdminFragments.PERMISSION_AUDIT_LOG,
     icon: "mdi-shield-account-outline",
+  },
+  {
+    name: "Activity Log",
+    fragment: AdminFragments.ACTIVITY_LOG,
+    icon: "mdi-history",
   },
   {
     name: "Unhide",

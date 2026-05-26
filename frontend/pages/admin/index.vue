@@ -9,8 +9,10 @@ import InstanceRorPane from "~/components/context/admin/InstanceRorPane.vue";
 import AdminStoragePane from "~/components/context/admin/AdminStoragePane.vue";
 import PluginsAdminPane from "~/components/context/admin/PluginsAdminPane.vue";
 import PermissionAuditLogPane from "~/components/context/admin/PermissionAuditLogPane.vue";
+import AdminActivityLogPane from "~/components/context/admin/AdminActivityLogPane.vue";
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
 import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
+import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -94,6 +96,12 @@ const landingCards = [
     icon: "mdi-shield-account-outline",
     title: "Permission Audit Log",
     description: "Who granted, revoked, or changed permissions, when.",
+  },
+  {
+    fragment: AdminFragments.ACTIVITY_LOG,
+    icon: "mdi-history",
+    title: "Activity Log",
+    description: "Full provenance activity stream — who accessed or mutated what, when.",
   },
   {
     fragment: AdminFragments.UNHIDE,
@@ -198,16 +206,18 @@ const landingCards = [
     <PermissionAuditLogPane
       v-if="routeFragment === AdminFragments.PERMISSION_AUDIT_LOG"
     />
+    <AdminActivityLogPane
+      v-if="routeFragment === AdminFragments.ACTIVITY_LOG"
+    />
     <UnhideAdminPane v-if="routeFragment === AdminFragments.UNHIDE" />
     <AdminLegacyV1Pane v-if="routeFragment === AdminFragments.LEGACY_V1" />
+    <AdminSqlTimeseriesPane
+      v-if="routeFragment === AdminFragments.SQL_TIMESERIES"
+    />
     <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.FILE_MIGRATION"
       slug="file-migration"
-    />
-    <PlaceholderFragmentPane
-      v-if="routeFragment === AdminFragments.SQL_TIMESERIES"
-      slug="sql-timeseries"
     />
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
