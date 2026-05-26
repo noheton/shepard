@@ -112,6 +112,12 @@ Captured as §7 "Known traps." The non-obvious ones:
   itself isn't a code change; it's an ops asset. The 34 tracker entry would
   be at activation time, not at runbook landing.)
 
+## OME-Zarr storage policy
+
+For OME-Zarr (VIS-X1) storage policy — dedicated `shepard-volumes` bucket layout,
+CORS config, presigned-URL TTL, and SM1 retention hooks — see
+`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`.
+
 ## What I did NOT do
 
 - Did NOT deploy Garage to nuclide.systems — the brief said read-only on the

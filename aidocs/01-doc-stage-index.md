@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 39 |
-| `concept` | 19 |
+| `concept` | 20 |
 | `idea` | 9 |
 | `feature-defined` | 92 |
 | `audited-by-personas` | 71 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 66 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **350** |
+| **total docs** | **351** |
 | **UNTAGGED** | **0** |
 
 ## fragment (39)
@@ -87,7 +87,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (19)
+## concept (20)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -104,6 +104,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/49-in-app-user-docs.md`](ops/49-in-app-user-docs.md) | In-App User Docs — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/57-openapi-client-generator-evaluation.md`](ops/57-openapi-client-generator-evaluation.md) | OpenAPI Client Generator Evaluation — `/v2/` Codegen | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-05-23 |
+| [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | — |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/190-thesis-idea-timeline.md`](strategy/190-thesis-idea-timeline.md) | Thesis Idea Timeline | 2026-05-26 | 2026-05-26 |
