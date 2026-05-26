@@ -68,6 +68,26 @@ public class DataObjectDetailV2IO extends DataObjectIO {
   private DataObjectSummaryIO parentSummary;
 
   /**
+   * PROV1j — EU AI Act Art. 50 per-artefact visibility field.
+   *
+   * <p>Mirrors {@link de.dlr.shepard.context.collection.entities.DataObject#getProvenanceMode()}.
+   * Allowed values: {@code "human"}, {@code "ai"}, {@code "collaborative"}, or {@code null}
+   * (semantically equivalent to {@code "human"} — the default human-authored case).
+   * Omitted from JSON serialisation when {@code null}.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "EU AI Act Art. 50 provenance mode for this DataObject: 'human', 'ai', 'collaborative', " +
+      "or null (default, semantically equivalent to human-authored). " +
+      "Set automatically from the X-AI-Agent request header on create when not provided explicitly.",
+    enumeration = {"human", "ai", "collaborative"}
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String provenanceMode;
+
+  /**
    * API1 — appIds (UUID v7) of the {@code :TimeseriesReference} nodes attached to
    * this DataObject. Use a value here to navigate to the linked timeseries container
    * via {@code GET /v2/timeseries-containers/{appId}}. Null (omitted from JSON) when
@@ -178,6 +198,9 @@ public class DataObjectDetailV2IO extends DataObjectIO {
     if (dataObject.getParent() != null && !dataObject.getParent().isDeleted()) {
       this.parentSummary = new DataObjectSummaryIO(dataObject.getParent());
     }
+
+    // PROV1j — surface the stored provenance mode (null = human default).
+    this.provenanceMode = dataObject.getProvenanceMode();
   }
 
   // ── inner class ──────────────────────────────────────────────────────────

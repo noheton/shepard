@@ -12,6 +12,7 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
@@ -37,6 +38,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -303,13 +305,16 @@ public class DataObjectV2Rest {
     summary = "Create a DataObject inside a Collection.",
     description =
       "Creates a `:DataObject` in the Collection identified by `collectionAppId` " +
-      "and returns the full entity in the 201 body. The server mints `appId` " +
-      "(UUID v7) and `id` (legacy long).\n\n" +
+      "and returns the full entity (as `DataObjectDetail`) in the 201 body. " +
+      "The server mints `appId` (UUID v7) and `id` (legacy long).\n\n" +
       "Body fields:\n" +
       "  - `name` (string, required, non-blank).\n" +
       "  - `description` (string, optional, CommonMark + GFM).\n" +
       "  - `attributes` (string-to-string map, optional).\n" +
-      "  - `status` (optional, DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED).\n\n" +
+      "  - `status` (optional, DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED).\n" +
+      "  - `provenanceMode` (optional, PROV1j / EU AI Act Art. 50): 'human', 'ai', " +
+      "    or 'collaborative'. When omitted, auto-detected from the `X-AI-Agent` " +
+      "    request header (present and non-blank → 'ai'; otherwise null).\n\n" +
       "Example body: `{\"name\": \"TR-001\", \"description\": \"hot-fire run\", " +
       "\"attributes\": {\"campaign\": \"Q3\"}}`.\n\n" +
       "Auth: Write on the parent Collection.\n\n" +
@@ -323,8 +328,8 @@ public class DataObjectV2Rest {
   )
   @APIResponse(
     responseCode = "201",
-    description = "DataObject created.",
-    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+    description = "DataObject created. Response is a DataObjectDetail shape (superset of DataObjectIO).",
+    content = @Content(schema = @Schema(implementation = DataObjectDetailV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body validation failed.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -334,8 +339,9 @@ public class DataObjectV2Rest {
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = DataObjectIO.class))
-    ) @Valid DataObjectIO body,
+      content = @Content(schema = @Schema(implementation = CreateDataObjectV2IO.class))
+    ) @Valid CreateDataObjectV2IO body,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader,
     @Context SecurityContext sc
   ) {
     Long collectionOgmId = resolveOrNull(collectionAppId);
@@ -344,8 +350,15 @@ public class DataObjectV2Rest {
     Response gate = enforceAccess(collectionOgmId, AccessType.Write, sc);
     if (gate != null) return gate;
 
+    // PROV1j (EU AI Act Art. 50): auto-detect provenanceMode from X-AI-Agent header
+    // when the caller did not supply it explicitly. Mirrors the SEMA-V6-007 pattern
+    // used by SemanticAnnotationV2Rest.
+    if (body.getProvenanceMode() == null && aiAgentHeader != null && !aiAgentHeader.isBlank()) {
+      body.setProvenanceMode("ai");
+    }
+
     DataObject created = dataObjectService.createDataObject(collectionOgmId, body);
-    return Response.status(Response.Status.CREATED).entity(new DataObjectIO(created)).build();
+    return Response.status(Response.Status.CREATED).entity(new DataObjectDetailV2IO(created)).build();
   }
 
   @PATCH

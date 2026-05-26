@@ -348,6 +348,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | (pending) | 2026-05-26 | code | 18k | 5k | 2.17 | 5 | 2 | 9.17 | 3.33 | LOW | fix(importer-plugin): IMPL3 — fail-fast startup guard for default credentials in prod mode |
 | `04efd5a9` | 2026-05-26 | doc | 12k | 4k | 1.78 | 0 | 0 | 1.78 | 0.65 | LOW | docs(db): DB-DOC1 — database overview reference + troubleshooting task page |
 | *(IMP1-TODO)* | 2026-05-26 | code | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | feat(import): IMP1 — collection-scoped annotation query for import context |
+| *(pending)* | 2026-05-26 | code | 35k | 12k | 4.50 | 10 | 3 | 17.50 | 6.35 | LOW | feat(prov): PROV1j — provenanceMode on DataObject + CreateDataObjectV2IO + X-AI-Agent auto-detect; 3 new tests; aidocs/34+44+energy updated |
 
 ---
 
@@ -440,4 +441,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added PROV1i entry (SnapshotService prov:Entity auto-typing).          | Claude Sonnet 4.6 |
 | 2026-05-26 | Added IMPL3 entry (importer plugin credential guard).                  | Claude Sonnet 4.6 |
 | 2026-05-26 | Added IMP1-TODO closure entry (import context annotation query).       | Claude Sonnet 4.6 |
+| 2026-05-26 | Added PROV1j entry (provenanceMode on DataObject + v2 IO surface).     | Claude Sonnet 4.6 |
 

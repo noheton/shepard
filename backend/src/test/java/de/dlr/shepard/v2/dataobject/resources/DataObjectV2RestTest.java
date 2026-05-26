@@ -23,6 +23,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
@@ -264,9 +265,9 @@ class DataObjectV2RestTest {
   @Test
   void createReturns404WhenCollectionUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    DataObjectIO body = new DataObjectIO();
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
     body.setName("new do");
-    Response r = resource.create(COLL_APP_ID, body, securityContext);
+    Response r = resource.create(COLL_APP_ID, body, null, securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -275,9 +276,9 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
-    DataObjectIO body = new DataObjectIO();
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
     body.setName("new do");
-    Response r = resource.create(COLL_APP_ID, body, securityContext);
+    Response r = resource.create(COLL_APP_ID, body, null, securityContext);
     assertEquals(403, r.getStatus());
     verify(dataObjectService, never()).createDataObject(anyLong(), any());
   }
@@ -288,15 +289,74 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
-    DataObjectIO body = new DataObjectIO();
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
     body.setName("new do");
     when(dataObjectService.createDataObject(eq(COLL_OGM_ID), eq(body))).thenReturn(created);
 
-    Response r = resource.create(COLL_APP_ID, body, securityContext);
+    Response r = resource.create(COLL_APP_ID, body, null, securityContext);
 
     assertEquals(201, r.getStatus());
-    DataObjectIO io = (DataObjectIO) r.getEntity();
+    DataObjectDetailV2IO io = (DataObjectDetailV2IO) r.getEntity();
     assertEquals("018f9c5a-9999-7000-a000-000000000099", io.getAppId());
+  }
+
+  // ── PROV1j: provenanceMode auto-detection via X-AI-Agent header ──────────
+
+  @Test
+  void createSetsProvenanceModeAiWhenXAiAgentHeaderPresent() {
+    // PROV1j: when caller sends X-AI-Agent header and body has no provenanceMode,
+    // the resource sets body.provenanceMode = "ai" before calling the service.
+    DataObject created = makeDataObject(99L, "018f9c5a-9999-7000-a000-000000000099", "ai-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
+    body.setName("ai-do");
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any())).thenReturn(created);
+
+    Response r = resource.create(COLL_APP_ID, body, "claude-mcp-client/1.0", securityContext);
+
+    assertEquals(201, r.getStatus());
+    // Body must have been mutated to "ai" before service call.
+    assertEquals("ai", body.getProvenanceMode());
+  }
+
+  @Test
+  void createDoesNotOverrideExplicitProvenanceModeWhenHeaderPresent() {
+    // PROV1j: when caller explicitly sets provenanceMode = "collaborative",
+    // the X-AI-Agent header must not override it.
+    DataObject created = makeDataObject(99L, "018f9c5a-9999-7000-a000-000000000099", "collab-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
+    body.setName("collab-do");
+    body.setProvenanceMode("collaborative");
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any())).thenReturn(created);
+
+    Response r = resource.create(COLL_APP_ID, body, "some-ai-agent/2.0", securityContext);
+
+    assertEquals(201, r.getStatus());
+    // Explicit value must be preserved.
+    assertEquals("collaborative", body.getProvenanceMode());
+  }
+
+  @Test
+  void createLeavesProvenanceModeNullWhenNoHeaderAndNoneInBody() {
+    // PROV1j: when neither X-AI-Agent header nor an explicit provenanceMode is set,
+    // body.provenanceMode stays null (semantically equivalent to human-authored).
+    DataObject created = makeDataObject(99L, "018f9c5a-9999-7000-a000-000000000099", "human-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    CreateDataObjectV2IO body = new CreateDataObjectV2IO();
+    body.setName("human-do");
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any())).thenReturn(created);
+
+    Response r = resource.create(COLL_APP_ID, body, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+    assertNull(body.getProvenanceMode());
   }
 
   // ── patch ─────────────────────────────────────────────────────────────────

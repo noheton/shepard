@@ -70,6 +70,24 @@ public class DataObjectListItemV2IO extends DataObjectIO {
   private Long timeBoundsEnd;
 
   /**
+   * PROV1j — EU AI Act Art. 50 per-artefact visibility field.
+   *
+   * <p>Allowed values: {@code "human"}, {@code "ai"}, {@code "collaborative"}, or {@code null}
+   * (semantically equivalent to {@code "human"} — the default human-authored case).
+   * Omitted from JSON serialisation when {@code null}.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "EU AI Act Art. 50 provenance mode: 'human', 'ai', 'collaborative', or null (default, " +
+      "equivalent to human-authored). Set from the X-AI-Agent request header on create.",
+    enumeration = {"human", "ai", "collaborative"}
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String provenanceMode;
+
+  /**
    * Copies all fields from {@code dataObject} (via the {@link DataObjectIO}
    * supertype constructor) and overlays the three reference counts.
    *
@@ -83,5 +101,7 @@ public class DataObjectListItemV2IO extends DataObjectIO {
     this.timeseriesCount = tsCount;
     this.fileCount = fileCount;
     this.structuredDataCount = sdCount;
+    // PROV1j — surface the stored provenance mode (null = human default).
+    this.provenanceMode = dataObject.getProvenanceMode();
   }
 }

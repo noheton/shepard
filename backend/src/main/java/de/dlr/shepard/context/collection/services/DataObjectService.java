@@ -14,6 +14,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteService;
@@ -113,6 +114,11 @@ public class DataObjectService {
     // LIC1 (FAIR-1): copy license + accessRights on create. Both nullable.
     toCreate.setLicense(dataObject.getLicense());
     toCreate.setAccessRights(dataObject.getAccessRights());
+    // PROV1j (EU AI Act Art. 50): propagate provenanceMode from v2 create body when present.
+    // The instanceof guard keeps the v1 create path unaffected (DataObjectIO has no such field).
+    if (dataObject instanceof CreateDataObjectV2IO v2io) {
+      toCreate.setProvenanceMode(v2io.getProvenanceMode());
+    }
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);

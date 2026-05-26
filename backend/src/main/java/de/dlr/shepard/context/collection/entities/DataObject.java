@@ -46,6 +46,24 @@ public class DataObject extends AbstractDataObject {
   private List<LabJournalEntry> labJournalEntries = new ArrayList<>();
 
   /**
+   * PROV1j — EU AI Act Art. 50 per-artefact visibility field.
+   *
+   * <p>Indicates the agent mode under which this DataObject was created:
+   * <ul>
+   *   <li>{@code null} — default, equivalent to {@code "human"} (human-authored)</li>
+   *   <li>{@code "human"} — explicitly human-authored</li>
+   *   <li>{@code "ai"} — created by an AI agent (X-AI-Agent header present on the
+   *       creating request, or caller set it explicitly)</li>
+   *   <li>{@code "collaborative"} — human + AI collaborative creation</li>
+   * </ul>
+   *
+   * <p>Stored as a plain Neo4j node property. OGM maps the field by name — no
+   * {@code @Property} annotation required. Value is immutable after creation;
+   * the v2 PATCH path does not expose this field (it is not on {@code DataObjectIO}).
+   */
+  private String provenanceMode;
+
+  /**
    * For testing purposes only
    *
    * @param id identifies the entity
