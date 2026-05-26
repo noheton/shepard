@@ -34,26 +34,18 @@ import sys
 import urllib.error
 import urllib.request
 
-# ── channel-selector constants ────────────────────────────────────────────────
+# ── channel-selector helpers ──────────────────────────────────────────────────
 #
 # 5-tuple channel identity (pre TS-ID migration, aidocs/platform/87).
 # Fields mirror what the MFFD ingest script writes to TimescaleDB:
-#   measurement = process step name used at ingest time
-#   device      = robot model identifier
-#   location    = facility code
+#   measurement  = process step name used at ingest time
+#   device       = robot model identifier
+#   location     = facility code
 #   symbolicName = sensor group
-#   field       = signal name matching the CSV column headers in data/
+#   field        = signal name matching the CSV column headers in data/
 #
 # Post TS-ID migration these become a single shepardId string; the VIEW_RECIPE
 # body format will change accordingly.
-
-_LBR_SELECTOR_TMPL = json.dumps({
-    "measurement":  "CleatsWithLBR",
-    "device":       "iiwa14_R820",
-    "location":     "ZLP_Augsburg",
-    "symbolicName": "lbr_force_torque",
-    "field":        "{field}",  # replaced below
-})
 
 
 def _selector(field: str) -> str:
