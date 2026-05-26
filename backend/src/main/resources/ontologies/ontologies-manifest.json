@@ -1,13 +1,15 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b (+ ONT1a + ONT1b + AI1r + N1e additions) — manifest of common ontologies",
+    "N1b (+ ONT1a + ONT1b + AI1r + N1e + M4I-f additions) — manifest of common ontologies",
     "pre-seeded into the internal neosemantics (n10s) semantic",
-    "repository on shepard startup. Currently twelve bundles (eight from",
+    "repository on shepard startup. Currently fifteen bundles (eight from",
     "N1b plus the OBO Relation Ontology added by ONT1a, see",
     "aidocs/58 §6, plus the NFDI4Ing metadata4ing ontology added by",
     "ONT1b, plus the shepard-experiment domain ontology added by AI1r,",
-    "plus the NASA Thesaurus propulsion stub added by N1e).",
+    "plus the NASA Thesaurus propulsion stub added by N1e, plus the",
+    "metadata4ing HPMC sub-ontology added by M4I-f, plus the SiMaT",
+    "material-testing ontology and LUMEN-inspired hotfire ontology).",
     "Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
@@ -211,8 +213,8 @@
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "version": "1.0.0",
       "retrievedAt": "2026-05-19",
-      "sha256": "033845473a4e194e27edd5831859bd8a483ea183b953692426bb5ff664739347",
-      "sizeBytes": 407870,
+      "sha256": "acdcfce92fa78ae22d154711ce797fbf51369ef019ca860e91aa4b51a79d57b9",
+      "sizeBytes": 407854,
       "required": false
     },
     {
@@ -263,6 +265,22 @@
       "retrievedAt": "2026-05-17",
       "sha256": "5c6c77ba6e2f7d668bb735f60276ef2b0c77cf920809152a3c65d6b139cc3517",
       "sizeBytes": 18841,
+      "required": false
+    },
+    {
+      "id": "metadata4ing-hpmc",
+      "name": "Metadata4Ing HPMC sub-ontology (NFDI4Ing TP 5.23-2)",
+      "file": "metadata4ing-hpmc.ttl",
+      "iriPrefix": "http://w3id.org/nfdi4ing/metadata4ing/",
+      "format": "Turtle",
+      "canonicalUrl": "http://w3id.org/nfdi4ing/metadata4ing/hpmc/",
+      "sourceRationale": "NFDI4Ing TP 5.23-2 (High-Performance Measurement and Computing) sub-ontology extending metadata4ing with workflow classes for high-rate data-acquisition processes: HpmcWorkflow, HpmcComputation, HpmcMeasurementProcess, HpmcSoftwareEnvironment, HpmcHardwareEnvironment. Directly relevant for LUMEN hot-fire DAQ and MFFD AFP-robot telemetry annotation. Terms reuse the m4i: IRI prefix (http://w3id.org/nfdi4ing/metadata4ing/). M4I-f (2026-05-26): initial stub; N1c admin refresh (GET /v2/admin/semantic/ontologies/metadata4ing-hpmc/refresh) pulls the full canonical OWL when available. Note transitive dependency on the parent metadata4ing bundle (ONT1b) and potentially NFDI-MatWerk / MaRDI terms in the full vocabulary — operators loading the canonical OWL should seed metadata4ing first.",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "0.1.0",
+      "retrievedAt": "2026-05-26",
+      "sha256": "42466d1f5526cbee0791fab7fda23aa2a5927514792a502afbe6f9081bc4f3c5",
+      "sizeBytes": 2924,
       "required": false
     }
   ]

@@ -608,8 +608,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) = 14.
-    assertEquals(14, ids.size(), "expected 14 bundled ontologies");
+    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + metadata4ing-hpmc (M4I-f) = 15.
+    assertEquals(15, ids.size(), "expected 15 bundled ontologies");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -622,6 +622,7 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
     assertTrue(ids.contains("shepard-experiment"), "manifest missing shepard-experiment (AI1r)");
     assertTrue(ids.contains("nasa-thesaurus"), "manifest missing nasa-thesaurus (N1e)");
+    assertTrue(ids.contains("metadata4ing-hpmc"), "manifest missing metadata4ing-hpmc (M4I-f)");
   }
 
   /**
@@ -658,7 +659,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(13, kept.size(), "skip-bundles=obo-relations should leave 13 entries");
+    assertEquals(14, kept.size(), "skip-bundles=obo-relations should leave 14 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
@@ -726,10 +727,64 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(13, kept.size(), "skip-bundles=metadata4ing should leave 13 entries");
+    assertEquals(14, kept.size(), "skip-bundles=metadata4ing should leave 14 entries");
     assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
     assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
+  }
+
+  // M4I-f — metadata4ing-hpmc (NFDI4Ing TP 5.23-2) bundle.
+
+  /**
+   * M4I-f — manifest declares the metadata4ing-hpmc bundle as the 15th
+   * entry. Cardinality is tested by {@link #realManifest_declaresEveryRequiredOntology};
+   * this assertion is the field-level counterpart that pins the IRI
+   * prefix, licence, file name, and format so accidental drift in a
+   * future manifest edit is caught at review time rather than at
+   * runtime.
+   */
+  @Test
+  void realManifest_metadata4ingHpmcCarriesNfdi4ingIriPrefixAndCcBy4Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var hpmc = svc
+      .loadManifest()
+      .stream()
+      .filter(e -> "metadata4ing-hpmc".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("metadata4ing-hpmc bundle missing from manifest"));
+    assertEquals("http://w3id.org/nfdi4ing/metadata4ing/", hpmc.iriPrefix, "metadata4ing-hpmc IRI prefix");
+    assertEquals("CC BY 4.0", hpmc.license, "metadata4ing-hpmc licence string");
+    assertEquals("metadata4ing-hpmc.ttl", hpmc.file, "metadata4ing-hpmc bundle file name");
+    assertEquals("Turtle", hpmc.format, "metadata4ing-hpmc bundled format");
+    assertEquals(
+      "http://w3id.org/nfdi4ing/metadata4ing/hpmc/",
+      hpmc.canonicalUrl,
+      "metadata4ing-hpmc canonical URL points at the HPMC sub-ontology document IRI"
+    );
+  }
+
+  /**
+   * M4I-f — {@code skip-bundles=metadata4ing-hpmc} excludes only the
+   * HPMC entry and leaves all 14 other bundles untouched. Symmetric
+   * with the ONT1a and ONT1b skip-bundles tests.
+   */
+  @Test
+  void realManifest_skipBundlesMetadata4ingHpmc_excludesHpmcButRetainsOthers() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    Set<String> skip = OntologySeedService.parseSkipBundles("metadata4ing-hpmc");
+    List<String> kept = svc
+      .loadManifest()
+      .stream()
+      .map(e -> e.id)
+      .filter(id -> !skip.contains(id))
+      .toList();
+    assertEquals(14, kept.size(), "skip-bundles=metadata4ing-hpmc should leave 14 entries");
+    assertFalse(kept.contains("metadata4ing-hpmc"), "metadata4ing-hpmc should be excluded by skip-bundles");
+    assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing-hpmc must not affect prov-o");
+    assertTrue(kept.contains("metadata4ing"), "skip-bundles=metadata4ing-hpmc must not affect metadata4ing");
+    assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing-hpmc must not affect obo-relations");
   }
 
   // ---------- helpers -------------------------------------------------------

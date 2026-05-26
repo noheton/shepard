@@ -1,0 +1,44 @@
+# Canonical source: https://nfdi4ing.de/5-23-2/ (NFDI4Ing TP 5.23-2; Turtle expected)
+# Ontology IRI:    http://w3id.org/nfdi4ing/metadata4ing/hpmc/
+# Term IRI prefix: http://w3id.org/nfdi4ing/metadata4ing/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the metadata4ing HPMC (High-Performance
+# Measurement and Computing) sub-ontology — the NFDI4Ing TP 5.23-2
+# extension of metadata4ing for describing high-rate data-acquisition
+# workflows in engineering research (rocket-engine hot-fire DAQ,
+# AFP-robot telemetry, turbomachinery rig instrumentation, etc.).
+# Carries the headline classes and properties shepard's PROV1-series
+# rendering and semantic annotation surface will reach for when
+# operators annotate HpmcWorkflow / HpmcMeasurementProcess instances
+# on LUMEN or MFFD DataObjects. Operators who need the full vocabulary
+# either run the N1c admin refresh CLI
+# (GET /v2/admin/semantic/ontologies/metadata4ing-hpmc/refresh)
+# or drop the canonical TTL in place and regenerate the manifest entry.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix m4i:     <http://w3id.org/nfdi4ing/metadata4ing/> .
+
+<http://w3id.org/nfdi4ing/metadata4ing/hpmc/>
+       a owl:Ontology ;
+       dcterms:title   "Metadata4Ing HPMC sub-ontology (shepard-bundled stub)"@en ;
+       dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+       dcterms:source  <https://nfdi4ing.de/5-23-2/> ;
+       owl:versionInfo "0.1.0" ;
+       rdfs:label      "Metadata4Ing HPMC"@en ;
+       rdfs:comment    "NFDI4Ing TP 5.23-2 sub-ontology extending metadata4ing for High-Performance Measurement and Computing (HPMC) workflows — hot-fire DAQ, AFP telemetry, and similar high-rate engineering data-acquisition processes."@en .
+
+m4i:HpmcWorkflow            a owl:Class ; rdfs:label "HPMC Workflow"@en ;            rdfs:subClassOf prov:Activity .
+m4i:HpmcComputation         a owl:Class ; rdfs:label "HPMC Computation"@en ;         rdfs:subClassOf prov:Activity .
+m4i:HpmcMeasurementProcess  a owl:Class ; rdfs:label "HPMC Measurement Process"@en ; rdfs:subClassOf prov:Activity .
+m4i:HpmcSoftwareEnvironment a owl:Class ; rdfs:label "HPMC Software Environment"@en ; rdfs:subClassOf prov:Entity .
+m4i:HpmcHardwareEnvironment a owl:Class ; rdfs:label "HPMC Hardware Environment"@en ; rdfs:subClassOf prov:Entity .
+
+m4i:hasComputingEnvironment a owl:ObjectProperty   ; rdfs:label "has computing environment"@en .
+m4i:hasSamplingRate         a owl:DatatypeProperty ; rdfs:label "has sampling rate"@en .
+m4i:hasDataAcquisitionRate  a owl:DatatypeProperty ; rdfs:label "has data acquisition rate"@en .
