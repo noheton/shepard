@@ -34,45 +34,60 @@
 -- ---------------------------------------------------------------------------
 -- 1) Set chunk time interval to 1 hour.
 --
--- Default is 7 days; 1 hour fits ~6 000 AFP track runs per chunk and matches
--- the "one session" query pattern. Only applies to chunks created after this
--- migration runs.
+-- The timeseries_data_points hypertable uses an integer time column (bigint
+-- nanoseconds since epoch), so set_chunk_time_interval expects a bigint, not
+-- a Postgres INTERVAL. 1 hour = 3_600_000_000_000 ns.
+-- Current default is 24 hours (86_400_000_000_000 ns). Only applies to
+-- chunks created after this migration runs.
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
-  current_interval INTERVAL;
+  current_interval BIGINT;
+  target_interval  BIGINT := 3600000000000; -- 1 hour in nanoseconds
 BEGIN
-  SELECT chunk_time_interval
+  SELECT integer_interval
     INTO current_interval
-    FROM timescaledb_information.hypertables
-    WHERE hypertable_name = 'timeseries_data_points';
+    FROM timescaledb_information.dimensions
+    WHERE hypertable_name = 'timeseries_data_points'
+      AND dimension_type = 'Time';
 
-  IF current_interval IS NULL OR current_interval <> INTERVAL '1 hour' THEN
-    PERFORM set_chunk_time_interval('timeseries_data_points', INTERVAL '1 hour');
-    RAISE NOTICE 'set chunk_time_interval to 1 hour (was %)', current_interval;
+  IF current_interval IS NULL OR current_interval <> target_interval THEN
+    PERFORM set_chunk_time_interval('timeseries_data_points', target_interval);
+    RAISE NOTICE 'set chunk_time_interval to 1h (3600000000000 ns); was %', current_interval;
   ELSE
-    RAISE NOTICE 'chunk_time_interval already 1 hour, skipping';
+    RAISE NOTICE 'chunk_time_interval already 1h, skipping';
   END IF;
 END $$;
 
 -- ---------------------------------------------------------------------------
--- 2) Add 4 space partitions on timeseries_id.
+-- 2) Add space partitions dimension on timeseries_id (4 partitions).
 --
 -- 4 partitions allow 4 parallel importer workers to write to distinct physical
 -- partitions without row-level lock contention. The partition count matches the
 -- worker pool size configured in the MFFD ingest pipeline.
+--
+-- Uses add_dimension(..., if_not_exists => true) so the block is safe to re-run
+-- on an instance that already has the dimension; it emits a NOTICE either way.
+-- Note: set_number_partitions() only modifies an *existing* space dimension;
+-- add_dimension() is the correct call to add a new one.
 -- ---------------------------------------------------------------------------
 DO $$
+DECLARE
+  already_present BOOLEAN;
 BEGIN
-  IF NOT EXISTS (
+  SELECT EXISTS (
     SELECT 1
       FROM timescaledb_information.dimensions
       WHERE hypertable_name = 'timeseries_data_points'
         AND dimension_type = 'Space'
-  ) THEN
-    PERFORM add_space_partitions('timeseries_data_points', 'timeseries_id', 4);
-    RAISE NOTICE 'added 4 space partitions on timeseries_id';
+  ) INTO already_present;
+
+  PERFORM add_dimension('timeseries_data_points', 'timeseries_id',
+                        number_partitions => 4, if_not_exists => true);
+
+  IF already_present THEN
+    RAISE NOTICE 'space dimension on timeseries_id already present, skipping';
   ELSE
-    RAISE NOTICE 'space partitions already present, skipping';
+    RAISE NOTICE 'added 4 space partitions on timeseries_id';
   END IF;
 END $$;
