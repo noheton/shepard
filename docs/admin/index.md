@@ -34,6 +34,8 @@ plugin author, see [the plugin docs convention]({{ '/reference/plugins/' | relat
 | [Observability]({{ '/admin/observability/' | relative_url }}) | Health endpoints, Prometheus scrape, bundled Grafana dashboard, k6 performance scripts, self-observability TS substrate. |
 | [Security]({{ '/admin/security/' | relative_url }}) | CI security gates (SpotBugs, CodeQL, OWASP, Trivy, gitleaks), SBOM, secret rotation. |
 | **Operator runbooks** ([`docs/admin/runbooks/`]({{ '/admin/runbooks/' | relative_url }})) | 10 numbered runbooks + 3 pre-existing. Quick topics: cube hotpatch (01), orphan payload wipe (02), API key rotation (03), Neo4j restore (04), TimescaleDB restore (05), Garage restore (06), add instance-admin (07), enable plugin (08), permission repair (09), cut a release (10). Plus: **migration-chain-integrity**, **restore-tsdb-container-neo4j-shadow**, **docker-bind-mount-inode-drift**. See [runbook index]({{ '/admin/runbooks/' | relative_url }}) for the decision guide. |
+| [**Database overview** (reference)]({{ '/reference/database-overview/' | relative_url }}) | One-page map of all five substrates — what data lives where, connection commands, which substrate to inspect for a given symptom, schema migration cursors. |
+| [**Troubleshooting databases** (task)]({{ '/help/troubleshooting-databases/' | relative_url }}) | Step-by-step fixes for the 7 most common database problems: PgBouncer log spam, CAgg job failure, Garage capacity cap, file download 500s, invisible timeseries containers, migration aborts, Activity node growth. |
 
 Maintainer-facing pages — cutting a release, the GitHub Projects board — live
 under `docs/ops/`; they are not part of the admin guide. See

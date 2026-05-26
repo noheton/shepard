@@ -42,8 +42,12 @@ is persisted per PM1e and survives restart).
   PR-5.
 - Source credential encryption uses `${SHEPARD_INSTANCE_SECRET}`
   as the key seed (PR-3); proper KMS/Vault integration is a
-  follow-up. **Do not run the plugin with the default
-  `changeme`-style env var in production.**
+  follow-up. **The plugin now refuses to activate in production if
+  `SHEPARD_INSTANCE_SECRET` (config key `shepard.audit.instance-secret`)
+  is absent, blank, the sentinel value `changeme`, or shorter than 16
+  characters.** On a bad value the plugin transitions to `FAILED` state
+  at startup and `GET /v2/admin/plugins` shows the reason. Set a strong
+  secret (≥ 16 chars) before deploying.
 
 ## Known limitations
 

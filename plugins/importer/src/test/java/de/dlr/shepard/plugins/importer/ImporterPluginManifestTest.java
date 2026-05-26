@@ -1,6 +1,8 @@
 package de.dlr.shepard.plugins.importer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
@@ -49,12 +51,20 @@ final class ImporterPluginManifestTest {
   }
 
   @Test
-  void on_register_and_unregister_are_no_op_safe() {
+  void on_register_throws_in_prod_without_secret() {
+    // IMPL3 — the guard means onRegister is no longer unconditionally
+    // safe. In the test JVM there is no Quarkus context, so
+    // ConfigProvider returns the empty-string default for the secret
+    // and no profile, defaulting to "prod" for both. The guard fires
+    // and the plugin correctly lands in FAILED state.  PluginRegistry
+    // catches this RuntimeException and keeps the app running — the
+    // fail-soft contract still holds at the registry level.
     var m = new ImporterPluginManifest();
     var ctx = Mockito.mock(PluginContext.class);
-    // Must not throw: a thrown exception flips the plugin to
-    // FAILED in PluginRegistry.
-    m.onRegister(ctx);
+    assertThatThrownBy(() -> m.onRegister(ctx))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
+    // onUnregister remains unconditionally safe.
     m.onUnregister(ctx);
   }
 
@@ -72,5 +82,75 @@ final class ImporterPluginManifestTest {
     assertThat(found)
       .as("ImporterPluginManifest must be discoverable via ServiceLoader")
       .isTrue();
+  }
+
+  // ====================== IMPL3 credential guard ======================
+
+  /**
+   * IMPL3 — in prod mode, a blank / default / too-short secret must
+   * throw so the plugin lands FAILED rather than running silently with
+   * an insecure credential.
+   */
+  @Test
+  void startup_withDefaultCredential_inProdProfile_throwsIllegalState() {
+    assertThatThrownBy(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("prod", "changeme")
+    )
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
+  }
+
+  @Test
+  void startup_withBlankCredential_inProdProfile_throwsIllegalState() {
+    assertThatThrownBy(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("prod", "")
+    )
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
+  }
+
+  @Test
+  void startup_withShortCredential_inProdProfile_throwsIllegalState() {
+    // 15 chars — one below the 16-char floor
+    assertThatThrownBy(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("prod", "tooshort1234567")
+    )
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
+  }
+
+  @Test
+  void startup_withStrongCredential_inProdProfile_succeeds() {
+    // 32 hex chars — well above the 16-char floor
+    assertThatCode(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("prod", "a1b2c3d4e5f60708a1b2c3d4e5f60708")
+    ).doesNotThrowAnyException();
+  }
+
+  @Test
+  void startup_withDefaultCredential_inDevProfile_succeeds() {
+    // Dev profile must never be blocked — local dev doesn't set a strong secret
+    assertThatCode(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("dev", "changeme")
+    ).doesNotThrowAnyException();
+  }
+
+  @Test
+  void startup_withDefaultCredential_inTestProfile_succeeds() {
+    // Test profile must never be blocked — CI doesn't set a strong secret
+    assertThatCode(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("test", "changeme")
+    ).doesNotThrowAnyException();
+  }
+
+  @Test
+  void startup_withChangemeCaseVariant_inProdProfile_throwsIllegalState() {
+    // Case-insensitive match on "changeme" — an operator who copies
+    // the doc literally may accidentally use "Changeme" or "CHANGEME".
+    assertThatThrownBy(() ->
+      ImporterPluginManifest.enforceInstanceSecretGuard("prod", "CHANGEME")
+    )
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
   }
 }

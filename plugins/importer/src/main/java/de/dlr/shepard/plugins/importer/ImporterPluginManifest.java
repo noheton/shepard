@@ -5,6 +5,7 @@ import de.dlr.shepard.plugin.PluginManifest;
 import io.quarkus.logging.Log;
 import java.net.URI;
 import java.util.Optional;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * IMP1a — shepard-plugin-importer manifest, discovered by
@@ -118,6 +119,19 @@ public final class ImporterPluginManifest implements PluginManifest {
 
   @Override
   public void onRegister(PluginContext ctx) {
+    // IMPL3 — fail-fast guard: refuse to activate with an insecure
+    // SHEPARD_INSTANCE_SECRET in non-dev/test profiles. The guard
+    // runs before any CDI wiring so the plugin lands in FAILED state
+    // (surfaced in GET /v2/admin/plugins) rather than running silently
+    // with a weak credential.
+    enforceInstanceSecretGuard(
+      ConfigProvider.getConfig()
+        .getOptionalValue("quarkus.profile", String.class)
+        .orElse("prod"),
+      ConfigProvider.getConfig()
+        .getOptionalValue("shepard.audit.instance-secret", String.class)
+        .orElse("")
+    );
     // PR-1 has no CDI beans yet; nothing to wire imperatively.
     // PR-2's @ApplicationScoped services and PR-4's @Path
     // resources will be discovered by Quarkus's build-time CDI
@@ -128,6 +142,45 @@ public final class ImporterPluginManifest implements PluginManifest {
       ID,
       SHEPARD_COMPATIBILITY
     );
+  }
+
+  /**
+   * IMPL3 — startup guard: throws {@link IllegalStateException} when the
+   * runtime profile is production-like (anything other than {@code dev}
+   * or {@code test}) and {@code SHEPARD_INSTANCE_SECRET}
+   * ({@code shepard.audit.instance-secret}) is absent, blank, the
+   * well-known sentinel {@code "changeme"}, or shorter than 16 characters.
+   *
+   * <p>Package-private + static so unit tests can exercise the logic
+   * without booting Quarkus or touching {@link ConfigProvider}.
+   * {@link #onRegister} resolves both values from config and passes
+   * them through here.
+   *
+   * <p>The check is intentionally symmetric with the install-doc
+   * warning at {@code plugins/importer/docs/install.md §Pitfalls}:
+   * the doc said "do not run in production with the default
+   * changeme-style value"; this method makes the consequence
+   * automatic and immediate.
+   *
+   * @param profile the Quarkus {@code quarkus.profile} value
+   *                (e.g. {@code "dev"}, {@code "test"}, {@code "prod"})
+   * @param secret  the configured {@code shepard.audit.instance-secret}
+   *                value, or empty string if absent
+   * @throws IllegalStateException when the guard fires
+   */
+  static void enforceInstanceSecretGuard(String profile, String secret) {
+    if ("dev".equals(profile) || "test".equals(profile)) {
+      return;
+    }
+    String s = (secret == null) ? "" : secret.trim();
+    if (s.isBlank() || "changeme".equalsIgnoreCase(s) || s.length() < 16) {
+      throw new IllegalStateException(
+        "shepard-plugin-importer: SHEPARD_INSTANCE_SECRET is insecure " +
+        "(blank, default 'changeme', or shorter than 16 characters). " +
+        "Set a strong value (≥16 chars) in SHEPARD_INSTANCE_SECRET before " +
+        "running in production. See plugins/importer/docs/install.md for details."
+      );
+    }
   }
 
   @Override
