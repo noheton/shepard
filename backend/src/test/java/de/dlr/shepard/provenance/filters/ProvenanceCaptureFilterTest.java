@@ -5,10 +5,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.users.daos.MirroredUserDAO;
+import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -16,6 +20,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -44,6 +49,15 @@ class ProvenanceCaptureFilterTest {
   @Mock
   EntityAppIdLookup entityAppIdLookup;
 
+  @Mock
+  MirroredUserDAO mirroredUserDAO;
+
+  @Mock
+  UserDAO userDAO;
+
+  @Mock
+  MirroredUserEnrichmentCache enrichmentCache;
+
   ProvenanceCaptureFilter filter;
 
   @BeforeEach
@@ -52,6 +66,9 @@ class ProvenanceCaptureFilterTest {
     filter = new ProvenanceCaptureFilter();
     filter.provenance = provenance;
     filter.captureReads = false;
+    filter.mirroredUserDAO = mirroredUserDAO;
+    filter.userDAO = userDAO;
+    filter.enrichmentCache = enrichmentCache;
     // Wire the real resolver bean against the mocked lookup so the path-walk
     // tests run end-to-end through the parser + resolver layers.
     TargetEntityResolver resolver = new TargetEntityResolver();
@@ -65,6 +82,9 @@ class ProvenanceCaptureFilterTest {
     when(request.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getPath()).thenReturn("v2/collections");
     when(request.getProperty(ProvenanceCaptureFilter.PROP_STARTED_AT_MILLIS)).thenReturn(1_700_000_000_000L);
+    // Default: no X-Source-User-* headers present → mirroredUserAppId is null.
+    when(request.getHeaderString(ProvenanceCaptureFilter.HDR_SOURCE_USERNAME)).thenReturn(null);
+    when(enrichmentCache.get(any(), any())).thenReturn(Optional.empty());
   }
 
   @Test
@@ -90,7 +110,8 @@ class ProvenanceCaptureFilterTest {
       eq("v2/collections"),
       eq(201),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()  // no X-Source-User-* headers → mirroredUserAppId is null
     );
   }
 
@@ -101,7 +122,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
   }
 
   @Test
@@ -122,7 +143,8 @@ class ProvenanceCaptureFilterTest {
       eq("v2/collections"),
       eq(200),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()
     );
   }
 
@@ -133,7 +155,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
   }
 
   @Test
@@ -144,7 +166,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
   }
 
   @Test
@@ -155,7 +177,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
   }
 
   @Test
@@ -177,7 +199,8 @@ class ProvenanceCaptureFilterTest {
       eq("v2/collections/" + uuid),
       eq(200),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()
     );
   }
 
@@ -203,7 +226,8 @@ class ProvenanceCaptureFilterTest {
       eq("shepard/api/collections/42"),
       eq(200),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()
     );
   }
 
@@ -229,7 +253,8 @@ class ProvenanceCaptureFilterTest {
       eq("shepard/api/collections/42/dataObjects/45/timeseriesReferences"),
       eq(201),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()
     );
   }
 
@@ -255,7 +280,8 @@ class ProvenanceCaptureFilterTest {
       eq("v2/collections/" + collUuid + "/data-objects/" + doUuid),
       eq(201),
       anyLong(),
-      anyLong()
+      anyLong(),
+      isNull()
     );
   }
 

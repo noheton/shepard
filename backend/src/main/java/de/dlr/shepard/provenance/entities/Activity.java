@@ -169,6 +169,21 @@ public class Activity implements HasId, HasAppId {
   private Integer secretVersion;
 
   /**
+   * PROV-USER-ENRICH — the {@code appId} of the {@code :MirroredUser} node that
+   * represents the source-side actor forwarded via the {@code X-Source-User-*}
+   * HTTP headers. Set by {@link de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter}
+   * when those headers are present on an inbound request (cross-instance writes from
+   * the MFFD importer). {@code null} for activities originating on this instance.
+   *
+   * <p>This is the lightweight alternative to a Neo4j relationship edge
+   * ({@code :Activity -[:WAS_ATTRIBUTED_TO]-> :MirroredUser}) — the relationship
+   * variant is deferred; the property is sufficient for audit-trail drill-down
+   * via the provenance REST surface.
+   */
+  @Property("mirroredUserAppId")
+  private String mirroredUserAppId;
+
+  /**
    * Distributed-ledger anchor receipt — set by the ledger service
    * (TPL17 / {@code aidocs/integrations/111}) when an operator triggers
    * anchoring via {@code POST /v2/admin/ledger/anchor}.

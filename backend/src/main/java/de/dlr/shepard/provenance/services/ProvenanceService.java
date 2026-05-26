@@ -76,6 +76,37 @@ public class ProvenanceService {
     long startedAtMillis,
     long endedAtMillis
   ) {
+    return record(actionKind, targetKind, targetAppId, agentUsername, summary, method, path, status,
+      startedAtMillis, endedAtMillis, null);
+  }
+
+  /**
+   * Extended overload that also stamps a {@code mirroredUserAppId} — the
+   * {@code appId} of the {@code :MirroredUser} node representing the
+   * source-side actor forwarded via {@code X-Source-User-*} headers.
+   * {@code null} is safe; behaves identically to the 10-param variant.
+   *
+   * <p>Only the {@link de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter}
+   * currently passes a non-null value (PROV-USER-ENRICH). All other callers
+   * use the 10-param overload and receive {@code null} transparently.
+   *
+   * @param mirroredUserAppId appId of the resolved {@code :MirroredUser} node,
+   *                          or {@code null} when the request did not carry
+   *                          {@code X-Source-User-*} headers
+   */
+  public Activity record(
+    String actionKind,
+    String targetKind,
+    String targetAppId,
+    String agentUsername,
+    String summary,
+    String method,
+    String path,
+    Integer status,
+    long startedAtMillis,
+    long endedAtMillis,
+    String mirroredUserAppId
+  ) {
     if (!enabled) return null;
     try {
       Activity a = new Activity();
@@ -90,6 +121,7 @@ public class ProvenanceService {
       a.setStartedAtMillis(startedAtMillis);
       a.setEndedAtMillis(endedAtMillis);
       a.setOriginInstance(originInstance);
+      a.setMirroredUserAppId(mirroredUserAppId);
       // PR-3 audit-chain stamp — best-effort, never blocks the write.
       hmacChainService.stamp(a);
       return activityDAO.createOrUpdate(a);
