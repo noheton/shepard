@@ -113,7 +113,7 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-spatial</artifactId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>

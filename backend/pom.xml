@@ -918,7 +918,7 @@
         -->
         <dependency>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-spatial</artifactId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
           <version>${revision}</version>
         </dependency>
         <!--

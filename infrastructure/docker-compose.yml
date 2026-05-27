@@ -17,7 +17,7 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB}
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_SHEPARD_USER}
       QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
-      QUARKUS_DATASOURCE_SPATIAL_JDBC_URL: jdbc:postgresql://postgis:5432/${POSTGRES_DB}
+      QUARKUS_DATASOURCE_SPATIAL_JDBC_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB}
       QUARKUS_DATASOURCE_SPATIAL_USERNAME: ${POSTGRES_SHEPARD_USER}
       QUARKUS_DATASOURCE_SPATIAL_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
       SHEPARD_MIGRATION_MODE_ENABLED: ${SHEPARD_MIGRATION_MODE_ENABLED}
@@ -131,7 +131,14 @@ services:
       - mongo
 
   timescaledb:
-    image: timescale/timescaledb:2.24.0-pg16
+    # SPATIAL-V6-001 — Decision D2: PostGIS is now co-located on this instance.
+    # The custom image extends timescale/timescaledb:2.24.0-pg16 (Alpine-based)
+    # with `apk add postgis`. See infrastructure/timescaledb-postgis/Dockerfile.
+    # Operators upgrading from a separate postgis container should migrate spatial
+    # data before removing the old postgis service (see plugins/spatiotemporal/docs/install.md).
+    build:
+      context: ./timescaledb-postgis
+      dockerfile: Dockerfile
     command: >
       postgres
       -c timescaledb.max_tuples_decompressed_per_dml_transaction=0
@@ -150,26 +157,6 @@ services:
     networks:
       - shepard
 
-  postgis:
-    image: postgis/postgis:16-3.5
-    container_name: postgis
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
-      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
-    shm_size: "6GB"
-    ports:
-      - "5433:5432"
-    volumes:
-      - ./docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
-      - /opt/shepard/postgis/db:/var/lib/postgresql/data
-    networks:
-      - shepard
-    restart: unless-stopped
-    profiles:
-      - spatial
 
   # A5a — HDF5 / HSDS sidecar (Phase 1). Off by default; bring up with
   #   docker compose --profile hdf up -d
