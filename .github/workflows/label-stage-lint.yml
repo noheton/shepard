@@ -1,0 +1,47 @@
+# label-stage-lint.yml — GH-PM-ENH-API-1
+#
+# Ensures the `stage:*` label entries in `.github/labels.yml` never drift
+# from the canonical stage taxonomy in `aidocs/00-doc-stages.md`.
+#
+# The check is a hard failure (no continue-on-error) because label/doc-stage
+# drift is always a mistake: either a new stage was added to the doc without
+# a matching label, or a label was renamed without updating the doc.
+#
+# The overlay band (`upgrade-vX:vY`) is intentionally absent from the label
+# set — `scripts/lint-label-stages.sh` filters it before diffing.
+#
+# Runs on:
+#   - push to main touching either file (keeps main always green)
+#   - any PR touching either file (catches the drift before merge)
+
+name: Label stage lint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/labels.yml"
+      - "aidocs/00-doc-stages.md"
+      - "scripts/lint-label-stages.sh"
+      - ".github/workflows/label-stage-lint.yml"
+  pull_request:
+    paths:
+      - ".github/labels.yml"
+      - "aidocs/00-doc-stages.md"
+      - "scripts/lint-label-stages.sh"
+      - ".github/workflows/label-stage-lint.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Verify stage labels ↔ doc-stage taxonomy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run label-stage lint
+        run: bash scripts/lint-label-stages.sh

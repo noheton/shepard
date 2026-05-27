@@ -1,0 +1,100 @@
+# milestone-gate.yml — GH-PM-ENH-API-3
+#
+# Warns when a milestone is closed but an earlier-due-date milestone is still
+# open — enforcing the sequencing rule from aidocs/strategy/85 §4:
+#
+#   "A milestone closes when its release tag is cut + aidocs/34 carries every
+#   bundled row."
+#
+# The cascade table (v6.0.0-rc.1 → v6.0.0-rc.2 → v6.0.0) means earlier
+# milestones must close before later ones can be validly released.  This gate
+# surfaces out-of-order closes before the operator proceeds.
+#
+# WARN-ONLY (continue-on-error: true): enforcement is deferred to a future
+# release cycle once milestone discipline is established.  The gate emits a
+# `::warning::` annotation visible in the Actions log and (if present) on the
+# PR that triggered the milestone close.
+# Tracking row: GH-PM-ENH-API-3 in aidocs/16-dispatcher-backlog.md.
+
+name: Milestone gate
+
+on:
+  milestone:
+    types: [closed]
+
+permissions:
+  issues: read
+
+jobs:
+  milestone-sequence-check:
+    name: Warn if earlier milestone is still open
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check milestone sequencing
+        id: check
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLOSED_MILESTONE_TITLE: ${{ github.event.milestone.title }}
+          CLOSED_MILESTONE_DUE: ${{ github.event.milestone.due_on }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "Milestone closed: ${CLOSED_MILESTONE_TITLE}"
+          echo "Due date:         ${CLOSED_MILESTONE_DUE:-<no due date>}"
+
+          # Fetch all currently-open milestones via the GitHub API.
+          open_milestones=$(gh api "repos/${REPO}/milestones?state=open&per_page=100" \
+            --jq '.[] | {title: .title, due_on: .due_on, number: .number}' \
+            2>/dev/null || echo "")
+
+          if [[ -z "${open_milestones}" ]]; then
+            echo "No open milestones found. Sequencing check: OK."
+            exit 0
+          fi
+
+          echo "Open milestones:"
+          echo "${open_milestones}" | sed 's/^/  /'
+
+          # If the closed milestone has no due date, we cannot compare — skip.
+          if [[ -z "${CLOSED_MILESTONE_DUE}" || "${CLOSED_MILESTONE_DUE}" == "null" ]]; then
+            echo "Closed milestone has no due date; cannot compare sequencing."
+            echo "Sequencing check: SKIPPED (no due_on on closed milestone)."
+            exit 0
+          fi
+
+          # Convert closed milestone due date to epoch seconds for comparison.
+          closed_epoch=$(date -d "${CLOSED_MILESTONE_DUE}" +%s 2>/dev/null || \
+                         date -j -f "%Y-%m-%dT%H:%M:%SZ" "${CLOSED_MILESTONE_DUE}" +%s 2>/dev/null || echo "0")
+
+          # Check each open milestone: warn if its due_on is earlier than the
+          # just-closed milestone's due_on.
+          found_earlier=0
+          while IFS= read -r line; do
+            open_due=$(echo "${line}" | grep -oP '(?<="due_on":")[^"]+' || echo "")
+            open_title=$(echo "${line}" | grep -oP '(?<="title":")[^"]+' || echo "unknown")
+
+            if [[ -z "${open_due}" || "${open_due}" == "null" ]]; then
+              continue
+            fi
+
+            open_epoch=$(date -d "${open_due}" +%s 2>/dev/null || \
+                         date -j -f "%Y-%m-%dT%H:%M:%SZ" "${open_due}" +%s 2>/dev/null || echo "0")
+
+            if [[ "${open_epoch}" -lt "${closed_epoch}" ]]; then
+              echo "::warning::Milestone sequencing issue: '${open_title}' (due ${open_due}) is still OPEN but has an earlier due date than the just-closed milestone '${CLOSED_MILESTONE_TITLE}' (due ${CLOSED_MILESTONE_DUE})."
+              echo "::warning::Per aidocs/strategy/85 §4, milestones should close in order. Verify that '${open_title}' is intentionally left open or close it before proceeding with the release for '${CLOSED_MILESTONE_TITLE}'."
+              found_earlier=1
+            fi
+          done < <(gh api "repos/${REPO}/milestones?state=open&per_page=100" \
+            --jq '.[] | "{\"title\":\"\(.title)\",\"due_on\":\"\(.due_on // "")\",\"number\":\(.number)}"' \
+            2>/dev/null || true)
+
+          if [[ "${found_earlier}" -eq 0 ]]; then
+            echo "Milestone sequencing check: OK. No open milestone has an earlier due date."
+          else
+            echo "::warning::This check is warn-only and will NOT block the release. It will become required in a future release cycle."
+            echo "::warning::Tracking row: GH-PM-ENH-API-3 in aidocs/16-dispatcher-backlog.md."
+            exit 1
+          fi

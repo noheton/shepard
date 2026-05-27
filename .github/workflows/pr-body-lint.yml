@@ -1,0 +1,57 @@
+# pr-body-lint.yml — GH-PM-ENH-API-5
+#
+# Checks that a PR body contains at least one checked checkbox (`- [x]` or
+# `- [X]`), confirming the author engaged with the PR template rather than
+# submitting a blank or unmodified body.
+#
+# Per aidocs/strategy/85 §6: "The PR body uses .github/pull_request_template.md
+# which mirrors every CLAUDE.md 'Always:' rule as a checkbox. Reviewers MUST
+# reject PRs missing…" the required items.  This CI gate surfaces the issue
+# before the reviewer sees it.
+#
+# WARN-ONLY in this first iteration (continue-on-error: true), consistent
+# with the pr-title-lint.yml posture.  Will become a hard failure in a future
+# release cycle once contributors have adopted the template habit.
+# Tracking row: GH-PM-ENH-API-5 in aidocs/16-dispatcher-backlog.md.
+
+name: PR Body Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint-pr-body:
+    name: Check PR body has at least one checked checkbox
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for checked checkbox in PR body
+        id: lint
+        continue-on-error: true
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+
+          echo "Checking PR body for at least one checked checkbox (- [x] or - [X])..."
+
+          # An empty/null body gets coerced to the empty string by the env
+          # variable expansion — treat that as a failure.
+          if [[ -z "${PR_BODY}" ]]; then
+            echo "::warning::PR body is empty. Please fill in the PR template (.github/pull_request_template.md) and check at least one checkbox."
+            echo "::warning::A blank PR body suggests the author skipped the 'Always:' checklist required by aidocs/strategy/85 §6."
+            echo "::warning::This check is warn-only and will NOT block the PR. It will become required in a future release cycle."
+            exit 1
+          fi
+
+          # Look for at least one `- [x]` or `- [X]` (checked checkbox in
+          # GitHub Flavoured Markdown task list syntax).
+          if echo "${PR_BODY}" | grep -qiE '^\s*-\s*\[x\]'; then
+            echo "PR body checkbox check: OK (at least one checkbox is checked)."
+          else
+            echo "::warning::PR body contains no checked checkboxes (- [x])."
+            echo "::warning::Please review .github/pull_request_template.md and check the boxes that apply to this PR."
+            echo "::warning::Per aidocs/strategy/85 §6, reviewers should reject PRs missing the required 'Always:' checklist items."
+            echo "::warning::This check is warn-only and will NOT block the PR. It will become required in a future release cycle."
+            exit 1
+          fi
