@@ -377,6 +377,7 @@ onMounted(() => {
   refStartNs.value     = q.startNs ? Number(q.startNs) : null;
   refEndNs.value       = q.endNs   ? Number(q.endNs)   : null;
   colormapName.value   = (q.colormap as ColormapName | undefined) ?? "inferno";
+  renderer.value       = q.renderer ? String(q.renderer) : "trace-3d";
   fromReference.value  = true;
 
   void renderTrace();
