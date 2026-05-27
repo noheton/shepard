@@ -77,6 +77,16 @@ const brushTimeRange = computed(() => {
   return `${fmt(startT)} → ${fmt(endT)}`;
 });
 
+// Timestamps captured from the last actual renderTrace() call — shown on the view.
+const lastRenderStartNs = ref<number | null>(null);
+const lastRenderEndNs   = ref<number | null>(null);
+
+const renderWindowLabel = computed<string | null>(() => {
+  if (!lastRenderStartNs.value || !lastRenderEndNs.value) return null;
+  const fmt = (ns: number) => new Date(ns / 1e6).toISOString().slice(0, 19).replace("T", " ");
+  return `${fmt(lastRenderStartNs.value)} → ${fmt(lastRenderEndNs.value)} UTC`;
+});
+
 // ── v2 base URL ───────────────────────────────────────────────────────────────
 function getV2Base(): string {
   const config = useRuntimeConfig().public;
@@ -187,6 +197,8 @@ async function renderTrace() {
   const now     = Date.now() * 1_000_000;
   const startNs = refStartNs.value ?? (now - windowHours.value * 3_600_000_000_000);
   const endNs   = refEndNs.value   ?? now;
+  lastRenderStartNs.value = startNs;
+  lastRenderEndNs.value   = endNs;
 
   const byRole = new Map<string, Binding>();
   for (const b of bindings.value) {
@@ -506,6 +518,16 @@ onMounted(() => {
 
         <!-- trace-3d / tresjs → Trace3DView (flat-array adapter + color-bar) -->
         <ClientOnly v-if="rendererKind === 'trace-3d'">
+          <!-- Time bracket from reference or windowHours setting — shown on view -->
+          <div v-if="renderWindowLabel" class="d-flex align-center ga-2 mb-1">
+            <v-icon size="small" color="primary">mdi-clock-time-four-outline</v-icon>
+            <span class="text-caption text-medium-emphasis font-weight-medium">
+              {{ renderWindowLabel }}
+            </span>
+            <v-chip v-if="fromReference" size="x-small" color="primary" variant="tonal">
+              from reference
+            </v-chip>
+          </div>
           <Trace3DView
             :x-data="xData"
             :y-data="yData"
@@ -513,6 +535,7 @@ onMounted(() => {
             :value-data="valueData"
             :value-label="valueLabel"
             :color-scheme="trace3DColorScheme"
+            :brush-range="brushRange"
           />
           <template #fallback>
             <v-skeleton-loader type="image" height="500" />

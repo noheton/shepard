@@ -340,7 +340,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt3-timescaledb-tuning.md`](agent-findings/db-opt3-timescaledb-tuning.md) | DB-OPT3 — TimescaleDB Chunk + Compression Analysis | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | — |
+| [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](agent-findings/gh-pm-backfill-plan-2026-05-23.md) | GH-PM5 backfill — plan + execution log (2026-05-23) | 2026-05-23 | 2026-05-23 |

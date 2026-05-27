@@ -60,10 +60,13 @@ const props = withDefaults(
      *   "viridis" — dark purple → teal → yellow
      */
     colorScheme?: Trace3DColorScheme;
+    /** Normalized 0–1 brush range — highlights a sub-range of the trace. */
+    brushRange?: { from: number; to: number };
   }>(),
   {
     valueLabel: "Value",
     colorScheme: "heat",
+    brushRange: undefined,
   },
 );
 
@@ -141,6 +144,7 @@ watch(colormapName, () => {
         :points="tracePoints"
         :colormap="colormapName"
         :label="valueLabel"
+        :brush-range="props.brushRange"
       />
       <template #fallback>
         <v-skeleton-loader type="image" height="500" />
