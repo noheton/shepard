@@ -35,7 +35,13 @@ import org.postgresql.copy.CopyManager;
 @RequestScoped
 public class TimeseriesDataPointRepository {
 
-  private final int INSERT_BATCH_SIZE = 20000;
+  // Postgres Bind message uses uint16 for the parameter count; hard cap is 65535.
+  // Each legacy-INSERT row needs 2 named params (:time<n>, :value<n>) plus 1 shared
+  // :timeseriesid → max safe batch = (PG_BIND_PARAM_LIMIT - 1) / 2 = 32767 rows.
+  // TS-AUDIT-2026-05-24-011: guard added so a future bump of INSERT_BATCH_SIZE
+  // cannot silently exceed the wire-protocol limit.
+  static final int PG_BIND_PARAM_LIMIT = 65535;
+  static final int INSERT_BATCH_SIZE = 20000; // 1 + 20000*2 = 40001 < 65535 ✓
 
   @PersistenceContext
   EntityManager entityManager;
@@ -250,12 +256,26 @@ public class TimeseriesDataPointRepository {
     return dataPoints;
   }
 
+  static int insertParamCount(int batchSize) {
+    return 1 + batchSize * 2; // 1 shared :timeseriesid + 2 per row (:time<n>, :value<n>)
+  }
+
   private Query buildInsertQueryObject(
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
     TimeseriesEntity timeseriesEntity
   ) {
+    int batchSize = endExclusive - startInclusive;
+    int paramCount = insertParamCount(batchSize);
+    if (paramCount > PG_BIND_PARAM_LIMIT) {
+      throw new IllegalStateException(
+        "INSERT batch of " + batchSize + " rows requires " + paramCount +
+        " named parameters, exceeding the Postgres Bind wire-protocol limit of " +
+        PG_BIND_PARAM_LIMIT + ". Reduce INSERT_BATCH_SIZE to at most " +
+        ((PG_BIND_PARAM_LIMIT - 1) / 2) + "."
+      );
+    }
     StringBuilder queryString = new StringBuilder();
     queryString.append(
       "INSERT INTO timeseries_data_points (timeseries_id, time, " +
