@@ -174,6 +174,12 @@ async function init() {
 
 onMounted(init);
 watch(() => props.containerId, init);
+// Re-init when the channel list transitions from empty (v1 fallback) to populated
+// (v2 list with shepardIds) so auto-populate fires once real IDs are available.
+watch(
+  () => props.channels.some(c => c.shepardId),
+  (hasIds, hadIds) => { if (hasIds && !hadIds) init(); },
+);
 
 // ── axis change → snackbar ────────────────────────────────────────────────────
 

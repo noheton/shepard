@@ -20,10 +20,26 @@ const openCount = ref(0);
 
 watch(open, (v) => { if (v) openCount.value++; });
 
+// When v2 channels haven't loaded yet (or container predates TS-SEMANTIC-01),
+// fall back to synthesising ChannelV2 entries from the v1 channel list so the
+// picker always has something to show. shepardId is intentionally empty for
+// synthesised entries — saveAnnotations skips them (falsy guard).
+const resolvedChannels = computed<ChannelV2[]>(() => {
+  if (props.channelsV2?.length) return props.channelsV2;
+  return props.channels.map(ch => ({
+    shepardId: "",
+    measurement: ch.measurement,
+    device: ch.device,
+    location: ch.location,
+    symbolicName: ch.symbolicName,
+    field: ch.field,
+  }));
+});
+
 // ── save annotations (TS-AXIS-AUTO) ──────────────────────────────────────────
 
 async function saveAnnotations() {
-  if (!pickerRef.value || !props.channelsV2?.length) return;
+  if (!pickerRef.value || !resolvedChannels.value.length) return;
   const sel = pickerRef.value.getSelection();
   const roleEntries: [string, Channel5Tuple | null][] = [
     ["x", sel.x], ["y", sel.y], ["z", sel.z],
@@ -31,7 +47,7 @@ async function saveAnnotations() {
   ];
   for (const [role, tuple] of roleEntries) {
     if (!tuple) continue;
-    const ch = props.channelsV2.find(
+    const ch = resolvedChannels.value.find(
       c =>
         (c.measurement ?? "") === tuple.measurement &&
         (c.device       ?? "") === tuple.device &&
@@ -88,7 +104,7 @@ function openTrace3D() {
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
-          :channels="channelsV2 ?? []"
+          :channels="resolvedChannels"
           @update:can-confirm="canOpen = $event"
           @save-annotations-requested="saveAnnotations"
         />
