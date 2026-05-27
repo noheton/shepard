@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.collection.services;
 
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
@@ -7,11 +8,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * MFG5 — closed-enum guard for DataObject lifecycle status.
+ * MFG5 + MFG1 — closed-enum guard for DataObject lifecycle status.
  *
- * <p>Valid statuses: {@code DRAFT}, {@code IN_REVIEW}, {@code READY},
- * {@code PUBLISHED}, {@code ARCHIVED}. {@code null} is always valid
- * (nullable field, may not be declared yet).
+ * <p>Valid statuses (full set):
+ * {@code DRAFT}, {@code IN_REVIEW}, {@code READY}, {@code PUBLISHED},
+ * {@code ARCHIVED} (base set, any authenticated user),
+ * plus {@code NCR_OPEN}, {@code ON_HOLD}, {@code REJECTED}, {@code CERTIFIED}
+ * (MFG1 quality-engineering statuses — require the {@code quality-engineer} role).
+ *
+ * <p>{@code null} is always valid (nullable field, may not be declared yet).
  *
  * <p>Forbidden downgrade transitions (current → proposed):
  * <ul>
@@ -22,13 +27,25 @@ import java.util.Set;
  * <p>Same-state transitions (e.g. {@code PUBLISHED → PUBLISHED}) are allowed
  * so that a full-replace PUT that re-sends the current status is idempotent.
  *
- * <p>Source: {@code aidocs/agent-findings/manufacturing-quality.md §11.2} (MFG5).
+ * <p>Source: {@code aidocs/agent-findings/manufacturing-quality.md §11.2} (MFG5);
+ * MFG1 extension adds quality-engineer-gated statuses (EN 9100 / EASA Part 21G).
  */
 class StatusTransitionGuard {
 
-  /** The closed set of acceptable status values. */
+  /** The closed set of acceptable status values (all users). */
   static final Set<String> VALID_STATUSES = Set.of(
-    "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"
+    "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
+    // MFG1 — EN 9100 / EASA quality-engineering statuses (role-gated on write)
+    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED"
+  );
+
+  /**
+   * MFG1 — statuses that require the {@code quality-engineer} role to SET.
+   * Any user may READ a DataObject that carries one of these statuses; only a
+   * quality engineer may WRITE (create or transition TO) these values.
+   */
+  static final Set<String> QUALITY_RESTRICTED_STATUSES = Set.of(
+    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED"
   );
 
   /**
@@ -87,6 +104,27 @@ class StatusTransitionGuard {
       throw new WebApplicationException(
         "Forbidden status transition: '%s' → '%s'".formatted(currentStatus, proposedStatus),
         Status.CONFLICT
+      );
+    }
+  }
+
+  /**
+   * MFG1 — enforce the quality-engineer role gate on quality-restricted statuses.
+   *
+   * <p>If {@code proposedStatus} is in {@link #QUALITY_RESTRICTED_STATUSES} and
+   * the caller does not hold the {@code quality-engineer} role, an
+   * {@link InvalidAuthException} (HTTP 403) is thrown.
+   *
+   * @param proposedStatus the status value being written (may be {@code null})
+   * @param hasQualityRole {@code true} if the authenticated caller holds
+   *                       the {@code quality-engineer} Keycloak/Neo4j role
+   * @throws InvalidAuthException if caller lacks the role for a quality status
+   */
+  static void validateQualityRole(String proposedStatus, boolean hasQualityRole) {
+    if (proposedStatus == null) return;
+    if (QUALITY_RESTRICTED_STATUSES.contains(proposedStatus) && !hasQualityRole) {
+      throw new InvalidAuthException(
+        "Status '%s' requires the 'quality-engineer' role".formatted(proposedStatus)
       );
     }
   }

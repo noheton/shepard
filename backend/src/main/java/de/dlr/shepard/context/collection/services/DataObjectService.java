@@ -6,10 +6,12 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
@@ -75,6 +77,9 @@ public class DataObjectService {
   @Inject
   CollectionEventProducer collectionEventProducer;
 
+  @Inject
+  FeatureToggleRegistry featureToggleRegistry;
+
   /**
    * Creates a DataObject
    *
@@ -95,6 +100,10 @@ public class DataObjectService {
 
     // MFG5: enforce closed-enum status on create.
     StatusTransitionGuard.validateOnCreate(dataObject.getStatus());
+    // MFG1: enforce quality-engineer role for quality-restricted statuses.
+    boolean hasQualityRole = authenticationContext.getPrincipal() != null
+      && authenticationContext.getPrincipal().hasRole(Constants.QUALITY_ENGINEER_ROLE);
+    StatusTransitionGuard.validateQualityRole(dataObject.getStatus(), hasQualityRole);
 
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
     if (
@@ -124,6 +133,23 @@ public class DataObjectService {
         dataObject.getPredecessorIds(),
         null
       );
+    }
+
+    // MFG2: block creation if any predecessor is in a blocking quality status (feature-flagged).
+    boolean qualityGatesEnabled = featureToggleRegistry.get("manufacturing-quality-gates")
+      .map(t -> t.isEnabled())
+      .orElse(false);
+    if (qualityGatesEnabled && predecessors != null) {
+      for (DataObject pred : predecessors) {
+        String predStatus = pred.getStatus();
+        if ("NCR_OPEN".equals(predStatus) || "ON_HOLD".equals(predStatus)) {
+          throw new jakarta.ws.rs.WebApplicationException(
+            "Predecessor " + (pred.getAppId() != null ? pred.getAppId() : pred.getShepardId()) +
+            " is in status " + predStatus + " — resolve before creating a successor",
+            jakarta.ws.rs.core.Response.Status.CONFLICT
+          );
+        }
+      }
     }
 
     DataObject toCreate = new DataObject();
@@ -355,6 +381,10 @@ public class DataObjectService {
 
     // MFG5: enforce closed-enum status and forbid downgrade transitions on update.
     StatusTransitionGuard.validateOnUpdate(old.getStatus(), dataObject.getStatus());
+    // MFG1: enforce quality-engineer role for quality-restricted statuses on update.
+    boolean hasQualityRoleOnUpdate = authenticationContext.getPrincipal() != null
+      && authenticationContext.getPrincipal().hasRole(Constants.QUALITY_ENGINEER_ROLE);
+    StatusTransitionGuard.validateQualityRole(dataObject.getStatus(), hasQualityRoleOnUpdate);
 
     User user = userService.getCurrentUser();
 

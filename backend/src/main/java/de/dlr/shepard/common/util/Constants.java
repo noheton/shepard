@@ -202,6 +202,9 @@ public class Constants {
   public static final String INSTANCE_ADMIN_DISPLAY_NAME = "Instance Admin";
   public static final String BOOTSTRAP_GRANTER = "bootstrap";
 
+  // MFG1 — quality-engineer role (EN 9100 / EASA Part 21G quality gate statuses)
+  public static final String QUALITY_ENGINEER_ROLE = "quality-engineer";
+
   // Influx
   public static final String MEASUREMENT = "measurement";
   public static final String LOCATION = "location";

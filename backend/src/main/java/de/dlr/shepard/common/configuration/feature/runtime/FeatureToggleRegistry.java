@@ -1,5 +1,6 @@
 package de.dlr.shepard.common.configuration.feature.runtime;
 
+import de.dlr.shepard.common.configuration.feature.toggles.ManufacturingQualityGatesFeatureToggle;
 import de.dlr.shepard.common.configuration.feature.toggles.SpatialDataFeatureToggle;
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import io.quarkus.runtime.StartupEvent;
@@ -108,12 +109,17 @@ public class FeatureToggleRegistry {
   private boolean spatialOverrideSet = false;
   private volatile boolean versioningOverride;
   private boolean versioningOverrideSet = false;
+  // MFG2 — manufacturing quality predecessor gate (default off)
+  private volatile boolean qualityGatesOverride;
+  private boolean qualityGatesOverrideSet = false;
 
   void onStart(@Observes StartupEvent event) {
     spatialOverride = SpatialDataFeatureToggle.isActive();
     spatialOverrideSet = true;
     versioningOverride = VersioningFeatureToggle.isEnabled();
     versioningOverrideSet = true;
+    qualityGatesOverride = ManufacturingQualityGatesFeatureToggle.isEnabled();
+    qualityGatesOverrideSet = true;
 
     register(new FeatureToggleEntry(
       "spatial-data",
@@ -129,6 +135,16 @@ public class FeatureToggleRegistry {
       () -> versioningOverrideSet ? versioningOverride : VersioningFeatureToggle.isEnabled(),
       v -> { versioningOverride = v; versioningOverrideSet = true; },
       "shepard.features.versioning.enabled"
+    ));
+
+    // MFG2 — manufacturing quality predecessor gate
+    register(new FeatureToggleEntry(
+      "manufacturing-quality-gates",
+      "MFG2: Blocks DataObject creation when any predecessor is in NCR_OPEN or ON_HOLD status " +
+        "(shepard.features.manufacturing-quality-gates.enabled). Default off.",
+      () -> qualityGatesOverrideSet ? qualityGatesOverride : ManufacturingQualityGatesFeatureToggle.isEnabled(),
+      v -> { qualityGatesOverride = v; qualityGatesOverrideSet = true; },
+      ManufacturingQualityGatesFeatureToggle.TOGGLE_PROPERTY
     ));
   }
 

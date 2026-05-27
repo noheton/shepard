@@ -74,7 +74,7 @@ public record ImportManifestIO(
     @NotBlank @Schema(description = "Caller-scoped manifest key (not persisted).", example = "do-tr004") String localRef,
     @NotBlank @Schema(description = "Display name for the DataObject.", example = "TR-004 Anomaly Investigation") String name,
     @Schema(description = "Optional free-text description.", example = "Post-hotfire analysis: turbopump vibration spike at t=8s") String description,
-    @Schema(description = "Lifecycle status.", enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED", "NCR_OPEN", "REJECTED"}, example = "IN_REVIEW") String status,
+    @Schema(description = "Lifecycle status.", enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED", "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED"}, example = "IN_REVIEW") String status,
     @Schema(description = "Key/value metadata attributes.", example = "{\"propellant\":\"LOX/LH2\",\"test_engineer\":\"j.mueller\"}") Map<String, String> attributes,
     @Schema(description = "localRef of parent DataObject in this manifest.", example = "do-campaign") String parentRef,
     @Schema(description = "localRefs of predecessor DataObjects in this manifest.") List<String> predecessorRefs

@@ -5,6 +5,11 @@ const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   READY: { color: "success", label: "Ready" },
   PUBLISHED: { color: "primary", label: "Published" },
   ARCHIVED: { color: "secondary", label: "Archived" },
+  // MFG1 — EN 9100 quality-engineering statuses
+  NCR_OPEN: { color: "error", label: "NCR Open" },
+  ON_HOLD: { color: "orange", label: "On Hold" },
+  REJECTED: { color: "error", label: "Rejected" },
+  CERTIFIED: { color: "success", label: "Certified" },
 };
 
 const props = defineProps<{ status: string }>();

@@ -52,7 +52,9 @@ public class ImportValidationService {
   /** Lifecycle statuses accepted on incoming DataObjects. */
   private static final Set<String> VALID_STATUSES = Set.of(
     "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
-    "FAILED", "NCR_OPEN", "REJECTED"
+    "FAILED", "NCR_OPEN", "REJECTED",
+    // MFG1 — additional EN 9100 quality-engineering statuses
+    "ON_HOLD", "CERTIFIED"
   );
 
   /** Container types supported by the importer. */

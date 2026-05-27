@@ -61,7 +61,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
             <v-select
               v-model="updatedDataObject.status"
               label="Status"
-              :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
+              :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED', 'NCR_OPEN', 'ON_HOLD', 'REJECTED', 'CERTIFIED']"
               clearable
               hint="Optional lifecycle status. Leave blank to clear."
               persistent-hint
