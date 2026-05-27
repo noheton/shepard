@@ -138,6 +138,58 @@ public class StatusTransitionGuardTest {
       () -> StatusTransitionGuard.validateOnUpdate("DRAFT", "BOGUS_STATE"));
   }
 
+  // ─── MFG1 extended-status tests ──────────────────────────────────────────
+
+  @Test
+  public void validateOnCreate_allMfg1Statuses_allowed() {
+    // NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED, FAILED must all be accepted on create
+    for (String status : new String[]{"NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "FAILED"}) {
+      assertDoesNotThrow(() -> StatusTransitionGuard.validateOnCreate(status));
+    }
+  }
+
+  @Test
+  public void validateOnUpdate_rejectedToDraft_throws409() {
+    // REJECTED is a terminal state — no outbound transitions permitted
+    WebApplicationException ex = assertThrows(WebApplicationException.class,
+      () -> StatusTransitionGuard.validateOnUpdate("REJECTED", "DRAFT"));
+    assertEquals(409, ex.getResponse().getStatus());
+  }
+
+  @Test
+  public void validateOnUpdate_archivedToNcrOpen_throws409() {
+    // ARCHIVED is terminal — MFG1 statuses do not create an escape hatch
+    WebApplicationException ex = assertThrows(WebApplicationException.class,
+      () -> StatusTransitionGuard.validateOnUpdate("ARCHIVED", "NCR_OPEN"));
+    assertEquals(409, ex.getResponse().getStatus());
+  }
+
+  @Test
+  public void validateOnUpdate_certifiedToDraft_throws409() {
+    // CERTIFIED cannot regress to a pre-approval state
+    WebApplicationException ex = assertThrows(WebApplicationException.class,
+      () -> StatusTransitionGuard.validateOnUpdate("CERTIFIED", "DRAFT"));
+    assertEquals(409, ex.getResponse().getStatus());
+  }
+
+  @Test
+  public void validateOnUpdate_draftToNcrOpen_succeeds() {
+    // NCR_OPEN is a reachable state from DRAFT (quality engineer flags an issue)
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("DRAFT", "NCR_OPEN"));
+  }
+
+  @Test
+  public void validateOnUpdate_ncrOpenToInReview_succeeds() {
+    // NCR_OPEN is not terminal — it can be resolved and advanced
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("NCR_OPEN", "IN_REVIEW"));
+  }
+
+  @Test
+  public void validateOnUpdate_certifiedToArchived_succeeds() {
+    // CERTIFIED → ARCHIVED is a valid archival move
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("CERTIFIED", "ARCHIVED"));
+  }
+
   // ─── Service-level integration tests ─────────────────────────────────────
 
   /**

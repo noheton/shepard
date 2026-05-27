@@ -7,28 +7,49 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * MFG5 — closed-enum guard for DataObject lifecycle status.
+ * MFG5 / MFG1 — closed-enum guard for DataObject lifecycle status.
  *
- * <p>Valid statuses: {@code DRAFT}, {@code IN_REVIEW}, {@code READY},
- * {@code PUBLISHED}, {@code ARCHIVED}. {@code null} is always valid
- * (nullable field, may not be declared yet).
- *
- * <p>Forbidden downgrade transitions (current → proposed):
+ * <p>Valid statuses:
  * <ul>
- *   <li>{@code PUBLISHED} → {@code DRAFT} or {@code IN_REVIEW}
- *   <li>{@code ARCHIVED} → anything (terminal state)
+ *   <li>Research lifecycle: {@code DRAFT}, {@code IN_REVIEW}, {@code READY},
+ *       {@code PUBLISHED}, {@code ARCHIVED}
+ *   <li>Quality / manufacturing (MFG1): {@code NCR_OPEN}, {@code ON_HOLD},
+ *       {@code REJECTED}, {@code CERTIFIED}, {@code FAILED}
+ * </ul>
+ * {@code null} is always valid (nullable field, may not be declared yet).
+ *
+ * <p>Terminal states (no outbound transitions allowed):
+ * <ul>
+ *   <li>{@code ARCHIVED} — dataset is archived; no further lifecycle moves
+ *   <li>{@code REJECTED} — item was definitively rejected; terminal like ARCHIVED
  * </ul>
  *
- * <p>Same-state transitions (e.g. {@code PUBLISHED → PUBLISHED}) are allowed
- * so that a full-replace PUT that re-sends the current status is idempotent.
+ * <p>Constrained states (some downgrade transitions forbidden):
+ * <ul>
+ *   <li>{@code PUBLISHED} → {@code DRAFT} or {@code IN_REVIEW} forbidden
+ *   <li>{@code CERTIFIED} → {@code DRAFT} or {@code IN_REVIEW} forbidden
+ *       (certified approval cannot be informally regressed to a draft/review state)
+ * </ul>
  *
- * <p>Source: {@code aidocs/agent-findings/manufacturing-quality.md §11.2} (MFG5).
+ * <p>Same-state transitions (e.g. {@code PUBLISHED → PUBLISHED}) are always
+ * allowed so that a full-replace PUT that re-sends the current status is idempotent.
+ *
+ * <p>Role guard: transitions to / from {@code NCR_OPEN}, {@code ON_HOLD},
+ * {@code REJECTED}, {@code CERTIFIED} should be restricted to users with the
+ * {@code quality-engineer} role. This enforcement is tracked as MFG1-role-guard
+ * and deferred to a follow-on PR — the SecurityIdentity injection and per-transition
+ * role-check table require additional design work beyond the scope of this PR.
+ *
+ * <p>Source: {@code aidocs/agent-findings/manufacturing-quality.md §9.5} (MFG1).
  */
 class StatusTransitionGuard {
 
-  /** The closed set of acceptable status values. */
+  /** The closed set of acceptable status values (MFG1 extended). */
   static final Set<String> VALID_STATUSES = Set.of(
-    "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"
+    // Research lifecycle (MFG5 original)
+    "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
+    // Quality / manufacturing extensions (MFG1)
+    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "FAILED"
   );
 
   /**
@@ -38,7 +59,18 @@ class StatusTransitionGuard {
    */
   static final Map<String, Set<String>> FORBIDDEN_TRANSITIONS = Map.of(
     "PUBLISHED", Set.of("DRAFT", "IN_REVIEW"),
-    "ARCHIVED",  Set.of("DRAFT", "IN_REVIEW", "READY", "PUBLISHED")
+    // ARCHIVED is terminal — no state change out of ARCHIVED is permitted
+    "ARCHIVED",  Set.of(
+      "DRAFT", "IN_REVIEW", "READY", "PUBLISHED",
+      "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "FAILED"
+    ),
+    // REJECTED is terminal — like ARCHIVED, no recovery once explicitly rejected
+    "REJECTED",  Set.of(
+      "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
+      "NCR_OPEN", "ON_HOLD", "CERTIFIED", "FAILED"
+    ),
+    // CERTIFIED cannot regress to draft / review — it is a formal approval state
+    "CERTIFIED", Set.of("DRAFT", "IN_REVIEW")
   );
 
   private StatusTransitionGuard() {
