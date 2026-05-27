@@ -26,6 +26,7 @@ interface TitleAndMetadataDisplayProps {
   onDelete?: () => void;
   onDownload?: (name: string) => void;
   onAnnotate?: () => void;
+  onEdit?: () => void;
 }
 defineProps<TitleAndMetadataDisplayProps>();
 
@@ -102,6 +103,16 @@ const { advancedMode } = useAdvancedMode();
           color="treeview"
           icon="mdi-tag-outline"
           @click="onAnnotate"
+        />
+        <v-btn
+          v-if="onEdit"
+          rounded="lg"
+          class="mx-2"
+          variant="flat"
+          color="treeview"
+          icon="mdi-pencil-outline"
+          aria-label="Edit name"
+          @click="onEdit"
         />
       </v-col>
     </v-row>
