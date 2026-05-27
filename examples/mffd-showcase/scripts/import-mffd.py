@@ -49,6 +49,13 @@ exponential retry.
     # Validate timeseries round-trip after upload:
     python3 import-mffd.py --confirm-ts-payload --limit-frames 1
 
+    # Capture cross-instance provenance (source instance URL + derived ID):
+    python3 import-mffd.py --source-url https://backend.bt-au-cube3.intra.dlr.de
+
+    # Explicit source instance ID override:
+    python3 import-mffd.py --source-url https://backend.bt-au-cube3.intra.dlr.de \
+                           --source-instance-id dlr-augsburg
+
 ## Credentials
 
 Reads `/root/.config/shepard/claude-credentials.env`:
@@ -546,6 +553,9 @@ class MffdImporter:
                 "mffd:technique": step["technique"],
                 "mffd:iri": step["iri"],
                 "mffd:dataStatus": "DATA-PRESENT" if step["source_root"] else "PLACEHOLDER",
+                # MFFD-IMPORT-ATTRS-PROVENANCE: captured at first import time.
+                # TODO: backfill passes should overwrite with "backfilled:<activity-appId>"
+                "source_attrs_provenance": "original",
             },
         }
         if predecessor_id is not None:
@@ -607,12 +617,17 @@ class MffdImporter:
         parent = step_do_id
         if sdo.parent_id is not None and sdo.parent_id in do_id_map:
             parent = do_id_map[sdo.parent_id]
+        # MFFD-IMPORT-ATTRS-PROVENANCE: stamp source_attrs_provenance on every DataObject.
+        # Use a copy of sdo.attributes so the original SourceDataObject is not mutated
+        # (relevant for any retry logic that re-reads the object).
+        # TODO: backfill passes should overwrite with "backfilled:<activity-appId>"
+        do_attrs = {**sdo.attributes, "source_attrs_provenance": "original"}
         result = self.client.post_json(
             f"/shepard/api/collections/{collection_id}/dataObjects",
             {
                 "name": sdo.name,
                 "description": "",
-                "attributes": sdo.attributes,
+                "attributes": do_attrs,
                 "parentId": parent,
             },
         )
@@ -771,6 +786,28 @@ def main():
                     help="Concurrent uploads (default 8, perf-baseline shows this is safe)")
     ap.add_argument("--state-db", default=str(STATE_DB),
                     help="SQLite file for resume tracking")
+    ap.add_argument(
+        "--source-url",
+        default=None,
+        help=(
+            "Base URL of the source Shepard instance this data originated from "
+            "(e.g. https://backend.bt-au-cube3.intra.dlr.de). "
+            "Written as source_instance_url on the dest collection. "
+            "Also used to fetch GET /versionz for source_instance_version. "
+            "Optional; if omitted, cross-instance provenance attrs are not stamped."
+        ),
+    )
+    ap.add_argument(
+        "--source-instance-id",
+        default=None,
+        help=(
+            "Stable human-readable ID for the source Shepard instance "
+            "(e.g. 'dlr-augsburg', 'shepard-bt'). "
+            "Written as source_instance_id on the dest collection. "
+            "If omitted, auto-derived from the --source-url hostname by stripping "
+            "a 'shepard-api.' prefix when present."
+        ),
+    )
     ap.add_argument("--verbose", "-v", action="store_true")
     args = ap.parse_args()
 
@@ -789,7 +826,11 @@ def main():
     client = ShepardClient(base, api_key)
     state = StateStore(Path(args.state_db))
     importer = MffdImporter(
-        client, state, dry_run=args.dry_run, parallelism=args.parallelism
+        client, state,
+        dry_run=args.dry_run,
+        parallelism=args.parallelism,
+        source_url=args.source_url,
+        source_instance_id=args.source_instance_id,
     )
     importer.run(limit_frames=args.limit_frames, confirm_ts=args.confirm_ts_payload)
 
