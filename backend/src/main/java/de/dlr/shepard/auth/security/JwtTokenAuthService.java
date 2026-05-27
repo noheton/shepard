@@ -236,7 +236,7 @@ public class JwtTokenAuthService {
   }
 
   /** Returns the configured username-claim name, or empty string if using sub-split default. */
-  String getUsernameClaim() {
+  public String getUsernameClaim() {
     return usernameClaim;
   }
 
