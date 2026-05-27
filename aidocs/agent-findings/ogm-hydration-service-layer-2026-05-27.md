@@ -157,6 +157,14 @@ fileContainer.setCollectionList(fileContainer.getCollectionList().stream().filte
 `FileContainer.collectionList` is `@Relationship(HAS_DEFAULT_FILE_CONTAINER, INCOMING)`.
 Session.load depth=1 hydrates it. Safe.
 
+**Self-evidencing anchor:** this code path runs on every file-container fetch in
+production. If `session.load(depth=1)` did NOT hydrate INCOMING fields,
+`fileContainer.getCollectionList()` would already return null/empty on every call
+and every collection's default file container would be invisible. The absence of
+this failure in production is direct evidence that `session.load(depth=1)` does
+hydrate INCOMING `@Relationship` fields — the foundational claim on which the
+entire "zero CRIT/MAJOR" verdict rests.
+
 ### 6. `SnapshotService.resolveCollection()` (line 275) + `SnapshotPinnedReadRest.checkCollection()` (line 122)
 
 `SnapshotDAO.findByAppId` uses bare `RETURN s`. The callers access
