@@ -818,24 +818,31 @@ OIDC_ROLE=shepard-user
 SHEPARD_OIDC_ROLES_CLAIM_PATH=realm_access.roles                    # both, post-Pocket-ID-claim-mapping
 ```
 
-#### 4.11a.4 Required backend follow-up: configurable claim path
+#### 4.11a.4 Configurable claim path — shipped (2026-05-27)
 
-Today `JWTFilter.parsePrincipalFromAccessToken` hard-codes the
-`realm_access.roles` path via Jackson's
-`Map.of("realm_access", RolesList.class)` deserialiser. To support
-non-Keycloak IdPs without forcing admins into the custom-claim
-workaround above, ship a small backend follow-up:
+**Both halves of L10 have now shipped:**
 
-- New config key `shepard.oidc.roles-claim-path` (default
-  `realm_access.roles` for backward compatibility).
-- `JWTFilter` parses the dot-separated path and walks the JSON tree
-  to find the roles array. Validates `String[]` shape.
-- Tracker row in `aidocs/34` as **CONFIG** — additive, default-safe.
+**Roles-claim path (F8 / A0, shipped earlier):**
+`JwtTokenAuthService` reads the dot-separated path from
+`shepard.oidc.roles-claim-path` (default `realm_access.roles`) and
+walks the JSON tree to collect the roles array. All IdPs in the table
+below are supported post-F8 by setting the env var
+`SHEPARD_OIDC_ROLES_CLAIM_PATH`.
 
-This is a S-sized backlog item (call it **F8**, slotting in alongside
-the F-series in `aidocs/24`'s permission-system review). Until F8
-ships, path (a) only works against IdPs that emit `realm_access.roles`
-natively or can be configured to do so.
+**Username-claim path (L10, shipped 2026-05-27):**
+New config key `shepard.oidc.username-claim` (default empty).
+When empty, the existing `sub`-split behaviour is preserved
+(Keycloak UUID → last `:` segment). When set to e.g.
+`preferred_username`, `email`, or any other textual JWT claim,
+that claim value is used as the Shepard username in both
+`JwtTokenAuthService.parsePrincipalFromAccessToken` and
+`UserFilter.resolveUsernameFromUserinfo` — keeping both sides of
+the username-match check in sync.
+
+**Migration warning:** flipping `shepard.oidc.username-claim` on an
+existing deployment renames all users. Back up Neo4j and migrate
+`:User.username` values before enabling on a deployment with existing
+data. See `aidocs/34` row L10 for the full operator runbook.
 
 #### 4.11a.5 Tested-but-unprovisioned IdPs (notes)
 
