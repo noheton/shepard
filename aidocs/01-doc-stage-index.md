@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 39 |
+| `fragment` | 40 |
 | `concept` | 24 |
 | `idea` | 9 |
 | `feature-defined` | 94 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 67 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **359** |
+| **total docs** | **360** |
 | **UNTAGGED** | **0** |
 
-## fragment (39)
+## fragment (40)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -57,6 +57,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/synergy-2026-05-23-shacl-driven-mcp.md`](agent-findings/synergy-2026-05-23-shacl-driven-mcp.md) | S-07 — SHACL × MCP tools × ShapesValidateRest: one validator, two surfaces | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-snapshots-garage-gap.md`](agent-findings/synergy-2026-05-23-snapshots-garage-gap.md) | S-06 — Snapshots × Garage S3 (no versioning): Shepard absorbs the gap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-trace3d-video-sync.md`](agent-findings/synergy-2026-05-23-trace3d-video-sync.md) | S-04 — Trace3D × Video × DataBinding: synchronized 3D-trace + camera-PiP | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/synergy-2026-05-27.md`](agent-findings/synergy-2026-05-27.md) | Synergy findings — 2026-05-27 | 2026-05-27 | — |
 | [`aidocs/data/12-timescaledb-performance-analysis.md`](data/12-timescaledb-performance-analysis.md) | TimescaleDB Timeseries Integration — Performance Analysis & Mitigations | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
