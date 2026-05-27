@@ -33,7 +33,10 @@ from typing import Optional
 # top of main() (see examples/lumen-showcase/seed.py for the pattern).
 PLUGIN_DEPS: dict[str, str] = {}
 
-COLLECTION_NAME = "Home energy & environment (live)"
+COLLECTION_NAME = os.environ.get(
+    "HOME_SHOWCASE_COLLECTION_NAME",
+    "Home energy & environment (live)",
+)
 COLLECTION_DESCRIPTION = (
     "Live MQTT-ingested home telemetry — solar inverter, smart-plug energy, "
     "and indoor environment. Data flows in continuously through the home-showcase "
@@ -275,36 +278,37 @@ def _attrs_equal(existing, target: dict) -> bool:
     return got == target
 
 
-def ensure_collection(coll_api):
+def ensure_collection(coll_api, name: str | None = None):
     """Idempotent. On re-run, if description/attributes have drifted from
     the seed source, reconcile them in place — so editing this file and
     re-running picks up the change without manual cleanup."""
     from shepard_client import Collection  # type: ignore
+    name = name or COLLECTION_NAME
     target_attrs = {"source": "home-showcase", "live": "true"}
-    existing = _find_collection_by_name(coll_api, COLLECTION_NAME)
+    existing = _find_collection_by_name(coll_api, name)
     if existing is not None:
         drift = (
             getattr(existing, "description", None) != COLLECTION_DESCRIPTION
             or not _attrs_equal(existing, target_attrs)
         )
         if not drift:
-            _log("SKIP", COLLECTION_NAME, "Collection", existing.id)
+            _log("SKIP", name, "Collection", existing.id)
             return existing
         try:
             updated_body = Collection(
-                name=COLLECTION_NAME,
+                name=name,
                 description=COLLECTION_DESCRIPTION,
                 attributes=target_attrs,
             )
             coll_api.update_collection(collection_id=existing.id, collection=updated_body)
-            _log("UPD", COLLECTION_NAME, "Collection", existing.id)
+            _log("UPD", name, "Collection", existing.id)
         except Exception as e:
-            _log("WARN", COLLECTION_NAME, f"reconcile failed ({str(e)[:80]})", existing.id)
+            _log("WARN", name, f"reconcile failed ({str(e)[:80]})", existing.id)
         return existing
     created = coll_api.create_collection(
-        Collection(name=COLLECTION_NAME, description=COLLECTION_DESCRIPTION, attributes=target_attrs)
+        Collection(name=name, description=COLLECTION_DESCRIPTION, attributes=target_attrs)
     )
-    _log("OK", COLLECTION_NAME, "Collection", created.id)
+    _log("OK", name, "Collection", created.id)
     return created
 
 
@@ -423,6 +427,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         default=os.environ.get("SHEPARD_API_KEY"),
         help="API key for admin (consumed via apikey header)",
     )
+    ap.add_argument(
+        "--collection-name",
+        default=os.environ.get("HOME_SHOWCASE_COLLECTION_NAME", COLLECTION_NAME),
+        help="Target collection name (default: %(default)s). Override to feed "
+             "the STC into a different collection.",
+    )
     args = ap.parse_args(argv)
     if not args.apikey:
         ap.error("set --apikey or SHEPARD_API_KEY env var")
@@ -441,7 +451,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     ts_api = TimeseriesContainerApi(client)
     tsr_api = TimeseriesReferenceApi(client)
 
-    coll = ensure_collection(coll_api)
+    coll = ensure_collection(coll_api, name=args.collection_name)
     # Make the Collection readable by every authenticated user so
     # non-admin demo visitors (alice, bob) see the home Collection on
     # /collections. Mirrors LUMEN's `_ensure_public` pattern.

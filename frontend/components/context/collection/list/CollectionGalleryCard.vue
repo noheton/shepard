@@ -6,6 +6,10 @@
  * placeholder), metadata-completeness chip, DataObject count, creator,
  * and a "Browse" button that navigates to the Collection detail page.
  *
+ * Optional watch toggle: pass `watchable` + `watched` props and handle
+ * the `toggle-watch` emit. Used by PersonalDigest to unify card design
+ * between the home page and the collections gallery.
+ *
  * The completeness chip reuses the same `computeMetadataCompleteness`
  * helper as `MetadataCompletenessCard.vue` — pure function, no I/O.
  * The card intentionally omits the async fetches (annotation count,
@@ -17,9 +21,18 @@
 import type { Collection } from "@dlr-shepard/backend-client";
 import { computeMetadataCompleteness } from "~/utils/metadataCompleteness";
 import { descriptionPreview } from "~/utils/helpers";
+import { isCleanupCollection } from "~/composables/context/useFetchRecentCollections";
 
 const props = defineProps<{
   collection: Collection;
+  /** Show a watch-toggle button on the hero banner. */
+  watchable?: boolean;
+  /** Current watch state — only relevant when watchable is true. */
+  watched?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: "toggle-watch"): void;
 }>();
 
 const router = useRouter();
@@ -100,6 +113,19 @@ function browse() {
       >
         <span class="gallery-card-initial text-white">{{ initial }}</span>
       </div>
+      <!-- Watch toggle button (optional) -->
+      <v-btn
+        v-if="watchable"
+        icon
+        size="x-small"
+        variant="flat"
+        :color="watched ? 'primary' : 'default'"
+        class="gallery-card-watch-btn"
+        :title="watched ? 'Remove from watched' : 'Add to watched'"
+        @click.stop="emit('toggle-watch')"
+      >
+        <v-icon size="small">{{ watched ? 'mdi-binoculars' : 'mdi-binoculars-outline' }}</v-icon>
+      </v-btn>
     </div>
 
     <!-- Card body -->
@@ -151,6 +177,26 @@ function browse() {
           {{ doCount }} DOs
         </v-chip>
 
+        <!-- Status chip (if set, not cleanup) -->
+        <v-chip
+          v-if="collection.status && !isCleanupCollection(collection)"
+          size="x-small"
+          variant="tonal"
+        >
+          {{ collection.status }}
+        </v-chip>
+
+        <!-- Cleanup warning -->
+        <v-chip
+          v-if="isCleanupCollection(collection)"
+          size="x-small"
+          variant="tonal"
+          color="warning"
+          prepend-icon="mdi-delete-clock-outline"
+        >
+          Pending cleanup
+        </v-chip>
+
         <span
           v-if="collection.createdBy"
           class="text-caption text-textbody2 ml-auto"
@@ -190,10 +236,25 @@ function browse() {
 }
 
 .gallery-card-hero {
+  position: relative;
   height: 120px;
   overflow: hidden;
   border-radius: 4px 4px 0 0;
   flex-shrink: 0;
+}
+
+.gallery-card-watch-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0.85;
+  background: rgba(var(--v-theme-surface), 0.75) !important;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .gallery-card-hero-img {

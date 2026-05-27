@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import {
   useFetchRecentCollections,
-  isCleanupCollection,
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
-import { renderInlineDescription } from "~/utils/inlineDescription";
 
 const router = useRouter();
 
@@ -88,16 +86,8 @@ function onCollectionCreated(id: number) {
   router.push(collectionsPath + id);
 }
 
-// Contributor list — deduplicates creator + last editor.
-function contributors(collection: { createdBy: string; updatedBy?: string | null }): string[] {
-  const list = [collection.createdBy];
-  if (collection.updatedBy && collection.updatedBy !== collection.createdBy) {
-    list.push(collection.updatedBy);
-  }
-  return list;
-}
-
-// Deterministic avatar color from username (one of 6 muted Vuetify colours).
+// Deterministic avatar color from username (one of 6 muted Vuetify colours) —
+// used by the "Shared with me" list section.
 const AVATAR_COLORS = ["blue-grey", "teal", "indigo", "deep-orange", "purple", "brown"];
 function avatarColor(username: string): string {
   let h = 0;
@@ -237,90 +227,12 @@ function relativeTime(date: Date | null | undefined): string {
             sm="6"
             md="4"
           >
-            <v-card
-              :to="`/collections/${collection.id}`"
-              height="100%"
-              elevation="0"
-              variant="outlined"
-              rounded="lg"
-              class="collection-digest-card d-flex flex-column"
-            >
-              <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
-                <div
-                  class="collection-name-clamp flex-grow-1"
-                  data-testid="collection-card-title"
-                  :title="collection.name"
-                >
-                  {{ collection.name }}
-                </div>
-                <v-btn
-                  icon
-                  variant="text"
-                  density="compact"
-                  size="small"
-                  color="primary"
-                  class="ms-1 flex-shrink-0"
-                  title="Remove from watched"
-                  @click.stop.prevent="toggleWatched(collection)"
-                >
-                  <v-icon>mdi-binoculars</v-icon>
-                </v-btn>
-              </v-card-title>
-              <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
-                <!-- eslint-disable-next-line vue/no-v-html -->
-                <div
-                  v-if="collection.description"
-                  class="text-body-2 text-medium-emphasis description-clamp"
-                  data-testid="collection-card-description"
-                  v-html="renderInlineDescription(collection.description)"
-                />
-                <div v-else class="text-body-2 text-disabled font-italic">
-                  No description
-                </div>
-              </v-card-text>
-              <v-card-actions class="px-4 pb-3 pt-0 d-flex flex-wrap ga-1">
-                <v-chip size="x-small" variant="tonal" prepend-icon="mdi-cube-outline">
-                  {{ collection.dataObjectIds?.length ?? 0 }}
-                  {{ (collection.dataObjectIds?.length ?? 0) === 1 ? "object" : "objects" }}
-                </v-chip>
-                <v-chip
-                  v-if="collection.status && !isCleanupCollection(collection)"
-                  size="x-small"
-                  variant="tonal"
-                >
-                  {{ collection.status }}
-                </v-chip>
-                <v-chip
-                  v-if="isCleanupCollection(collection)"
-                  size="x-small"
-                  variant="tonal"
-                  color="warning"
-                  prepend-icon="mdi-delete-clock-outline"
-                >
-                  Pending cleanup
-                </v-chip>
-                <v-spacer />
-                <div class="d-flex ga-1 align-center me-1">
-                  <v-avatar
-                    v-for="u in contributors(collection)"
-                    :key="u"
-                    :color="avatarColor(u)"
-                    size="20"
-                    :title="u"
-                  >
-                    <span style="font-size:10px; color:white; font-weight:500">{{ u.charAt(0).toUpperCase() }}</span>
-                  </v-avatar>
-                </div>
-                <v-chip
-                  size="x-small"
-                  variant="text"
-                  class="text-medium-emphasis"
-                  prepend-icon="mdi-clock-outline"
-                >
-                  {{ relativeTime(collection.updatedAt ?? collection.createdAt) }}
-                </v-chip>
-              </v-card-actions>
-            </v-card>
+            <CollectionGalleryCard
+              :collection="collection"
+              :watchable="true"
+              :watched="true"
+              @toggle-watch="toggleWatched(collection)"
+            />
           </v-col>
         </template>
       </v-row>
@@ -354,7 +266,8 @@ function relativeTime(date: Date | null | undefined): string {
           </v-col>
         </template>
 
-        <!-- Collection cards -->
+        <!-- Collection cards — uses the same CollectionGalleryCard as the
+             /collections gallery so both pages share one consistent design. -->
         <template v-else>
           <v-col
             v-for="collection in myCollections"
@@ -363,107 +276,12 @@ function relativeTime(date: Date | null | undefined): string {
             sm="6"
             md="4"
           >
-            <v-card
-              :to="`/collections/${collection.id}`"
-              height="100%"
-              elevation="0"
-              variant="outlined"
-              rounded="lg"
-              class="collection-digest-card d-flex flex-column"
-            >
-              <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
-                <div
-                  class="collection-name-clamp flex-grow-1"
-                  data-testid="collection-card-title"
-                  :title="collection.name"
-                >
-                  {{ collection.name }}
-                </div>
-                <v-btn
-                  icon
-                  variant="text"
-                  density="compact"
-                  size="small"
-                  :color="isWatched(collection.id!) ? 'primary' : undefined"
-                  class="ms-1 flex-shrink-0"
-                  :title="isWatched(collection.id!) ? 'Remove from watched' : 'Add to watched'"
-                  @click.stop.prevent="toggleWatched(collection)"
-                >
-                  <v-icon>{{ isWatched(collection.id!) ? 'mdi-binoculars' : 'mdi-binoculars-outline' }}</v-icon>
-                </v-btn>
-              </v-card-title>
-
-              <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
-                <!-- eslint-disable-next-line vue/no-v-html -->
-                <div
-                  v-if="collection.description"
-                  class="text-body-2 text-medium-emphasis description-clamp"
-                  data-testid="collection-card-description"
-                  v-html="renderInlineDescription(collection.description)"
-                />
-                <div v-else class="text-body-2 text-disabled font-italic">
-                  No description
-                </div>
-              </v-card-text>
-
-              <!-- Footer chips -->
-              <v-card-actions class="px-4 pb-3 pt-0 d-flex flex-wrap ga-1">
-                <!-- DataObject count chip -->
-                <v-chip
-                  size="x-small"
-                  variant="tonal"
-                  prepend-icon="mdi-cube-outline"
-                >
-                  {{ collection.dataObjectIds.length }}
-                  {{ collection.dataObjectIds.length === 1 ? "object" : "objects" }}
-                </v-chip>
-
-                <!-- Status chip (if set, and not cleanup — cleanup gets its own chip) -->
-                <v-chip
-                  v-if="collection.status && !isCleanupCollection(collection)"
-                  size="x-small"
-                  variant="tonal"
-                >
-                  {{ collection.status }}
-                </v-chip>
-
-                <!-- Cleanup warning — visible to everyone so admins can spot it -->
-                <v-chip
-                  v-if="isCleanupCollection(collection)"
-                  size="x-small"
-                  variant="tonal"
-                  color="warning"
-                  prepend-icon="mdi-delete-clock-outline"
-                >
-                  Pending cleanup
-                </v-chip>
-
-                <v-spacer />
-
-                <!-- Contributor initials -->
-                <div class="d-flex ga-1 align-center me-1">
-                  <v-avatar
-                    v-for="u in contributors(collection)"
-                    :key="u"
-                    :color="avatarColor(u)"
-                    size="20"
-                    :title="u"
-                  >
-                    <span style="font-size:10px; color:white; font-weight:500">{{ u.charAt(0).toUpperCase() }}</span>
-                  </v-avatar>
-                </div>
-
-                <!-- Last updated relative timestamp -->
-                <v-chip
-                  size="x-small"
-                  variant="text"
-                  class="text-medium-emphasis"
-                  prepend-icon="mdi-clock-outline"
-                >
-                  {{ relativeTime(collection.updatedAt ?? collection.createdAt) }}
-                </v-chip>
-              </v-card-actions>
-            </v-card>
+            <CollectionGalleryCard
+              :collection="collection"
+              :watchable="true"
+              :watched="isWatched(collection.id!)"
+              @toggle-watch="toggleWatched(collection)"
+            />
           </v-col>
         </template>
       </v-row>
@@ -554,40 +372,3 @@ function relativeTime(date: Date | null | undefined): string {
   </v-container>
 </template>
 
-<style scoped>
-.collection-name-clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4;
-  word-break: break-word;
-  /* UI-006: the title is a flex child via `flex-grow-1`; without an explicit
-   * `min-width: 0` it cannot shrink below its intrinsic content width, which
-   * defeats the -webkit-line-clamp ellipsis. The result is mid-word truncation
-   * with no `…`. Setting `min-width: 0` re-enables shrink-to-fit, restoring the
-   * ellipsis behaviour. */
-  min-width: 0;
-  /* Cap the per-line text and add an ellipsis when only one line fits the
-   * available width — belt-and-braces with the line-clamp above. */
-  text-overflow: ellipsis;
-}
-
-.description-clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.5;
-}
-
-.collection-digest-card {
-  cursor: pointer;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
-}
-
-.collection-digest-card:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
-  transform: translateY(-1px);
-}
-</style>
