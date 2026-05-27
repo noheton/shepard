@@ -24,11 +24,31 @@ export interface TimeseriesAnnotationDto {
   createdBy?: string;
 }
 
+/** One contiguous run of anomalous data points — mirrors AnomalyIntervalIO. */
+export interface AnomalyIntervalDto {
+  startNs: number;
+  endNs: number;
+  peakValue: number;
+  maxZScore: number;
+}
+
+/** Full result from POST /detect-anomalies — mirrors AnomalyDetectResultIO. */
 export interface AnomalyDetectionResultDto {
+  anomalies: AnomalyIntervalDto[];
+  windowSize: number;
+  threshold: number;
+  totalPoints: number;
   annotationsCreated: number;
-  intervalsDetected: number;
-  // Plus the raw stats payload — fields vary; we don't render them yet.
-  [k: string]: unknown;
+}
+
+/** Parameters forwarded in the JSON body to the detect-anomalies endpoint. */
+export interface DetectAnomaliesParams {
+  window?: number;
+  k?: number;
+  createAnnotations?: boolean;
+  measurement?: string;
+  field?: string;
+  detectorId?: string;
 }
 
 function v2BaseUrl(): string {
@@ -92,23 +112,41 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
     }
   }
 
-  async function detectAnomalies(): Promise<AnomalyDetectionResultDto | null> {
+  /**
+   * POST /v2/timeseries-references/{refAppId}/detect-anomalies
+   *
+   * Sends the detection parameters as a JSON body (the endpoint accepts an
+   * optional body — empty {} uses server defaults). Returns the full
+   * AnomalyDetectResultIO payload so the dialog can display per-interval detail.
+   *
+   * Set `createAnnotations: true` to have the server persist
+   * TimeseriesAnnotation nodes; the composable calls fetchAll() afterwards so
+   * the "Anomalies & intervals" section refreshes automatically.
+   */
+  async function detectAnomalies(
+    params: DetectAnomaliesParams = {},
+  ): Promise<AnomalyDetectionResultDto | null> {
     if (!refAppId.value) return null;
     detecting.value = true;
     try {
       const headers = await authHeaders();
       const url =
-        `${v2BaseUrl()}/v2/timeseries-references/${refAppId.value}` +
-        `/detect-anomalies?createAnnotations=true`;
-      const response = await fetch(url, { method: "POST", headers });
+        `${v2BaseUrl()}/v2/timeseries-references/${refAppId.value}/detect-anomalies`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(params),
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       const result = (await response.json()) as AnomalyDetectionResultDto;
       emitSuccess(
-        `Anomaly detection finished — ${result.intervalsDetected ?? 0} interval(s) found.`,
+        `Anomaly detection finished — ${result.anomalies.length} interval(s) found.`,
       );
-      await fetchAll();
+      if (params.createAnnotations) {
+        await fetchAll();
+      }
       return result;
     } catch (e) {
       handleError(e as Error, "running anomaly detection");
