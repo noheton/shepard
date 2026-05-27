@@ -174,12 +174,63 @@ the INCOMING `has_reference` edge into `FileReference.dataObject`. Safe.
 
 ---
 
+## MAJOR risk — DataObjectDAO.findByAppId + resolveTypedPredecessors (post-write addendum)
+
+This risk was identified during main-session verification **after** the agent wrote
+the preceding "zero MAJOR risks" summary. The agent checked SnapshotDAO but did not
+enumerate DataObjectDAO bare-RETURN callers.
+
+**File:** `DataObjectDAO.java:418-423` + `DataObjectService.java:647,657`
+
+`DataObjectDAO.findByAppId(String appId)` uses:
+
+```java
+String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
+var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
+return StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+```
+
+Bare `RETURN d` → INCOMING fields null per the table above. Specifically,
+`DataObject.collection` (annotated `@Relationship(type = HAS_DATAOBJECT, direction = INCOMING)`)
+will be null if the DataObject was not already in the OGM session cache.
+
+Its only service-layer caller is `DataObjectService.resolveTypedPredecessors()`:
+
+```java
+DataObject predecessor = dataObjectDAO.findByAppId(tp.predecessorAppId());  // line 647
+// null-checks deleted, then...
+if (!predecessor.getCollection().getShepardId().equals(collectionShepardId)) {  // line 657 — NPE
+```
+
+**Trigger condition:** `POST /v2/collections/{id}/data-objects` (or the equivalent
+update path) with `typedPredecessors` containing an appId. If the predecessor
+DataObject is already in the OGM session cache from a prior load, the NPE is masked
+(cache returns the hydrated entity). If not (fresh session, multi-worker import),
+`getCollection()` returns null and line 657 NPEs.
+
+**Fix:**
+
+```java
+public DataObject findByAppId(String appId) {
+    if (appId == null || appId.isBlank()) return null;
+    String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
+    var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
+    DataObject stub = StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+    if (stub == null) return null;
+    return session.load(DataObject.class, stub.getId(), DEPTH_ENTITY);  // add this line
+}
+```
+
+This matches the pattern already used in `findByShepardIdAtDepth()`.
+
+---
+
 ## Recommendations
 
 ### For the live codebase
 
-No code changes are required. All examined service-layer composite call sites
-are safe under current DAO fetch semantics.
+One code change required: `DataObjectDAO.findByAppId` needs the `session.load` tail-call
+(see MAJOR finding above). All other examined service-layer composite call sites are safe.
 
 ### Structural safeguard (carry-forward from OGM-HYDRATE-2026-05-24-003)
 

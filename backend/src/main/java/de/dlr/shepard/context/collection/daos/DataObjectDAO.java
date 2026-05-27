@@ -419,7 +419,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     if (appId == null || appId.isBlank()) return null;
     String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
     var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
-    return StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+    // OGM-HYDRATE-004: bare RETURN d leaves INCOMING @Relationship fields (e.g. collection) null.
+    // Re-load at DEPTH_ENTITY so resolveTypedPredecessors can safely call .getCollection().
+    DataObject stub = StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+    if (stub == null) return null;
+    return session.load(DataObject.class, stub.getId(), DEPTH_ENTITY);
   }
 
   /**

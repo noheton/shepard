@@ -262,7 +262,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-process-chain-gap-analysis.md`](agent-findings/mffd-process-chain-gap-analysis.md) | MFFD Synthetic Seed — Process Chain Gap Analysis | 2026-05-26 | 2026-05-27 |
 | [`aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md`](agent-findings/ogm-hydration-audit-2026-05-24.md) | OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24) | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/ogm-hydration-service-layer-2026-05-27.md`](agent-findings/ogm-hydration-service-layer-2026-05-27.md) | OGM-HYDRATE-2026-05-24-004 — Service-layer composite-call hydration audit (2026-05-27) | 2026-05-27 | — |
+| [`aidocs/agent-findings/ogm-hydration-service-layer-2026-05-27.md`](agent-findings/ogm-hydration-service-layer-2026-05-27.md) | OGM-HYDRATE-2026-05-24-004 — Service-layer composite-call hydration audit (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md`](agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md) | Persona — API Scrutinizer (Minimalist) — GH-PM adoption review | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/persona-audit-logstore-2026-05-23.md`](agent-findings/persona-audit-logstore-2026-05-23.md) | Persona audit — log-store-sidecar design (`aidocs/integrations/94`) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | 2026-05-23 |
