@@ -81,6 +81,17 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
             />
           </v-col>
         </v-row>
+        <!-- PROMPT-h2: AI prompt log mode — advanced mode only.
+             Most researchers should leave this at the default (HASH_ONLY).
+             Operators deploying in air-gapped or GPAI-documentation
+             contexts may need BODY_RAW. This is an advanced setting. -->
+        <v-row v-if="advancedMode">
+          <v-col>
+            <PromptLogModeSelector
+              v-model:prompt-log-mode="updatedCollection.promptLogMode"
+            />
+          </v-col>
+        </v-row>
         <v-row>
           <v-col class="pt-2">
             <CollectionPermissionsInput

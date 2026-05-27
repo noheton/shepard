@@ -79,6 +79,9 @@ public class CollectionService {
     // can carry them. The fields are nullable; null means "not yet declared".
     toCreate.setLicense(collection.getLicense());
     toCreate.setAccessRights(collection.getAccessRights());
+    // PROMPT-h2: persist the caller-supplied promptLogMode (or null → HASH_ONLY
+    // semantically, but stored as null until V91 migration runs).
+    toCreate.setPromptLogMode(collection.getPromptLogMode());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
@@ -222,6 +225,10 @@ public class CollectionService {
     // calling here, so a PATCH that omits the keys leaves them untouched.
     old.setLicense(collection.getLicense());
     old.setAccessRights(collection.getAccessRights());
+    // PROMPT-h2: persist promptLogMode. Same merge-patch semantics as license
+    // and accessRights — null from a PATCH that omits the key leaves it
+    // unchanged (RFC 7396 produces the existing value in the merged IO).
+    old.setPromptLogMode(collection.getPromptLogMode());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());

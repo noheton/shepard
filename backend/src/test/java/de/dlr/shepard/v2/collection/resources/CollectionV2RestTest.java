@@ -242,6 +242,89 @@ class CollectionV2RestTest {
     assertEquals("new description", io.getDescription());
   }
 
+  // ── promptLogMode (PROMPT-h2) ─────────────────────────────────────────────
+
+  @Test
+  void createWithPromptLogModePersistsIt() {
+    CollectionIO body = new CollectionIO();
+    body.setName("with prompt log mode");
+    body.setPromptLogMode("BODY_RAW");
+
+    Collection created = new Collection();
+    created.setShepardId(88L);
+    created.setAppId("018f9c5a-8888-7000-a000-000000000088");
+    created.setName("with prompt log mode");
+    created.setPromptLogMode("BODY_RAW");
+    when(collectionService.createCollection(body)).thenReturn(created);
+
+    Response r = resource.create(body);
+
+    assertEquals(201, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    assertEquals("BODY_RAW", io.getPromptLogMode());
+  }
+
+  @Test
+  void patchWithPromptLogModeUpdatesIt() {
+    Collection existing = new Collection();
+    existing.setShepardId(COLL_OGM_ID);
+    existing.setAppId(COLL_APP_ID);
+    existing.setName("demo");
+    existing.setPromptLogMode("HASH_ONLY");
+
+    Collection updated = new Collection();
+    updated.setShepardId(COLL_OGM_ID);
+    updated.setAppId(COLL_APP_ID);
+    updated.setName("demo");
+    updated.setPromptLogMode("BODY_REDACTED");
+
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.put("promptLogMode", "BODY_REDACTED");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+      .thenReturn(true);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLL_OGM_ID)).thenReturn(existing);
+    when(collectionService.updateCollectionByShepardId(eq(COLL_OGM_ID), any())).thenReturn(updated);
+
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    assertEquals("BODY_REDACTED", io.getPromptLogMode());
+  }
+
+  @Test
+  void patchWithoutPromptLogModeLeavesItUnchanged() {
+    Collection existing = new Collection();
+    existing.setShepardId(COLL_OGM_ID);
+    existing.setAppId(COLL_APP_ID);
+    existing.setName("demo");
+    existing.setPromptLogMode("BODY_RAW");
+
+    Collection afterUpdate = new Collection();
+    afterUpdate.setShepardId(COLL_OGM_ID);
+    afterUpdate.setAppId(COLL_APP_ID);
+    afterUpdate.setName("demo");
+    afterUpdate.setDescription("new desc");
+    afterUpdate.setPromptLogMode("BODY_RAW");
+
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.put("description", "new desc");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+      .thenReturn(true);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLL_OGM_ID)).thenReturn(existing);
+    when(collectionService.updateCollectionByShepardId(eq(COLL_OGM_ID), any())).thenReturn(afterUpdate);
+
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    assertEquals("BODY_RAW", io.getPromptLogMode());
+  }
+
   // ── heroImageUrl (Feature B) ───────────────────────────────────────────────
 
   @Test

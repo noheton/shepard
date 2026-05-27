@@ -127,6 +127,57 @@ public class CollectionIOTest {
     assertThat(json).contains("\"accessRights\":\"OPEN\"");
   }
 
+  // ── PROMPT-h2: promptLogMode wire contract ─────────────────────────────────
+  //
+  // Per CLAUDE.md §"API-version policy" the /shepard/api/... surface must stay
+  // byte-compatible with upstream shepard 5.2.0, which has no promptLogMode
+  // field. The @JsonInclude(NON_NULL) annotation keeps it off the wire when
+  // unset (null), so a Collection with no promptLogMode serialises with the
+  // upstream-identical key set.
+
+  @Test
+  public void promptLogMode_isOmittedFromJson_whenNull() throws Exception {
+    var io = new CollectionIO();
+    io.setName("test");
+    // promptLogMode left null (the default when not set by V91 migration)
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).doesNotContain("promptLogMode");
+  }
+
+  @Test
+  public void promptLogMode_isSerialised_whenSet() throws Exception {
+    var io = new CollectionIO();
+    io.setName("test");
+    io.setPromptLogMode("HASH_ONLY");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).contains("\"promptLogMode\":\"HASH_ONLY\"");
+  }
+
+  @Test
+  public void promptLogMode_roundTripsThroughJson() throws Exception {
+    var mapper = new ObjectMapper();
+    var io = new CollectionIO();
+    io.setName("test");
+    io.setPromptLogMode("BODY_RAW");
+    String json = mapper.writeValueAsString(io);
+    var deserialised = mapper.readValue(json, CollectionIO.class);
+    assertEquals("BODY_RAW", deserialised.getPromptLogMode());
+  }
+
+  @Test
+  public void promptLogMode_allThreeModes_serialiseCorrectly() throws Exception {
+    var mapper = new ObjectMapper();
+    for (String mode : new String[]{"HASH_ONLY", "BODY_REDACTED", "BODY_RAW"}) {
+      var io = new CollectionIO();
+      io.setName("test");
+      io.setPromptLogMode(mode);
+      String json = mapper.writeValueAsString(io);
+      assertThat(json).contains("\"promptLogMode\":\"" + mode + "\"");
+      var roundTripped = mapper.readValue(json, CollectionIO.class);
+      assertEquals(mode, roundTripped.getPromptLogMode());
+    }
+  }
+
   @Test
   public void testConversion() {
     var dataObject = new DataObject(2L);

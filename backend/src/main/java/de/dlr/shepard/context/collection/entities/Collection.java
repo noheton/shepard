@@ -54,6 +54,32 @@ public class Collection extends AbstractDataObject implements HasPermissions {
    */
   private String importedFrom;
 
+  /**
+   * PROMPT-h2 — controls how the PromptLog substrate stores conversation
+   * bodies for AI interactions scoped to this Collection.
+   *
+   * <p>Valid values are the {@link PromptLogMode} enum names:
+   * {@code "HASH_ONLY"} (default, safest — only a SHA-256 hash of the body
+   * is stored), {@code "BODY_REDACTED"} (body stored after PII redaction at
+   * ingest), or {@code "BODY_RAW"} (body stored verbatim — only for
+   * air-gapped / EU AI Act Article 53 GPAI documentation deployments).
+   *
+   * <p>Stored as a String to avoid OGM enum-serialisation friction; the
+   * {@link PromptLogMode} enum is the validation reference. Validated at the
+   * IO layer only — the server stays permissive for additive forward compat.
+   *
+   * <p>Additive nullable field; the {@code V91} Cypher migration backfills
+   * existing Collections with {@code "HASH_ONLY"}. Reading {@code null}
+   * (pre-migration nodes) is treated as {@code "HASH_ONLY"} by all consumers.
+   *
+   * <p>Exposed only on the {@code /v2/} surface — the legacy
+   * {@code /shepard/api/} endpoints are unaffected (see
+   * {@code CollectionIO} {@code @JsonInclude(NON_NULL)} note).
+   *
+   * <p>See {@code aidocs/semantics/99-promptlog-design.md §10-11}.
+   */
+  private String promptLogMode;
+
   @Relationship(type = Constants.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();
 

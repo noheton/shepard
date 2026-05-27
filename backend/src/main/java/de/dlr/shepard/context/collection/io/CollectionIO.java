@@ -67,6 +67,31 @@ public class CollectionIO extends AbstractDataObjectIO {
   @Schema(nullable = true)
   private String importedFrom;
 
+  /**
+   * PROMPT-h2 — per-Collection PromptLog storage mode.
+   *
+   * <p>Controls how AI conversation bodies are persisted in the PromptLog
+   * substrate for this Collection. Values correspond to
+   * {@link de.dlr.shepard.context.collection.entities.PromptLogMode}:
+   * {@code "HASH_ONLY"} (safe default — only a SHA-256 hash stored),
+   * {@code "BODY_REDACTED"} (body stored after PII redaction),
+   * {@code "BODY_RAW"} (body stored verbatim — air-gapped / GPAI doc only).
+   *
+   * <p>Null in the wire representation means "not yet set; treat as
+   * {@code HASH_ONLY}". After the {@code V91} migration all existing
+   * Collections carry an explicit {@code "HASH_ONLY"}, so GET responses
+   * for migrated instances will always show the effective mode.
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * the field is omitted from the v1 {@code /shepard/api/} wire when null,
+   * keeping the upstream-5.2.0 byte-fidelity guarantee intact.
+   *
+   * <p>See {@code aidocs/semantics/99-promptlog-design.md §10-11}.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, enumeration = {"HASH_ONLY", "BODY_REDACTED", "BODY_RAW"})
+  private String promptLogMode;
+
   public CollectionIO(Collection collection) {
     super(collection);
     this.dataObjectIds = extractShepardIds(collection.getDataObjects());
@@ -80,6 +105,7 @@ public class CollectionIO extends AbstractDataObjectIO {
 
     this.heroImageUrl = collection.getHeroImageUrl();
     this.importedFrom = collection.getImportedFrom();
+    this.promptLogMode = collection.getPromptLogMode();
   }
 
   @Override
@@ -93,7 +119,8 @@ public class CollectionIO extends AbstractDataObjectIO {
       HasId.areEqualSets(incomingIds, other.incomingIds) &&
       Objects.equals(defaultFileContainerId, other.defaultFileContainerId) &&
       Objects.equals(heroImageUrl, other.heroImageUrl) &&
-      Objects.equals(importedFrom, other.importedFrom)
+      Objects.equals(importedFrom, other.importedFrom) &&
+      Objects.equals(promptLogMode, other.promptLogMode)
     );
   }
 
@@ -106,6 +133,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     result = prime * result + Objects.hashCode(defaultFileContainerId);
     result = prime * result + Objects.hashCode(heroImageUrl);
     result = prime * result + Objects.hashCode(importedFrom);
+    result = prime * result + Objects.hashCode(promptLogMode);
     return result;
   }
 }

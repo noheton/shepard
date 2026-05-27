@@ -17,4 +17,7 @@ export type UpdatedCollection = UpdateCollectionRequest["collection"] & {
   // LIC1 (FAIR-1): controlled accessRights enum.
   // OPEN | RESTRICTED | CLOSED | EMBARGOED, or null = undeclared.
   accessRights?: string | null;
+  // PROMPT-h2: PromptLog storage mode.
+  // HASH_ONLY | BODY_REDACTED | BODY_RAW, or null = not yet set (treated as HASH_ONLY).
+  promptLogMode?: string | null;
 };
