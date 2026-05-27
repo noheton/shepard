@@ -6,6 +6,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.UUIDHelper;
@@ -25,13 +26,37 @@ import java.util.ArrayList;
 import java.util.List;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @RequestScoped
 public class FileService {
 
   private static final int CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MiB
+
+  /**
+   * MONGO-AUDIT-2026-05-24-012 — configurable upper bound for file uploads
+   * to MongoDB-backed storage (GridFS). Files whose declared size exceeds
+   * this limit are rejected with a 400 {@link InvalidRequestException} before
+   * any bytes are written to GridFS, preventing a single large upload from
+   * saturating the MongoDB substrate.
+   *
+   * <p>Set to {@code 0} to disable the check (unrestricted uploads).
+   *
+   * <p>Note on the two-layer model: this cap prevents oversized files from
+   * reaching GridFS. It does NOT prevent the bytes from touching the Quarkus
+   * host's local temp-file filesystem, because the multipart layer writes the
+   * upload to a temp file before the handler runs. To reject oversized
+   * requests before they hit disk, additionally set
+   * {@code quarkus.http.limits.max-body-size} in
+   * {@code application.properties}.
+   */
+  @ConfigProperty(name = "shepard.mongo.file.max-bytes", defaultValue = "2147483648")
+  long mongoFileMaxBytes;
+
   private static final String ID_ATTR = "_id";
   private static final String FILENAME_ATTR = "name";
+  // MONGO-AUDIT-007: Stored as a plain hex String, not as ObjectId — GridFS _id is ObjectId.
+  // Cast to new ObjectId(fileMongoId) before using in $lookup aggregations (see MongoSchemaInitializer).
   private static final String FILEID_ATTR = "FileMongoId";
   private static final String CREATEDAT_ATTR = "createdAt";
   private static final String MD5_ATTR = "md5";
@@ -54,6 +79,25 @@ public class FileService {
   }
 
   /**
+   * MONGO-AUDIT-2026-05-24-012 — reject an upload that exceeds
+   * {@code shepard.mongo.file.max-bytes} before any GridFS write occurs.
+   *
+   * <p>Pass {@code declaredSize <= 0} when size is unknown (the check is
+   * then skipped, preserving backward compatibility for callers that only
+   * have a raw {@link InputStream}).
+   *
+   * @param declaredSize caller-declared file size in bytes; {@code <= 0} skips the check.
+   * @throws InvalidRequestException (HTTP 400) when the declared size exceeds the cap.
+   */
+  void enforceFileSizeCap(long declaredSize) {
+    if (mongoFileMaxBytes > 0 && declaredSize > mongoFileMaxBytes) {
+      throw new InvalidRequestException(
+        "File exceeds the maximum allowed size of " + mongoFileMaxBytes + " bytes"
+      );
+    }
+  }
+
+  /**
    * PV1a — result record returned by {@link #createFileWithSha256}. Carries
    * the persisted {@link ShepardFile} alongside the SHA-256 hex digest of the
    * uploaded bytes.
@@ -72,6 +116,29 @@ public class FileService {
    * for backward-compat). Bytes flow through both digests in a single pass
    * as GridFS reads the stream.
    *
+   * <p>MONGO-AUDIT-2026-05-24-012: when {@code declaredSize > 0} and exceeds
+   * {@code shepard.mongo.file.max-bytes}, an {@link InvalidRequestException}
+   * is thrown before any GridFS write occurs.
+   *
+   * @param mongoId      the MongoDB collection ID of the file container.
+   * @param fileName     the file name to store.
+   * @param inputStream  the payload bytes.
+   * @param declaredSize caller-declared file size in bytes; {@code <= 0} skips the size cap check.
+   * @return a {@link FileCreateResult} with the saved file and its SHA-256.
+   * @throws InvalidRequestException                    if the declared size exceeds the cap.
+   * @throws jakarta.ws.rs.NotFoundException            if the container is not found.
+   * @throws jakarta.ws.rs.InternalServerErrorException if a digest algorithm is unavailable.
+   */
+  public FileCreateResult createFileWithSha256(String mongoId, String fileName, InputStream inputStream, long declaredSize) {
+    enforceFileSizeCap(declaredSize);
+    return createFileWithSha256Internal(mongoId, fileName, inputStream);
+  }
+
+  /**
+   * Backward-compatible overload that skips the size cap check.
+   * Prefer {@link #createFileWithSha256(String, String, InputStream, long)} when
+   * the caller knows the file size.
+   *
    * @param mongoId     the MongoDB collection ID of the file container.
    * @param fileName    the file name to store.
    * @param inputStream the payload bytes.
@@ -80,6 +147,10 @@ public class FileService {
    * @throws jakarta.ws.rs.InternalServerErrorException if a digest algorithm is unavailable.
    */
   public FileCreateResult createFileWithSha256(String mongoId, String fileName, InputStream inputStream) {
+    return createFileWithSha256Internal(mongoId, fileName, inputStream);
+  }
+
+  private FileCreateResult createFileWithSha256Internal(String mongoId, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
       collection = mongoDatabase.getCollection(mongoId);
@@ -120,7 +191,28 @@ public class FileService {
   }
 
   /**
-   * Creates a new file in file container
+   * Creates a new file in file container with an explicit size cap check.
+   *
+   * <p>MONGO-AUDIT-2026-05-24-012: when {@code declaredSize > 0} and exceeds
+   * {@code shepard.mongo.file.max-bytes}, an {@link InvalidRequestException}
+   * is thrown before any GridFS write occurs.
+   *
+   * @param mongoId      the MongoDB collection ID of the file container.
+   * @param fileName     the file name to store.
+   * @param inputStream  the payload bytes.
+   * @param declaredSize caller-declared file size in bytes; {@code <= 0} skips the size cap check.
+   * @return ShepardFile
+   * @throws InvalidRequestException if the declared size exceeds the cap.
+   */
+  public ShepardFile createFile(String mongoId, String fileName, InputStream inputStream, long declaredSize) {
+    enforceFileSizeCap(declaredSize);
+    return createFileInternal(mongoId, fileName, inputStream);
+  }
+
+  /**
+   * Creates a new file in file container.
+   * Prefer {@link #createFile(String, String, InputStream, long)} when the caller
+   * knows the file size so the upload size cap can be enforced pre-stream.
    *
    * @param mongoId
    * @param fileName
@@ -128,6 +220,10 @@ public class FileService {
    * @return ShepardFile
    */
   public ShepardFile createFile(String mongoId, String fileName, InputStream inputStream) {
+    return createFileInternal(mongoId, fileName, inputStream);
+  }
+
+  private ShepardFile createFileInternal(String mongoId, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
       collection = mongoDatabase.getCollection(mongoId);

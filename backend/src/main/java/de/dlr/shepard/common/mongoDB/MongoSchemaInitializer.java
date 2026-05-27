@@ -57,6 +57,20 @@ import org.bson.Document;
  * dynamically-named collections is a different scope (they also share the same
  * bookkeeping shape as {@code _shepard_files}, so once the singleton case is
  * proven out this can be extended).
+ *
+ * <p><strong>$lookup join note (MONGO-AUDIT-007).</strong> Shadow-collection documents
+ * store the GridFS file id as a plain hex string in the {@code FileMongoId} field, while
+ * {@code fs.files._id} is a BSON ObjectId. Any aggregation pipeline that joins these two
+ * collections must use {@code $convert} to bridge the type gap:
+ * <pre>
+ *   { $lookup: { from: "fs.files", let: { fid: "$FileMongoId" },
+ *     pipeline: [{ $match: { $expr: { $eq: ["$_id", { $toObjectId: "$$fid" }] } } }],
+ *     as: "file" } }
+ * </pre>
+ * A direct {@code $lookup: { localField: "FileMongoId", foreignField: "_id" }} returns
+ * empty results because the types do not match. Migration to native ObjectId storage is
+ * deferred (needs a V## data migration across all shadow collections) — see
+ * MONGO-AUDIT-2026-05-24-007 in {@code aidocs/16-dispatcher-backlog.md}.
  */
 @ApplicationScoped
 public class MongoSchemaInitializer {
