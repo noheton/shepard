@@ -374,7 +374,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ux-pattern-d-count-badges-2026-05-24.md`](agent-findings/ux-pattern-d-count-badges-2026-05-24.md) | UX Pattern D — count badges on DataObject reference panels | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-polish-bundle-2026-05-24.md`](agent-findings/ux-polish-bundle-2026-05-24.md) | UX polish bundle — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/case-study-2026-05-19.md`](case-study-2026-05-19.md) | Case Study: One Month of AI-Assisted Fork Development | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/00-model-inventory.md`](data/00-model-inventory.md) | 00 — Model inventory (SSOT) | 2026-05-23 | 2026-05-26 |
+| [`aidocs/data/00-model-inventory.md`](data/00-model-inventory.md) | 00 — Model inventory (SSOT) | 2026-05-23 | 2026-05-27 |
 | [`aidocs/data/37-lab-journal-and-jupyter-design.md`](data/37-lab-journal-and-jupyter-design.md) | Lab Journal Reassessment + Jupyter Feasibility — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/41-snapshots-design.md`](data/41-snapshots-design.md) | Snapshots — Design (versioning, reloaded) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/68-timeseries-data-model-tuning.md`](data/68-timeseries-data-model-tuning.md) | TimescaleDB Data Model Tuning — Recommendations | 2026-05-23 | 2026-05-23 |

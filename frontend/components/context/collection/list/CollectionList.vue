@@ -4,6 +4,7 @@ import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { descriptionPreview, toShortDateString } from "~/utils/helpers";
+import { useDoCountChip } from "~/utils/doCountChip";
 
 defineProps<{
   itemsPerPage: number;
@@ -17,8 +18,6 @@ const { queryParams } = useCollectionListQueryParams();
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { advancedMode } = useAdvancedMode();
 
-// UI-011: "large" collection threshold for the # DOs chip.
-const LARGE_COLLECTION_THRESHOLD = 1000;
 // UI-011: Description preview chars in the list cell.
 const DESCRIPTION_PREVIEW_CHARS = 120;
 
@@ -176,18 +175,16 @@ function onPageChange(page: number) {
           <span v-else class="text-textbody2" aria-hidden="true">—</span>
         </template>
         <template #[`item.doCount`]>
+          <!-- UI-011b: colour-band chip — grey/green/blue/orange/red by bucket -->
           <span class="do-count-cell" data-testid="collection-row-do-count">
-            <span class="do-count-number">
-              {{ (rowProps.item.dataObjectIds || []).length }}
-            </span>
             <v-chip
-              v-if="(rowProps.item.dataObjectIds || []).length >= LARGE_COLLECTION_THRESHOLD"
-              size="x-small"
-              color="primary"
+              :color="useDoCountChip((rowProps.item.dataObjectIds || []).length).color"
+              size="small"
               variant="tonal"
-              class="ml-2"
-              data-testid="collection-row-large-chip"
-            >large</v-chip>
+              data-testid="collection-row-do-chip"
+            >
+              {{ (rowProps.item.dataObjectIds || []).length }}
+            </v-chip>
           </span>
         </template>
         <template #[`item.updatedAt`]>
@@ -263,7 +260,5 @@ function onPageChange(page: number) {
   width: 100%;
 }
 
-.do-count-number {
-  font-variant-numeric: tabular-nums;
-}
+/* .do-count-number removed in UI-011b — number is now inside the chip */
 </style>
