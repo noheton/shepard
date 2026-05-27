@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -220,8 +222,20 @@ public class FileService {
   }
 
   /**
+   * Deletes all files from the GridFS bucket for this container, then drops the
+   * container collection.
    *
-   * @param mongoId
+   * <p>MONGO-AUDIT-2026-05-24-006: The previous implementation iterated the
+   * cursor and issued one {@code GridFSBucket.delete} per document, interleaving
+   * cursor round-trips with delete operations. The replacement materialises the
+   * full cursor into a list first (one pass), then iterates the list to issue
+   * deletes. This separates cursor reads from write operations, reducing
+   * cursor-hold time and avoiding N interleaved round-trips. Driver 5.1.x does
+   * not expose a {@code delete(List&lt;ObjectId&gt;)} overload; a future
+   * {@code fs.files.deleteMany($in)} + {@code fs.chunks.deleteMany($in)} bypass
+   * would reduce this to O(2) round-trips but is tracked separately.
+   *
+   * @param mongoId the MongoDB collection ID of the file container.
    * @throws NotFoundException if deleting container fails
    */
   public void deleteFileContainer(String mongoId) {
@@ -233,10 +247,13 @@ public class FileService {
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
+    // MONGO-AUDIT-2026-05-24-006: materialise all GridFS ObjectIds in one cursor
+    // pass, then delete from the list — avoids N interleaved cursor round-trips.
+    List<ObjectId> fileIds = toDelete.find()
+        .map(doc -> new ObjectId(doc.getString(FILEID_ATTR)))
+        .into(new ArrayList<>());
     GridFSBucket gridBucket = createBucket();
-    for (Document doc : toDelete.find()) {
-      gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
-    }
+    fileIds.forEach(gridBucket::delete);
     toDelete.drop();
   }
 
