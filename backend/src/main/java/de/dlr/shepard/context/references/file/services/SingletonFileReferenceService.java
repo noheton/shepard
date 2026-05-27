@@ -106,6 +106,65 @@ public class SingletonFileReferenceService {
   }
 
   /**
+   * Create a new singleton attached to a parent DataObject with an explicit size cap check.
+   *
+   * <p>MONGO-AUDIT-2026-05-24-012: when {@code declaredSize > 0} and exceeds
+   * {@code shepard.mongo.file.max-bytes}, an {@link de.dlr.shepard.common.exceptions.InvalidRequestException}
+   * is thrown before any GridFS write occurs.
+   *
+   * @param dataObjectAppId parent DataObject's appId. Required.
+   * @param name human-readable name for the Reference. Required, non-blank.
+   * @param filename original filename of the upload. Required, non-blank.
+   * @param payload byte stream of the file body. Required, non-null.
+   * @param declaredSize caller-declared file size in bytes; {@code <= 0} skips the size cap check.
+   * @return the persisted singleton with its attached file.
+   * @throws NotFoundException when no DataObject with that appId exists.
+   * @throws BadRequestException when {@code name} or {@code payload} are missing.
+   */
+  public FileReference createSingleton(String dataObjectAppId, String name, String filename, InputStream payload, long declaredSize) {
+    if (name == null || name.isBlank()) {
+      throw new BadRequestException("name must not be null or blank");
+    }
+    if (filename == null || filename.isBlank()) {
+      throw new BadRequestException("filename must not be null or blank");
+    }
+    if (payload == null) {
+      throw new BadRequestException("file payload must not be null");
+    }
+
+    DataObject parent = resolveDataObjectByAppId(dataObjectAppId);
+    if (parent == null) {
+      throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
+    }
+
+    ensureSharedNamespace();
+
+    // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
+    ShepardFile saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+
+    User user = userService.getCurrentUser();
+
+    FileReference singleton = new FileReference();
+    singleton.setName(name);
+    singleton.setDataObject(parent);
+    singleton.setFile(saved);
+    singleton.setCreatedAt(dateHelper.getDate());
+    singleton.setCreatedBy(user);
+
+    FileReference created = singletonFileReferenceDAO.createOrUpdate(singleton);
+    created.setShepardId(created.getId());
+    created = singletonFileReferenceDAO.createOrUpdate(created);
+
+    Log.debugf(
+      "FR1b: created singleton FileReference appId=%s under DataObject appId=%s (file oid=%s)",
+      created.getAppId(),
+      dataObjectAppId,
+      saved.getOid()
+    );
+    return created;
+  }
+
+  /**
    * Create a new singleton attached to a parent DataObject.
    *
    * <p>Stores the uploaded byte stream in the shared
@@ -113,6 +172,9 @@ public class SingletonFileReferenceService {
    * mints a fresh {@link FileReference}, attaches the resulting
    * {@link ShepardFile} via {@code HAS_PAYLOAD}, and persists the
    * Reference under {@code (DataObject)-[:has_reference]->}.
+   *
+   * <p>Prefer {@link #createSingleton(String, String, String, InputStream, long)} when
+   * the caller knows the declared file size so the upload size cap can be enforced.
    *
    * @param dataObjectAppId parent DataObject's appId. Required.
    * @param name human-readable name for the Reference (the singleton's

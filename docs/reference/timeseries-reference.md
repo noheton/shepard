@@ -228,6 +228,52 @@ Clears both fields; effective values revert to `application.properties` defaults
 
 ---
 
+## Pinned channel tiles on PersonalDigest (UX-PIN1)
+
+Any timeseries channel can be **pinned** to the personal landing page
+(`PersonalDigest`). Pins are stored in `localStorage` under the key
+`shepard:pinnedChannels` and survive page reloads without a round-trip
+to the backend.
+
+### Pin / unpin a channel
+
+1. Open a Timeseries Container page.
+2. In the **Measurements** table, each row has a pin icon in the rightmost
+   column. Click the `mdi-pin-outline` icon to pin; the icon turns solid
+   (`mdi-pin`, primary colour) when the channel is pinned. Click again to
+   unpin.
+
+The pin button is **disabled** (greyed out) while the browser is resolving
+the channel's `shepardId` via
+`GET /v2/timeseries-containers/{id}/channels?size=2000`. This is a one-time
+load per container visit and typically completes in < 200 ms on a warm server.
+The legacy v1 `TimeseriesEntity` list does not carry `shepardId`, so this
+parallel fetch is necessary.
+
+### What the tile shows
+
+| Element | Detail |
+|---|---|
+| Channel name | `device · field` or all five 5-tuple parts joined with ` · ` |
+| Last value | Most recent data point in the last 60 seconds, formatted to 4 significant figures |
+| Trend arrow | `↑` (up ≥ 2%), `↓` (down ≥ 2%), `→` (flat) — colour-coded green/red/default |
+| Sparkline | 60-point LTTB-downsampled line chart of the last 60 seconds of data |
+| Source link | Click the tile title to navigate back to the timeseries container |
+| Unpin | Click the `×` button on the tile to remove it from the landing page |
+
+Data is fetched once on component mount via
+`GET /v2/timeseries-containers/{containerId}/channels/{shepardId}/data?start=...&end=...&downsample=lttb&maxPoints=60`.
+There is no live polling in UX-PIN1; reload the page to refresh tile data.
+Live streaming is deferred to a later slice (UX-PIN1c).
+
+### Persistence
+
+Pins persist in `localStorage` — they survive browser restarts but are
+**per-browser, not per-user-account**. Backend preference sync (so pins
+follow you across devices and browsers) is planned as UX-PIN1b.
+
+---
+
 ## Upstream ingestion endpoints
 
 Timeseries channels are created and written via the upstream

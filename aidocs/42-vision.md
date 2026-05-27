@@ -399,7 +399,15 @@ Five typical entry points:
    the users who acted on it, with edge labels for action kinds and
    counts); **personal landing page** (authenticated users land on a
    digest of their 6 most recently active collections with quick-action
-   buttons, replacing the static marketing page); **401 auto-refresh**
+   buttons, replacing the static marketing page); **pinned channel tiles**
+   (UX-PIN1 — any sensor channel from any timeseries container can be
+   pinned directly to the personal landing page; each tile shows the
+   channel's last value, a trend arrow, and a 60-point LTTB sparkline of
+   the most recent 60 seconds; pins persist across sessions via
+   `localStorage`; tiles link back to the source container; pin/unpin from
+   the measurements table in the timeseries container page with a single
+   click — zero navigation required for a shop-floor IME to reach their
+   key indicators); **401 auto-refresh**
    (the API client now transparently refreshes the OIDC token on 401,
    retries the request, and redirects to sign-in only when the refresh
    token itself has expired — no more sudden logout mid-session);

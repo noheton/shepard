@@ -5,6 +5,7 @@ import static com.mongodb.client.model.Filters.eq;
 import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
@@ -34,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 import org.bson.Document;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * VID1a — service layer for {@link VideoStreamReference} CRUD.
@@ -59,6 +61,14 @@ public class VideoStreamReferenceService {
    * (8.6 MiB × 3) is well within this window.
    */
   static final long DEDUP_MAX_SIZE_BYTES = 100L * 1024 * 1024; // 100 MiB
+
+  /**
+   * MONGO-AUDIT-2026-05-24-012 — configurable upper bound for video file uploads.
+   * Shares the same config key as the file upload cap so operators have a single
+   * knob. Set to {@code 0} to disable the check (unrestricted uploads).
+   */
+  @ConfigProperty(name = "shepard.mongo.file.max-bytes", defaultValue = "2147483648")
+  long mongoFileMaxBytes;
 
   /** Attribute name for MD5 in the {@code _shepard_videos} bookkeeping documents. */
   private static final String MD5_ATTR = "md5";
@@ -168,6 +178,14 @@ public class VideoStreamReferenceService {
       throw new StorageNotInstalledException("No active file storage adapter configured");
     }
     FileStorage storage = storageOpt.get();
+
+    // MONGO-AUDIT-2026-05-24-012 — reject oversized video uploads before writing to GridFS.
+    // The contentLength is provided by the REST layer from the multipart temp-file size.
+    if (mongoFileMaxBytes > 0 && contentLength != null && contentLength > mongoFileMaxBytes) {
+      throw new InvalidRequestException(
+        "File exceeds the maximum allowed size of " + mongoFileMaxBytes + " bytes"
+      );
+    }
 
     // MONGO-AUDIT-013 — MD5-based deduplication for GridFS video blobs.
     //

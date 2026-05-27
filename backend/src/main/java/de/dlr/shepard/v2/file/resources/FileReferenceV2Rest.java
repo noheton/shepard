@@ -150,12 +150,16 @@ public class FileReferenceV2Rest {
 
     String referenceName = (name != null && !name.isBlank()) ? name : upload.fileName();
     File uploaded = upload.uploadedFile().toFile();
+    // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
+    // FileService can enforce the upload cap before writing to GridFS.
+    long declaredSize = uploaded.length();
     try (InputStream is = new FileInputStream(uploaded)) {
       FileReference created = singletonService.createSingleton(
         parentDataObjectAppId,
         referenceName,
         upload.fileName(),
-        is
+        is,
+        declaredSize
       );
       return Response.status(Response.Status.CREATED).entity(new FileReferenceV2IO(created)).build();
     } catch (NotFoundException nfe) {

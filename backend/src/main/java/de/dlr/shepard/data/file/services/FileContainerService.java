@@ -218,7 +218,31 @@ public class FileContainerService extends AbstractContainerService<FileContainer
   }
 
   /**
-   * Create a new file
+   * Create a new file with an explicit size cap check.
+   *
+   * <p>MONGO-AUDIT-2026-05-24-012: when {@code declaredSize > 0} and exceeds
+   * {@code shepard.mongo.file.max-bytes}, an
+   * {@link de.dlr.shepard.common.exceptions.InvalidRequestException} is thrown before
+   * any GridFS write occurs.
+   *
+   * @param fileContainerId identifies the file container
+   * @param fileName        the name of the new file
+   * @param inputStream     the file itself
+   * @param declaredSize    caller-declared file size in bytes; {@code <= 0} skips the size cap check
+   * @return The newly created file
+   * @throws InternalServerErrorException if file creation fails
+   * @throws InvalidPathException if the file container cannot be found
+   * @throws InvalidAuthException if user has no read or write permission on container
+   * @throws de.dlr.shepard.storage.StorageNotInstalledException if no storage adapter is active
+   */
+  public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream, long declaredSize) {
+    return createFileImpl(fileContainerId, fileName, inputStream, declaredSize);
+  }
+
+  /**
+   * Create a new file.
+   * Prefer {@link #createFile(long, String, InputStream, long)} when the caller knows
+   * the declared file size so the upload size cap can be enforced pre-stream.
    *
    * @param fileContainerId identifies the file container
    * @param fileName        the name of the new file
@@ -230,6 +254,10 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    * @throws de.dlr.shepard.storage.StorageNotInstalledException if no storage adapter is active
    */
   public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
+    return createFileImpl(fileContainerId, fileName, inputStream, 0L);
+  }
+
+  private ShepardFile createFileImpl(long fileContainerId, String fileName, InputStream inputStream, long declaredSize) {
     FileContainer fileContainer = getContainer(fileContainerId);
     assertIsAllowedToEditContainer(fileContainerId);
 
@@ -264,7 +292,8 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       // SHA-256 digest is available for version recording without
       // a second pass over the bytes.
       if (GridFsFileStorage.ID.equals(adapter.id())) {
-        FileCreateResult fcr = fileService.createFileWithSha256(fileContainer.getMongoId(), fileName, inputStream);
+        // MONGO-AUDIT-2026-05-24-012: pass declared size so FileService can enforce the cap.
+        FileCreateResult fcr = fileService.createFileWithSha256(fileContainer.getMongoId(), fileName, inputStream, declaredSize);
         result = fcr.file();
         sha256 = fcr.sha256();
       } else {

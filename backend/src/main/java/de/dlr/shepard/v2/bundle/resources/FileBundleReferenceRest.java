@@ -448,8 +448,11 @@ public class FileBundleReferenceRest {
     }
 
     File file = upload.uploadedFile().toFile();
+    // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
+    // FileService can enforce the upload cap before writing to GridFS.
+    long declaredSize = file.length();
     try (InputStream is = new FileInputStream(file)) {
-      ShepardFile saved = fileService.createFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is);
+      ShepardFile saved = fileService.createFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is, declaredSize);
       fileGroupService.attachFile(groupAppId, saved);
       return Response.status(Response.Status.CREATED).entity(saved).build();
     } catch (IOException ioe) {

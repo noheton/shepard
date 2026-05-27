@@ -269,8 +269,11 @@ public class FileRest {
     }
 
     File file = new File(filePath);
+    // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
+    // FileService can enforce the upload cap before writing to GridFS.
+    long declaredSize = file.length();
     try (InputStream fileInputStream = new FileInputStream(file)) {
-      var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
+      var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream, declaredSize);
       return result != null
         ? Response.status(Status.CREATED).entity(result).build()
         : Response.status(Status.INTERNAL_SERVER_ERROR).build();
