@@ -10,6 +10,7 @@ import { FileContainerAccessor } from "~/composables/container/FileContainerAcce
 import { useFileUploadProgress } from "~/composables/container/useFileUploadProgress";
 import { UploadAbortError } from "~/composables/container/xhrUpload";
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
+import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateFileReference } from "~/composables/references/useCreateFileReference";
 import type { FileRef } from "~/components/context/data-references/create-dialog/DataRef";
@@ -60,7 +61,24 @@ const newFileContainerPermissionType = ref<PermissionType>(
 
 const newReferenceName = ref<string>("");
 const isFileContainerDefault = ref<boolean>(false);
-const isCreatingNewFileContainer = ref<boolean>(false);
+
+// CC1d: "link" = link to an existing collection container; "create" = create a new one.
+// Default to "link" so the most common case (container already exists) requires zero
+// extra clicks.
+const containerMode = ref<"link" | "create">("link");
+
+// Backwards-compat alias used by createNewFileContainer() and the CC1c name-prefill watch.
+const isCreatingNewFileContainer = computed(() => containerMode.value === "create");
+
+// CC1d: collection-scoped FILE containers for the "Link existing" list.
+const collectionAppId = computed(
+  () => collectionAccessor.collection.value?.appId ?? null,
+);
+const { containers: collectionContainers, isLoading: containersLoading } =
+  useFetchCollectionContainers(collectionAppId);
+const fileContainersInCollection = computed(() =>
+  collectionContainers.value.filter(c => c.containerType === "FILE"),
+);
 
 const uploading = ref<boolean>(false);
 const successCount = ref<number>(0);
@@ -81,9 +99,8 @@ const isUploadButtonDisabled = computed(() => {
     files.value === undefined ||
     (Array.isArray(files.value) && files.value.length === 0) ||
     (props.createReference && !newReferenceName.value) ||
-    (isCreatingNewFileContainer.value === false &&
-      fileContainerId.value === undefined) ||
-    (isCreatingNewFileContainer.value === true && !newFileContainerName.value)
+    (containerMode.value === "link" && fileContainerId.value === undefined) ||
+    (containerMode.value === "create" && !newFileContainerName.value)
   );
 });
 
@@ -134,7 +151,7 @@ async function createFileReferences(files: (ShepardFile | undefined)[]) {
 }
 
 async function createNewFileContainer() {
-  if (isCreatingNewFileContainer.value === true) {
+  if (containerMode.value === "create") {
     try {
       const newFileContainer = await useCreateFileContainer(
         newFileContainerName.value,
@@ -277,10 +294,10 @@ watch(
 );
 
 // CC1c: pre-fill the container name with "<Collection name> — file store" when
-// the user toggles "Create new file container" on. Only fills when the field is
-// still blank so the user can type their own name without it being overwritten.
-watch(isCreatingNewFileContainer, (creating: boolean) => {
-  if (creating && !newFileContainerName.value) {
+// the user switches to the "Create new" tab. Only fills when the field is still
+// blank so the user can type their own name without it being overwritten.
+watch(containerMode, (mode: "link" | "create") => {
+  if (mode === "create" && !newFileContainerName.value) {
     const collectionName = collectionAccessor.collection.value?.name ?? "";
     if (collectionName) {
       newFileContainerName.value = `${collectionName} — file store`;
@@ -337,29 +354,67 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
               <span class="text-textbody1 text-subtitle-2">
                 Storage Location
               </span>
-              <v-switch
-                v-model:model-value="isCreatingNewFileContainer"
+              <!-- CC1d: tab toggle for "Link existing" vs "Create new" -->
+              <v-btn-toggle
+                v-model="containerMode"
                 color="primary"
                 density="compact"
-                flat
-                hide-details
-                label="Create new file container"
-              />
+                mandatory
+                rounded="lg"
+                variant="outlined"
+              >
+                <v-btn value="link" size="small">
+                  <v-icon start size="small">mdi-link-variant</v-icon>
+                  Link existing
+                </v-btn>
+                <v-btn value="create" size="small">
+                  <v-icon start size="small">mdi-plus</v-icon>
+                  Create new
+                </v-btn>
+              </v-btn-toggle>
             </div>
-            <ContainerInput
-              v-if="!isCreatingNewFileContainer"
-              v-model:container-id="fileContainerId"
-              :collection-id="collectionId"
-              :container-type="ContainerType.File"
-              :is-required="true"
-              @container-selected="
-                (id, _) => {
-                  fileContainerId = id;
-                }
-              "
-              @selection-cleared="fileContainerId = undefined"
-            />
 
+            <!-- CC1d: "Link existing" panel — collection-scoped FILE containers -->
+            <template v-if="containerMode === 'link'">
+              <v-autocomplete
+                v-if="fileContainersInCollection.length > 0"
+                v-model="fileContainerId"
+                :items="fileContainersInCollection"
+                :loading="containersLoading"
+                item-title="name"
+                item-value="id"
+                label="Select file container *"
+                density="compact"
+                variant="outlined"
+                clearable
+                no-data-text="No file containers in this collection yet"
+              />
+              <ContainerInput
+                v-else
+                v-model:container-id="fileContainerId"
+                :collection-id="collectionId"
+                :container-type="ContainerType.File"
+                :is-required="true"
+                @container-selected="
+                  (id, _) => {
+                    fileContainerId = id;
+                  }
+                "
+                @selection-cleared="fileContainerId = undefined"
+              />
+              <v-alert
+                v-if="fileContainersInCollection.length === 0 && !containersLoading"
+                density="compact"
+                type="info"
+                variant="tonal"
+                class="mt-1"
+              >
+                No file containers are linked to this collection yet — search
+                globally above or switch to "Create new" to add one.
+              </v-alert>
+            </template>
+
+            <!-- "Create new" panel — unchanged from CC1c -->
             <div v-else class="d-flex flex-column ga-4">
               <SimpleInput
                 v-model:input-string="newFileContainerName"
@@ -373,7 +428,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
             <v-checkbox
               v-if="
                 collectionAccessor.collection.value?.defaultFileContainerId !==
-                  fileContainerId || isCreatingNewFileContainer
+                  fileContainerId || containerMode === 'create'
               "
               v-model="isFileContainerDefault"
               color="primary"
