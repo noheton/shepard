@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -249,7 +250,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("filename"), isNull(), anyLong())).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
@@ -281,7 +282,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
+    when(fileService.createFileWithSha256(eq("mongoId"), eq(fileName), isNull(), anyLong())).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
@@ -313,7 +314,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
+    when(fileService.createFileWithSha256(eq("mongoId"), eq(fileName), isNull(), anyLong())).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
@@ -359,7 +360,7 @@ public class FileContainerServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenThrow(InternalServerErrorException.class);
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("filename"), isNull(), anyLong())).thenThrow(InternalServerErrorException.class);
     //TODO: this unit test does not really test anything, we need to implement partial mocking on the FileService to simulate the MongoError
 
     assertThrows(InternalServerErrorException.class, () -> service.createFile(1L, "filename", null));
@@ -497,7 +498,7 @@ public class FileContainerServiceTest {
     ShepardFile created = new ShepardFile("oid", new Date(), "name", "md5");
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(created, "SHA256HEX"));
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("filename"), isNull(), anyLong())).thenReturn(new FileCreateResult(created, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
@@ -735,7 +736,7 @@ public class FileContainerServiceTest {
     file.setFileSize(1024L);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", "sensor.csv", null))
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("sensor.csv"), isNull(), anyLong()))
       .thenReturn(new FileCreateResult(file, "E3B0C44298FC1C149AFBF4C8996FB924"));
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(payloadVersionDAO.findMaxVersionNumber("container-app-1", "sensor.csv")).thenReturn(0L);
@@ -768,7 +769,7 @@ public class FileContainerServiceTest {
     ShepardFile file = new ShepardFile("file-oid2", new Date(), "data.bin", "md5");
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", "data.bin", null))
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("data.bin"), isNull(), anyLong()))
       .thenReturn(new FileCreateResult(file, "DEADBEEF"));
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     // Existing max = 1 (a first upload already happened)
@@ -794,7 +795,7 @@ public class FileContainerServiceTest {
     ShepardFile file = new ShepardFile("oid", new Date(), "file.csv", "md5");
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFileWithSha256("mongoId", "file.csv", null))
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("file.csv"), isNull(), anyLong()))
       .thenReturn(new FileCreateResult(file, "SHA256"));
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
