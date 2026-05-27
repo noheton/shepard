@@ -38,13 +38,6 @@ public class SemanticAnnotationService {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(shepardId);
   }
 
-  /**
-   * Gets semantic annotation by neo4j id
-   *
-   * @param id
-   * @return
-   * @throws NotFoundException if semantic annotation is null or deleted
-   */
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
     if (annotation == null) {
@@ -80,7 +73,6 @@ public class SemanticAnnotationService {
 
   public boolean deleteAnnotationByNeo4jId(long id) {
     getAnnotationByNeo4jId(id);
-
     var result = semanticAnnotationDAO.deleteByNeo4jId(id);
     return result;
   }
@@ -98,11 +90,66 @@ public class SemanticAnnotationService {
     var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(), repository.getEndpoint());
     var term = src.getTerm(iri);
     if (term == null || term.isEmpty()) throw new InvalidBodyException("term could not be found");
-    // Prefer the default label
     if (term.containsKey("")) return term.get("");
-    // Then prefer the English label
     if (term.containsKey("en")) return term.get("en");
-    // Fall back to the first label in the list
     return term.values().iterator().next();
+  }
+
+  // N1l — non-throwing label resolution for the snapshot-refresh job
+  private String resolveLabelOrNull(SemanticRepository repository, String iri) {
+    if (repository == null || iri == null || iri.isBlank()) return null;
+    try {
+      var src = semanticRepositoryConnectorFactory.getRepositoryService(
+          repository.getType(), repository.getEndpoint());
+      var term = src.getTerm(iri);
+      if (term == null || term.isEmpty()) return null;
+      if (term.containsKey("")) return term.get("");
+      if (term.containsKey("en")) return term.get("en");
+      return term.values().iterator().next();
+    } catch (RuntimeException ex) {
+      Log.warnf(
+          "SemanticAnnotationService.resolveLabelOrNull: could not resolve <%s> (%s)",
+          iri, ex.getMessage());
+      return null;
+    }
+  }
+
+  // N1l — opt-in admin job to refresh stale propertyName/valueName snapshots
+  public int refreshStaleSnapshots() {
+    final int BATCH = 500;
+    int skip = 0;
+    int updated = 0;
+
+    while (true) {
+      List<SemanticAnnotation> page = semanticAnnotationDAO.findPaginated(skip, BATCH);
+      if (page.isEmpty()) break;
+
+      for (SemanticAnnotation ann : page) {
+        boolean dirty = false;
+
+        String newPropName = resolveLabelOrNull(ann.getPropertyRepository(), ann.getPropertyIRI());
+        if (newPropName != null && !newPropName.equals(ann.getPropertyName())) {
+          ann.setPropertyName(newPropName);
+          dirty = true;
+        }
+
+        String newValName = resolveLabelOrNull(ann.getValueRepository(), ann.getValueIRI());
+        if (newValName != null && !newValName.equals(ann.getValueName())) {
+          ann.setValueName(newValName);
+          dirty = true;
+        }
+
+        if (dirty) {
+          semanticAnnotationDAO.createOrUpdate(ann);
+          updated++;
+        }
+      }
+
+      if (page.size() < BATCH) break;
+      skip += BATCH;
+    }
+
+    Log.infof("SemanticAnnotationService.refreshStaleSnapshots: updated %d annotation(s)", updated);
+    return updated;
   }
 }

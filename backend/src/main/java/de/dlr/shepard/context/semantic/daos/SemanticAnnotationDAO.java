@@ -188,6 +188,23 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
     return out;
   }
 
+
+  // N1l — paginated load for the snapshot-refresh job
+  public List<SemanticAnnotation> findPaginated(int skip, int limit) {
+    String query =
+        "MATCH (a:SemanticAnnotation) WITH a "
+        + CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
+        + " SKIP $skip LIMIT $lim";
+    Map<String, Object> params = new java.util.HashMap<>();
+    params.put("skip", (long) skip);
+    params.put("lim", (long) limit);
+    List<SemanticAnnotation> out = new ArrayList<>();
+    for (SemanticAnnotation a : findByQuery(query, params)) {
+      out.add(a);
+    }
+    return out;
+  }
+
   @Override
   public Class<SemanticAnnotation> getEntityType() {
     return SemanticAnnotation.class;

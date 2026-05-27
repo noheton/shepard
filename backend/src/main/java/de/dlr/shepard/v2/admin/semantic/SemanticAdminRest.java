@@ -19,7 +19,9 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResu
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleListIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
+import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
+import de.dlr.shepard.v2.admin.semantic.io.RefreshSnapshotsResultIO;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -98,6 +100,9 @@ public class SemanticAdminRest {
 
   @Inject
   OntologyConfigService configService;
+
+  @Inject
+  SemanticAnnotationService semanticAnnotationService;
 
   @Inject
   AuthenticationContext authenticationContext;
@@ -202,6 +207,35 @@ public class SemanticAdminRest {
       errors
     );
     return Response.ok(result).build();
+  }
+
+  // ─── N1l: refresh stale annotation snapshots ─────────────────────────────
+
+  @POST
+  @Path("/refresh-snapshots")
+  @Operation(
+    summary = "Refresh stale SemanticAnnotation label snapshots.",
+    description =
+      "Pages through every :SemanticAnnotation node in batches of 500, "
+      + "re-resolves propertyIRI and valueIRI against the live n10s repository, and writes "
+      + "back the propertyName / valueName snapshot only when the label has changed. "
+      + "Use after importing or updating an ontology bundle to propagate new labels to "
+      + "existing annotations. Runs synchronously; returns the count of updated nodes."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Refresh complete. 'updated' is the number of annotation nodes written back.",
+    content = @Content(schema = @Schema(implementation = RefreshSnapshotsResultIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
+  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role (RFC 7807).")
+  public Response refreshSnapshots(@Context SecurityContext securityContext) {
+    Response denied = guardAdmin(securityContext);
+    if (denied != null) return denied;
+
+    Log.infof("SemanticAdminRest: refresh-snapshots invoked by '%s'", callerName(securityContext));
+    int updated = semanticAnnotationService.refreshStaleSnapshots();
+    return Response.ok(new RefreshSnapshotsResultIO(updated)).build();
   }
 
   // ─── N1c2: list / enable / disable / upload / delete ────────────────────
