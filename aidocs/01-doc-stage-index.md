@@ -32,7 +32,7 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 41 |
 | `concept` | 24 |
-| `idea` | 10 |
+| `idea` | 11 |
 | `feature-defined` | 95 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 67 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **364** |
+| **total docs** | **365** |
 | **UNTAGGED** | **0** |
 
 ## fragment (41)
@@ -118,13 +118,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-26 |
 
-## idea (10)
+## idea (11)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/98-thesis-perspective.md`](98-thesis-perspective.md) | 98 — Shepard as a thesis at a German university (perspective + viability) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v5-metadata-enrichment-survey-2026-05-23.md`](agent-findings/v5-metadata-enrichment-survey-2026-05-23.md) | v5 OpenAPI — metadata enrichment survey for the MFFD importer (v15.10 candidates) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/109-mffd-scan-line-join-key.md`](data/109-mffd-scan-line-join-key.md) | 109 — MFFD scan-line join key across TPS stores | 2026-05-27 | 2026-05-27 |
+| [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | — |
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |

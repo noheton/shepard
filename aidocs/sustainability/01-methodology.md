@@ -33,7 +33,7 @@ collapsed everything onto DE grid and was wrong.
 | **LLM inference** | Tokens in + tokens out for AI-assisted work that led to the commit | **Anthropic infra** (primarily AWS US: us-east-1 Virginia + us-west-2 Oregon; minor GCP us-central1 Iowa per Anthropic-Google partnership) | Electricity Maps + AWS Sustainability Dashboard + EPA eGRID 2023; **worst-case us-east-1** when split unknown |
 | **Local build / dev-box** | `mvn package`, `npm build`, `docker build`, local test runs implicated by the commit | **DE grid** (dev box in Germany) | Umweltbundesamt Strommix 2024 |
 | **CI runtime** | GitHub Actions minutes × runner power draw | **Azure us-east** (GitHub-hosted runners default) | GitHub Sustainability Disclosures + Azure regional carbon (Electricity Maps for the region) |
-| **Production runtime** | Continuous backend / DB / frontend cost on prod (apportioned per commit only if the commit changes the steady-state draw) | nuclide.systems hosting region (verify per provider; default worst-case) | Electricity Maps for the region |
+| **Production runtime** | Continuous backend / DB / frontend cost on prod (apportioned per commit only if the commit changes the steady-state draw) | **Hetzner Falkenstein, Germany (FSK1)** — verified 2026-05-27; Hetzner FSN datacenter, DE grid zone | Electricity Maps zone `DE` (Germany annual average, Umweltbundesamt); Hetzner purchases 100% renewable energy certificates (RECs) for German DCs — we do **not** discount on this basis (same annual-vs-hourly argument as §2.1) |
 
 **Methodology v1 vs v0.** v0 (never shipped to the log; existed
 only as the rule in `feedback_energy_log_per_commit.md` for ~half a
@@ -125,16 +125,68 @@ heuristic in §3.
   Sustainability Disclosures put a 2-core ubuntu runner at
   **~12 Wh per CPU-hour** (0.2 Wh/min) under load.
 
+### 2.3a CI attribution rule (v1) — which commit owns a PR's CI minutes?
+
+**Rule (v1 — may be refined when actual GHA usage data is analysed,
+SUST-CI-ATTRIBUTION).**
+
+- **Merged PR**: the **head commit** of the merged PR owns all CI
+  minutes triggered by that PR's CI run. Intermediate commits in the
+  PR branch do not receive attribution; attribution sits on the merge
+  point.
+- **Direct push to `main`**: the pushed commit owns the CI minutes
+  for the workflow run it triggered.
+- **Squash merge**: the squash commit owns the CI minutes for the
+  entire squash. The squashed intermediate commits carry 0 CI
+  attribution.
+
+**Rationale.** Most CI minutes for a PR are deterministic at merge
+time — the full test suite runs once on the head commit (or the merge
+commit). Attributing to the head commit is:
+
+1. *Simpler*: reproducible from `git log` without inspecting the
+   workflow run trigger.
+2. *Conservative*: slightly over-attributes to the final commit
+   rather than distributing minutes across push history where the
+   per-commit allocation would be arbitrary.
+3. *Accurate in aggregate*: the total CI cost for a PR is fully
+   captured; only the per-commit distribution varies.
+
+**Boundary case — force-pushed / amended commits.** A force-push or
+amend that triggers a CI re-run attributes the re-run to the amended
+commit, not the original. The total CI cost for the logical PR
+remains accurate; the per-commit column may show a larger number on
+the amended commit than on the pre-amendment one. This is acceptable
+for v1 as the aggregate remains correct.
+
+**Boundary case — matrix builds.** When a workflow runs multiple
+parallel matrix jobs (e.g., JDK 17 + JDK 21 for the backend test
+suite), the CI minutes for all matrix arms are summed and attributed
+to the triggering commit as a single total.
+
 ### 2.4 Production runtime — nuclide.systems hosting
 
-- **Region**: nuclide.systems hosting provider region; current
-  prod box is in **Falkenstein (DE)** at Hetzner per the
-  ops-deploy notes.
-- **Falkenstein grid**: same as DE general grid — **380 gCO₂eq/kWh**
-  (Umweltbundesamt 2024).
-- Hetzner publishes 100% renewable claim for their German DCs; we
-  do **not** discount on that basis (same hourly-vs-annual
-  argument as §2.1).
+- **Region**: **Hetzner Falkenstein, Germany — data center FSK1**
+  (Falkensteinbergwerk). Verified 2026-05-27 against Hetzner
+  product documentation and ops-deploy notes. The "verify per
+  provider" open question from the v1 draft is resolved; no
+  recompute of prior log rows is needed (§2.4 was already using
+  380 gCO₂eq/kWh DE grid in any backfill rows computed after
+  2026-05-23).
+- **Carbon-intensity source**: Electricity Maps zone `DE`
+  (Germany annual average). Umweltbundesamt *Strommix 2024*
+  figure: **380 gCO₂eq/kWh**.
+- **Hetzner REC posture**: Hetzner publishes a "100% renewable
+  energy" pledge for its German data centers, backed by annual
+  renewable energy certificates (RECs). Per §7 honest-companion
+  policy: annual RECs ≠ hourly carbon-free energy; we do **not**
+  discount the DE-grid intensity on that basis. The true
+  marginal-hour intensity when this server is running is bounded
+  by the DE annual average on the conservative side; the REC
+  purchase shifts the yearly accounting but not the marginal
+  dispatch. If Electricity Maps real-time data is ever captured
+  per-commit, the hourly figure from zone `DE` would replace the
+  annual average (v2 methodology trigger — see §6.2).
 - Per-commit attribution: only when a commit measurably changes
   steady-state draw (e.g., adds a new background job, removes a
   cache). Most commits are 0-attribution here.
