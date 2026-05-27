@@ -141,6 +141,10 @@ async function fetchBindings() {
 }
 
 // ── bulk channel fetch (TS-OPT2) — one request for all roles ─────────────────
+//
+// Two-step: (1) resolve each binding's 5-tuple to its shepardId via the
+// channel-list endpoint (TS-ID PR-2), (2) POST the shepardId list to the
+// bulk data endpoint. Response maps back to roles via the 5-tuple.
 async function fetchBulkTrace(
   channels: { role: string; parsed: NonNullable<Binding["parsed"]> }[],
   startNs: number,
@@ -152,31 +156,68 @@ async function fetchBulkTrace(
   if (!isFinite(id)) return result;
 
   try {
+    // Step 1: fetch channel list to resolve 5-tuples → shepardIds
+    const listRes = await fetch(
+      getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
+      { headers: getAuthHeaders() },
+    );
+    if (!listRes.ok) return result;
+    const channelList: {
+      shepardId: string;
+      measurement: string; device: string; location: string;
+      symbolicName: string; field: string;
+    }[] = await listRes.json();
+
+    const norm = (s: string | null | undefined) => (s ?? "").trim();
+    const tupleKey = (m: string, d: string, l: string, sn: string, f: string) =>
+      `${norm(m)}|${norm(d)}|${norm(l)}|${norm(sn)}|${norm(f)}`;
+
+    const tupleToShepardId = new Map<string, string>();
+    for (const ch of channelList) {
+      tupleToShepardId.set(
+        tupleKey(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field),
+        ch.shepardId,
+      );
+    }
+
+    // Step 2: resolve each role's 5-tuple; build shepardId → role reverse map
+    const shepardIdToRole = new Map<string, string>();
+    const shepardIds: string[] = [];
+    for (const { role, parsed } of channels) {
+      const key = tupleKey(parsed.measurement, parsed.device, parsed.location, parsed.symbolicName, parsed.field);
+      const shepardId = tupleToShepardId.get(key);
+      if (shepardId) {
+        shepardIds.push(shepardId);
+        shepardIdToRole.set(shepardId, role);
+      }
+    }
+    if (shepardIds.length === 0) return result;
+
+    // Step 3: bulk fetch — correct path is /channels/data/bulk, body is {shepardIds, start, end}
     const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels/bulk`,
+      getV2Base() + `/v2/timeseries-containers/${id}/channels/data/bulk`,
       {
         method:  "POST",
         headers: getAuthHeaders(),
-        body:    JSON.stringify({
-          start:     startNs,
-          end:       endNs,
-          downsample: "lttb",
-          maxPoints:  2000,
-          channels:   channels.map(c => ({
-            role:         c.role,
-            measurement:  c.parsed.measurement,
-            device:       c.parsed.device || null,
-            location:     c.parsed.location || null,
-            symbolicName: c.parsed.symbolicName || null,
-            field:        c.parsed.field,
-          })),
-        }),
+        body:    JSON.stringify({ shepardIds, start: startNs, end: endNs }),
       },
     );
     if (!res.ok) return result;
-    const body: { role: string; points: { timestamp: number; value: number }[] }[] = await res.json();
+
+    // Step 4: map response entries back to roles via 5-tuple
+    const body: {
+      timeseries: { measurement: string; device: string; location: string; symbolicName: string; field: string };
+      points: { timestamp: number; value: number }[];
+    }[] = await res.json();
+
     for (const entry of body) {
-      result.set(entry.role, (entry.points ?? []).map(p => [p.timestamp, p.value] as [number, number]));
+      const ts = entry.timeseries;
+      const key = tupleKey(ts.measurement, ts.device, ts.location, ts.symbolicName, ts.field);
+      const shepardId = tupleToShepardId.get(key);
+      const role = shepardId ? shepardIdToRole.get(shepardId) : undefined;
+      if (role) {
+        result.set(role, (entry.points ?? []).map(p => [p.timestamp, p.value as number] as [number, number]));
+      }
     }
   } catch {
     /* swallow — caller will see missing keys as empty arrays */
@@ -467,7 +508,7 @@ onMounted(() => {
             persistent-hint
           />
         </v-col>
-        <v-col cols="12" md="2">
+        <v-col v-if="!fromReference" cols="12" md="2">
           <v-text-field
             v-model.number="windowHours"
             label="Time window (hours)"
