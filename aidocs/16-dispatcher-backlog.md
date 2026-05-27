@@ -1614,7 +1614,7 @@ SSOT: [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-she
 | AI-V6-PGVECTOR-RLS-DESIGN | PG RLS predicate calling Neo4j FDW OR materialised permission view | L | design open | v1+ work; race in v0's app-layer post-filter is acceptable for now |
 | AI-V6-FUTURE-MULTIMODAL | Image embeddings (CLIP-style) + audio + multimodal — `embeddings_512` per-dim table | L | future | Out of v6 scope; flag for Phase 3 |
 | PM1f-MIGRATION-AI-2026-05-24 | Fold AI sidecar into the PM1f sidecar-declaration migration alongside spatial + hdf5 | S | queued | Synthesis AP-X10 closes for AI in the same PR; bundles cleanly with `PM1f-MIGRATION-SPATIAL-HDF5-2026-05-24` |
-| PM1g-SIDECAR-MEMLIMIT-ENFORCEMENT | `SidecarsAssembler` rejects `SidecarSpec` without explicit `mem_limit` | S | queued | STACK-AUDIT-001 hygiene; applies to all PM1f users (spatial + hdf5 + AI + future plugins) |
+| PM1g-SIDECAR-MEMLIMIT-ENFORCEMENT | `SidecarsAssembler` rejects `SidecarSpec` without explicit `mem_limit` | S | ✓ shipped (2026-05-27) | STACK-AUDIT-001 hygiene; `memLimit` field added to `SidecarSpec` record with null/blank validation; `mem_limit:` key emitted in compose snippet; Garage sidecar uses `"512m"`; tests in `SidecarSpecTest` + `SidecarsAssemblerTest` |
 
 ## PG-COLLAPSE-* — substrate convergence (POSTGRES-MULTITENANT-DECISION shipping)
 

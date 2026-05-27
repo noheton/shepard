@@ -54,7 +54,8 @@ class SidecarsAssemblerTest {
           Map.of(),
           validHealthcheck(),
           List.of(),
-          Map.of()
+          Map.of(),
+          "512m"
         )
       )
     );
@@ -92,7 +93,8 @@ class SidecarsAssemblerTest {
           ),
           validHealthcheck(),
           List.of(),
-          Map.of()
+          Map.of(),
+          "512m"
         )
       )
     );
@@ -119,6 +121,29 @@ class SidecarsAssemblerTest {
     assertThat(out).contains("      interval: 30s\n");
     assertThat(out).contains("      timeout: 10s\n");
     assertThat(out).contains("      retries: 3\n");
+  }
+
+  @Test
+  void memLimitRenderedInComposeSnippet() {
+    String out = assembler.assembleComposeSnippet(List.of(minimalGarage()));
+    assertThat(out).contains("    mem_limit: 512m\n");
+  }
+
+  @Test
+  void memLimitCustomValueRendered() {
+    SidecarSpec spec = new SidecarSpec(
+      "cache",
+      "redis:7-alpine",
+      List.of(),
+      List.of(),
+      Map.of(),
+      validHealthcheck(),
+      List.of(),
+      Map.of(),
+      "2g"
+    );
+    String out = assembler.assembleComposeSnippet(List.of(spec));
+    assertThat(out).contains("    mem_limit: 2g\n");
   }
 
   @Test
@@ -156,7 +181,8 @@ class SidecarsAssemblerTest {
             5
           ),
           List.of(),
-          Map.of()
+          Map.of(),
+          "1g"
         )
       )
     );
@@ -180,7 +206,8 @@ class SidecarsAssemblerTest {
         2
       ),
       List.of(),
-      Map.of()
+      Map.of(),
+      "1g"
     );
     String out = assembler.assembleComposeSnippet(List.of(garage, kafka));
     int garageIdx = out.indexOf("shepard-garage:");
@@ -201,7 +228,8 @@ class SidecarsAssemblerTest {
       Map.of(),
       validHealthcheck(),
       List.of(),
-      Map.of()
+      Map.of(),
+      "256m"
     );
     String out = assembler.assembleComposeSnippet(List.of(noVol));
     assertThat(out).doesNotContain("volumes:");
@@ -254,7 +282,8 @@ class SidecarsAssemblerTest {
         "{{from:postInit.3.access_key_id}}",
         "SHEPARD_FILES_S3_SECRET_ACCESS_KEY",
         "{{from:postInit.3.secret_access_key}}"
-      )
+      ),
+      "512m"
     );
   }
 

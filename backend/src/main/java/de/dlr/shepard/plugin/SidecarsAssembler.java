@@ -90,6 +90,7 @@ public final class SidecarsAssembler {
     out.append(INDENT_2).append(service).append(":\n");
     out.append(INDENT_4).append("image: ").append(spec.image()).append("\n");
     out.append(INDENT_4).append("restart: unless-stopped\n");
+    out.append(INDENT_4).append("mem_limit: ").append(spec.memLimit()).append("\n");
 
     if (!spec.ports().isEmpty()) {
       out.append(INDENT_4).append("ports:\n");

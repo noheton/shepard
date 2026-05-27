@@ -132,7 +132,8 @@ class SidecarSpecTest {
         Map.of(),
         validHealthcheck(),
         List.of(),
-        Map.of()
+        Map.of(),
+        "512m"
       )
     )
       .isInstanceOf(IllegalArgumentException.class);
@@ -149,10 +150,48 @@ class SidecarSpecTest {
         Map.of(),
         validHealthcheck(),
         List.of(),
-        Map.of()
+        Map.of(),
+        "512m"
       )
     )
       .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void sidecarSpec_rejectsNullMemLimit() {
+    assertThatThrownBy(() ->
+      new SidecarSpec(
+        "garage",
+        "dxflrs/garage:v1.0.1",
+        List.of(),
+        List.of(),
+        Map.of(),
+        validHealthcheck(),
+        List.of(),
+        Map.of(),
+        null
+      )
+    )
+      .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void sidecarSpec_rejectsBlankMemLimit() {
+    assertThatThrownBy(() ->
+      new SidecarSpec(
+        "garage",
+        "dxflrs/garage:v1.0.1",
+        List.of(),
+        List.of(),
+        Map.of(),
+        validHealthcheck(),
+        List.of(),
+        Map.of(),
+        "   "
+      )
+    )
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessageContaining("memLimit");
   }
 
   @Test
@@ -165,7 +204,8 @@ class SidecarSpecTest {
       null,
       validHealthcheck(),
       null,
-      null
+      null,
+      "512m"
     );
     assertThat(s.ports()).isEmpty();
     assertThat(s.volumes()).isEmpty();
@@ -184,11 +224,13 @@ class SidecarSpecTest {
       Map.of("GARAGE_RPC_SECRET", "{{generate:hex:64}}"),
       validHealthcheck(),
       List.of("/garage bucket create shepard-files"),
-      Map.of("SHEPARD_FILES_S3_BUCKET", "shepard-files")
+      Map.of("SHEPARD_FILES_S3_BUCKET", "shepard-files"),
+      "512m"
     );
     assertThat(s.id()).isEqualTo("garage");
     assertThat(s.image()).isEqualTo("dxflrs/garage:v1.0.1");
     assertThat(s.ports()).hasSize(1);
+    assertThat(s.memLimit()).isEqualTo("512m");
     assertThat(s.env())
       .containsEntry("GARAGE_RPC_SECRET", "{{generate:hex:64}}");
     // Defensive-copy contract — record's accessor returns immutable
@@ -216,7 +258,8 @@ class SidecarSpecTest {
         "http://{{sidecar.host}}:3900",
         "SHEPARD_FILES_S3_ACCESS_KEY_ID",
         "{{from:postInit.3.access_key_id}}"
-      )
+      ),
+      "512m"
     );
     assertThat(s.env().get("GARAGE_RPC_SECRET")).isEqualTo("{{generate:hex:64}}");
     assertThat(s.backendEnvBinding().get("SHEPARD_FILES_S3_ENDPOINT"))

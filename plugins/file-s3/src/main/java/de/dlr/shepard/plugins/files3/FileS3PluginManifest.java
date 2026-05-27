@@ -148,7 +148,8 @@ public final class FileS3PluginManifest implements PluginManifest {
           "{{from:postInit.3.access_key_id}}",
           "SHEPARD_FILES_S3_SECRET_ACCESS_KEY",
           "{{from:postInit.3.secret_access_key}}"
-        )
+        ),
+        "512m"
       )
     );
   }

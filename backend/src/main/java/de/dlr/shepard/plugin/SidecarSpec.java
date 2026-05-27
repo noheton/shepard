@@ -74,6 +74,12 @@ import java.util.Objects;
  *   includes these in the backend service's environment block as
  *   {@code # backend-env:} comment hints (the operator-side
  *   bootstrap moves them to the backend service definition).
+ * @param memLimit Docker memory limit for this sidecar in
+ *   docker-compose format (e.g. {@code "512m"}, {@code "2g"},
+ *   {@code "1024m"}). Must not be null or blank. Rendered as
+ *   {@code mem_limit:} in the compose snippet emitted by
+ *   {@link SidecarsAssembler}. Prevents uncapped memory use when
+ *   an operator pastes the generated snippet into production.
  */
 public record SidecarSpec(
   String id,
@@ -83,16 +89,23 @@ public record SidecarSpec(
   Map<String, String> env,
   HealthcheckSpec healthcheck,
   List<String> postInit,
-  Map<String, String> backendEnvBinding
+  Map<String, String> backendEnvBinding,
+  String memLimit
 ) {
   public SidecarSpec {
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(image, "image");
+    Objects.requireNonNull(memLimit, "memLimit");
     if (id.isBlank()) {
       throw new IllegalArgumentException("sidecar id must be non-blank");
     }
     if (image.isBlank()) {
       throw new IllegalArgumentException("sidecar image must be non-blank");
+    }
+    if (memLimit.isBlank()) {
+      throw new IllegalArgumentException(
+        "sidecar memLimit must be non-blank (e.g. '512m', '2g')"
+      );
     }
     ports = ports == null ? List.of() : List.copyOf(ports);
     volumes = volumes == null ? List.of() : List.copyOf(volumes);
