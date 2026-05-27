@@ -279,10 +279,13 @@ useHead({
           />
         </ExpansionPanelItem>
       </ExpansionPanels>
+      <!-- UX-PIN1: containerPath is stored with each pin so the PersonalDigest
+           tile can navigate back to this container. -->
       <TimeseriesMeasurementsTable
         :container-id="containerId"
         :is-allowed-to-edit-data="containerAccessor.isAllowedToEditData.value"
         :measurements="containerAccessor.measurements.value"
+        :container-path="`${containersPath}${urlSegment}${containerId}`"
       />
       <!-- CC1b: Referenced by — wired to GET /v2/timeseries-containers/{id}/linked-data-objects -->
       <ExpansionPanels class="mt-4" :default-open="[0]">

@@ -4,6 +4,7 @@ import {
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
+import { usePinnedChannels } from "~/composables/container/usePinnedChannels";
 
 const router = useRouter();
 
@@ -75,6 +76,9 @@ const {
 // Watched collections
 const { watched, watchedLoading, isWatched, toggle: toggleWatched } =
   useWatchedCollections();
+
+// UX-PIN1 — Pinned channel tiles (localStorage-backed singleton)
+const { pinnedChannels, unpin } = usePinnedChannels();
 
 const isEmpty = computed(() => !loading.value && allCollections.value.length === 0 && !error.value);
 
@@ -206,6 +210,35 @@ function relativeTime(date: Date | null | undefined): string {
         Create your first collection
       </v-btn>
     </div>
+
+    <!-- UX-PIN1: Pinned channel tiles — shop-floor "just show me the values" entry point.
+         Only rendered when at least one channel has been pinned from a TimeseriesContainer
+         page.  The section header is suppressed while the list is empty so the home page
+         stays uncluttered for users who have never pinned anything. -->
+    <template v-if="pinnedChannels.length > 0">
+      <div class="d-flex align-center mb-4 ga-2">
+        <v-icon icon="mdi-pin" color="primary" size="20" />
+        <div class="text-h6 font-weight-medium">Pinned channels</div>
+        <v-chip size="x-small" variant="tonal" class="ms-1">
+          {{ pinnedChannels.length }}
+        </v-chip>
+      </div>
+      <v-row class="mb-6">
+        <v-col
+          v-for="ch in pinnedChannels"
+          :key="ch.shepardId"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="3"
+        >
+          <PinnedChannelTile
+            :channel="ch"
+            @unpin="unpin($event)"
+          />
+        </v-col>
+      </v-row>
+    </template>
 
     <!-- Watched collections section — always shown so the feature is discoverable -->
     <div class="d-flex align-center mb-4 ga-2">

@@ -4,6 +4,8 @@ import type {
   TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
 import AddAnnotationButton from "~/components/common/button/AddAnnotationButton.vue";
+import { usePinnedChannels } from "~/composables/container/usePinnedChannels";
+import { useFetchV2Channels } from "~/composables/container/useFetchV2Channels";
 
 interface AnnotatedTimeseries extends TimeseriesEntity {
   annotations: Ref<SemanticAnnotation[] | null>;
@@ -13,7 +15,44 @@ const props = defineProps<{
   measurements: TimeseriesEntity[];
   containerId: number;
   isAllowedToEditData: boolean;
+  /** Optional: absolute path to this container's page, stored with pins for navigation. */
+  containerPath?: string;
 }>();
+
+// UX-PIN1 — pin/unpin support
+const { pin, unpin, isPinned } = usePinnedChannels();
+const { resolveShepardId } = useFetchV2Channels(props.containerId);
+
+/**
+ * Human-readable label for a channel, matching the format used in
+ * ChannelPreviewChart and the container page's `channelLabel()` helper.
+ */
+function channelLabel(ch: TimeseriesEntity): string {
+  const parts = [ch.device, ch.field, ch.location, ch.measurement, ch.symbolicName].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "(unnamed channel)";
+}
+
+function togglePin(ch: TimeseriesEntity) {
+  const shepardId = resolveShepardId(
+    ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field,
+  );
+  if (!shepardId) return; // v2 map not yet ready or channel not found
+
+  if (isPinned(shepardId)) {
+    unpin(shepardId);
+  } else {
+    pin({
+      shepardId,
+      containerId: props.containerId,
+      channelName: channelLabel(ch),
+      containerPath: props.containerPath,
+    });
+  }
+}
+
+function channelShepardId(ch: TimeseriesEntity): string | null {
+  return resolveShepardId(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field);
+}
 
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
   props.measurements.map(value => ({
@@ -27,6 +66,7 @@ const am: Ref<AnnotatedTimeseries[]> = computed(() =>
 // everywhere. Narrow ID + Field; the wider string columns absorb the
 // rest. Improves density on the TimeseriesReference page where this
 // table is the main content (user feedback 2026-05-19).
+// The "pin" action column (UX-PIN1) is narrow and right-aligned.
 const headers = [
   { key: "data-table-expand", width: "32px" },
   { title: "ID", key: "id", sortable: true, width: "60px" },
@@ -35,6 +75,7 @@ const headers = [
   { title: "Location", key: "location", sortable: true },
   { title: "Symbolic Name", key: "symbolicName", sortable: true },
   { title: "Field", key: "field", sortable: true, width: "100px" },
+  { key: "pin-action", width: "40px", sortable: false },
 ];
 
 const itemsPerPage = 10;
@@ -50,6 +91,20 @@ const itemsPerPage = 10;
     item-value="id"
     show-expand
   >
+    <!-- UX-PIN1: pin/unpin button in every non-expanded row -->
+    <template #[`item.pin-action`]="{ item }">
+      <v-btn
+        :icon="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'mdi-pin' : 'mdi-pin-outline'"
+        :color="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'primary' : undefined"
+        variant="text"
+        size="x-small"
+        density="compact"
+        :title="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'Unpin channel from home page' : 'Pin channel to home page'"
+        :disabled="!channelShepardId(item)"
+        @click.stop="togglePin(item)"
+      />
+    </template>
+
     <template #[`expanded-row`]="{ item }">
       <tr class="expanded">
         <td :colspan="headers.length">
