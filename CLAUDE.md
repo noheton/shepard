@@ -422,6 +422,34 @@ AI-substrate enabler. Per-kind shapes cause EAV bloat and bridge-node
 sprawl. The 2026-05-24 SEMA-V6 design (`aidocs/semantics/100`) is the
 canonical reference.
 
+## Always: ship a UI stub for every backend feature
+
+Every PR that ships a non-trivial backend feature — new endpoint, new entity,
+new config surface — **must include at least a minimal frontend surface in the
+same PR**. Order of preference:
+
+1. **Real functional UI + tests** (Vitest + Playwright at 4K viewport) — the
+   right shape; ships the capability end-to-end.
+2. **Real functional UI without tests** — acceptable; test obligation goes in
+   `aidocs/16` with a sprint target.
+3. **Minimal stub using the placeholder kit** — the acceptable minimum. The kit
+   lives in `frontend/components/common/placeholder/` and includes
+   `PlaceholderPageHeader`, `PlaceholderRestDump`, `PlaceholderImplStatus`,
+   `PlaceholderFragmentPane`, and `placeholderRegistry.ts`. Each placeholder
+   is ~30–50 LoC; no excuse for option 4.
+4. **Nothing** — explicitly disallowed. This is the pattern that produced the
+   no-UI gap that required 14 catch-up stubs (shipped 2026-05-24, `8c682955`).
+
+A reviewer seeing no `frontend/` touch in a feature PR **blocks the merge**
+until a stub is added or a backlog row with a gate date is filed.
+
+Exceptions (no stub required): internal refactors, performance work, security
+fixes, migration scripts, dependency bumps, backend-only test additions.
+
+Cross-references: `feedback_done_criteria.md` (parent rule — "backend + frontend
++ tests; all three"); `feedback_ui_api_parity.md` (converse — every UI action
+callable via REST; this rule's converse — every REST action visible via UI).
+
 ## Specialized agent roles
 
 Reusable prompt scaffolds for specialized review and design tasks. Copy the
