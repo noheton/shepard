@@ -5,7 +5,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
-import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
+import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowPointIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowResponseIO;
@@ -58,7 +58,7 @@ public class TimeseriesLiveWindowRest {
   TimeseriesContainerService containerService;
 
   @Inject
-  TimeseriesRepository timeseriesRepository;
+  TsChannelResolver channelResolver;
 
   @Inject
   TimeseriesDataPointRepository dataPointRepository;
@@ -120,25 +120,13 @@ public class TimeseriesLiveWindowRest {
     long windowStartMs = startNs / NS_PER_MS;
     long windowEndMs = nowNs / NS_PER_MS;
 
-    // Resolve the channel entity. measurement is required; the rest default to "" to match
-    // channels ingested without those dimensions.
-    String m = measurement != null ? measurement : "";
-    String d = device != null ? device : "";
-    String l = location != null ? location : "";
-    String s = symbolicName != null ? symbolicName : "";
-    String f = field != null ? field : "";
-
-    // Fetch all channels for this container and filter.
-    List<TimeseriesEntity> candidates = timeseriesRepository.list("containerId", containerId);
-
-    // Apply supplied non-default filters (non-null query params narrow the match).
-    List<TimeseriesEntity> matched = candidates.stream()
-      .filter(e -> (measurement == null || m.equals(e.getMeasurement())))
-      .filter(e -> (device == null || d.equals(e.getDevice())))
-      .filter(e -> (location == null || l.equals(e.getLocation())))
-      .filter(e -> (symbolicName == null || s.equals(e.getSymbolicName())))
-      .filter(e -> (field == null || f.equals(e.getField())))
-      .toList();
+    // PERF10: push all supplied filter fields into a parameterised DB query.
+    // Null params are omitted from the WHERE clause (match any value).
+    // The channel_metadata UNIQUE index (container_id, measurement, field,
+    // symbolic_name, device, location) makes partial-tuple lookups O(matches)
+    // instead of O(all-channels-in-container).
+    List<TimeseriesEntity> matched = channelResolver.findByContainerAndPartialTuple(
+      containerId, measurement, device, location, symbolicName, field);
 
     if (matched.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)

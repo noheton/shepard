@@ -90,4 +90,57 @@ public class TsChannelResolverTest {
     );
     assertEquals("vibration-AFP-1-head-ts1-g_rms-Double", legacyKey);
   }
+
+  // ── PERF10: findByContainerAndPartialTuple null-handling ─────────────────
+
+  /**
+   * When all tuple fields are null, the resolver builds a query with only the
+   * containerId predicate. The Panache call is an integration-only operation,
+   * but we can verify the method accepts all-null inputs without throwing — the
+   * null short-circuit in the loop must not NPE before reaching the Panache call.
+   *
+   * <p>This test instantiates the resolver directly (no CDI context). Any
+   * attempt to actually execute the Panache query would throw a
+   * {@link IllegalStateException} from the static context; we verify the
+   * method signature, param handling, and no early NPE by trying to call
+   * it and catching only the expected Panache context error.
+   */
+  @Test
+  void findByContainerAndPartialTuple_allNullFields_doesNotThrowBeforePanache() {
+    TsChannelResolver resolver = new TsChannelResolver();
+    // The method must not throw NullPointerException before reaching Panache.
+    // A Panache context error (no EntityManager) is the expected failure mode
+    // outside a CDI container — that is acceptable in a pure-unit test.
+    try {
+      resolver.findByContainerAndPartialTuple(99L, null, null, null, null, null);
+    } catch (IllegalStateException | NullPointerException e) {
+      // Panache static context error is expected in pure-unit context; NPE is not.
+      assertTrue(
+        !(e instanceof NullPointerException),
+        "must not NPE on all-null fields: partial-tuple builder must handle null params safely"
+      );
+    } catch (Exception e) {
+      // Any other exception from Panache infrastructure is acceptable in unit context.
+    }
+  }
+
+  /**
+   * Verify the method accepts a mix of null and non-null filter fields.
+   * Only the measurement dimension is supplied; the rest are null.
+   * Same null-handling contract as the all-null case.
+   */
+  @Test
+  void findByContainerAndPartialTuple_partialFields_doesNotThrowBeforePanache() {
+    TsChannelResolver resolver = new TsChannelResolver();
+    try {
+      resolver.findByContainerAndPartialTuple(99L, "vibration", null, null, null, "g_rms");
+    } catch (IllegalStateException | NullPointerException e) {
+      assertTrue(
+        !(e instanceof NullPointerException),
+        "must not NPE with partial fields: only non-null fields must appear in WHERE clause"
+      );
+    } catch (Exception e) {
+      // Panache infrastructure errors acceptable in unit context.
+    }
+  }
 }
