@@ -239,7 +239,7 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/161-aidocs-ssot-audit.md`](agent-findings/161-aidocs-ssot-audit.md) | 161 — aidocs SSOT consolidation sweep | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-26 |
+| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-27 |
 | [`aidocs/agent-findings/aidocs-consolidation-survey.md`](agent-findings/aidocs-consolidation-survey.md) | aidocs consolidation survey — single source of truth enforcement | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-05-23 |
