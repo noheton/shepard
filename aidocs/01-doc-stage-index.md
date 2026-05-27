@@ -30,24 +30,25 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 40 |
+| `fragment` | 41 |
 | `concept` | 24 |
 | `idea` | 9 |
-| `feature-defined` | 94 |
+| `feature-defined` | 95 |
 | `audited-by-personas` | 72 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 67 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **360** |
+| **total docs** | **362** |
 | **UNTAGGED** | **0** |
 
-## fragment (40)
+## fragment (41)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/00-synergy-index.md`](agent-findings/00-synergy-index.md) | 00 — Synergy index | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | — |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/synergy-2026-05-23-ai-accountability.md`](agent-findings/synergy-2026-05-23-ai-accountability.md) | S-08 — AI accountability dashboard: MCP × Permission audit log × F(AI)²R | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/synergy-2026-05-23-channel-as-individual.md`](agent-findings/synergy-2026-05-23-channel-as-individual.md) | S-01 — Channel-as-individual: HSDS HDF5 × AAS TimeSeriesData × sTC | 2026-05-23 | 2026-05-23 |
@@ -57,7 +58,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/synergy-2026-05-23-shacl-driven-mcp.md`](agent-findings/synergy-2026-05-23-shacl-driven-mcp.md) | S-07 — SHACL × MCP tools × ShapesValidateRest: one validator, two surfaces | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-snapshots-garage-gap.md`](agent-findings/synergy-2026-05-23-snapshots-garage-gap.md) | S-06 — Snapshots × Garage S3 (no versioning): Shepard absorbs the gap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-trace3d-video-sync.md`](agent-findings/synergy-2026-05-23-trace3d-video-sync.md) | S-04 — Trace3D × Video × DataBinding: synchronized 3D-trace + camera-PiP | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/synergy-2026-05-27.md`](agent-findings/synergy-2026-05-27.md) | Synergy findings — 2026-05-27 | 2026-05-27 | — |
+| [`aidocs/agent-findings/synergy-2026-05-27.md`](agent-findings/synergy-2026-05-27.md) | Synergy findings — 2026-05-27 | 2026-05-27 | 2026-05-27 |
 | [`aidocs/data/12-timescaledb-performance-analysis.md`](data/12-timescaledb-performance-analysis.md) | TimescaleDB Timeseries Integration — Performance Analysis & Mitigations | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
@@ -131,7 +132,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (94)
+## feature-defined (95)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -205,6 +206,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-26 | 2026-05-26 |
+| [`aidocs/semantics/98b-tpl2c-live-resolution.md`](semantics/98b-tpl2c-live-resolution.md) | 98b — TPL2c: Live Channel Resolution for `POST /v2/shapes/render` | 2026-05-27 | — |
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
