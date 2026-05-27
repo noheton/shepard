@@ -1,5 +1,8 @@
 package de.dlr.shepard.common.search.services;
 
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.in;
+
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.auth.users.entities.User;
@@ -19,13 +22,14 @@ import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 @RequestScoped
 public class StructuredDataSearchService {
@@ -76,21 +80,26 @@ public class StructuredDataSearchService {
     for (var reference : reachableReferences.entrySet()) {
       String mongoContainerId = reference.getKey().getStructuredDataContainer().getMongoId();
       MongoCollection<Document> mongoContainer = mongoDatabase.getCollection(mongoContainerId);
-      List<String> mongoStructuredDataIds = new ArrayList<>();
-      for (StructuredData structuredData : reference.getKey().getStructuredDatas()) {
-        mongoStructuredDataIds.add(makeMongoQueryId(structuredData.getOid()));
-      }
-      String mongoQuery = "{_id: {$in: " + makeMongoQueryArray(mongoStructuredDataIds) + "}";
+      List<ObjectId> objectIds = reference
+        .getKey()
+        .getStructuredDatas()
+        .stream()
+        .map(sd -> new ObjectId(sd.getOid()))
+        .toList();
+      Bson idFilter = in("_id", objectIds);
       String mongoSearchQuery = searchBody.getSearchParams().getQuery();
       // JSON queries start with a curly bracket ({) so they have to be translated to
-      // MongoDB syntax first
+      // MongoDB syntax first.
       // TODO: Deprecate MongoDB queries
       if (mongoSearchQuery.startsWith("{")) mongoSearchQuery = MongoDBQueryBuilder.getMongoDBQueryString(
         mongoSearchQuery
       );
-      mongoQuery += ", " + mongoSearchQuery + "}";
-      var mongoQueryDocument = Document.parse(mongoQuery);
-      var mongoQueryResult = mongoContainer.find(mongoQueryDocument);
+      // MongoDBQueryBuilder returns a fragment (e.g. "xwert: {$gt: 0}") without
+      // enclosing braces — Document.parse requires them. This wrapping is
+      // intentional and NOT the string-concatenation anti-pattern being fixed here.
+      Bson searchFilter = Document.parse("{" + mongoSearchQuery + "}");
+      Bson combined = and(idFilter, searchFilter);
+      var mongoQueryResult = mongoContainer.find(combined);
       if (mongoQueryResult.first() != null) matchingReferences.put(reference.getKey(), reference.getValue());
     }
     return matchingReferences;
@@ -145,11 +154,4 @@ public class StructuredDataSearchService {
     return ret;
   }
 
-  private static String makeMongoQueryId(String mongoId) {
-    return "{$oid: '" + mongoId + "'}";
-  }
-
-  private static String makeMongoQueryArray(List<String> strings) {
-    return "[" + String.join(", ", strings) + "]";
-  }
 }
