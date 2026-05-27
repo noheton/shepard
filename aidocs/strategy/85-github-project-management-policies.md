@@ -134,6 +134,18 @@ rows do NOT get back-filled into Issues.
    every automated commit inverts the signal-to-noise ratio of the
    Issues surface and pollutes the external-contributor view.
 
+   **Parallel-agent path isolation (AGENT-WT1).** When two or more agents
+   are dispatched in parallel with `isolation: worktree`, each agent gets
+   a separate working tree — but if an agent writes to absolute
+   `/opt/shepard/...` paths instead of paths relative to its own worktree
+   root, its writes land directly in the main tree and bypass worktree
+   isolation entirely. Agent prompts must instruct: use relative paths
+   within the worktree, OR stage + commit inside the worktree before
+   reporting back. Parallel dispatches that skip this rule collapse into
+   a single staging area and produce misleadingly-scoped merge commits
+   (see commit `681309a2` — three parallel persona-audits + ontology
+   survey landed as one commit).
+
 **Sync direction.** One-way: aidocs/16 → Issue. Never the reverse.
 
 **Practical workflow.**
