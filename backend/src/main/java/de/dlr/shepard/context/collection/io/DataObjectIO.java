@@ -37,15 +37,69 @@ public class DataObjectIO extends AbstractDataObjectIO {
   @Schema(readOnly = true, required = true)
   private long[] incomingIds;
 
-  @Schema(readOnly = true, required = true)
+  /**
+   * @deprecated Use {@code timeseriesCount} from {@link de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO}
+   * on the {@code /v2/} list endpoint instead. Two semantic differences: (1) this field
+   * counts ALL references including soft-deleted ones; the v2 {@code timeseriesCount} counts
+   * non-deleted references only. (2) this field is an {@code int} (overflow-unsafe for large
+   * collections); the v2 field is a {@code long}. Consolidation deferred to L2e (breaking
+   * API version bump).
+   */
+  @Deprecated
+  @Schema(
+    readOnly = true,
+    required = true,
+    deprecated = true,
+    description = "Deprecated — use `timeseriesCount` on the /v2/ DataObjectListItemV2 shape instead. " +
+      "This int includes soft-deleted references; the v2 long field counts non-deleted only."
+  )
   private int timeseriesReferenceCount;
 
-  @Schema(readOnly = true, required = true)
+  /**
+   * @deprecated Use {@code fileCount} from {@link de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO}
+   * on the {@code /v2/} list endpoint instead. Three semantic differences: (1) this field
+   * counts only {@code :FileBundleReference} nodes (FR1a bundles); the v2 {@code fileCount}
+   * counts both {@code :FileReference} (bundles) and {@code :SingletonFileReference} (FR1b
+   * singletons), making it the correct total. (2) this field includes soft-deleted references;
+   * v2 counts non-deleted only. (3) this field is an {@code int}; the v2 field is a {@code long}.
+   * Consolidation deferred to L2e (breaking API version bump).
+   */
+  @Deprecated
+  @Schema(
+    readOnly = true,
+    required = true,
+    deprecated = true,
+    description = "Deprecated — use `fileCount` on the /v2/ DataObjectListItemV2 shape instead. " +
+      "This int counts only FileBundleReference nodes (FR1a); the v2 long also counts " +
+      "SingletonFileReference (FR1b) and excludes soft-deleted references."
+  )
   private int fileBundleCount;
 
-  @Schema(readOnly = true, required = true)
+  /**
+   * @deprecated Use {@code structuredDataCount} from
+   * {@link de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO} on the {@code /v2/} list
+   * endpoint instead. Two semantic differences: (1) this field counts ALL references including
+   * soft-deleted ones; the v2 {@code structuredDataCount} counts non-deleted references only.
+   * (2) this field is an {@code int} (overflow-unsafe for large collections); the v2 field is
+   * a {@code long}. Consolidation deferred to L2e (breaking API version bump).
+   */
+  @Deprecated
+  @Schema(
+    readOnly = true,
+    required = true,
+    deprecated = true,
+    description = "Deprecated — use `structuredDataCount` on the /v2/ DataObjectListItemV2 shape instead. " +
+      "This int includes soft-deleted references; the v2 long field counts non-deleted only."
+  )
   private int structuredDataReferenceCount;
 
+  /**
+   * No v2 {@code long} counterpart exists yet for video-stream references.
+   * This field remains active (not deprecated) until {@code DataObjectListItemV2IO} grows a
+   * {@code videoCount} field. Tracked in the backlog as API2-video. The {@code int} type will
+   * be unsafe if a DataObject ever holds more than ~2 billion video references, but that
+   * scenario is not practically expected. When a v2 field lands, deprecate this field then.
+   */
   @Schema(readOnly = true, required = true)
   private int videoStreamReferenceCount;
 

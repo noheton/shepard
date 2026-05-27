@@ -598,6 +598,36 @@ class DataObjectV2RestTest {
     assertNotNull(detail.getReferenceIds());
   }
 
+  // ── API2: deprecated int count fields backward-compat guard ──────────────
+
+  /**
+   * API2 backward-compatibility guard: the three deprecated {@code int} count
+   * fields on {@link de.dlr.shepard.context.collection.io.DataObjectIO}
+   * ({@code timeseriesReferenceCount}, {@code fileBundleCount},
+   * {@code structuredDataReferenceCount}) must still be present and return
+   * zero for a stub DataObject with no references.  Adding {@code @Deprecated}
+   * must not change their wire-serialisation (fields are still emitted as JSON).
+   */
+  @Test
+  void deprecatedIntCountFieldsStillPresentOnDataObjectIO() {
+    // Build a minimal DataObject with no references — counts should all be 0.
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+
+    de.dlr.shepard.context.collection.io.DataObjectIO io =
+      new de.dlr.shepard.context.collection.io.DataObjectIO(d);
+
+    // Deprecated but still present: must return the zero-reference default.
+    assertEquals(0, io.getTimeseriesReferenceCount(),
+      "timeseriesReferenceCount must still be present and return 0 (deprecated, not removed)");
+    assertEquals(0, io.getFileBundleCount(),
+      "fileBundleCount must still be present and return 0 (deprecated, not removed)");
+    assertEquals(0, io.getStructuredDataReferenceCount(),
+      "structuredDataReferenceCount must still be present and return 0 (deprecated, not removed)");
+    // videoStreamReferenceCount is NOT deprecated yet (no v2 long counterpart).
+    assertEquals(0, io.getVideoStreamReferenceCount(),
+      "videoStreamReferenceCount must still be present and return 0");
+  }
+
   // ── ANC-1: predecessors / successors / children ───────────────────────────
 
   @Test
