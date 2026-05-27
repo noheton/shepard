@@ -202,6 +202,38 @@ class PublicEndpointRegistryTest {
     assertFalse(isPublic("shepard/api/v2/instance/capabilitiesx"));
   }
 
+  // BACKEND-VERSIONZ-PROBE — /healthz prefix covers the smallrye-health family
+
+  @Test
+  void healthzBarePathIsPublic() {
+    // quarkus.smallrye-health.root-path=/shepard/api/healthz →
+    // application path /healthz. Must bypass JWTFilter without auth.
+    assertTrue(isPublic("shepard/api/healthz"));
+    assertTrue(isPublic("shepard/api/healthz/"));
+  }
+
+  @Test
+  void healthzLivenessIsPublic() {
+    assertTrue(isPublic("shepard/api/healthz/live"));
+  }
+
+  @Test
+  void healthzReadinessIsPublic() {
+    assertTrue(isPublic("shepard/api/healthz/ready"));
+  }
+
+  @Test
+  void healthzGroupPathIsPublic() {
+    assertTrue(isPublic("shepard/api/healthz/group/neo4j"));
+  }
+
+  @Test
+  void healthzPrefixFootGunGuarded() {
+    // /healthz-evil must NOT match the /healthz prefix.
+    assertFalse(isPublic("shepard/api/healthz-evil"));
+    assertFalse(isPublic("shepard/api/healthzevil"));
+  }
+
   // PM1g — plugin-path registration API tests
 
   @Test

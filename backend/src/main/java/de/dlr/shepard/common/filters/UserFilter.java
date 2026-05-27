@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.filters;
 
 import de.dlr.shepard.auth.security.JWTPrincipal;
+import de.dlr.shepard.auth.security.JwtTokenAuthService;
 import de.dlr.shepard.auth.security.UserLastSeenCache;
 import de.dlr.shepard.auth.security.Userinfo;
 import de.dlr.shepard.auth.security.UserinfoService;
@@ -34,6 +35,9 @@ public class UserFilter implements ContainerRequestFilter {
 
   @Inject
   UserinfoService userInfoService;
+
+  @Inject
+  JwtTokenAuthService jwtTokenAuthService;
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -80,14 +84,47 @@ public class UserFilter implements ContainerRequestFilter {
   }
 
   private User parseUserFromUserinfo(Userinfo userinfo) {
-    // We only want the last part of the subject, since this is usually a human
-    // readable user name
-    var splitted = userinfo.getSub().split(":");
-    String username = splitted[splitted.length - 1];
-
+    String username = resolveUsernameFromUserinfo(userinfo);
     // ORCID is not read from the OIDC claim — it is a pure user profile
     // setting managed via PATCH /v2/users/me. IdP-managed ORCID attributes
     // vary wildly across realms and are not reliably present.
     return new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
+  }
+
+  /**
+   * Derive the username from a userinfo response using the same claim
+   * strategy as {@link JwtTokenAuthService#extractUsername}. Keeps
+   * {@code UserFilter} and {@code JwtTokenAuthService} in sync so the
+   * username-match check at line 59 never fails because of a claim mismatch.
+   *
+   * <p>When {@code shepard.oidc.username-claim} is set, the same named
+   * field is read from the userinfo response (available as a dedicated
+   * property on {@link Userinfo} for {@code preferred_username}, {@code sub},
+   * {@code email}). Falls back to the sub-split default when the claim is
+   * empty or absent.
+   */
+  private String resolveUsernameFromUserinfo(Userinfo userinfo) {
+    String claim = jwtTokenAuthService.getUsernameClaim();
+    if (claim != null && !claim.isBlank()) {
+      String value = switch (claim) {
+        case "preferred_username" -> userinfo.getPreferredUsername();
+        case "email" -> userinfo.getEmail();
+        case "sub" -> userinfo.getSub();
+        // Unknown claim names fall back to sub-split; unknown fields
+        // cannot be read from the typed Userinfo DTO.
+        default -> null;
+      };
+      if (value != null && !value.isBlank()) {
+        return value;
+      }
+      Log.warnf(
+        "shepard.oidc.username-claim='%s' not found or empty in userinfo response; " +
+        "falling back to sub-split.",
+        claim
+      );
+    }
+    // Default: sub-split (last colon-separated segment).
+    var splitted = userinfo.getSub().split(":");
+    return splitted[splitted.length - 1];
   }
 }

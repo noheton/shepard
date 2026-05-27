@@ -88,8 +88,18 @@ public class PublicEndpointRegistry {
    * {@link de.dlr.shepard.plugin.PluginManifest#publicPathPrefixes()} and
    * collected into {@link #PLUGIN_PATH_PREFIXES} at startup by
    * {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar}.
+   *
+   * <p>BACKEND-VERSIONZ-PROBE: {@code /healthz} covers the smallrye-health
+   * family ({@code /healthz}, {@code /healthz/live}, {@code /healthz/ready},
+   * {@code /healthz/group/...}) — all configured via
+   * {@code quarkus.smallrye-health.root-path=/shepard/api/healthz}. Health
+   * probes (Docker healthcheck, Caddy, {@code make wait-for-health}) do not
+   * send an Authorization header; without this prefix they hit JWTFilter and
+   * generate ~45 WARN/hour ("Invalid/missing authorization header").
    */
-  private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of();
+  private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of(
+    "/healthz"
+  );
 
   /**
    * Public-endpoint regex patterns — for paths where the variable

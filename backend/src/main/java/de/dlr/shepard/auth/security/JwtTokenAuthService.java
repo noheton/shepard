@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.role.daos.RoleDAO;
 import de.dlr.shepard.common.util.Constants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.quarkus.logging.Log;
@@ -49,6 +50,26 @@ public class JwtTokenAuthService {
   private final String[] rolesClaimPath;
   private final String instanceAdminClaimValue;
 
+  /**
+   * Optional JWT claim name used to extract the identity string for
+   * {@link JWTPrincipal#getUsername()}. When empty (the default) the
+   * existing sub-split behaviour is preserved: the JWT {@code sub} claim
+   * is split on {@code :} and the last segment is used as the username.
+   * Operators on non-Keycloak IdPs that emit a human-readable identity
+   * in a different claim (e.g. {@code preferred_username}, {@code email},
+   * {@code upn}) set {@code shepard.oidc.username-claim} to the claim
+   * name they need.
+   *
+   * <p><strong>Migration note.</strong> Flipping this key on an existing
+   * deployment changes the identity string for every user. Neo4j
+   * {@code :User} nodes are keyed by whatever string was used as username
+   * at first login; switching the claim re-creates users under new keys
+   * and loses Neo4j-internal role grants and permission records. Perform
+   * a username-migration pass in Neo4j before enabling the new claim in
+   * production.
+   */
+  private final String usernameClaim;
+
   @Inject
   RoleDAO roleDAO;
 
@@ -58,6 +79,7 @@ public class JwtTokenAuthService {
     this.requiredOidcRole = "";
     this.rolesClaimPath = new String[0];
     this.instanceAdminClaimValue = "";
+    this.usernameClaim = "";
   }
 
   @Inject
@@ -68,11 +90,13 @@ public class JwtTokenAuthService {
       name = "shepard.oidc.roles-claim-path",
       defaultValue = "realm_access.roles"
     ) String rolesClaimPath,
-    @ConfigProperty(name = "shepard.instance-admin.role") Optional<String> instanceAdminClaimValue
+    @ConfigProperty(name = "shepard.instance-admin.role") Optional<String> instanceAdminClaimValue,
+    @ConfigProperty(name = "shepard.oidc.username-claim", defaultValue = "") Optional<String> usernameClaim
   ) throws NoSuchAlgorithmException, InvalidKeySpecException {
     this.requiredOidcRole = oidcRole.orElse("");
     this.rolesClaimPath = parseClaimPath(rolesClaimPath);
     this.instanceAdminClaimValue = instanceAdminClaimValue.map(String::trim).orElse("");
+    this.usernameClaim = usernameClaim.map(String::trim).orElse("");
 
     var kFactory = KeyFactory.getInstance("RSA");
     byte[] decoded;
@@ -84,7 +108,10 @@ public class JwtTokenAuthService {
     this.oidcPublicKey = kFactory.generatePublic(new X509EncodedKeySpec(decoded));
   }
 
-  /** Test-only constructor that lets unit tests inject a pre-built public key. */
+  /**
+   * Test-only constructor (no username-claim override — uses sub-split default).
+   * Delegates to the 6-arg form with an empty username-claim.
+   */
   JwtTokenAuthService(
     PublicKey oidcPublicKey,
     String requiredOidcRole,
@@ -92,11 +119,24 @@ public class JwtTokenAuthService {
     String instanceAdminClaimValue,
     RoleDAO roleDAO
   ) {
+    this(oidcPublicKey, requiredOidcRole, rolesClaimPath, instanceAdminClaimValue, "", roleDAO);
+  }
+
+  /** Test-only constructor with explicit username-claim override. */
+  JwtTokenAuthService(
+    PublicKey oidcPublicKey,
+    String requiredOidcRole,
+    String[] rolesClaimPath,
+    String instanceAdminClaimValue,
+    String usernameClaim,
+    RoleDAO roleDAO
+  ) {
     this.oidcPublicKey = oidcPublicKey;
     this.requiredOidcRole = requiredOidcRole == null ? "" : requiredOidcRole;
     this.rolesClaimPath = rolesClaimPath == null ? new String[0] : rolesClaimPath;
     this.instanceAdminClaimValue =
       instanceAdminClaimValue == null ? "" : instanceAdminClaimValue.trim();
+    this.usernameClaim = usernameClaim == null ? "" : usernameClaim.trim();
     this.roleDAO = roleDAO;
   }
 
@@ -122,6 +162,12 @@ public class JwtTokenAuthService {
       Jws<Claims> jws = parser.parseClaimsJws(token);
       Log.debugf("Valid token: %s", jws.getBody().getId());
       return jws;
+    } catch (ExpiredJwtException ex) {
+      // Expired tokens are normal client-side staleness (rotation lag, probe
+      // traffic on public endpoints like /versionz). DEBUG — not a security
+      // event. Signature mismatches / malformed tokens stay at WARN below.
+      Log.debugf("Expired token presented: %s", ex.getMessage());
+      return null;
     } catch (JwtException ex) {
       Log.warnf("Invalid token: %s", ex.getMessage());
       return null;
@@ -150,8 +196,7 @@ public class JwtTokenAuthService {
       }
     }
 
-    var splitted = subject.split(":");
-    String username = splitted[splitted.length - 1];
+    String username = extractUsername(body, subject);
 
     Set<String> resolvedRoles = resolveDualSourceRoles(username, idpRoles);
 
@@ -159,6 +204,40 @@ public class JwtTokenAuthService {
     long iat = issuedAt != null ? issuedAt.getTime() / 1000L : 0L;
 
     return new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
+  }
+
+  /**
+   * Extract the username identity string from the JWT body.
+   *
+   * <p>When {@link #usernameClaim} is set, the named claim is read from
+   * the JWT body; if it is present and textual, its value is returned.
+   * If the claim is absent or non-textual, a warning is emitted and the
+   * method falls back to the sub-split path below.
+   *
+   * <p>Default (empty {@code usernameClaim}): split {@code subject} on
+   * {@code :} and return the last segment — the longstanding Keycloak-
+   * compatible behaviour.
+   */
+  String extractUsername(Claims body, String subject) {
+    if (usernameClaim != null && !usernameClaim.isBlank()) {
+      Object raw = body.get(usernameClaim);
+      if (raw instanceof String s && !s.isBlank()) {
+        return s;
+      }
+      Log.warnf(
+        "shepard.oidc.username-claim='%s' not found or non-textual in JWT; " +
+        "falling back to sub-split. Set the claim or check your IdP token shape.",
+        usernameClaim
+      );
+    }
+    // Default: sub-split (last colon-separated segment).
+    var splitted = subject.split(":");
+    return splitted[splitted.length - 1];
+  }
+
+  /** Returns the configured username-claim name, or empty string if using sub-split default. */
+  String getUsernameClaim() {
+    return usernameClaim;
   }
 
   /**
