@@ -83,7 +83,18 @@ const itemsPerPage = 10;
                     @annotations="annotations => (item.annotations.value = annotations)"
                   />
                 </td>
-                <td>
+                <td class="action-buttons">
+                  <!-- Set unit: pre-filters the annotation dialog to QUDT
+                       vocabulary terms so the user assigns a physical unit in
+                       one click. Pre-fills from symbolicName for best UX. UI18 -->
+                  <AddAnnotationButton
+                    v-if="isAllowedToEditData"
+                    :annotated="new AnnotatedTimeseries(item)"
+                    :prefill="item.symbolicName ?? undefined"
+                    filter-vocab="qudt"
+                    button-icon="mdi-ruler"
+                    button-text="SET UNIT"
+                  />
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
                     :annotated="new AnnotatedTimeseries(item)"

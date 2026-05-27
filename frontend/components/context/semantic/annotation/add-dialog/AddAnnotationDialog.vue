@@ -18,6 +18,11 @@ interface AddAnnotationDialogProps {
    *  channel's symbolicName via symbolicNameToSearchToken(). When absent the
    *  dialog opens with an empty search field (backward-compatible). */
   prefill?: string;
+  /** Optional vocabulary filter: when set, term suggestions are narrowed to
+   *  those whose URI contains this string (case-insensitive). Pass the
+   *  vocabulary manifest ID (e.g. "qudt") or any URI substring. When absent,
+   *  all vocabularies are shown (backward-compatible). */
+  filterVocab?: string;
 }
 
 const props = defineProps<AddAnnotationDialogProps>();
@@ -93,6 +98,15 @@ const mapToAutocompleteItem = (r: SemanticRepository): AutoCompleteItem => ({
 let propertyDebounce: ReturnType<typeof setTimeout> | null = null;
 let valueDebounce: ReturnType<typeof setTimeout> | null = null;
 
+/** Filter a term suggestion list to only those whose URI contains the
+ *  filterVocab substring (case-insensitive). A falsy filterVocab passes
+ *  all terms through unchanged. */
+function applyVocabFilter(suggestions: TermSuggestion[]): TermSuggestion[] {
+  if (!props.filterVocab) return suggestions;
+  const needle = props.filterVocab.toLowerCase();
+  return suggestions.filter(s => s.uri.toLowerCase().includes(needle));
+}
+
 function onPropertySearch(query: string) {
   propertyIri.value = query ?? "";
   if (propertyDebounce) clearTimeout(propertyDebounce);
@@ -102,7 +116,7 @@ function onPropertySearch(query: string) {
   }
   propertyLoading.value = true;
   propertyDebounce = setTimeout(async () => {
-    propertySuggestions.value = await search(query);
+    propertySuggestions.value = applyVocabFilter(await search(query));
     propertyLoading.value = false;
   }, 300);
 }
@@ -116,7 +130,7 @@ function onValueSearch(query: string) {
   }
   valueLoading.value = true;
   valueDebounce = setTimeout(async () => {
-    valueSuggestions.value = await search(query);
+    valueSuggestions.value = applyVocabFilter(await search(query));
     valueLoading.value = false;
   }, 300);
 }
@@ -177,7 +191,7 @@ const onSubmit = async () => {
     :max-width="600"
     :submit-disabled="!isValid"
     save-button-text="Add"
-    title="Create New Semantic Annotation"
+    :title="filterVocab ? `Set Unit (${filterVocab.toUpperCase()} vocabulary)` : 'Create New Semantic Annotation'"
     @submit="onSubmit"
   >
     <template #form>
