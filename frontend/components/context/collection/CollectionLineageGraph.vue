@@ -8,7 +8,7 @@ import dagre from "@dagrejs/dagre";
 import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import { computeLineageState, type LineageState } from "~/utils/lineageState";
-import { STATUS_COLORS, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
+import { STATUS_COLORS, DEFAULT_NODE_COLOR, nodeColor, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
 if (process.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent, LegendComponent]);
@@ -22,7 +22,7 @@ const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, coll
 const NODE_CAP = 150;
 
 function statusColor(do_: DataObjectListItemV2): string {
-  return STATUS_COLORS[(do_ as any).status ?? ""] ?? STATUS_COLORS.DRAFT;
+  return nodeColor((do_ as any).status ?? "");
 }
 
 function doLabel(do_: DataObjectListItemV2): string {

@@ -11,7 +11,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
-import { ACTION_COLORS, DEFAULT_NODE_COLOR, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
+import { ACTION_COLORS, nodeColor, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
 if (process.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent]);
@@ -145,7 +145,7 @@ const chartOption = computed(() => {
       target: "entity",
       lineStyle: {
         type: "solid",
-        color: ACTION_COLORS[latestAct?.actionKind ?? ""] ?? DEFAULT_NODE_COLOR,
+        color: nodeColor(latestAct?.actionKind ?? "", ACTION_COLORS),
         width: 1.5,
       },
       label: { show: true, formatter: summary, fontSize: 9 },
