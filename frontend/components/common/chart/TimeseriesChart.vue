@@ -4,9 +4,12 @@ import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
 import {
+  BrushComponent,
   DataZoomComponent,
   GridComponent,
   LegendComponent,
+  MarkAreaComponent,
+  MarkLineComponent,
   ToolboxComponent,
   TooltipComponent,
 } from "echarts/components";
@@ -21,6 +24,9 @@ if (process.client) {
     LegendComponent,
     DataZoomComponent,
     ToolboxComponent,
+    BrushComponent,
+    MarkAreaComponent,
+    MarkLineComponent,
   ]);
 }
 
@@ -69,9 +75,46 @@ const props = withDefaults(
      * See xMin for details.
      */
     xMax?: number;
+    /**
+     * Enable the brush (range-select) tool for annotation.
+     * When true, a horizontal-select brush button appears in the toolbox.
+     * The parent receives `brush:end` emits with the selected ns range.
+     */
+    brushEnabled?: boolean;
+    /**
+     * Existing temporal annotations to render as background overlays.
+     * Each entry covers [startNs, endNs] (endNs null = point annotation).
+     */
+    annotations?: Array<{ startNs: number; endNs: number | null; label?: string; color?: string }>;
   }>(),
   { height: "360px", showLegend: false, smooth: false, step: false, animationDuration: 0 },
 );
+
+const emit = defineEmits<{
+  "brush:end": [{ startNs: number; endNs: number | null }];
+}>();
+
+const chartRef = ref<InstanceType<typeof VChart> | null>(null);
+
+function onBrushEnd(event: any) {
+  const area = event?.areas?.[0];
+  if (!area?.coordRange) return;
+  const [a, b] = area.coordRange as [number, number];
+  const startMs = Math.min(a, b);
+  const endMs = Math.max(a, b);
+  const startNs = startMs * 1e6;
+  // Treat selections < 1 ms as a point annotation (endNs = null)
+  const endNs = (endMs - startMs) < 1 ? null : endMs * 1e6;
+  emit("brush:end", { startNs, endNs });
+}
+
+function restoreZoom() {
+  if (!chartRef.value) return;
+  (chartRef.value as any).dispatchAction({ type: "dataZoom", start: 0, end: 100 });
+  (chartRef.value as any).dispatchAction({ type: "brush", areas: [] });
+}
+
+defineExpose({ restoreZoom });
 
 // Max timestamp across all series (ms). Recomputes whenever series data changes.
 // Used to anchor the xAxis clip window to the latest data rather than Date.now(),
@@ -131,9 +174,13 @@ const chartOption = computed(() => ({
     top: 2,
     feature: {
       dataZoom: { yAxisIndex: "none", title: { zoom: "Zoom", back: "Reset" } },
+      ...(props.brushEnabled ? {
+        brush: { type: ["lineX", "clear"] as string[], title: { lineX: "Select range", clear: "Clear" } },
+      } : {}),
       saveAsImage: { title: "Save PNG", name: "timeseries" },
     },
   },
+  ...(props.brushEnabled ? { brush: { xAxisIndex: 0, brushMode: "single" } } : {}),
   xAxis: {
     type: "time",
     axisLabel: { fontSize: 11 },
@@ -176,19 +223,58 @@ const chartOption = computed(() => ({
       borderColor: "transparent",
     },
   ],
-  series: props.series.map(s => ({
-    name: s.name,
-    type: "line",
-    symbol: "none",
-    smooth: props.step ? false : props.smooth,
-    step: props.step ? "end" : undefined,
-    ...(s.color !== undefined
-      ? { lineStyle: { width: 1.5, color: s.color }, itemStyle: { color: s.color } }
-      : { lineStyle: { width: 1.5 } }),
-    data: s.data.map(([tsNs, v]) => [tsNs / 1e6, v]),
-    large: true,
-    largeThreshold: 2000,
-  })),
+  series: [
+    ...props.series.map(s => ({
+      name: s.name,
+      type: "line" as const,
+      symbol: "none",
+      smooth: props.step ? false : props.smooth,
+      step: props.step ? "end" : undefined,
+      ...(s.color !== undefined
+        ? { lineStyle: { width: 1.5, color: s.color }, itemStyle: { color: s.color } }
+        : { lineStyle: { width: 1.5 } }),
+      data: s.data.map(([tsNs, v]) => [tsNs / 1e6, v]),
+      large: true,
+      largeThreshold: 2000,
+    })),
+    // Invisible sentinel series that carries markArea + markLine for annotation overlays.
+    // Uses a dedicated series rather than attaching marks to data series so annotations
+    // render even when there is no data (empty chart use case).
+    ...(props.annotations?.length
+      ? [{
+          name: "__annotations__",
+          type: "line" as const,
+          silent: true,
+          symbol: "none",
+          lineStyle: { opacity: 0 },
+          data: [],
+          markArea: {
+            silent: true,
+            data: props.annotations
+              .filter(a => a.endNs != null)
+              .map(a => [
+                {
+                  xAxis: a.startNs / 1e6,
+                  itemStyle: { color: a.color ?? "rgba(251, 140, 0, 0.12)" },
+                  label: { show: !!a.label, formatter: a.label ?? "", position: "insideTopLeft", fontSize: 10 },
+                },
+                { xAxis: a.endNs! / 1e6 },
+              ]),
+          },
+          markLine: {
+            silent: true,
+            symbol: ["none", "none"],
+            data: props.annotations
+              .filter(a => a.endNs == null)
+              .map(a => ({
+                xAxis: a.startNs / 1e6,
+                lineStyle: { color: a.color ?? "#FB8C00", width: 1.5, type: "dashed" },
+                label: { show: !!a.label, formatter: a.label ?? "", position: "start", fontSize: 10 },
+              })),
+          },
+        }]
+      : []),
+  ],
 }));
 </script>
 
@@ -203,10 +289,12 @@ const chartOption = computed(() => ({
          series's `data` field in place. At 1s refresh the result is a
          smooth slide, not a re-render flash. -->
     <v-chart
+      ref="chartRef"
       :option="chartOption"
       :update-options="{ notMerge: false, lazyUpdate: true }"
       :style="{ height }"
       autoresize
+      @brushEnd="onBrushEnd"
     />
   </ClientOnly>
 </template>

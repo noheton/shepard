@@ -7,6 +7,7 @@ import {
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
 import { useFetchTimeseriesContainerStats } from "~/composables/containers/useFetchTimeseriesContainerStats";
+import TimeseriesChart from "~/components/common/chart/TimeseriesChart.vue";
 
 const MAX_CHANNELS = 8;
 
@@ -242,6 +243,29 @@ if (typeof document !== "undefined") {
 onBeforeUnmount(() => {
   stopLiveTimer();
 });
+
+// ── Brush selection (range annotate) ─────────────────────────────────────
+// brushSelection holds the most recent user-drawn selection (in ns).
+// null = no active selection. endNs = null = point selection.
+const staticChartRef = ref<InstanceType<typeof TimeseriesChart> | null>(null);
+const brushSelection = ref<{ startNs: number; endNs: number | null } | null>(null);
+const emit = defineEmits<{
+  "annotate:request": [{ startNs: number; endNs: number | null }];
+}>();
+
+function onBrushEnd(sel: { startNs: number; endNs: number | null }) {
+  brushSelection.value = sel;
+}
+
+function clearBrush() {
+  brushSelection.value = null;
+  staticChartRef.value?.restoreZoom();
+}
+
+function requestAnnotate() {
+  if (!brushSelection.value) return;
+  emit("annotate:request", brushSelection.value);
+}
 </script>
 
 <template>
@@ -431,6 +455,44 @@ onBeforeUnmount(() => {
           No data points yet. Enable live mode to stream incoming data, or upload a CSV.
         </template>
       </div>
+      <!-- Brush selection action bar — shown when user has drawn a range selection.
+           Works even on an empty time axis (no data required). -->
+      <v-slide-y-transition>
+        <div
+          v-if="brushSelection && !liveMode"
+          class="d-flex align-center ga-2 mb-1 mx-2"
+        >
+          <v-chip
+            size="small"
+            color="warning"
+            variant="tonal"
+            prepend-icon="mdi-selection-drag"
+          >
+            {{ brushSelection.endNs == null
+              ? new Date(brushSelection.startNs / 1e6).toLocaleString()
+              : `${new Date(brushSelection.startNs / 1e6).toLocaleString()} → ${new Date(brushSelection.endNs / 1e6).toLocaleString()}`
+            }}
+          </v-chip>
+          <v-btn
+            size="x-small"
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-tag-plus-outline"
+            @click="requestAnnotate"
+          >
+            Annotate
+          </v-btn>
+          <v-btn
+            size="x-small"
+            variant="text"
+            prepend-icon="mdi-close"
+            @click="clearBrush"
+          >
+            Clear
+          </v-btn>
+        </div>
+      </v-slide-y-transition>
+
       <!-- Live mode: uPlot for high-performance canvas rendering.
            uPlot has no animation by design — data snaps immediately,
            which is correct for high-frequency feeds.
@@ -448,6 +510,7 @@ onBeforeUnmount(() => {
         />
         <TimeseriesChart
           v-else
+          ref="staticChartRef"
           :series="series"
           height="300px"
           :show-legend="true"
@@ -455,6 +518,8 @@ onBeforeUnmount(() => {
           :step="stepChart"
           :animation-duration="chartAnimationMs"
           :visible-window-ms="chartVisibleWindowMs"
+          :brush-enabled="!liveMode"
+          @brush:end="onBrushEnd"
         />
       </ClientOnly>
     </div>
