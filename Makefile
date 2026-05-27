@@ -44,7 +44,11 @@ build-plugins:
 	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
 
 build-backend: build-plugins
-	cd backend && $(MVN) package -Dmaven.test.skip=true -q
+	# `clean` removes stale class files from previously killed builds.
+	# Mixed old+new .class files cause Quarkus CDI augmentation to spin
+	# indefinitely on ConcurrentHashMap.computeIfAbsent (CRIT-STALE-CLASSFILES,
+	# 2026-05-27). Cost: full recompile (~10 min extra); benefit: no 5h hangs.
+	cd backend && $(MVN) clean package -Dmaven.test.skip=true -q
 
 image-backend: build-backend
 	docker build -t $(BACKEND_IMAGE) ./backend
