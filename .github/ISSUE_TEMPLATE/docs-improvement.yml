@@ -59,3 +59,5 @@ body:
         - Internal contributor (DLR + AI co-pilot)
         - API consumer (Python / Java / MCP client)
         - Funding body / strategic reader
+    validations:
+      required: true

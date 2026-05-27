@@ -1,28 +1,32 @@
-name: 🔐 Security finding — DO NOT FILE PUBLICLY
-description: This template is a stub. Real security findings go via a private channel.
-title: "DO NOT USE — see private disclosure path"
+name: 🔐 Security finding (private advisory)
+description: >
+  Report a security vulnerability. This template creates a private GitHub
+  Security Advisory — it is NOT a public issue. Real findings are routed
+  privately; see the body for the preferred contact path.
+title: "[SECURITY] <one-line summary>"
 labels:
-  - "type:docs"
+  - "type:bug"
+  - "area:security"
+  - "severity:critical"
+private: true
 body:
   - type: markdown
     attributes:
       value: |
-        ## ⚠️ Stop — do not file security findings as public issues.
+        ## This form creates a PRIVATE GitHub Security Advisory
 
-        Security findings (authentication bypass, data leakage, RCE,
-        privilege escalation, signed-URL TTL leakage, etc.) **must
-        NOT** be filed as public GitHub Issues. A public issue means
-        every reader of the repo learns about the vulnerability before
-        any operator has a chance to patch.
+        Submitting this form opens a **private** draft advisory visible
+        only to you and the maintainer — it is NOT a public issue.
+        This is the correct mechanism for reporting security
+        vulnerabilities in shepard without disclosing them to the public
+        before a patch exists.
 
-        ### Where to send a security finding
-
-        Email the maintainer privately at **fkrebs@nucli.de** with:
+        **Preferred path:** Email **fkrebs@nucli.de** directly for the
+        fastest response. Include:
 
         - A clear description of the issue
         - Reproduction steps (with concrete request bodies + headers if
-          relevant — per `feedback_no_redactions.md`, real values beat
-          placeholders for reproducibility)
+          relevant — real values beat placeholders for reproducibility)
         - The impact you observed (what an attacker could do)
         - Your suggested fix or mitigation, if you have one
         - Whether you'd like to be credited in the eventual advisory
@@ -32,16 +36,16 @@ body:
 
         ### What happens next
 
-        Once a fix lands, an advisory is published via the **GitHub
-        Security Advisories** mechanism on the repo. You'll be invited
+        Once a fix lands, the advisory is published via GitHub Security
+        Advisories (the canonical CVE-grade record). You'll be invited
         as a collaborator on the draft advisory if you wanted credit.
 
-        ### Why we don't use a public template
+        ### Scope
 
-        Filling out a public form already leaks the existence of a
-        vulnerability before it's patched. The right shape for security
-        triage is a private one-on-one channel; GitHub Issues are the
-        wrong tool.
+        Applicable to: authentication bypass, data leakage, RCE,
+        privilege escalation, signed-URL TTL leakage, SPARQL injection,
+        SSRF, and any other finding that puts user data or operations
+        at risk.
 
   - type: checkboxes
     id: ack
@@ -49,6 +53,10 @@ body:
       label: Acknowledgement
       options:
         - label: >
-            I understand I should NOT submit this form, and will email
-            fkrebs@nucli.de instead.
+            I confirm this is a security vulnerability, not a general bug
+            (general bugs go via the Bug report template).
+          required: true
+        - label: >
+            I understand this form creates a PRIVATE advisory, not a
+            public issue.
           required: true

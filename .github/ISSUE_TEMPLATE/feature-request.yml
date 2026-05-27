@@ -80,6 +80,8 @@ body:
         - 4 — Domain feature touching existing kinds → in-tree
         - Exception — security / identity / SPI registry (in-tree)
         - Not sure — please advise
+    validations:
+      required: true
 
   - type: textarea
     id: success-criteria

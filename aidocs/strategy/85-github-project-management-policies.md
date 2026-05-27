@@ -122,6 +122,18 @@ rows do NOT get back-filled into Issues.
    in-flight ledger. Closes automatically when the agent merges its
    PR.
 
+   **MUST NOT: internal-agent-dispatch work.** Commits by Claude Code
+   agents running as part of routine backlog automation (worktree-based
+   dispatch, automated maintenance sweeps, periodic regeneration tasks)
+   MUST NOT auto-file GitHub Issues. The aidocs/16 row ID and the
+   Conventional Commits scope in the merge commit constitute the full
+   audit trail for such work. The Issues gate exists for external-pickup
+   items, security findings, reproduced bugs, and items an external
+   contributor would independently pick up — not for every agent
+   worktree that closes a backlog row. A CI bot that opens an Issue for
+   every automated commit inverts the signal-to-noise ratio of the
+   Issues surface and pollutes the external-contributor view.
+
 **Sync direction.** One-way: aidocs/16 → Issue. Never the reverse.
 
 **Practical workflow.**
