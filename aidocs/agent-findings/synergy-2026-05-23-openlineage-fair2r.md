@@ -90,7 +90,7 @@ public class ProducerClassifier {
 ```ttl
 @prefix prov:   <http://www.w3.org/ns/prov#> .
 @prefix m4i:    <http://w3id.org/nfdi4ing/metadata4ing#> .
-@prefix fair2r: <https://noheton.github.io/f-ai-r/ns#> .
+@prefix fair2r: <https://noheton.org/f-ai-r/ns#> .
 
 shp:activity/0192fd01-7000-… a prov:Activity, fair2r:AIActivity ;
     fair2r:hasAgent     shp:agent/openai-gpt-4o-2024-11-20 ;
@@ -106,7 +106,7 @@ shp:activity/0192fd01-7000-… a prov:Activity, fair2r:AIActivity ;
 ### 3. SPARQL: extract the EASA evidence pack
 
 ```sparql
-PREFIX fair2r: <https://noheton.github.io/f-ai-r/ns#>
+PREFIX fair2r: <https://noheton.org/f-ai-r/ns#>
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 
 SELECT ?activity ?agent ?model ?status ?in ?out

@@ -3,7 +3,7 @@
 @prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix shep:   <https://shepard.example.org/ontology/> .
-@prefix fair2r: <https://noheton.github.io/f-ai-r/v0/> .
+@prefix fair2r: <https://noheton.org/f-ai-r/ns#> .
 @prefix mffd:   <https://shepard.example.org/mffd/> .
 
 # AT1 — SHACL shape for typed anomaly annotations produced by the

@@ -628,6 +628,75 @@ Total: **~10–11 days** of focused work for the full deepening.
 | Date | What changed | Why |
 |---|---|---|
 | 2026-05-23 | Initial design — six slices proposed (M4I-a through M4I-f); concept inventory grounded against canonical m4i 1.4.0; bug-shaped finding on `m4i:hasMethod` / `hasInput` / `hasOutput` surfaced and routed to M4I-b. | User request 2026-05-23: deepen metadata4ing integration. |
+| 2026-05-27 | Added §11 M4I-d Bridge documenting `prov:wasInformedBy` composition between `m4i:ProcessingStep` and `fair2r:AuthoringPass`. | FAIR4-M4I-BRIDGE-DOC backlog item. |
+
+---
+
+## 11. M4I-d Bridge: m4i:ProcessingStep ↔ fair2r:AuthoringPass
+
+An ML training run — for example, fitting an AFP anomaly-detection model on MFFD process-step sensor channels — is naturally expressed as an `m4i:ProcessingStep`: it has inputs (training data), an output (the trained model artefact), a method (the chosen learning algorithm), and a tool (the library). The hyperparameter selection conversation that preceded it — whether between two engineers, or between an engineer and an LLM assistant — is a `fair2r:AuthoringPass`: an intellectual act that produced design decisions without itself producing the model weights. The bridge predicate is `prov:wasInformedBy` — **no new predicate is needed**. The triple `m4i:ProcessingStep prov:wasInformedBy fair2r:AuthoringPass` closes the f(ai)²r × m4i composition: the training run carries the domain provenance (which instruments produced which data, under which conditions) AND the intellectual provenance (which design decisions, made by whom, guided its hyperparameters). Together, the two nodes satisfy both the NFDI4Ing interoperability contract and the EU AI Act Article 50 transparency obligation for AI-assisted parameter selection.
+
+### 11.1 Worked example
+
+The following Turtle fragment shows an AFP anomaly-detection model training run and its associated hyperparameter selection conversation, using the canonical namespace prefixes from `aidocs/semantics/101-canonical-iris.md`.
+
+```turtle
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix m4i:     <http://w3id.org/nfdi4ing/metadata4ing#> .
+@prefix fair2r:  <https://noheton.org/f-ai-r/ns#> .
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix mffd:    <http://semantics.dlr.de/mffd-process#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# The training run — domain provenance via m4i
+shepard:activity/afp-anomaly-train-2026-05-27
+    a m4i:ProcessingStep ;
+    dcterms:title "AFP anomaly-detection model training run v3" ;
+    m4i:realizesMethod mffd:method/mad-zscore-v3 ;
+    prov:used          shepard:dataobject/mffd-q1-afp-channels-2025 ;
+    prov:generated     shepard:model/afp-anomaly-detector-v3 ;
+    prov:startedAtTime "2026-05-27T09:14:00Z"^^xsd:dateTime ;
+    prov:endedAtTime   "2026-05-27T09:47:32Z"^^xsd:dateTime ;
+    # Bridge: this training run was informed by the hyperparameter
+    # selection conversation — intellectual provenance via fair2r
+    prov:wasInformedBy shepard:authoring-pass/hyperparams-afp-anomaly-v3 .
+
+# The hyperparameter selection conversation — intellectual provenance via fair2r
+shepard:authoring-pass/hyperparams-afp-anomaly-v3
+    a fair2r:AuthoringPass ;
+    fair2r:modeOfProduction "collaborative" ;
+    fair2r:realizesModel    <https://api.anthropic.com/v1/models/claude-sonnet-4-6> ;
+    prov:generated          shepard:prompt-run/hyperparams-selection-001 ;
+    prov:startedAtTime      "2026-05-27T08:45:00Z"^^xsd:dateTime ;
+    prov:endedAtTime        "2026-05-27T09:12:00Z"^^xsd:dateTime ;
+    dcterms:description     "Engineer–LLM conversation selecting window size (51 samples), k=6.0 threshold, and MAD estimator for the MFFD Q1 AFP vibration anomaly detector." .
+```
+
+The equivalent SPARQL query that recovers both the domain and intellectual provenance for any trained model:
+
+```sparql
+PREFIX prov:    <http://www.w3.org/ns/prov#>
+PREFIX m4i:     <http://w3id.org/nfdi4ing/metadata4ing#>
+PREFIX fair2r:  <https://noheton.org/f-ai-r/ns#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?step ?stepLabel ?pass ?mode ?model ?passDescription
+WHERE {
+  ?step a m4i:ProcessingStep ;
+        dcterms:title ?stepLabel ;
+        prov:wasInformedBy ?pass .
+  ?pass a fair2r:AuthoringPass ;
+        fair2r:modeOfProduction ?mode .
+  OPTIONAL { ?pass fair2r:realizesModel ?model . }
+  OPTIONAL { ?pass dcterms:description ?passDescription . }
+}
+ORDER BY ?step
+```
+
+### 11.2 wasInformedBy vs wasDerivedFrom
+
+Use `prov:wasInformedBy` when the `fair2r:AuthoringPass` **influenced** the `m4i:ProcessingStep` without directly producing it — for example, a hyperparameter selection conversation whose output was a design decision that guided the subsequent training run. Use `prov:wasDerivedFrom` when the output of one entity **directly becomes the input** to another — for example, when the transcript of the AuthoringPass is itself fed as a document into the training pipeline as a training example. The heuristic: if removing the AuthoringPass would make the ProcessingStep's configuration unexplained, use `wasInformedBy`; if removing it would make the ProcessingStep's input data incomplete, use `wasDerivedFrom`.
 
 ---
 

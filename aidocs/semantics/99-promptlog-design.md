@@ -576,7 +576,7 @@ the run-level envelope. No DAG author touches F(AI)²R.
 The single endpoint that closes the EU AI Act Article 50 loop:
 
 ```sparql
-PREFIX fair2r: <https://noheton.github.io/f-ai-r/ns#>
+PREFIX fair2r: <https://noheton.org/f-ai-r/ns#>
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 PREFIX schema: <http://schema.org/>
 
@@ -1040,7 +1040,24 @@ To respect scope discipline:
 
 ---
 
-## §17 References
+## §17 EU AI Act Article 50 alignment
+
+EU AI Act Article 50 (in force from 2026-08-02) requires transparency disclosure when AI-generated content is presented to natural persons. The f(ai)²r vocabulary provides the predicates needed to satisfy each sub-obligation.
+
+| EU AI Act Art. 50 obligation | f(ai)²r predicate / mechanism |
+|---|---|
+| §50(1) — Inform user when interacting with an AI system | `fair2r:modeOfProduction "ai"` on the generated artefact |
+| §50(2) — Mark AI-generated audio/video as artificially generated | `fair2r:modeOfProduction "ai"` + `fair2r:generatorModel` naming the model |
+| §50(3) — Label AI-generated text as AI-generated (GPAI systems) | `fair2r:modeOfProduction "ai"` on the `:PromptRun` artefact |
+| §50(4) — Transparency obligation for GPAI providers | `fair2r:realizesModel` linking the `:PromptRun` to the model identifier |
+| §50(5) — Machine-readable AI-generated content markers | The `:PromptRun` entity is machine-readable; query via `GET /v2/prov/prompt-runs?dataObjectAppId=…` |
+| Recital 133 — Audit trail for AI-generated content | `:Activity` chain with `fair2r:verificationState`, `fair2r:reviewedBy`, timestamp |
+
+The PromptLog plugin (PROMPT-a..i critical path) delivers the §50 evidence pack; this table is the cross-reference between the legal text and the technical implementation.
+
+---
+
+## §18 References
 
 External sources cited in this doc (URLs verified 2026-05-23):
 
