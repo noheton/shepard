@@ -63,7 +63,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/input/input_raw.md`](input/input_raw.md) | Set up configuration | 2026-05-23 | 2026-05-23 |
-| [`aidocs/ops/22-admin-cli-draft.md`](ops/22-admin-cli-draft.md) | Admin CLI — Candidate-Function Draft | 2026-05-23 | 2026-05-23 |
+| [`aidocs/ops/22-admin-cli-draft.md`](ops/22-admin-cli-draft.md) | Admin CLI — Candidate-Function Draft | 2026-05-23 | 2026-05-27 |
 | [`aidocs/ops/27-convenience-clients-design.md`](ops/27-convenience-clients-design.md) | Convenience Clients — `shepard-py` and `shepard-ts` (P16) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/28-paradigms-and-clients-synthesis.md`](ops/28-paradigms-and-clients-synthesis.md) | 28. Paradigms-and-Clients Synthesis — The Integrated Proposal | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/33-frontend-workflow-analysis.md`](ops/33-frontend-workflow-analysis.md) | 33 — Frontend / UI Workflow Analysis + Suggestions | 2026-05-23 | 2026-05-26 |
