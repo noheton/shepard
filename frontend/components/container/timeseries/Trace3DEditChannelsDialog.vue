@@ -1,29 +1,34 @@
 <script setup lang="ts">
-import type { Timeseries } from "@dlr-shepard/backend-client";
+/**
+ * Trace3DEditChannelsDialog — edit axis assignments on an already-rendered Trace3D view.
+ *
+ * Wraps Trace3DChannelPicker and emits "save" with the new Trace3DChannelSelection
+ * when the user confirms. Handles annotation persistence on "save" snackbar click.
+ */
 import Trace3DChannelPicker from "./Trace3DChannelPicker.vue";
-import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "./Trace3DChannelPicker.vue";
+import type { ChannelV2, Trace3DChannelSelection, Channel5Tuple } from "./Trace3DChannelPicker.vue";
 
 const props = defineProps<{
   containerId: number;
-  channels: Timeseries[];
-  /** v2 channel list carrying shepardId for auto-populate and annotation save. */
-  channelsV2?: ChannelV2[];
-  startNs: number;
-  endNs: number;
+  channels: ChannelV2[];
+  initial: Partial<Trace3DChannelSelection>;
+}>();
+
+const emit = defineEmits<{
+  save: [Trace3DChannelSelection];
 }>();
 
 const open = defineModel<boolean>({ default: false });
-
 const pickerRef = ref<InstanceType<typeof Trace3DChannelPicker> | null>(null);
-const canOpen = ref(false);
+const canConfirm = ref(false);
 const openCount = ref(0);
 
 watch(open, (v) => { if (v) openCount.value++; });
 
-// ── save annotations (TS-AXIS-AUTO) ──────────────────────────────────────────
+// ── annotation save (TS-AXIS-AUTO snackbar "Save" action) ─────────────────────
 
 async function saveAnnotations() {
-  if (!pickerRef.value || !props.channelsV2?.length) return;
+  if (!pickerRef.value || !props.channels.length) return;
   const sel = pickerRef.value.getSelection();
   const roleEntries: [string, Channel5Tuple | null][] = [
     ["x", sel.x], ["y", sel.y], ["z", sel.z],
@@ -31,7 +36,7 @@ async function saveAnnotations() {
   ];
   for (const [role, tuple] of roleEntries) {
     if (!tuple) continue;
-    const ch = props.channelsV2.find(
+    const ch = props.channels.find(
       c =>
         (c.measurement ?? "") === tuple.measurement &&
         (c.device       ?? "") === tuple.device &&
@@ -47,29 +52,10 @@ async function saveAnnotations() {
   }
 }
 
-// ── open Trace3D render page ──────────────────────────────────────────────────
-
-function openTrace3D() {
+function onApply() {
   if (!pickerRef.value) return;
-  const sel: Trace3DChannelSelection = pickerRef.value.getSelection();
-  if (!sel.x || !sel.y || !sel.z) return;
-
-  const roles: Record<string, Channel5Tuple> = { x: sel.x, y: sel.y, z: sel.z };
-  if (sel.value) roles.value = sel.value;
-  if (sel.rot_a) roles.rot_a = sel.rot_a;
-  if (sel.rot_b) roles.rot_b = sel.rot_b;
-  if (sel.rot_c) roles.rot_c = sel.rot_c;
-
-  navigateTo({
-    path: "/shapes/render",
-    query: {
-      containerId: String(props.containerId),
-      startNs:    String(props.startNs),
-      endNs:      String(props.endNs),
-      colormap:   sel.colormap,
-      roles:      btoa(JSON.stringify(roles)),
-    },
-  });
+  emit("save", pickerRef.value.getSelection());
+  open.value = false;
 }
 </script>
 
@@ -77,19 +63,20 @@ function openTrace3D() {
   <v-dialog v-model="open" max-width="480">
     <v-card>
       <v-card-title class="d-flex align-center ga-2 pt-4">
-        <v-icon color="primary">mdi-cube-outline</v-icon>
-        Visualize in 3D
+        <v-icon color="primary">mdi-pencil-outline</v-icon>
+        Edit channel assignments
       </v-card-title>
       <v-card-subtitle class="pb-2">
-        Assign channels to spatial axes, then open the Trace3D renderer.
+        Reassign channels to spatial axes for this Trace3D view.
       </v-card-subtitle>
       <v-card-text class="pt-2">
         <Trace3DChannelPicker
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
-          :channels="channelsV2 ?? []"
-          @update:can-confirm="canOpen = $event"
+          :channels="channels"
+          :initial="initial"
+          @update:can-confirm="canConfirm = $event"
           @save-annotations-requested="saveAnnotations"
         />
       </v-card-text>
@@ -99,11 +86,11 @@ function openTrace3D() {
         <v-btn
           color="primary"
           variant="tonal"
-          :disabled="!canOpen"
-          prepend-icon="mdi-cube-outline"
-          @click="openTrace3D"
+          :disabled="!canConfirm"
+          prepend-icon="mdi-check"
+          @click="onApply"
         >
-          Open Trace3D
+          Apply
         </v-btn>
       </v-card-actions>
     </v-card>

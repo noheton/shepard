@@ -26,6 +26,14 @@ import type { ColormapName } from "~/utils/colormap";
 import { colormapRgb } from "~/utils/colormap";
 import Trace3DCanvas from "~/components/shapes/Trace3DCanvas.vue";
 
+const trace3dCanvasRef = ref<{ captureDataUrl: () => string } | null>(null);
+
+function captureDataUrl(): string {
+  return trace3dCanvasRef.value?.captureDataUrl() ?? "";
+}
+
+defineExpose({ captureDataUrl });
+
 // ── prop types ────────────────────────────────────────────────────────────────
 
 export type Trace3DColorScheme = "heat" | "cool" | "viridis";
@@ -141,6 +149,7 @@ watch(colormapName, () => {
     <!-- 3D canvas — Three.js requires client-only (no SSR WebGL) -->
     <ClientOnly>
       <Trace3DCanvas
+        ref="trace3dCanvasRef"
         :points="tracePoints"
         :colormap="colormapName"
         :label="valueLabel"

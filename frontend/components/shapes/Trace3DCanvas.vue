@@ -37,6 +37,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 let renderer: THREE.WebGLRenderer | null = null;
 let controls: OrbitControls | null = null;
 let animId: number | null = null;
+let captureDataUrlFn: (() => string) | null = null;
 
 const hasOrientationArrows = computed(() =>
   props.points.some(p => p.eulerA !== undefined || p.eulerB !== undefined || p.eulerC !== undefined),
@@ -46,13 +47,18 @@ function buildScene(canvas: HTMLCanvasElement) {
   const w = canvas.clientWidth || 800;
   const h = canvas.clientHeight || 500;
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(w, h, false);
   renderer.setClearColor(0x0d0d0d, 1);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, w / h, 0.0001, 10000);
+  captureDataUrlFn = () => {
+    if (!renderer || !canvasRef.value) return "";
+    renderer.render(scene, camera);
+    return canvasRef.value.toDataURL("image/png");
+  };
   camera.position.set(1, 1, 2);
 
   controls = new OrbitControls(camera, renderer.domElement);
@@ -184,6 +190,12 @@ function buildScene(canvas: HTMLCanvasElement) {
     renderer!.dispose();
   };
 }
+
+function captureDataUrl(): string {
+  return captureDataUrlFn?.() ?? "";
+}
+
+defineExpose({ captureDataUrl });
 
 let cleanup: (() => void) | null = null;
 
