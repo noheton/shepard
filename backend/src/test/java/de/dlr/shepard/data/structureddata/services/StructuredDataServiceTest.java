@@ -224,6 +224,110 @@ public class StructuredDataServiceTest extends BaseTestCase {
     verify(collection, never()).insertOne(any(Document.class));
   }
 
+  // MONGO-AUDIT-2026-05-24-004: JSON array payloads must be wrapped server-side so that
+  // all callers (REST, MCP, future integrations) are protected, not only the v15.12 importer.
+
+  @Test
+  public void createStructuredDataTest_jsonArrayIsWrapped() {
+    // A JSON array POSTed as SD payload must be wrapped in {items:[...], _wrapped:"v15.12-bug-e"}
+    // and stored without error — the _wrapped marker signals the wrap occurred.
+    String payload = "[{\"a\":\"b\"},{\"c\":\"d\"}]";
+    Date date = new Date();
+    ObjectId oid = new ObjectId();
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", oid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    var expectedData = new StructuredData();
+    expectedData.setName("name");
+
+    assertDoesNotThrow(() -> service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
+
+    var captor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).insertOne(captor.capture());
+    Document inserted = captor.getValue();
+    // _wrapped marker must be present
+    assertEquals("v15.12-bug-e", inserted.get("_wrapped"));
+    // items key must hold the original array contents
+    var items = inserted.getList("items", Document.class);
+    assertEquals(2, items.size());
+    assertEquals("b", items.get(0).get("a"));
+  }
+
+  @Test
+  public void createStructuredDataTest_jsonObjectIsNotWrapped() {
+    // A regular JSON object must pass through unchanged — no _wrapped key added.
+    String payload = "{\"a\":\"b\"}";
+    Date date = new Date();
+    ObjectId oid = new ObjectId();
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", oid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    var expectedData = new StructuredData();
+    expectedData.setName("name");
+    service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
+
+    var captor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).insertOne(captor.capture());
+    Document inserted = captor.getValue();
+    // No _wrapped key for plain objects
+    assertEquals(null, inserted.get("_wrapped"));
+    assertEquals("b", inserted.get("a"));
+  }
+
+  @Test
+  public void createStructuredDataTest_jsonArrayWithLeadingWhitespaceIsWrapped() {
+    // Leading whitespace before '[' must still trigger the wrap (trim() contract).
+    String payload = "  \n  [{\"x\":\"y\"}]";
+    Date date = new Date();
+    ObjectId oid = new ObjectId();
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", oid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    var expectedData = new StructuredData();
+    expectedData.setName("name");
+    assertDoesNotThrow(() -> service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
+
+    var captor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).insertOne(captor.capture());
+    assertEquals("v15.12-bug-e", captor.getValue().get("_wrapped"));
+  }
+
   @Test
   public void deleteStructuredDataTest() {
     when(mongoDatabase.getCollection("collection")).thenReturn(collection);
