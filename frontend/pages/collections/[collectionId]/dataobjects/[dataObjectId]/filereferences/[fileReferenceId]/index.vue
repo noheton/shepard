@@ -95,6 +95,10 @@ function onShowFileContentDialog(params: {
   showFileContentViewerDialog.value = true;
 }
 
+const fileReferenceDisplayName = computed(() =>
+  fileReference.value ? `File Reference "${fileReference.value.name}"` : '',
+);
+
 function onDownloadFile(params: { filename: string; oid: string }) {
   const filename = sanitizeFilename(params.filename);
 
@@ -162,7 +166,7 @@ watch(fileReference, () => {
               <TitleAndMetadataDisplay
                 :entity="{
                   ...fileReference,
-                  name: `File Reference "${fileReference.name}"`,
+                  name: fileReferenceDisplayName,
                   type: 'File',
                   container: {
                     title:
