@@ -24,6 +24,14 @@ export type RelationshipTableElement = {
   actions: {
     elementId: number;
     annotatable: boolean;
+    /** REF-EDIT-6: UUID v7 appId, present only for URIReference rows. */
+    uriRefAppId?: string;
+    /** REF-EDIT-6: Current name / uri / relationship for pre-filling the edit dialog. */
+    uriRefEditData?: {
+      name: string;
+      uri: string;
+      relationship?: string;
+    };
   };
 };
 

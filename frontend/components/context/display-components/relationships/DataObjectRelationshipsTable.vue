@@ -3,6 +3,7 @@ import { compareNullableStrings } from "./compareNullableStrings";
 import type { RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { mapRelatedEntityToRelationshipTableElement } from "./relationshipTableElementMappingUtil";
+import { handleDataObjectUpdate } from "~/utils/resourceUpdateBus";
 
 interface DataObjectRelationshipsTable {
   collectionId: number;
@@ -26,6 +27,13 @@ const selectedTableElement = ref<RelationshipTableElement | undefined>();
 const showAddAnnotationDialog = ref(false);
 const showDeleteRelationshipDialog = ref<boolean>(false);
 
+// REF-EDIT-6 — URI reference edit dialog state
+const showEditUriDialog = ref(false);
+const editUriAppId = ref<string>("");
+const editUriInitialName = ref<string>("");
+const editUriInitialUri = ref<string>("");
+const editUriInitialRelationship = ref<string | undefined>(undefined);
+
 function openAddAnnotationDialog(relationshipElementId: number) {
   const relationShipElement = getRelationshipElementById(relationshipElementId);
   if (!relationShipElement) return;
@@ -40,6 +48,24 @@ function openAddAnnotationDialog(relationshipElementId: number) {
       throw new Error("Unsupported relationship type");
   }
   showAddAnnotationDialog.value = true;
+}
+
+// REF-EDIT-6: open the URI reference edit dialog
+function openEditUriDialog(relationshipElementId: number) {
+  const el = getRelationshipElementById(relationshipElementId);
+  if (!el) return;
+  const { uriRefAppId, uriRefEditData } = el.actions;
+  if (!uriRefAppId || !uriRefEditData) return;
+  editUriAppId.value = uriRefAppId;
+  editUriInitialName.value = uriRefEditData.name;
+  editUriInitialUri.value = uriRefEditData.uri;
+  editUriInitialRelationship.value = uriRefEditData.relationship;
+  showEditUriDialog.value = true;
+}
+
+// REF-EDIT-6: refresh the relationships list after a successful URI edit
+function onUriReferenceSaved() {
+  handleDataObjectUpdate();
 }
 
 function openDeleteRelationshipDialog(relationshipElementId: number) {
@@ -180,6 +206,13 @@ const headers = [
       }"
     >
       <ActionContainer>
+        <!-- REF-EDIT-6: edit button for URI references only -->
+        <ActionButton
+          v-if="isAllowedToEditCollection && !!value.uriRefAppId"
+          class="relationship-actions"
+          icon="mdi-pencil-outline"
+          @click="() => openEditUriDialog(value.elementId)"
+        />
         <ActionButton
           v-if="isAllowedToEditCollection && value.annotatable"
           class="relationship-actions"
@@ -217,6 +250,17 @@ const headers = [
     :collection-id="props.collectionId"
     :data-object-id="props.dataObjectId"
     :table-element="selectedTableElement"
+  />
+
+  <!-- REF-EDIT-6: URI reference edit dialog -->
+  <EditUriReferenceDialog
+    v-if="showEditUriDialog"
+    v-model:show-dialog="showEditUriDialog"
+    :app-id="editUriAppId"
+    :initial-name="editUriInitialName"
+    :initial-uri="editUriInitialUri"
+    :initial-relationship="editUriInitialRelationship"
+    @saved="onUriReferenceSaved"
   />
 </template>
 
