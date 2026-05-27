@@ -64,9 +64,8 @@ const timeseriesReferenceAppId = computed<string | undefined>(
 const {
   annotations: tsAnnotations,
   loading: tsAnnotationsLoading,
-  detecting: anomalyDetecting,
   deleteAnnotation: deleteTsAnnotation,
-  detectAnomalies,
+  fetchAll: refetchTsAnnotations,
 } = useTimeseriesReferenceAnnotations(timeseriesReferenceAppId);
 
 function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): string {
@@ -80,8 +79,9 @@ function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): strin
 
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
-const showDeleteDialog    = ref<boolean>(false);
-const showVisualize3D     = ref<boolean>(false);
+const showDeleteDialog       = ref<boolean>(false);
+const showVisualize3D        = ref<boolean>(false);
+const showDetectAnomalies    = ref<boolean>(false);
 const canVisualize3D = computed(
   () =>
     (timeseriesReference.value?.timeseries?.length ?? 0) >= 3 &&
@@ -563,10 +563,9 @@ watch(timeseriesReference, () => {
                   size="small"
                   color="primary"
                   prepend-icon="mdi-magnify-scan"
-                  :loading="anomalyDetecting"
-                  @click="detectAnomalies"
+                  @click="showDetectAnomalies = true"
                 >
-                  Run anomaly detection
+                  Detect anomalies
                 </v-btn>
               </div>
 
@@ -583,7 +582,7 @@ watch(timeseriesReference, () => {
                 class="text-medium-emphasis text-body-2 pa-2"
               >
                 No anomalies or labelled intervals on this reference yet.
-                {{ isAllowedToEditCollection ? "Click \"Run anomaly detection\" to scan." : "" }}
+                {{ isAllowedToEditCollection ? "Click \"Detect anomalies\" to scan." : "" }}
               </div>
               <div v-else class="d-flex flex-column ga-2">
                 <div
@@ -641,6 +640,12 @@ watch(timeseriesReference, () => {
     <ConfirmDeleteDialog
       v-model:show-dialog="showDeleteDialog"
       @confirmed="deleteTimeseriesReference"
+    />
+    <DetectAnomaliesDialog
+      v-if="timeseriesReferenceAppId"
+      v-model:show-dialog="showDetectAnomalies"
+      :ref-app-id="timeseriesReferenceAppId"
+      @annotations-saved="refetchTsAnnotations"
     />
   </div>
 </template>
