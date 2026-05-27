@@ -127,6 +127,20 @@ const overviewXMax = computed<number | undefined>(() =>
   timeseriesReference.value ? timeseriesReference.value.end / 1e6 : undefined,
 );
 
+// TM1b — wall-clock overlay: pass the offset to the chart when the reference
+// is EXPERIMENT_RELATIVE and wallClockOffset is set so the tooltip shows
+// both relative ("t+8.234s") and absolute ("2024-06-02 14:30:08.234 UTC") labels.
+const overviewWallClockOffsetMs = computed<number | undefined>(() => {
+  const ref = timeseriesReference.value;
+  if (
+    ref?.timeReference === "EXPERIMENT_RELATIVE" &&
+    ref.wallClockOffset != null
+  ) {
+    return ref.wallClockOffset / 1_000_000;
+  }
+  return undefined;
+});
+
 const chartColors = [
   "#7ECA8F", "#FCA54D", "#B799DB", "#E56874",
   "#4097CC", "#FFD145", "#8C8C8C", "#F06292",
@@ -412,6 +426,7 @@ watch(
                     :series="overviewSeries"
                     :x-min="overviewXMin"
                     :x-max="overviewXMax"
+                    :wall-clock-offset-ms="overviewWallClockOffsetMs"
                     show-legend
                     height="320px"
                   />

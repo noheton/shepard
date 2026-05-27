@@ -14,6 +14,7 @@ import {
   TooltipComponent,
 } from "echarts/components";
 import type { TimeseriesSeries } from "./types";
+import { formatDualTime } from "~/utils/wallClockTime";
 
 if (process.client) {
   use([
@@ -86,6 +87,14 @@ const props = withDefaults(
      * Each entry covers [startNs, endNs] (endNs null = point annotation).
      */
     annotations?: Array<{ startNs: number; endNs: number | null; label?: string; color?: string }>;
+    /**
+     * TM1b — wall-clock offset in milliseconds (= wallClockOffset / 1e6).
+     * Only set when timeReference = EXPERIMENT_RELATIVE and wallClockOffset is
+     * non-null. When present, the tooltip shows both the experiment-relative
+     * "t+Xs" label AND the absolute UTC timestamp alongside each data point.
+     * Undefined (default) = WALL_CLOCK mode or no offset; tooltip shows UTC as usual.
+     */
+    wallClockOffsetMs?: number;
   }>(),
   { height: "360px", showLegend: false, smooth: false, step: false, animationDuration: 0 },
 );
@@ -143,15 +152,22 @@ const chartOption = computed(() => ({
     formatter: (params: any[]) => {
       if (!params?.length) return "";
       const tsMs = params[0].value[0];
-      const date = new Date(tsMs);
-      const header = date.toLocaleString("en-GB", {
-        year: "2-digit",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
+      let header: string;
+      if (props.wallClockOffsetMs != null) {
+        // TM1b — EXPERIMENT_RELATIVE mode: show both relative and absolute UTC.
+        const { relative, absolute } = formatDualTime(tsMs, props.wallClockOffsetMs);
+        header = `${relative} <span style="opacity:0.7;font-size:0.9em">(${absolute})</span>`;
+      } else {
+        const date = new Date(tsMs);
+        header = date.toLocaleString("en-GB", {
+          year: "2-digit",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
       const rows = params
         .map(
           (p: any) =>
@@ -183,7 +199,20 @@ const chartOption = computed(() => ({
   ...(props.brushEnabled ? { brush: { xAxisIndex: 0, brushMode: "single" } } : {}),
   xAxis: {
     type: "time",
-    axisLabel: { fontSize: 11 },
+    axisLabel: {
+      fontSize: 11,
+      // TM1b — EXPERIMENT_RELATIVE mode: show "t+Xs" relative labels on the
+      // axis ticks instead of UTC dates. The tooltip still shows both.
+      ...(props.wallClockOffsetMs != null
+        ? {
+            formatter: (ms: number) => {
+              const sec = ms / 1000;
+              const sign = sec < 0 ? "−" : "+";
+              return `t${sign}${Math.abs(sec).toFixed(1)}s`;
+            },
+          }
+        : {}),
+    },
     // xMin/xMax (reference range lock) take precedence over visibleWindowMs (live mode).
     // When xMin/xMax are provided, the axis is hard-clamped to the reference
     // time window. The inside dataZoom is omitted (see below) so the user
