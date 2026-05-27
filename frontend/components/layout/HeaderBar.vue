@@ -251,6 +251,7 @@
         :to="{ path: '/me', hash: '#profile' }"
         class="header-avatar-btn"
         variant="text"
+        :title="isSignedIn ? 'Edit profile & avatar' : 'Sign in'"
         data-testid="header-user-avatar-btn"
       >
         <div class="header-avatar-wrapper">
@@ -267,6 +268,17 @@
             </span>
           </v-avatar>
           <v-icon v-else>mdi-account-outline</v-icon>
+          <!-- UI-012: camera hover overlay — appears on :hover via CSS;
+               pointer-events: none so the parent v-btn :to keeps handling
+               clicks. Only shown when signed in (uploading requires auth). -->
+          <span
+            v-if="isSignedIn"
+            class="header-avatar-camera"
+            aria-hidden="true"
+            data-testid="header-user-avatar-camera"
+          >
+            <v-icon size="16" color="white">mdi-camera</v-icon>
+          </span>
           <span
             v-if="isSignedIn && headerUserOrcid && headerShowOrcidBadge"
             class="header-orcid-badge"
@@ -693,6 +705,26 @@ function onEnterPressed() {
   align-items: center;
   justify-content: center;
 }
+
+// UI-012: camera overlay — signals that the avatar is clickable/uploadable.
+// Shown on hover over the parent .header-avatar-btn; pointer-events: none
+// so the underlying v-btn :to handles the navigation (no competing click).
+.header-avatar-camera {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.header-avatar-btn:hover .header-avatar-camera {
+  opacity: 1;
+}
+
 .header-orcid-badge {
   position: absolute;
   bottom: -2px;
