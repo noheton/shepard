@@ -1,0 +1,9 @@
+{
+  "belongsTo" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "jwt" : "<<ANY-STRING>>",
+  "name" : "ApiKeyWireFixture",
+  "roles" : [ ],
+  "uid" : "<<ANY-STRING>>",
+  "validUntil" : null
+}
