@@ -1,0 +1,172 @@
+# Canonical source: https://www.w3.org/ns/sosa/ (SOSA core)
+#                   https://www.w3.org/ns/ssn/ (SSN extension)
+# Ontology IRI:    http://www.w3.org/ns/sosa/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         W3C Document License (https://www.w3.org/Consortium/Legal/2015/doc-license)
+#
+# shepard-bundled stub of the W3C SOSA/SSN (Sensor/Observation ontology)
+# vocabularies. SOSA (Sensor, Observation, Sample and Actuator) is the
+# lightweight core; SSN (Semantic Sensor Network) is the full OWL extension.
+# W3C Recommendation 19 October 2017; OGC also standardised it as OGC 17-011r2.
+#
+# In the Shepard context SOSA enables binding:
+#   sosa:Sensor ←→ timeseries channel (appId)
+#   sosa:observes ←→ channel → ObservableProperty (e.g. vibration, temperature)
+#   sosa:hasFeatureOfInterest ←→ channel → the physical component being monitored
+#   sosa:Observation ←→ a DataObject capturing a measurement event
+# This closes the FAIR-I interoperability gap for sensor-annotated datasets
+# and prepares channels for M4I NumericalVariable linkage.
+#
+# Minimum-viable Shepard stub — N1k (2026-05-27).
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sosa:    <http://www.w3.org/ns/sosa/> .
+@prefix ssn:     <http://www.w3.org/ns/ssn/> .
+
+<http://www.w3.org/ns/sosa/>
+    a owl:Ontology ;
+    dcterms:title   "SOSA/SSN — Sensor, Observation, Sample and Actuator Ontology (shepard-bundled stub)"@en ;
+    dcterms:license <https://www.w3.org/Consortium/Legal/2015/doc-license> ;
+    dcterms:source  <https://www.w3.org/TR/vocab-ssn/> ;
+    owl:versionInfo "W3C Recommendation 19 October 2017" ;
+    rdfs:label      "SOSA/SSN"@en ;
+    rdfs:comment    "W3C/OGC Sensor, Observation, Sample and Actuator ontology. SOSA is the lightweight core; SSN is the full OWL extension for the Semantic Sensor Network. Enables sensor-to-timeseries-channel binding in Shepard and closes FAIR-I interoperability for sensor datasets."@en .
+
+# ---- SOSA core classes ------------------------------------------------------
+
+sosa:Sensor
+    a owl:Class ;
+    rdfs:label   "Sensor"@en ;
+    rdfs:comment "A device, agent (person or software), or system that can follow a sensing Procedure to estimate or calculate a value of an ObservableProperty."@en .
+
+sosa:Observation
+    a owl:Class ;
+    rdfs:label   "Observation"@en ;
+    rdfs:comment "Act of carrying out an (Observation) Procedure to estimate or calculate a value of an ObservableProperty of a FeatureOfInterest."@en .
+
+sosa:ObservableProperty
+    a owl:Class ;
+    rdfs:label   "Observable Property"@en ;
+    rdfs:comment "An observable quality (property, characteristic) of a FeatureOfInterest — e.g. temperature, vibration magnitude, pressure."@en .
+
+sosa:FeatureOfInterest
+    a owl:Class ;
+    rdfs:label   "Feature of Interest"@en ;
+    rdfs:comment "The thing whose property is being estimated or calculated in the course of an Observation — e.g. a turbopump, a CFRP panel, an engine combustion chamber."@en .
+
+sosa:Actuator
+    a owl:Class ;
+    rdfs:label   "Actuator"@en ;
+    rdfs:comment "A device that is used by an Actuation to change the state of the world — e.g. a valve controller, a heating element."@en .
+
+sosa:Platform
+    a owl:Class ;
+    rdfs:label   "Platform"@en ;
+    rdfs:comment "A Platform is an entity that hosts other entities — particularly Sensors, Actuators, Samplers, or other Platforms."@en .
+
+sosa:Procedure
+    a owl:Class ;
+    rdfs:label   "Procedure"@en ;
+    rdfs:comment "A workflow, protocol, plan, algorithm, or computational method specifying how to make an Observation, create a Sample, or make a change to the state of the world."@en .
+
+sosa:Result
+    a owl:Class ;
+    rdfs:label   "Result"@en ;
+    rdfs:comment "The result of an Observation, Actuation or Sampling act."@en .
+
+sosa:Sample
+    a owl:Class ;
+    rdfs:label   "Sample"@en ;
+    rdfs:comment "A Sample is the result from an act of Sampling. It stands for, is intended to be representative of, and is obtained for the purpose of gaining knowledge about a FeatureOfInterest."@en .
+
+# ---- SOSA core properties ---------------------------------------------------
+
+sosa:observes
+    a owl:ObjectProperty ;
+    rdfs:label   "observes"@en ;
+    rdfs:domain  sosa:Sensor ;
+    rdfs:range   sosa:ObservableProperty ;
+    rdfs:comment "Relation between a Sensor and an ObservableProperty that the Sensor is capable of sensing."@en .
+
+sosa:isObservedBy
+    a owl:ObjectProperty ;
+    rdfs:label   "is observed by"@en ;
+    rdfs:domain  sosa:ObservableProperty ;
+    rdfs:range   sosa:Sensor ;
+    rdfs:comment "Relation between an ObservableProperty and the Sensor able to observe it."@en .
+
+sosa:hasFeatureOfInterest
+    a owl:ObjectProperty ;
+    rdfs:label   "has feature of interest"@en ;
+    rdfs:domain  sosa:Observation ;
+    rdfs:range   sosa:FeatureOfInterest ;
+    rdfs:comment "A relation between an Observation and the entity whose quality was observed."@en .
+
+sosa:observedProperty
+    a owl:ObjectProperty ;
+    rdfs:label   "observed property"@en ;
+    rdfs:domain  sosa:Observation ;
+    rdfs:range   sosa:ObservableProperty ;
+    rdfs:comment "Relation linking an Observation to the property that was observed."@en .
+
+sosa:hasResult
+    a owl:ObjectProperty ;
+    rdfs:label   "has result"@en ;
+    rdfs:domain  sosa:Observation ;
+    rdfs:range   sosa:Result ;
+    rdfs:comment "Relation linking an Observation and a Result, which contains a value representing the value associated with the observed Property."@en .
+
+sosa:resultTime
+    a owl:DatatypeProperty ;
+    rdfs:label   "result time"@en ;
+    rdfs:domain  sosa:Observation ;
+    rdfs:range   xsd:dateTime ;
+    rdfs:comment "The instant of time when the Observation activity was completed."@en .
+
+sosa:madeBySensor
+    a owl:ObjectProperty ;
+    rdfs:label   "made by sensor"@en ;
+    rdfs:domain  sosa:Observation ;
+    rdfs:range   sosa:Sensor ;
+    rdfs:comment "Relation between an Observation and the Sensor which made the Observation."@en .
+
+sosa:isHostedBy
+    a owl:ObjectProperty ;
+    rdfs:label   "is hosted by"@en ;
+    rdfs:domain  sosa:Sensor ;
+    rdfs:range   sosa:Platform ;
+    rdfs:comment "Relation between a Sensor and the Platform that hosts it."@en .
+
+# ---- SSN extension properties -----------------------------------------------
+
+ssn:hasProperty
+    a owl:ObjectProperty ;
+    rdfs:label   "has property"@en ;
+    rdfs:domain  sosa:FeatureOfInterest ;
+    rdfs:range   sosa:ObservableProperty ;
+    rdfs:comment "A relation between a FeatureOfInterest and an ObservableProperty of that feature."@en .
+
+ssn:implementedBy
+    a owl:ObjectProperty ;
+    rdfs:label   "implemented by"@en ;
+    rdfs:domain  sosa:Procedure ;
+    rdfs:range   sosa:Sensor ;
+    rdfs:comment "A relation between a Procedure and a Sensor implementing that procedure."@en .
+
+ssn:hasInput
+    a owl:ObjectProperty ;
+    rdfs:label   "has input"@en ;
+    rdfs:domain  sosa:Procedure ;
+    rdfs:comment "Relation between a Procedure and an input it receives."@en .
+
+ssn:hasOutput
+    a owl:ObjectProperty ;
+    rdfs:label   "has output"@en ;
+    rdfs:domain  sosa:Procedure ;
+    rdfs:comment "Relation between a Procedure and an output it produces."@en .
+
+# End of Shepard minimum-viable stub — replace with canonical SOSA/SSN Turtle for full vocabulary.

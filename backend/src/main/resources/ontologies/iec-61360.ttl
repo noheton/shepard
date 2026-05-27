@@ -1,0 +1,131 @@
+# Canonical source: https://www.w3id.org/eclass (ECLASS association)
+#                   ISO/IEC 61360: Common Data Dictionary for properties
+# Ontology IRI:    https://www.w3id.org/eclass#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the IEC 61360 / ECLASS property ontology.
+# IEC 61360 defines the Common Data Dictionary (CDD) concept model for
+# describing properties of technical systems. ECLASS is the major industrial
+# implementation of IEC 61360 widely used in aerospace (AAS Asset
+# Administration Shell, Industrie 4.0) and materials cataloguing.
+#
+# In the Shepard context this vocabulary pairs with QUDT for industrial
+# property cataloguing — eclass:Property + eclass:Unit covers the
+# "what is this channel measuring and in what unit" question in a way
+# that is interoperable with AAS submodel descriptors and IEC CDD exports.
+# Operators annotating timeseries channels with IEC 61360 property IRIs
+# gain a direct mapping path to AAS PropertyType elements.
+#
+# Minimum-viable Shepard stub — N1k (2026-05-27).
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix eclass:  <https://www.w3id.org/eclass#> .
+
+<https://www.w3id.org/eclass>
+    a owl:Ontology ;
+    dcterms:title   "IEC 61360 / ECLASS Common Data Dictionary (shepard-bundled stub)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:source  <https://www.eclass.eu/> ;
+    owl:versionInfo "IEC 61360-4 + ECLASS 14.0" ;
+    rdfs:label      "IEC-61360 / ECLASS"@en ;
+    rdfs:comment    "IEC 61360 Common Data Dictionary ontology for describing properties, units, and data elements of technical systems. Implemented by the ECLASS association as a widely-used industrial taxonomy for Industrie 4.0, AAS submodels, and materials cataloguing. Pairs with QUDT for unit-of-measure interoperability."@en .
+
+# ---- Core classes -----------------------------------------------------------
+
+eclass:Property
+    a owl:Class ;
+    rdfs:label   "Property"@en ;
+    rdfs:comment "A characteristic or attribute that can be used to describe the nature, state, or behaviour of an entity. In IEC 61360 this is a Data Element Concept with an associated unit and data type."@en .
+
+eclass:Unit
+    a owl:Class ;
+    rdfs:label   "Unit"@en ;
+    rdfs:comment "A unit of measurement associated with a Property. Linked to QUDT unit:* individuals for machine-readable unit conversion."@en .
+
+eclass:DataElement
+    a owl:Class ;
+    rdfs:label   "Data Element"@en ;
+    rdfs:comment "A pair of a Data Element Concept (what is described) and a Representation (how it is expressed). Corresponds to IEC 61360 Data Element Type."@en .
+
+eclass:ValueList
+    a owl:Class ;
+    rdfs:label   "Value List"@en ;
+    rdfs:comment "An enumeration of permissible values for a Property — e.g. a list of allowed material grades or quality flags."@en .
+
+eclass:DataElementCategory
+    a owl:Class ;
+    rdfs:label   "Data Element Category"@en ;
+    rdfs:comment "A grouping concept for Data Elements within the ECLASS taxonomy tree."@en .
+
+eclass:ClassificationClass
+    a owl:Class ;
+    rdfs:label   "Classification Class"@en ;
+    rdfs:comment "An ECLASS classification node (e.g. '27-01-90-02 Sensor, acceleration') used for product/component classification."@en .
+
+eclass:PropertyValue
+    a owl:Class ;
+    rdfs:label   "Property Value"@en ;
+    rdfs:comment "A specific value of a Property for a given entity — the instantiated data assertion."@en .
+
+# ---- Key properties ---------------------------------------------------------
+
+eclass:preferredName
+    a owl:DatatypeProperty ;
+    rdfs:label   "preferred name"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   xsd:string ;
+    rdfs:comment "The primary human-readable name for the property in a given language, as defined in the ECLASS CDD."@en .
+
+eclass:shortName
+    a owl:DatatypeProperty ;
+    rdfs:label   "short name"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   xsd:string ;
+    rdfs:comment "An abbreviated identifier for the property — e.g. 'Temp' for temperature. Used in AAS submodel attribute keys."@en .
+
+eclass:unit
+    a owl:ObjectProperty ;
+    rdfs:label   "unit"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   eclass:Unit ;
+    rdfs:comment "Associates a Property with its unit of measurement."@en .
+
+eclass:value
+    a owl:DatatypeProperty ;
+    rdfs:label   "value"@en ;
+    rdfs:domain  eclass:PropertyValue ;
+    rdfs:comment "The scalar value of the property for a specific entity — numeric or string depending on the property type."@en .
+
+eclass:hasProperty
+    a owl:ObjectProperty ;
+    rdfs:label   "has property"@en ;
+    rdfs:range   eclass:Property ;
+    rdfs:comment "Associates any entity (material, component, process step) with an ECLASS Property."@en .
+
+eclass:eclassIrdi
+    a owl:DatatypeProperty ;
+    rdfs:label   "ECLASS IRDI"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   xsd:string ;
+    rdfs:comment "The ECLASS International Registration Data Identifier — a globally unique string of the form 0173-1#XX-XXXXXX#NNN that identifies this property in the ECLASS CDD."@en .
+
+eclass:definition
+    a owl:DatatypeProperty ;
+    rdfs:label   "definition"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   xsd:string ;
+    rdfs:comment "The authoritative definition of the property as published in the ECLASS CDD."@en .
+
+eclass:dataType
+    a owl:DatatypeProperty ;
+    rdfs:label   "data type"@en ;
+    rdfs:domain  eclass:Property ;
+    rdfs:range   xsd:string ;
+    rdfs:comment "The data type of the property value — e.g. REAL_MEASURE, STRING, BOOLEAN, DATE."@en .
+
+# End of Shepard minimum-viable stub — replace with canonical IEC 61360/ECLASS Turtle for full vocabulary.

@@ -1,0 +1,129 @@
+# Canonical source: https://raw.githubusercontent.com/emmo-repo/CHAMEO/master/chameo.ttl
+# Ontology IRI:    https://w3id.org/chameo/chameo#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the CHAMEO (Characterisation Methodology
+# Ontology) vocabulary. CHAMEO is developed under the EMMO/EMMC-ASBL
+# umbrella and provides a formal ontology for describing characterisation
+# methods, instruments, measuring systems, specimens, and results.
+# It is critical for MFFD NDT (non-destructive testing) process steps
+# where measurement equipment identity, procedure, and specimen must be
+# linked to a DataObject for DIN EN 9100 audit-trail compliance.
+#
+# This stub carries the canonical IRI prefix plus the headline classes
+# and properties needed for the annotation flow on a fresh install.
+# Operators who need the full vocabulary run the N1c refresh CLI or
+# drop the canonical Turtle in place and regenerate the manifest entry.
+#
+# Minimum-viable Shepard stub — N1k (2026-05-27).
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix chameo:  <https://w3id.org/chameo/chameo#> .
+@prefix emmo:    <https://w3id.org/emmo#> .
+
+<https://w3id.org/chameo/chameo>
+    a owl:Ontology ;
+    dcterms:title   "CHAMEO — Characterisation Methodology Ontology (shepard-bundled stub)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:source  <https://github.com/emmo-repo/CHAMEO> ;
+    owl:versionInfo "1.0.0" ;
+    rdfs:label      "CHAMEO"@en ;
+    rdfs:comment    "Ontology for describing characterisation methods, measuring systems, instruments, specimens, and results. Developed under the EMMO/EMMC-ASBL umbrella. Covers NDT and materials characterisation workflows per DIN EN 9100 and ISO standards."@en .
+
+# ---- Core classes -----------------------------------------------------------
+
+chameo:CharacterisationMethod
+    a owl:Class ;
+    rdfs:label   "Characterisation Method"@en ;
+    rdfs:comment "A defined procedure used to determine properties of a specimen. Subclasses cover ultrasonic testing, X-ray CT, optical microscopy, etc."@en .
+
+chameo:Instrument
+    a owl:Class ;
+    rdfs:label   "Instrument"@en ;
+    rdfs:comment "A physical device used to perform or support a characterisation method."@en .
+
+chameo:MeasuringSystem
+    a owl:Class ;
+    rdfs:label   "Measuring System"@en ;
+    rdfs:comment "A complete assembly of instruments and associated equipment used to perform a measurement."@en .
+
+chameo:Specimen
+    a owl:Class ;
+    rdfs:label   "Specimen"@en ;
+    rdfs:comment "The physical object being characterised. In MFFD context this may be a CFRP panel, weld seam, or test coupon."@en .
+
+chameo:CharacterisationInput
+    a owl:Class ;
+    rdfs:label   "Characterisation Input"@en ;
+    rdfs:comment "Any input required by the characterisation method — settings, calibration parameters, or specimen preparation instructions."@en .
+
+chameo:CharacterisationOutput
+    a owl:Class ;
+    rdfs:label   "Characterisation Output"@en ;
+    rdfs:comment "Raw data or signals produced by the characterisation process before interpretation."@en .
+
+chameo:CharacterisationResult
+    a owl:Class ;
+    rdfs:label   "Characterisation Result"@en ;
+    rdfs:comment "Interpreted outcome of a characterisation process — e.g. presence/absence of defect, measured dimension, or material property value."@en .
+
+chameo:NonDestructiveTesting
+    a owl:Class ;
+    rdfs:subClassOf chameo:CharacterisationMethod ;
+    rdfs:label   "Non-Destructive Testing"@en ;
+    rdfs:comment "Characterisation methods that do not alter the specimen — e.g. UT, X-ray CT, thermography."@en .
+
+chameo:MeasurementProcedure
+    a owl:Class ;
+    rdfs:label   "Measurement Procedure"@en ;
+    rdfs:comment "A step-by-step protocol specifying how a characterisation method is to be executed."@en .
+
+# ---- Key properties ---------------------------------------------------------
+
+chameo:hasInstrument
+    a owl:ObjectProperty ;
+    rdfs:label   "has instrument"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:Instrument ;
+    rdfs:comment "Associates a characterisation method with the instrument(s) employed."@en .
+
+chameo:hasMeasuringSystem
+    a owl:ObjectProperty ;
+    rdfs:label   "has measuring system"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:MeasuringSystem ;
+    rdfs:comment "Associates a characterisation method with the overall measuring system."@en .
+
+chameo:hasSpecimen
+    a owl:ObjectProperty ;
+    rdfs:label   "has specimen"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:Specimen ;
+    rdfs:comment "Associates a characterisation method with the specimen being characterised."@en .
+
+chameo:producesOutput
+    a owl:ObjectProperty ;
+    rdfs:label   "produces output"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:CharacterisationOutput ;
+    rdfs:comment "Links a characterisation method to the output data it produces."@en .
+
+chameo:hasResult
+    a owl:ObjectProperty ;
+    rdfs:label   "has result"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:CharacterisationResult ;
+    rdfs:comment "Links a characterisation method execution to its interpreted result."@en .
+
+chameo:hasProcedure
+    a owl:ObjectProperty ;
+    rdfs:label   "has procedure"@en ;
+    rdfs:domain  chameo:CharacterisationMethod ;
+    rdfs:range   chameo:MeasurementProcedure ;
+    rdfs:comment "Associates a characterisation method with its governing measurement procedure."@en .
+
+# End of Shepard minimum-viable stub — replace with canonical CHAMEO Turtle for full vocabulary.

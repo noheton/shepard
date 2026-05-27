@@ -608,8 +608,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) = 14.
-    assertEquals(14, ids.size(), "expected 14 bundled ontologies");
+    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + chameo + ssn-sosa + iec-61360 (N1k) = 17.
+    assertEquals(17, ids.size(), "expected 17 bundled ontologies");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -622,6 +622,9 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
     assertTrue(ids.contains("shepard-experiment"), "manifest missing shepard-experiment (AI1r)");
     assertTrue(ids.contains("nasa-thesaurus"), "manifest missing nasa-thesaurus (N1e)");
+    assertTrue(ids.contains("chameo"), "manifest missing chameo (N1k)");
+    assertTrue(ids.contains("ssn-sosa"), "manifest missing ssn-sosa (N1k)");
+    assertTrue(ids.contains("iec-61360"), "manifest missing iec-61360 (N1k)");
   }
 
   /**
@@ -658,11 +661,14 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(13, kept.size(), "skip-bundles=obo-relations should leave 13 entries");
+    assertEquals(16, kept.size(), "skip-bundles=obo-relations should leave 16 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
     assertTrue(kept.contains("metadata4ing"), "skip-bundles=obo-relations must not affect metadata4ing");
+    assertTrue(kept.contains("chameo"), "skip-bundles=obo-relations must not affect chameo");
+    assertTrue(kept.contains("ssn-sosa"), "skip-bundles=obo-relations must not affect ssn-sosa");
+    assertTrue(kept.contains("iec-61360"), "skip-bundles=obo-relations must not affect iec-61360");
   }
 
   // ONT1b — metadata4ing (NFDI4Ing) bundle.
@@ -726,10 +732,70 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(13, kept.size(), "skip-bundles=metadata4ing should leave 13 entries");
+    assertEquals(16, kept.size(), "skip-bundles=metadata4ing should leave 16 entries");
     assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
     assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
+    assertTrue(kept.contains("chameo"), "skip-bundles=metadata4ing must not affect chameo");
+    assertTrue(kept.contains("ssn-sosa"), "skip-bundles=metadata4ing must not affect ssn-sosa");
+    assertTrue(kept.contains("iec-61360"), "skip-bundles=metadata4ing must not affect iec-61360");
+  }
+
+  // N1k — CHAMEO + SSN/SOSA + IEC-61360 bundles.
+
+  /**
+   * N1k — CHAMEO bundle carries the canonical w3id.org/chameo IRI prefix,
+   * CC BY 4.0 licence, ships as chameo.ttl in Turtle format. Mirrors the
+   * ONT1b per-bundle assertion style.
+   */
+  @Test
+  void realManifest_chameoCarriesChameoIriPrefixAndCcBy4Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var chameo = svc.loadManifest().stream()
+      .filter(e -> "chameo".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("chameo bundle missing from manifest"));
+    assertEquals("https://w3id.org/chameo/chameo#", chameo.iriPrefix, "chameo IRI prefix");
+    assertEquals("CC BY 4.0", chameo.license, "chameo licence string");
+    assertEquals("chameo.ttl", chameo.file, "chameo bundle file name");
+    assertEquals("Turtle", chameo.format, "chameo bundled format");
+  }
+
+  /**
+   * N1k — SSN/SOSA bundle carries the canonical W3C SOSA IRI prefix,
+   * W3C Document Licence, ships as ssn-sosa.ttl in Turtle format.
+   */
+  @Test
+  void realManifest_ssnSosaCarriesSosaIriPrefixAndW3cLicence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var ssnSosa = svc.loadManifest().stream()
+      .filter(e -> "ssn-sosa".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("ssn-sosa bundle missing from manifest"));
+    assertEquals("http://www.w3.org/ns/sosa/", ssnSosa.iriPrefix, "ssn-sosa IRI prefix");
+    assertEquals("W3C Document License", ssnSosa.license, "ssn-sosa licence string");
+    assertEquals("ssn-sosa.ttl", ssnSosa.file, "ssn-sosa bundle file name");
+    assertEquals("Turtle", ssnSosa.format, "ssn-sosa bundled format");
+  }
+
+  /**
+   * N1k — IEC-61360 bundle carries the canonical ECLASS IRI prefix,
+   * CC BY 4.0 licence, ships as iec-61360.ttl in Turtle format.
+   */
+  @Test
+  void realManifest_iec61360CarriesEclassIriPrefixAndCcBy4Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var iec = svc.loadManifest().stream()
+      .filter(e -> "iec-61360".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("iec-61360 bundle missing from manifest"));
+    assertEquals("https://www.w3id.org/eclass#", iec.iriPrefix, "iec-61360 IRI prefix");
+    assertEquals("CC BY 4.0", iec.license, "iec-61360 licence string");
+    assertEquals("iec-61360.ttl", iec.file, "iec-61360 bundle file name");
+    assertEquals("Turtle", iec.format, "iec-61360 bundled format");
   }
 
   // ---------- helpers -------------------------------------------------------
