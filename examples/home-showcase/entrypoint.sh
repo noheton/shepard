@@ -102,16 +102,14 @@ case "${MODE}" in
     exec python3 /home-showcase/seed.py --host "${BACKEND}" --apikey "${API_KEY}"
     ;;
   collector)
-    # The compose service is no longer profile-gated, so this entrypoint
-    # runs on every deploy. Operators without an MQTT broker shouldn't
-    # see a crashlooping container — exit clean (0) with a single log
-    # line when MQTT_HOST is empty/missing.
-    if [ -z "${MQTT_HOST:-}" ]; then
-      log "MQTT_HOST is empty/unset — collector has nothing to subscribe to. Exiting clean (operator can set MQTT_HOST=… in infrastructure/.env to enable the live-data path)."
+    # Exit clean when HA_TOKEN is absent so the container does not crashloop
+    # on deployments where the collector is not yet configured.
+    if [ -z "${HA_TOKEN:-}" ]; then
+      log "HA_TOKEN is empty/unset — collector has nothing to poll. Exiting clean (set HA_TOKEN=<long-lived HA token> in infrastructure/.env to enable the live-data path)."
       exit 0
     fi
-    log "Installing shepard-client + paho-mqtt + running collector.py ..."
-    pip install --quiet --no-cache-dir --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple shepard-client paho-mqtt
+    log "Installing shepard-client + running collector.py ..."
+    pip install --quiet --no-cache-dir --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple shepard-client
     exec python3 /home-showcase/collector.py
     ;;
   *)

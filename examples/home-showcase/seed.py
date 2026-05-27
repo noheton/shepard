@@ -493,12 +493,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         )
         data_objects[do_name] = do.id
         containers[container_name] = ct.id
-        # Skip creating an empty TimeseriesReference up-front — the upstream
-        # API requires `timeseries: [...]` to have ≥1 channel and we don't
-        # know the channel list before the collector ingests its first
-        # message. The collector / WATCH1 watch-link surfaces the container
-        # on the collection page even without a per-DataObject Reference.
-        _log("DEFER", f"{container_name}-ref", "TimeseriesReference (created lazily by collector)")
+        # Create an open-ended TimeseriesReference linking the DataObject to the
+        # container with an empty channel list (timeseries=[]).  The backend
+        # accepts empty lists — channels are populated implicitly as the collector
+        # ingests data.  Without this link the DataObject detail page shows no
+        # container.
+        ensure_timeseries_reference(tsr_api, coll.id, do.id, ct.id, container_name)
 
     # WATCH1 — wire each TimeseriesContainer as a "watched container" on
     # the home Collection so the Collection's detail page surfaces the
