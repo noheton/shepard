@@ -153,7 +153,7 @@ export const options = {
 
 // ── Auth headers ──────────────────────────────────────────────────────────────
 // Use `apikey` header (matches integration test suite + seeder convention).
-// k6-smoke.js uses X-API-KEY for historical reasons; this script uses apikey.
+// All four k6 scripts now use apikey (PERF4e unification, 2026-05-27).
 
 function authHeaders(extra) {
   const base = API_KEY

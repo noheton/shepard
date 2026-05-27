@@ -39,7 +39,7 @@ const KEY = __ENV.SHEPARD_API_KEY || "";
 // ── Auth headers ─────────────────────────────────────────────────────────────
 
 const headers = KEY
-  ? { "X-API-KEY": KEY, Accept: "application/json", "Content-Type": "application/json" }
+  ? { "apikey": KEY, Accept: "application/json", "Content-Type": "application/json" }
   : { Accept: "application/json", "Content-Type": "application/json" };
 
 const headersNoBody = { ...headers };
@@ -271,7 +271,7 @@ function doFileUpload(data) {
       `${BASE}/shepard/api/filecontainers/${data.fileContainerId}/files`,
       fd,
       {
-        headers: KEY ? { "X-API-KEY": KEY } : {},
+        headers: KEY ? { "apikey": KEY } : {},
         tags: { endpoint: "file-upload" },
       },
     );
@@ -300,7 +300,7 @@ function doTsIngest(data) {
       csv,
       {
         headers: KEY
-          ? { "X-API-KEY": KEY, "Content-Type": "text/csv" }
+          ? { "apikey": KEY, "Content-Type": "text/csv" }
           : { "Content-Type": "text/csv" },
         tags: { endpoint: "ts-ingest" },
       },
