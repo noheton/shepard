@@ -1,15 +1,18 @@
 """home-showcase — one-shot seed that provisions the Collection +
-DataObjects + TimeseriesContainers used by the live MQTT collector.
+DataObjects + TimeseriesContainers used by the Home Assistant REST
+polling collector.
 
 Designed to be idempotent: running it twice does nothing harmful;
 each "ensure_*" step looks the entity up by name first.
 
-Three containers (per the user direction 2026-05-18):
+Two containers:
 
-  - solar-powerocean       — inverter telemetry (empty until the
-                              PowerOcean bridge is wired up)
-  - home-energy-appliances — zigbee2mqtt smart-plug power + energy
-  - home-environment       — temperature / humidity / pressure / lux
+  - solar-inverter    — PowerOcean inverter: MPPT production, AC output,
+                        grid feed-in, self-consumption, daily yield.
+                        Source: sensor.powerocean_hj37zdh5zg5w0109_*
+  - home-consumption  — Klostergasse electricity meter: current grid draw,
+                        cumulative import and export (feed-in).
+                        Source: sensor.electricity_klostergasse_20a_*
 
 The collector (collector.py) targets these container ids by name
 after the seed has run."""
@@ -38,22 +41,24 @@ COLLECTION_NAME = os.environ.get(
     "Home energy & environment (live)",
 )
 COLLECTION_DESCRIPTION = (
-    "Live MQTT-ingested home telemetry — solar inverter, smart-plug energy, "
-    "and indoor environment. Data flows in continuously through the home-showcase "
+    "Live home telemetry polled from Home Assistant via REST API — solar "
+    "production (PowerOcean inverter) and grid consumption (Klostergasse "
+    "electricity meter). Data flows in continuously through the home-showcase "
     "collector (see examples/home-showcase/collector.py). Distinct from the "
     "LUMEN hot-fire showcase, which uses synthetic deterministic data."
 )
 
 # (data-object-name, container-name, payload-description)
 TARGETS = [
-    ("Solar & battery", "solar-powerocean",
-        "PowerOcean inverter — solar production, battery state, grid in/out. "
-        "Empty until the PowerOcean integration is bridged into MQTT."),
-    ("Smart plugs", "home-energy-appliances",
-        "Per-appliance power (W) and energy (kWh) from zigbee2mqtt smart plugs."),
-    ("Indoor environment", "home-environment",
-        "Temperature, humidity, illuminance, and pressure across all rooms. "
-        "Channels carry their measurement class in the `measurement` segment."),
+    ("Solar array", "solar-inverter",
+        "PowerOcean inverter (HJ37ZDH5ZG5W0109) — MPPT solar production (W), "
+        "inverter AC output (W, negative = feed-in), grid feed-in (W), "
+        "self-consumption (W), and today's cumulative yield (kWh). "
+        "Polled from sensor.powerocean_hj37zdh5zg5w0109_* via Home Assistant REST API."),
+    ("General consumption", "home-consumption",
+        "Klostergasse electricity meter (20A) — current grid draw (W), "
+        "cumulative grid import (kWh), and cumulative feed-in export (kWh). "
+        "Polled from sensor.electricity_klostergasse_20a_* via Home Assistant REST API."),
 ]
 
 
