@@ -700,7 +700,7 @@ A batch API on the dest reduces N round-trips to N/B (B = batch size, e.g. 100).
 
 | ID | Slice | Size | Status | Notes |
 |---|---|---|---|---|
-| DEADCODE-BULKTRACE | **Remove orphaned BulkTrace IO classes** — `BulkTraceRequestIO`, `BulkTraceResultIO`, `BulkTraceChannelIO` all carry javadoc referencing `POST /v2/timeseries-containers/{id}/channels/bulk` but no `@Path` annotation wires this path. The shipped bulk read endpoint is `/channels/data/bulk` using `BulkChannelDataRequestIO`. Delete or wire. Confirmed by `grep -rn 'channels/bulk' backend/src/main/java/` returning only javadoc strings. | XS | queued | Surfaced by BATCH-API-4 audit (2026-05-27). Precondition for any new TS batch endpoint spec to avoid naming confusion. |
+| DEADCODE-BULKTRACE | **Remove orphaned BulkTrace IO classes** — `BulkTraceRequestIO`, `BulkTraceResultIO`, `BulkTraceChannelIO` all carry javadoc referencing `POST /v2/timeseries-containers/{id}/channels/bulk` but no `@Path` annotation wires this path. The shipped bulk read endpoint is `/channels/data/bulk` using `BulkChannelDataRequestIO`. Delete or wire. Confirmed by `grep -rn 'channels/bulk' backend/src/main/java/` returning only javadoc strings. | XS | **done** (2026-05-27) | All three files deleted; dead imports removed from `TimeseriesContainerChannelsRest.java`. Surfaced by BATCH-API-4 audit (2026-05-27). |
 
 ### V16-PRESERVE-HIERARCHY — 2026-05-23 (replace v15's flat shape with full source-DO tree replication)
 
