@@ -1,0 +1,54 @@
+# PR Title Lint — GH-PM-ENH-API-12
+#
+# Validates that PR titles follow the Conventional Commits scope grammar defined
+# in aidocs/strategy/85-github-project-management-policies.md §7.
+#
+# Required format: <type>(<SCOPE>): <subject>
+#   - type: feat, fix, docs, refactor, test, chore, perf, style, build, ci
+#   - SCOPE: must match ^[A-Z][A-Za-z0-9-]*(\+[A-Z][A-Za-z0-9-]*)*$
+#     (backlog row IDs like FS1b, GH-PM-ENH-API-6, IMPORT-W1)
+#   - SCOPE must NOT be a GitHub Issue number (e.g. #148 is wrong; BUG-148 is correct)
+#
+# WARN-ONLY in this first iteration (continue-on-error: true on the lint step).
+# This workflow will become a hard failure in a future release cycle once
+# contributors have had time to adopt the scope-grammar convention.
+# Tracking row: GH-PM-ENH-API-12 in aidocs/16-dispatcher-backlog.md.
+
+name: PR Title Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title format (Conventional Commits + §7 scope grammar)
+        id: lint
+        continue-on-error: true
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          # Full regex for a conforming PR title:
+          #   <type>(<SCOPE>): <subject>
+          # where SCOPE = ^[A-Z][A-Za-z0-9-]*(\+[A-Z][A-Za-z0-9-]*)*$
+          # Combined scopes use + as separator (e.g. FS1b+FS1d).
+          PATTERN='^(feat|fix|docs|refactor|test|chore|perf|style|build|ci)\(([A-Z][A-Za-z0-9-]*(\+[A-Z][A-Za-z0-9-]*)*)\): .+'
+
+          echo "PR title: ${PR_TITLE}"
+
+          if echo "${PR_TITLE}" | grep -qP "${PATTERN}"; then
+            echo "PR title format: OK"
+          else
+            echo "::warning::PR title does not match the Conventional Commits scope grammar defined in aidocs/strategy/85 §7."
+            echo "::warning::Expected format: <type>(<SCOPE>): <subject>"
+            echo "::warning::  where type ∈ {feat, fix, docs, refactor, test, chore, perf, style, build, ci}"
+            echo "::warning::  and SCOPE matches ^[A-Z][A-Za-z0-9-]*(\+[A-Z][A-Za-z0-9-]*)*$"
+            echo "::warning::  (e.g. 'feat(FS1b): add S3 plugin' or 'fix(BUG-148): reject NaN' — NOT 'fix(#148):')"
+            echo "::warning::PR title received: ${PR_TITLE}"
+            echo "::warning::This check is warn-only and will NOT block the PR. It will become required in a future release cycle."
+            exit 1
+          fi
