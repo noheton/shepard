@@ -369,34 +369,56 @@ onBeforeUnmount(() => {
           Showing first {{ MAX_CHANNELS }} of {{ measurements.length }} channels
         </div>
       </div>
-      <!-- Static-mode-only downsample indicator + toggle. Hidden in live
-           mode where uniform time-bucket Mean is the right strategy. -->
+      <!-- Static-mode-only Raw / LTTB fidelity toggle. Hidden in live mode
+           (streaming data is always raw — no downsampling applied to live
+           channels). LTTB is the default for chart performance; Raw fetches
+           every recorded sample so the user can verify anomaly fidelity. -->
       <div
         v-if="!liveMode && series.length"
         class="d-flex align-center justify-end mb-1 mr-2"
-        style="gap: 8px"
+        style="gap: 6px"
       >
-        <v-chip
-          v-if="useStaticDownsample"
-          size="x-small"
-          color="primary"
-          variant="tonal"
-          prepend-icon="mdi-chart-bell-curve"
-          title="Visual peaks preserved (Largest-Triangle-Three-Buckets). Toggle 'Full' for every sample."
-        >
-          Downsampled (LTTB)
-        </v-chip>
-        <v-switch
+        <v-tooltip location="top" max-width="300">
+          <template #activator="{ props: tipProps }">
+            <v-icon
+              v-bind="tipProps"
+              size="small"
+              color="info"
+              style="cursor: help"
+            >
+              mdi-information-outline
+            </v-icon>
+          </template>
+          <div>
+            <strong>LTTB</strong> (Largest-Triangle-Three-Buckets) preserves visual
+            peaks and troughs at heavy compression — anomaly spikes stay visible.
+            <br /><br />
+            <strong>Raw</strong> fetches every recorded sample. Use Raw to verify
+            fidelity or for export / analysis after visual inspection.
+            <br /><br />
+            <em>Note: export and bulk-fetch paths always use Raw data regardless
+            of this toggle.</em>
+          </div>
+        </v-tooltip>
+        <v-btn-toggle
           v-model="useStaticDownsample"
-          :true-value="false"
-          :false-value="true"
           density="compact"
-          hide-details
           color="primary"
-          label="Full"
-          title="Fetch every raw sample (heavier, slower, identical visual shape)"
+          variant="outlined"
+          rounded="pill"
+          mandatory
+          aria-label="Chart downsampling mode"
           @update:model-value="() => fetchAll()"
-        />
+        >
+          <v-btn :value="true" size="x-small" title="Shape-preserving LTTB downsampling (faster, peaks preserved)">
+            <v-icon size="x-small" start>mdi-chart-bell-curve</v-icon>
+            LTTB
+          </v-btn>
+          <v-btn :value="false" size="x-small" title="Every raw sample (heavier — use for fidelity checks and analysis)">
+            <v-icon size="x-small" start>mdi-chart-line</v-icon>
+            Raw
+          </v-btn>
+        </v-btn-toggle>
       </div>
       <div
         v-if="!series.length"

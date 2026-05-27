@@ -48,9 +48,17 @@ public class StructuredDataService {
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
+    // MONGO-AUDIT-2026-05-24-004 / BUG-E (v15.12): BSON does not accept a JSON array as a
+    // top-level document. The v15.12 importer worked around this client-side; closing the gap
+    // here at the server boundary means every caller (REST, MCP, future integrations) is
+    // protected, not just the importer.
+    String rawPayload = payload.getPayload();
+    if (rawPayload != null && rawPayload.trim().startsWith("[")) {
+      rawPayload = "{\"items\":" + rawPayload.trim() + ",\"_wrapped\":\"v15.12-bug-e\"}";
+    }
     Document toInsert;
     try {
-      toInsert = Document.parse(payload.getPayload());
+      toInsert = Document.parse(rawPayload);
     } catch (JsonParseException e) {
       Log.errorf("Could not parse json: %s", payload.getPayload());
       throw new InvalidBodyException("The specified payload is not json parsable");
