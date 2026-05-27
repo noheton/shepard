@@ -92,7 +92,7 @@ describe("useSkosRelated — fetchRelated()", () => {
     const { related, fetchRelated } = useSkosRelated();
     await fetchRelated("http://example.org/Source");
 
-    expect(related.value[0].label).toBeNull();
+    expect(related.value[0]!.label).toBeNull();
   });
 
   it("deduplicates rows with the same related URI", async () => {
@@ -112,7 +112,7 @@ describe("useSkosRelated — fetchRelated()", () => {
     await fetchRelated("http://example.org/SteadyState");
 
     expect(related.value).toHaveLength(1);
-    expect(related.value[0].uri).toBe("http://example.org/TestRun");
+    expect(related.value[0]!.uri).toBe("http://example.org/TestRun");
   });
 
   it("skips non-URI related bindings", async () => {
@@ -131,7 +131,7 @@ describe("useSkosRelated — fetchRelated()", () => {
     await fetchRelated("http://example.org/Source");
 
     expect(related.value).toHaveLength(1);
-    expect(related.value[0].uri).toBe("http://example.org/Valid");
+    expect(related.value[0]!.uri).toBe("http://example.org/Valid");
   });
 
   it("sends POST to /v2/semantic/internal/sparql with form body", async () => {
