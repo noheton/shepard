@@ -91,7 +91,19 @@ dim() {
 
 # ─── 1. aidocs/16 backlog row ─────────────────────────────────────────
 section "1. aidocs/16 backlog row"
+# Also extract the Notes column to determine whether this row is a chore/docs-only
+# change — used by surfaces 6 and 7 to emit a more informative message.
+ROW_IS_EXEMPT=0
 if [ -f aidocs/16-dispatcher-backlog.md ]; then
+  ROW_LINE=$(grep "^| ${ID} " aidocs/16-dispatcher-backlog.md | head -1)
+  if [ -n "${ROW_LINE}" ]; then
+    # The backlog rows end with a trailing " |", so $NF is empty;
+    # the actual Notes column is the second-to-last pipe-delimited field.
+    NOTES=$(echo "${ROW_LINE}" | awk -F'|' '{print $(NF-1)}')
+    if echo "${NOTES}" | grep -qiE 'chore|docs-only|doc-only|housekeeping|docs/'; then
+      ROW_IS_EXEMPT=1
+    fi
+  fi
   if ! grep -A 2 "^| ${ID} " aidocs/16-dispatcher-backlog.md; then
     dim "  (no row found — file an aidocs/16 row first)"
   fi
@@ -153,7 +165,11 @@ fi
 section "6. aidocs/34 admin-facing row"
 if [ -f aidocs/34-upstream-upgrade-path.md ]; then
   if ! grep -n "\\b${ID}\\b" aidocs/34-upstream-upgrade-path.md; then
-    dim "  (no aidocs/34 row — admins don't know this shipped)"
+    if [ "${ROW_IS_EXEMPT}" -eq 1 ]; then
+      dim "  (legitimately empty — chore/docs-only change; no admin or model-inventory row expected)"
+    else
+      dim "  (no aidocs/34 row — admins don't know this shipped)"
+    fi
   fi
 fi
 
@@ -161,7 +177,11 @@ fi
 section "7. aidocs/data/00 model delta"
 if [ -f aidocs/data/00-model-inventory.md ]; then
   if ! grep -n "\\b${ID}\\b" aidocs/data/00-model-inventory.md; then
-    dim "  (no model-inventory mention — fine if the change didn't touch the substrate)"
+    if [ "${ROW_IS_EXEMPT}" -eq 1 ]; then
+      dim "  (legitimately empty — chore/docs-only change; no admin or model-inventory row expected)"
+    else
+      dim "  (no model-inventory mention — fine if the change didn't touch the substrate)"
+    fi
   fi
 else
   dim "  aidocs/data/00-model-inventory.md missing"

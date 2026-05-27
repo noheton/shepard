@@ -288,6 +288,21 @@ Valid types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`,
 (`feat(fs1b)` vs `feat(FS1b)`) makes TRACE-A miss the commit. Case
 is significant. The IDs are uppercase as authored in `aidocs/16`.
 
+**Scope grammar — MUST.** Every commit scope MUST match the pattern:
+
+```
+^[A-Z][A-Za-z0-9-]*(\+[A-Z][A-Za-z0-9-]*)*$
+```
+
+Single scope: `FS1b`, `GH-PM-ENH-API-6`, `IMPORT-W1`.
+Combined scopes (discouraged, allowed): `FS1b+FS1d`.
+
+Scopes MUST NOT use GitHub Issue numbers (e.g. `fix(#148):` is
+**WRONG** — `#148` is an Issue number, not a row ID; the correct
+form is `fix(BUG-148):` or the relevant aidocs/16 ID). Using a raw
+Issue number breaks TRACE-A and orphans the commit from the
+aidocs/16 audit trail.
+
 ---
 
 ## 8. Issue lifecycle (when an Issue exists)
