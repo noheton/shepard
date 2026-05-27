@@ -318,6 +318,65 @@ lives in `infrastructure/proxy/Caddyfile`; static SSL material in
 `infrastructure/proxy/ssl`. Local-development variants are under
 `infrastructure-local/` (Keycloak + a developer-friendly compose file).
 
+## Compliance and certifications
+
+### Cloud exit strategy (Cloud-Strategie §8)
+
+Operators at German public institutions who are required to conduct a
+*Vorabprüfung* (prior assessment) under the
+*Cloud-Strategie des DLR* (v1.0, 2019-09-26) §5.3 / point 8 may cite
+the following: Shepard's docker-compose deployment satisfies the
+§8 *Container-Lösungen + Exit-Strategie* requirement structurally.
+All application containers are built from standard OCI images —
+Quarkus/JVM (backend), Node/Nuxt (frontend), Neo4j 5, TimescaleDB
+(PostgreSQL-compatible), MongoDB, Garage (S3-compatible object storage)
+— and no proprietary cloud-provider APIs are consumed. The entire
+stack is cloud-provider-agnostic: an operator can migrate a running
+deployment to any docker-compose–capable host (on-premises, a
+different VPS provider, or a DLR-internal server) by copying the
+`infrastructure/docker-compose*.yml` files together with the named
+volume data directories (Neo4j, MongoDB, TimescaleDB, Garage) and
+repointing the `.env` file. All research data is accessible via the
+Shepard REST API and the `shepard-admin` CLI at any time; no data
+is locked into a proprietary cloud format. The source code is
+MIT-licensed and self-hostable with zero runtime dependencies on
+any proprietary cloud service. This exit-strategy fitness was
+established at initial deployment and is preserved by the
+cloud-provider-agnostic constraint on all future dependencies
+(enforced via the project's dependency-review gate in
+`.github/dependency-review-config.yml`).
+
+### Provider certifications (Hetzner Cloud)
+
+The **nuclide.systems** reference deployment runs on
+**Hetzner Cloud** (Falkenstein, Germany). Hetzner Online GmbH
+holds the following certifications relevant to German public
+institution cloud-use assessments:
+
+- **ISO/IEC 27001:2022** — certified by SOCOTEC Certification
+  Deutschland GmbH. Scope: "all hosting services and the data
+  centers" (covers all Hetzner datacentre parks and entire
+  infrastructure). Certificate: <https://www.hetzner.com/assets/downloads/ISO-Certificate.pdf>
+- **BSI C5:2020 Type 2 attestation** — cloud-services scope;
+  confirms implementation and effectiveness of security controls
+  over a defined audit period (Type 2 = period-of-time coverage,
+  not point-in-time). Technical and Organisational Measures
+  documentation: <https://docs.hetzner.com/general/security-and-identify/technical-and-organizational-measures/>
+- **§ 8a BSI-KritisV** — Hetzner is classified as a KRITIS
+  operator under German critical-infrastructure law; compliance
+  is documented via the prescribed BSI audit and verification
+  procedures.
+
+The C5:2020 Type 2 attestation and BSI-KritisV compliance are
+specific to Hetzner's German datacentre operations and their
+cloud-services product line. Operators deploying Shepard on
+other cloud providers should verify their own provider's
+certification posture — the Cloud-Strategie §"Empfehlungen"
+recommends preferring ISO 27001- and BSI C5-certified providers
+where available. Hetzner publishes its current certification
+status at <https://www.hetzner.com/legal/certifications/> and
+in its ISMS documentation.
+
 ## Integrations
 
 Third-party tools that integrate against a running shepard instance live under
