@@ -90,14 +90,11 @@ async function confirmDelete() {
     return;
   }
 
-  // Video and HDF5: raw fetch DELETE
+  // Video: raw fetch DELETE
   const accessToken = session.value?.accessToken;
   if (!accessToken) return;
 
-  const kindPath =
-    item.type === "Video"
-      ? "video-stream-references"
-      : "hdf-references";
+  const kindPath = "video-stream-references";
   const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/${kindPath}/${encodeURIComponent(appId)}`;
 
   try {
@@ -141,7 +138,6 @@ const kindCounts = computed<Record<RefKind, number>>(() => {
     "File Bundle": 0,
     Git: 0,
     Video: 0,
-    HDF5: 0,
   };
   for (const item of allTableItems.value) counts[item.type]++;
   return counts;
@@ -159,7 +155,6 @@ const kindIcons: Record<RefKind, string> = {
   "File Bundle": "mdi-file-multiple-outline",
   Git: "mdi-git",
   Video: "mdi-video-outline",
-  HDF5: "mdi-database-outline",
 };
 const KIND_ORDER: RefKind[] = [
   "TimeSeries",
@@ -167,7 +162,6 @@ const KIND_ORDER: RefKind[] = [
   "File Bundle",
   "Git",
   "Video",
-  "HDF5",
 ];
 
 const headers = [
@@ -204,12 +198,11 @@ const headers = [
 const itemsPerPage = 10;
 
 /** True for new-kind rows that have appId but no detail page yet. */
-const NEW_KINDS: ReadonlySet<RefKind> = new Set(["Git", "Video", "HDF5"]);
+const NEW_KINDS: ReadonlySet<RefKind> = new Set(["Git", "Video"]);
 
 function semaKindFor(type: RefKind): string {
   if (type === "Git") return "GitReference";
   if (type === "Video") return "VideoStreamReference";
-  if (type === "HDF5") return "HdfReference";
   return "DataObjectReference";
 }
 
@@ -338,16 +331,6 @@ function formatDuration(seconds: number | null | undefined): string {
               prepend-icon="mdi-monitor-screenshot"
             >
               {{ value.resolution }}
-            </v-chip>
-            <!-- HDF5 meta -->
-            <v-chip
-              v-if="item.type === 'HDF5' && value.hdfContainerAppId"
-              size="x-small"
-              variant="tonal"
-              prepend-icon="mdi-identifier"
-              :title="value.hdfContainerAppId"
-            >
-              {{ value.hdfContainerAppId.slice(0, 8) }}…
             </v-chip>
           </div>
         </template>

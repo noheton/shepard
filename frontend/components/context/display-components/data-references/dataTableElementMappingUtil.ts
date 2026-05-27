@@ -7,7 +7,6 @@ import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
 import type { GitReferenceIO } from "@dlr-shepard/backend-client";
 import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
-import type { HdfReferenceIO } from "~/composables/context/useFetchHdfReferences";
 
 export const mapDataReferenceToDataTableElement = (
   ref: DataReference,
@@ -19,7 +18,7 @@ export const mapDataReferenceToDataTableElement = (
   actions: { elementId: ref.id, showDetails: buildShowDetailsArgs(ref) },
 });
 
-// ── New-kind mappers (Git / Video / HDF5) ────────────────────────────────────
+// ── New-kind mappers (Git / Video) ───────────────────────────────────────────
 // These reference kinds use appId (string) rather than numeric id.
 // The "Created" column shows "—" because these kinds don't carry createdAt/createdBy
 // in the current API shape.
@@ -73,25 +72,6 @@ export const mapVideoReferenceToDataTableElement = (
   };
 };
 
-export const mapHdfReferenceToDataTableElement = (
-  ref: HdfReferenceIO,
-): DataTableElement => ({
-  type: "HDF5",
-  name: ref.datasetPath ?? ref.appId,
-  meta: {
-    appId: ref.appId,
-    datasetPath: ref.datasetPath,
-    hdfContainerAppId: ref.hdfContainerAppId,
-  },
-  created: {
-    createdAt: FALLBACK_DATE,
-    createdBy: "—",
-  },
-  actions: {
-    elementAppId: ref.appId,
-    showDetails: { enabled: false, pathFragment: "" },
-  },
-});
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";

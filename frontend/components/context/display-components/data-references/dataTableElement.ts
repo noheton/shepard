@@ -1,18 +1,12 @@
 import type { ReferencedContainerMeta } from "./dataReference";
 
 export type DataTableElement = {
-  type:
-    | "TimeSeries"
-    | "Structured Data"
-    | "File Bundle"
-    | "Git"
-    | "Video"
-    | "HDF5";
+  type: "TimeSeries" | "Structured Data" | "File Bundle" | "Git" | "Video";
   name: string;
   meta: {
-    /** Numeric id for legacy-v1 annotation path; undefined for appId-only kinds (Git/Video/HDF5). */
+    /** Numeric id for legacy-v1 annotation path; undefined for appId-only kinds (Git/Video). */
     id?: number;
-    /** appId string for SEMA-V6 annotation path; set for new kinds (Git/Video/HDF5). */
+    /** appId string for SEMA-V6 annotation path; set for new kinds (Git/Video). */
     appId?: string;
     containerId?: number;
     interval?: string;
@@ -30,10 +24,6 @@ export type DataTableElement = {
     durationSeconds?: number | null;
     /** Video: WxH resolution string e.g. "1920×1080" */
     resolution?: string | null;
-    /** HDF5: dataset path within container */
-    datasetPath?: string;
-    /** HDF5: container appId */
-    hdfContainerAppId?: string;
   } & Partial<ReferencedContainerMeta>;
   created: {
     createdBy: string;

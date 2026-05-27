@@ -14,11 +14,9 @@ import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
-import { useFetchHdfReferences } from "~/composables/context/useFetchHdfReferences";
 import {
   mapGitReferenceToDataTableElement,
   mapVideoReferenceToDataTableElement,
-  mapHdfReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
 
@@ -47,7 +45,6 @@ const extraReferenceItems = ref<DataTableElement[]>([]);
 // Hold refs to sub-composable refresh functions so the panel can request re-fetch.
 const refreshGitRefs = ref<(() => void) | null>(null);
 const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
-const refreshHdfRefs = ref<(() => void | Promise<void>) | null>(null);
 
 watch(
   () => dataObject.value?.appId,
@@ -60,15 +57,11 @@ watch(
     const videoComposable = useFetchVideoStreamReferences(appId);
     refreshVideoRefs.value = videoComposable.refresh;
 
-    const hdfComposable = useFetchHdfReferences(appId);
-    refreshHdfRefs.value = hdfComposable.refresh;
-
-    // Reactively derive extraReferenceItems from the three composable states.
+    // Reactively derive extraReferenceItems from the two composable states.
     watchEffect(() => {
       extraReferenceItems.value = [
         ...gitComposable.gitReferences.value.map(mapGitReferenceToDataTableElement),
         ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
-        ...hdfComposable.references.value.map(mapHdfReferenceToDataTableElement),
       ];
     });
   },
@@ -78,7 +71,6 @@ watch(
 function refreshExtraReferences() {
   refreshGitRefs.value?.();
   refreshVideoRefs.value?.();
-  refreshHdfRefs.value?.();
 }
 
 /** Total count for the "Data References" panel badge: legacy + new kinds. */
