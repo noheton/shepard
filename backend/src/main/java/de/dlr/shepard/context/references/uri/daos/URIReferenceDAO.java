@@ -57,6 +57,21 @@ public class URIReferenceDAO extends VersionableEntityDAO<URIReference> {
     return result;
   }
 
+  /**
+   * Looks up a URIReference by its application-level UUID v7 ({@code appId}).
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching {@link URIReference}, or {@code null} when not found
+   */
+  public URIReference findByAppId(String appId) {
+    String query =
+      "MATCH %s WHERE r.appId = $appId ".formatted(CypherQueryHelper.getObjectPart("r", "URIReference", false)) +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? it.next() : null;
+  }
+
   @Override
   public Class<URIReference> getEntityType() {
     return URIReference.class;

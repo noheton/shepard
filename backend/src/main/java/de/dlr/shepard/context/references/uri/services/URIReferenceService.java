@@ -18,6 +18,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequestScoped
@@ -131,6 +132,66 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     created = uRIReferenceDAO.createOrUpdate(created);
     versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
+  }
+
+  /**
+   * Applies a partial (RFC 7396 merge-patch) update to a URIReference looked up by its
+   * application-level UUID v7 ({@code appId}).
+   *
+   * <p>Mutable fields: {@code name}, {@code uri}, {@code relationship}.
+   * Absent keys are left unchanged. {@code name} and {@code uri} must not be set to
+   * {@code null} or blank — both are required non-null fields on the entity.
+   * {@code relationship} may be set to {@code null} to clear it.
+   *
+   * @param appId UUID v7 of the reference to patch
+   * @param patch key/value map of fields to update (RFC 7396 semantics)
+   * @return the updated {@link URIReference}
+   * @throws InvalidPathException if no reference with that appId exists
+   * @throws IllegalArgumentException if a required field is set to blank or null
+   */
+  public URIReference patchReferenceByAppId(String appId, Map<String, Object> patch) {
+    URIReference ref = uRIReferenceDAO.findByAppId(appId);
+    if (ref == null) {
+      String msg = "URIReference with appId %s not found".formatted(appId);
+      Log.error(msg);
+      throw new InvalidPathException(msg);
+    }
+
+    if (patch.containsKey("name")) {
+      Object v = patch.get("name");
+      if (v == null || v.toString().isBlank()) {
+        throw new IllegalArgumentException("name must not be blank");
+      }
+      ref.setName(v.toString());
+    }
+    if (patch.containsKey("uri")) {
+      Object v = patch.get("uri");
+      if (v == null || v.toString().isBlank()) {
+        throw new IllegalArgumentException("uri must not be blank");
+      }
+      ref.setUri(v.toString());
+    }
+    if (patch.containsKey("relationship")) {
+      Object v = patch.get("relationship");
+      ref.setRelationship(v != null ? v.toString() : null);
+    }
+
+    User user = userService.getCurrentUser();
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(user);
+
+    return uRIReferenceDAO.createOrUpdate(ref);
+  }
+
+  /**
+   * Looks up a URIReference by its application-level UUID v7 without permission checks.
+   * Used by the v2 REST resource to resolve the parent DataObject for access gating.
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching {@link URIReference}, or {@code null}
+   */
+  public URIReference findByAppId(String appId) {
+    return uRIReferenceDAO.findByAppId(appId);
   }
 
   /**

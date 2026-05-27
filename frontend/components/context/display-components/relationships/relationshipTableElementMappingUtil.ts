@@ -3,6 +3,7 @@ import {
   instanceOfDataObject,
   instanceOfDataObjectReference,
   instanceOfURIReference,
+  type URIReference,
 } from "@dlr-shepard/backend-client";
 import type { RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
@@ -10,6 +11,14 @@ import type { RelationshipTableElement } from "./relationshipTableElement";
 export function mapRelatedEntityToRelationshipTableElement(
   relatedEntity: RelatedEntity,
 ): RelationshipTableElement {
+  const isUri = instanceOfURIReference(relatedEntity);
+  // REF-EDIT-6: carry appId + edit-seed for URI references.
+  // The generated URIReference type lacks appId, so we access it via
+  // a type assertion — the backend serialises it via BasicEntityIO.
+  const uriEntity = isUri
+    ? (relatedEntity as URIReference & { appId?: string })
+    : undefined;
+
   return {
     id: relatedEntity.id,
     relationship: mapRelationshipType(relatedEntity),
@@ -26,6 +35,14 @@ export function mapRelatedEntityToRelationshipTableElement(
     actions: {
       elementId: relatedEntity.id,
       annotatable: isAnnotatable(relatedEntity),
+      uriRefAppId: uriEntity?.appId,
+      uriRefEditData: uriEntity
+        ? {
+            name: uriEntity.name,
+            uri: uriEntity.uri,
+            relationship: uriEntity.relationship ?? undefined,
+          }
+        : undefined,
     },
   };
 }
