@@ -181,3 +181,74 @@ describe("useFetchChannelPreview — in-flight de-duplication", () => {
     expect(_inFlightMap.size).toBe(0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test 3 — TS-LTTB-VIS-TOGGLE-01: Raw/LTTB toggle semantics
+//
+// These tests verify the contract that the chart viewer Raw/LTTB toggle
+// drives in the composable layer:
+//   - LTTB mode: ?downsample=lttb included in the request
+//   - Raw mode:  no downsample param at all
+//   - refetch(false) (Raw toggle): no downsample param
+//   - refetch(true)  (LTTB toggle): ?downsample=lttb included
+// ─────────────────────────────────────────────────────────────────────────────
+describe("TS-LTTB-VIS-TOGGLE-01 — Raw / LTTB toggle: correct downsample param", () => {
+  it("LTTB mode (downsample=true) sends ?downsample=lttb to the API", async () => {
+    useFetchChannelPreview(42, ch, { downsample: true });
+    await flush();
+
+    expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
+    const call = mockGetTimeseries.mock.calls[0]?.[0];
+    expect(call?.downsample).toBe("lttb");
+  });
+
+  it("Raw mode (downsample=false) does NOT send a downsample param to the API", async () => {
+    useFetchChannelPreview(42, ch, { downsample: false });
+    await flush();
+
+    expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
+    const call = mockGetTimeseries.mock.calls[0]?.[0];
+    expect(call?.downsample).toBeUndefined();
+  });
+
+  it("refetch(false) — Raw toggle — omits downsample param", async () => {
+    const { refetch } = useFetchChannelPreview(42, ch, { downsample: true });
+    await flush();
+    vi.clearAllMocks();
+    mockGetTimeseries.mockResolvedValue({ points: [] });
+
+    // Simulates the user clicking "Raw" in TimeseriesAllChannelsChart
+    await refetch(false);
+
+    expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
+    const call = mockGetTimeseries.mock.calls[0]?.[0];
+    expect(call?.downsample).toBeUndefined();
+  });
+
+  it("refetch(true) — LTTB toggle — includes downsample=lttb", async () => {
+    const { refetch } = useFetchChannelPreview(42, ch, { downsample: false });
+    await flush();
+    vi.clearAllMocks();
+    mockGetTimeseries.mockResolvedValue({ points: [] });
+
+    // Simulates the user clicking "LTTB" in TimeseriesAllChannelsChart
+    await refetch(true);
+
+    expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
+    const call = mockGetTimeseries.mock.calls[0]?.[0];
+    expect(call?.downsample).toBe("lttb");
+  });
+
+  it("downsampled ref tracks the active mode: true after LTTB fetch, false after Raw fetch", async () => {
+    const { downsampled, refetch } = useFetchChannelPreview(42, ch, { downsample: true });
+    await flush();
+    expect(downsampled.value).toBe(true);
+
+    mockGetTimeseries.mockResolvedValue({ points: [{ timestamp: 2000, value: 99 }] });
+    await refetch(false);
+    expect(downsampled.value).toBe(false);
+
+    await refetch(true);
+    expect(downsampled.value).toBe(true);
+  });
+});
