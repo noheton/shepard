@@ -41,7 +41,9 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -735,6 +737,55 @@ def upload_run_timeseries(
 
 # ---- file + structured uploads --------------------------------------------
 
+def _v2_base(host: str) -> str:
+    return re.sub(r"/shepard/api/?$", "/v2", host.rstrip("/"))
+
+
+def _get_fc_app_id(host: str, api_key: str, fc_id: int) -> str:
+    req = urllib.request.Request(
+        f"{host}/fileContainers/{fc_id}",
+        headers={"X-API-KEY": api_key},
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read())["appId"]
+
+
+def _upload_file_presigned(v2_base: str, api_key: str, container_app_id: str, path: Path) -> str:
+    """Three-step presigned upload: obtain URL → PUT bytes → commit. Required for Garage S3 storage."""
+    fname = path.name
+    data_bytes = path.read_bytes()
+    hdrs = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+
+    r1 = urllib.request.Request(
+        f"{v2_base}/file-containers/{container_app_id}/upload-url",
+        data=json.dumps({"fileName": fname}).encode(),
+        headers=hdrs,
+        method="POST",
+    )
+    with urllib.request.urlopen(r1, timeout=30) as resp:
+        d = json.loads(resp.read())
+    upload_url, oid = d["uploadUrl"], d["oid"]
+
+    r2 = urllib.request.Request(
+        upload_url,
+        data=data_bytes,
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+        method="PUT",
+    )
+    with urllib.request.urlopen(r2, timeout=120) as _:
+        pass
+
+    ctype = "text/markdown" if fname.endswith(".md") else "application/octet-stream"
+    r3 = urllib.request.Request(
+        f"{v2_base}/file-containers/{container_app_id}/upload-url/commit",
+        data=json.dumps({"oid": oid, "fileName": fname, "contentType": ctype, "fileSize": len(data_bytes)}).encode(),
+        headers=hdrs,
+        method="POST",
+    )
+    with urllib.request.urlopen(r3, timeout=30) as _:
+        pass
+    return oid
+
 
 def upload_run_files(apis: Apis, coll: Collection, run_do: DataObject, fc: FileContainer, data_dir: Path, run_idx: int) -> None:
     """One CAD stub + one test report per run as a single FileReference."""
@@ -750,12 +801,17 @@ def upload_run_files(apis: Apis, coll: Collection, run_do: DataObject, fc: FileC
         data_dir / "files" / f"tr-{run_idx:03d}-test-report.md",
         data_dir / "files" / f"tr-{run_idx:03d}-thermal.png",  # false-colour thermal profile PNG
     ]
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    v2 = _v2_base(host)
+    fc_app_id = _get_fc_app_id(host, api_key, fc.id)
+
     oids: list[str] = []
     for path in files:
         if not path.exists():
             continue
-        sf = apis.file_container.create_file(fc.id, str(path))
-        oids.append(sf.oid)
+        oid = _upload_file_presigned(v2, api_key, fc_app_id, path)
+        oids.append(oid)
     if not oids:
         return
     fr = FileReference(
