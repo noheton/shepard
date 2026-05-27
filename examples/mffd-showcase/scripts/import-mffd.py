@@ -76,6 +76,47 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
+
+def _derive_instance_id(url: str) -> str:
+    """Derive a stable instance ID from a URL.
+
+    Strips the ``shepard-api.`` prefix from the hostname if present;
+    otherwise returns the full hostname.  Operators can always override
+    with ``--source-instance-id``.
+
+    Examples:
+        https://shepard-api.intra.dlr.de  →  intra.dlr.de
+        https://backend.bt-au-cube3.intra.dlr.de  →  backend.bt-au-cube3.intra.dlr.de
+    """
+    hostname = urllib.parse.urlparse(url).hostname or url
+    prefix = "shepard-api."
+    if hostname.startswith(prefix):
+        hostname = hostname[len(prefix):]
+    return hostname
+
+
+def _fetch_versionz(url: str) -> str | None:
+    """Fetch the Shepard version string from ``GET /versionz``.
+
+    The source instance may not accept the dest API key, so this call is
+    unauthenticated.  Returns ``None`` on any failure.
+    """
+    try:
+        vz_url = url.rstrip("/") + "/versionz"
+        req = urllib.request.Request(vz_url, method="GET",
+                                     headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            payload = resp.read()
+            if payload:
+                data = json.loads(payload)
+                if isinstance(data, dict):
+                    return data.get("version") or data.get("buildVersion")
+                if isinstance(data, str):
+                    return data
+    except Exception:
+        pass
+    return None
+
 # ─── Configuration ──────────────────────────────────────────────────────
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -300,12 +341,19 @@ class ImportPlan:
 
 class MffdImporter:
     def __init__(self, client: ShepardClient, state: StateStore,
-                 dry_run: bool = False, parallelism: int = 8):
+                 dry_run: bool = False, parallelism: int = 8,
+                 source_url: str | None = None,
+                 source_instance_id: str | None = None):
         self.client = client
         self.state = state
         self.dry_run = dry_run
         self.parallelism = parallelism
         self.log = logging.getLogger("importer")
+        # Source-instance provenance (MFFD-IMPORT-INSTANCE-URL)
+        self.source_url: str | None = source_url
+        self.source_instance_id: str | None = source_instance_id
+        if source_url and not source_instance_id:
+            self.source_instance_id = _derive_instance_id(source_url)
         # Lazily-created container IDs
         self.file_container_id: int | None = None
         self.sd_container_id: int | None = None
@@ -353,6 +401,7 @@ class MffdImporter:
         # ── 1. Collection + step DataObjects ──────────────────────────────
         collection_id = self._ensure_collection(plan.collection_name)
         self._set_hero_image(collection_id)
+        self._stamp_source_instance_attrs(collection_id)
         step_do_ids: dict[str, int] = {}
         for i, step in enumerate(plan.steps):
             predecessor = step_do_ids.get(plan.steps[i - 1]["name"]) if i > 0 else None
@@ -405,6 +454,56 @@ class MffdImporter:
         except Exception as exc:
             self.log.warning("heroImageUrl PATCH failed (non-fatal): %s", exc)
 
+    def _stamp_source_instance_attrs(self, collection_id: int) -> None:
+        """PATCH source_instance_url / source_instance_id / source_instance_version
+        onto the dest collection via v2 REST (MFFD-IMPORT-INSTANCE-URL).
+
+        Runs after every _ensure_collection call — idempotent, safe on re-runs.
+        If --source-url was not provided, logs a WARNING and skips.
+        """
+        if not self.source_url:
+            self.log.warning(
+                "source_instance_url not stamped: no --source-url provided. "
+                "Re-run with --source-url <origin-url> to capture cross-instance provenance."
+            )
+            return
+        try:
+            raw = self.client._request("GET", f"/shepard/api/collections/{collection_id}")
+            app_id = raw.get("appId") if isinstance(raw, dict) else None
+            if not app_id:
+                self.log.warning("source_instance_url stamp skipped: no appId on collection %d", collection_id)
+                return
+
+            source_version = _fetch_versionz(self.source_url)
+            if source_version:
+                self.log.info("Source instance version: %s", source_version)
+            else:
+                self.log.warning("Could not fetch /versionz from source instance (non-fatal)")
+
+            patch_attrs: dict[str, str] = {
+                "source_instance_url": self.source_url,
+                "source_instance_id": self.source_instance_id or "",
+            }
+            if source_version:
+                patch_attrs["source_instance_version"] = source_version
+
+            import re as _re
+            v2_base = _re.sub(r"/shepard/api/?$", "/v2", self.client.base.rstrip("/"))
+            import urllib.request as _ur
+            url = f"{v2_base}/collections/{app_id}"
+            body_bytes = json.dumps(patch_attrs).encode()
+            req = _ur.Request(url, data=body_bytes, method="PATCH",
+                              headers={"X-API-KEY": self.client.api_key,
+                                       "Content-Type": "application/json"})
+            with _ur.urlopen(req, timeout=10):
+                pass
+            self.log.info(
+                "Stamped source_instance_url=%s source_instance_id=%s on collection %d",
+                self.source_url, self.source_instance_id, collection_id,
+            )
+        except Exception as exc:
+            self.log.warning("source_instance stamp PATCH failed (non-fatal): %s", exc)
+
     def _ensure_collection(self, name: str) -> int:
         cache_key = f"collection:{name}"
         if (existing := self.state.already_done(cache_key)):
@@ -423,6 +522,10 @@ class MffdImporter:
                 "mffd:campaign": "Augsburg-2026",
                 "mffd:institute": "DLR-ZLP-Augsburg",
                 "ontology": "http://semantics.dlr.de/mffd-process",
+                # MFFD-IMPORT-ATTRS-PROVENANCE: signal that source_* attrs were captured at
+                # first import time, not backfilled retroactively.
+                # TODO: backfill passes should overwrite with "backfilled:<activity-appId>"
+                "source_attrs_provenance": "original",
             },
         })
         cid = result["id"]
