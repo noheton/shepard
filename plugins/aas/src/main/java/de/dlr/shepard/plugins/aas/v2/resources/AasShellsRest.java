@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.aas.v2.resources;
 
+import de.dlr.shepard.plugins.aas.services.AasConfigService;
 import de.dlr.shepard.plugins.aas.services.AasShellMappingService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -47,6 +48,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class AasShellsRest {
 
   @Inject
+  AasConfigService aasConfigService;
+
+  @Inject
   CollectionDAO collectionDAO;
 
   @Inject
@@ -57,6 +61,18 @@ public class AasShellsRest {
 
   @Inject
   AuthenticationContext authenticationContext;
+
+  private boolean aasDisabled() {
+    return !aasConfigService.current().isEnabled();
+  }
+
+  private static Response aasDisabledResponse() {
+    return Response.status(501)
+        .entity(java.util.Map.of("message",
+            "AAS integration is disabled on this instance. " +
+            "Enable via PATCH /v2/admin/aas/config."))
+        .build();
+  }
 
   @GET
   @Operation(
@@ -76,6 +92,8 @@ public class AasShellsRest {
       @QueryParam("page") Integer page,
       @Parameter(description = "Page size.")
       @QueryParam("size") @DefaultValue("100") Integer size) {
+
+    if (aasDisabled()) return aasDisabledResponse();
 
     String username = authenticationContext.getCurrentUserName();
 
@@ -113,6 +131,8 @@ public class AasShellsRest {
           "or bare Collection appId.")
       @PathParam("aasId") String aasId) {
 
+    if (aasDisabled()) return aasDisabledResponse();
+
     String username = authenticationContext.getCurrentUserName();
     String appId = resolveAppId(aasId);
     Collection collection = collectionDAO.findByAppId(appId, username);
@@ -144,6 +164,8 @@ public class AasShellsRest {
       @Parameter(description = "Base64url-encoded Shell IRI per IDTA-01002-3-2 §4.3, " +
           "or bare Collection appId.")
       @PathParam("aasId") String aasId) {
+
+    if (aasDisabled()) return aasDisabledResponse();
 
     String username = authenticationContext.getCurrentUserName();
     String appId = resolveAppId(aasId);

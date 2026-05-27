@@ -1,11 +1,11 @@
 /**
- * RDM-005 — Metadata Completeness Score helper.
+ * RDM-005 / FAIR8 — Metadata Completeness Score helper.
  *
  * Pure (no I/O) scoring utility consumed by `MetadataCompletenessCard.vue`.
  * The card supplies the Collection wire shape + a handful of cheap fetched
- * counts (semantic annotations, lab journal entries, creator ORCID) and
- * this helper produces a deterministic 0–100 score with a per-check
- * breakdown.
+ * counts (semantic annotations, lab journal entries, creator ORCID,
+ * keyword tags) and this helper produces a deterministic 0–100 score with
+ * a per-check breakdown.
  *
  * Design — why this is pure:
  *   - keeps Vitest unit cases trivial (no API mocking)
@@ -28,6 +28,16 @@
  * exists), its points must be added to the appropriate band or the
  * ceiling re-baselined; the unit test `total points sums to 100` will
  * fail to make this obvious.
+ *
+ * ── F-UJI alignment (FAIR8) ────────────────────────────────────────────
+ * Scoring inspired by F-UJI FAIR maturity indicators (fuji.net / CESSDA
+ * PANGAEA). Each check below is annotated with the F-UJI indicator code
+ * it contributes to. Indicators not yet addressable from a single
+ * Collection record (FsF-F1-01D/02D PID registration, FsF-F4-01M
+ * catalogue harvest, FsF-I1-01M RDF serialisation, FsF-I3-01M related
+ * entity links, FsF-R1.3-01M community standard, FsF-R1.3-02D file
+ * format) are tracked in FAIR8 follow-up rows in aidocs/16.
+ * ───────────────────────────────────────────────────────────────────────
  */
 import type { Collection } from "@dlr-shepard/backend-client";
 
@@ -41,7 +51,7 @@ export type MetadataCheckId =
   | "creatorOrcid"
   | "semanticAnnotation"
   | "labJournal"
-  | "heroImage"
+  | "keywords"
   | "dataObjects";
 
 export interface MetadataCheck {
@@ -101,6 +111,16 @@ export interface MetadataCompletenessInputs {
    * loading state separately so the row can render a spinner.
    */
   creatorOrcid: string | null;
+  /**
+   * Number of keyword/subject-tag semantic annotations on the
+   * Collection (predicate = schema:keywords or equivalent controlled
+   * term). Fetched by the widget alongside the general annotation
+   * count; a dedicated keyword-annotation endpoint will be added in
+   * FAIR8 follow-up. `null` means "still loading" — treated
+   * conservatively as 0 so the score never over-reports.
+   * FsF-F2-01M (descriptive core metadata: keywords sub-field).
+   */
+  keywordCount: number | null;
 }
 
 /** Minimum description length to count as "rich" — 50 chars is the
@@ -117,7 +137,7 @@ export const DEEP_LINK_IDS = {
   accessRights: "metadata-license-edit",
   semanticAnnotation: "metadata-annotations-section",
   labJournal: "metadata-labjournal-section",
-  heroImage: "metadata-heroimage-edit",
+  keywords: "metadata-annotations-section",
   dataObjects: "metadata-dataobjects-section",
   // name + creatorOrcid intentionally absent — name is on the title
   // strip (always edited via the global edit dialog), creatorOrcid
@@ -138,8 +158,13 @@ function clamp01(value: number): number {
 export function computeMetadataCompleteness(
   inputs: MetadataCompletenessInputs,
 ): MetadataCompletenessResult {
-  const { collection, semanticAnnotationCount, labJournalCount, creatorOrcid } =
-    inputs;
+  const {
+    collection,
+    semanticAnnotationCount,
+    labJournalCount,
+    creatorOrcid,
+    keywordCount,
+  } = inputs;
 
   // Defensive reads: the wire shape might predate LIC1 on an older
   // backend image. Mirror the parent page's `(collection as unknown
@@ -150,46 +175,51 @@ export function computeMetadataCompleteness(
   const accessRights =
     (collection as unknown as { accessRights?: string | null }).accessRights ??
     null;
-  const heroImageUrl =
-    (collection as unknown as { heroImageUrl?: string | null }).heroImageUrl ??
-    null;
 
   const description = collection.description ?? "";
   const name = collection.name ?? "";
 
   const checks: MetadataCheck[] = [
+    // FsF-F2-01M — descriptive core metadata: Title sub-field.
     {
       id: "name",
       label: "Collection has a name",
       passed: name.trim().length > 0,
       points: 10,
-      why: "DataCite §3 (Title) — required for every published dataset.",
+      why:
+        "DataCite §3 (Title) + F-UJI FsF-F2-01M — required for every " +
+        "published dataset.",
       deepLink: null,
       actionLabel: "Set name",
     },
+    // FsF-F2-01M — descriptive core metadata: Description sub-field.
+    // FsF-R1-01MD — data content metadata (variable/format description).
     {
       id: "description",
       label: `Description ≥ ${DESCRIPTION_MIN_CHARS} characters`,
       passed: description.trim().length >= DESCRIPTION_MIN_CHARS,
       points: 15,
       why:
-        `DataCite §17 (Description) + Zenodo completeness — at least ` +
-        `${DESCRIPTION_MIN_CHARS} characters distinguishes a stub from a ` +
-        `real abstract.`,
+        `DataCite §17 (Description) + F-UJI FsF-F2-01M / FsF-R1-01MD — ` +
+        `at least ${DESCRIPTION_MIN_CHARS} characters distinguishes a stub ` +
+        `from a real abstract.`,
       deepLink: DEEP_LINK_IDS.description,
       actionLabel: "Add description",
     },
+    // FsF-R1.1-01M — data usage license.
     {
       id: "license",
       label: "License (SPDX) set",
       passed: typeof license === "string" && license.trim().length > 0,
       points: 20,
       why:
-        "DataCite §16 (Rights) + FAIR R1.1 — the single biggest blocker " +
-        "to publication. Without a license the dataset is legally unusable.",
+        "DataCite §16 (Rights) + F-UJI FsF-R1.1-01M — the single biggest " +
+        "blocker to publication. Without a license the dataset is legally " +
+        "unusable.",
       deepLink: DEEP_LINK_IDS.license,
       actionLabel: "Add license",
     },
+    // FsF-A1-01M — data access information (access level / conditions).
     {
       id: "accessRights",
       label: "Access rights set",
@@ -197,11 +227,13 @@ export function computeMetadataCompleteness(
         typeof accessRights === "string" && accessRights.trim().length > 0,
       points: 10,
       why:
-        "DataCite §16 (Rights) + FAIR A1.2 — declares open / restricted / " +
-        "closed / embargoed. Required for Horizon Europe embargoed deposits.",
+        "DataCite §16 (Rights) + F-UJI FsF-A1-01M — declares open / " +
+        "restricted / closed / embargoed. Required for Horizon Europe " +
+        "embargoed deposits.",
       deepLink: DEEP_LINK_IDS.accessRights,
       actionLabel: "Set access rights",
     },
+    // FsF-F2-01M — descriptive core metadata: Creator sub-field.
     {
       id: "creatorOrcid",
       label: "Creator has ORCID",
@@ -209,53 +241,62 @@ export function computeMetadataCompleteness(
         typeof creatorOrcid === "string" && creatorOrcid.trim().length > 0,
       points: 10,
       why:
-        "DataCite §2 (Creator) — researcher PID. Without ORCID the " +
-        "citation falls back to a bare username with no resolver.",
+        "DataCite §2 (Creator) + F-UJI FsF-F2-01M — researcher PID. " +
+        "Without ORCID the citation falls back to a bare username with " +
+        "no resolver.",
       deepLink: null,
       actionLabel: "Set ORCID on /me",
     },
+    // FsF-I2-01M — metadata with semantic/vocabulary resources.
     {
       id: "semanticAnnotation",
       label: "At least one semantic annotation",
       passed: (semanticAnnotationCount ?? 0) > 0,
       points: 10,
       why:
-        "FAIR I1 + I2 — controlled-vocabulary annotation makes the " +
-        "Collection findable via ontology-aware catalogues.",
+        "F-UJI FsF-I2-01M — controlled-vocabulary annotation makes the " +
+        "Collection findable via ontology-aware catalogues (FAIR I1 + I2).",
       deepLink: DEEP_LINK_IDS.semanticAnnotation,
       actionLabel: "Add annotation",
     },
+    // FsF-R1.2-01M — data provenance.
     {
       id: "labJournal",
       label: "At least one lab journal entry",
       passed: (labJournalCount ?? 0) > 0,
       points: 5,
       why:
-        "FAIR R1.2 (provenance) — narrative context that the " +
-        "machine-readable graph alone cannot provide.",
+        "F-UJI FsF-R1.2-01M — narrative context that the machine-readable " +
+        "provenance graph alone cannot provide (FAIR R1.2).",
       deepLink: DEEP_LINK_IDS.labJournal,
       actionLabel: "Open Lab Journal",
     },
+    // FsF-F2-01M — descriptive core metadata: Keywords sub-field.
+    // Note: `Collection` has no native keywords[] field today; this check
+    // uses `keywordCount` supplied by the widget from keyword-predicate
+    // semantic annotations. A dedicated keyword-annotation pass is tracked
+    // in the FAIR8 follow-up row in aidocs/16.
     {
-      id: "heroImage",
-      label: "Hero image set",
-      passed:
-        typeof heroImageUrl === "string" && heroImageUrl.trim().length > 0,
+      id: "keywords",
+      label: "At least one keyword annotation",
+      passed: (keywordCount ?? 0) > 0,
       points: 5,
       why:
-        "Findability + discoverability — a banner image gives the " +
-        "Collection landing a recognisable face in catalog listings.",
-      deepLink: DEEP_LINK_IDS.heroImage,
-      actionLabel: "Set hero image",
+        "F-UJI FsF-F2-01M (Keywords sub-field) — subject tags make the " +
+        "Collection discoverable in catalogue keyword searches (DataCite " +
+        "§6 Subject).",
+      deepLink: DEEP_LINK_IDS.keywords,
+      actionLabel: "Add keyword annotation",
     },
+    // FsF-F3-01M — metadata includes resource identifier / access info.
     {
       id: "dataObjects",
       label: "Has at least one DataObject",
       passed: (collection.dataObjectIds?.length ?? 0) > 0,
       points: 15,
       why:
-        "FAIR F2 — a Collection with zero DataObjects has nothing " +
-        "for harvesters to enumerate.",
+        "F-UJI FsF-F3-01M — a Collection with zero DataObjects has nothing " +
+        "for harvesters to enumerate (FAIR F2 / F3).",
       deepLink: DEEP_LINK_IDS.dataObjects,
       actionLabel: "Open Data Objects",
     },

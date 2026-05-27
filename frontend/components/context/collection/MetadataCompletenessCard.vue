@@ -18,10 +18,12 @@
  *
  * Data sources:
  *   - Collection wire shape (passed in via prop) — name, description,
- *     license, accessRights, heroImageUrl, dataObjectIds
+ *     license, accessRights, dataObjectIds
  *   - SemanticAnnotation count — `AnnotatedCollection.fetchAnnotations`
  *   - Lab journal entry count — `useFetchCollectionLabJournalEntries`
  *   - Creator ORCID — `UserApi.getUser({username: createdBy})`
+ *   - Keyword count — conservatively 0 until a keyword-annotation
+ *     endpoint ships (FAIR8 follow-up in aidocs/16-dispatcher-backlog.md)
  *
  * All three fetches are best-effort; failures resolve to `0` /
  * `null` and the score is conservatively biased toward "incomplete"
@@ -136,12 +138,17 @@ watch(
 );
 
 // ── Compute completeness ─────────────────────────────────────────────────
+// keywordCount is conservatively 0 until a keyword-annotation query
+// endpoint ships (tracked as FAIR8 follow-up in aidocs/16). The widget
+// will show the "keywords" row as failing, which correctly reflects that
+// the collection has no keyword annotations yet.
 const result = computed(() =>
   computeMetadataCompleteness({
     collection: props.collection,
     semanticAnnotationCount: semanticAnnotationCount.value,
     labJournalCount: labJournalCount.value,
     creatorOrcid: creatorOrcid.value,
+    keywordCount: 0,
   }),
 );
 

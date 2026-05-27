@@ -66,12 +66,18 @@ const placeholderGradient = computed<string>(() => {
 });
 
 // ── Metadata completeness (fast, no-IO path) ─────────────────────────
+// Async-fetched inputs (semanticAnnotationCount, labJournalCount,
+// creatorOrcid, keywordCount) are all null here — the gallery card is a
+// discovery surface, not an audit form. Scores are intentionally
+// conservative; the full card on the Collection landing page does the
+// async fetches.
 const completeness = computed(() =>
   computeMetadataCompleteness({
     collection: props.collection,
     semanticAnnotationCount: null,
     labJournalCount: null,
     creatorOrcid: null,
+    keywordCount: null,
   }),
 );
 

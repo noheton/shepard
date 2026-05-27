@@ -1,12 +1,15 @@
 /**
- * RDM-005 — Metadata Completeness Score helper tests.
+ * RDM-005 / FAIR8 — Metadata Completeness Score helper tests.
  *
  * Each check is exercised in pass + fail (+ edge-case where the
  * boundary is non-trivial — description min-length, ORCID
  * present/null/empty-string, dataObjectIds null vs empty). Plus the
  * total-points invariant + band classification + score clamping.
  *
- * Cases: 28 (well beyond the spec's "10+ cases" floor).
+ * FAIR8 additions: keywordCount pass/fail/null cases for the new
+ * FsF-F2-01M keywords check (replaces the non-FAIR heroImage check).
+ *
+ * Cases: 30 (well beyond the spec's "10+ cases" floor).
  */
 import { describe, it, expect } from "vitest";
 import type { Collection } from "@dlr-shepard/backend-client";
@@ -41,7 +44,6 @@ function buildFullCollection(overrides: Partial<Collection> = {}): Collection {
     dataObjectIds: [1, 2, 3, 4, 5],
     incomingIds: [],
     defaultFileContainerId: null,
-    heroImageUrl: "https://example.com/lumen.png",
     license: "CC-BY-4.0",
     accessRights: "OPEN",
     ...overrides,
@@ -56,6 +58,7 @@ function buildFullInputs(
     semanticAnnotationCount: 8,
     labJournalCount: 3,
     creatorOrcid: "0000-0001-2345-6789",
+    keywordCount: 2,
     ...overrides,
   };
 }
@@ -68,7 +71,7 @@ describe("computeMetadataCompleteness — invariants", () => {
     expect(sum).toBe(100);
   });
 
-  it("renders exactly 9 checks (current check list)", () => {
+  it("renders exactly 9 checks (FAIR8 aligned list)", () => {
     const { checks } = computeMetadataCompleteness(buildFullInputs());
     expect(checks).toHaveLength(9);
   });
@@ -91,13 +94,13 @@ describe("computeMetadataCompleteness — invariants", () => {
         name: "",
         description: "",
         dataObjectIds: [],
-        heroImageUrl: null,
         license: null,
         accessRights: null,
       } as unknown as Partial<Collection>),
       semanticAnnotationCount: 0,
       labJournalCount: 0,
       creatorOrcid: null,
+      keywordCount: 0,
     });
     expect(result.score).toBe(0);
     expect(result.band).toBe("error");
@@ -260,17 +263,27 @@ describe("computeMetadataCompleteness — per-check pass/fail", () => {
     expect(r.checks.find(c => c.id === "labJournal")?.passed).toBe(false);
   });
 
-  it("heroImage pass: url string", () => {
+  it("keywords pass: count > 0 (FsF-F2-01M)", () => {
     const r = computeMetadataCompleteness(buildFullInputs());
-    expect(r.checks.find(c => c.id === "heroImage")?.passed).toBe(true);
+    expect(r.checks.find(c => c.id === "keywords")?.passed).toBe(true);
   });
 
-  it("heroImage fail: null", () => {
+  it("keywords fail: count = 0 (FsF-F2-01M)", () => {
     const r = computeMetadataCompleteness({
       ...buildFullInputs(),
-      collection: buildFullCollection({ heroImageUrl: null }),
+      keywordCount: 0,
     });
-    expect(r.checks.find(c => c.id === "heroImage")?.passed).toBe(false);
+    expect(r.checks.find(c => c.id === "keywords")?.passed).toBe(false);
+  });
+
+  it("keywords fail: count = null — still loading (FsF-F2-01M)", () => {
+    // Conservative: null loading state renders as failing so the score
+    // is never inflated while the async keyword fetch is in-flight.
+    const r = computeMetadataCompleteness({
+      ...buildFullInputs(),
+      keywordCount: null,
+    });
+    expect(r.checks.find(c => c.id === "keywords")?.passed).toBe(false);
   });
 
   it("dataObjects pass: non-empty list", () => {
@@ -289,40 +302,41 @@ describe("computeMetadataCompleteness — per-check pass/fail", () => {
 
 describe("computeMetadataCompleteness — band classification", () => {
   it("band = error when score < 50", () => {
-    // 9 + 10 + 15 + 5 = 39 (name + accessRights + description + labJournal)
+    // name(10) + accessRights(10) + description(15) + labJournal(5) = 40
+    // (license, keywords, semanticAnnotation, creatorOrcid, dataObjects missing)
     const r = computeMetadataCompleteness({
       ...buildFullInputs(),
       collection: buildFullCollection({
         license: null,
-        heroImageUrl: null,
         dataObjectIds: [],
       } as unknown as Partial<Collection>),
       semanticAnnotationCount: 0,
       creatorOrcid: null,
+      keywordCount: 0,
     });
     expect(r.band).toBe("error");
   });
 
   it("band = warning when score in [50, 80)", () => {
-    // license missing (-20), heroImage missing (-5), description missing (-15)
+    // license missing (-20), keywords missing (-5), description missing (-15)
     // → 100 - 40 = 60
     const r = computeMetadataCompleteness({
       ...buildFullInputs(),
       collection: buildFullCollection({
         license: null,
-        heroImageUrl: null,
         description: "stub",
       } as unknown as Partial<Collection>),
+      keywordCount: 0,
     });
     expect(r.score).toBe(60);
     expect(r.band).toBe("warning");
   });
 
   it("band = success when score >= 80", () => {
-    // heroImage missing only — 100 - 5 = 95
+    // keywords missing only — 100 - 5 = 95
     const r = computeMetadataCompleteness({
       ...buildFullInputs(),
-      collection: buildFullCollection({ heroImageUrl: null }),
+      keywordCount: 0,
     });
     expect(r.score).toBe(95);
     expect(r.band).toBe("success");
@@ -349,7 +363,7 @@ describe("computeMetadataCompleteness — deep-link wiring", () => {
     }
   });
 
-  it("description / license / accessRights / annotations / labJournal / heroImage / dataObjects have on-page deepLink anchors", () => {
+  it("description / license / accessRights / annotations / labJournal / keywords / dataObjects have on-page deepLink anchors", () => {
     const r = computeMetadataCompleteness(buildFullInputs());
     const withAnchor = new Set([
       "description",
@@ -357,7 +371,7 @@ describe("computeMetadataCompleteness — deep-link wiring", () => {
       "accessRights",
       "semanticAnnotation",
       "labJournal",
-      "heroImage",
+      "keywords",
       "dataObjects",
     ]);
     for (const check of r.checks) {

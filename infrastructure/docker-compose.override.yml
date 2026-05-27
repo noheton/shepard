@@ -108,7 +108,8 @@ services:
       SHEPARD_PLUGINS_MINTER_LOCAL_ENABLED: "true"
       SHEPARD_PLUGINS_SPATIAL_ENABLED: "true"
       SHEPARD_PLUGINS_GIT_ENABLED: "true"
-      SHEPARD_PLUGINS_AAS_ENABLED: "true"
+      # AAS plugin — disabled by default (endpoints return 501 when `:AasConfig.enabled=false`).
+      # Enable at runtime via PATCH /v2/admin/aas/config or set SHEPARD_PLUGINS_AAS_ENABLED=true.
       # VID1b — enables the video capability declaration so shepard-plugin-imagebundle
       # dependency resolution succeeds. The VideoStreamReference endpoints are in-tree;
       # this toggle also enables the /v2/admin/plugins "video" row in the admin UI.

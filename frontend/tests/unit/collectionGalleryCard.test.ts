@@ -138,16 +138,16 @@ describe("metadata completeness — fast (no-IO) path used by card", () => {
       name: "",
       description: null,
       dataObjectIds: [],
-      heroImageUrl: null,
     });
     const result = computeMetadataCompleteness({
       collection: col,
       semanticAnnotationCount: null,
       labJournalCount: null,
       creatorOrcid: null,
+      keywordCount: null,
     });
     // Only checks that can pass without async data: none here (name is
-    // empty, description is null, dataObjectIds is empty, no heroImage).
+    // empty, description is null, dataObjectIds is empty).
     expect(result.score).toBe(0);
     expect(result.band).toBe("error");
   });
@@ -159,25 +159,27 @@ describe("metadata completeness — fast (no-IO) path used by card", () => {
       semanticAnnotationCount: null,
       labJournalCount: null,
       creatorOrcid: null,
+      keywordCount: null,
     });
     // name=10 + description=15 (≥50 chars) + dataObjects=15 → at least 40
     expect(result.score).toBeGreaterThanOrEqual(40);
   });
 
   it("band is 'warning' when score ∈ [50,80)", () => {
-    // name(10) + description(15) + dataObjects(15) + heroImage(5) = 45
-    // → add accessRights(10) = 55 → warning
+    // name(10) + description(15) + dataObjects(15) + accessRights(10) = 50
+    // → with license missing, no async fields → 50 = warning boundary
     const col = buildCollection({
-      heroImageUrl: "https://example.com/hero.png",
-    });
+      accessRights: "OPEN",
+    } as unknown as Partial<Collection>);
     const result = computeMetadataCompleteness({
       collection: col,
       semanticAnnotationCount: null,
       labJournalCount: null,
       creatorOrcid: null,
+      keywordCount: null,
     });
-    // Without license, creatorOrcid, semanticAnnotation, labJournal →
-    // score = 10+15+5+15 = 45 → still "error". Check band is not "success".
+    // Without license(20), creatorOrcid(10), semanticAnnotation(10),
+    // labJournal(5), keywords(5) → score = 10+15+10+15 = 50 → "warning".
     expect(result.band).not.toBe("success");
   });
 
@@ -188,6 +190,7 @@ describe("metadata completeness — fast (no-IO) path used by card", () => {
       semanticAnnotationCount: null,
       labJournalCount: null,
       creatorOrcid: null,
+      keywordCount: null,
     });
     // The component maps result.band directly to Vuetify color.
     expect(["error", "warning", "success"]).toContain(result.band);
