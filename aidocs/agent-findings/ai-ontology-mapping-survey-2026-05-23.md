@@ -1105,6 +1105,26 @@ When all of these are met, the slice is done:
    Yes — `aidocs/semantics/99-ontology-mapping.md` (or next free
    number); follow-up PR.
 
+### §11.3 OQ-6 Resolution (closed 2026-05-27)
+
+OQ-6 asked how per-user vs. admin AI credentials resolve when the ontology-mapper
+calls the AI SPI, how the audit trail is recorded, and how billing routes through
+the gateway.
+
+The answer is that the plugin makes no credential decisions of its own. It declares
+`@AiCapabilityRequirement(capability = STRUCTURED, hardDep = true)` and calls
+`LlmProvider.complete(request)` without any own provider config; the BYOK resolution
+chain in `aidocs/archive/platform/86-ai-plugin-design.md §4` then selects credentials
+in priority order — (1) user per-capability override in `:UserPreferences`, (2)
+instance `:AiCapabilityConfig` slot, (3) error — covering both the admin-only and
+user-BYOK deployments with a single call. The audit trail is handled by
+`(:User)-[:wasAssociatedWith]->(:AiActivity)` written by the AI plugin (§8 of the
+same doc), so accountability is recorded regardless of which credential path was
+taken. Billing routes via the LiteLLM proxy (§13), which already provides per-user,
+per-team, and per-model cost tracking, meaning the ontology-mapper plugin ships zero
+billing logic. Backlog row `ONT-MAP-AI-DEP` captured the `@AiCapabilityRequirement`
+declaration obligation and is now closed.
+
 ---
 
 ## Appendix A — Citation index
