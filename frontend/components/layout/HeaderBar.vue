@@ -663,6 +663,7 @@ function onEnterPressed() {
   font-weight: 400;
   font-style: normal;
   line-height: 26px;
+  white-space: nowrap; // HEADER-SEMANTIC-LINK-AUDIT: prevent label wrapping if nav grows
 }
 
 .header-search {
