@@ -9,6 +9,119 @@ Run **on the DLR cube** (bt-au-cube3.intra.dlr.de). All commands are copy-paste 
 
 ---
 
+## §0 Pre-import reset (execute before every fresh MFFD ingest)
+
+This step wipes all Shepard data from the dest instance (nuclide) while preserving
+Keycloak users and API keys. Required because the real-data ingest assumes a clean
+slate — partial state from previous synthetic/test runs will cause id-collisions and
+duplicate DOs.
+
+All commands run **on nuclide** from `/opt/shepard/infrastructure/`.
+
+### 0.1 — Stop the application stack (preserve Keycloak)
+
+Keycloak runs outside this compose file (managed separately). Stop only the Shepard
+services:
+
+```bash
+cd /opt/shepard/infrastructure
+docker compose stop backend frontend neo4j timescaledb shepard-garage
+```
+
+Do NOT stop the load balancer (caddy) or any external Keycloak service.
+
+### 0.2 — Wipe Neo4j data volume
+
+Neo4j data lives in a bind-mount at `/opt/shepard/neo4j/data`:
+
+```bash
+rm -rf /opt/shepard/neo4j/data/*
+# Confirm empty:
+ls /opt/shepard/neo4j/data/
+```
+
+### 0.3 — Wipe TimescaleDB data volume (all Flyway-managed schemas)
+
+TimescaleDB data lives in a bind-mount at `/opt/shepard/timescaledb`:
+
+```bash
+rm -rf /opt/shepard/timescaledb/*
+# Confirm empty:
+ls /opt/shepard/timescaledb/
+```
+
+### 0.4 — Wipe Garage S3 data directory
+
+Garage data lives in the compose bind-mount at `./garage-data` (i.e.
+`/opt/shepard/infrastructure/garage-data`). Only needed if the files-s3 profile
+was active:
+
+```bash
+rm -rf /opt/shepard/infrastructure/garage-data/*
+# Confirm empty (or skip if files-s3 profile was never brought up):
+ls /opt/shepard/infrastructure/garage-data/
+```
+
+### 0.5 — Restart the stack
+
+```bash
+cd /opt/shepard/infrastructure
+docker compose up -d
+```
+
+Then wait for the backend to become healthy (Flyway + Neo4j migrations run on startup):
+
+```bash
+# From repo root:
+make wait-for-health
+# Or directly:
+until curl -sf https://shepard-api.nuclide.systems/shepard/api/healthz/ready | grep -q UP; do
+  echo "waiting..."; sleep 5
+done
+echo "backend healthy"
+```
+
+### 0.6 — Verify Flyway migrations ran clean
+
+```bash
+docker compose exec timescaledb psql -U postgres -d ${POSTGRES_DB:-shepard} \
+  -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 10;"
+```
+
+Expected: the most recent row is V1.14.0 (channel_metadata schema) or higher, with
+`success = t`. If any row shows `success = f`, stop — a failed migration means the
+schema is in a partial state and the ingest will corrupt data.
+
+### 0.7 — Re-confirm API keys are valid
+
+After the reset, Shepard's internal user records are gone but Keycloak-issued JWTs
+remain valid. The importer re-creates internal user nodes on first authenticated call.
+Confirm the dest API key still authenticates:
+
+```bash
+curl -sf \
+  -H "X-API-KEY: ${SHEPARD_API_KEY}" \
+  https://shepard-api.nuclide.systems/v2/collections | head -c 200
+```
+
+Expected: a JSON array (possibly empty `[]`). A 401 means the JWT expired or Keycloak
+lost the user — re-mint via Step 1 of this runbook.
+
+### 0.8 — Run MFFD-TS-01 idempotency check (TimescaleDB chunk config)
+
+V1.13.0 (1-hour chunks + 4 space partitions) runs automatically via Flyway (step 0.6).
+Verify the chunk interval is correct:
+
+```bash
+docker compose exec timescaledb psql -U postgres -d ${POSTGRES_DB:-shepard} \
+  -c "SELECT integer_interval FROM timescaledb_information.dimensions WHERE hypertable_name='timeseries_data_points' AND dimension_type='Time';"
+```
+
+Expected: `3600000000000` (= 1 hour in nanoseconds). If blank, the hypertable was not
+created — check Flyway history for V1.13.0.
+
+---
+
 ## Step 1 — Re-mint source JWT on cube3
 
 The 2026-05-23 source token (jti eca5887a) is expired. Mint a fresh one:
