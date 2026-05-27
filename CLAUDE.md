@@ -1414,3 +1414,41 @@ Exceptions (allowed to require external config):
 - Features explicitly labelled `EXPERIMENTAL` in the admin UI that are off by default.
 - Plugins that are purely an integration adapter (no core Shepard functionality depends
   on them being active).
+
+## Always: every reference type ships a complete create + edit + delete UI
+
+Every reference type — in-tree (`TimeseriesReference`, `FileReference`, …) or
+plugin-defined (`VideoReference`, AAS reference, …) — must provide a **full UI
+surface** before it can be promoted to `beta` lifecycle status. A reference type
+whose plugin ships without all four surfaces is `alpha` regardless of backend
+completeness.
+
+**Minimum UI bar per reference type:**
+
+1. **Create** — a dialog or guided form with all required fields explicitly exposed
+   (not a raw JSON dump). Template-system integration (T1e) is preferred: if a
+   `ShepardTemplate` exists for the parent DataObject type, the creation wizard
+   should pre-fill from it.
+2. **Edit** — an edit dialog accessible from the reference detail page (or the
+   DataObject detail panel) covering every mutable field. A `PATCH` endpoint must
+   exist on the backend for the editable fields; the frontend calls it. Read-only
+   fields (e.g. upload checksums, `aiGenerated`) may be displayed but not editable.
+3. **Delete** — a confirmation step that properly unlinks then deletes the reference.
+   Re-using the existing `ConfirmDeleteDialog` pattern is sufficient.
+4. **List** — the parent DataObject detail page shows the reference in its per-kind
+   panel with a count badge and a row for each reference.
+
+**Plugin beta gate:** A plugin PR that ships a new reference type must include all
+four surfaces **in the same PR** to qualify as `beta`. A PR that ships only the
+backend (DAO + REST) is `alpha`; the PR description must say so and file a
+`REF-EDIT-*` backlog row for each missing surface.
+
+**In-tree reference types** follow the same rule: if a PATCH endpoint exists on the
+backend but the frontend lacks an edit dialog, file a `REF-EDIT-*` backlog row.
+
+The REF-EDIT-* audit table lives in `aidocs/16-dispatcher-backlog.md`.
+
+**Why:** A reference type without an edit path forces users to delete + recreate on
+every correction, destroying provenance continuity. The template-driven creation path
+(T1e) compounds this: without an edit form, template-populated values become
+permanent typos rather than correctable defaults.
