@@ -212,9 +212,21 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md",
     backend: "shipped",
   },
+  // FE-PROV-INSTANCE-REGISTRY
+  {
+    slug: "instance-registry",
+    surface: "admin",
+    title: "Instance Registry",
+    subtitle:
+      "Register peer Shepard instances (instanceId → displayName → baseUrl → dlrInstitute). Drives badge hover-text in the provenance UI — 'DLR BT, Augsburg' instead of 'dlr-augsburg'. Default: empty (operator opt-in).",
+    endpoint: "/v2/admin/instances",
+    backlogRow: "FE-PROV-INSTANCE-REGISTRY",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
 ];
 
-// TPL3: +1 for ontology-alignment (2026-05-26)
+// FE-PROV-INSTANCE-REGISTRY: +1 for instance-registry (2026-05-27)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

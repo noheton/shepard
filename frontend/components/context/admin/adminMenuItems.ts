@@ -27,6 +27,8 @@ export enum AdminFragments {
   ONTOLOGY_ALIGNMENT = "ontology-alignment",
   // SEMA-V6-014
   SEMANTIC_CONFIG = "semantic-config",
+  // FE-PROV-INSTANCE-REGISTRY
+  INSTANCE_REGISTRY = "instance-registry",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -151,5 +153,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Semantic Config",
     fragment: AdminFragments.SEMANTIC_CONFIG,
     icon: "mdi-tag-multiple-outline",
+  },
+  // FE-PROV-INSTANCE-REGISTRY
+  {
+    name: "Instance Registry",
+    fragment: AdminFragments.INSTANCE_REGISTRY,
+    icon: "mdi-map-marker-multiple-outline",
   },
 ];

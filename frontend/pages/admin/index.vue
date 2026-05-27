@@ -203,6 +203,13 @@ const landingCards = [
     title: "Ontology Alignment",
     description: "Read-only registry: how Shepard concepts map to BFO/IAO/PROV-O upper-ontology classes (TPL3).",
   },
+  // FE-PROV-INSTANCE-REGISTRY
+  {
+    fragment: AdminFragments.INSTANCE_REGISTRY,
+    icon: "mdi-map-marker-multiple-outline",
+    title: "Instance Registry",
+    description: "Register peer Shepard instances — resolves instanceId to friendly name in the provenance badge hover.",
+  },
 ];
 </script>
 
@@ -295,6 +302,11 @@ const landingCards = [
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.ONTOLOGY_ALIGNMENT"
       slug="ontology-alignment"
+    />
+    <!-- FE-PROV-INSTANCE-REGISTRY -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.INSTANCE_REGISTRY"
+      slug="instance-registry"
     />
   </PaneLayout>
 </template>

@@ -62,7 +62,12 @@ public class PublicEndpointRegistry {
     // plugins list). Must be reachable without a JWT because the
     // sidecar has no user credential. Only exposes which plugin ids
     // are enabled — no entity payload, no PII.
-    "/v2/instance/capabilities"
+    "/v2/instance/capabilities",
+    // FE-PROV-INSTANCE-REGISTRY — the frontend badge hover resolves
+    // an instance ID to a friendly name before the user authenticates.
+    // Only exposes operator-configured peer instance metadata (names,
+    // URLs) — no entity payload, no PII.
+    "/v2/admin/instances"
   );
 
   /**
