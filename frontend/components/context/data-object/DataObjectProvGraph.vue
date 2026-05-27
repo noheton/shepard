@@ -11,6 +11,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
+import { ACTION_COLORS, DEFAULT_NODE_COLOR, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
 if (process.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent]);
@@ -52,14 +53,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-const ACTION_COLORS: Record<string, string> = {
-  CREATE: "#7ECA8F",
-  UPDATE: "#4097CC",
-  DELETE: "#E56874",
-  READ:   "#8C8C8C",
-  EXECUTE: "#B799DB",
-};
 
 const chartOption = computed(() => {
   const do_ = props.dataObject;
@@ -152,7 +145,7 @@ const chartOption = computed(() => {
       target: "entity",
       lineStyle: {
         type: "solid",
-        color: ACTION_COLORS[latestAct?.actionKind ?? ""] ?? "#8C8C8C",
+        color: ACTION_COLORS[latestAct?.actionKind ?? ""] ?? DEFAULT_NODE_COLOR,
         width: 1.5,
       },
       label: { show: true, formatter: summary, fontSize: 9 },
@@ -177,17 +170,15 @@ const chartOption = computed(() => {
     },
     series: [
       {
-        type: "graph",
+        ...baseGraphSeriesConfig(),
         layout: "force",
-        roam: true,
         draggable: true,
+        edgeSymbolSize: [0, 7],
         force: {
           repulsion: 200,
           gravity: 0.03,
           edgeLength: [80, 160],
         },
-        edgeSymbol: ["none", "arrow"],
-        edgeSymbolSize: [0, 7],
         nodes,
         edges,
         emphasis: { focus: "adjacency" },
@@ -195,10 +186,9 @@ const chartOption = computed(() => {
           color: "inherit",
           formatter: (params: any) => {
             const n: string = params.name ?? "";
-            return n.length > 16 ? n.substring(0, 14) + "…" : n;
+            return truncateLabel(n, 16);
           },
         },
-        lineStyle: { curveness: 0.15 },
       },
     ],
   };

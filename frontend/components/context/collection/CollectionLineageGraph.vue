@@ -8,6 +8,7 @@ import dagre from "@dagrejs/dagre";
 import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import { computeLineageState, type LineageState } from "~/utils/lineageState";
+import { STATUS_COLORS, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
 if (process.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent, LegendComponent]);
@@ -20,16 +21,8 @@ const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, coll
 
 const NODE_CAP = 150;
 
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT:     "#8C8C8C",
-  IN_REVIEW: "#FCA54D",
-  READY:     "#4097CC",
-  PUBLISHED: "#7ECA8F",
-  ARCHIVED:  "#B799DB",
-};
-
 function statusColor(do_: DataObjectListItemV2): string {
-  return STATUS_COLORS[(do_ as any).status ?? ""] ?? "#8C8C8C";
+  return STATUS_COLORS[(do_ as any).status ?? ""] ?? STATUS_COLORS.DRAFT;
 }
 
 function doLabel(do_: DataObjectListItemV2): string {
@@ -154,26 +147,22 @@ const chartOption = computed(() => {
     },
     series: [
       {
-        type:      "graph",
+        ...baseGraphSeriesConfig(),
         layout:    "none",
-        roam:      true,
         draggable: false,
-        edgeSymbol:     ["none", "arrow"],
-        edgeSymbolSize: [0, 8],
         nodes,
         edges,
         emphasis: {
           focus:     "adjacency",
           lineStyle: { width: 2 },
         },
-        lineStyle: { curveness: 0.15 },
         label: {
           position: "bottom",
           fontSize:  11,
           color:    "inherit",
           formatter: (params: any) => {
             const n: string = params.name ?? "";
-            return n.length > 18 ? n.substring(0, 16) + "…" : n;
+            return truncateLabel(n, 18);
           },
         },
       },
@@ -222,7 +211,7 @@ const chartOption = computed(() => {
       </v-sheet>
       <div class="d-flex flex-wrap gap-2 mt-2 px-2">
         <v-chip
-          v-for="(color, status) in { DRAFT: '#8C8C8C', IN_REVIEW: '#FCA54D', READY: '#4097CC', PUBLISHED: '#7ECA8F', ARCHIVED: '#B799DB' }"
+          v-for="(color, status) in STATUS_COLORS"
           :key="status"
           size="x-small"
           variant="tonal"
