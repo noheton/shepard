@@ -1,9 +1,16 @@
 package de.dlr.shepard.plugins.hdf5;
 
+import de.dlr.shepard.plugin.HealthcheckSpec;
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
+import de.dlr.shepard.plugin.PortSpec;
+import de.dlr.shepard.plugin.SidecarSpec;
+import de.dlr.shepard.plugin.VolumeSpec;
 import io.quarkus.logging.Log;
 import java.net.URI;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -78,6 +85,70 @@ public final class HdfPluginManifest implements PluginManifest {
   @Override
   public String licence() {
     return LICENCE;
+  }
+
+  /**
+   * PM1f — declares the HSDS (Highly Scalable Data Service) sidecar this
+   * plugin needs to serve HDF5 payloads. HSDS provides an HDF-REST API
+   * over either a POSIX local-storage backend (quick-start default) or an
+   * S3-compatible backend (production; see {@code HSDS_AWS_S3_GATEWAY} env
+   * var for pointing at Garage).
+   *
+   * <p>This is additive-only for now — the {@link de.dlr.shepard.plugin.SidecarsAssembler}
+   * that reads this declaration is not yet deployed. The declaration exists
+   * so the tooling has the information ready (PM1f partial; compose removal
+   * deferred to the SidecarsAssembler milestone per
+   * PLUGIN-HDF5-AUDIT-2026-05-24-001).
+   *
+   * <p>The {@code backendEnvBinding} keys map directly to the
+   * {@code shepard.hdf.hsds.*} properties consumed by {@code HsdsClient}.
+   * The {@code SHEPARD_HDF_ENABLED} binding activates the plugin toggle;
+   * without it the HSDS sidecar starts but Shepard never calls it.
+   *
+   * <p>Default credentials ({@code admin}/{@code admin}) are intentional
+   * quick-start placeholders — the operator MUST override
+   * {@code HSDS_USERNAME} and {@code HSDS_PASSWORD} (and the matching
+   * {@code SHEPARD_HDF_HSDS_USERNAME}/{@code SHEPARD_HDF_HSDS_PASSWORD}
+   * backend bindings) before exposing to any network.
+   */
+  @Override
+  public List<SidecarSpec> sidecars() {
+    return List.of(
+      new SidecarSpec(
+        "shepard-hsds",
+        "hdfgroup/hsds:v0.9.5",
+        List.of(new PortSpec(5101, "hdf-rest-api")),
+        List.of(new VolumeSpec("hsds_storage", "/data")),
+        Map.of(
+          "BUCKET_NAME",
+          "shepard",
+          "HSDS_USERNAME",
+          "{{operator:HSDS_USERNAME:-admin}}",
+          "HSDS_PASSWORD",
+          "{{operator:HSDS_PASSWORD:-admin}}",
+          "LOG_LEVEL",
+          "INFO"
+        ),
+        new HealthcheckSpec(
+          "curl --fail --silent http://localhost:5101/about || exit 1",
+          Duration.ofSeconds(15),
+          Duration.ofSeconds(5),
+          6
+        ),
+        List.of(),
+        Map.of(
+          "SHEPARD_HDF_HSDS_ENDPOINT",
+          "http://{{sidecar.host}}:5101",
+          "SHEPARD_HDF_HSDS_USERNAME",
+          "{{operator:HSDS_USERNAME:-admin}}",
+          "SHEPARD_HDF_HSDS_PASSWORD",
+          "{{operator:HSDS_PASSWORD:-admin}}",
+          "SHEPARD_HDF_ENABLED",
+          "true"
+        ),
+        "512m"
+      )
+    );
   }
 
   @Override

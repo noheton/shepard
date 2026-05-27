@@ -49,4 +49,21 @@ class HdfPluginManifestTest extends AbstractPluginManifestTest<HdfPluginManifest
     manifest().onRegister(null);
     manifest().onUnregister(null);
   }
+
+  @Test
+  void sidecars_includes_hsds() {
+    assertThat(manifest().sidecars())
+      .extracting(de.dlr.shepard.plugin.SidecarSpec::id)
+      .contains("shepard-hsds");
+  }
+
+  @Test
+  void sidecars_hsds_has_correct_image() {
+    assertThat(manifest().sidecars())
+      .filteredOn(s -> s.id().equals("shepard-hsds"))
+      .singleElement()
+      .extracting(de.dlr.shepard.plugin.SidecarSpec::image)
+      .asString()
+      .contains("hdfgroup/hsds");
+  }
 }

@@ -44,4 +44,21 @@ class SpatiotemporalPluginManifestTest
   void licence_is_apache() {
     assertThat(manifest().licence()).isEqualTo("Apache-2.0");
   }
+
+  @Test
+  void sidecars_includes_postgis() {
+    assertThat(manifest().sidecars())
+      .extracting(de.dlr.shepard.plugin.SidecarSpec::id)
+      .contains("postgis");
+  }
+
+  @Test
+  void sidecars_postgis_has_correct_image() {
+    assertThat(manifest().sidecars())
+      .filteredOn(s -> s.id().equals("postgis"))
+      .singleElement()
+      .extracting(de.dlr.shepard.plugin.SidecarSpec::image)
+      .asString()
+      .contains("timescaledb");
+  }
 }

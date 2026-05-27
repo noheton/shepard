@@ -1,9 +1,16 @@
 package de.dlr.shepard.plugins.spatiotemporal;
 
+import de.dlr.shepard.plugin.HealthcheckSpec;
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
+import de.dlr.shepard.plugin.PortSpec;
+import de.dlr.shepard.plugin.SidecarSpec;
+import de.dlr.shepard.plugin.VolumeSpec;
 import io.quarkus.logging.Log;
 import java.net.URI;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -80,6 +87,75 @@ public final class SpatiotemporalPluginManifest implements PluginManifest {
   @Override
   public String licence() {
     return LICENCE;
+  }
+
+  /**
+   * PM1f — declares the PostGIS-enabled TimescaleDB sidecar this plugin
+   * needs. Since SPATIAL-V6-001 (Decision D2) PostGIS is co-located on
+   * the TimescaleDB instance via a custom image
+   * ({@code infrastructure/timescaledb-postgis/Dockerfile}); there is no
+   * separate {@code postgis} container. The sidecar id is {@code "postgis"}
+   * to match the legacy service name operators recognise.
+   *
+   * <p>This is additive-only for now — the {@link de.dlr.shepard.plugin.SidecarsAssembler}
+   * that reads this declaration to render compose snippets is not yet
+   * deployed. The declaration exists so the tooling has the information
+   * ready (PM1f partial; compose removal deferred to the SidecarsAssembler
+   * milestone per PLUGIN-SPATIAL-AUDIT-2026-05-24-001).
+   *
+   * <p>The image tag {@code timescale/timescaledb-postgis:2.24.0-pg16}
+   * is a logical identifier — the actual deployment uses a locally-built
+   * image from {@code infrastructure/timescaledb-postgis/Dockerfile}
+   * (extends {@code timescale/timescaledb:2.24.0-pg16} + {@code apk add postgis}).
+   * The {@code backendEnvBinding} keys match what the backend's
+   * {@code application.properties} reads via Quarkus config:
+   * {@code quarkus.datasource."spatial".*}.
+   */
+  @Override
+  public List<SidecarSpec> sidecars() {
+    return List.of(
+      new SidecarSpec(
+        "postgis",
+        "timescale/timescaledb-postgis:2.24.0-pg16",
+        List.of(new PortSpec(5432, "postgresql")),
+        List.of(new VolumeSpec("timescaledb_data", "/var/lib/postgres/data")),
+        Map.of(
+          "POSTGRES_DB",
+          "{{operator:POSTGRES_DB}}",
+          "POSTGRES_USER",
+          "{{operator:POSTGRES_USER}}",
+          "POSTGRES_PASSWORD",
+          "{{generate:hex:32}}",
+          "POSTGRES_SHEPARD_USER",
+          "{{operator:POSTGRES_SHEPARD_USER}}",
+          "POSTGRES_SHEPARD_USER_PW",
+          "{{generate:hex:32}}",
+          "PGDATA",
+          "/var/lib/postgres/data"
+        ),
+        new HealthcheckSpec(
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+          Duration.ofSeconds(15),
+          Duration.ofSeconds(5),
+          5
+        ),
+        List.of(
+          "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE EXTENSION IF NOT EXISTS postgis;'",
+          "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE EXTENSION IF NOT EXISTS timescaledb;'"
+        ),
+        Map.of(
+          "QUARKUS_DATASOURCE_SPATIAL_JDBC_URL",
+          "jdbc:postgresql://{{sidecar.host}}:5432/{{operator:POSTGRES_DB}}",
+          "QUARKUS_DATASOURCE_SPATIAL_USERNAME",
+          "{{operator:POSTGRES_SHEPARD_USER}}",
+          "QUARKUS_DATASOURCE_SPATIAL_PASSWORD",
+          "{{from:env.POSTGRES_SHEPARD_USER_PW}}",
+          "SHEPARD_SPATIAL_DATA_ENABLED",
+          "true"
+        ),
+        "512m"
+      )
+    );
   }
 
   @Override
