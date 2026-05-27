@@ -226,6 +226,17 @@
     </dependency>
 
     <!-- ====== test scope ====== -->
+    <!--
+      AbstractPluginManifestTest base class — cross-cutting manifest
+      contract assertions (id format, version, compat, sidecars).
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>

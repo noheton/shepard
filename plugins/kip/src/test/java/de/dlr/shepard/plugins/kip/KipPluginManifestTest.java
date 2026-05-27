@@ -1,8 +1,10 @@
 package de.dlr.shepard.plugins.kip;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.dlr.shepard.plugin.AbstractPluginManifestTest;
 import de.dlr.shepard.plugins.kip.resources.KipResolverRest;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -10,14 +12,26 @@ import org.junit.jupiter.api.Test;
 /**
  * PM1g — verifies that {@link KipPluginManifest} self-declares its
  * public-path prefix via {@link de.dlr.shepard.plugin.PluginManifest#publicPathPrefixes()}.
+ *
+ * <p>Structural contract (id format, version non-blank,
+ * shepardCompatibility non-blank, sidecars non-null) is provided for
+ * free by {@link AbstractPluginManifestTest}.
  */
-class KipPluginManifestTest {
+class KipPluginManifestTest extends AbstractPluginManifestTest<KipPluginManifest> {
 
-  private final KipPluginManifest manifest = new KipPluginManifest();
+  @Override
+  protected KipPluginManifest manifest() {
+    return new KipPluginManifest();
+  }
+
+  @Test
+  void id_isKip() {
+    assertThat(manifest().id()).isEqualTo("kip");
+  }
 
   @Test
   void publicPathPrefixes_returnsKipResolverPrefix() {
-    List<String> prefixes = manifest.publicPathPrefixes();
+    List<String> prefixes = manifest().publicPathPrefixes();
     assertEquals(1, prefixes.size());
     assertEquals(KipResolverRest.PUBLIC_PATH_PREFIX, prefixes.get(0));
   }
@@ -25,6 +39,6 @@ class KipPluginManifestTest {
   @Test
   void publicPaths_returnsEmpty() {
     // The KIP plugin uses a prefix (variable PID suffix), not an exact path.
-    assertTrue(manifest.publicPaths().isEmpty());
+    assertTrue(manifest().publicPaths().isEmpty());
   }
 }

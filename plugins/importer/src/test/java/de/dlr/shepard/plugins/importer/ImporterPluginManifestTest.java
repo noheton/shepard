@@ -1,9 +1,10 @@
 package de.dlr.shepard.plugins.importer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import de.dlr.shepard.plugin.AbstractPluginManifestTest;
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
 import java.util.ServiceLoader;
@@ -28,26 +29,33 @@ import org.mockito.Mockito;
  *       are non-null and non-empty — these are what an operator
  *       sees in {@code shepard-admin plugins list}.
  * </ul>
+ *
+ * <p>Structural contract (id format, version non-blank,
+ * shepardCompatibility non-blank, sidecars non-null) is provided for
+ * free by {@link AbstractPluginManifestTest}.
  */
-final class ImporterPluginManifestTest {
+final class ImporterPluginManifestTest extends AbstractPluginManifestTest<ImporterPluginManifest> {
+
+  @Override
+  protected ImporterPluginManifest manifest() {
+    return new ImporterPluginManifest();
+  }
 
   @Test
   void declares_expected_plugin_id_and_version() {
-    var m = new ImporterPluginManifest();
-    assertThat(m.id()).isEqualTo("importer");
-    assertThat(m.version()).isEqualTo("1.0.0-SNAPSHOT");
-    assertThat(m.shepardCompatibility()).isEqualTo(">=6.0.0-SNAPSHOT,<7");
+    assertThat(manifest().id()).isEqualTo("importer");
+    assertThat(manifest().version()).isEqualTo("1.0.0-SNAPSHOT");
+    assertThat(manifest().shepardCompatibility()).isEqualTo(">=6.0.0-SNAPSHOT,<7");
   }
 
   @Test
   void surfaces_operator_metadata() {
-    var m = new ImporterPluginManifest();
-    assertThat(m.title()).contains("Importer");
-    assertThat(m.description()).isNotBlank();
-    assertThat(m.homepageUrl()).isPresent();
-    assertThat(m.repositoryUrl()).isPresent();
-    assertThat(m.licence()).isEqualTo("Apache-2.0");
-    assertThat(m.dependencies()).isEmpty();
+    assertThat(manifest().title()).contains("Importer");
+    assertThat(manifest().description()).isNotBlank();
+    assertThat(manifest().homepageUrl()).isPresent();
+    assertThat(manifest().repositoryUrl()).isPresent();
+    assertThat(manifest().licence()).isEqualTo("Apache-2.0");
+    assertThat(manifest().dependencies()).isEmpty();
   }
 
   @Test
@@ -59,13 +67,12 @@ final class ImporterPluginManifestTest {
     // and the plugin correctly lands in FAILED state.  PluginRegistry
     // catches this RuntimeException and keeps the app running — the
     // fail-soft contract still holds at the registry level.
-    var m = new ImporterPluginManifest();
     var ctx = Mockito.mock(PluginContext.class);
-    assertThatThrownBy(() -> m.onRegister(ctx))
+    assertThatThrownBy(() -> manifest().onRegister(ctx))
       .isInstanceOf(IllegalStateException.class)
       .hasMessageContaining("SHEPARD_INSTANCE_SECRET is insecure");
     // onUnregister remains unconditionally safe.
-    m.onUnregister(ctx);
+    manifest().onUnregister(ctx);
   }
 
   @Test
