@@ -5,6 +5,9 @@ import {
 } from "@dlr-shepard/backend-client";
 import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
+import type { GitReferenceIO } from "@dlr-shepard/backend-client";
+import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
+import type { HdfReferenceIO } from "~/composables/context/useFetchHdfReferences";
 
 export const mapDataReferenceToDataTableElement = (
   ref: DataReference,
@@ -14,6 +17,80 @@ export const mapDataReferenceToDataTableElement = (
   meta: mapContainerMetaData(ref),
   created: { createdAt: ref.createdAt, createdBy: ref.createdBy },
   actions: { elementId: ref.id, showDetails: buildShowDetailsArgs(ref) },
+});
+
+// ── New-kind mappers (Git / Video / HDF5) ────────────────────────────────────
+// These reference kinds use appId (string) rather than numeric id.
+// The "Created" column shows "—" because these kinds don't carry createdAt/createdBy
+// in the current API shape.
+
+const FALLBACK_DATE = new Date(0);
+
+export const mapGitReferenceToDataTableElement = (
+  ref: GitReferenceIO,
+): DataTableElement => ({
+  type: "Git",
+  name: ref.repoUrl,
+  meta: {
+    appId: ref.appId,
+    repoUrl: ref.repoUrl,
+    gitRef: ref.ref ?? undefined,
+    gitPath: ref.path ?? undefined,
+  },
+  created: {
+    createdAt: FALLBACK_DATE,
+    createdBy: "—",
+  },
+  actions: {
+    elementAppId: ref.appId,
+    showDetails: { enabled: false, pathFragment: "" },
+  },
+});
+
+export const mapVideoReferenceToDataTableElement = (
+  ref: VideoStreamReferenceIO,
+): DataTableElement => {
+  const resolution =
+    ref.width != null && ref.height != null
+      ? `${ref.width}×${ref.height}`
+      : null;
+  return {
+    type: "Video",
+    name: ref.name ?? ref.appId,
+    meta: {
+      appId: ref.appId,
+      durationSeconds: ref.durationSeconds,
+      resolution,
+    },
+    created: {
+      createdAt: FALLBACK_DATE,
+      createdBy: "—",
+    },
+    actions: {
+      elementAppId: ref.appId,
+      showDetails: { enabled: false, pathFragment: "" },
+    },
+  };
+};
+
+export const mapHdfReferenceToDataTableElement = (
+  ref: HdfReferenceIO,
+): DataTableElement => ({
+  type: "HDF5",
+  name: ref.datasetPath ?? ref.appId,
+  meta: {
+    appId: ref.appId,
+    datasetPath: ref.datasetPath,
+    hdfContainerAppId: ref.hdfContainerAppId,
+  },
+  created: {
+    createdAt: FALLBACK_DATE,
+    createdBy: "—",
+  },
+  actions: {
+    elementAppId: ref.appId,
+    showDetails: { enabled: false, pathFragment: "" },
+  },
 });
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {

@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import DataObjectNotebooksPane from "~/components/context/lab-journal/DataObjectNotebooksPane.vue";
-import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
-import HdfReferencesPane from "~/components/context/dataobject/HdfReferencesPane.vue";
-import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
+// REF-UNIFIED-TABLE: GitReferencesPane, VideoStreamReferencesPane, HdfReferencesPane removed
+// from this page; they now live in frontend/components/context/dataobject/legacy/ for reuse.
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
@@ -13,6 +12,15 @@ import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
+import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
+import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
+import { useFetchHdfReferences } from "~/composables/context/useFetchHdfReferences";
+import {
+  mapGitReferenceToDataTableElement,
+  mapVideoReferenceToDataTableElement,
+  mapHdfReferenceToDataTableElement,
+} from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
+import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
 
 definePageMeta({ layout: "collection" });
 
@@ -30,6 +38,53 @@ const { dataReferences } = useDataReferencesByDataObject(
   dataObjectId,
 );
 const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
+
+// REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.
+// These composables are set up once dataObject.appId is available, since
+// the new-kind endpoints use appId (string) rather than numeric id.
+const extraReferenceItems = ref<DataTableElement[]>([]);
+
+// Hold refs to sub-composable refresh functions so the panel can request re-fetch.
+const refreshGitRefs = ref<(() => void) | null>(null);
+const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
+const refreshHdfRefs = ref<(() => void | Promise<void>) | null>(null);
+
+watch(
+  () => dataObject.value?.appId,
+  (appId) => {
+    if (!appId) return;
+
+    const gitComposable = useFetchGitReferences(appId);
+    refreshGitRefs.value = gitComposable.refresh;
+
+    const videoComposable = useFetchVideoStreamReferences(appId);
+    refreshVideoRefs.value = videoComposable.refresh;
+
+    const hdfComposable = useFetchHdfReferences(appId);
+    refreshHdfRefs.value = hdfComposable.refresh;
+
+    // Reactively derive extraReferenceItems from the three composable states.
+    watchEffect(() => {
+      extraReferenceItems.value = [
+        ...gitComposable.gitReferences.value.map(mapGitReferenceToDataTableElement),
+        ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
+        ...hdfComposable.references.value.map(mapHdfReferenceToDataTableElement),
+      ];
+    });
+  },
+  { immediate: true },
+);
+
+function refreshExtraReferences() {
+  refreshGitRefs.value?.();
+  refreshVideoRefs.value?.();
+  refreshHdfRefs.value?.();
+}
+
+/** Total count for the "Data References" panel badge: legacy + new kinds. */
+const totalReferenceCount = computed(
+  () => (dataReferences.value?.length ?? 0) + extraReferenceItems.value.length,
+);
 
 // PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
 // Best-effort: empty when the DataObject has no typed predecessors or backend
@@ -557,8 +612,15 @@ async function saveEmbargoEdit() {
                     />
                   </div>
                 </ExpansionPanelItem>
+                <!-- REF-UNIFIED-TABLE: single unified references table covering
+                     all reference kinds (TimeSeries, File Bundle, Structured Data,
+                     Git, Video, HDF5). Filter chips at the top let users narrow
+                     to a specific kind. New kinds show in the table via extraItems.
+                     The old per-kind panes (GitReferencesPane, VideoStreamReferencesPane,
+                     HdfReferencesPane) are preserved in components/context/dataobject/legacy/
+                     but no longer mounted here. -->
                 <ExpansionPanelItem
-                  :count="dataReferences.length"
+                  :count="totalReferenceCount"
                   title="Data References"
                 >
                   <template v-if="isAllowedToEditCollection" #append>
@@ -586,23 +648,10 @@ async function saveEmbargoEdit() {
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
+                    :extra-items="extraReferenceItems"
+                    :data-object-app-id="dataObject.appId ?? undefined"
+                    @refresh="refreshExtraReferences"
                   />
-                  <template v-if="dataObject.appId">
-                    <v-divider class="my-6" />
-                    <GitReferencesPane :data-object-app-id="dataObject.appId" />
-                    <v-divider class="my-6" />
-                    <VideoStreamReferencesPane
-                      :data-object-app-id="dataObject.appId"
-                      :can-upload="!!isAllowedToEditCollection"
-                    />
-                    <v-divider class="my-6" />
-                    <!-- A5c: HDF5 dataset references. Panel handles 404
-                         gracefully when shepard.hdf.enabled=false. -->
-                    <HdfReferencesPane
-                      :data-object-app-id="dataObject.appId"
-                      :can-edit="!!isAllowedToEditCollection"
-                    />
-                  </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
                   :count="relatedEntities.length"
