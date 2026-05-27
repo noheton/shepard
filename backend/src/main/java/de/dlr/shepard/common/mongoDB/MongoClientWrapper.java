@@ -9,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -21,6 +22,13 @@ public class MongoClientWrapper {
 
   @ConfigProperty(name = "quarkus.mongodb.connection-string")
   String connectionStringProperty;
+
+  /**
+   * Explicit database name override. When set, it takes precedence over the path
+   * segment in the connection string and suppresses the fallback warning.
+   */
+  @ConfigProperty(name = "quarkus.mongodb.database")
+  Optional<String> explicitDatabaseName;
 
   @Inject
   MongoClient mongoClient;
@@ -37,6 +45,13 @@ public class MongoClientWrapper {
   @PostConstruct
   public void init() {
     String databaseName = determineDatabaseName(connectionStringProperty);
+    if (shouldWarnAboutFallback(databaseName, explicitDatabaseName)) {
+      Log.warn(
+        "MongoDB database name not explicitly configured — using fallback 'database'. " +
+        "Set quarkus.mongodb.connection-string to include a DB path segment or set " +
+        "quarkus.mongodb.database explicitly."
+      );
+    }
     try {
       this.mongoDatabase = mongoClient.getDatabase(databaseName);
     } catch (IllegalArgumentException e) {
@@ -48,12 +63,31 @@ public class MongoClientWrapper {
   protected static String determineDatabaseName(String connectionString) {
     String dbName = new ConnectionString(connectionString).getDatabase();
     if (dbName == null || dbName.isBlank()) {
-      Log.warn(
-        "Could not retrieve a MongoDB database name from the connection string. Using fallback default database name: 'database'."
-      );
+      // No DB segment in the URI — caller (init) will emit the operator warning.
       return DEFAULT_DATABASE_NAME;
     }
     return dbName;
+  }
+
+  /**
+   * Returns {@code true} when the resolved database name is the silent fallback
+   * {@code "database"} AND no explicit {@code quarkus.mongodb.database} override
+   * is configured.  When the operator has set the explicit key the fallback is
+   * intentional and no warning is needed.
+   *
+   * <p>Extracted as a static helper so it can be tested without a running MongoDB
+   * or CDI container.
+   *
+   * @param resolvedName     name returned by {@link #determineDatabaseName}
+   * @param explicitOverride value of the {@code quarkus.mongodb.database} config key
+   * @return {@code true} when the operator warning should be emitted
+   */
+  static boolean shouldWarnAboutFallback(String resolvedName, Optional<String> explicitOverride) {
+    if (!DEFAULT_DATABASE_NAME.equals(resolvedName)) {
+      return false;
+    }
+    // Explicit override present and non-blank → operator knew what they were doing.
+    return explicitOverride.isEmpty() || explicitOverride.get().isBlank();
   }
 
   /**

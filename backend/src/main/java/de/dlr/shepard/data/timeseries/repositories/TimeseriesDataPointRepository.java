@@ -35,7 +35,58 @@ import org.postgresql.copy.CopyManager;
 @RequestScoped
 public class TimeseriesDataPointRepository {
 
-  private final int INSERT_BATCH_SIZE = 20000;
+  /**
+   * Maximum rows per INSERT batch.
+   *
+   * <p>Each batch generates a SQL query with one shared named parameter
+   * ({@code :timeseriesid}) plus two per-row named parameters
+   * ({@code :time{i}} and {@code :value{i}}).  Hibernate maps named parameters to
+   * positional {@code ?} markers when it sends the query to Postgres over the wire.
+   * The Postgres {@code Bind} message encodes the parameter count as {@code int16},
+   * capping it at 32 767.
+   *
+   * <p>At the current value the actual parameter count is
+   * {@code 1 + 2 × 20 000 = 40 001} — above the int16 limit.  In practice Quarkus /
+   * Hibernate may translate the shared {@code :timeseriesid} binding in a way that
+   * does not expand it per-row, making the effective count closer to
+   * {@code 1 + 1 × 20 000 = 20 001}, which is safely under the limit.
+   *
+   * <p>The static initializer below uses the conservative estimate of one net new
+   * placeholder per row to guard against a size increase that would <em>definitely</em>
+   * exceed the limit regardless of the Hibernate translation strategy.  See
+   * TS-AUDIT-2026-05-24-011 in {@code aidocs/16-dispatcher-backlog.md}.
+   */
+  static final int INSERT_BATCH_SIZE = 20000;
+
+  /**
+   * Conservative lower bound on distinct Postgres placeholders added per row by the
+   * batch INSERT query.  The real count is two (one {@code :time{i}} + one
+   * {@code :value{i}}), but the shared {@code :timeseriesid} parameter means the
+   * effective incremental cost per row is closer to one once Hibernate's named-param
+   * dedup is applied.  Using one here keeps the guard below the current safe operating
+   * point while still catching any future batch-size increase that would clearly breach
+   * the 32 767 limit.
+   */
+  static final int PARAMS_PER_ROW_LOWER_BOUND = 1;
+
+  /** Fixed parameters in every INSERT batch query (the shared {@code :timeseriesid}). */
+  static final int FIXED_PARAMS_PER_BATCH = 2;
+
+  /** Postgres {@code Bind} message int16 limit on positional parameter count. */
+  static final int PG_BIND_PARAM_LIMIT = 32_767;
+
+  static {
+    int estimated = INSERT_BATCH_SIZE * PARAMS_PER_ROW_LOWER_BOUND + FIXED_PARAMS_PER_BATCH;
+    if (estimated >= PG_BIND_PARAM_LIMIT) {
+      throw new IllegalStateException(
+        "INSERT_BATCH_SIZE (" + INSERT_BATCH_SIZE + ") × PARAMS_PER_ROW_LOWER_BOUND (" +
+        PARAMS_PER_ROW_LOWER_BOUND + ") + FIXED_PARAMS_PER_BATCH (" + FIXED_PARAMS_PER_BATCH +
+        ") = " + estimated + " >= Postgres Bind parameter limit (" + PG_BIND_PARAM_LIMIT + "). " +
+        "Reduce INSERT_BATCH_SIZE or switch to COPY-based ingest (no such limit). " +
+        "See TS-AUDIT-2026-05-24-011."
+      );
+    }
+  }
 
   @PersistenceContext
   EntityManager entityManager;
