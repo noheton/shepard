@@ -450,6 +450,114 @@ Cross-references: `feedback_done_criteria.md` (parent rule — "backend + fronte
 + tests; all three"); `feedback_ui_api_parity.md` (converse — every UI action
 callable via REST; this rule's converse — every REST action visible via UI).
 
+## Always: the audit trail is a graph, not a log
+
+Every action in Shepard — data mutation, annotation write, AI invocation, admin
+config change — is recorded as a first-class `:Activity` node in Neo4j with
+full PROV-O edges (`WAS_ASSOCIATED_WITH` → `:User`, `GENERATED` → result entity,
+`USED` → input entities). The audit trail is **queryable by the same tools as the
+data itself**: Cypher, SPARQL, the provenance UI panel. The HMAC chain
+(`auditHmac`/`auditPrevHmac`) makes it tamper-evident without leaving the graph.
+
+Rules:
+- New entity types that are audit-worthy get PROV-O edges wired by `ActivityDAO.wireEdges()`.
+- New endpoints needing richer audit metadata add nullable fields to `:Activity`
+  (schema-free additive — see principle below); never a separate log table.
+- When a feature needs tamper-evidence, extend the HMAC chain via
+  `HmacChainService.stamp()` as a best-effort secondary write (never blocking).
+- Content negotiation on provenance endpoints supports JSON-LD, PROV-N, m4i
+  flavour, and raw JSON; new formats are added as `MediaType` constants.
+
+**Why:** Storing provenance in the same substrate as the data it describes means
+"show me all AI annotations on TR-004 after June 1" is one Cypher query — no ETL,
+no log-sink correlation, no separate audit system to keep in sync.
+
+## Always: cross-cutting context travels in HTTP headers, not request bodies
+
+Context that cuts across many endpoints — AI agent identity, delegation chain,
+client version, provenance mode — goes in a custom `X-Shepard-*` request or
+response header, not in the request body.
+
+Rules:
+- New cross-cutting context uses a custom `X-Shepard-*` header, documented in
+  `aidocs/16-dispatcher-backlog.md` with its consuming filter.
+- The filter/interceptor layer reads the header, validates it, and sets a
+  request-scoped CDI bean for downstream consumption. Never read a cross-cutting
+  header directly in a REST resource method.
+- Response headers (`X-Provenance-Mode`, `X-Activity-AppId`) follow the same
+  convention for context the caller may want to observe.
+- This is what makes `sourceMode ∈ {human | ai | collaborative}` work without
+  body-schema changes: `X-AI-Agent` header presence → `sourceMode = "ai"` in the
+  Activity, satisfying EU AI Act Art. 50 machine-readable disclosure.
+
+**Why:** Request body shapes are versioned and domain-specific. Injecting
+infrastructure context (who drove the call, what mode, what agent) into them
+couples the body schema to deployment concerns. Headers are orthogonal to the
+body, naturally stripped by reverse proxies, and trivially extended without a
+version bump.
+
+## Always: every persisted entity carries a single stable shepardId
+
+Every entity across every storage substrate (Neo4j, TimescaleDB, Postgres,
+MongoDB, Garage/S3) carries one UUID v7 field — currently called `appId` in the
+codebase, planned coordinated rename to `shepardId` (task #123). This is the
+only ID that crosses substrate boundaries. Semantic annotations, provenance
+edges, MCP tool arguments, and REST resource paths all use this handle
+exclusively — never database-internal IDs (Neo4j node IDs, MongoDB ObjectIds,
+TimescaleDB serial PKs, S3 paths).
+
+Rules:
+- Every new persisted entity type, in any substrate, gets a UUID v7 `appId`
+  field minted at creation time (`AppIdGenerator.next()`).
+- For Neo4j entities, implement `HasAppId`; `GenericDAO.createOrUpdate()` mints
+  automatically when null.
+- For Postgres/TimescaleDB, add `appId UUID NOT NULL` with a unique index via
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+- REST resource paths use `appId` as the path parameter. Internal resolution to
+  substrate keys is a DAO implementation detail.
+- MCP tool arguments accept `appId` strings only.
+
+**Note on naming:** `appId` is the current Java field name. The rename to
+`shepardId` is deferred to a single coordinated pass (task #123,
+`feedback_appid_to_shepardid.md`). Do not ad-hoc rename individual fields
+ahead of that pass.
+
+**Note on the `urn:shepard:*` namespace:** This is a separate concern — it is
+the predicate namespace for semantic annotation *vocabulary terms* (e.g.,
+`urn:shepard:spatial:axis`), owned by the organizing ontology. Do not confuse
+the entity identity UUID with the predicate namespace.
+
+**Why:** The timeseries 5-tuple (measurement/device/location/symbolicName/field)
+is the live cost of violating this principle. Every new substrate entity that
+skips a `appId` column creates a future TS-CORE-SCHEMA-01-style migration.
+
+## Always: evolve in a new namespace; never mutate an existing one
+
+Every extension — API paths, migration files, property keys, semantic predicates
+— is added in a new, additive namespace rather than modifying an existing one.
+
+Rules:
+- New endpoints go under `/v2/<resource>`, never as a new method on a
+  `/shepard/api/` resource.
+- New semantic predicates go under `urn:shepard:<your-domain>:<your-role>`,
+  documented in the organizing ontology manifest; never reuse or extend a
+  third-party term by mutation.
+- New Neo4j migrations get a fresh `V(N+1)__` file with `IF NOT EXISTS` guards
+  and a rollback twin (`V(N+1)_R__*`); never edit a migration file that has been
+  applied to any production instance.
+- New deploy-time config keys follow `shepard.v2.<feature>.<knob>`; their
+  runtime-mutable counterparts get a `:*Config` singleton using the same name.
+- New Postgres columns use `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` with a
+  nullable or defaulted type; no backfill unless the field must be queryable for
+  correctness.
+
+**Why:** Mutating a shared namespace creates coordination debt — upstream
+upgraders must disentangle the change, clients absorb a breaking path change,
+operators reason about mixed-version state. New namespaces let old and new
+coexist at zero forced-upgrade cost. The `/v2/` split, the `urn:shepard:*`
+predicate namespace, and the `IF NOT EXISTS` migration guards are all the same
+principle applied at different layers.
+
 ## Specialized agent roles
 
 Reusable prompt scaffolds for specialized review and design tasks. Copy the

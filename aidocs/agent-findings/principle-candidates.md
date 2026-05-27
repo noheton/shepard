@@ -13,6 +13,8 @@ candidate is grounded in file-level evidence, not inference.*
 
 ## Principle 1 — Best-Effort Secondary Writes
 
+**User perspective:** When you upload data or annotate a DataObject, the operation never fails because the audit trail had a hiccup. Provenance recording, quality scoring, and HMAC chain stamping all happen in the background — if one of them trips, you still get your data saved, and the system logs a warning so an admin can investigate. The audit record catches up; your operation doesn't wait for it. You will never see a 500 error that says "your upload failed because the provenance write timed out."
+
 **Pattern observed:** Every "observability" write — provenance Activity recording,
 HMAC chain stamping, AI provenance capture, plugin onRegister hooks — is wrapped in
 a `try/catch` that logs at WARN/DEBUG on failure and allows the primary request to
@@ -48,6 +50,8 @@ operation is not.
 ---
 
 ## Principle 2 — Fail-Soft Registry
+
+**User perspective:** If a plugin or AI provider isn't installed or configured, Shepard still starts up and the rest of the system works normally. You might see "AI quality scoring unavailable" on a DataObject instead of a score — but you can still upload data, browse collections, run searches, and annotate. The missing capability is surfaced as a clear message, not as a crashed service that takes everything else down with it. An admin can add the missing plugin at runtime without a restart.
 
 **Pattern observed:** Extension point registries (`AiRegistry`, `MinterRegistry`,
 `PluginRegistry`) never throw during startup discovery. When zero implementations are
@@ -85,6 +89,8 @@ far more operator-friendly than a startup abort.
 ---
 
 ## Principle 3 — Runtime-Mutable Config Singleton
+
+**User perspective:** An admin can change Shepard's behaviour — rate limits, AI endpoints, ontology URLs, retention windows — without restarting the service or touching a config file. They go to the admin panel, flip the knob, and it takes effect immediately. The default is baked in when the system first starts so there's nothing to configure out of the box; the runtime override is available when the deployment needs to differ from the default. No restart means no downtime for your active analyses.
 
 **Pattern observed:** Every feature that needs an operator-tunable knob gets a
 single `*Config` Neo4j node (`HasAppId`, single instance per deployment), a
@@ -127,6 +133,8 @@ the properties file as a baked-in default for IaC.
 
 ## Principle 4 — Schema-Free Additive Extension
 
+**User perspective:** When a new feature is deployed — say, a quality score field on TimeSeries, or a license field on Collections — your existing data doesn't break and doesn't require a migration that locks the DB for hours. Old DataObjects simply don't have the new field yet; the system treats that as "not set." You can start filling it in gradually without touching anything from before. The system never forces you to backfill 10,000 historical records before you can use a new feature.
+
 **Pattern observed:** New fields on existing Neo4j node entities are added without a
 schema migration: they carry no `@Property` annotation (or one without a `NOT NULL`
 constraint), have a Javadoc comment noting "No migration required — absent on
@@ -164,6 +172,8 @@ new features incrementally adoptable on deployments that have existing data.
 ---
 
 ## Principle 5 — Auditing-as-Graph
+
+**User perspective:** When you look at a DataObject and ask "who touched this, when, and why?" — Shepard doesn't give you a flat log file. It gives you a graph you can actually query: *"show me all changes User A made to this collection after the June test campaign"*, *"which AI models annotated these measurements?"*, *"what did TR-004's anomaly investigation chain look like, step by step?"* The audit history is stored the same way as the data itself, so it works with all the same query tools — SPARQL, Cypher, the provenance panel in the UI. You never have to correlate two separate systems (data here, logs somewhere else).
 
 **Pattern observed:** The audit trail is not a log file, not an append-only SQL
 table, and not a set of `updatedAt` timestamps — it is a first-class subgraph in
@@ -207,6 +217,8 @@ log sink) and makes the audit surface a first-class citizen of the semantic laye
 
 ## Principle 6 — HTTP Header as Cross-Cutting Context Channel
 
+**User perspective:** When a script, an MCP tool, or a CI pipeline calls Shepard's API, it can add a small flag in the HTTP header saying "this was AI-generated" or "this call is on behalf of user X." Shepard records that in the audit trail automatically — without the API endpoint needing to change shape. So when you look at the provenance for an annotation, you see not just *what* changed, but *who drove it* (human / AI / collaborative). This is what makes the EU AI Act Art. 50 disclosure work: the AI's fingerprint on every action, without any extra fields in the data format.
+
 **Pattern observed:** Features that need to pass context across the HTTP boundary
 without polluting the request body use custom request headers. The pattern appears
 for: AI agent identity (`X-AI-Agent` → `sourceMode = "ai"` in Activity), source-user
@@ -248,6 +260,8 @@ service just sees `currentRequest.sourceMode()`, not `requestBody.xAiAgent`.
 
 ## Principle 7 — Capability-Slot Indirection
 
+**User perspective:** As a researcher at DLR, you connect Shepard to the SAIA AI service. A colleague at another institute connects their Shepard to an Ollama instance running locally. A third deployment uses OpenAI. The feature — anomaly detection, annotation suggestions, quality scoring — works the same way in all three. An admin changes which AI backend fills each slot from the admin panel, with no code change and no restart. What the feature *does* is defined in Shepard; who *delivers* it is an operator decision.
+
 **Pattern observed:** When a feature can be served by multiple competing
 implementations (LLM providers, PID minters, notification transports), the code
 never resolves the implementation directly by class name. Instead, it requests a
@@ -286,7 +300,11 @@ changing config alone.
 
 ---
 
-## Principle 8 — appId as Universal Cross-Substrate Handle
+## Principle 8 — appId as Universal Cross-Substrate Handle (future name: shepardId)
+
+**User perspective — clarification:** These are two separate things. The `urn:shepard:*` predicate namespace is about how annotation vocabulary *terms* are named (e.g., `urn:shepard:spatial:axis`) — that is captured in the organizing ontology / annotation preselection principle. This principle is about a completely different thing: the stable UUID entity identity that every piece of data carries. Currently called `appId` in the Java code; a coordinated rename to `shepardId` is planned (tracked in memory `feedback_appid_to_shepardid.md`).
+
+**User perspective:** Every entity in Shepard — across every storage system — carries the same single UUID. When you write a Python script to fetch a TimeSeries, annotate a DataObject, or query via the MCP tools, you use one ID and it works everywhere. You never need to know "this is the Neo4j node ID" vs "this is the database primary key" — those are internals. The `shepardId` is the stable public handle. The timeseries 5-tuple (measurement + device + location + symbolicName + field) is exactly the cost of *not* following this principle early enough — and the ongoing TS-CORE-SCHEMA-01 migration fixes it.
 
 **Pattern observed:** Every persisted entity across all five substrates (Neo4j,
 TimescaleDB, MongoDB, PostGIS, Garage/MinIO) carries the same UUID v7 `appId`
@@ -329,6 +347,8 @@ the "we violated this principle and paid the price" case.
 
 ## Principle 9 — Skip-Capture Handoff
 
+**User perspective:** When you annotate a DataObject with an AI-suggested term, the provenance record shows exactly one entry: "AI model X suggested this annotation at confidence 0.87, user confirmed it." You don't see two duplicate entries — one generic "annotation written" and one specific "AI annotation written." The system knows when a feature is recording its own richer provenance and steps back, so your activity feed stays clean and meaningful rather than double-counting every action that an AI touches.
+
 **Pattern observed:** The `ProvenanceCaptureFilter` automatically records one
 `:Activity` per mutating 2xx request. But some handlers (annotation endpoints, AI
 invocation endpoints) need to record a richer or differently-typed Activity with
@@ -368,6 +388,8 @@ Without it, every annotation write would generate two Activities.
 ---
 
 ## Principle 10 — Evolve in New Namespace, Never Mutate Old
+
+**User perspective:** When Shepard ships a new feature, it does not break anything that was working before. New API endpoints appear at `/v2/something-new`; old endpoints at `/shepard/api/...` don't change. New annotation vocabulary terms live under `urn:shepard:your-domain:your-role` without touching existing ontology terms. Database migrations are always additive — a new field that old rows simply don't have yet, rather than a column that breaks existing data. Scripts you wrote today still work after an upgrade; annotations you made last year don't conflict with new vocabulary the system learned this month; if you're running an older client against a newer server, it still speaks the same language for everything it already knew.
 
 **Pattern observed:** Every extension point — API paths, migration files, property
 keys, semantic predicates — is added in a new, additive namespace rather than
