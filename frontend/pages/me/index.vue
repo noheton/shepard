@@ -20,9 +20,9 @@ const { routeFragment } = useRouteFragment();
 const landingCards = [
   {
     fragment: UserFragments.PROFILE,
-    icon: "mdi-account-outline",
-    title: "Profile",
-    description: "Your display name, avatar, and account information.",
+    icon: "mdi-account-circle-outline",
+    title: "Profile & Avatar",
+    description: "Upload or change your avatar, set your display name, and update your ORCID.",
   },
   {
     fragment: UserFragments.API_KEYS,
