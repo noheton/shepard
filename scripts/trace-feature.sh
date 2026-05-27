@@ -14,6 +14,10 @@
 #   7. aidocs/data/00-model-inventory.md model delta
 #   8. GitHub Issue (if any) — best-effort via `gh`
 #   9. Release tag containing the merge commit
+#  10. aidocs/44-fork-vs-upstream-feature-matrix.md matrix row
+#  11. Open PRs referencing the ID — best-effort via `gh pr list`
+#  12. Plugin docs — plugins/*/docs/*.md
+#  13. User-facing docs — docs/reference/*.md and docs/help/*.md
 #
 # If a shipped feature returns nothing from one of these surfaces,
 # traceability is broken. Fix the missing surface before shipping
@@ -204,6 +208,73 @@ if [ -n "${LAST_COMMIT}" ]; then
   fi
 else
   dim "  (no commits to anchor a release lookup)"
+fi
+
+# ─── 10. aidocs/44 fork-vs-upstream matrix ───────────────────────
+section "10. aidocs/44 fork-vs-upstream feature matrix"
+if [ -f aidocs/44-fork-vs-upstream-feature-matrix.md ]; then
+  if ! grep -n "\\b${ID}\\b" aidocs/44-fork-vs-upstream-feature-matrix.md; then
+    dim "  (no aidocs/44 row — fork-vs-upstream matrix doesn't list this; flip the row when the feature ships)"
+  fi
+else
+  dim "  aidocs/44-fork-vs-upstream-feature-matrix.md missing"
+fi
+
+# ─── 11. open PRs (best-effort via gh) ───────────────────────────
+section "11. open PRs referencing ${ID}"
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    PRS=$(timeout 5 gh pr list --search "${ID}" --state open \
+           --json number,title,state,url 2>/dev/null \
+           | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for pr in data:
+    print(f"  #{pr[\"number\"]:>4}  {pr[\"state\"]:>6}  {pr[\"title\"]}")
+    print(f"         {pr[\"url\"]}")
+' 2>/dev/null)
+    if [ -n "${PRS}" ]; then
+      echo "${PRS}"
+    else
+      dim "  (no open PRs reference this ID)"
+    fi
+  else
+    dim "  gh not authenticated; skipping (run \`gh auth login\`)"
+  fi
+else
+  dim "  gh CLI not installed; skipping"
+fi
+
+# ─── 12. plugin docs ─────────────────────────────────────────────
+section "12. plugin docs (plugins/*/docs/*.md)"
+if [ -d plugins ]; then
+  HITS=$(grep -rln "\\b${ID}\\b" plugins/ --include='*.md' 2>/dev/null)
+  if [ -n "${HITS}" ]; then
+    echo "${HITS}"
+  else
+    dim "  (no plugin-docs references — fine if the feature is not plugin-touching)"
+  fi
+else
+  dim "  plugins/ directory not found"
+fi
+
+# ─── 13. user-facing docs ────────────────────────────────────────
+section "13. user-facing docs (docs/reference/ + docs/help/)"
+USERDOC_HITS=""
+if [ -d docs/reference ]; then
+  USERDOC_HITS=$(grep -rln "\\b${ID}\\b" docs/reference/ --include='*.md' 2>/dev/null)
+fi
+if [ -d docs/help ]; then
+  HELP_HITS=$(grep -rln "\\b${ID}\\b" docs/help/ --include='*.md' 2>/dev/null)
+  USERDOC_HITS="${USERDOC_HITS}${USERDOC_HITS:+$'\n'}${HELP_HITS}"
+fi
+if [ -n "${USERDOC_HITS}" ]; then
+  echo "${USERDOC_HITS}"
+else
+  dim "  (no user-facing docs references — fine for internal/refactor/security-fix)"
 fi
 
 printf '\n'
