@@ -8,9 +8,18 @@ import static org.mockito.Mockito.when;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.UriInfo;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class PublicEndpointRegistryTest {
+
+  @AfterEach
+  void resetPluginPaths() {
+    // PM1g — clear plugin-contributed registrations so each test runs
+    // against a clean slate; the mutable static sets would otherwise
+    // persist across test methods within the same JVM.
+    PublicEndpointRegistry.resetPluginRegistrations();
+  }
 
   // Post-P4 the JAX-RS-reported path leads with `shepard/api/`. The test
   // exercises full request paths and relies on RequestPathHelper to strip
@@ -98,11 +107,13 @@ class PublicEndpointRegistryTest {
     assertFalse(isPublic("shepard/api/v2/aas/.well-known/aas-server/subpath"));
   }
 
-  // KIP1b — /v2/.well-known/kip/{pid-suffix} is a prefix-matched public
-  // endpoint (the suffix is the runtime-minted PID).
+  // KIP1b / PM1g — /v2/.well-known/kip/{pid-suffix} is a prefix-matched public
+  // endpoint declared by the KIP plugin manifest (PM1g).
 
   @Test
   void kipResolverBarePrefixIsPublic() {
+    // Register the KIP prefix via the plugin mechanism (PM1g).
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/.well-known/kip");
     // The prefix itself (no PID suffix) is also public — JAX-RS would
     // return 404 anyway, but the auth filter should not reject it.
     assertTrue(isPublic("shepard/api/v2/.well-known/kip"));
@@ -111,6 +122,8 @@ class PublicEndpointRegistryTest {
 
   @Test
   void kipResolverWithPidSuffixIsPublic() {
+    // Register the KIP prefix via the plugin mechanism (PM1g).
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/.well-known/kip");
     // Mock-shaped PIDs carry colons; Handle/DOI shapes carry slashes —
     // both must pass through the filter without auth.
     assertTrue(isPublic("shepard/api/v2/.well-known/kip/mock:shepard:data-objects:01HF:1747000000000"));
@@ -119,9 +132,18 @@ class PublicEndpointRegistryTest {
 
   @Test
   void kipResolverPrefixFootGunGuarded() {
+    // Register the KIP prefix via the plugin mechanism (PM1g).
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/.well-known/kip");
     // /v2/.well-known/kip-foo must NOT match the /v2/.well-known/kip prefix.
     assertFalse(isPublic("shepard/api/v2/.well-known/kip-foo"));
     assertFalse(isPublic("shepard/api/v2/.well-known/kip-evil/abc"));
+  }
+
+  @Test
+  void kipResolverPrefixNotPublicWithoutRegistration() {
+    // PM1g: without the plugin registering the prefix, the path is not public.
+    assertFalse(isPublic("shepard/api/v2/.well-known/kip"));
+    assertFalse(isPublic("shepard/api/v2/.well-known/kip/abc"));
   }
 
   @Test
@@ -139,22 +161,29 @@ class PublicEndpointRegistryTest {
 
   @Test
   void unhideFeedIsPublic() {
-    // UH1a — the Helmholtz Unhide harvest feed is JWT-bypassed; the
-    // runtime-mutable access predicate (enabled / feedPublic / X-API-KEY
-    // matching :UnhideConfig.harvestApiKeyHash) is enforced inside the
-    // resource because a static registry can't express it.
+    // UH1a / PM1g — the Helmholtz Unhide harvest feed is JWT-bypassed;
+    // the path is now declared by the Unhide plugin manifest (PM1g).
+    PublicEndpointRegistry.registerPluginPath("/v2/unhide/feed.jsonld");
     assertTrue(isPublic("shepard/api/v2/unhide/feed.jsonld"));
     assertTrue(isPublic("shepard/api/v2/unhide/feed.jsonld/"));
   }
 
   @Test
   void unhideAdminEndpointsAreNotPublic() {
+    // Register the feed path (PM1g) and verify admin endpoints stay protected.
+    PublicEndpointRegistry.registerPluginPath("/v2/unhide/feed.jsonld");
     // The /v2/admin/unhide/... surface stays JWT-protected — it's
     // @RolesAllowed(instance-admin), the feed isn't.
     assertFalse(isPublic("shepard/api/v2/admin/unhide/config"));
     assertFalse(isPublic("shepard/api/v2/admin/unhide/harvest-key/rotate"));
     assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld/evil"));
     assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld.evil"));
+  }
+
+  @Test
+  void unhideFeedNotPublicWithoutRegistration() {
+    // PM1g: without the plugin registering the path, the feed is not public.
+    assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld"));
   }
 
   // MCP-1 — /v2/instance/capabilities is public so the sidecar can poll
@@ -171,6 +200,65 @@ class PublicEndpointRegistryTest {
     // Exact-match only — subpaths and typo neighbours are not public.
     assertFalse(isPublic("shepard/api/v2/instance/capabilities/evil"));
     assertFalse(isPublic("shepard/api/v2/instance/capabilitiesx"));
+  }
+
+  // PM1g — plugin-path registration API tests
+
+  @Test
+  void registerPluginPath_allowsExactMatch() {
+    PublicEndpointRegistry.registerPluginPath("/v2/my-plugin/feed");
+    assertTrue(isPublic("shepard/api/v2/my-plugin/feed"));
+    assertTrue(isPublic("shepard/api/v2/my-plugin/feed/"));
+  }
+
+  @Test
+  void registerPluginPath_doesNotAllowSubpaths() {
+    PublicEndpointRegistry.registerPluginPath("/v2/my-plugin/feed");
+    assertFalse(isPublic("shepard/api/v2/my-plugin/feed/secret"));
+  }
+
+  @Test
+  void registerPluginPathPrefix_allowsExactAndChildren() {
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/my-plugin/resolver");
+    assertTrue(isPublic("shepard/api/v2/my-plugin/resolver"));
+    assertTrue(isPublic("shepard/api/v2/my-plugin/resolver/"));
+    assertTrue(isPublic("shepard/api/v2/my-plugin/resolver/abc"));
+  }
+
+  @Test
+  void registerPluginPathPrefix_footGunGuarded() {
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/my-plugin/resolver");
+    assertFalse(isPublic("shepard/api/v2/my-plugin/resolver-evil"));
+    assertFalse(isPublic("shepard/api/v2/my-plugin/resolverfoo"));
+  }
+
+  @Test
+  void resetPluginRegistrations_clearsRegisteredPaths() {
+    PublicEndpointRegistry.registerPluginPath("/v2/my-plugin/feed");
+    PublicEndpointRegistry.registerPluginPathPrefix("/v2/my-plugin/resolver");
+    assertTrue(isPublic("shepard/api/v2/my-plugin/feed"));
+    assertTrue(isPublic("shepard/api/v2/my-plugin/resolver"));
+    PublicEndpointRegistry.resetPluginRegistrations();
+    assertFalse(isPublic("shepard/api/v2/my-plugin/feed"));
+    assertFalse(isPublic("shepard/api/v2/my-plugin/resolver"));
+  }
+
+  @Test
+  void registerPluginPath_ignoresNullAndBlank() {
+    // Defensive: null and blank values must not cause NPE or pollute the set.
+    PublicEndpointRegistry.registerPluginPath(null);
+    PublicEndpointRegistry.registerPluginPath("");
+    PublicEndpointRegistry.registerPluginPath("   ");
+    // Core paths still work; no exception thrown.
+    assertTrue(isPublic("shepard/api/versionz"));
+  }
+
+  @Test
+  void registerPluginPathPrefix_ignoresNullAndBlank() {
+    PublicEndpointRegistry.registerPluginPathPrefix(null);
+    PublicEndpointRegistry.registerPluginPathPrefix("");
+    PublicEndpointRegistry.registerPluginPathPrefix("   ");
+    assertTrue(isPublic("shepard/api/versionz"));
   }
 
   // helper

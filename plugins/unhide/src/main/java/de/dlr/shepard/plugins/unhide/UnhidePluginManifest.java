@@ -2,8 +2,10 @@ package de.dlr.shepard.plugins.unhide;
 
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
+import de.dlr.shepard.plugins.unhide.resources.UnhideFeedRest;
 import io.quarkus.logging.Log;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -120,6 +122,24 @@ public final class UnhidePluginManifest implements PluginManifest {
   // dependencies() — left as the default (empty list). UH1a depends
   // on the in-tree backend SPIs (PROV1, KIP1, GenericDAO) — not on
   // any other plugin.
+
+  /**
+   * PM1g — declare the Unhide harvest-feed path as a public exact-match path.
+   * The canonical path string is {@link UnhideFeedRest#PUBLIC_FEED_PATH};
+   * referencing it here makes the plugin the single source of truth for
+   * its own unauthenticated surface — no more core-side hard-coding.
+   *
+   * <p>The access model is runtime-mutable ({@code feedPublic=true} ⇒ truly
+   * public; {@code feedPublic=false} ⇒ requires X-API-KEY or instance-admin
+   * JWT). {@link UnhideFeedRest} performs the per-call auth check because a
+   * static registry can't express a runtime-mutable predicate. JWTFilter
+   * must still be bypassed here so the resource receives the request and can
+   * make its own access decision.
+   */
+  @Override
+  public List<String> publicPaths() {
+    return List.of(UnhideFeedRest.PUBLIC_FEED_PATH);
+  }
 
   @Override
   public void onRegister(PluginContext ctx) {

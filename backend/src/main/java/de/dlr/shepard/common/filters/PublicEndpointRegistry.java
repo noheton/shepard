@@ -14,20 +14,19 @@ import java.util.regex.Pattern;
  * <p>A0 adds {@code /v2/admin/bootstrap} — the bootstrap-token
  * endpoint must be reachable before any user is authenticated.
  *
- * <p><strong>Plugin-contributed public endpoints.</strong> The
- * {@link #PUBLIC_PATHS} + {@link #PUBLIC_PATH_PREFIXES} sets also
- * carry entries owned by plugin modules (today: UH1a's
- * {@code /v2/unhide/feed.jsonld} feed and KIP1g's
- * {@code /v2/.well-known/kip} resolver prefix). The plugin owning
- * the path does not register itself at runtime — the entry is
- * kept here as a static fact for the auth filter's benefit. This
- * keeps the auth surface explicit (one place to audit "what's
- * reachable without a JWT?") at the cost of cross-module
- * coupling: a plugin author adding a new public path must update
- * this registry in the same PR. A follow-up slice may introduce
- * a {@code PluginContext.registerPublicPrefix(String)} API so
- * plugins self-declare their public-prefix contributions; until
- * then, the static list here is the canonical source of truth.
+ * <p><strong>Plugin-contributed public endpoints (PM1g).</strong>
+ * Plugins self-declare paths via {@link de.dlr.shepard.plugin.PluginManifest#publicPaths()}
+ * and {@link de.dlr.shepard.plugin.PluginManifest#publicPathPrefixes()}.
+ * At startup {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar} collects
+ * these and feeds them into {@link #PLUGIN_PATHS} / {@link #PLUGIN_PATH_PREFIXES}
+ * via {@link #registerPluginPath} / {@link #registerPluginPathPrefix}.
+ *
+ * <p>The static {@link #PUBLIC_PATHS} + {@link #PUBLIC_PATH_PREFIXES} sets remain
+ * the compile-time baseline (core-owned paths like {@code /versionz} and
+ * {@code /v2/admin/bootstrap} that must be available regardless of which plugins
+ * are active). Plugin-contributed entries sit in the separate mutable sets so the
+ * two concerns are never conflated: auditing "what's public without a JWT?" requires
+ * checking both the compile-time sets and the plugin-populated sets.
  */
 public class PublicEndpointRegistry {
 
@@ -58,16 +57,6 @@ public class PublicEndpointRegistry {
     // resource @Path is /shepard/doc/openapi/{v1,v2}.json directly.
     "/shepard/doc/openapi/v1.json",
     "/shepard/doc/openapi/v2.json",
-    // UH1a — the Helmholtz Unhide publish feed. Bypasses JWT auth
-    // because its access model is runtime-mutable: feedPublic=true
-    // ⇒ truly public; feedPublic=false ⇒ requires X-API-KEY matching
-    // :UnhideConfig.harvestApiKeyHash OR an instance-admin caller.
-    // The UnhideFeedRest resource performs the per-call auth check
-    // (config-load + key compare) because a static registry can't
-    // express a runtime-mutable predicate. When enabled=false the
-    // feed returns 503 unhide.feed.disabled before any auth path
-    // runs.
-    "/v2/unhide/feed.jsonld",
     // MCP-1 — the sidecar polls this on startup and every 30 s to
     // learn its own enabled state (checks if "mcp" appears in the
     // plugins list). Must be reachable without a JWT because the
@@ -79,27 +68,23 @@ public class PublicEndpointRegistry {
   /**
    * Public-endpoint **prefixes** — paths matched by structural
    * prefix rather than exact equality. Used for endpoint families
-   * whose URL carries a runtime-supplied suffix (e.g. KIP1b's
-   * {@code /v2/.well-known/kip/{pid-suffix}} resolver: the suffix
-   * is the freshly-minted PID and varies per row).
+   * whose URL carries a runtime-supplied suffix.
    *
-   * <p>Entry semantics: {@code "/v2/.well-known/kip"} matches both
+   * <p>Entry semantics: a prefix {@code "/v2/.well-known/kip"} matches both
    * the bare path and any descendant {@code /v2/.well-known/kip/anything}.
    * The prefix MUST end without a trailing slash; the matcher requires
    * either exact equality or the next character being a slash (so
    * {@code /v2/.well-known/kip-foo} does NOT match the
    * {@code /v2/.well-known/kip} prefix).
    *
-   * <p>KIP1a/b — {@code /v2/.well-known/kip/{pid-suffix}} is public
-   * by design (resolver returns KIP record metadata, not entity
-   * payload — see {@code aidocs/66 §4.2}); the {@code landingPage}
-   * URL it points at may still require auth. Post-KIP1g the
-   * resolver itself lives in {@code shepard-plugin-kip}, but the
-   * prefix stays registered here per the class-level Javadoc:
-   * plugin-contributed public paths are tracked centrally so the
-   * auth filter has a single source of truth.
+   * <p>Core-owned entries only (PM1g). Plugin-contributed prefixes
+   * — e.g. KIP1g's {@code /v2/.well-known/kip} resolver prefix — are
+   * now declared on each plugin's
+   * {@link de.dlr.shepard.plugin.PluginManifest#publicPathPrefixes()} and
+   * collected into {@link #PLUGIN_PATH_PREFIXES} at startup by
+   * {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar}.
    */
-  private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of("/v2/.well-known/kip");
+  private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of();
 
   /**
    * Public-endpoint regex patterns — for paths where the variable
@@ -123,6 +108,42 @@ public class PublicEndpointRegistry {
   private static final Set<Pattern> PUBLIC_PATH_PATTERNS = Set.of(
     Pattern.compile("^/v2/users/[^/]+/avatar$")
   );
+
+  // PM1g — plugin-contributed entries, populated at startup by
+  // PluginPublicPathRegistrar. CopyOnWriteArraySet: writes are rare
+  // (startup only) and concurrent reads are the hot path.
+  private static final Set<String> PLUGIN_PATHS =
+    new java.util.concurrent.CopyOnWriteArraySet<>();
+  private static final Set<String> PLUGIN_PATH_PREFIXES =
+    new java.util.concurrent.CopyOnWriteArraySet<>();
+
+  /**
+   * PM1g — register an exact-match path contributed by a plugin.
+   * Called by {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar}
+   * at startup; null and blank values are silently ignored.
+   */
+  public static void registerPluginPath(String path) {
+    if (path != null && !path.isBlank()) PLUGIN_PATHS.add(path);
+  }
+
+  /**
+   * PM1g — register a structural-prefix path contributed by a plugin.
+   * Called by {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar}
+   * at startup; null and blank values are silently ignored.
+   */
+  public static void registerPluginPathPrefix(String prefix) {
+    if (prefix != null && !prefix.isBlank()) PLUGIN_PATH_PREFIXES.add(prefix);
+  }
+
+  /**
+   * PM1g — clear all plugin-contributed registrations.
+   * Package-private; intended for test teardown only — never call
+   * this in production code.
+   */
+  static void resetPluginRegistrations() {
+    PLUGIN_PATHS.clear();
+    PLUGIN_PATH_PREFIXES.clear();
+  }
 
   /**
    * Returns {@code true} when the request path matches a registered public
@@ -158,6 +179,11 @@ public class PublicEndpointRegistry {
     }
     for (Pattern pattern : PUBLIC_PATH_PATTERNS) {
       if (pattern.matcher(normalised).matches()) return true;
+    }
+    // PM1g — plugin-contributed entries
+    if (PLUGIN_PATHS.contains(normalised)) return true;
+    for (String prefix : PLUGIN_PATH_PREFIXES) {
+      if (matchesPrefix(normalised, prefix)) return true;
     }
     return false;
   }

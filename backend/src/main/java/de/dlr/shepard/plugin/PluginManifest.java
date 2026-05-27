@@ -198,6 +198,41 @@ public interface PluginManifest {
   }
 
   /**
+   * PM1g — application-relative paths that this plugin needs to bypass
+   * {@link de.dlr.shepard.common.filters.JWTFilter} with exact-match semantics.
+   * Use for unauthenticated endpoints where the full path is fixed (no variable
+   * suffix). The {@link PluginPublicPathRegistrar}
+   * gathers these at startup and feeds them into
+   * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry}.
+   *
+   * <p>Security note: every string returned here becomes permanently unauthenticated.
+   * Use the minimum necessary — prefer {@link #publicPathPrefixes()} only when the
+   * path carries a variable suffix (PID, appId, …).
+   *
+   * <p>Default: empty — plugins that need no unauthenticated endpoints keep compiling
+   * without change.
+   */
+  default List<String> publicPaths() {
+    return List.of();
+  }
+
+  /**
+   * PM1g — application-relative path prefixes that this plugin needs to bypass
+   * {@link de.dlr.shepard.common.filters.JWTFilter} with structural-prefix semantics
+   * (exact equality OR the prefix followed by {@code /}).
+   *
+   * <p>Security note: every string returned here becomes permanently unauthenticated
+   * for the entire prefix subtree. Use only for public-by-design endpoint families
+   * (PID resolvers, capability descriptions, feed endpoints). Never return a prefix
+   * broad enough to shadow other endpoints (e.g. {@code "/v2"}).
+   *
+   * <p>Default: empty.
+   */
+  default List<String> publicPathPrefixes() {
+    return List.of();
+  }
+
+  /**
    * Lifecycle hook invoked after the JAR's classes are loaded and
    * the plugin's {@code shepard.plugins.<id>.enabled} toggle has been
    * read (and is {@code true}). The plugin uses {@code ctx} to wire

@@ -77,6 +77,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Unhide")
 public class UnhideFeedRest {
 
+  /**
+   * PM1g — application-relative path of the harvest feed.
+   * Referenced by {@link de.dlr.shepard.plugins.unhide.UnhidePluginManifest#publicPaths()}
+   * so the plugin is the single source of truth for its own unauthenticated surface.
+   */
+  public static final String PUBLIC_FEED_PATH = "/v2/unhide/feed.jsonld";
+
   /** RFC 7807 type URI for the master-toggle-off path. */
   static final String PROBLEM_TYPE_FEED_DISABLED = "/problems/unhide.feed.disabled";
 

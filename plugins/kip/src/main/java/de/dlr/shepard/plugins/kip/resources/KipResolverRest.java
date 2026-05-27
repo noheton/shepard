@@ -49,14 +49,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * the {@code .+} regex absorbs the suffix verbatim too.
  *
  * <p>The {@code .well-known/kip} prefix is registered in
- * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} (core)
- * so {@link de.dlr.shepard.common.filters.JWTFilter} doesn't reject
- * the call before the response is built. The core-side registry
- * tracks plugin-contributed public prefixes by path string; the
- * plugin owning the path doesn't self-register today — see
- * KIP1g's tracker row for the rationale and the PM1d follow-up
- * that would introduce a {@code PluginContext.registerPublicPrefix(...)}
- * API.
+ * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} via the
+ * PM1g plugin public-path SPI. {@link KipPluginManifest#publicPathPrefixes()}
+ * returns {@link #PUBLIC_PATH_PREFIX}; the
+ * {@link de.dlr.shepard.plugin.PluginPublicPathRegistrar} collects it at
+ * startup and feeds it into {@code PublicEndpointRegistry} so
+ * {@link de.dlr.shepard.common.filters.JWTFilter} doesn't reject the call
+ * before the response is built.
  *
  * <p>KIP1g moved this resource from in-tree
  * {@code de.dlr.shepard.v2.publish.resources.KipResolverRest} to

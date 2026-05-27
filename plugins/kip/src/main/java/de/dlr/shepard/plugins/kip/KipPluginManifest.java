@@ -2,7 +2,9 @@ package de.dlr.shepard.plugins.kip;
 
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
+import de.dlr.shepard.plugins.kip.resources.KipResolverRest;
 import io.quarkus.logging.Log;
+import java.util.List;
 
 /**
  * KIP1g — Helmholtz Kernel Information Profile (KIP) plugin
@@ -74,6 +76,17 @@ public final class KipPluginManifest implements PluginManifest {
   @Override
   public String shepardCompatibility() {
     return SHEPARD_COMPATIBILITY;
+  }
+
+  /**
+   * PM1g — declare the KIP resolver prefix as a public-path prefix.
+   * The canonical prefix string is {@link KipResolverRest#PUBLIC_PATH_PREFIX};
+   * referencing it here makes the plugin the single source of truth for
+   * its own unauthenticated surface — no more core-side hard-coding.
+   */
+  @Override
+  public List<String> publicPathPrefixes() {
+    return List.of(KipResolverRest.PUBLIC_PATH_PREFIX);
   }
 
   @Override
