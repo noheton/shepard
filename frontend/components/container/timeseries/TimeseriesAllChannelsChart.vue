@@ -8,6 +8,8 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
 import { useFetchTimeseriesContainerStats } from "~/composables/containers/useFetchTimeseriesContainerStats";
 import TimeseriesChart from "~/components/common/chart/TimeseriesChart.vue";
+import TemporalAnnotationDialog from "~/components/container/timeseries/TemporalAnnotationDialog.vue";
+import { useTimeseriesContainerAnnotations } from "~/composables/containers/useTimeseriesContainerAnnotations";
 
 const MAX_CHANNELS = 8;
 
@@ -244,14 +246,38 @@ onBeforeUnmount(() => {
   stopLiveTimer();
 });
 
+// ── Container-level temporal annotations ──────────────────────────────────
+const containerIdRef = computed(() => props.containerId);
+const {
+  annotations: containerAnnotations,
+  deleteAnnotation: deleteContainerAnnotation,
+} = useTimeseriesContainerAnnotations(containerIdRef);
+
+// Map annotations to the overlay shape expected by TimeseriesChart.
+const annotationOverlays = computed(() =>
+  containerAnnotations.value.map(a => ({
+    startNs: a.startNs,
+    endNs: a.endNs,
+    label: a.label,
+    color: a.aiGenerated ? "rgba(25,118,210,0.15)" : undefined,
+  })),
+);
+
 // ── Brush selection (range annotate) ─────────────────────────────────────
 // brushSelection holds the most recent user-drawn selection (in ns).
 // null = no active selection. endNs = null = point selection.
 const staticChartRef = ref<InstanceType<typeof TimeseriesChart> | null>(null);
 const brushSelection = ref<{ startNs: number; endNs: number | null } | null>(null);
-const emit = defineEmits<{
-  "annotate:request": [{ startNs: number; endNs: number | null }];
-}>();
+
+// ── Annotation dialog state ────────────────────────────────────────────────
+const showAnnotationDialog = ref(false);
+const editingAnnotation = ref<{
+  appId: string;
+  startNs: number;
+  endNs: number | null;
+  label: string;
+  description?: string | null;
+} | null>(null);
 
 function onBrushEnd(sel: { startNs: number; endNs: number | null }) {
   brushSelection.value = sel;
@@ -262,9 +288,26 @@ function clearBrush() {
   staticChartRef.value?.restoreZoom();
 }
 
-function requestAnnotate() {
+function openCreateDialog() {
   if (!brushSelection.value) return;
-  emit("annotate:request", brushSelection.value);
+  editingAnnotation.value = null;
+  showAnnotationDialog.value = true;
+}
+
+function openEditDialog(ann: typeof containerAnnotations.value[0]) {
+  editingAnnotation.value = {
+    appId: ann.appId,
+    startNs: ann.startNs,
+    endNs: ann.endNs,
+    label: ann.label,
+    description: ann.description,
+  };
+  showAnnotationDialog.value = true;
+}
+
+function onAnnotationSaved() {
+  brushSelection.value = null;
+  staticChartRef.value?.restoreZoom();
 }
 </script>
 
@@ -478,7 +521,7 @@ function requestAnnotate() {
             color="primary"
             variant="tonal"
             prepend-icon="mdi-tag-plus-outline"
-            @click="requestAnnotate"
+            @click="openCreateDialog"
           >
             Annotate
           </v-btn>
@@ -519,9 +562,79 @@ function requestAnnotate() {
           :animation-duration="chartAnimationMs"
           :visible-window-ms="chartVisibleWindowMs"
           :brush-enabled="!liveMode"
+          :annotations="annotationOverlays"
           @brush:end="onBrushEnd"
         />
       </ClientOnly>
+
+      <!-- Temporal annotation list -->
+      <div
+        v-if="containerAnnotations.length"
+        class="mt-3 px-2"
+      >
+        <div class="text-caption text-medium-emphasis mb-1">
+          Annotations ({{ containerAnnotations.length }})
+        </div>
+        <v-table density="compact">
+          <tbody>
+            <tr
+              v-for="ann in containerAnnotations"
+              :key="ann.appId"
+            >
+              <td class="text-body-2 py-1">
+                <v-chip
+                  v-if="ann.aiGenerated"
+                  size="x-small"
+                  color="info"
+                  variant="tonal"
+                  class="mr-1"
+                  title="Created by AI"
+                >AI</v-chip>
+                {{ ann.label }}
+              </td>
+              <td class="text-caption text-medium-emphasis py-1" style="white-space:nowrap">
+                {{ new Date(ann.startNs / 1e6).toLocaleString() }}
+                <template v-if="ann.endNs != null">
+                  → {{ new Date(ann.endNs / 1e6).toLocaleString() }}
+                </template>
+              </td>
+              <td class="py-1" style="width:80px">
+                <v-btn
+                  size="x-small"
+                  icon
+                  variant="text"
+                  title="Edit"
+                  @click="openEditDialog(ann)"
+                >
+                  <v-icon size="x-small">mdi-pencil-outline</v-icon>
+                </v-btn>
+                <v-btn
+                  size="x-small"
+                  icon
+                  variant="text"
+                  color="error"
+                  title="Delete"
+                  @click="deleteContainerAnnotation(ann.appId)"
+                >
+                  <v-icon size="x-small">mdi-delete-outline</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </div>
     </div>
   </div>
+
+  <!-- Temporal annotation create / edit dialog -->
+  <TemporalAnnotationDialog
+    v-model:show-dialog="showAnnotationDialog"
+    :container-id="containerId"
+    :initial-start-ns="editingAnnotation?.startNs ?? brushSelection?.startNs"
+    :initial-end-ns="editingAnnotation?.endNs ?? brushSelection?.endNs"
+    :annotation-app-id="editingAnnotation?.appId"
+    :initial-label="editingAnnotation?.label"
+    :initial-description="editingAnnotation?.description"
+    @saved="onAnnotationSaved"
+  />
 </template>
