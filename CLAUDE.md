@@ -558,6 +558,104 @@ coexist at zero forced-upgrade cost. The `/v2/` split, the `urn:shepard:*`
 predicate namespace, and the `IF NOT EXISTS` migration guards are all the same
 principle applied at different layers.
 
+## Always: secondary writes are fire-and-forget
+
+Any write that is not the primary purpose of an operation — provenance capture,
+HMAC chain stamping, notification dispatch, observability counters — must never
+propagate exceptions to the caller. These are secondary effects; the caller
+requested a data operation, not an audit operation.
+
+Rules:
+- Wrap every secondary write in a try/catch (Java) or `.catch(() => {})` (TS).
+  Log a `WARN` and continue; never re-throw.
+- The `ProvenanceCaptureFilter` already does this in its `aroundWriteTo` phase.
+  New calls to `ProvenanceService.record()`, `HmacChainService.stamp()`, or any
+  notification publisher must follow the same pattern.
+- If a secondary write is mandatory for correctness (e.g. a write-ahead log that
+  cannot be skipped), it is no longer secondary — it belongs in the primary
+  transaction, not in a fire-and-forget catch block.
+
+**Why:** A thrown exception inside a filter or interceptor propagates to the
+caller as a 500, making a primary success look like a failure. The audit trail
+being temporarily incomplete is always preferable to the primary operation
+failing.
+
+## Always: registries are fail-soft
+
+Every SPI registry — `AiRegistry`, `MinterRegistry`, notification transports,
+plugin loaders — must return `Optional.empty()` (or an empty collection) when a
+slot is unconfigured or a provider is unavailable. Registries must never throw
+on a missing registration, and must never abort startup when a provider fails to
+load.
+
+Rules:
+- `resolve(slot)` returns `Optional<T>` — callers check `.isPresent()` and
+  degrade gracefully (skip the feature, return a no-op response, log a `WARN`).
+- Registry construction must not perform I/O that can fail; defer I/O to first
+  use, wrapped in try/catch.
+- The "local/offline default" rule for AI capabilities (see below) is a specific
+  application of this principle. The same shape applies to every new SPI
+  registry.
+- If a slot is required for a feature to function at all, surface a clear
+  admin-facing warning (not a startup abort) and disable only the dependent
+  feature, not the whole application.
+
+**Why:** A startup abort caused by a missing plugin or an unconfigured AI slot
+takes down the entire instance for all users, for a feature that may only be
+used by one team. Fail-soft isolation limits blast radius to the feature's own
+surface.
+
+## Always: schema changes are additive and nullable
+
+Every database schema change — Neo4j, PostgreSQL/TimescaleDB, MongoDB, PostGIS
+— must be forward-compatible and require zero backfill of existing rows.
+
+Rules:
+- New columns are always `nullable` (Postgres) or simply absent on pre-feature
+  rows (Neo4j property bag). `NOT NULL` without a `DEFAULT` that covers all
+  existing rows is banned.
+- Neo4j migrations use `IF NOT EXISTS` guards on constraints and indexes.
+  PostgreSQL migrations use `ADD COLUMN IF NOT EXISTS` and
+  `CREATE INDEX IF NOT EXISTS`. Never edit a migration file after it has been
+  applied to any production instance.
+- Pre-feature rows that lack the new field are treated as `null` / default at
+  query time — add the null-coalesce to the read path, not a backfill to the
+  data.
+- When a backfill is truly necessary (rare), ship it as a separate, explicitly
+  idempotent migration with a rollback twin and an operator runbook, and mark it
+  `BREAKING` in `aidocs/34`.
+- Each data-mutating migration ships a paired `V(N)_R__*.cypher` /
+  `V(N)_R__*.sql` rollback file.
+
+**Why:** A `NOT NULL` column with no default on a table with millions of rows
+requires a full-table-lock backfill — incompatible with zero-downtime deploys.
+The pattern has bitten the timeseries channel table (5-tuple debt, TS-CORE-SCHEMA-01)
+and must not recur on any other substrate.
+
+## Always: resolve capabilities through slots, not class names
+
+When a feature needs a replaceable implementation — an AI model, a PID minter, a
+notification transport, a storage provider — it requests a named capability slot
+from the appropriate registry. It never instantiates or references a provider
+class directly.
+
+Rules:
+- Define the need as an enum value (`AiCapability.MY_SLOT`, `MinterType.DOI`,
+  `NotificationTransport.MATRIX`) — extend existing enums rather than creating
+  parallel systems.
+- Call `registry.resolve(MyCapability.SLOT)` → `Optional<Provider>`. Handle
+  `Optional.empty()` per the fail-soft registry rule above.
+- A new `:*CapabilityConfig` singleton (runtime-mutable, per the admin knobs
+  rule) is seeded for the new slot on startup so an admin can configure which
+  transport fills it at runtime without a redeploy.
+- The operator decision ("which provider for this deployment") is expressed in
+  `application.properties` or via the admin `PATCH` endpoint — never in the
+  feature code.
+
+**Why:** Hard-coding a provider class couples deployment topology (SAIA at DLR,
+Ollama offline, OpenAI in CI) to feature code. The same binary must serve every
+deployment profile; the slot/registry split is what makes that possible.
+
 ## Specialized agent roles
 
 Reusable prompt scaffolds for specialized review and design tasks. Copy the
