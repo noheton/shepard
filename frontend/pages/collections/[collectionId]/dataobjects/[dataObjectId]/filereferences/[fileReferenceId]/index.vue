@@ -160,9 +160,9 @@ watch(fileReference, () => {
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <TitleAndMetadataDisplay
-                :entity=”{
+                :entity="{
                   ...fileReference,
-                  name: `File Reference “${fileReference.name}”`,
+                  name: `File Reference "${fileReference.name}"`,
                   type: 'File',
                   container: {
                     title:
@@ -171,11 +171,11 @@ watch(fileReference, () => {
                     type: 'FILE',
                     availability: fileReference.referencedContainerAvailability,
                   },
-                }”
-                :on-annotate=”onAnnotate”
-                :on-delete=”onDelete”
-                :on-edit=”fileReference.appId ? onEdit : undefined”
-                id-label=”ID”
+                }"
+                :on-annotate="onAnnotate"
+                :on-delete="onDelete"
+                :on-edit="fileReference.appId ? onEdit : undefined"
+                id-label="ID"
               />
             </v-row>
             <v-row align="center" justify="space-between">
