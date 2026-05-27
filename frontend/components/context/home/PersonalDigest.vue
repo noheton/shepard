@@ -207,36 +207,52 @@ function relativeTime(date: Date | null | undefined): string {
       </v-btn>
     </div>
 
-    <!-- Watched collections section -->
-    <template v-if="watched.length > 0 || watchedLoading">
-      <div class="d-flex align-center mb-4 ga-2">
-        <v-icon icon="mdi-binoculars" color="primary" size="20" />
-        <div class="text-h6 font-weight-medium">Watched</div>
-      </div>
-      <v-row class="mb-6">
-        <template v-if="watchedLoading">
-          <v-col v-for="n in 3" :key="n" cols="12" sm="6" md="4">
-            <v-skeleton-loader type="card" />
-          </v-col>
-        </template>
-        <template v-else>
-          <v-col
-            v-for="collection in watched"
-            :key="collection.id"
-            cols="12"
-            sm="6"
-            md="4"
+    <!-- Watched collections section — always shown so the feature is discoverable -->
+    <div class="d-flex align-center mb-4 ga-2">
+      <v-icon icon="mdi-binoculars" color="primary" size="20" />
+      <div class="text-h6 font-weight-medium">Watched</div>
+    </div>
+    <v-row class="mb-6">
+      <template v-if="watchedLoading">
+        <v-col v-for="n in 3" :key="n" cols="12" sm="6" md="4">
+          <v-skeleton-loader type="card" />
+        </v-col>
+      </template>
+      <template v-else-if="watched.length === 0">
+        <v-col cols="12">
+          <v-card
+            variant="outlined"
+            rounded="lg"
+            class="pa-8 text-center"
+            data-testid="watched-empty-state"
           >
-            <CollectionGalleryCard
-              :collection="collection"
-              :watchable="true"
-              :watched="true"
-              @toggle-watch="toggleWatched(collection)"
-            />
-          </v-col>
-        </template>
-      </v-row>
-    </template>
+            <v-icon icon="mdi-binoculars-outline" size="48" color="medium-emphasis" class="mb-3" />
+            <div class="text-body-1 font-weight-medium mb-1">No watched collections yet</div>
+            <div class="text-body-2 text-medium-emphasis">
+              Open any collection and click the
+              <v-icon icon="mdi-binoculars-outline" size="14" />
+              binoculars icon to watch it.
+            </div>
+          </v-card>
+        </v-col>
+      </template>
+      <template v-else>
+        <v-col
+          v-for="collection in watched"
+          :key="collection.id"
+          cols="12"
+          sm="6"
+          md="4"
+        >
+          <CollectionGalleryCard
+            :collection="collection"
+            :watchable="true"
+            :watched="true"
+            @toggle-watch="toggleWatched(collection)"
+          />
+        </v-col>
+      </template>
+    </v-row>
 
     <!-- Collection cards grid -->
     <template v-if="!isEmpty">
