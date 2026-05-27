@@ -346,6 +346,14 @@ class ImportPlan:
     total_ts_refs: int = 0
 
 
+# Shepard-internal attribute keys that the dest instance fills itself.
+# These are NEVER copied from the source DO's attributes dict (V16-IMPL-3).
+_SHEPARD_INTERNAL_ATTRS: frozenset[str] = frozenset({
+    "appId", "shepardId", "createdBy", "createdAt",
+    "updatedBy", "updatedAt", "deleted",
+})
+
+
 class MffdImporter:
     def __init__(self, client: ShepardClient, state: StateStore,
                  dry_run: bool = False, parallelism: int = 8,
@@ -361,6 +369,9 @@ class MffdImporter:
         self.source_instance_id: str | None = source_instance_id
         if source_url and not source_instance_id:
             self.source_instance_id = _derive_instance_id(source_url)
+        # Cached source version — fetched once in _stamp_source_instance_attrs
+        # and reused in _build_do_attrs so we do NOT call GET /versionz once per DO.
+        self._source_version: str | None = None
         # Lazily-created container IDs
         self.file_container_id: int | None = None
         self.sd_container_id: int | None = None
@@ -481,11 +492,16 @@ class MffdImporter:
                 self.log.warning("source_instance_url stamp skipped: no appId on collection %d", collection_id)
                 return
 
-            source_version = _fetch_versionz(self.source_url)
-            if source_version:
-                self.log.info("Source instance version: %s", source_version)
-            else:
-                self.log.warning("Could not fetch /versionz from source instance (non-fatal)")
+            # Fetch once and cache so per-DO attribute stamping (V16-IMPL-3) can
+            # reuse the version string without making N additional /versionz calls.
+            if self._source_version is None:
+                fetched = _fetch_versionz(self.source_url)
+                if fetched:
+                    self._source_version = fetched
+                    self.log.info("Source instance version: %s", self._source_version)
+                else:
+                    self.log.warning("Could not fetch /versionz from source instance (non-fatal)")
+            source_version = self._source_version
 
             patch_attrs: dict[str, str] = {
                 "source_instance_url": self.source_url,
@@ -607,6 +623,32 @@ class MffdImporter:
                     self.log.info("  imported %d / %d under %s",
                                   i + 1, len(futures), source_root.name)
 
+    def _build_do_attrs(self, sdo: SourceDataObject) -> dict:
+        """Build the attributes dict to write on the dest DO (V16-IMPL-3).
+
+        Copies ALL source DO attributes verbatim, EXCEPT the shepard-internal
+        keys that the dest instance fills itself (see _SHEPARD_INTERNAL_ATTRS).
+        Then appends the four standard source-instance markers so that a dest
+        DataObject carries full cross-instance provenance on every node.
+
+        Note: source markers are only written when --source-url was provided.
+        The collection-level stamp (_stamp_source_instance_attrs) calls
+        _fetch_versionz once and caches the result in self._source_version so
+        this method never issues a network call of its own.
+        """
+        attrs = {k: v for k, v in sdo.attributes.items()
+                 if k not in _SHEPARD_INTERNAL_ATTRS}
+        # source_attrs_provenance is always present to signal the copy was done
+        # at original import time (not backfilled retroactively).
+        # TODO: backfill passes should overwrite with "backfilled:<activity-appId>"
+        attrs["source_attrs_provenance"] = "original"
+        if self.source_url:
+            attrs["source_instance_url"] = self.source_url
+            attrs["source_instance_id"] = self.source_instance_id or ""
+            if self._source_version:
+                attrs["source_instance_version"] = self._source_version
+        return attrs
+
     def _import_one_do(self, collection_id: int, step_do_id: int,
                        sdo: SourceDataObject, do_id_map: dict[int, int],
                        source_root: Path, confirm_ts: bool):
@@ -614,14 +656,23 @@ class MffdImporter:
         if (existing := self.state.already_done(h)):
             do_id_map[sdo.do_id] = int(existing)
             return
+        # V16-IMPL-6: Parallel siblings under the same parent are ALL replicated.
+        # walk_source_tree yields every do-NNNNN.json sorted by filename; each
+        # sibling produces a distinct SourceDataObject with a different do_id and
+        # name.  stable_hash() = sha256("do:{do_id}:{name}") so sibling hashes
+        # never collide, no already_done hit skips a sibling, and do_id_map is
+        # keyed by source do_id so there is no overwrite.  The ThreadPoolExecutor
+        # in _import_subtree fans out one future per SourceDataObject, so siblings
+        # run concurrently — no guard limits them to one-per-parent.
+        # (The one caveat is V16-IMPL-2's territory: if a CHILD is processed before
+        # its PARENT in a single pass, the fallback parent = step_do_id applies for
+        # that run; that is a separate issue addressed by V16-IMPL-2.)
         parent = step_do_id
         if sdo.parent_id is not None and sdo.parent_id in do_id_map:
             parent = do_id_map[sdo.parent_id]
-        # MFFD-IMPORT-ATTRS-PROVENANCE: stamp source_attrs_provenance on every DataObject.
-        # Use a copy of sdo.attributes so the original SourceDataObject is not mutated
-        # (relevant for any retry logic that re-reads the object).
-        # TODO: backfill passes should overwrite with "backfilled:<activity-appId>"
-        do_attrs = {**sdo.attributes, "source_attrs_provenance": "original"}
+        # V16-IMPL-3: build the dest DO attributes by copying all source attrs
+        # (minus shepard-internal keys) and appending the four source_* markers.
+        do_attrs = self._build_do_attrs(sdo)
         result = self.client.post_json(
             f"/shepard/api/collections/{collection_id}/dataObjects",
             {

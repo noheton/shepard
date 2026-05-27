@@ -125,7 +125,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/98-thesis-perspective.md`](98-thesis-perspective.md) | 98 — Shepard as a thesis at a German university (perspective + viability) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v5-metadata-enrichment-survey-2026-05-23.md`](agent-findings/v5-metadata-enrichment-survey-2026-05-23.md) | v5 OpenAPI — metadata enrichment survey for the MFFD importer (v15.10 candidates) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/109-mffd-scan-line-join-key.md`](data/109-mffd-scan-line-join-key.md) | 109 — MFFD scan-line join key across TPS stores | 2026-05-27 | 2026-05-27 |
-| [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | — |
+| [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | 2026-05-27 |
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
@@ -228,7 +228,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/ai-fork-production-readiness-2026-05-23.md`](strategy/ai-fork-production-readiness-2026-05-23.md) | Is the AI-collaborative `noheton/shepard` fork production-ready? | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md`](strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md) | Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-26 |
-| [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-23 |
+| [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-27 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/74-auto-refresh-stale-session.md`](ux/74-auto-refresh-stale-session.md) | 74 — Auto-Refresh on Stale Session | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
