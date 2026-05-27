@@ -52,6 +52,38 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
     deleteByNeo4jId(annotation.getId());
   }
 
+  // ── container-level temporal annotations (TS-ANNOT-B) ────────────────────
+
+  public List<TimeseriesAnnotation> findByContainerId(long containerId) {
+    String query =
+      "MATCH (c:TimeseriesContainer) WHERE id(c) = $cid " +
+      "MATCH (c)-[:has_temporal_annotation]->" +
+      CypherQueryHelper.getObjectPart("a", "TimeseriesAnnotation", false) +
+      " " +
+      CypherQueryHelper.getReturnPart("a");
+    return StreamSupport
+      .stream(findByQuery(query, Map.of("cid", containerId)).spliterator(), false)
+      .toList();
+  }
+
+  public void linkToContainer(long containerId, String annotationAppId) {
+    session.query(
+      "MATCH (c:TimeseriesContainer) WHERE id(c) = $cid " +
+      "MATCH (a:TimeseriesAnnotation {appId: $annId}) " +
+      "MERGE (c)-[:has_temporal_annotation]->(a)",
+      Map.of("cid", containerId, "annId", annotationAppId)
+    );
+  }
+
+  public void unlinkAndDeleteFromContainer(long containerId, TimeseriesAnnotation annotation) {
+    session.query(
+      "MATCH (c:TimeseriesContainer)-[rel:has_temporal_annotation]->" +
+      "(a:TimeseriesAnnotation {appId: $annId}) WHERE id(c) = $cid DELETE rel",
+      Map.of("cid", containerId, "annId", annotation.getAppId())
+    );
+    deleteByNeo4jId(annotation.getId());
+  }
+
   @Override
   public Class<TimeseriesAnnotation> getEntityType() {
     return TimeseriesAnnotation.class;
