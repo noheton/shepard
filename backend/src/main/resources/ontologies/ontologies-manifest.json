@@ -1,14 +1,15 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b (+ ONT1a + ONT1b + AI1r + N1e + N1k additions) — manifest of common ontologies",
+    "N1b (+ ONT1a + ONT1b + AI1r + N1e + N1k + M4I-f additions) — manifest of common ontologies",
     "pre-seeded into the internal neosemantics (n10s) semantic",
-    "repository on shepard startup. Currently seventeen bundles (eight from",
+    "repository on shepard startup. Currently eighteen bundles (eight from",
     "N1b plus the OBO Relation Ontology added by ONT1a, see",
     "aidocs/58 §6, plus the NFDI4Ing metadata4ing ontology added by",
     "ONT1b, plus the shepard-experiment domain ontology added by AI1r,",
     "plus the NASA Thesaurus propulsion stub added by N1e,",
-    "plus CHAMEO + SSN/SOSA + IEC-61360 added by N1k).",
+    "plus CHAMEO + SSN/SOSA + IEC-61360 added by N1k,",
+    "plus the metadata4ing HPMC sub-ontology added by M4I-f).",
     "Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
@@ -312,6 +313,22 @@
       "retrievedAt": "2026-05-27",
       "sha256": "3a32ba988dc5b9999e4df31916e3a4acf63d5399faebfe17ea7973bb195af9c7",
       "sizeBytes": 6050,
+      "required": false
+    },
+    {
+      "id": "metadata4ing-hpmc",
+      "name": "metadata4ing HPMC — High-Performance Measurement and Computing sub-ontology",
+      "file": "metadata4ing-hpmc.ttl",
+      "iriPrefix": "https://w3id.org/nfdi4ing/metadata4ing/hpmc#",
+      "format": "Turtle",
+      "canonicalUrl": "https://nfdi4ing.de/5-23-2/",
+      "sourceRationale": "HPMC (High-Performance Measurement and Computing) sub-ontology published by the NFDI4Ing HPMC working group. Extends the base metadata4ing vocabulary (m4i) with workflow-level classes for combining high-rate DAQ (e.g. LUMEN hot-fire channels at µs resolution) with computational processing pipelines (e.g. MFFD AFP multi-sensor telemetry reduction). Key headline classes: m4i-hpmc:HpmcWorkflow, m4i-hpmc:ComputationalStep, m4i-hpmc:MeasurementWorkflow, m4i-hpmc:DataAcquisitionStep, m4i-hpmc:SignalProcessingStep. Transitive dependencies on NFDI-MatWerk / MaRDI vocabulary terms TBD on first full-OWL refresh via N1c admin CLI (shepard-admin semantic refresh-ontologies). Added per M4I-f (2026-05-27); see aidocs/semantics/94 §4.6.",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "draft (NFDI4Ing HPMC working group)",
+      "retrievedAt": "2026-05-27",
+      "sha256": "7d816af6c2e9a5d5fe1c6ad1f9f2413e054b727639ea08ae2a687d85dd7c6456",
+      "sizeBytes": 5693,
       "required": false
     }
   ]

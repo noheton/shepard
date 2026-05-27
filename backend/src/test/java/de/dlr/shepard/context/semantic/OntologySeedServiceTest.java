@@ -608,8 +608,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + chameo + ssn-sosa + iec-61360 (N1k) = 17.
-    assertEquals(17, ids.size(), "expected 17 bundled ontologies");
+    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + chameo + ssn-sosa + iec-61360 (N1k) + metadata4ing-hpmc (M4I-f) = 18.
+    assertEquals(18, ids.size(), "expected 18 bundled ontologies");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -625,6 +625,7 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("chameo"), "manifest missing chameo (N1k)");
     assertTrue(ids.contains("ssn-sosa"), "manifest missing ssn-sosa (N1k)");
     assertTrue(ids.contains("iec-61360"), "manifest missing iec-61360 (N1k)");
+    assertTrue(ids.contains("metadata4ing-hpmc"), "manifest missing metadata4ing-hpmc (M4I-f)");
   }
 
   /**
@@ -661,7 +662,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(16, kept.size(), "skip-bundles=obo-relations should leave 16 entries");
+    assertEquals(17, kept.size(), "skip-bundles=obo-relations should leave 17 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
@@ -669,6 +670,7 @@ class OntologySeedServiceTest {
     assertTrue(kept.contains("chameo"), "skip-bundles=obo-relations must not affect chameo");
     assertTrue(kept.contains("ssn-sosa"), "skip-bundles=obo-relations must not affect ssn-sosa");
     assertTrue(kept.contains("iec-61360"), "skip-bundles=obo-relations must not affect iec-61360");
+    assertTrue(kept.contains("metadata4ing-hpmc"), "skip-bundles=obo-relations must not affect metadata4ing-hpmc");
   }
 
   // ONT1b — metadata4ing (NFDI4Ing) bundle.
@@ -732,13 +734,14 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(16, kept.size(), "skip-bundles=metadata4ing should leave 16 entries");
+    assertEquals(17, kept.size(), "skip-bundles=metadata4ing should leave 17 entries");
     assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
     assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
     assertTrue(kept.contains("chameo"), "skip-bundles=metadata4ing must not affect chameo");
     assertTrue(kept.contains("ssn-sosa"), "skip-bundles=metadata4ing must not affect ssn-sosa");
     assertTrue(kept.contains("iec-61360"), "skip-bundles=metadata4ing must not affect iec-61360");
+    assertTrue(kept.contains("metadata4ing-hpmc"), "skip-bundles=metadata4ing must not affect metadata4ing-hpmc");
   }
 
   // N1k — CHAMEO + SSN/SOSA + IEC-61360 bundles.
@@ -796,6 +799,56 @@ class OntologySeedServiceTest {
     assertEquals("CC BY 4.0", iec.license, "iec-61360 licence string");
     assertEquals("iec-61360.ttl", iec.file, "iec-61360 bundle file name");
     assertEquals("Turtle", iec.format, "iec-61360 bundled format");
+  }
+
+  // M4I-f — metadata4ing-hpmc bundle.
+
+  /**
+   * M4I-f — metadata4ing HPMC bundle carries the canonical NFDI4Ing HPMC IRI
+   * prefix ({@code https://w3id.org/nfdi4ing/metadata4ing/hpmc#}), is licensed
+   * CC BY 4.0, ships as {@code metadata4ing-hpmc.ttl} in Turtle format, and
+   * pins the canonical NFDI4Ing HPMC URL. Mirrors the N1k per-bundle
+   * assertion style.
+   */
+  @Test
+  void realManifest_metadata4ingHpmcCarriesHpmcIriPrefixAndCcBy4Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var hpmc = svc.loadManifest().stream()
+      .filter(e -> "metadata4ing-hpmc".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("metadata4ing-hpmc bundle missing from manifest"));
+    assertEquals("https://w3id.org/nfdi4ing/metadata4ing/hpmc#", hpmc.iriPrefix, "metadata4ing-hpmc IRI prefix");
+    assertEquals("CC BY 4.0", hpmc.license, "metadata4ing-hpmc licence string");
+    assertEquals("metadata4ing-hpmc.ttl", hpmc.file, "metadata4ing-hpmc bundle file name");
+    assertEquals("Turtle", hpmc.format, "metadata4ing-hpmc bundled format");
+    assertEquals("https://nfdi4ing.de/5-23-2/", hpmc.canonicalUrl,
+      "metadata4ing-hpmc canonical URL pinned to the NFDI4Ing HPMC publication");
+  }
+
+  /**
+   * M4I-f — {@code skip-bundles=metadata4ing-hpmc} excludes only the HPMC
+   * entry from the seed pass and leaves the other seventeen bundles untouched.
+   * Symmetric with the N1k skip-bundles tests above.
+   */
+  @Test
+  void realManifest_skipBundlesMetadata4ingHpmc_excludesHpmcButRetainsOthers() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    Set<String> skip = OntologySeedService.parseSkipBundles("metadata4ing-hpmc");
+    List<String> kept = svc
+      .loadManifest()
+      .stream()
+      .map(e -> e.id)
+      .filter(id -> !skip.contains(id))
+      .toList();
+    assertEquals(17, kept.size(), "skip-bundles=metadata4ing-hpmc should leave 17 entries");
+    assertFalse(kept.contains("metadata4ing-hpmc"), "metadata4ing-hpmc should be excluded by skip-bundles");
+    assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing-hpmc must not affect prov-o");
+    assertTrue(kept.contains("metadata4ing"), "skip-bundles=metadata4ing-hpmc must not affect metadata4ing");
+    assertTrue(kept.contains("chameo"), "skip-bundles=metadata4ing-hpmc must not affect chameo");
+    assertTrue(kept.contains("ssn-sosa"), "skip-bundles=metadata4ing-hpmc must not affect ssn-sosa");
+    assertTrue(kept.contains("iec-61360"), "skip-bundles=metadata4ing-hpmc must not affect iec-61360");
   }
 
   // ---------- helpers -------------------------------------------------------

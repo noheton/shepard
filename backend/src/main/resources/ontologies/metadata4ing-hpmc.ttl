@@ -1,0 +1,97 @@
+# Canonical source: https://nfdi4ing.de/5-23-2/
+# Ontology IRI:    https://w3id.org/nfdi4ing/metadata4ing/hpmc#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the metadata4ing HPMC (High-Performance Measurement
+# and Computing) sub-ontology, published by NFDI4Ing. The HPMC sub-ontology
+# extends the base metadata4ing vocabulary (m4i) for workflows that combine
+# high-rate data acquisition (e.g. LUMEN hot-fire DAQ at µs resolution) with
+# computational processing pipelines (e.g. MFFD AFP multi-sensor robot
+# telemetry reduction chains).
+#
+# Transitive dependencies: the full canonical OWL may import or reference
+# NFDI-MatWerk and/or MaRDI vocabulary terms. These are forward-referenced
+# here and will be resolved on the first N1c admin refresh
+# (`shepard-admin semantic refresh-ontologies`).
+#
+# This stub carries the canonical IRI prefix plus the headline classes
+# needed for the annotation flow on a fresh install. Operators who need
+# the full vocabulary run the N1c refresh CLI or drop the canonical OWL
+# in place and regenerate the manifest entry.
+#
+# Minimum-viable Shepard stub — M4I-f (2026-05-27).
+
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix m4i:      <http://w3id.org/nfdi4ing/metadata4ing/> .
+@prefix m4i-hpmc: <https://w3id.org/nfdi4ing/metadata4ing/hpmc#> .
+
+<https://w3id.org/nfdi4ing/metadata4ing/hpmc>
+    a owl:Ontology ;
+    dcterms:title   "metadata4ing HPMC — High-Performance Measurement and Computing sub-ontology (shepard-bundled stub)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:source  <https://nfdi4ing.de/5-23-2/> ;
+    owl:imports     <http://w3id.org/nfdi4ing/metadata4ing/> ;
+    owl:versionInfo "draft (NFDI4Ing HPMC working group)" ;
+    rdfs:label      "metadata4ing HPMC"@en ;
+    rdfs:comment    "HPMC sub-ontology for high-performance measurement and computing workflows. Extends the base metadata4ing vocabulary for LUMEN hot-fire DAQ and MFFD AFP multi-sensor telemetry use cases. Published by the NFDI4Ing HPMC working group. Transitive dependencies on NFDI-MatWerk / MaRDI terms TBD on first full-OWL refresh."@en .
+
+# ---- Core HPMC classes -------------------------------------------------------
+
+m4i-hpmc:HpmcWorkflow
+    a owl:Class ;
+    rdfs:subClassOf m4i:ProcessingStep ;
+    rdfs:label   "HPMC Workflow"@en ;
+    rdfs:comment "A workflow combining high-performance measurement (sensor acquisition) and computing (signal processing or simulation) stages. Subclass of m4i:ProcessingStep, enabling PROV-O provenance stamping via the base m4i model."@en .
+
+m4i-hpmc:ComputationalStep
+    a owl:Class ;
+    rdfs:subClassOf m4i:ProcessingStep ;
+    rdfs:label   "Computational Step"@en ;
+    rdfs:comment "A discrete computational processing step within an HPMC workflow — e.g. FFT, filter application, model inference, or simulation run. Captures software environment and parameter settings alongside input/output data."@en .
+
+m4i-hpmc:MeasurementWorkflow
+    a owl:Class ;
+    rdfs:subClassOf m4i-hpmc:HpmcWorkflow ;
+    rdfs:label   "Measurement Workflow"@en ;
+    rdfs:comment "An HPMC workflow specialised for high-rate sensor data acquisition — e.g. a LUMEN hot-fire run capturing pressure, vibration, and temperature channels at µs resolution. Links measurement equipment identity, DAQ settings, and raw timeseries to a DataObject."@en .
+
+m4i-hpmc:DataAcquisitionStep
+    a owl:Class ;
+    rdfs:subClassOf m4i-hpmc:ComputationalStep ;
+    rdfs:label   "Data Acquisition Step"@en ;
+    rdfs:comment "A step performing raw sensor data acquisition from physical instruments into a digital data stream. Captures sampling rate, channel count, bit depth, trigger conditions, and equipment identifiers for audit-trail compliance."@en .
+
+m4i-hpmc:SignalProcessingStep
+    a owl:Class ;
+    rdfs:subClassOf m4i-hpmc:ComputationalStep ;
+    rdfs:label   "Signal Processing Step"@en ;
+    rdfs:comment "A step performing digital signal processing on acquired sensor data — e.g. filtering, decimation, spectral analysis, anomaly detection. Captures algorithm identity and version, parameters, and the input/output channel appIds."@en .
+
+# ---- Key properties ----------------------------------------------------------
+
+m4i-hpmc:hasSamplingRate
+    a owl:DatatypeProperty ;
+    rdfs:label   "has sampling rate"@en ;
+    rdfs:domain  m4i-hpmc:DataAcquisitionStep ;
+    rdfs:range   <http://www.w3.org/2001/XMLSchema#double> ;
+    rdfs:comment "The sampling rate of the data acquisition step in samples per second (Hz). Used for LUMEN DAQ channel metadata and MFFD AFP telemetry ingest."@en .
+
+m4i-hpmc:hasChannelCount
+    a owl:DatatypeProperty ;
+    rdfs:label   "has channel count"@en ;
+    rdfs:domain  m4i-hpmc:DataAcquisitionStep ;
+    rdfs:range   <http://www.w3.org/2001/XMLSchema#integer> ;
+    rdfs:comment "Number of sensor channels simultaneously acquired in this data acquisition step."@en .
+
+m4i-hpmc:hasAlgorithmIdentifier
+    a owl:DatatypeProperty ;
+    rdfs:label   "has algorithm identifier"@en ;
+    rdfs:domain  m4i-hpmc:SignalProcessingStep ;
+    rdfs:range   <http://www.w3.org/2001/XMLSchema#string> ;
+    rdfs:comment "A human-readable identifier for the signal processing algorithm applied — e.g. 'Butterworth-lowpass-4th-order', 'FFT-welch', 'isolation-forest-v2'."@en .
+
+# End of Shepard minimum-viable stub — replace with canonical HPMC OWL for full vocabulary.
