@@ -10,9 +10,14 @@ import {
   useTermSearch,
   type TermSuggestion,
 } from "~/composables/context/useTermSearch";
+import { symbolicNameToSearchToken } from "~/utils/symbolicNameToSearchToken";
 
 interface AddAnnotationDialogProps {
   annotated: Annotated;
+  /** Optional pre-fill string for the property search field, derived from a
+   *  channel's symbolicName via symbolicNameToSearchToken(). When absent the
+   *  dialog opens with an empty search field (backward-compatible). */
+  prefill?: string;
 }
 
 const props = defineProps<AddAnnotationDialogProps>();
@@ -20,6 +25,20 @@ const props = defineProps<AddAnnotationDialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
+});
+
+// v-model:search binding for the property combobox — allows programmatic
+// pre-fill when a channel symbolicName is supplied via the `prefill` prop.
+const propertySearch = ref<string>("");
+
+onMounted(() => {
+  if (props.prefill) {
+    const token = symbolicNameToSearchToken(props.prefill);
+    if (token) {
+      propertySearch.value = token;
+      onPropertySearch(token);
+    }
+  }
 });
 
 const emit = defineEmits<{
@@ -183,6 +202,7 @@ const onSubmit = async () => {
         <v-row>
           <v-col class="pb-1">
             <v-combobox
+              v-model:search="propertySearch"
               :items="propertySuggestions"
               :loading="propertyLoading"
               autofocus

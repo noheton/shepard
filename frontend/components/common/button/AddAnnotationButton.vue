@@ -1,5 +1,11 @@
 <script lang="ts" setup>
-defineProps<{ annotated: Annotated }>();
+defineProps<{
+  annotated: Annotated;
+  /** Optional pre-fill hint for the annotation search field. Pass a channel's
+   *  symbolicName (e.g. "compaction_force") and the dialog will derive the
+   *  best search token automatically. */
+  prefill?: string;
+}>();
 const showCreateAnnotationDialog = ref(false);
 </script>
 
@@ -13,6 +19,7 @@ const showCreateAnnotationDialog = ref(false);
     v-if="showCreateAnnotationDialog"
     v-model:show-dialog="showCreateAnnotationDialog"
     :annotated="annotated"
+    :prefill="prefill"
   />
 </template>
 

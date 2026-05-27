@@ -87,6 +87,7 @@ const itemsPerPage = 10;
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
                     :annotated="new AnnotatedTimeseries(item)"
+                    :prefill="item.symbolicName ?? undefined"
                   />
                 </td>
               </tr>
