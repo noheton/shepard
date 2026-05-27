@@ -167,6 +167,27 @@ PROP_CAMPAIGN_ROLE = LUMEN_NS + "CampaignRole"  # lumen:CampaignRole predicate
 PROP_ANOMALY_TYPE = LUMEN_NS + "AnomalyType"  # lumen:AnomalyType predicate
 PROP_QUALITY = SHEX_NS + "QualityFlag"        # quality-flag still from shex
 
+# ONT1c — cross-ontology predicates for the anomaly-repair lineage chain.
+# IRIs verified against bundled TTL files in
+# backend/src/main/resources/ontologies/.
+RO_NS   = "http://purl.obolibrary.org/obo/"
+PROV_NS = "http://www.w3.org/ns/prov#"
+M4I_NS  = "http://w3id.org/nfdi4ing/metadata4ing/"
+
+PROP_DERIVES_FROM     = RO_NS   + "RO_0001000"       # ro:derives_from
+PROP_WAS_GENERATED_BY = PROV_NS + "wasGeneratedBy"    # prov:wasGeneratedBy
+PROP_PROCESSING_STEP  = M4I_NS  + "ProcessingStep"    # m4i:ProcessingStep
+
+# Synthetic LUMEN concept IRIs used as annotation values.
+# These are declared in the lumen-inspired.ttl ontology
+# (backend/src/main/resources/ontologies/lumen-inspired.ttl) or are plain
+# LUMEN_NS IRIs that serve as stable identifiers within this showcase.
+VAL_TR004_ENTITY                 = LUMEN_NS + "TR-004"                 # the TR-004 entity
+VAL_BEARING_REPLACEMENT_ACTIVITY = LUMEN_NS + "BearingReplacementActivity"
+VAL_ANOMALY_INVESTIGATION_STEP   = LUMEN_NS + "AnomalyInvestigationStep"
+VAL_BEARING_TEARDOWN_STEP        = LUMEN_NS + "BearingTeardownStep"
+VAL_POST_REPAIR_RETEST_STEP      = LUMEN_NS + "PostRepairRetestStep"
+
 VAL_PHASE: dict[str, str] = {
     "precool":      LUMEN_NS + "PreCooling",
     "ignition":     LUMEN_NS + "IgnitionSequence",
@@ -1016,6 +1037,57 @@ def annotate_run(
             _log("OK", f"{run_do.name}/anomaly-type", "SemanticAnnotation")
         except Exception as exc:
             _log("SKIP", f"{run_do.name}/anomaly-type", "SemanticAnnotation", str(exc)[:60])
+
+
+# ---- ONT1c repair-lineage annotations -------------------------------------
+
+
+def annotate_repair_lineage(
+    apis: Apis,
+    coll: Collection,
+    runs: dict[int, DataObject],
+    investigation: DataObject,
+    repo: SemanticRepository,
+) -> None:
+    """ONT1c — Annotate the TR-004 → investigation → TR-005 → repair → TR-006
+    chain with cross-vocabulary predicate terms:
+
+    * ``m4i:ProcessingStep`` (metadata4ing) — marks the investigation, the
+      bearing teardown (TR-005), and the post-repair re-test (TR-006) as
+      distinct processing steps in the repair workflow.
+    * ``ro:derives_from`` (OBO RO_0001000) — declares that TR-006 re-test data
+      derives from TR-004 (the anomaly run that triggered the repair).
+    * ``prov:wasGeneratedBy`` (PROV-O) — links TR-006 to the
+      BearingReplacementActivity, making the provenance statement
+      machine-readable and PROV-compatible.
+
+    All annotations are idempotent via try/except: duplicate-annotation errors
+    (from re-seeding) are silently skipped.
+    """
+    annotations: list[tuple[DataObject, str, str, str]] = [
+        # (data_object, propertyIRI, valueIRI, log_label)
+        (investigation, PROP_PROCESSING_STEP,  VAL_ANOMALY_INVESTIGATION_STEP,   "investigation/m4i-ProcessingStep"),
+        (runs[5],       PROP_PROCESSING_STEP,  VAL_BEARING_TEARDOWN_STEP,        "TR-005/m4i-ProcessingStep"),
+        (runs[6],       PROP_PROCESSING_STEP,  VAL_POST_REPAIR_RETEST_STEP,      "TR-006/m4i-ProcessingStep"),
+        (runs[6],       PROP_WAS_GENERATED_BY, VAL_BEARING_REPLACEMENT_ACTIVITY, "TR-006/prov-wasGeneratedBy"),
+        (runs[6],       PROP_DERIVES_FROM,     VAL_TR004_ENTITY,                 "TR-006/ro-derivesFrom-TR004"),
+    ]
+    for do, prop_iri, val_iri, label in annotations:
+        ann = SemanticAnnotation(
+            propertyIRI=prop_iri,
+            propertyRepositoryId=repo.id,
+            valueIRI=val_iri,
+            valueRepositoryId=repo.id,
+        )
+        try:
+            apis.annotation.create_data_object_annotation(
+                collection_id=coll.id,
+                data_object_id=do.id,
+                semantic_annotation=ann,
+            )
+            _log("OK", label, "SemanticAnnotation")
+        except Exception as exc:
+            _log("SKIP", label, "SemanticAnnotation", str(exc)[:60])
 
 
 # ---- publications DataObject (best-effort) ---------------------------------
@@ -2337,6 +2409,11 @@ def main(argv: list[str] | None = None) -> int:
         if repo is not None:
             annotate_phase_boundaries(apis, coll, run_do, tsr, repo, is_anomaly_run=(n == ANOMALY_RUN))
             annotate_run(apis, coll, run_do, repo, n)
+
+    # ONT1c — repair-lineage annotations (cross-vocabulary: RO + m4i + PROV-O).
+    # Runs after the per-run loop so all run DataObjects are guaranteed to exist.
+    if repo is not None:
+        annotate_repair_lineage(apis, coll, runs, investigation, repo)
 
     # Lab journals
     ensure_lab_journal(apis, runs[ANOMALY_RUN], JOURNAL_TR4, "tr4-debrief")
