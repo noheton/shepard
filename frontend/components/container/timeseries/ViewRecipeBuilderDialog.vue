@@ -39,6 +39,9 @@ const autoSelectedAxes = ref<Set<string>>(new Set());
 /** If true, show the "save role annotations" snackbar. */
 const showSaveSnackbar = ref(false);
 
+/** True while autoPopulateFromAnnotations() is running — suppress onAxisChange. */
+const isAutoPopulating = ref(false);;
+
 const channelItems = computed(() =>
   props.channels.map((ch, i) => ({
     title: [ch.device, ch.field, ch.measurement].filter(Boolean).join(" · "),
@@ -48,14 +51,27 @@ const channelItems = computed(() =>
 
 /**
  * Look up the index in `channels` that corresponds to a shepardId.
+ *
+ * `channelsV2` = all channels in the container (by shepardId).
+ * `channels`   = only the channels exposed by THIS reference (by 5-tuple).
+ * They are NOT parallel arrays — they must be cross-referenced by 5-tuple fields.
+ *
  * Returns null if no match.
  */
 function indexByShepardId(shepardId: string | null | undefined): number | null {
   if (!shepardId || !props.channelsV2) return null;
-  const v2idx = props.channelsV2.findIndex((c) => c.shepardId === shepardId);
-  if (v2idx < 0) return null;
-  // channelsV2 and channels are parallel arrays (same order)
-  return v2idx < props.channels.length ? v2idx : null;
+  const v2match = props.channelsV2.find((c) => c.shepardId === shepardId);
+  if (!v2match) return null;
+  // Cross-reference into channels[] by 5-tuple identity
+  const idx = props.channels.findIndex(
+    (ch) =>
+      ch.measurement   === v2match.measurement &&
+      ch.device        === v2match.device &&
+      ch.field         === v2match.field &&
+      (ch.location     ?? null) === (v2match.location     ?? null) &&
+      (ch.symbolicName ?? null) === (v2match.symbolicName ?? null),
+  );
+  return idx >= 0 ? idx : null;
 }
 
 type RoleKey = "x" | "y" | "z" | "rot_a" | "rot_b" | "rot_c";
@@ -96,6 +112,9 @@ async function autoPopulateFromAnnotations() {
 }
 
 function onAxisChange(role: string) {
+  // During auto-populate the v-model assignments fire this handler programmatically.
+  // Skip snackbar logic until the user actually makes a manual change.
+  if (isAutoPopulating.value) return;
   // If the user manually changes an axis that was auto-populated, mark it as manual
   autoSelectedAxes.value.delete(role);
   // Show snackbar prompting to save as annotation
@@ -165,6 +184,8 @@ const canOpen = computed(
 
 watch(open, async (v) => {
   if (v) {
+    // Set guard FIRST — resets below trigger @update:model-value on v-selects
+    isAutoPopulating.value = true;
     xIdx.value = null; yIdx.value = null; zIdx.value = null;
     valueIdx.value = null;
     eulerAIdx.value = null; eulerBIdx.value = null; eulerCIdx.value = null;
@@ -173,6 +194,7 @@ watch(open, async (v) => {
     showSaveSnackbar.value = false;
     // Auto-populate from annotations (best-effort)
     await autoPopulateFromAnnotations();
+    isAutoPopulating.value = false;
   }
 });
 </script>

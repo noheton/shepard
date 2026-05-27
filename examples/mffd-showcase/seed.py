@@ -609,7 +609,15 @@ def annotate_spatial_roles(
 ) -> None:
     """
     TS-AXIS-AUTO — write axis-role annotations for channels in a timeseries
-    container whose field name matches a known spatial role.
+    container whose device matches ``prefix`` and whose field name maps to a
+    known spatial role.
+
+    Filtering by device is critical: the container holds channels from multiple
+    instruments (LBR iiwa, AFP robot, …) that share the same field names (e.g.
+    ``force_x_N``). Annotating all of them as role "x" would leave duplicate
+    role entries in Neo4j. The backend's first-wins policy would silently pick
+    whichever channel appears first in the channel listing rather than the one
+    the caller intended.
 
     Calls:
       GET  /v2/timeseries-containers/{containerId}/channels
@@ -618,6 +626,7 @@ def annotate_spatial_roles(
     Idempotent: existing annotations for the same predicate are not checked;
     the UI deduplicates via first-wins at read time. Running twice is safe.
     """
+    device_filter = DEVICE_FOR_PREFIX.get(prefix, prefix)
     v2 = _v2_base(host)
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
 
@@ -643,6 +652,9 @@ def annotate_spatial_roles(
 
     annotated = 0
     for ch in all_channels:
+        # Only annotate channels belonging to this device prefix
+        if ch.get("device") != device_filter:
+            continue
         shepard_id = ch.get("shepardId")
         field = ch.get("field", "")
         role = AXIS_ROLES_BY_FIELD.get(field)
@@ -657,9 +669,9 @@ def annotate_spatial_roles(
         if resp.status_code in (200, 201):
             annotated += 1
         else:
-            _log("WARN", f"channel {shepard_id} field={field}", "axis annotation", resp.status_code)
+            _log("WARN", f"channel {shepard_id} device={device_filter} field={field}", "axis annotation", resp.status_code)
 
-    _log("OK", f"prefix={prefix}", "axis annotations", annotated)
+    _log("OK", f"prefix={prefix} device={device_filter}", "axis annotations", annotated)
 
 
 # ---------------------------------------------------------------------------
