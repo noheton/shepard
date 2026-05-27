@@ -24,7 +24,7 @@ const headers = [
   {
     title: "ID",
     key: "id",
-    width: "10%",
+    width: "8%",
     cellProps: {
       class: "text-body-1",
     },
@@ -32,7 +32,7 @@ const headers = [
   {
     title: "Name",
     key: BasicContainerAttributes.Name,
-    width: "30%",
+    width: "27%",
     cellProps: {
       class: "text-subtitle-2 word-wrap-anywhere",
     },
@@ -40,7 +40,7 @@ const headers = [
   {
     title: "Container Type",
     key: BasicContainerAttributes.Type,
-    width: "20%",
+    width: "17%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -48,7 +48,7 @@ const headers = [
   {
     title: "Created by",
     key: BasicContainerAttributes.CreatedBy,
-    width: "20%",
+    width: "17%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -56,9 +56,19 @@ const headers = [
   {
     title: "Created at",
     key: BasicContainerAttributes.CreatedAt,
-    width: "20%",
+    width: "16%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
+    },
+  },
+  {
+    // CC1e — linked-from breadcrumb: how many Collections reference this container.
+    title: "Referenced by",
+    key: "referencedBy",
+    width: "15%",
+    sortable: false,
+    cellProps: {
+      class: "text-body-1",
     },
   },
 ];
@@ -139,6 +149,13 @@ function onPageChange(page: number) {
             :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
             style="display: block; color: inherit; text-decoration: none;"
           >{{ toShortDateString(rowProps.item.createdAt) }}</NuxtLink>
+        </template>
+        <!-- CC1e: referenced-by collection count — lazy fetch per row -->
+        <template #[`item.referencedBy`]>
+          <ContainerReferencedByCell
+            :container-id="rowProps.item.id"
+            :container-type="rowProps.item.type"
+          />
         </template>
       </v-data-table-row>
     </template>
