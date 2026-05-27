@@ -14,7 +14,8 @@ Run::
 
 Output layout::
 
-    data/timeseries/   afp-s1-*.csv, stringer-s1-*.csv, frame-punkt-*.csv, …
+    data/timeseries/   afp-s1-*.csv (6 process + 6 TCP pose), stringer-s1-*.csv, frame-punkt-*.csv, …
+                       lbr-*.csv (7 joints + 6 F/T + 6 TCP pose), …
     data/structured/   ndt-s1-report.json, stringer-s1-quality.json, …
     data/files/        afp-layup-recipe-s1.md, rework-s1-protocol.md, …
     data/manifest.json
@@ -71,6 +72,15 @@ AFP_CH: dict[str, Ch] = {
     "nip_pressure_bar":      Ch(  6.5,  0.3, "bar"),                # consolidation pressure
 }
 
+# ── AFP TCP robot-pose channels (KUKA KR270 R2700, ceiling-mount) ─────────────
+# 6D Cartesian pose of the AFP head tool-centre-point in the mold frame.
+# The mold section is ~2000 mm wide (X) × ~8000 mm long (Y).  Each ply is
+# 16 mm tape so one pass covers 16 mm in Y.  A representative 10-min slice
+# covers ~18 plies (S1 early plies).  Nominal clearance above mold: 80 mm.
+AFP_TCP_NAMES = ["tcp_x_mm", "tcp_y_mm", "tcp_z_mm", "tcp_rx_deg", "tcp_ry_deg", "tcp_rz_deg"]
+# LBR TCP pose channels (KUKA LBR iiwa 14 R820)
+LBR_TCP_NAMES = ["tcp_x_mm", "tcp_y_mm", "tcp_z_mm", "tcp_rx_deg", "tcp_ry_deg", "tcp_rz_deg"]
+
 # ── Continuous ultrasonic welding channels (stringers) ─────────────────────────
 WELD_CH: dict[str, Ch] = {
     "sonotrode_amplitude_um": Ch( 45.0,  3.0, "µm"),         # ultrasonic amplitude at horn tip
@@ -119,6 +129,14 @@ def gen_afp(rng: np.random.Generator, out: Path, panel: str, anomaly: bool) -> N
     +18 °C at t = 280–320 s (ply-5 interval), simulating the transient resin-starved
     zone that active thermography later detects as a 45 cm² delamination at rib
     station 7.
+
+    TCP robot-pose channels (KUKA KR270 R2700, ceiling-mount):
+    - tcp_x_mm  : triangular sweep 0 → 2000 → 0 → … (one traverse ≈ 16.7 s @ 120 mm/s)
+    - tcp_y_mm  : monotonically advances +16 mm/pass (tape width) over 18 plies
+    - tcp_z_mm  : ≈ 80 mm clearance above mold surface (small noise)
+    - tcp_rx_deg: small roll noise ±2° (surface-following)
+    - tcp_ry_deg: follows barrel curvature; ≈ 8° × sin(2π x / 2000) (CFRP mold cross-section)
+    - tcp_rz_deg: 0° on forward pass, 180° on return (head flip at each turnaround)
     """
     t0 = 0.0 if panel == "s1" else 3600.0  # S2 starts 1 h after S1 (parallel)
     n = AFP_S * AFP_HZ
@@ -136,7 +154,29 @@ def gen_afp(rng: np.random.Generator, out: Path, panel: str, anomaly: bool) -> N
                     val = ch.nom + 18.0 + rng.normal(0, ch.std * 1.5)
             rows.append((ts, round(val, 4)))
         _csv(out / "timeseries" / f"afp-{panel}-{name}.csv", rows)
-    print(f"  AFP {panel.upper()}: {len(AFP_CH)} channels × {AFP_S} s @ {AFP_HZ} Hz"
+
+    # ── TCP robot-pose (6D) ───────────────────────────────────────────────────
+    # Traverse period: 2000 mm / 120 mm/s = 16.667 s one-way.
+    traverse_s = 2000.0 / 120.0
+    t_arr = np.arange(n) / AFP_HZ
+    # Normalised position within a single traverse (0→1→0 sawtooth via abs(triangle))
+    phase_norm = (t_arr / traverse_s) % 2.0          # 0→1 forward, 1→2 return
+    forward = phase_norm < 1.0
+    x_pos = np.where(forward, phase_norm, 2.0 - phase_norm) * 2000.0  # mm
+    # Y advances by tape width per half-traverse
+    pass_num = np.floor(t_arr / traverse_s)
+    y_pos = pass_num * 16.0                           # 16 mm tape width per pass
+    z_pos = np.full(n, 80.0)                          # 80 mm clearance
+    rx = rng.normal(0, 2.0, n)                        # roll ±2° noise
+    ry = 8.0 * np.sin(2 * np.pi * x_pos / 2000.0) + rng.normal(0, 1.0, n)  # curvature following
+    rz = np.where(forward, 0.0, 180.0) + rng.normal(0, 0.5, n)  # head flip
+
+    for ch_name, vals in zip(AFP_TCP_NAMES, [x_pos, y_pos, z_pos, rx, ry, rz]):
+        rows = [(_ts(CAMPAIGN_START, t0, i, AFP_HZ), round(float(vals[i]), 4)) for i in range(n)]
+        _csv(out / "timeseries" / f"afp-{panel}-{ch_name}.csv", rows)
+
+    total_ch = len(AFP_CH) + len(AFP_TCP_NAMES)
+    print(f"  AFP {panel.upper()}: {total_ch} channels × {AFP_S} s @ {AFP_HZ} Hz"
           + (" [anomaly seeded]" if anomaly else ""), flush=True)
 
 
@@ -230,11 +270,20 @@ def gen_assembly(rng: np.random.Generator, out: Path) -> None:
 
 
 def gen_lbr(rng: np.random.Generator, out: Path) -> None:
-    """LBR iiwa: 7 joints + 6-axis F/T. 42 cleats, ~2.7 s per cleat (reach → insert → withdraw)."""
+    """LBR iiwa: 7 joints + 6-axis F/T + 6D TCP pose.
+    42 cleats, ~2.7 s per cleat (reach → insert → withdraw).
+
+    TCP Cartesian pose (KUKA LBR iiwa 14 R820, base fixed on assembly rig):
+    - tcp_x/y_mm: robot reaches ~350 mm out in XY; x oscillates ±30 mm per cleat
+    - tcp_z_mm  : descends from ~300 mm (rest) to ~230 mm (contact) during insert phase
+    - tcp_rx/ry_deg: tool tip orientation ±5° noise (force-torque guidance)
+    - tcp_rz_deg: rotates per cleat position (42 evenly spaced around 360° arc)
+    """
     day = 11 * 86400
     n = LBR_S * LBR_HZ
     t = np.arange(n) / LBR_HZ
     phase = t % 2.7          # position within a single cleat installation cycle
+
     for j, name in enumerate(LBR_JOINTS):
         rows: list[tuple[int, float]] = []
         for i in range(n):
@@ -244,6 +293,7 @@ def gen_lbr(rng: np.random.Generator, out: Path) -> None:
             val = LBR_JOINT_NOM[j] + motion + rng.normal(0, LBR_JOINT_STD[j])
             rows.append((ts, round(val, 4)))
         _csv(out / "timeseries" / f"lbr-{name}.csv", rows)
+
     for ft, name in enumerate(LBR_FT):
         rows = []
         for i in range(n):
@@ -254,7 +304,27 @@ def gen_lbr(rng: np.random.Generator, out: Path) -> None:
                 val -= 25.0   # contact-force spike during cleat insertion
             rows.append((ts, round(val, 4)))
         _csv(out / "timeseries" / f"lbr-{name}.csv", rows)
-    total_ch = len(LBR_JOINTS) + len(LBR_FT)
+
+    # ── LBR TCP Cartesian pose ────────────────────────────────────────────────
+    # Cleat index = floor(t / 2.7); 42 cleats evenly spaced on a circular arc
+    cleat_idx = np.floor(t / 2.7).astype(int)
+    cleat_angle_deg = (cleat_idx % 42) * (360.0 / 42.0)  # 0…360° arc
+    # XY reach: nominal 350 mm out + small radial variation
+    reach = 350.0 + rng.normal(0, 5.0, n)
+    tcp_x = reach * np.cos(np.radians(cleat_angle_deg)) + rng.normal(0, 2.0, n)
+    tcp_y = reach * np.sin(np.radians(cleat_angle_deg)) + rng.normal(0, 2.0, n)
+    # Z: descends to ~230 mm during insertion phase (phase 2.0–2.7 s)
+    insert = (phase >= 2.0) & (phase < 2.7)
+    tcp_z = np.where(insert, 230.0, 295.0) + rng.normal(0, 3.0, n)
+    tcp_rx = rng.normal(0, 4.0, n)   # tool tip orientation noise
+    tcp_ry = rng.normal(0, 4.0, n)
+    tcp_rz = cleat_angle_deg + rng.normal(0, 1.0, n)  # tool points toward cleat
+
+    for ch_name, vals in zip(LBR_TCP_NAMES, [tcp_x, tcp_y, tcp_z, tcp_rx, tcp_ry, tcp_rz]):
+        rows = [(_ts(CAMPAIGN_START, float(day), i, LBR_HZ), round(float(vals[i]), 4)) for i in range(n)]
+        _csv(out / "timeseries" / f"lbr-{ch_name}.csv", rows)
+
+    total_ch = len(LBR_JOINTS) + len(LBR_FT) + len(LBR_TCP_NAMES)
     print(f"  LBR robot: {total_ch} channels × {LBR_S} s @ {LBR_HZ} Hz", flush=True)
 
 
