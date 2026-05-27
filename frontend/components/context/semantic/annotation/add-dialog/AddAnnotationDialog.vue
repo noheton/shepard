@@ -10,9 +10,14 @@ import {
   useTermSearch,
   type TermSuggestion,
 } from "~/composables/context/useTermSearch";
+import { normalizePropertyHint } from "~/utils/annotationPropertyHint";
 
 interface AddAnnotationDialogProps {
   annotated: Annotated;
+  /** Optional pre-fill hint derived from the entity being annotated (e.g. a
+   *  channel's symbolicName). Normalised and used as the initial property
+   *  search term so suggestions appear immediately on open. */
+  propertyHint?: string;
 }
 
 const props = defineProps<AddAnnotationDialogProps>();
@@ -64,6 +69,12 @@ watch([propertyRepository, propertyIri, valueRepository, valueIri], () => {
     propertyIri.value !== "" &&
     valueRepository.value !== null &&
     valueIri.value !== "";
+});
+
+watch(showDialog, (open) => {
+  if (open && props.propertyHint) {
+    onPropertySearch(normalizePropertyHint(props.propertyHint));
+  }
 });
 
 const mapToAutocompleteItem = (r: SemanticRepository): AutoCompleteItem => ({

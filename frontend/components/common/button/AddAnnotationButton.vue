@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-defineProps<{ annotated: Annotated }>();
+defineProps<{
+  annotated: Annotated;
+  /** Forwarded to AddAnnotationDialog to pre-fill the property search. */
+  propertyHint?: string;
+}>();
 const showCreateAnnotationDialog = ref(false);
 </script>
 
@@ -13,6 +17,7 @@ const showCreateAnnotationDialog = ref(false);
     v-if="showCreateAnnotationDialog"
     v-model:show-dialog="showCreateAnnotationDialog"
     :annotated="annotated"
+    :property-hint="propertyHint"
   />
 </template>
 
