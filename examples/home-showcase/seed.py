@@ -61,6 +61,22 @@ TARGETS = [
         "Polled from sensor.electricity_klostergasse_20a_* via Home Assistant REST API."),
 ]
 
+# Seed channel descriptors — one representative channel per container.
+# The collector adds all channels on first ingest; the SDK requires
+# timeseries != [] when creating a TimeseriesReference, so we seed one.
+SEED_CHANNELS: dict[str, dict] = {
+    "solar-inverter": {
+        "measurement": "solar", "device": "powerocean_inverter",
+        "location": "roof", "symbolic_name": "mppt", "field": "power_w",
+        "value_type": "Float",
+    },
+    "home-consumption": {
+        "measurement": "electricity", "device": "klostergasse_20a",
+        "location": "grid", "symbolic_name": "meter", "field": "power_w",
+        "value_type": "Float",
+    },
+}
+
 
 @dataclass
 class SeededEntities:
@@ -397,15 +413,25 @@ def ensure_timeseries_reference(tsr_api, coll_id: int, do_id: int, container_id:
     except Exception:
         pass
 
-    from shepard_client import TimeseriesReference  # type: ignore
-    # We use a placeholder open-ended range — actual ingest happens via the
-    # collector adding TimeseriesDataPoint rows; the reference is purely a
-    # graph edge.
+    from shepard_client import Timeseries, TimeseriesReference  # type: ignore
+    # The SDK requires timeseries != []; seed one representative channel.
+    # The collector populates all channels on first ingest.
+    seed = SEED_CHANNELS.get(name, {
+        "measurement": "sensor", "device": name, "location": "home",
+        "symbolic_name": "value", "field": "value",
+    })
+    ts_entry = Timeseries(
+        measurement=seed["measurement"],
+        device=seed["device"],
+        location=seed["location"],
+        symbolic_name=seed["symbolic_name"],
+        var_field=seed["field"],
+    )
     new = TimeseriesReference(
         name=name,
         start=0,
-        end=10_000_000_000 * 1_000_000_000,  # nominally "open"
-        timeseries=[],
+        end=4_102_444_800_000_000_000,  # year 2100 in ns — within Long.MAX_VALUE
+        timeseries=[ts_entry],
         timeseries_container_id=container_id,
     )
     created = tsr_api.create_timeseries_reference(
