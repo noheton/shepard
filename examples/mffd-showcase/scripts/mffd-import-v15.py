@@ -120,6 +120,7 @@ Environment variables
 from __future__ import annotations
 
 import argparse
+import collections
 import datetime
 import hashlib
 import io
@@ -744,6 +745,21 @@ class ShepardClient:
         # Format: "<agent-id>; actedOnBehalfOf=<email>"
         if ai_agent:
             self._s.headers["X-AI-Agent"] = ai_agent
+        # MFFD-IMPORT-PERF4: optional telemetry handle wired post-construction
+        # via attach_telemetry(). None until attached — all gauge calls are
+        # guarded with `if self._telemetry is not None`.
+        self._telemetry: Any | None = None
+
+    def attach_telemetry(self, telemetry: Any) -> None:
+        """MFFD-IMPORT-PERF4: wire a Telemetry instance into this client.
+
+        Called from main() after Telemetry is constructed (construction order
+        forces post-init attachment). Thread-safe: Telemetry methods are
+        already lock-protected; the assignment itself is GIL-atomic.
+        Unit tests that never call attach_telemetry continue to work
+        unmodified — _telemetry stays None and all gauge paths are skipped.
+        """
+        self._telemetry = telemetry
 
     def _refresh_session(self) -> None:
         """Drop stale connection pool; recreate session with identical headers.
@@ -2495,46 +2511,70 @@ class ShepardClient:
         waiting = False
         attempt = 0
 
-        while True:
-            attempt += 1
-            last_label: str = ""
-            try:
-                r = self._s.request(method, url, timeout=timeout, **kwargs)
-                if r.status_code not in self._RETRY_STATUSES:
-                    if waiting:
-                        print(
-                            f"  [reconnect] backend back ✓ (HTTP {r.status_code}, "
-                            f"after {attempt} attempts)",
-                            flush=True,
+        # MFFD-IMPORT-PERF4: track this request as in-flight for the duration
+        # of the entire retry loop (one logical operation from caller's view).
+        # gauge_inc is a no-op when _telemetry is None (unit-test path).
+        if self._telemetry is not None:
+            self._telemetry.gauge_inc("cube3_inflight_requests", 1)
+
+        try:
+            while True:
+                attempt += 1
+                last_label: str = ""
+                _req_start = time.monotonic()
+                try:
+                    r = self._s.request(method, url, timeout=timeout, **kwargs)
+                    # MFFD-IMPORT-PERF4: record latency for this attempt.
+                    if self._telemetry is not None:
+                        self._telemetry.record_latency_ms(
+                            (time.monotonic() - _req_start) * 1000.0
                         )
-                        self._refresh_session()  # flush stale pooled connections (Learning 5)
-                    return r
-                last_label = f"HTTP {r.status_code}"
-            except (
-                requests.exceptions.ConnectionError,
-                requests.exceptions.Timeout,
-                requests.exceptions.ChunkedEncodingError,
-            ) as exc:
-                last_label = exc.__class__.__name__
+                    if r.status_code not in self._RETRY_STATUSES:
+                        if waiting:
+                            print(
+                                f"  [reconnect] backend back ✓ (HTTP {r.status_code}, "
+                                f"after {attempt} attempts)",
+                                flush=True,
+                            )
+                            self._refresh_session()  # flush stale pooled connections (Learning 5)
+                        return r
+                    last_label = f"HTTP {r.status_code}"
+                except (
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    requests.exceptions.ChunkedEncodingError,
+                ) as exc:
+                    # Record latency even on exception (measures time-to-failure,
+                    # useful for diagnosing WAN timeouts vs. fast-reject patterns).
+                    if self._telemetry is not None:
+                        self._telemetry.record_latency_ms(
+                            (time.monotonic() - _req_start) * 1000.0
+                        )
+                    last_label = exc.__class__.__name__
 
-            if not waiting:
-                print(
-                    f"  [reconnect] backend unreachable ({last_label}); "
-                    f"waiting up to {deadline_s:.0f}s for it to come back…",
-                    flush=True,
-                )
-                waiting = True
+                if not waiting:
+                    print(
+                        f"  [reconnect] backend unreachable ({last_label}); "
+                        f"waiting up to {deadline_s:.0f}s for it to come back…",
+                        flush=True,
+                    )
+                    waiting = True
 
-            if time.monotonic() >= deadline:
-                print(
-                    f"  [reconnect] giving up on {method} {url.split('?')[0]} "
-                    f"after {attempt} attempts ({deadline_s:.0f}s deadline)",
-                    flush=True,
-                )
-                return None
+                if time.monotonic() >= deadline:
+                    print(
+                        f"  [reconnect] giving up on {method} {url.split('?')[0]} "
+                        f"after {attempt} attempts ({deadline_s:.0f}s deadline)",
+                        flush=True,
+                    )
+                    return None
 
-            time.sleep(backoff)
-            backoff = min(backoff * 1.5, max_backoff)
+                time.sleep(backoff)
+                backoff = min(backoff * 1.5, max_backoff)
+        finally:
+            # MFFD-IMPORT-PERF4: always decrement inflight counter on exit
+            # (success, deadline-exceeded, or unexpected exception).
+            if self._telemetry is not None:
+                self._telemetry.gauge_inc("cube3_inflight_requests", -1)
 
     def _get(self, url: str, params: dict | None = None) -> Response | None:
         r = self._request_with_retry("GET", url, params=params, timeout=30)
@@ -3627,6 +3667,7 @@ def run_source_mode(
     name_map: dict[str, str] | None = None,
     workers: int = 1,
     use_batch_api: bool = True,
+    update_event: threading.Event | None = None,
 ) -> dict[str, int]:
     """
     Traverse source Shepard collections, migrating all three payload types
@@ -4326,6 +4367,18 @@ def run_source_mode(
                     structured_imported += c["structured_imported"]
                     structured_failed += c["structured_failed"]
                     do_bar.update(1)
+                    # MFFD-IMPORT-PERF3: preempt-friendly self-update check.
+                    # The updater detects a new version at 60s cadence but the
+                    # apply is gated by run_source_mode returning. Exit the
+                    # inner loop here (after the current DO finishes cleanly)
+                    # so the finally-block apply_pending_update path fires
+                    # without waiting for 2h+ of remaining DOs.
+                    if update_event is not None and update_event.is_set():
+                        do_bar.write(
+                            "  [self-update] pending update detected — "
+                            "exiting DO loop early to apply"
+                        )
+                        break
             else:
                 # v15.8 IMPORT-PERF1 — real fan-out. Bounded by `workers`
                 # per aidocs/93 §5 (max 4 parallel GETs against cube3 +
@@ -4395,6 +4448,16 @@ def run_source_mode(
                         do_bar.update(1)
                         # Keep pool topped up.
                         _try_submit_next()
+                        # MFFD-IMPORT-PERF3: preempt-friendly self-update check.
+                        # Stop submitting new work and drain remaining in-flight
+                        # futures (the executor `with` block handles that) so the
+                        # finally-block apply_pending_update path fires promptly.
+                        if update_event is not None and update_event.is_set():
+                            do_bar.write(
+                                "  [self-update] pending update detected — "
+                                "draining in-flight futures then exiting"
+                            )
+                            break
 
         print(
             f"  → files: uploaded={files_uploaded} skipped={files_skipped} failed={files_failed}"
@@ -4438,6 +4501,18 @@ def run_source_mode(
             "structured": {"imported": structured_imported, "failed": structured_failed},
             "duration_s": round(time.time() - _iter_start_s, 1),
         })
+
+        # MFFD-IMPORT-PERF3: outer step loop preempt check.
+        # After the completeness row is written, break before starting the
+        # next step so the finally-block apply_pending_update path fires
+        # without processing additional source steps.
+        if update_event is not None and update_event.is_set():
+            print(
+                f"\n[self-update] pending update — stopping after step {step_key!r}; "
+                f"next run resumes from state file",
+                flush=True,
+            )
+            break
 
     # ── v15.13 CONTAINED-COMPLETENESS PASS ────────────────────────────────────
     # Runs in the same process. No external script, no extra source queries —
@@ -4782,6 +4857,7 @@ def run_source_mode_workers(
     default_access_rights: str | None = None,
     name_map: dict[str, str] | None = None,
     use_batch_api: bool = True,
+    update_event: threading.Event | None = None,
 ) -> dict[str, int]:
     """v15.8 IMPORT-PERF1 — thin forwarder onto `run_source_mode(workers=N)`.
 
@@ -4811,6 +4887,7 @@ def run_source_mode_workers(
             name_map=name_map,
             workers=1,
             use_batch_api=use_batch_api,
+            update_event=update_event,
         )
 
     print(f"\n[workers] v15.8 real fan-out — pool size = {workers}")
@@ -4824,6 +4901,7 @@ def run_source_mode_workers(
         name_map=name_map,
         workers=workers,
         use_batch_api=use_batch_api,
+        update_event=update_event,
     )
 
 
@@ -5013,6 +5091,11 @@ class Telemetry:
             out.append("_" if ch in " .,/" else ch)
         return "".join(out) or "unknown"
 
+    # MFFD-IMPORT-PERF4: sliding-window size for p95 latency histogram.
+    # 200 samples at typical MFFD request cadence covers ~30–120s depending
+    # on WAN conditions — good resolution for heartbeat-cadence reporting.
+    _LATENCY_WINDOW = 200
+
     def __init__(self, dest_client: Any, version: str, mode: str) -> None:
         self._client = dest_client
         self._version = version
@@ -5023,6 +5106,14 @@ class Telemetry:
         self._events: list[dict] = []
         self._counters: dict[str, float] = {k: 0.0 for k in self._NEVER_NEGATIVE}
         self._gauges: dict[str, float] = {}
+        # MFFD-IMPORT-PERF4: in-flight counter (integer) and latency window.
+        # _inflight maps gauge_name → current count (typically just
+        # "cube3_inflight_requests"). _latency_window is a stdlib deque
+        # bounded to _LATENCY_WINDOW samples (no external deps).
+        self._inflight: dict[str, int] = {}
+        self._latency_window: collections.deque[float] = collections.deque(
+            maxlen=self._LATENCY_WINDOW
+        )
         self._start_ts_s = time.time()
         self._last_flush_s = self._start_ts_s
         self._enabled = bool(TELEMETRY_TS_CONTAINER_ID and RUNLOG_SD_CONTAINER_ID)
@@ -5034,6 +5125,33 @@ class Telemetry:
     def gauge(self, name: str, value: float) -> None:
         with self._lock:
             self._gauges[name] = float(value)
+
+    def gauge_inc(self, name: str, delta: int = 1) -> None:
+        """MFFD-IMPORT-PERF4: increment (or decrement) an in-flight counter gauge.
+
+        Thread-safe. The current value is mirrored into _gauges immediately
+        so the next flush() call includes it without a separate gauge() call.
+        Use delta=-1 to decrement on completion.
+        """
+        with self._lock:
+            new_val = self._inflight.get(name, 0) + delta
+            self._inflight[name] = max(new_val, 0)  # clamp — never negative
+            self._gauges[name] = float(self._inflight[name])
+
+    def record_latency_ms(self, latency_ms: float) -> None:
+        """MFFD-IMPORT-PERF4: append one request latency sample to the sliding window.
+
+        Computes p95 over the last _LATENCY_WINDOW samples and stores it into
+        _gauges["cube3_p95_latency_ms"] so the next flush() ships it.
+        Thread-safe; uses stdlib only (deque + sorted).
+        """
+        with self._lock:
+            self._latency_window.append(latency_ms)
+            n = len(self._latency_window)
+            if n >= 2:
+                idx = max(0, int(n * 0.95) - 1)
+                p95 = sorted(self._latency_window)[idx]
+                self._gauges["cube3_p95_latency_ms"] = p95
 
     def event(self, level: str, event: str, **kwargs: Any) -> None:
         row = {
@@ -6134,6 +6252,11 @@ def main() -> None:
         else ("source" if (cross_instance and source_mode) else "local")
     )
     telemetry = Telemetry(dest_client, IMPORT_SCRIPT_VERSION, _mode_for_telemetry)
+    # MFFD-IMPORT-PERF4: attach telemetry to dest_client so _request_with_retry
+    # can record gauge_cube3_inflight_requests + gauge_cube3_p95_latency_ms.
+    # src_client is built later (L6641); it is attached there too so cross-
+    # instance reads from cube3 also contribute to the inflight/latency gauges.
+    dest_client.attach_telemetry(telemetry)
     # v15.11 IMPORT-DIAG — instantiate DiagSink BEFORE manifest poller starts.
     # Mode is whichever the CLI / env said. The sink will mirror events into
     # `telemetry` so the existing structured-data-container channel still gets
@@ -6526,9 +6649,18 @@ def main() -> None:
                 if cross_instance
                 else None
             )
+            # MFFD-IMPORT-PERF4: attach telemetry to src_client (cube3 reads)
+            # so _request_with_retry on the source path also contributes to
+            # gauge_cube3_inflight_requests + gauge_cube3_p95_latency_ms.
+            # This is the hot path for cross-instance imports; dest_client was
+            # already attached above.
+            if src_client is not None:
+                src_client.attach_telemetry(telemetry)
             # v15.1: route through the worker-pool wrapper. N=1 is the sequential
             # fallback (preserves v15 behavior byte-for-byte). N>1 is opt-in.
             # v16.5 BATCH-API-3: use_batch_api from --use-batch-api / --no-batch-api.
+            # MFFD-IMPORT-PERF3: pass updater.update_event so the inner DO loop
+            # can preempt gracefully when a self-update is pending.
             run_source_mode_workers(
                 dest_client, coll_id, state,
                 source_client=src_client,
@@ -6537,6 +6669,7 @@ def main() -> None:
                 default_access_rights=args.default_access_rights or None,
                 name_map=name_map,
                 use_batch_api=args.use_batch_api,
+                update_event=updater.update_event,
             )
         else:
             run_local_mode(dest_client, coll_id, state)
