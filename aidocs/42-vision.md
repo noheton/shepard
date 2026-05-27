@@ -152,8 +152,15 @@ Plus payload kinds (the things References point at):
   `/v2/`-only).
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
-- **SpatialDataReference** → geo / spatial geometry, stored in
-  PostGIS (optional feature toggle).
+- **SpatialDataReference** → geo / spatial geometry and high-rate
+  engineering-process profiles (AFP brush traces, NDT scan paths,
+  robot joint trajectories), stored via `shepard-plugin-spatiotemporal`
+  (renamed from `shepard-plugin-spatial`; opt-in toggle). PostGIS
+  extension is now co-located on the TimescaleDB host (no separate
+  `postgis` container). The v6 schema adds a `profile` TimescaleDB
+  hypertable alongside the legacy `spatial_data_points` table — the
+  new substrate is designed for sub-millisecond AFP process recording
+  at MFFD scale.
 - **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
   create/read/delete + opt-in `hdf` compose profile + HTTP Basic
   Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the
@@ -495,6 +502,13 @@ The four things on the near horizon, in priority order:
 
 Mid-horizon:
 
+- **Spatiotemporal engineering-process viewer** (`aidocs/data/90`,
+  SPATIAL-V6-003/004 series). 3D brush-trace viewer (`BrushTraceView.vue`,
+  Three.js BufferGeometry) fed by a JSON-SSE + glTF trace endpoint
+  (`GET /v2/spatial-containers/{appId}/trace`). Target: AFP layup
+  path rendered in-browser at MFFD scale; section-plane controls;
+  as-designed vs. as-built overlay. NDT C-scan and PAUT sector-scan
+  view recipes in the same plugin.
 - **Snapshots** (`aidocs/41`, V2 series). Reproducible reads, deep
   exports, lineage diff.
 - **Git artifact tracking** (`aidocs/38`, G1 series). Commit-SHA

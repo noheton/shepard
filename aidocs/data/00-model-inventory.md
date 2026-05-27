@@ -1,6 +1,6 @@
 ---
 stage: deployed
-last-stage-change: 2026-05-23
+last-stage-change: 2026-05-27
 ---
 
 # 00 — Model inventory (SSOT)
@@ -30,7 +30,7 @@ per-collection, not per-tenant.
 | **Postgres** | Relational app state | `app_user`, `subscription`, `importer_run`, `legacy_v1_config` |
 | **TimescaleDB** (Postgres extension) | High-rate timeseries payloads | `timeseries` row per channel + per-timestamp value table |
 | **MongoDB** | Structured-data payloads + GridFS (legacy file storage) | `structured_data_<oid>` collections; `fs.files` / `fs.chunks` for GridFS |
-| **PostGIS** (Postgres extension) | Spatial-data payloads | `spatial_data_point` table (GeoJSON-shaped rows) |
+| **PostGIS** (Postgres extension, co-located on TimescaleDB since SPATIAL-V6-001) | Spatial-data payloads | legacy `spatial_data_points` table (GeoJSON-shaped rows) + new `shepard_spatial.profile` hypertable (engineering-process profiles: AFP brush traces, NDT scan paths, robot joint trajectories) |
 | **Garage S3** | File-payload object storage (default) | `shepard-files` bucket, key `FileContainer<oid>/<file-oid>` |
 
 Connection wait + readiness probing per substrate is governed by
@@ -117,7 +117,9 @@ Flyway-managed under `backend/src/main/resources/db/migration/V*.sql`
 | `app_user` | core | OIDC subject mapping; the `Activity` writer joins against this |
 | `subscription` | core | per-user collection-watch list |
 | `timeseries` | core (Timescale hypertable) | one row per channel keyed by 5-tuple + `shepard_id` UUID (TS-ID PR-1 shipped per `aidocs/platform/87-timeseries-appid-migration.md`) |
-| `spatial_data_point` | core (PostGIS) | one row per geo-tagged data point |
+| `spatial_data_points` | `shepard-plugin-spatiotemporal` (V1 schema, legacy) | one row per geo-tagged data point (GeoJSON-shaped; `V1.0.0__setup_spatial_data_tables.sql`) |
+| `shepard_spatial.profile_container` | `shepard-plugin-spatiotemporal` (SPATIAL-V6-001) | one row per engineering-process container; metadata + `appId` UUID |
+| `shepard_spatial.profile` | `shepard-plugin-spatiotemporal` (SPATIAL-V6-001) | TimescaleDB hypertable; one row per profile sample (container_id, time ns, position GEOMETRY, orientation GEOMETRY, measurements JSONB, annotations JSONB); BRIN + GIST + GIN indexes; 7-day compression policy; 4 space-partitions by `container_id` |
 | `importer_run` | `shepard-plugin-importer` (IMP1b) | JobService-shaped run tracker |
 | `legacy_v1_config` | `shepard-plugin-v1-compat` (V1COMPAT.0) | singleton mirror of the Neo4j `:LegacyV1Config` |
 | `file_object_migrations` | core (FS1e1) | migration sweep tracker |
