@@ -64,6 +64,7 @@ repository-code: "https://github.com/noheton/shepard"
 url: "https://noheton.github.io/shepard/"
 license: Apache-2.0
 version: "5.4.0-noheton"
+commit: "please-update"  # Updated to the tagged commit SHA by the release workflow (docs/ops/cut-a-release.md)
 
 keywords:
   - data management

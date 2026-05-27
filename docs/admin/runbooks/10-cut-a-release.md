@@ -102,7 +102,22 @@ git add backend/pom.xml frontend/package.json
 git commit -m "chore(release): bump version to ${VERSION}"
 ```
 
-### 3. Update the energy estimation log
+### 3. Update `CITATION.cff` with the release commit SHA
+
+Before tagging, pin the `commit:` field in `CITATION.cff` to the SHA of the
+release commit. This makes GitHub's "Cite this repository" UI render a
+commit-pinned citation for the tag.
+
+```bash
+# [operator-machine]
+RELEASE_COMMIT=$(git rev-parse HEAD)
+sed -i "s|^commit: .*|commit: \"${RELEASE_COMMIT}\"  # Updated to the tagged commit SHA by the release workflow (docs/ops/cut-a-release.md)|" \
+  CITATION.cff
+git add CITATION.cff
+git commit -m "chore(release): pin CITATION.cff commit SHA to ${RELEASE_COMMIT}"
+```
+
+### 4. Update the energy estimation log
 
 Per `feedback_energy_log_per_commit.md`:
 
@@ -112,7 +127,7 @@ Per `feedback_energy_log_per_commit.md`:
 # (estimate GPU/CPU hours for CI builds in this release cycle)
 ```
 
-### 4. Tag the release
+### 5. Tag the release
 
 ```bash
 # [operator-machine]
@@ -121,7 +136,7 @@ git push origin main
 git push origin "v${VERSION}"
 ```
 
-### 5. Build and push images
+### 6. Build and push images
 
 The GitHub Actions workflow `build-images.yml` triggers on tag push and:
 - Builds `shepard-backend` and `shepard-frontend` images.
@@ -145,7 +160,7 @@ For a local build (e.g. to test before tagging):
 make build-backend build-frontend
 ```
 
-### 6. Create the GitHub Release
+### 7. Create the GitHub Release
 
 ```bash
 # [operator-machine]
@@ -193,7 +208,7 @@ CycloneDX SBOM is attached as `shepard-sbom-*.json`.
 EOF
 ```
 
-### 7. Verify the release page
+### 8. Verify the release page
 
 ```bash
 # [operator-machine]
@@ -202,7 +217,7 @@ gh release view "v${VERSION}" --repo noheton/shepard
 
 Expected: release notes present, SBOM JSON attached as an asset.
 
-### 8. Deploy to nuclide (if this release goes to production)
+### 9. Deploy to nuclide (if this release goes to production)
 
 ```bash
 # [nuclide]
@@ -213,7 +228,7 @@ make redeploy
 
 Follow `docs/admin/runbooks/01-generic-cube-hotpatch.md` for the cube instance.
 
-### 9. Post-release smoke test
+### 10. Post-release smoke test
 
 ```bash
 # [operator-machine]

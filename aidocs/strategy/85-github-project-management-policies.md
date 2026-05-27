@@ -189,8 +189,10 @@ release tag exactly.
 
 1. Every shipped row in the milestone has its matching
    `aidocs/34` row landed (admin sees what changed).
-2. `aidocs/data/00-model-inventory.md` updated with the model
-   delta (if the release touched the substrate model).
+2. Every shipped row in the milestone has its matching
+   `aidocs/data/00-model-inventory.md` delta landed (model
+   inventory current with every entity, field, or relationship
+   change introduced in this release).
 3. `python3 scripts/regenerate-doc-stage-index.py --check` clean
    (no `UNTAGGED` docs).
 4. `python3 scripts/build-traceability-index.py` runs clean — the
@@ -454,7 +456,13 @@ opens a draft release on tag push.
 3. Highlight any **breaking changes** with an explicit operator
    migration note (per CLAUDE.md "Always: maintain the upstream
    upgrade path").
-4. Link the **SBOM artefact**.
+4. Link the **SBOM artefact**. For each feature that was driven by
+   a persona audit finding (e.g.
+   `aidocs/agent-findings/persona-rdm-2026-05-24.md`) or a
+   bibliography entry (`docs/_data/references.bib`), include that
+   citation in the release note body for that feature — this
+   provides Nature-grade publication evidence traceability linking
+   the shipped artefact back to the motivating research or review.
 
 Then publish. The draft is never auto-published.
 
