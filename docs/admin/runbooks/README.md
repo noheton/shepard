@@ -47,6 +47,7 @@ Operational runbooks for instance admins. Every runbook follows this contract:
 | [migration-chain-integrity](migration-chain-integrity.md) | `/shepard/api/healthz/ready` DOWN with `INCOMPLETE_MIGRATIONS` or `DIFFERENT_CONTENT` |
 | [restore-tsdb-container-neo4j-shadow](restore-tsdb-container-neo4j-shadow.md) | TimescaleDB has rows but Neo4j lost the `:TimeseriesContainer` shadow node |
 | [docker-bind-mount-inode-drift](docker-bind-mount-inode-drift.md) | Caddy / `.env` edits not visible after `caddy reload`; single-file bind-mount inode staleness |
+| [orphan-retention-policy](orphan-retention-policy.md) | Configure orphan-data retention windows, recover from delete-on-next-sweep state, query deletion audit trail (SM1a) |
 
 ---
 
@@ -76,6 +77,12 @@ Caddyfile or .env edit didn't take effect in the running container
 
 Need to cut a tagged release + push to GHCR + attach SBOM
   → 10-cut-a-release.md
+
+Operator needs to set how long orphan (unreferenced) payloads are kept
+  → orphan-retention-policy.md
+
+Container was accidentally set to delete-on-next-sweep and needs recovering
+  → orphan-retention-policy.md §4
 
 Postgres container exited / crash-looping / health check DOWN
   → 12-postgres-collapse-restart.md
