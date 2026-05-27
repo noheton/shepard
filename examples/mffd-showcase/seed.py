@@ -576,6 +576,93 @@ def upload_do_timeseries(
 
 
 # ---------------------------------------------------------------------------
+# Spatial axis role annotations (TS-AXIS-AUTO)
+
+# Maps a channel field name to its Trace3D axis role.
+# Applies to any channel whose `field` matches the key.
+# For the LBR iiwa the spatial channels are force_{x,y,z}_N.
+# For AFP TCP the channels would be tcp_{x,y,z}_mm / tcp_{rx,ry,rz}_deg
+# (not present in synthetic CSV data yet; included here for real-data runs).
+AXIS_ROLES_BY_FIELD: dict[str, str] = {
+    # LBR iiwa force/torque spatial axes
+    "force_x_N": "x",
+    "force_y_N": "y",
+    "force_z_N": "z",
+    "torque_x_Nm": "rot_a",
+    "torque_y_Nm": "rot_b",
+    "torque_z_Nm": "rot_c",
+    # AFP TCP spatial channels (present in real ZLP data)
+    "tcp_x_mm":  "x",
+    "tcp_y_mm":  "y",
+    "tcp_z_mm":  "z",
+    "tcp_rx_deg": "rot_a",
+    "tcp_ry_deg": "rot_b",
+    "tcp_rz_deg": "rot_c",
+}
+
+
+def annotate_spatial_roles(
+    host: str,
+    api_key: str,
+    container_id: int,
+    prefix: str,
+) -> None:
+    """
+    TS-AXIS-AUTO — write axis-role annotations for channels in a timeseries
+    container whose field name matches a known spatial role.
+
+    Calls:
+      GET  /v2/timeseries-containers/{containerId}/channels
+      POST /v2/timeseries-containers/{containerId}/channels/{shepardId}/annotations
+
+    Idempotent: existing annotations for the same predicate are not checked;
+    the UI deduplicates via first-wins at read time. Running twice is safe.
+    """
+    v2 = _v2_base(host)
+    headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+
+    # Fetch all channels for this container (paginated)
+    all_channels: list[dict] = []
+    page = 0
+    page_size = 200
+    while True:
+        resp = _http.get(
+            f"{v2}/timeseries-containers/{container_id}/channels",
+            params={"page": page, "size": page_size},
+            headers=headers,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        batch = resp.json()
+        if not batch:
+            break
+        all_channels.extend(batch)
+        if len(batch) < page_size:
+            break
+        page += 1
+
+    annotated = 0
+    for ch in all_channels:
+        shepard_id = ch.get("shepardId")
+        field = ch.get("field", "")
+        role = AXIS_ROLES_BY_FIELD.get(field)
+        if not shepard_id or not role:
+            continue
+        resp = _http.post(
+            f"{v2}/timeseries-containers/{container_id}/channels/{shepard_id}/annotations",
+            json={"value": role},
+            headers=headers,
+            timeout=30,
+        )
+        if resp.status_code in (200, 201):
+            annotated += 1
+        else:
+            _log("WARN", f"channel {shepard_id} field={field}", "axis annotation", resp.status_code)
+
+    _log("OK", f"prefix={prefix}", "axis annotations", annotated)
+
+
+# ---------------------------------------------------------------------------
 # Structured data upload
 
 def upload_do_structured(
@@ -730,6 +817,14 @@ def seed(apis: Apis, data_dir: Path) -> None:
         if do is None:
             continue
         upload_do_timeseries(apis, coll, do, tsc, data_dir, prefix)
+
+    # Spatial axis role annotations (TS-AXIS-AUTO)
+    print("\n--- Spatial axis role annotations ---", flush=True)
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    annotate_spatial_roles(host, api_key, tsc.id, "lbr")
+    # AFP channels use the same container; annotate when real TCP data is present.
+    annotate_spatial_roles(host, api_key, tsc.id, "afp-s1")
 
     # Structured data uploads
     print("\n--- Structured data ---", flush=True)

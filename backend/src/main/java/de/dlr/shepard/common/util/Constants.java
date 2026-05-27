@@ -273,4 +273,13 @@ public class Constants {
   public static final String TS_PREDICATE_LOCATION = "urn:shepard:channel:location";
   /** Predicate IRI for the 'symbolicName' channel-metadata field. */
   public static final String TS_PREDICATE_SYMBOLIC_NAME = "urn:shepard:channel:symbolicName";
+
+  // TS-AXIS-AUTO — spatial-axis role annotation constants
+  /**
+   * Predicate IRI that identifies a channel's spatial axis role (x/y/z/rot_a/rot_b/rot_c).
+   * Written by the UI when a user assigns a channel to an axis in the Trace3D recipe builder,
+   * and read by {@code GET /v2/timeseries-containers/{id}/channels/spatial-roles} to
+   * auto-populate the dialog on next open.
+   */
+  public static final String TS_AXIS_PREDICATE = "urn:shepard:spatial:axis";
 }

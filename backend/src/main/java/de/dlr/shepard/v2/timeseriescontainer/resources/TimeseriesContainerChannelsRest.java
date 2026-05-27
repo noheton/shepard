@@ -1,5 +1,9 @@
 package de.dlr.shepard.v2.timeseriescontainer.resources;
 
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
+import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -9,6 +13,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -25,9 +30,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -63,6 +70,9 @@ public class TimeseriesContainerChannelsRest {
   @Inject
   TimeseriesService timeseriesService;
 
+  @Inject
+  AnnotatableTimeseriesDAO annotatableTimeseriesDAO;
+
   private static final int DEFAULT_PAGE_SIZE = 200;
   private static final int MAX_PAGE_SIZE     = 1000;
 
@@ -93,6 +103,82 @@ public class TimeseriesContainerChannelsRest {
     int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
     List<TimeseriesEntity> rows = tsChannelResolver.listPaged(containerId, page, safeSize);
     List<TimeseriesChannelV2IO> body = rows.stream().map(TimeseriesChannelV2IO::from).toList();
+    return Response.ok(body).build();
+  }
+
+  // ── TS-AXIS-AUTO: auto-populate axis roles from annotations ──────────────────
+
+  /**
+   * Return the per-role channel assignments for the Trace3D recipe builder.
+   *
+   * <p>JAX-RS path matching: the literal segment {@code spatial-roles} takes
+   * precedence over the template segment {@code {shepardId}} on the sibling
+   * {@code /channels/{shepardId}/data} endpoint — no routing conflict.
+   *
+   * <p>The endpoint scans every channel in the container. For each channel it
+   * loads its {@link AnnotatableTimeseries} node (if any) and looks for a
+   * {@link SemanticAnnotation} whose {@code propertyIRI} equals
+   * {@link Constants#TS_AXIS_PREDICATE}. The first matching annotation per role
+   * wins; additional duplicates (e.g. stale entries) are silently ignored.
+   */
+  @GET
+  @Path("/{containerId}/channels/spatial-roles")
+  @Operation(
+    operationId = "getChannelSpatialRoles",
+    summary = "Return per-axis channel assignments for the Trace3D view recipe (TS-AXIS-AUTO).",
+    description = "Scans the container's channels for axis-role annotations " +
+      "(propertyIRI = urn:shepard:spatial:axis) and returns one shepardId per role. " +
+      "Null fields mean 'no annotation found for that role.' " +
+      "The Trace3D recipe builder uses this to pre-populate its axis dropdowns on open."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Spatial role map.",
+    content = @Content(schema = @Schema(implementation = SpatialRolesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  public Response getSpatialRoles(@PathParam("containerId") long containerId) {
+    timeseriesContainerService.getContainer(containerId);
+
+    // Walk all channels; for each one probe Neo4j for an axis-role annotation.
+    // We page through in batches of 500 to avoid loading everything at once
+    // for containers with thousands of channels.
+    Map<String, UUID> roleMap = new HashMap<>();
+    int page = 0;
+    final int PAGE_SIZE = 500;
+
+    while (true) {
+      List<TimeseriesEntity> batch = tsChannelResolver.listPaged(containerId, page, PAGE_SIZE);
+      if (batch.isEmpty()) break;
+
+      for (TimeseriesEntity row : batch) {
+        if (row.getShepardId() == null) continue;
+        Optional<AnnotatableTimeseries> node =
+            annotatableTimeseriesDAO.findByAppId(row.getShepardId().toString());
+        if (node.isEmpty()) continue;
+
+        for (SemanticAnnotation ann : node.get().getAnnotations()) {
+          if (!Constants.TS_AXIS_PREDICATE.equals(ann.getPropertyIRI())) continue;
+          String role = ann.getValueIRI();
+          // First annotation wins; skip if role already resolved
+          roleMap.putIfAbsent(role, row.getShepardId());
+        }
+      }
+
+      if (batch.size() < PAGE_SIZE) break;
+      page++;
+    }
+
+    SpatialRolesIO body = new SpatialRolesIO(
+        roleMap.get("x"),
+        roleMap.get("y"),
+        roleMap.get("z"),
+        roleMap.get("rot_a"),
+        roleMap.get("rot_b"),
+        roleMap.get("rot_c")
+    );
     return Response.ok(body).build();
   }
 

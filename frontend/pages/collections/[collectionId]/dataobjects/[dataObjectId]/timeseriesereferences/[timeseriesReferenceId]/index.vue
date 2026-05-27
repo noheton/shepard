@@ -283,6 +283,36 @@ watch(timeseriesReference, () => {
     title: timeseriesReference.value?.name + " | shepard",
   });
 });
+
+// ── TS-AXIS-AUTO: fetch v2 channels carrying shepardId for the recipe builder ─
+
+interface ChannelV2 {
+  shepardId: string;
+  measurement?: string;
+  device?: string;
+  field?: string;
+  location?: string;
+  symbolicName?: string;
+}
+
+const channelsV2 = ref<ChannelV2[]>([]);
+
+watch(
+  () => timeseriesReference.value?.timeseriesContainerId,
+  async (containerId) => {
+    if (!containerId) return;
+    try {
+      const data = await $fetch<ChannelV2[]>(
+        `/v2/timeseries-containers/${containerId}/channels`,
+      );
+      channelsV2.value = data ?? [];
+    } catch {
+      // Best-effort; falls back to no auto-populate
+      channelsV2.value = [];
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -634,6 +664,7 @@ watch(timeseriesReference, () => {
       v-model="showVisualize3D"
       :container-id="timeseriesReference.timeseriesContainerId"
       :channels="timeseriesReference.timeseries"
+      :channels-v2="channelsV2.length ? channelsV2 : undefined"
       :start-ns="timeseriesReference.start"
       :end-ns="timeseriesReference.end"
     />
