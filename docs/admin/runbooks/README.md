@@ -35,6 +35,8 @@ Operational runbooks for instance admins. Every runbook follows this contract:
 | 08 | [Enable plugin](08-enable-plugin.md) | nuclide | Runtime-toggle an existing plugin; or install a new JAR + restart |
 | 09 | [Permission repair](09-permission-repair.md) | nuclide | Diagnose 403/404 on a Collection; repair the Neo4j permission edge |
 | 10 | [Cut a release](10-cut-a-release.md) | operator | Pre-flight → tag → build → GitHub Release + SBOM |
+| 11 | [Postgres restore](11-postgres-restore.md) | nuclide | Four recovery scenarios: corrupt schema, accidental table drop, full-instance loss, point-in-time (Wal-G) |
+| 12 | [Postgres collapse + restart](12-postgres-collapse-restart.md) | nuclide | Detect collapse → log capture → in-place restart → volume-preserving restart → wipe + restore |
 
 ---
 
@@ -74,6 +76,12 @@ Caddyfile or .env edit didn't take effect in the running container
 
 Need to cut a tagged release + push to GHCR + attach SBOM
   → 10-cut-a-release.md
+
+Postgres container exited / crash-looping / health check DOWN
+  → 12-postgres-collapse-restart.md
+
+Postgres data needs restoring from a pg_dump backup
+  → 11-postgres-restore.md (choose scenario: corrupt schema / table drop / full-instance loss / point-in-time)
 ```
 
 ---
