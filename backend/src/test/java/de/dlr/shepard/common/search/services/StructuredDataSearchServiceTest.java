@@ -2,7 +2,9 @@ package de.dlr.shepard.common.search.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.mongodb.client.FindIterable;
@@ -34,7 +36,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 @QuarkusComponentTest
 public class StructuredDataSearchServiceTest extends BaseTestCase {
@@ -106,7 +110,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
       structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, user.getUsername())
     ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
-    when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     when(userService.getCurrentUser()).thenReturn(user);
     // test
@@ -159,7 +163,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
       )
     ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
-    when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     when(userService.getCurrentUser()).thenReturn(user);
     // test
@@ -215,7 +219,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     ).thenReturn(List.of(sdReference));
     when(userService.getCurrentUser()).thenReturn(user);
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
-    when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
     var actual = structuredDataSearcher.search(searchBody);
@@ -287,7 +291,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
       structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, user.getUsername())
     ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
-    when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(null);
     when(userService.getCurrentUser()).thenReturn(user);
     // test
@@ -344,11 +348,121 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
       List.of(sdReference)
     );
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
-    when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     when(userService.getCurrentUser()).thenReturn(user);
     // test
     var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
+  }
+
+  /**
+   * Verifies that the Filters DSL is used for the combined query (no string concatenation).
+   * The captured Bson must contain an $and clause with both the _id.$in filter and the
+   * search predicate. This is the regression guard for MONGO-AUDIT-2026-05-24-003.
+   */
+  @Test
+  public void filtersQuery_nonJsonQuery_usesFiltersAndWithIdIn() {
+    Long collectionId = 1L;
+    Long dataObjectId = 2L;
+    String oid = "61371f2889b108615688e22e";
+    String mongoID = oid;
+    DataObject dataObject = new DataObject(dataObjectId);
+    dataObject.setShepardId(dataObject.getId());
+    List<StructuredData> structuredDatas = List.of(new StructuredData(oid, new Date(), "name"));
+    StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
+    sdContainer.setMongoId(mongoID);
+    StructuredDataReference sdReference = new StructuredDataReference() {
+      {
+        setId(3L);
+        setShepardId(3L);
+        setDeleted(false);
+        setName("reference1");
+        setStructuredDatas(structuredDatas);
+        setStructuredDataContainer(sdContainer);
+        setDataObject(dataObject);
+      }
+    };
+    // non-JSON query (does not start with '{') — passed through verbatim wrapped in braces
+    String query = "xwert: {$gt: 0}";
+    SearchScope scope = new SearchScope(collectionId, dataObjectId, new TraversalRules[] {});
+    SearchBody searchBody = new SearchBody(new SearchScope[] { scope }, new SearchParams(query, QueryType.StructuredData));
+
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, user.getUsername()))
+      .thenReturn(List.of(sdReference));
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
+    when(mongoQueryResult.first()).thenReturn(firstDocument);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    structuredDataSearcher.search(searchBody);
+
+    // Capture the Bson passed to find() and verify it is an $and with _id.$in and the search predicate
+    ArgumentCaptor<Bson> captor = ArgumentCaptor.forClass(Bson.class);
+    verify(mongoContainer).find(captor.capture());
+    String rendered = captor.getValue().toBsonDocument().toJson();
+    assertTrue(rendered.contains("\"$and\""), "Combined filter must use $and: " + rendered);
+    assertTrue(rendered.contains("\"$in\""), "Combined filter must contain $in for _id: " + rendered);
+    assertTrue(rendered.contains("$gt"), "Combined filter must include the search predicate: " + rendered);
+  }
+
+  /**
+   * Verifies that a JSON-style query (starting with '{') is routed through
+   * MongoDBQueryBuilder before being combined via Filters.and.
+   * This is the regression guard for the JSON-query branch in MONGO-AUDIT-2026-05-24-003.
+   */
+  @Test
+  public void filtersQuery_jsonQuery_routesThroughMongoDbQueryBuilder() {
+    Long collectionId = 1L;
+    Long dataObjectId = 2L;
+    String oid = "61371f2889b108615688e22e";
+    String mongoID = oid;
+    DataObject dataObject = new DataObject(dataObjectId);
+    dataObject.setShepardId(dataObject.getId());
+    List<StructuredData> structuredDatas = List.of(new StructuredData(oid, new Date(), "name"));
+    StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
+    sdContainer.setMongoId(mongoID);
+    StructuredDataReference sdReference = new StructuredDataReference() {
+      {
+        setId(3L);
+        setShepardId(3L);
+        setDeleted(false);
+        setName("reference1");
+        setStructuredDatas(structuredDatas);
+        setStructuredDataContainer(sdContainer);
+        setDataObject(dataObject);
+      }
+    };
+    // JSON-style query (starts with '{') — routed through MongoDBQueryBuilder
+    String query =
+      """
+      {
+        "property": "sensor",
+        "value": "vibration",
+        "operator": "eq"
+      }
+      """;
+    SearchScope scope = new SearchScope(collectionId, dataObjectId, new TraversalRules[] {});
+    SearchBody searchBody = new SearchBody(new SearchScope[] { scope }, new SearchParams(query, QueryType.StructuredData));
+
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, user.getUsername()))
+      .thenReturn(List.of(sdReference));
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoContainer.find(any(Bson.class))).thenReturn(mongoQueryResult);
+    when(mongoQueryResult.first()).thenReturn(firstDocument);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    structuredDataSearcher.search(searchBody);
+
+    // Capture and verify the combined Bson uses $and and $in for _id, plus the translated eq predicate
+    ArgumentCaptor<Bson> captor = ArgumentCaptor.forClass(Bson.class);
+    verify(mongoContainer).find(captor.capture());
+    String rendered = captor.getValue().toBsonDocument().toJson();
+    assertTrue(rendered.contains("\"$and\""), "Combined filter must use $and: " + rendered);
+    assertTrue(rendered.contains("\"$in\""), "Combined filter must contain $in for _id: " + rendered);
+    // MongoDBQueryBuilder translates {"property":"sensor","value":"vibration","operator":"eq"} to
+    // sensor: {$eq: "vibration"} — verify the translated predicate field is present
+    assertTrue(rendered.contains("sensor"), "Combined filter must include translated search field: " + rendered);
+    assertTrue(rendered.contains("$eq"), "Combined filter must include translated $eq operator: " + rendered);
   }
 }
