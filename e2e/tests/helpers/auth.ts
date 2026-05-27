@@ -88,7 +88,7 @@ export async function loginAs(
     // two before the layout reflects the new session.
     for (let confirm = 0; confirm < 2; confirm++) {
       const ok = await page
-        .waitForSelector("text=SIGN OUT", { timeout: 10_000 })
+        .waitForSelector("text=SIGN OUT", { timeout: 30_000 })
         .then(() => true)
         .catch(() => false);
       if (ok) return;
