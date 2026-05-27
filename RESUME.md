@@ -1,23 +1,31 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-27 ~01:00 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
-**Active arc:** MFFD showcase — Track A real data ingest pending backend redeploy; Track B synthetic seed DONE.
-**Status:** Wave 16 **FRONTEND LIVE** (smoke 30/30 ✓, commit 4574bba53 TypeScript fix). Backend build in progress (PID 3685510, started ~00:39 UTC, Quarkus augmentation phase). Track A: AFP export running on cube3; framewelding today. Track B: **SEED COMPLETE** — Collection 987758 on nuclide has 16 DOs + 8 TS refs + 5 structured + 5 file refs. Awaiting backend rebuild + redeploy to activate Wave 14/15/16 BACKEND changes.
+**Updated:** 2026-05-28 ~01:40 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
+**Active arc:** MFFD showcase — Task #137 DONE (111 wiki DOs + TOC imported). Backend rebuild in progress (PID 354722, TS-AXIS-AUTO + TS-SEMANTIC-REST activation). TS-AXIS-VERIFY pending backend deploy.
+**Status:** Task #137 COMPLETE — 111 Confluence wiki pages imported as DataObjects in MFFD-Dropbox (661923), TOC appId `019e6bc0-8481-7a6b-93f9-28b47b17c33e`. Backend image dated 2026-05-26 — needs rebuild for TS-AXIS-AUTO (`spatial-roles` endpoint) + TS-SEMANTIC-REST (channel annotations) to activate. Maven build PID 354722 in progress.
 
 ---
 
 ## Immediate next action
 
-**Waiting on:** Backend Maven build PID 3685510 to complete (running in bg via task b4dc2r8zr). Once jar is ready:
+**Waiting on:** Maven build PID 354722. When jar appears at `backend/target/quarkus-app/quarkus-run.jar`:
 ```
-make image-backend && cd infrastructure && docker compose up -d --force-recreate shepard-backend && make wait-for-health && make smoke
+make image-backend && cd infrastructure && docker compose up -d --no-build --force-recreate backend && make wait-for-health && make smoke
 ```
 
-**After backend redeploy:**
-1. Verify Wave 16 backend live: UX-PROV1 predecessor-chain endpoint, PERF9 TS channel list, PERF5 batch N+1 fix
+**After backend redeploys (TS-AXIS-AUTO + TS-SEMANTIC-REST activate):**
+1. TS-AXIS-VERIFY: channels in container 987749 have shepardIds; seed's `annotate_spatial_roles` got 404s when run — re-run annotation only:
+   ```bash
+   cd /opt/shepard/examples/mffd-showcase && python3 -c "
+   import sys; sys.path.insert(0, '.')
+   from seed import annotate_spatial_roles
+   APIKEY = 'eyJhbGciOiJSUzI1NiJ9...'  # nuclide long-lived key
+   annotate_spatial_roles('https://shepard-api.nuclide.systems', APIKEY, 987749, 'lbr')
+   annotate_spatial_roles('https://shepard-api.nuclide.systems', APIKEY, 987749, 'afp-s1')
+   "
+   ```
+   Then verify `/v2/timeseries-containers/987749/channels/spatial-roles` returns non-null roles.
 2. Track A: task #145 — fix fileRef parser bug for 8462 MFFD-Dropbox DOs (needs fresh DLR JWT from user-side)
-3. task #146 — v1-compat Phase 1 follow-up (filter scope + DAO session timing + smoke gate)
-4. task #137 — Mutate MFFD-Dropbox collection (Confluence zip → per-page DOs + TOC)
 
 ## Hot artefacts (verify before recommending)
 
