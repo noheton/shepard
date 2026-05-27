@@ -159,6 +159,9 @@ public class LabJournalEntryService {
    * @throws InvalidAuthException if user has no read permissions on associated DataObject
    */
   private Long getCollectionId(Long labJournalEntryId) {
+    // Safe: findByNeo4jId → session.load(depth=1) hydrates BOTH directions including
+    // the INCOMING has_labjournalentry edge. Do NOT replace with session.query("RETURN lje")
+    // unless you add CypherQueryHelper.getReturnPart("lje") — that would be the BUG-LJ-V1 class.
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
 
     if (null == labJournalEntry || labJournalEntry.isDeleted()) {
