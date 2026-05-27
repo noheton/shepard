@@ -107,7 +107,7 @@ Content-Type: text/turtle (shape) or application/json (request)
 
 Request:
   {
-    "templateAppId": "...",      // the shape to render
+    "templateShepardId": "...",  // the shape to render (post-rename; see feedback_appid_to_shepardid.md)
     "focusShepardId": "...",     // the individual to project
     "mediaType": "application/json"
   }
@@ -255,13 +255,21 @@ have introduced (CRUD, list, version, import, export, allow-list)
 is already on `/v2/templates`. The single render operation lands as
 `POST /v2/shapes/render` (§1.2).
 
+Pagination, filtering by `kind` + name + `shape:targetClass`, default
+page size, and the composite index treatment for `GET /v2/templates`
+are specified canonically in `aidocs/workflows/54-templates-as-first-class-entity.md`.
+Do not duplicate that spec here; cross-check it when adding indexes for
+the new `kind=VIEW_RECIPE` value. The `list_templates` MCP tool returns
+`templateKind` in each result entry; an agent can filter client-side on
+`templateKind == "VIEW_RECIPE"` without a server-side filter parameter.
+
 ### 2.2 Rendering = SHACL focus-node selection + projection
 
 The render pipeline:
 
-1. Client posts `(templateAppId, focusShepardId)` to
+1. Client posts `(templateShepardId, focusShepardId)` to
    `/v2/shapes/render`.
-2. Backend resolves `templateAppId → :ShepardTemplate.body` (Turtle).
+2. Backend resolves `templateShepardId → :ShepardTemplate.body` (Turtle).
 3. Backend resolves `focusShepardId → individual IRI` from the
    named-individuals registry (§1.3).
 4. Backend uses Jena SHACL to (a) validate the focus against the
@@ -310,6 +318,15 @@ override the grouping per-session and have it stick. **Workspace =
 the override store, scoped to the user.** That is exactly the
 saved-view pattern; not a new primitive.
 
+**Literal-bucket columns in workspaces.** Workspace column preferences
+span *both* typed-bucket and literal-bucket properties (§4.5). A user
+who wants "always show my `material_roll_change` column" stores that as
+a workspace `columnPrefs` entry exactly like a typed SHACL property;
+the renderer simply reads the literal key from the `attributes` map
+instead of a property-path annotation. There is no design asymmetry
+between the two bucket types at the workspace layer — the distinction
+is only in whether validation fires.
+
 ### 2.5 Default landing view: table, not detail-page tabs
 
 The Reluctant Senior review verdict: a Collection's default landing
@@ -318,9 +335,21 @@ columns whose default set comes from the shape but whose actual set
 is per-user. The "detail page with seven tabs" should be one click
 away, not the default.
 
-This doc adopts the verdict. The shape's `sh:order` / `sh:group`
-metadata becomes the **default column set + grouping**; the user's
-workspace overrides both. Per-user column preferences persist.
+This doc adopts the verdict. The table is the right default for the
+high-value Reluctant Senior workflow (the "600-row Excel master sheet"
+maps directly onto it). The seven-tab detail page is one click away
+for everyone — the Digital Native researcher goes there for deep
+inspection; the Reluctant Senior ignores it. Neither constituency is
+blocked. The shape's `sh:order` / `sh:group` metadata becomes the
+**default column set + grouping**; the user's workspace overrides
+both. Per-user column preferences persist.
+
+The table should include a **lineage** column that renders a small ⤳
+chip on any row that has outgoing `shepard:reworkOf` or
+`prov:wasRevisionOf` edges. Clicking the chip opens the lineage graph
+view directly. This makes rework chains visible at the table scan
+level — an auditor scanning 100 rows can spot the two rework events
+without entering any individual record.
 
 ---
 
@@ -340,7 +369,13 @@ mffd:ProcessParameter`. **This breaks**:
 3. The QUDT unit binding (§1.6 above) lives on the class, not the
    value — units are lost on write.
 
-**Fix (this doc).** Adopt the IOF-style instance + taxonomy pattern:
+**Fix (this doc) — lean, subject to §7 NEEDS-CLARIFICATION-1.** Adopt
+the IOF-style instance + taxonomy pattern. The fork between instance +
+taxonomy (Option A), class-per-channel (Option B), and SOSA observations
+(Option C) is still open; see §7 NEEDS-CLARIFICATION-1 for the full
+options analysis and the lean. This section documents Option A; the
+recommendation may be revised depending on the external ontologist
+sign-off required by `aidocs/semantics/96`.
 
 - `mffd:ProcessParameter` is a single class.
 - `mffd:WeldCurrentParameterType`, `mffd:WeldDurationParameterType`, …
@@ -1020,6 +1055,23 @@ blocker for AI1d (similarity search). **Decision (this doc):**
 - Channel identity = the DataObject's appId-derived IRI from §1.3
   (no 5-tuple smell).
 
+The search endpoint sketch (for Python SDK predictability):
+
+```
+POST /v2/embeddings/search
+{
+  "query": "AFP consolidation force anomaly similar to TR-004",
+  "k": 10,
+  "collectionId": "..."   // optional scope
+}
+→ [{ "shepardId": "...", "score": 0.92, "label": "...", "kind": "DataObject" }]
+```
+
+This is the operation the Python notebook writes as
+`c.embeddings.search(query, k=10)`. The backing pgvector query is a
+single `SELECT ... ORDER BY embedding <=> $1 LIMIT $2`; latency at
+MFFD scale (10⁵ DOs, 1536-dim vectors) is sub-100 ms.
+
 This unblocks AI1d, AI1f (NL search reranking), and any
 retrieval-augmented LLM workflow.
 
@@ -1118,7 +1170,7 @@ The Ontologist review surfaced three diverged namespaces in
 production (`fair2r:`, `mffd:`, `shepard:` — each with at least two
 incompatible IRI bases across backend + analytics-ts plugin).
 
-**Required.** A sibling doc `aidocs/semantics/97-canonical-iris.md`
+**Shipped.** Sibling doc `aidocs/semantics/101-canonical-iris.md`
 freezes the canonical bases:
 
 - `mffd:` → `http://semantics.dlr.de/mffd-process#`
@@ -1661,7 +1713,7 @@ Each item below is a small additive PR. Order is by blast-radius
 6. **§4.3 canonical export-shape mapping table** — sibling doc +
    JSON file; CI lint added to assert plugins match. Coordinates
    Unhide / Invenio / Databus / MOSS / RO-Crate exporters.
-7. **§4.9 namespace canonicalisation** — `aidocs/semantics/97-canonical-iris.md`
+7. **§4.9 namespace canonicalisation** — `aidocs/semantics/101-canonical-iris.md`
    + CI lint rejecting `example.org` IRIs in `*.ttl` files. Plugins
    that diverged ship a one-time `owl:sameAs` migration.
 8. **§1.2 POST /v2/shapes/render** — new stateless endpoint sibling
@@ -1774,7 +1826,7 @@ zero survived, every one folded into an existing primitive.
 
 **To-be-written siblings (this doc commits to writing):**
 
-- `aidocs/semantics/97-canonical-iris.md` — namespace freeze (§4.9).
+- `aidocs/semantics/101-canonical-iris.md` — namespace freeze (§4.9).
 - `aidocs/semantics/99-export-shape-mapping.md` + JSON sibling at
   `aidocs/semantics/contexts/export-shape-mapping.json` — canonical
   mapping table (§4.3).

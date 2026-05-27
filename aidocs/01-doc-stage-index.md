@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 41 |
 | `concept` | 24 |
 | `idea` | 9 |
-| `feature-defined` | 94 |
+| `feature-defined` | 95 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 67 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **362** |
+| **total docs** | **363** |
 | **UNTAGGED** | **0** |
 
 ## fragment (41)
@@ -132,7 +132,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (94)
+## feature-defined (95)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -202,6 +202,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/89-tpl9-fair2r-ai-provenance.md`](platform/89-tpl9-fair2r-ai-provenance.md) | TPL9 — f(ai)²r AI provenance capture (PROV-O extension for AI transparency) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
+| [`aidocs/semantics/101-canonical-iris.md`](semantics/101-canonical-iris.md) | 101 — Canonical IRI namespaces for Shepard semantic documents | 2026-05-27 | — |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |

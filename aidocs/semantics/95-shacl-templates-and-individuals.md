@@ -545,7 +545,12 @@ each separately:
    Migration: add an optional `:type` property carrying a PROV-O
    IRI (`prov:wasInformedBy`, `prov:wasDerivedFrom`,
    `prov:wasRevisionOf`). Existing edges stay readable as untyped;
-   new writes type by default.
+   new writes type by default. The typed rework predicate —
+   `shepard:reworkOf rdfs:subPropertyOf prov:wasRevisionOf` — is
+   the most important of these: it distinguishes a rework retry
+   from a normal predecessor step and makes the anomaly → repair →
+   re-test chain auditor-reconstructable. Full sub-property axiom
+   and queries are in `aidocs/semantics/98 §3.2`.
 
 3. **Hardcoded `Collection` vs `DataObject` Java class split.** Both
    already extend `AbstractDataObject`. The distinction is real in
@@ -1749,7 +1754,7 @@ RDM platforms have **none** of this infrastructure.
 |---|---|---|
 | **TPL1a** | Neo4j entities `:Shape`, `:PropertyShape`; TTL loader in SemanticRepository bootstrap | 3 |
 | **TPL1b** | REST `GET /v2/templates`, `GET /v2/templates/{appId}/shape`, `POST /v2/templates/{appId}/instantiate` | 3 |
-| **TPL1c** | Frontend form generator from shape JSON; widget map (10 mappings); recursive `sh:node` rendering with lazy expand + cycle guard | 5 |
+| **TPL1c** | Frontend form generator from shape JSON; widget map (10 mappings); recursive `sh:node` rendering with lazy expand + cycle guard. BUILD-OWN is defensible: the alternative (shacl-form) would require a full Vuetify 3 retheme; the Shepard-native `useShape` / `useCollection` composables make a from-scratch renderer small enough to control. See `aidocs/semantics/98 §6.4` for the reuse-survey justification. | 5 |
 | **TPL1d** | Worked examples shipped in V## migration: `:EUProjectShape`, `:MFFDCampaignShape` + mini-shape library | 2 |
 | **TPL1e** | Writable-shape admin UI v1 — **TTL paste-box** (validate + save), NOT a visual editor. A real visual SHACL editor is a 6-month project (cf. Protégé) and out of scope for this milestone. v2 adds field-level edit on top of v1. | 3 |
 | **TPL1f** | MCP tools: `list_templates`, `instantiate_template`; shape→tool-input-schema generator | 1 |
