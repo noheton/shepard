@@ -1,0 +1,113 @@
+{
+  "@context": {
+    "@version": 1.1,
+
+    "comment": "MFFD process ontology JSON-LD context. Canonical namespace bases are frozen in aidocs/semantics/101-canonical-iris.md. This context is the binding site for PID strategy per aidocs/semantics/98-shapes-views-and-process-model.md §4.2.",
+
+    "@vocab": "http://semantics.dlr.de/mffd-process#",
+
+    "mffd":    "http://semantics.dlr.de/mffd-process#",
+    "shepard": "http://semantics.dlr.de/shepard-upper#",
+    "fair2r":  "https://noheton.org/f-ai-r/ns#",
+
+    "dc":      "http://purl.org/dc/elements/1.1/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "schema":  "https://schema.org/",
+    "prov":    "http://www.w3.org/ns/prov#",
+    "owl":     "http://www.w3.org/2002/07/owl#",
+    "rdfs":    "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd":     "http://www.w3.org/2001/XMLSchema#",
+    "qudt":    "http://qudt.org/schema/qudt/",
+    "unit":    "http://qudt.org/vocab/unit/",
+    "sh":      "http://www.w3.org/ns/shacl#",
+
+    "dc:title":       { "@id": "http://purl.org/dc/elements/1.1/title" },
+    "dc:description": { "@id": "http://purl.org/dc/elements/1.1/description" },
+    "dc:creator":     { "@id": "http://purl.org/dc/elements/1.1/creator" },
+    "dc:date":        { "@id": "http://purl.org/dc/elements/1.1/date" },
+
+    "dcterms:title":        { "@id": "http://purl.org/dc/terms/title" },
+    "dcterms:description":  { "@id": "http://purl.org/dc/terms/description" },
+    "dcterms:created":      { "@id": "http://purl.org/dc/terms/created",   "@type": "xsd:dateTime" },
+    "dcterms:modified":     { "@id": "http://purl.org/dc/terms/modified",  "@type": "xsd:dateTime" },
+    "dcterms:identifier":   { "@id": "http://purl.org/dc/terms/identifier" },
+    "dcterms:hasVersion":   { "@id": "http://purl.org/dc/terms/hasVersion" },
+    "dcterms:isPartOf":     { "@id": "http://purl.org/dc/terms/isPartOf",  "@type": "@id" },
+    "dcterms:hasPart":      { "@id": "http://purl.org/dc/terms/hasPart",   "@type": "@id" },
+
+    "schema:name":       { "@id": "https://schema.org/name" },
+    "schema:identifier": { "@id": "https://schema.org/identifier" },
+    "schema:dateCreated":{ "@id": "https://schema.org/dateCreated", "@type": "xsd:dateTime" },
+
+    "ManufacturingActivity": "mffd:ManufacturingActivity",
+    "ProcessStep":           "mffd:ProcessStep",
+    "MFFDCampaign":          "mffd:MFFDCampaign",
+    "CalibrationCertificate":"mffd:CalibrationCertificate",
+    "NDTGate":               "mffd:NDTGate",
+    "ProcessParameter":      "mffd:ProcessParameter",
+    "Constraint":            "mffd:Constraint",
+    "Equipment":             "mffd:Equipment",
+
+    "TapeLayup":          "mffd:TapeLayup",
+    "SkinInspection":     "mffd:SkinInspection",
+    "StringerWelding":    "mffd:StringerWelding",
+    "SpotWelding":        "mffd:SpotWelding",
+    "BridgeWelding":      "mffd:BridgeWelding",
+    "StringerConnection": "mffd:StringerConnection",
+    "CleatsWithLBR":      "mffd:CleatsWithLBR",
+
+    "AFP":               "mffd:AFP",
+    "Thermography":      "mffd:Thermography",
+    "UltrasonicWelding": "mffd:UltrasonicWelding",
+    "ResistanceWelding": "mffd:ResistanceWelding",
+    "LBRClamping":       "mffd:LBRClamping",
+
+    "hasProcessStep":     { "@id": "mffd:hasProcessStep",    "@type": "@id" },
+    "technique":          { "@id": "mffd:technique",         "@type": "@id" },
+    "operator":           { "@id": "mffd:operator",          "@type": "@id" },
+    "hasCalibrationCert": { "@id": "mffd:hasCalibrationCert","@type": "@id" },
+    "hasNDTGate":         { "@id": "mffd:hasNDTGate",        "@type": "@id" },
+    "hasConstraint":      { "@id": "mffd:hasConstraint" },
+    "hasUnit":            { "@id": "mffd:hasUnit",           "@type": "@id" },
+    "causesDefect":       { "@id": "mffd:causesDefect",      "@type": "@id" },
+
+    "stepNumber":         { "@id": "mffd:stepNumber",        "@type": "xsd:integer" },
+    "frameNumber":        { "@id": "mffd:frameNumber",       "@type": "xsd:integer" },
+    "campaignNumber":     { "@id": "mffd:campaignNumber" },
+    "trackNumber":        { "@id": "mffd:trackNumber",       "@type": "xsd:integer" },
+
+    "nominalValue":      { "@id": "mffd:nominalValue",      "@type": "xsd:float" },
+    "minValue":          { "@id": "mffd:minValue",          "@type": "xsd:float" },
+    "maxValue":          { "@id": "mffd:maxValue",          "@type": "xsd:float" },
+    "warningMinValue":   { "@id": "mffd:warningMinValue",   "@type": "xsd:float" },
+    "warningMaxValue":   { "@id": "mffd:warningMaxValue",   "@type": "xsd:float" },
+
+    "ndtResult":         { "@id": "mffd:ndtResult" },
+    "ndtMethod":         { "@id": "mffd:ndtMethod" },
+    "inspector":         { "@id": "mffd:inspector",         "@type": "@id" },
+    "inspectedAt":       { "@id": "mffd:inspectedAt",       "@type": "xsd:dateTime" },
+    "ndtReport":         { "@id": "mffd:ndtReport",         "@type": "@id" },
+    "raisedNCR":         { "@id": "mffd:raisedNCR",         "@type": "@id" },
+
+    "certIdentifier":        { "@id": "mffd:certIdentifier" },
+    "calibratedEquipment":   { "@id": "mffd:calibratedEquipment", "@type": "@id" },
+    "calibratedOn":          { "@id": "mffd:calibratedOn",        "@type": "xsd:date" },
+    "validUntil":            { "@id": "mffd:validUntil",          "@type": "xsd:date" },
+    "calibrationLab":        { "@id": "mffd:calibrationLab" },
+    "certificateDocument":   { "@id": "mffd:certificateDocument", "@type": "@id" },
+
+    "onChannel":         { "@id": "shepard:onChannel" },
+
+    "CM_I":          "mffd:CM_I",
+    "CM_t":          "mffd:CM_t",
+    "CM_p":          "mffd:CM_p",
+    "W1_I":          "mffd:W1_I",
+    "W1_U":          "mffd:W1_U",
+    "W1_t":          "mffd:W1_t",
+    "W1_p":          "mffd:W1_p",
+    "W2_I":          "mffd:W2_I",
+    "W2_U":          "mffd:W2_U",
+    "WC_I":          "mffd:WC_I",
+    "BridgePosition":"mffd:BridgePosition"
+  }
+}

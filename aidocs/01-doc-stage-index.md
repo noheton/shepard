@@ -306,8 +306,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/ai-policy/147-oecd-ai-alignment.md`](ai-policy/147-oecd-ai-alignment.md) | Shepard AI design × authoritative policy alignment — 9-source × 4-band matrix | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-26 |
-| [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-27 |
+| [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-26 |
 
 ## feedback-implemented (1)
