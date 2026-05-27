@@ -170,7 +170,9 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
       numericValue, unitIRI, source,
       // SEMA-V6-001 fields
       subjectKind, subjectAppId, vocabularyId, sourceMode,
-      sourceActivityAppId, validFromMillis, validUntilMillis, confidence
+      sourceActivityAppId, validFromMillis, validUntilMillis, confidence,
+      // SEMA-V6-013 field
+      agentUsername
     );
     result = prime * result + HasId.hashcodeHelper(propertyRepository);
     result = prime * result + HasId.hashcodeHelper(valueRepository);
@@ -200,6 +202,8 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
       Objects.equals(validFromMillis, other.validFromMillis) &&
       Objects.equals(validUntilMillis, other.validUntilMillis) &&
       Objects.equals(confidence, other.confidence) &&
+      // SEMA-V6-013 field
+      Objects.equals(agentUsername, other.agentUsername) &&
       HasId.equalsHelper(propertyRepository, other.propertyRepository) &&
       HasId.equalsHelper(valueRepository, other.valueRepository)
     );

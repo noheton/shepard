@@ -419,6 +419,85 @@ class SemanticAnnotationV2RestTest {
     verify(annotationDAO, never()).deleteByNeo4jId(anyLong());
   }
 
+  // ─── N1h: numeric value + unit IRI ───────────────────────────────────────
+
+  /**
+   * N1h — POST with numericValue + unitIri: fields are persisted on the entity
+   * and reflected in the 201 response body.
+   */
+  @Test
+  void create_withNumericValueAndUnitIri_roundTrips() {
+    CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "25.0 kN", null);
+    body.setNumericValue(25.0);
+    body.setUnitIri("http://qudt.org/vocab/unit/KiloN");
+
+    Response r = resource.create(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getNumericValue()).isEqualTo(25.0);
+    assertThat(io.getUnitIri()).isEqualTo("http://qudt.org/vocab/unit/KiloN");
+  }
+
+  /**
+   * N1h — POST without numericValue/unitIri: existing IRI-pair annotations
+   * are unaffected (both fields null in the response).
+   */
+  @Test
+  void create_withoutNumericValue_legacyAnnotationUnaffected() {
+    CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "CF/LMPAEK", null);
+    // numericValue and unitIri intentionally not set
+
+    Response r = resource.create(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getNumericValue()).isNull();
+    assertThat(io.getUnitIri()).isNull();
+  }
+
+  /**
+   * N1h — GET after setting numericValue: fields are exposed on the AnnotationIO
+   * returned by the GET endpoint.
+   */
+  @Test
+  void get_withNumericValueAndUnitIri_returnsFields() {
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "25.0 kN");
+    ann.setNumericValue(25.0);
+    ann.setUnitIRI("http://qudt.org/vocab/unit/KiloN");
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+
+    Response r = resource.get(ANN_APP_ID, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getNumericValue()).isEqualTo(25.0);
+    assertThat(io.getUnitIri()).isEqualTo("http://qudt.org/vocab/unit/KiloN");
+  }
+
+  /**
+   * N1h — PUT with numericValue: the existing annotation is patched and the
+   * updated value is returned.
+   */
+  @Test
+  void update_patchesNumericValueAndUnitIri() {
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "old-value");
+    ann.setNumericValue(10.0);
+    ann.setUnitIRI("http://qudt.org/vocab/unit/N");
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+
+    UpdateAnnotationIO body = new UpdateAnnotationIO();
+    body.setNumericValue(25.0);
+    body.setUnitIri("http://qudt.org/vocab/unit/KiloN");
+
+    Response r = resource.update(ANN_APP_ID, body, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getNumericValue()).isEqualTo(25.0);
+    assertThat(io.getUnitIri()).isEqualTo("http://qudt.org/vocab/unit/KiloN");
+  }
+
   // ─── turtle export ────────────────────────────────────────────────────────
 
   @Test

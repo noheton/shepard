@@ -60,4 +60,33 @@ public class SemanticAnnotationIOTest {
 
     assertEquals("123", actual);
   }
+
+  // N1h — numeric value + unit IRI round-trip
+
+  @Test
+  public void testConversion_withNumericValueAndUnitIRI() {
+    var obj = new SemanticAnnotation(1L);
+    obj.setPropertyIRI("http://example.org/p");
+    obj.setValueIRI("http://example.org/v");
+    obj.setNumericValue(25.0);
+    obj.setUnitIRI("http://qudt.org/vocab/unit/KiloN");
+
+    var converted = new SemanticAnnotationIO(obj);
+
+    assertEquals(25.0, converted.getNumericValue());
+    assertEquals("http://qudt.org/vocab/unit/KiloN", converted.getUnitIRI());
+  }
+
+  @Test
+  public void testConversion_withNullNumericAndUnit_doesNotBreakLegacy() {
+    var obj = new SemanticAnnotation(1L);
+    obj.setPropertyIRI("http://example.org/p");
+    obj.setValueIRI("http://example.org/v");
+    // numericValue and unitIRI intentionally left null
+
+    var converted = new SemanticAnnotationIO(obj);
+
+    assertEquals(null, converted.getNumericValue());
+    assertEquals(null, converted.getUnitIRI());
+  }
 }
