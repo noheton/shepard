@@ -21,6 +21,7 @@ const { collectionId, dataObjectId, fileReferenceId } =
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
 const showFileContentViewerDialog = ref<boolean>(false);
+const showEditDialog = ref<boolean>(false);
 const fileDataTableItems = ref<ShepardFileDataTableItem[]>([]);
 const selectedOid = ref<string>("");
 const selectedFileType = ref<FileType>("unknown");
@@ -50,6 +51,10 @@ watch(files, () => {
 
 function onAnnotate() {
   showAddAnnotationDialog.value = true;
+}
+
+function onEdit() {
+  showEditDialog.value = true;
 }
 
 function onDelete() {
@@ -155,7 +160,7 @@ watch(fileReference, () => {
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <TitleAndMetadataDisplay
-                :entity="{
+                :entity=”{
                   ...fileReference,
                   name: `File Reference “${fileReference.name}”`,
                   type: 'File',
@@ -166,10 +171,11 @@ watch(fileReference, () => {
                     type: 'FILE',
                     availability: fileReference.referencedContainerAvailability,
                   },
-                }"
-                :on-annotate="onAnnotate"
-                :on-delete="onDelete"
-                id-label="ID"
+                }”
+                :on-annotate=”onAnnotate”
+                :on-delete=”onDelete”
+                :on-edit=”fileReference.appId ? onEdit : undefined”
+                id-label=”ID”
               />
             </v-row>
             <v-row align="center" justify="space-between">
@@ -259,6 +265,13 @@ watch(fileReference, () => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <EditFileReferenceDialog
+      v-if="showEditDialog && fileReference?.appId"
+      v-model:show-dialog="showEditDialog"
+      :file-reference-app-id="fileReference.appId"
+      :current-name="fileReference.name"
+      @saved="(newName) => { if (fileReference) fileReference.name = newName; }"
+    />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
