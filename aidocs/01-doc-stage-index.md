@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 24 |
 | `idea` | 9 |
 | `feature-defined` | 94 |
-| `audited-by-personas` | 72 |
+| `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 67 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **361** |
+| **total docs** | **362** |
 | **UNTAGGED** | **0** |
 
 ## fragment (41)
@@ -231,7 +231,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (72)
+## audited-by-personas (73)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -262,6 +262,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-process-chain-gap-analysis.md`](agent-findings/mffd-process-chain-gap-analysis.md) | MFFD Synthetic Seed — Process Chain Gap Analysis | 2026-05-26 | 2026-05-27 |
 | [`aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md`](agent-findings/ogm-hydration-audit-2026-05-24.md) | OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ogm-hydration-service-layer-2026-05-27.md`](agent-findings/ogm-hydration-service-layer-2026-05-27.md) | OGM-HYDRATE-2026-05-24-004 — Service-layer composite-call hydration audit (2026-05-27) | 2026-05-27 | — |
 | [`aidocs/agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md`](agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md) | Persona — API Scrutinizer (Minimalist) — GH-PM adoption review | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/persona-audit-logstore-2026-05-23.md`](agent-findings/persona-audit-logstore-2026-05-23.md) | Persona audit — log-store-sidecar design (`aidocs/integrations/94`) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | 2026-05-23 |
