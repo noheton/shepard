@@ -1,5 +1,8 @@
 package de.dlr.shepard.context.references.videostreamreference.services;
 
+import static com.mongodb.client.model.Filters.eq;
+
+import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -15,13 +18,22 @@ import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StorageNotInstalledException;
 import de.dlr.shepard.storage.StoragePutRequest;
+import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.xml.bind.DatatypeConverter;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
+import org.bson.Document;
 
 /**
  * VID1a — service layer for {@link VideoStreamReference} CRUD.
@@ -37,6 +49,23 @@ public class VideoStreamReferenceService {
 
   /** Shared MongoDB / S3 container used for video file bytes (one per deployment). */
   public static final String VIDEO_CONTAINER = "_shepard_videos";
+
+  /**
+   * MONGO-AUDIT-013 — maximum file size (in bytes) for which content-based
+   * MD5 deduplication is attempted. Files larger than this threshold are
+   * forwarded directly to storage without buffering, trading possible
+   * duplicate blobs for bounded heap usage. 100 MiB matches a typical
+   * short-form video clip; the bulk of the LUMEN showcase duplicate
+   * (8.6 MiB × 3) is well within this window.
+   */
+  static final long DEDUP_MAX_SIZE_BYTES = 100L * 1024 * 1024; // 100 MiB
+
+  /** Attribute name for MD5 in the {@code _shepard_videos} bookkeeping documents. */
+  private static final String MD5_ATTR = "md5";
+
+  @Inject
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @Inject
   VideoStreamReferenceDAO videoStreamReferenceDAO;
@@ -140,21 +169,30 @@ public class VideoStreamReferenceService {
     }
     FileStorage storage = storageOpt.get();
 
-    // Run the probe before storing — we need to store anyway, so we
-    // write to a temp file in probe() and then feed the stored bytes back
-    // via storage.put. For simplicity we run probe on the raw stream first
-    // then re-open the file for storage (upload side re-reads the temp via
-    // the storage.put path below). However, since the InputStream is consumed
-    // by probe, we must buffer it.
+    // MONGO-AUDIT-013 — MD5-based deduplication for GridFS video blobs.
     //
-    // To keep this path simple and avoid double-buffering: probe the
-    // stored file AFTER storage.put by fetching it back. This is slightly
-    // less efficient but keeps the code simple and avoids consuming the
-    // stream twice.
-
-    // Store the bytes first.
-    StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, payload, contentLength, null);
-    StorageLocator locator = storage.put(req);
+    // Strategy: buffer the stream, compute MD5, check _shepard_videos for an
+    // existing document with the same MD5. If found, reuse its _id as the
+    // locator rather than uploading a second copy of the same bytes.
+    //
+    // Size guard: only buffer (and dedup) when the declared size is unknown or
+    // within DEDUP_MAX_SIZE_BYTES. Very large uploads fall through to direct
+    // storage.put() to avoid exhausting heap.
+    //
+    // The locator synthesised for a dedup hit is "gridfs:_shepard_videos:<oid>",
+    // which is exactly the shape GridFsFileStorage.put() would return — so the
+    // rest of the create() path (probe-by-fetch, Neo4j persist) is unchanged.
+    StorageLocator locator;
+    if (contentLength == null || contentLength <= DEDUP_MAX_SIZE_BYTES) {
+      locator = storeWithDedup(storage, fileName, mimeType, contentLength, payload);
+    } else {
+      Log.debugf(
+        "VID1a/DEDUP: file size %d > threshold %d — skipping dedup, streaming directly",
+        contentLength, (Object) DEDUP_MAX_SIZE_BYTES
+      );
+      StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, payload, contentLength, null);
+      locator = storage.put(req);
+    }
 
     // Now probe the stored bytes by fetching them back.
     VideoProbeResult probe = VideoProbeResult.empty();
@@ -289,6 +327,91 @@ public class VideoStreamReferenceService {
     } catch (NotFoundException e) {
       return null;
     }
+  }
+
+  /**
+   * MONGO-AUDIT-013 — buffer the stream, compute its MD5, and either reuse
+   * an existing blob or upload a fresh one.
+   *
+   * <p>Steps:
+   * <ol>
+   *   <li>Read all bytes from {@code payload} into memory while streaming
+   *       through a {@link DigestInputStream} to compute the MD5 in one
+   *       pass.</li>
+   *   <li>Query the {@code _shepard_videos} MongoDB collection for an
+   *       existing bookkeeping document whose {@code md5} field matches
+   *       the computed digest (upper-case hex, as written by
+   *       {@link jakarta.xml.bind.DatatypeConverter#printHexBinary}).</li>
+   *   <li>If a match is found: return a synthetic {@link StorageLocator}
+   *       pointing at the existing document's {@code _id}. The blob is
+   *       reused; no GridFS write occurs.</li>
+   *   <li>If no match: call {@code storage.put()} with the buffered bytes.
+   *       The {@link GridFsFileStorage} path writes a new GridFS blob and
+   *       inserts a new bookkeeping document.</li>
+   * </ol>
+   *
+   * <p>If buffering fails (I/O error) or MD5 is unavailable (should never
+   * happen on any JVM that passes the JCE suite), the method falls back to
+   * direct {@code storage.put()} so the upload path is never broken by
+   * the dedup check.
+   *
+   * @param storage       the active {@link FileStorage} adapter
+   * @param fileName      filename for the bookkeeping document
+   * @param mimeType      MIME type hint (nullable)
+   * @param contentLength pre-known size (nullable)
+   * @param payload       the raw video byte stream (consumed by this method)
+   * @return the {@link StorageLocator} for the stored (or reused) blob
+   * @throws StorageException on storage-tier write failure
+   */
+  StorageLocator storeWithDedup(
+    FileStorage storage,
+    String fileName,
+    String mimeType,
+    Long contentLength,
+    InputStream payload
+  ) throws StorageException {
+    // Step 1: buffer + digest.
+    byte[] bytes;
+    String md5Hex;
+    try {
+      MessageDigest md = MessageDigest.getInstance("MD5");
+      try (DigestInputStream dis = new DigestInputStream(payload, md)) {
+        bytes = dis.readAllBytes();
+      }
+      md5Hex = DatatypeConverter.printHexBinary(md.digest());
+    } catch (NoSuchAlgorithmException | IOException ex) {
+      // MD5 unavailable or I/O error: fall back to direct put with original
+      // stream consumed; log and let storage.put() handle the original stream
+      // if bytes is null (it won't be — but be safe).
+      Log.warnf("VID1a/DEDUP: could not buffer stream for dedup (%s) — uploading without dedup", ex.getMessage());
+      StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, payload, contentLength, null);
+      return storage.put(req);
+    }
+
+    // Step 2: check for an existing blob with this MD5.
+    try {
+      Document existing = mongoDatabase
+        .getCollection(VIDEO_CONTAINER)
+        .find(eq(MD5_ATTR, md5Hex))
+        .first();
+      if (existing != null) {
+        String existingOid = existing.getObjectId("_id").toHexString();
+        Log.infof(
+          "VID1a/DEDUP: reusing existing blob (md5=%s, oid=%s) — skipping GridFS write",
+          md5Hex, existingOid
+        );
+        return new StorageLocator(GridFsFileStorage.ID, VIDEO_CONTAINER + GridFsFileStorage.LOCATOR_SEPARATOR + existingOid);
+      }
+    } catch (RuntimeException ex) {
+      // Dedup lookup failure must not break the upload — log and continue to fresh upload.
+      Log.warnf("VID1a/DEDUP: MD5 lookup in %s failed (%s) — uploading without dedup", VIDEO_CONTAINER, ex.getMessage());
+    }
+
+    // Step 3: no existing blob — upload fresh.
+    Log.debugf("VID1a/DEDUP: no existing blob for md5=%s — uploading new blob", md5Hex);
+    Long size = (long) bytes.length;
+    StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, new ByteArrayInputStream(bytes), size, null);
+    return storage.put(req);
   }
 
   private DataObject resolveDataObjectByAppId(String appId) {

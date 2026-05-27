@@ -9,6 +9,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -24,11 +27,15 @@ import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StorageNotInstalledException;
 import de.dlr.shepard.storage.StoragePutRequest;
+import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +64,7 @@ class VideoStreamReferenceServiceTest {
   UserService userService;
   DateHelper dateHelper;
   EntityIdResolver entityIdResolver;
+  MongoDatabase mongoDatabase;
 
   DataObject parentDataObject;
   User currentUser;
@@ -71,6 +79,7 @@ class VideoStreamReferenceServiceTest {
     userService = mock(UserService.class);
     dateHelper = mock(DateHelper.class);
     entityIdResolver = mock(EntityIdResolver.class);
+    mongoDatabase = mock(MongoDatabase.class);
 
     service = new VideoStreamReferenceService();
     service.videoStreamReferenceDAO = videoStreamReferenceDAO;
@@ -80,6 +89,7 @@ class VideoStreamReferenceServiceTest {
     service.userService = userService;
     service.dateHelper = dateHelper;
     service.entityIdResolver = entityIdResolver;
+    service.mongoDatabase = mongoDatabase;
 
     parentDataObject = new DataObject();
     parentDataObject.setId(DO_OGM_ID);
@@ -303,5 +313,66 @@ class VideoStreamReferenceServiceTest {
 
     assertThat(ref.isDeleted()).isTrue();
     verify(videoStreamReferenceDAO).createOrUpdate(ref);
+  }
+
+  // ─── storeWithDedup (MONGO-AUDIT-013) ────────────────────────────────────
+
+  /**
+   * MONGO-AUDIT-013: when an existing document with the same MD5 is found in
+   * _shepard_videos, the existing blob's OID is reused — storage.put() must
+   * NOT be called.
+   */
+  @SuppressWarnings("unchecked")
+  @Test
+  void storeWithDedup_duplicateMd5_reusesExistingBlob() throws Exception {
+    ObjectId existingId = new ObjectId("aabbccddeeff001122334455");
+    Document existingDoc = new Document("_id", existingId).append("md5", "SOMEHEX");
+
+    MongoCollection<Document> collection = mock(MongoCollection.class);
+    FindIterable<Document> findIterable = mock(FindIterable.class);
+    when(mongoDatabase.getCollection(VideoStreamReferenceService.VIDEO_CONTAINER)).thenReturn(collection);
+    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(findIterable);
+    when(findIterable.first()).thenReturn(existingDoc);
+
+    // Tiny payload — 4 bytes; MD5 will be computed from these bytes.
+    byte[] payload = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+    StorageLocator locator = service.storeWithDedup(
+      fileStorage, "video.mp4", "video/mp4", (long) payload.length, new ByteArrayInputStream(payload)
+    );
+
+    // storage.put() must NOT be invoked — blob was reused.
+    verify(fileStorage, never()).put(any());
+
+    // Returned locator must point at the existing document OID.
+    assertThat(locator.providerId()).isEqualTo(GridFsFileStorage.ID);
+    assertThat(locator.locator()).isEqualTo(
+      VideoStreamReferenceService.VIDEO_CONTAINER + GridFsFileStorage.LOCATOR_SEPARATOR + existingId.toHexString()
+    );
+  }
+
+  /**
+   * MONGO-AUDIT-013: when no existing document is found, storage.put() must
+   * be invoked to create a new blob.
+   */
+  @SuppressWarnings("unchecked")
+  @Test
+  void storeWithDedup_newMd5_uploadsNewBlob() throws Exception {
+    MongoCollection<Document> collection = mock(MongoCollection.class);
+    FindIterable<Document> findIterable = mock(FindIterable.class);
+    when(mongoDatabase.getCollection(VideoStreamReferenceService.VIDEO_CONTAINER)).thenReturn(collection);
+    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(findIterable);
+    when(findIterable.first()).thenReturn(null); // no existing blob
+
+    StorageLocator expected = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(expected);
+
+    byte[] payload = new byte[] { 0x0A, 0x0B, 0x0C };
+    StorageLocator locator = service.storeWithDedup(
+      fileStorage, "new.mp4", "video/mp4", (long) payload.length, new ByteArrayInputStream(payload)
+    );
+
+    // storage.put() must be invoked exactly once.
+    verify(fileStorage).put(any(StoragePutRequest.class));
+    assertThat(locator).isEqualTo(expected);
   }
 }
