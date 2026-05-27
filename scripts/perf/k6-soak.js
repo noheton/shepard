@@ -37,7 +37,7 @@ const BASE = __ENV.SHEPARD_BASE_URL || "http://localhost:8080";
 const KEY  = __ENV.SHEPARD_API_KEY  || "";
 
 const headers = KEY
-  ? { "X-API-KEY": KEY, Accept: "application/json", "Content-Type": "application/json" }
+  ? { "apikey": KEY, Accept: "application/json", "Content-Type": "application/json" }
   : { Accept: "application/json", "Content-Type": "application/json" };
 
 const headersNoBody = { ...headers };

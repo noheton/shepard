@@ -68,11 +68,10 @@ k6 0.37) let a single script file run three distinct executor shapes
 tagged separately in the metric stream. PERF4 uses this to keep the per-endpoint
 SLO matrix in one script rather than three.
 
-**Auth header note.** The existing `k6-smoke.js` and `k6-stress.js` use
-`X-API-KEY` as the auth header. The backend's `UserinfoService` currently
-supports both `apikey` and `X-API-KEY` (case-insensitive; the Caddy proxy
-strips and rewrites headers). New scripts in PERF4 will use `apikey` to match
-the integration test suite (`75`) and the seeder's convention.
+**Auth header note.** All k6 scripts use the `apikey` request header (PERF4e,
+2026-05-27). The backend's `UserinfoService` supports both `apikey` and
+`X-API-KEY` (case-insensitive), but the canonical header across integration
+tests, seeders, and all perf scripts is `apikey`.
 
 ---
 
@@ -522,10 +521,8 @@ All new scripts use the `apikey` request header. This matches:
 The CI job reads `SHEPARD_API_KEY` from the same Actions secret as PERF3
 (`secrets.SHEPARD_PERF_API_KEY`). No new secrets are needed.
 
-The existing `k6-smoke.js` and `k6-stress.js` use `X-API-KEY`. Leave those
-unchanged to avoid drift with the `recommend.py` baseline. PERF4a scripts
-use `apikey`; a follow-up cleanup (PERF4e) can unify after the next major
-release.
+All four k6 scripts (`k6-smoke.js`, `k6-soak.js`, `k6-stress.js`, `k6-endpoints.js`)
+now use `apikey`. PERF4e (2026-05-27) completed the unification.
 
 ---
 
@@ -854,11 +851,11 @@ to register. Use `K6_SCENARIO=steady,ramp` to skip only the spike scenario.
 | **PERF4b** | README + SLO table update | Update `scripts/perf/README.md`; add SLO table to `docs/admin.md §Performance metrics` | XS | PERF4a |
 | **PERF4c** | Grafana integration | Prometheus remote-write env-var doc + Grafana dashboard panel additions | S | PERF1 monitoring profile |
 | **PERF4d** | Nightly CI job | `.github/workflows/perf-endpoints.yml` as designed in §9.2 | S | PERF4a |
-| **PERF4e** | Auth-header unification | Align `k6-smoke.js` + `k6-stress.js` to `apikey` header | XS | None (cosmetic) |
+| **PERF4e** | Auth-header unification | ~~Align `k6-smoke.js` + `k6-stress.js` to `apikey` header~~ **done (2026-05-27)** | XS | None (cosmetic) |
 
 PERF4a and PERF4d are the meaningful implementation items. PERF4b/c are
 documentation and dashboard follow-ons that land in the same PR as PERF4a.
-PERF4e is a clean-up; defer it to the next release cycle.
+PERF4e shipped 2026-05-27 — all scripts now use `apikey`.
 
 ---
 

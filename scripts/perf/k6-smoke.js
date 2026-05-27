@@ -30,7 +30,7 @@ const BASE = __ENV.SHEPARD_BASE_URL || "http://localhost:8080";
 const KEY = __ENV.SHEPARD_API_KEY || "";
 
 const params = KEY
-  ? { headers: { "X-API-KEY": KEY, Accept: "application/json" } }
+  ? { headers: { "apikey": KEY, Accept: "application/json" } }
   : { headers: { Accept: "application/json" } };
 
 const versionz = new Trend("versionz_duration", true);
