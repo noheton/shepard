@@ -217,6 +217,52 @@ feature-matrix currency (`aidocs/44`) rules above.
 bumps — none of these need a docs update unless they change a
 user-visible behaviour.)
 
+## Always: ship a UI stub for every backend feature
+
+Every backend feature that introduces new REST endpoints, an admin
+surface, or any user-visible capability **must ship with at least a
+UI stub in the same PR**. The stub closes the gap between "API exists"
+and "users can discover and interact with it."
+
+Order of preference, from most to least complete:
+
+1. **Real functional UI + tests** — the gold standard; the frontend
+   renders the endpoint and has Vitest/e2e coverage.
+2. **Real functional UI** — renders the endpoint; tests filed as
+   follow-on.
+3. **Minimal placeholder stub** using the v0 placeholder kit (shipped
+   2026-05-24, commit `8c682955`):
+   - `PlaceholderPageHeader.vue` — title + subtitle + backend-status chip
+   - `PlaceholderRestDump.vue` — live `GET` dump of the endpoint in
+     advanced mode; requires a non-null `endpoint` in the registry entry
+   - `PlaceholderImplStatus.vue` — status badge + backlog-row link
+   - `PlaceholderFragmentPane.vue` — admin-fragment or profile-fragment
+     wrapper
+   - Register a new entry in
+     `frontend/components/common/placeholder/placeholderRegistry.ts`
+     (add to `PLACEHOLDER_ENTRIES`; the count constant auto-updates)
+4. **Nothing** — **disallowed**. A backend feature with no UI footprint
+   is invisible to every researcher and operator; the PR should not merge.
+
+**Why the rule exists:** the placeholder kit makes option 3 a 30-minute
+add. The "we'll add the UI later" pattern has a near-zero completion rate
+— the audit that prompted this rule (`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`)
+found 12 shipped backend features with no reachable UI path.
+
+The exceptions (stays backend-only by design):
+
+- Background jobs with no operator-visible state (e.g. scheduled cache
+  warm-ups where the only observable is a healthcheck).
+- Internal healthcheck endpoints (`/q/health/*`) — no UI surface needed.
+- Cypher / Flyway migrations — schema changes with no direct UI hook.
+
+Everything that has an admin config surface, a user workflow, or a
+discoverable payload kind: **UI stub is the minimum**. Cross-reference:
+`feedback_done_criteria.md` (parent rule — four-surface completeness:
+backend + frontend + tests + docs) and `feedback_ui_api_parity.md`
+(converse rule — UI affordances must not outpace shipped backend).
+The triggering event is documented in `feedback_ui_stub_required_for_deploy.md`.
+
 ## Always: think plugin-first for new features
 
 The `aidocs/platform/47-dev-experience-and-plugin-system.md §2` PayloadKind / PayloadStorage SPI seam exists
