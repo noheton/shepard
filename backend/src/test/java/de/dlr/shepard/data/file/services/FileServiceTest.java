@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
@@ -37,8 +39,10 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -330,21 +334,81 @@ public class FileServiceTest {
     assertThrows(NotFoundException.class, () -> fileService.createFile(nonExistingMongoid, fileName, inputStream));
   }
 
+  /**
+   * Sets up a {@link FindIterable} mock so that {@code .map(fn).into(list)}
+   * populates the target list with {@code result}.
+   * This models the behaviour used in
+   * {@link FileService#deleteFileContainer(String)} after MONGO-AUDIT-2026-05-24-006.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static <T> void mockMapInto(FindIterable<Document> findIterable, List<T> result) {
+    MongoIterable mappedIterable = mock(MongoIterable.class);
+    when(findIterable.map(any())).thenReturn(mappedIterable);
+    doAnswer(invocation -> {
+      List target = invocation.getArgument(0);
+      target.addAll(result);
+      return target;
+    }).when(mappedIterable).into(any());
+  }
+
   @Test
   public void deleteExistingFileContainerTest() {
+    // MONGO-AUDIT-2026-05-24-006: single-file container — verify one delete call.
     String existingMongoOid = "60b73212cfa45d2d5baa795d";
     ObjectId oid = new ObjectId();
     @SuppressWarnings("unchecked")
     FindIterable<Document> collectionReturn = mock(FindIterable.class);
-    Document doc = mock(Document.class);
-    mockIterable(collectionReturn, doc);
+    mockMapInto(collectionReturn, List.of(oid));
 
     when(mongoDatabase.getCollection(existingMongoOid)).thenReturn(collection);
     when(collection.find()).thenReturn(collectionReturn);
-    when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 
     assertDoesNotThrow(() -> fileService.deleteFileContainer(existingMongoOid));
     verify(gridBucket).delete(oid);
+    verify(collection).drop();
+  }
+
+  @Test
+  public void deleteExistingFileContainerTest_multiFile() {
+    // MONGO-AUDIT-2026-05-24-006: multi-file container — verifies all ObjectIds
+    // are deleted and that cursor materialisation (map+into) happens before any
+    // delete (inOrder: find → delete × N → drop).
+    String existingMongoOid = "60b73212cfa45d2d5baa795d";
+    ObjectId oid1 = new ObjectId("60b73212cfa45d2d5baa7951");
+    ObjectId oid2 = new ObjectId("60b73212cfa45d2d5baa7952");
+    ObjectId oid3 = new ObjectId("60b73212cfa45d2d5baa7953");
+    List<ObjectId> fileIds = new ArrayList<>(List.of(oid1, oid2, oid3));
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
+    mockMapInto(collectionReturn, fileIds);
+
+    when(mongoDatabase.getCollection(existingMongoOid)).thenReturn(collection);
+    when(collection.find()).thenReturn(collectionReturn);
+
+    assertDoesNotThrow(() -> fileService.deleteFileContainer(existingMongoOid));
+
+    // All three ObjectIds must each be deleted exactly once.
+    verify(gridBucket, times(3)).delete(any(ObjectId.class));
+    verify(gridBucket).delete(oid1);
+    verify(gridBucket).delete(oid2);
+    verify(gridBucket).delete(oid3);
+    verify(collection).drop();
+  }
+
+  @Test
+  public void deleteExistingFileContainerTest_emptyContainer() {
+    // MONGO-AUDIT-2026-05-24-006: empty container — no delete calls, drop still runs.
+    String existingMongoOid = "60b73212cfa45d2d5baa795d";
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
+    mockMapInto(collectionReturn, new ArrayList<>());
+
+    when(mongoDatabase.getCollection(existingMongoOid)).thenReturn(collection);
+    when(collection.find()).thenReturn(collectionReturn);
+
+    assertDoesNotThrow(() -> fileService.deleteFileContainer(existingMongoOid));
+    verify(gridBucket, times(0)).delete(any(ObjectId.class));
+    verify(collection).drop();
   }
 
   @Test
