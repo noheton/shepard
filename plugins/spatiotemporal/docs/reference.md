@@ -123,3 +123,34 @@ The `SemanticVocabularyRegistry` logs a summary line at startup:
 ```
 SemanticVocabularyRegistry: discovered 1 vocabulary provider(s): [http://www.opengis.net/ont/geosparql#]; 5 total predicate(s)
 ```
+
+## NDT orientation extensions
+
+### Beam-steering NDT orientation extensions
+
+The `orientation` JSONB field on profiles (notably `line`-kind profiles used for
+ultrasonic B/C/D-scan probe paths) accepts two optional sub-schemas for phased-array
+and time-of-flight diffraction instruments:
+
+**PAUT (Phased-Array Ultrasound Testing):**
+```json
+{
+  "pose": { "qx": 0, "qy": 0, "qz": 0, "qw": 1 },
+  "beamSteer": { "angleDeg": 45.0, "skewDeg": 0.0 }
+}
+```
+
+**TOFD (Time-of-Flight Diffraction):**
+```json
+{
+  "pose": { "qx": 0, "qy": 0, "qz": 0, "qw": 1 },
+  "pairOffsetMm": {
+    "transmitter": [0, -15, 0],
+    "receiver": [0, 15, 0]
+  }
+}
+```
+
+No schema migration is required — `orientation` is JSONB (open schema). These conventions
+are enforced by the `MFFDUTAScanShape` SHACL companion shape. A future validator can
+require `beamSteer` when `scanMode = "PAUT"` and `pairOffsetMm` when `scanMode = "TOFD"`.

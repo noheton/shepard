@@ -1184,3 +1184,27 @@ Write in the voice of the persona — terse, technical, honest. Include:
 - Honest verdict: production tool, interesting prototype, or "I'll contribute a PR
   and use it in 6 months"
 ```
+
+## Always: ship a working local default for every AI capability
+
+Every AI feature (embedding, inference, classification, quality scoring) must have a
+**local/offline default** that works without any external API key or network call. The
+pattern is a no-op or heuristic fallback that ships as the default and degrades
+gracefully when a real AI backend is configured.
+
+Rules:
+1. **No AI feature is gated behind a required API key.** If `AI_API_KEY` is absent,
+   the feature runs in degraded-but-functional mode (e.g. returns empty embeddings,
+   returns quality=null, returns no suggestions).
+2. **The local default is a real implementation**, not a stub that returns 500. An
+   absent-key scenario must return a valid (possibly empty) response, not an error.
+3. **`application.properties` seeds the default** to the local provider; the admin
+   can override at runtime via `:AIConfig` + `PATCH /v2/admin/ai/config` (same pattern
+   as `:SemanticConfig`, `:UnhideConfig`).
+4. **New AI capabilities follow the `LocalTeiEmbeddingProvider` → `RemoteTeiEmbeddingProvider`
+   pattern** — local = built-in no-network adapter; remote = operator-supplied URL.
+
+Exceptions (allowed to require external config):
+- Features explicitly labelled `EXPERIMENTAL` in the admin UI that are off by default.
+- Plugins that are purely an integration adapter (no core Shepard functionality depends
+  on them being active).

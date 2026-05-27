@@ -115,3 +115,18 @@ Until the parallel SHACL non-TS agent's substrate lands in `main`,
 anomalies persist to the existing `:TimeseriesAnnotation` graph
 exactly as today, with a TODO marker citing the SHACL target. See
 PR-6 in the AT1 task tracker.
+
+## Cross-language embedding consistency
+
+Shepard stores one embedding vector per DataObject. When a collection contains DataObjects
+in multiple languages (e.g. English annotations + German description), the embedding is
+computed from the **concatenated English + German text** as a single input.
+
+**Recommended pattern:** translate non-English text to English before embedding.
+Use the `translate_then_embed` option in the annotation API (when enabled). This
+produces cross-language-comparable embeddings that survive cosine-similarity searches
+across language boundaries.
+
+If translation is disabled, similarity search within a mixed-language collection will
+cluster by language rather than by semantic content. Acceptable for single-language
+deployments; document the posture in the collection's `description` field.
