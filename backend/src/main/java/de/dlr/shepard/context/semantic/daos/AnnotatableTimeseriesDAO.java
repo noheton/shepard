@@ -21,6 +21,18 @@ public class AnnotatableTimeseriesDAO extends GenericDAO<AnnotatableTimeseries> 
       .findFirst();
   }
 
+  /**
+   * TS-SEMANTIC-REST — look up by the channel's UUID v7 (AnnotatableTimeseries.appId),
+   * which equals the Postgres channel shepardId set by the dual-write service (TS-SEMANTIC-01).
+   * Only finds nodes created via the dual-write path; legacy v1 nodes (no appId) are invisible here.
+   */
+  public Optional<AnnotatableTimeseries> findByAppId(String appId) {
+    var filter = new Filter("appId", ComparisonOperator.EQUALS, appId);
+    return this.session.loadAll(AnnotatableTimeseries.class, filter, 2)
+      .stream()
+      .findFirst();
+  }
+
   public SemanticAnnotation getAnnotationById(long annotationId) {
     var entity = this.session.load(SemanticAnnotation.class, annotationId, 2);
     if (entity != null) return entity;

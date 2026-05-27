@@ -287,6 +287,12 @@ useHead({
         :measurements="containerAccessor.measurements.value"
         :container-path="`${containersPath}${urlSegment}${containerId}`"
       />
+      <!-- TS-SEMANTIC-REST: channel-level annotation surface stub -->
+      <ExpansionPanels class="mt-4" :default-open="[]">
+        <ExpansionPanelItem title="Channel Annotations">
+          <PlaceholderFragmentPane slug="ts-channel-annotations" />
+        </ExpansionPanelItem>
+      </ExpansionPanels>
       <!-- CC1b: Referenced by — wired to GET /v2/timeseries-containers/{id}/linked-data-objects -->
       <ExpansionPanels class="mt-4" :default-open="[0]">
         <ExpansionPanelItem

@@ -11,7 +11,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
   it("ships the documented count of placeholders", () => {
     // findings doc commits to a specific count; if this changes the doc
     // must change too (forces same-PR coupling).
-    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(17); // FE-PROV-INSTANCE-REGISTRY: +1 instance-registry (2026-05-27)
+    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(18); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
     expect(PLACEHOLDER_ENTRIES).toHaveLength(EXPECTED_PLACEHOLDER_COUNT);
   });
 
@@ -67,9 +67,9 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const admin = placeholdersBySurface("admin");
     const profile = placeholdersBySurface("profile");
     const route = placeholdersBySurface("route");
-    expect(admin.length).toBe(10); // FE-PROV-INSTANCE-REGISTRY: +1 instance-registry (2026-05-27)
+    expect(admin.length).toBe(10);
     expect(profile.length).toBe(1);
-    expect(route.length).toBe(6);
+    expect(route.length).toBe(7); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
     expect(admin.length + profile.length + route.length).toBe(
       EXPECTED_PLACEHOLDER_COUNT,
     );

@@ -224,9 +224,21 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
+  // TS-SEMANTIC-REST
+  {
+    slug: "ts-channel-annotations",
+    surface: "route",
+    title: "Channel Annotations",
+    subtitle:
+      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations.",
+    endpoint: "/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations",
+    backlogRow: "TS-SEMANTIC-REST",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
 ];
 
-// FE-PROV-INSTANCE-REGISTRY: +1 for instance-registry (2026-05-27)
+// TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

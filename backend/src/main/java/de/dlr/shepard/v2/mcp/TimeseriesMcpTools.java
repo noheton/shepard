@@ -1,5 +1,8 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -37,6 +40,9 @@ public class TimeseriesMcpTools {
 
   @Inject
   TimeseriesService timeseriesService;
+
+  @Inject
+  AnnotatableTimeseriesService annotatableTimeseriesService;
 
   @Inject
   McpContextBridge contextBridge;
@@ -196,6 +202,88 @@ public class TimeseriesMcpTools {
       }
       body.put("points", points);
       return support.toJson(body);
+    });
+  }
+
+  @Tool(
+    name = "list_channel_annotations",
+    description =
+      "List semantic annotations attached to a specific timeseries channel. " +
+      "Channels receive identity annotations automatically via the TS-SEMANTIC-01 " +
+      "dual-write (one annotation per non-blank 5-tuple field). Additional annotations " +
+      "can be added by researchers or AI agents via `create_channel_annotation`.\n\n" +
+      "A channel that exists in Postgres but has no AnnotatableTimeseries node yet " +
+      "(created before TS-SEMANTIC-01 shipped) returns an empty list.\n\n" +
+      "Response: JSON array of {id, propertyIRI, propertyName, valueIRI, valueName, ...}."
+  )
+  public String listChannelAnnotations(
+    @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
+    @ToolArg(description = "UUID v7 channelShepardId of the channel (from the `shepardId` field in `list_channels` response, once TS-ID migration is complete).") String channelShepardId
+  ) {
+    return support.run("list_channel_annotations", () -> {
+      contextBridge.bind();
+      long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
+      List<SemanticAnnotation> annotations =
+        annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerOgmId, channelShepardId);
+      List<Map<String, Object>> result = new ArrayList<>(annotations.size());
+      for (SemanticAnnotation a : annotations) {
+        var io = new SemanticAnnotationIO(a);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", io.getId());
+        row.put("propertyIRI", io.getPropertyIRI());
+        row.put("propertyName", io.getPropertyName());
+        row.put("valueIRI", io.getValueIRI());
+        row.put("valueName", io.getValueName());
+        if (io.getNumericValue() != null) row.put("numericValue", io.getNumericValue());
+        if (io.getUnitIRI() != null) row.put("unitIRI", io.getUnitIRI());
+        result.add(row);
+      }
+      return support.toJson(result);
+    });
+  }
+
+  @Tool(
+    name = "create_channel_annotation",
+    description =
+      "Attach a new semantic annotation to a timeseries channel. " +
+      "Requires Write permission on the TimeseriesContainer.\n\n" +
+      "The channel must have been created via the normal timeseries upload/write path " +
+      "(TS-SEMANTIC-01 dual-write). Channels that pre-date that service (created before " +
+      "TS-SEMANTIC-01 shipped) do not have an AnnotatableTimeseries node and will return " +
+      "an error.\n\n" +
+      "Use `list_vocabularies` to find a vocabulary id, then `search_predicates` to find " +
+      "the propertyIRI, and `search_values` to find the valueIRI. Both " +
+      "propertyRepositoryId and valueRepositoryId must be valid vocabulary IDs.\n\n" +
+      "Response: the newly created annotation object."
+  )
+  public String createChannelAnnotation(
+    @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
+    @ToolArg(description = "UUID v7 channelShepardId of the channel to annotate.") String channelShepardId,
+    @ToolArg(description = "IRI of the property (predicate). Get from `search_predicates`.") String propertyIRI,
+    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the property IRI. Get from `list_vocabularies`.") Long propertyRepositoryId,
+    @ToolArg(description = "IRI of the value (object). Get from `search_values`.") String valueIRI,
+    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the value IRI. Get from `list_vocabularies`.") Long valueRepositoryId
+  ) {
+    return support.run("create_channel_annotation", () -> {
+      contextBridge.bind();
+      long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
+
+      var io = new SemanticAnnotationIO();
+      io.setPropertyIRI(propertyIRI);
+      io.setPropertyRepositoryId(propertyRepositoryId);
+      io.setValueIRI(valueIRI);
+      io.setValueRepositoryId(valueRepositoryId);
+
+      SemanticAnnotation created =
+        annotatableTimeseriesService.createAnnotationForChannel(containerOgmId, channelShepardId, io);
+      var resultIO = new SemanticAnnotationIO(created);
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("id", resultIO.getId());
+      row.put("propertyIRI", resultIO.getPropertyIRI());
+      row.put("propertyName", resultIO.getPropertyName());
+      row.put("valueIRI", resultIO.getValueIRI());
+      row.put("valueName", resultIO.getValueName());
+      return support.toJson(row);
     });
   }
 
