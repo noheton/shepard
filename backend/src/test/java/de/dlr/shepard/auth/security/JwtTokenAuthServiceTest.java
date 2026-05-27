@@ -55,6 +55,17 @@ class JwtTokenAuthServiceTest {
     );
   }
 
+  private static JwtTokenAuthService serviceWithUsernameClaim(String usernameClaim, RoleDAO roleDAO) {
+    return new JwtTokenAuthService(
+      publicKey,
+      "",
+      JwtTokenAuthService.parseClaimPath("realm_access.roles"),
+      "",
+      usernameClaim,
+      roleDAO
+    );
+  }
+
   private static String validJws(String subject, String[] realmRoles) {
     Date now = new Date();
     Date future = DateUtils.addMinutes(now, 5);
@@ -193,6 +204,83 @@ class JwtTokenAuthServiceTest {
       .compact();
 
     assertNull(svc.parseBearerToken("Bearer " + jws));
+  }
+
+  // ---- L10: configurable username-claim tests ----
+
+  @Test
+  void extractUsername_defaultEmpty_usesSubSplit() {
+    // Default (empty username-claim) — sub split on ':' returns last segment.
+    var svc = serviceWithUsernameClaim("", mockRoleDAO());
+    assertEquals("", svc.getUsernameClaim());
+
+    String jws = validJws("realm:alice", new String[] {});
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+    assertNotNull(p);
+    assertEquals("alice", p.getUsername());
+  }
+
+  @Test
+  void extractUsername_preferredUsernameClaim_usedWhenPresent() {
+    // When username-claim = "preferred_username" and the JWT carries it,
+    // the claim value wins over the sub-split.
+    var roleDAO = mockRoleDAO();
+    when(roleDAO.rolesForUser("bob_display")).thenReturn(Collections.emptyList());
+    var svc = serviceWithUsernameClaim("preferred_username", roleDAO);
+    assertEquals("preferred_username", svc.getUsernameClaim());
+
+    Date now = new Date();
+    String jws = Jwts.builder()
+      .setSubject("9a176950-418c-dead-beef-000000000001") // Keycloak UUID sub
+      .setAudience("account")
+      .setExpiration(DateUtils.addMinutes(now, 5))
+      .setIssuedAt(now)
+      .setId(UUID.randomUUID().toString())
+      .claim("preferred_username", "bob_display")
+      .signWith(privateKey)
+      .compact();
+
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+    assertNotNull(p);
+    // Must use the preferred_username value, not the UUID sub.
+    assertEquals("bob_display", p.getUsername());
+  }
+
+  @Test
+  void extractUsername_preferredUsernameClaim_fallsBackToSubSplitWhenAbsent() {
+    // When the configured claim is absent from the JWT, fall back to sub-split.
+    var roleDAO = mockRoleDAO();
+    when(roleDAO.rolesForUser("fallback-user")).thenReturn(Collections.emptyList());
+    var svc = serviceWithUsernameClaim("preferred_username", roleDAO);
+
+    // JWT does NOT carry "preferred_username" — sub-split should be used.
+    String jws = validJws("realm:fallback-user", new String[] {});
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+    assertNotNull(p);
+    assertEquals("fallback-user", p.getUsername());
+  }
+
+  @Test
+  void extractUsername_customClaim_usedWhenPresent() {
+    // Any arbitrary claim name (e.g. "upn") should work when it carries a string.
+    var roleDAO = mockRoleDAO();
+    when(roleDAO.rolesForUser("carol@example.org")).thenReturn(Collections.emptyList());
+    var svc = serviceWithUsernameClaim("upn", roleDAO);
+
+    Date now = new Date();
+    String jws = Jwts.builder()
+      .setSubject("some-uuid")
+      .setAudience("account")
+      .setExpiration(DateUtils.addMinutes(now, 5))
+      .setIssuedAt(now)
+      .setId(UUID.randomUUID().toString())
+      .claim("upn", "carol@example.org")
+      .signWith(privateKey)
+      .compact();
+
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+    assertNotNull(p);
+    assertEquals("carol@example.org", p.getUsername());
   }
 
   private static RoleDAO mockRoleDAO() {
