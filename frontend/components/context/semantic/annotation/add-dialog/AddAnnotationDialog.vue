@@ -10,6 +10,7 @@ import {
   useTermSearch,
   type TermSuggestion,
 } from "~/composables/context/useTermSearch";
+import { useSkosRelated } from "~/composables/semantic/useSkosRelated";
 import { symbolicNameToSearchToken } from "~/utils/symbolicNameToSearchToken";
 
 interface AddAnnotationDialogProps {
@@ -52,6 +53,7 @@ const emit = defineEmits<{
 
 const { repositories } = useFetchSemanticRepositories();
 const { search } = useTermSearch();
+const { related: skosRelated, loading: skosLoading, fetchRelated: fetchSkosRelated, clear: clearSkosRelated } = useSkosRelated();
 
 const propertyIri = ref<string>("");
 const propertyRepository = ref<SemanticRepository | null>(null);
@@ -152,12 +154,15 @@ function onValueUpdate(val: string | TermSuggestion | null) {
   if (!val) {
     valueIri.value = "";
     valuePreview.value = null;
+    clearSkosRelated();
   } else if (typeof val === "string") {
     valueIri.value = val;
     valuePreview.value = null;
+    fetchSkosRelated(val);
   } else {
     valueIri.value = val.uri;
     valuePreview.value = val;
+    fetchSkosRelated(val.uri);
   }
 }
 
@@ -312,6 +317,39 @@ const onSubmit = async () => {
             </v-sheet>
           </v-col>
         </v-row>
+
+        <!-- skos:related panel ──────────────────────────────────────────── -->
+        <v-expand-transition>
+          <v-row v-if="skosRelated.length > 0 || skosLoading" class="mt-0">
+            <v-col class="pt-1">
+              <div class="text-caption text-medium-emphasis mb-1 d-flex align-center ga-1">
+                <v-icon size="12" icon="mdi-link-variant" />
+                Related concepts
+                <v-progress-circular
+                  v-if="skosLoading"
+                  size="10"
+                  width="1"
+                  indeterminate
+                  color="medium-emphasis"
+                  class="ml-1"
+                />
+              </div>
+              <v-chip-group column>
+                <v-chip
+                  v-for="term in skosRelated"
+                  :key="term.uri"
+                  size="x-small"
+                  variant="tonal"
+                  color="primary"
+                  :title="term.uri"
+                  @click="onValueUpdate(term.uri)"
+                >
+                  {{ term.label ?? term.uri.split(/[/#]/).pop() ?? term.uri }}
+                </v-chip>
+              </v-chip-group>
+            </v-col>
+          </v-row>
+        </v-expand-transition>
 
         <!-- Advanced (repository overrides) ─────────────────────────────── -->
         <v-row class="mt-2">
