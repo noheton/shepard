@@ -385,7 +385,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/reading-list.md`](reading-list.md) | Reading list | 2026-05-23 | 2026-05-23 |
 | [`aidocs/roadmap.md`](roadmap.md) | Shepard Fork — Roadmap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 | 2026-05-26 |
-| [`aidocs/strategy/85-github-project-management-policies.md`](strategy/85-github-project-management-policies.md) | 85 — GitHub project-management policies (traceability SSOT) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/85-github-project-management-policies.md`](strategy/85-github-project-management-policies.md) | 85 — GitHub project-management policies (traceability SSOT) | 2026-05-23 | 2026-05-27 |
 | [`aidocs/ux/82-basic-vs-advanced-mode-matrix.md`](ux/82-basic-vs-advanced-mode-matrix.md) | 82 — Basic vs Advanced Mode Feature Matrix | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/36-user-profile-and-settings-design.md`](workflows/36-user-profile-and-settings-design.md) | User Profile & Settings — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/38-git-integration-design.md`](workflows/38-git-integration-design.md) | Git Integration — Design | 2026-05-23 | 2026-05-23 |
