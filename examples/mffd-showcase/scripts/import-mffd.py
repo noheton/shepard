@@ -352,6 +352,7 @@ class MffdImporter:
 
         # ── 1. Collection + step DataObjects ──────────────────────────────
         collection_id = self._ensure_collection(plan.collection_name)
+        self._set_hero_image(collection_id)
         step_do_ids: dict[str, int] = {}
         for i, step in enumerate(plan.steps):
             predecessor = step_do_ids.get(plan.steps[i - 1]["name"]) if i > 0 else None
@@ -379,6 +380,30 @@ class MffdImporter:
         self.log.info(f"Browse: https://shepard.nuclide.systems/collections/{collection_id}")
 
     # ── Internals ─────────────────────────────────────────────────────
+
+    _HERO_URL = "https://shepard.nuclide.systems/static/mffd-hero.webp"
+
+    def _set_hero_image(self, collection_id: int) -> None:
+        """PATCH heroImageUrl via v2 REST.  Best-effort; logs WARN on failure."""
+        try:
+            raw = self.client._request("GET", f"/shepard/api/collections/{collection_id}")
+            app_id = raw.get("appId") if isinstance(raw, dict) else None
+            if not app_id:
+                self.log.warning("heroImageUrl PATCH skipped: no appId on collection %d", collection_id)
+                return
+            import re as _re
+            v2_base = _re.sub(r"/shepard/api/?$", "/v2", self.client.base.rstrip("/"))
+            import urllib.request as _ur
+            url = f"{v2_base}/collections/{app_id}"
+            body_bytes = json.dumps({"heroImageUrl": self._HERO_URL}).encode()
+            req = _ur.Request(url, data=body_bytes, method="PATCH",
+                              headers={"X-API-KEY": self.client.api_key,
+                                       "Content-Type": "application/json"})
+            with _ur.urlopen(req, timeout=10):
+                pass
+            self.log.info("heroImageUrl set → %s", self._HERO_URL)
+        except Exception as exc:
+            self.log.warning("heroImageUrl PATCH failed (non-fatal): %s", exc)
 
     def _ensure_collection(self, name: str) -> int:
         cache_key = f"collection:{name}"

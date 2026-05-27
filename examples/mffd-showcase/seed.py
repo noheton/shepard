@@ -36,6 +36,8 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+import os
+
 import requests as _http
 
 from shepard_client import (  # type: ignore
@@ -746,6 +748,79 @@ def seed(apis: Apis, data_dir: Path) -> None:
         upload_do_files(apis, coll, do, fc, data_dir, md_files)
 
     print(f"\nDone.  Collection id={coll.id}", flush=True)
+
+    # Hero image — upload to Garage S3 then PATCH heroImageUrl on the collection.
+    best_effort_hero_image(apis, coll, Path(__file__).parent)
+
+
+# ---------------------------------------------------------------------------
+# Hero image
+
+HERO_IMAGE_URL = "https://shepard.nuclide.systems/static/mffd-hero.webp"
+HERO_IMAGE_S3_KEY = "mffd-hero.webp"
+
+
+def _collection_app_id(coll: Collection, apis: "Apis") -> str | None:
+    """Read raw JSON to extract appId (pydantic model drops unknown fields)."""
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    try:
+        resp = _http.get(f"{host}/collections/{coll.id}", headers={"X-API-KEY": api_key}, timeout=5)
+        resp.raise_for_status()
+        return resp.json().get("appId") or None
+    except Exception:
+        return None
+
+
+def best_effort_hero_image(apis: "Apis", coll: Collection, seed_dir: Path) -> None:
+    """Upload hero.webp to Garage S3 (best-effort) and PATCH heroImageUrl."""
+    hero_path = seed_dir / "hero.webp"
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+
+    # S3 upload — requires boto3 + Garage endpoint accessible from seed host.
+    # Creds default to the nuclide dev box; override via GARAGE_* env vars.
+    if hero_path.exists():
+        s3_endpoint  = os.environ.get("GARAGE_ENDPOINT",    "http://127.0.0.1:3900")
+        s3_access    = os.environ.get("GARAGE_ACCESS_KEY",  "GK6f1eb80a3f7237cda3cf5830")
+        s3_secret    = os.environ.get("GARAGE_SECRET_KEY",  "a01a7b7b0d5a694aa8817b7657835b688ee4bf422fdf3df3a4c8b8137bf1e5f5")
+        s3_bucket    = os.environ.get("GARAGE_BUCKET",      "shepard-files")
+        try:
+            import boto3  # type: ignore
+            from botocore.config import Config  # type: ignore
+            s3 = boto3.client(
+                "s3", endpoint_url=s3_endpoint,
+                aws_access_key_id=s3_access, aws_secret_access_key=s3_secret,
+                region_name="garage-region",
+                config=Config(s3={"addressing_style": "path"}),
+            )
+            s3.put_object(
+                Bucket=s3_bucket, Key=HERO_IMAGE_S3_KEY,
+                Body=hero_path.read_bytes(),
+                ContentType="image/webp",
+                CacheControl="public, max-age=31536000, immutable",
+            )
+            _log("OK", "hero.webp", f"S3/{HERO_IMAGE_S3_KEY}", s3_bucket)
+        except Exception as exc:
+            _log("SKIP", "hero.webp", f"S3 upload ({str(exc)[:60]})")
+
+    # PATCH heroImageUrl via v2 REST.
+    app_id = _collection_app_id(coll, apis)
+    if not app_id:
+        _log("SKIP", HERO_IMAGE_URL, "heroImageUrl PATCH (no appId)")
+        return
+    v2 = _v2_base(host)
+    try:
+        resp = _http.patch(
+            f"{v2}/collections/{app_id}",
+            json={"heroImageUrl": HERO_IMAGE_URL},
+            headers={"X-API-KEY": api_key},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        _log("OK", COLLECTION_NAME, f"heroImageUrl → {HERO_IMAGE_URL}")
+    except Exception as exc:
+        _log("SKIP", HERO_IMAGE_URL, f"heroImageUrl PATCH ({str(exc)[:60]})")
 
 
 # ---------------------------------------------------------------------------

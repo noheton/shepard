@@ -1760,6 +1760,62 @@ def best_effort_template(apis: Apis, coll: Collection) -> None:
 # ---- collection versions (best-effort; feature-toggled) -------------------
 
 
+HERO_IMAGE_URL = "https://shepard.nuclide.systems/static/lumen-hero.webp"
+HERO_IMAGE_S3_KEY = "lumen-hero.webp"
+
+
+def best_effort_hero_image(apis: Apis, coll: Collection, seed_dir: "Path") -> None:
+    """Upload hero.webp to Garage S3 (best-effort) and PATCH heroImageUrl."""
+    import urllib.error
+    import urllib.request as _ur
+    hero_path = seed_dir / "hero.webp"
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+
+    if hero_path.exists():
+        s3_endpoint = os.environ.get("GARAGE_ENDPOINT",   "http://127.0.0.1:3900")
+        s3_access   = os.environ.get("GARAGE_ACCESS_KEY", "GK6f1eb80a3f7237cda3cf5830")
+        s3_secret   = os.environ.get("GARAGE_SECRET_KEY", "a01a7b7b0d5a694aa8817b7657835b688ee4bf422fdf3df3a4c8b8137bf1e5f5")
+        s3_bucket   = os.environ.get("GARAGE_BUCKET",     "shepard-files")
+        try:
+            import boto3  # type: ignore
+            from botocore.config import Config  # type: ignore
+            s3 = boto3.client(
+                "s3", endpoint_url=s3_endpoint,
+                aws_access_key_id=s3_access, aws_secret_access_key=s3_secret,
+                region_name="garage-region",
+                config=Config(s3={"addressing_style": "path"}),
+            )
+            s3.put_object(
+                Bucket=s3_bucket, Key=HERO_IMAGE_S3_KEY,
+                Body=hero_path.read_bytes(),
+                ContentType="image/webp",
+                CacheControl="public, max-age=31536000, immutable",
+            )
+            _log("OK", "hero.webp", f"S3/{HERO_IMAGE_S3_KEY}", s3_bucket)
+        except Exception as exc:
+            _log("SKIP", "hero.webp", f"S3 upload ({str(exc)[:60]})")
+
+    app_id = _collection_app_id(coll, apis)
+    if not app_id:
+        _log("SKIP", HERO_IMAGE_URL, "heroImageUrl PATCH (no appId)")
+        return
+    v2 = _v2_base(host)
+    body = json.dumps({"heroImageUrl": HERO_IMAGE_URL}).encode()
+    req = _ur.Request(
+        f"{v2}/collections/{app_id}",
+        data=body,
+        headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+        method="PATCH",
+    )
+    try:
+        with _ur.urlopen(req, timeout=10):
+            pass
+        _log("OK", "LUMEN-Inspired Hotfire Test Campaign", f"heroImageUrl → {HERO_IMAGE_URL}")
+    except Exception as exc:
+        _log("SKIP", HERO_IMAGE_URL, f"heroImageUrl PATCH ({str(exc)[:60]})")
+
+
 def best_effort_versions(apis: Apis, coll: Collection) -> None:
     """Try to create v0 / v1 / v2 markers via the versioning endpoint.
 
@@ -2347,6 +2403,9 @@ def main(argv: list[str] | None = None) -> int:
     best_effort_git_credential_preseed(apis, [
         ("flo", "github.com", "noheton", args.github_pat),
     ], enabled_plugins=enabled_plugins)
+
+    # Hero image — S3 upload + heroImageUrl PATCH (best-effort).
+    best_effort_hero_image(apis, coll, Path(__file__).parent)
 
     # Versions + api keys (best-effort).
     best_effort_versions(apis, coll)

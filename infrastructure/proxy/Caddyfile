@@ -20,6 +20,17 @@
 }
 
 :80 {
+	# Static assets served from Garage S3 website endpoint.
+	# Objects uploaded to the shepard-files bucket are reachable at
+	# https://shepard.nuclide.systems/static/<key>.  No auth required —
+	# garage bucket website --allow is set on shepard-files.
+	handle /static/* {
+		uri strip_prefix /static
+		reverse_proxy shepard-garage:3902 {
+			header_up Host "shepard-files.web.garage.local"
+		}
+	}
+
 	# Native Quarkus MCP server (MCP-2) — same backend that serves /shepard/api/*.
 	# SSE URL:           https://shepard.nuclide.systems/v2/mcp/sse
 	# Streamable HTTP:   https://shepard.nuclide.systems/v2/mcp
