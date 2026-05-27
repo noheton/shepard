@@ -257,6 +257,73 @@ public class TimeseriesDataPointRepository {
     query.getResultList();
   }
 
+  /**
+   * Compresses any {@code timeseries_data_points} chunk that is older than 8 days
+   * and not yet compressed.
+   *
+   * <p>Called after each import run (importer post-phase) and by the fortnightly
+   * {@link de.dlr.shepard.data.timeseries.services.TimeseriesBackfillCompressionJob}
+   * maintenance job, so backfill chunks ingested outside the daily compression
+   * policy window don't sit uncompressed for up to 23 hours.
+   *
+   * <p>The {@code timeseries_data_points} hypertable uses a BIGINT nanoseconds-since-epoch
+   * time column, so the cutoff is computed in nanoseconds rather than as a Postgres
+   * {@code INTERVAL} (which only works with {@code TIMESTAMPTZ} hypertables).
+   *
+   * <p>8 days in nanoseconds = 8 × 24 × 3600 × 1 000 000 000 = 691 200 000 000 000 ns.
+   * Any chunk whose {@code range_end_integer} is below {@code now_ns - 8_days_ns} is
+   * a backfill candidate.  Chunks that have already been compressed are skipped.
+   *
+   * <p>Each compressed chunk is logged at INFO level (chunk_schema.chunk_name) so
+   * operators can observe progress in the application log.
+   *
+   * <p>Idempotent: calling the method multiple times on the same set of chunks is safe;
+   * attempting to compress an already-compressed chunk is a no-op in TimescaleDB.
+   *
+   * <p>TS-AUDIT-2026-05-24-008.
+   */
+  @Timed(value = "shepard.timeseries-data-point.compression-backfill")
+  public void compressBackfilledChunks() {
+    // 8 days expressed in nanoseconds (same unit as the hypertable's integer time column).
+    final long eightDaysNs = 8L * 24L * 3600L * 1_000_000_000L;
+    // unix_now_immutable() is the registered integer-now function (returns ns since epoch).
+    @SuppressWarnings("unchecked")
+    List<Object[]> stale = entityManager.createNativeQuery(
+      "SELECT chunk_schema, chunk_name " +
+      "FROM timescaledb_information.chunks " +
+      "WHERE hypertable_name = 'timeseries_data_points' " +
+      "  AND is_compressed = false " +
+      "  AND range_end_integer < (unix_now_immutable() - :cutoffNs)"
+    )
+      .setParameter("cutoffNs", eightDaysNs)
+      .getResultList();
+
+    if (stale.isEmpty()) {
+      Log.debug("TS-AUDIT-008: no uncompressed backfill chunks older than 8 days — nothing to do");
+      return;
+    }
+
+    Log.infof("TS-AUDIT-008: found %d uncompressed backfill chunk(s) older than 8 days — compressing", stale.size());
+    int compressed = 0;
+    int failed = 0;
+    for (Object[] row : stale) {
+      String schema = (String) row[0];
+      String chunkName = (String) row[1];
+      String qualified = "\"" + schema + "\".\"" + chunkName + "\"";
+      try {
+        entityManager.createNativeQuery("SELECT compress_chunk('" + qualified + "'::regclass)")
+          .getResultList();
+        Log.infof("TS-AUDIT-008: compressed chunk %s", qualified);
+        compressed++;
+      } catch (RuntimeException ex) {
+        // Chunk may have been compressed concurrently or no longer exist — log and continue.
+        Log.warnf(ex, "TS-AUDIT-008: failed to compress chunk %s — skipping", qualified);
+        failed++;
+      }
+    }
+    Log.infof("TS-AUDIT-008: backfill compression complete — compressed=%d failed=%d", compressed, failed);
+  }
+
   @Timed(value = "shepard.timeseries-data-point.query")
   public List<TimeseriesDataPoint> queryDataPoints(
     int timeseriesId,

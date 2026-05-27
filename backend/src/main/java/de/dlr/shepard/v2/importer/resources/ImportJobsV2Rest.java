@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.importer.resources;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
+import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.v2.importer.daos.ImportPlanDAO;
 import de.dlr.shepard.v2.importer.entities.ImportLock;
 import de.dlr.shepard.v2.importer.entities.ImportPlan;
@@ -79,6 +80,9 @@ public class ImportJobsV2Rest {
 
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
+
+  @Inject
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
 
   // ─── POST /v2/import/jobs ─────────────────────────────────────────────────
 
@@ -222,6 +226,18 @@ public class ImportJobsV2Rest {
     lockService.release(lock.getLockId());
     plan.setStatus("USED");
     importPlanDAO.createOrUpdate(plan);
+
+    // ── 9a. Post-import backfill compression (TS-AUDIT-2026-05-24-008) ────────
+    // Best-effort: compress any timeseries chunks older than 8 days that the
+    // daily policy has not yet swept.  Called *after* the import lock is released
+    // so a compression failure never blocks the 201/207 response or a concurrent
+    // import.  Any exception is caught and logged at WARN; the daily compression
+    // policy will catch missed chunks on the next scheduled run.
+    try {
+      timeseriesDataPointRepository.compressBackfilledChunks();
+    } catch (RuntimeException e) {
+      Log.warnf(e, "IMP2: post-import backfill compression failed (non-fatal)");
+    }
 
     // ── 10. Response ──────────────────────────────────────────────────────────
     if ("COMPLETED".equals(result.status())) {
