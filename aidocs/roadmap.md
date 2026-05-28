@@ -132,7 +132,7 @@ a picture a PI or a new contributor can read in five minutes.
 | T1a+ | Templates system: `ShepardTemplate` entity → `AttributeSpec` → `FileSlot` → instantiation flow | — |
 | PR1 | Process runtime: `ProcessDefinition` + `ProcessRun` stepper, SPW XML importer | T1b |
 | V2b–e | Snapshots: freeze + pinned read path + diff tool + RO-Crate pin | V2a ✓ |
-| AI1b | Anomaly detection: rolling-median + isolation-forest, `dlr:anomaly` annotation | none |
+| ~~AI1b~~ | ~~Anomaly detection: rolling-median + isolation-forest, `dlr:anomaly` annotation~~ — **shipped** (2026-05-27 confirmed; AI1b-UI button + `DetectAnomaliesDialog.vue` live) | ✓ |
 | AI1a | AI plumbing: per-user `ai.apiKey`/`ai.baseUrl`; admin fallback; `LlmClient`; sensitivity toggle | U1a ✓ |
 | AI1e | Snap dashboards (Lumen): chat sidebar, closed tool-use catalogue, Vega-Lite rendering, `DashboardReference` save | AI1a + L2c ✓ |
 | AI1q | Lumen SPARQL tool: `query_knowledge_graph(sparql)` in dashboard catalogue | AI1e + N1f |
