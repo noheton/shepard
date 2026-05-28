@@ -178,7 +178,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | aidocs/85 — Coordinate Frame Tree (CST1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | 2026-05-28 |
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-26 |
