@@ -1250,10 +1250,33 @@ class ShepardClient:
         dest: Path,
         size_hint: int = 0,
         oid: str = "",
+        corr: str | None = None,
     ) -> bool:
         """Bug D fix: when `oid` is set, address the specific payload
         within the FileReference bundle. v1-compat fallback (legacy
         single-payload refs without OIDs) keeps the bare /payload URL.
+
+        Q7 (BUG-FILEREF-TRUNCATION, 2026-05-28) — verify bytes-on-disk against
+        the server's Content-Length AFTER the stream drains. `requests` /
+        urllib3 silently truncate `iter_content()` if the upstream connection
+        closes mid-transfer (psf/requests#2275, #4227, #6512): no exception is
+        raised, iter_content just stops, and a short / zero-byte file lands on
+        disk. The original DLR-cube → nuclide ingest lost ~8462 DOs to this
+        path — FileReference rows landed on dest, but their payload bytes were
+        truncated because download_file_ref returned True on every short read.
+
+        Behaviour:
+          - Content-Length present → compare to `dest.stat().st_size` after
+            the loop. Mismatch → unlink the partial file, emit a structured
+            `file_truncated` diag event (IMPORT-DBG1 surface), return False.
+          - Content-Length absent (e.g. chunked transfer encoding via Confluence
+            sources) → accept the bytes we got, but emit a `file_unverified`
+            WARN so a future operator can spot the un-verifiable subset. We
+            cannot do better here without a wire-shape change.
+          - Shepard file payloads are binary blobs served straight from Garage
+            S3 with no transparent decompression, so `dest.stat().st_size`
+            equals wire bytes received — no need for `r.raw.tell()` and its
+            urllib3-version coupling.
         """
         if oid:
             url = (
@@ -1270,7 +1293,9 @@ class ShepardClient:
             if not r.ok:
                 self._log_err("GET payload", url, r)
                 return False
-            total = int(r.headers.get("Content-Length", size_hint or 0))
+            cl_header = r.headers.get("Content-Length")
+            expected = int(cl_header) if cl_header is not None else None
+            total = expected if expected is not None else (size_hint or 0)
             with dest.open("wb") as fh:
                 with tqdm(
                     total=total or None,
@@ -1284,9 +1309,50 @@ class ShepardClient:
                     for chunk in r.iter_content(chunk_size=65536):
                         fh.write(chunk)
                         bar.update(len(chunk))
+            # Q7 truncation guard — verify bytes-on-disk against Content-Length.
+            actual = dest.stat().st_size
+            if expected is not None and actual != expected:
+                print(
+                    f"  [error] download fref {fref_id} oid={oid or '-'}: "
+                    f"truncated stream — wrote {actual} bytes, "
+                    f"server advertised {expected} (delta={expected - actual})"
+                )
+                _diag_emit("file_truncated", {
+                    "fref_id": fref_id,
+                    "oid": oid,
+                    "expected_bytes": expected,
+                    "actual_bytes": actual,
+                    "url_path": url[len(self._base):],
+                    "do_id": do_id,
+                    "coll_id": coll_id,
+                }, corr=corr)
+                # Unlink the partial file so a stray actor doesn't mistake the
+                # truncated bytes for a successful download artefact.
+                try:
+                    dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                return False
+            if expected is None:
+                # Chunked / Content-Length-absent path — accept, but flag.
+                _diag_emit("file_unverified", {
+                    "fref_id": fref_id,
+                    "oid": oid,
+                    "actual_bytes": actual,
+                    "url_path": url[len(self._base):],
+                    "do_id": do_id,
+                    "coll_id": coll_id,
+                    "reason": "no Content-Length header on response",
+                }, corr=corr)
             return True
         except Exception as exc:
             print(f"  [error] download fref {fref_id}: {exc}")
+            # Defensive cleanup — a partial file from an exception path is
+            # just as misleading as one from the truncation path.
+            try:
+                dest.unlink(missing_ok=True)
+            except Exception:
+                pass
             return False
 
     # ── Dest collection ───────────────────────────────────────────────────────
@@ -4103,7 +4169,8 @@ def run_source_mode(
 
                     tmp_file = tmp / fref.name
                     ok = _src.download_file_ref(
-                        src_coll_id, src_do.do_id, fref.fref_id, tmp_file, fref.size
+                        src_coll_id, src_do.do_id, fref.fref_id, tmp_file,
+                        fref.size, oid=fref.oid, corr=corr_id,
                     )
                     if not ok:
                         do_bar.write(f"    [error-file] download {fref.name}")

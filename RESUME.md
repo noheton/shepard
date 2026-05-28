@@ -33,6 +33,7 @@
 | Source JWT (kreb_fl) | jti `9f6ffd2a-b720-4582-b016-8ec2662ef5f6`, iat 2026-05-22 18:38 UTC | churns every ~14h |
 | Dest JWT (Flo Researcher) | jti `76c20c60-a35f-4024-87a6-1b54ddb371eb`, iat 2026-05-22 04:47 UTC | long-lived |
 | MCP endpoint | `https://shepard.nuclide.systems/mcp/sse` | via Zoraxy virtual directory |
+| Q7 / #145 fix | branch `145-fileref-truncation-fix`; findings `aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md` | **code-only fix shipped 2026-05-28** — two compounding bugs in `download_file_ref`: (1) worker call site dropped `oid=fref.oid` so bare `/payload` returned JSON metadata uploaded as binary; (2) `iter_content()` silent truncation never verified against `Content-Length`. 10-case regression in `test_fileref_truncation.py`. Validation deferred to next v16 import (no live cube JWT + 661923 was wiped today). |
 
 ## Gotchas
 

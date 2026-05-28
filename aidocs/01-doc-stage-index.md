@@ -35,7 +35,7 @@ section and the `upgrade-overlay` section.
 | `idea` | 11 |
 | `feature-defined` | 101 |
 | `audited-by-personas` | 73 |
-| `feedback-implemented` | 1 |
+| `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 68 |
 | `decommissioned` | 49 |
@@ -321,10 +321,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-27 |
 
-## feedback-implemented (1)
+## feedback-implemented (2)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | — |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
 ## tests-implemented (4)
