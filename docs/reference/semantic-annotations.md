@@ -401,6 +401,76 @@ loaded and enabled vocabularies appear. The minimum query length is
 
 ---
 
+## 10b. Channel unit auto-inference (AI1v)
+
+Every Timeseries channel that lands in `channel_metadata` is auto-tagged
+with a QUDT unit IRI when its `field` name carries a deterministic unit
+hint. The annotation appears on the channel's `:AnnotatableTimeseries`
+bridge node, alongside the 5-tuple channel-identity annotations, with:
+
+| Field                 | Value                                                                  |
+| --------------------- | ---------------------------------------------------------------------- |
+| `propertyIRI`         | `urn:shepard:unit`                                                     |
+| `valueIRI`            | a QUDT canonical IRI, e.g. `http://qudt.org/vocab/unit/MilliM`         |
+| `valueName`           | human-readable label, e.g. `millimeter`                                |
+| `subjectKind`         | `AnnotatableTimeseries`                                                |
+| `subjectAppId`        | the channel's UUID v7 `shepardId`                                      |
+| `sourceMode`          | `ai` (rule-based; the operator has not yet confirmed it)               |
+| `source`              | `ts-channel-unit-suffix`                                               |
+| `confidence`          | `1.0` (SUFFIX) · `0.9` (WELDING_CAP) · `0.85` (PREFIX_HEURISTIC)       |
+
+### Resolution tiers (Phase 1, deterministic)
+
+1. **SUFFIX** — name ends in `_mm`, `_mm_s`, `_um`, `_N`, `_Nm`, `_kN`,
+   `_J`, `_K`, `_C`, `_degC`, `_deg`, `_bar`, `_psi`, `_g`, `_Pa`. The
+   longest matching suffix wins (so `_mm_s` beats `_mm`).
+2. **PREFIX_HEURISTIC** — joint angles `j1_…j7_` → degree, plus
+   `acc_`, `rpm_`, `mdot_`, `vib_`, and the rocket-engine LUMEN
+   conventions (`tc_`, `pc_`, `p_inj_`, `p_tank_`, `t_coolant_`,
+   `t_lox_`, `lch4_temperature`, `turbopump_bearing_temp`,
+   `turbopump_vibration`, `strain_`).
+3. **WELDING_CAP** — `CM_`, `W1_`, `W2_`, `WC_` cap-controller channels
+   disambiguate `_I` → Ampere, `_U` → Volt. The remaining tails (`_p`,
+   `_t`) are ambiguous between power/pressure and time/temperature and
+   stay un-annotated.
+4. **AMBIGUOUS** — no deterministic rule matched. A structured warning
+   is logged (`AI1v: container=… → AMBIGUOUS`) and no annotation is
+   written. Phase 2 (LLM with parent-DataObject context) is gated on
+   the AI plugin (AI1a) and will resolve these.
+
+### Why `sourceMode = "ai"` if no LLM is invoked?
+
+Because the inference is **automated and not human-confirmed**, which is
+the property the EU AI Act Article 50 disclosure cares about. When a
+user accepts or overrides the annotation via the UI, the `sourceMode`
+flips to `collaborative`.
+
+### Idempotency
+
+Existing `ts-channel-unit-suffix` annotations are purged on each channel
+re-upsert (mirroring the `ts-channel-metadata` 5-tuple purge), so the
+rule table is the single source of truth — operator edits to the
+annotation tier configuration take effect on the next ingest.
+
+### QuantityKind derivation
+
+The annotation carries the **unit** IRI only. The matching QUDT
+**QuantityKind** (e.g. `qudt:QuantityKind/Length` for `MilliM`) is
+derived at presentation time by the M4I-d-3 renderer; we do not denormalise
+it onto the annotation.
+
+### Reference impl
+
+`backend/.../semantic/services/ChannelUnitInferenceService.java` — the
+Java service. The wire-up to the channel write path is in
+`TimeseriesSemanticDualWriteService.dualWriteChannelMetadata(...)`.
+
+The same rule set is also shipped as a standalone Python recovery
+script for backfilling existing un-annotated channels:
+`examples/mffd-showcase/scripts/recovery/annotate-channel-axes-and-units.py`.
+
+---
+
 ## 11. Wire shapes (JSON-LD and Turtle)
 
 The `GET /v2/annotations/{appId}/export/turtle` endpoint returns
