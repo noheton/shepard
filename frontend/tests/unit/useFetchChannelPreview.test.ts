@@ -9,6 +9,9 @@
  *      and fire separate requests.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { useFetchChannelPreview, useChannelPreviewLazy, _inFlightMap } from
+  "~/composables/container/useFetchChannelPreview";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 // ── Mock @vueuse/core before importing the module under test ──────────────────
 // The test environment is `node` (no IntersectionObserver); we stub
@@ -16,17 +19,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // callback fires.
 //
 // NOTE: vi.mock factories are hoisted to the top of the file by Vitest, which
-// means any `let` variables declared in the test file body are not yet
-// initialised when the factory executes. We work around this by capturing state
-// through a shared closure object that is allocated before the factory runs.
+// means any `const`/`let` variables declared in the test file body are not yet
+// initialised when the factory executes. We use `vi.hoisted` to lift the shared
+// state object alongside the mock factory so the closure resolves cleanly.
 
 type IOCallback = (entries: Partial<IntersectionObserverEntry>[]) => void;
 
-// Mutable state shared between factory and tests.
-const ioState = {
+// Mutable state shared between factory and tests, hoisted alongside vi.mock.
+const ioState = vi.hoisted(() => ({
   callback: null as IOCallback | null,
   stop: null as ((...args: unknown[]) => void) | null,
-};
+}));
 
 vi.mock("@vueuse/core", () => ({
   useIntersectionObserver: (
@@ -45,10 +48,6 @@ vi.mock("@vueuse/core", () => ({
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
-
-import { useFetchChannelPreview, useChannelPreviewLazy, _inFlightMap } from
-  "~/composables/container/useFetchChannelPreview";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const mockGetTimeseries = vi.fn();
 

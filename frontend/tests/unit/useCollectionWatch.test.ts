@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CollectionWatchesApi, MeApi } from "@dlr-shepard/backend-client";
+import { useCollectionWatch, _resetUsernameCacheForTest } from "~/composables/context/useCollectionWatch";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
-// Mock BEFORE importing the module under test so the mock is hoisted.
+// vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
   useV2ShepardApi: vi.fn(),
 }));
-
-import { useCollectionWatch, _resetUsernameCacheForTest } from "~/composables/context/useCollectionWatch";
-import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 // CW1 wire mocks. The composable now (UI-005) calls listWatchers + getMe
 // instead of getMyWatch so the browser never emits a 404 on landing.

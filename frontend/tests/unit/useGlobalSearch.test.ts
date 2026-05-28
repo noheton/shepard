@@ -8,13 +8,13 @@
  * limits, and that an empty query never fires a request.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
+// vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
-
-import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const mockSearch = vi.fn();
 const mockSearchContainers = vi.fn();

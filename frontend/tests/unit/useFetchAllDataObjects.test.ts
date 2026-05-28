@@ -10,15 +10,6 @@
  *   6. After TTL expiry the composable refetches
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-
-// Mock BEFORE importing the module under test so the mock is hoisted.
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: vi.fn(),
-}));
-vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
-  useV2ShepardApi: vi.fn(),
-}));
-
 import {
   useFetchAllDataObjects,
   invalidateDataObjectsCache,
@@ -26,6 +17,14 @@ import {
 } from "~/composables/context/useFetchAllDataObjects";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+
+// vi.mock is hoisted by Vitest above the imports at runtime.
+vi.mock("~/composables/common/api/useShepardApi", () => ({
+  useShepardApi: vi.fn(),
+}));
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
+}));
 
 const mockGetAllDataObjects = vi.fn();
 const mockListDataObjects = vi.fn();

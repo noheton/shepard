@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// Must mock BEFORE importing the module under test so the mock is hoisted.
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: vi.fn(),
-}));
-
 import { useFetchRecentCollections } from "~/composables/context/useFetchRecentCollections";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { BasicCollectionAttributes } from "@dlr-shepard/backend-client";
+
+// vi.mock is hoisted by Vitest above the imports at runtime.
+vi.mock("~/composables/common/api/useShepardApi", () => ({
+  useShepardApi: vi.fn(),
+}));
 
 const mockSearchCollections = vi.fn();
 

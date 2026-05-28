@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ResponseContext } from "@dlr-shepard/backend-client";
+import { useAuthRefreshMiddleware } from "~/composables/common/api/useAuthRefreshMiddleware";
 
-// Override the global useAuth / useRouter stubs before the module is imported
-// so each test suite can install per-test mocks.
+// useAuthRefreshMiddleware reads useAuth/useRouter from the global scope only
+// when its returned function is invoked (inside it() blocks), so installing
+// these stubs at module top is sufficient.
 const mockRefresh = vi.fn();
 const mockSignIn = vi.fn();
 const mockDataRef = ref<{ accessToken: string } | null>(null);
@@ -16,8 +18,6 @@ const mockCurrentRoute = ref({ fullPath: "/test" });
 (globalThis as unknown as Record<string, unknown>).useRouter = () => ({
   currentRoute: mockCurrentRoute,
 });
-
-import { useAuthRefreshMiddleware } from "~/composables/common/api/useAuthRefreshMiddleware";
 
 function makeContext(
   status: number,

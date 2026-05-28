@@ -9,14 +9,13 @@
  *  - re-fetches when collectionAppId ref changes
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
-// Must mock BEFORE importing the module under test so the mock is hoisted.
+// vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
-
-import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const mockListReferencedContainers = vi.fn();
 
