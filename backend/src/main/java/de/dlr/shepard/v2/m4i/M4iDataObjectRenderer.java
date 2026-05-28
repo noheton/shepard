@@ -85,6 +85,7 @@ public class M4iDataObjectRenderer {
   public static final String QUDT_NS = "http://qudt.org/schema/qudt/";
   public static final String SHEPARD_NS = "https://noheton.github.io/shepard/prov#";
   public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema#";
+  public static final String RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#";
 
   /** Stable m4i profile URI accepted on the {@code Accept} header. */
   public static final String M4I_PROFILE_URI = ProvJsonLdRenderer.M4I_PROFILE_URI;
@@ -149,6 +150,7 @@ public class M4iDataObjectRenderer {
     ctx.put("qudt", QUDT_NS);
     ctx.put("shepard", SHEPARD_NS);
     ctx.put("xsd", XSD_NS);
+    ctx.put("rdfs", RDFS_NS);
     return ctx;
   }
 

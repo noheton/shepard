@@ -116,6 +116,64 @@ programmatically on PUT/PATCH or via the Edit dialog in the UI (they appear in
 the "Attributes" section of the dialog). Shepard does **not** infer them from
 timeseries payload automatically — set them explicitly.
 
+## metadata4ing (m4i) JSON-LD projection (M4I-c + M4I-d)
+
+DataObjects ship a NFDI4Ing-canonical `metadata4ing` (m4i 1.4.0)
+projection that any RDF-aware client (Apache Jena, RDFLib, pyShacl,
+ROBOT, the NFDI4Ing Terminology Service) can read directly.
+Request via content negotiation:
+
+```bash
+curl -H 'Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"' \
+     -H "X-API-KEY: $KEY" \
+     https://shepard.example.dlr.de/v2/collections/<collection-appid>/data-objects/<do-appid>
+```
+
+The short profile form `Accept: application/ld+json; profile=metadata4ing`
+also works. Without the `profile=` parameter, the canonical JSON
+shape (see the table above) is returned unchanged.
+
+The m4i body always carries the following mandatory triples:
+
+| Predicate | Source | Notes |
+|---|---|---|
+| `@type` (`m4i:InvestigatedObject`, `prov:Entity`) | const | Dual-typed so PROV-O readers also parse. |
+| `dcterms:identifier` | DataObject.appId | UUID v7. |
+| `dcterms:title` | DataObject.name | Required, non-blank. |
+| `schema:dateCreated` | DataObject.createdAt | `xsd:dateTime`. |
+
+Optional triples — emitted when the underlying data carries them:
+
+| Predicate | Source | Notes |
+|---|---|---|
+| `dcterms:description` | DataObject.description | CommonMark, surfaced as plain string. |
+| `m4i:hasIdentifier` | KIP1a `Publication.pid` | A nested blank node with `m4i:identifierValue` + `m4i:hasIdentifierType "Handle"`. |
+| `obo:RO_0002233` | Predecessors | `has input` per OBO Relations Ontology; multi-valued. |
+| `obo:RO_0002234` | Successors | `has output`; multi-valued. |
+| `prov:wasGeneratedBy` | Most-recent `:Activity` targeting this DO | Single. |
+| `m4i:realizesMethod` | Activity.actionKind | `shepard:method/<kind>` IRI minted on the fly by `MethodResolver`. |
+| `m4i:hasEmployedTool` | Activity.targetKind | `shepard:tool/<kind>` minted by `ToolResolver`. |
+| `m4i:hasNumericalVariable` | Numeric `SemanticAnnotation`s | Blank nodes carrying `m4i:hasValue` + `qudt:unit`. |
+| `schema:keywords` | Text `SemanticAnnotation`s | Free-text fallback for non-numeric annotations. |
+
+The SHACL contract that pins this shape ships at
+`backend/src/main/resources/shapes/m4i-dataobject-shape.ttl`. Validate
+a live instance against it with the acceptance script:
+
+```bash
+pip install pyshacl rdflib requests
+python3 examples/mffd-showcase/scripts/validate_m4i_shape.py \
+    --shepard-url https://shepard.example.dlr.de \
+    --api-key "$KEY" \
+    --collection-id <collection-appid>
+```
+
+Unknown `profile=` value returns RFC 7807 problem+json with type
+`https://noheton.github.io/shepard/errors/dataobject.unsupported-profile`
+and status 406.
+
+**Design source.** `aidocs/semantics/94 §4.3 / §4.4 / §12`.
+
 ## See also
 
 - `collections.md` — sibling page documenting the same fields at the
@@ -123,3 +181,4 @@ timeseries payload automatically — set them explicitly.
 - `aidocs/semantics/98-shapes-views-and-process-model.md §4.1` — funder-review
   rationale and the deferred items.
 - `provenance.md` — Predecessor/Successor chain semantics.
+- `nfdi4ing-federation.md` — m4i federation runbook (M4I-e).

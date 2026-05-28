@@ -92,6 +92,9 @@ class M4iDataObjectRendererTest {
     assertEquals("http://qudt.org/schema/qudt/", ctx.get("qudt"));
     assertNotNull(ctx.get("shepard"));
     assertEquals("http://www.w3.org/2001/XMLSchema#", ctx.get("xsd"));
+    // rdfs is required for the m4i:NumericalVariable.rdfs:label slot
+    // to be parseable by JSON-LD aware tools (pyShacl, Apache Jena).
+    assertEquals("http://www.w3.org/2000/01/rdf-schema#", ctx.get("rdfs"));
   }
 
   // ── mandatory triples ────────────────────────────────────────────────

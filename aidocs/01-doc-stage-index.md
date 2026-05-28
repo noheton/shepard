@@ -215,7 +215,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/101-canonical-iris.md`](semantics/101-canonical-iris.md) | 101 — Canonical IRI namespaces for Shepard semantic documents | 2026-05-27 | 2026-05-27 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-27 |
+| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-28 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-26 | 2026-05-26 |
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-26 |
