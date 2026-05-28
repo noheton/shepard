@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shepard-plugin-fileformat-robotics — RoboDK station (.rdk) tier-1 parser
+
+  STANDALONE MODULE. This pom is deliberately NOT wired into
+  /opt/shepard/plugins/pom.xml or /opt/shepard/backend/pom.xml — the
+  main aggregator build is currently wedged on a Quarkus/Jandex
+  CompositeIndex.getClassByName infinite-loop hang, and pulling this
+  module into the aggregator would make that worse. See the sibling
+  fileformat-thermography pom for the same constraint.
+
+  Build:
+    cd plugins/fileformat-robotics && mvn package
+
+  Aggregator wire-up is a follow-up row (RDK-WIRE-AGGREGATOR-1)
+  deferred until the Jandex hang in backend is resolved.
+
+  Tier-1 scope (RDK-PARSE-1):
+    - Decompress zlib stream starting at offset 4 of .rdk
+    - Walk 4-byte LE length-prefixed UTF-16LE string records
+    - Classify each string against eight predicate regexes
+    - Emit SemanticAnnotation set under urn:shepard:rdk:* on the
+      parent FileReference (companionSpatialAnalyzer points at the
+      paired .xit FileReference appId when present)
+    - NO kinematic-tree extraction (tier-2, RDK-PARSE-2)
+    - NO CAD-asset download (just URI references)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-fileformat-robotics</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — fileformat robotics (RoboDK .rdk tier-1)</name>
+  <description>
+    Tier-1 text-scrape parser for RoboDK station files (.rdk) from the
+    MFFD upper-shell AFP robot cell at DLR ZLP Augsburg. Decompresses
+    the zlib payload, walks length-prefixed UTF-16LE strings, and
+    emits urn:shepard:rdk:* SemanticAnnotations on the parent
+    FileReference (appVersion, platform, programSource, cadRef,
+    stepRef, apiEndpoint, robotController, companionSpatialAnalyzer).
+    No DataObject or container creation; full kinematic-tree
+    extraction is deferred to RDK-PARSE-2 (RoboDK Python API sidecar).
+  </description>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <compiler-plugin.version>3.13.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.2</surefire-plugin.version>
+
+    <junit.version>5.11.4</junit.version>
+    <assertj.version>3.27.3</assertj.version>
+  </properties>
+
+  <dependencies>
+    <!-- No runtime deps beyond the JDK: java.util.zip.Inflater handles
+         the zlib decompression, java.nio.ByteBuffer handles the
+         length-prefix walk. -->
+
+    <!-- test scope only -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-fileformat-robotics-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
