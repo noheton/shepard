@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 43 |
 | `concept` | 25 |
 | `idea` | 11 |
-| `feature-defined` | 95 |
+| `feature-defined` | 96 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 68 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **369** |
+| **total docs** | **370** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
@@ -137,7 +137,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (95)
+## feature-defined (96)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -180,6 +180,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-26 |
+| [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
