@@ -1,8 +1,8 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-28 ~16:35 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
-**Active arc:** **POST-RESET** — full-instance reset (runbook 13) executed on nuclide; stack rebuilt from scratch with Keycloak users + admin singletons preserved. LUMEN + MFFD synthetic re-seed pending operator long-lived API key (needs flo to sign in once + mint). Backend image stays at 2026-05-26 cut (post-#207 Permissions-seed fix); Jandex hang investigation remains deferred.
-**Status:** Wipe footprint: Neo4j 317 MB → 8 KB; Mongo 949 MB → empty; TimescaleDB 1.8 GB → empty; anon postgres + garage_data + garage_meta volumes destroyed. Pre-reset counts snapshot at `/tmp/preset-20260528-181423/`: 17 Collections / 17,324 DataObjects / 22,126 ShepardFiles / 22,336 BasicRefs / 238,525 SemanticAnnotations / 328,618 Activities / 379,771 Resources / 5 Users. Post-reset: 0 of each EXCEPT 1 User (flo bootstrapped pre-startup) + V49 preseed (Vocabulary×10, Resource×10, OntologyAlignment×12) + admin singletons (LegacyV1Config, SemanticConfig, InstanceRorConfig, SqlTimeseriesConfig, BootstrapState, _ShepardMigrationContext, SemanticRepository, Role). Public reachability green: shepard.nuclide.systems 200, shepard-api.nuclide.systems/healthz/ready 200, shepard-auth realm 200, /shepard/doc/openapi/v2.json 200.
+**Updated:** 2026-05-28 ~19:10 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
+**Active arc:** **POST-RESET, SEEDED** — full-instance reset (runbook 13) executed on nuclide; stack rebuilt from scratch with Keycloak users + admin singletons preserved; LUMEN + MFFD synthetic re-seeded by bob (instance-admin) and live. Backend image stays at 2026-05-26 cut (post-#207 Permissions-seed fix); Jandex hang investigation remains deferred.
+**Status:** Wipe footprint: Neo4j 317 MB → 8 KB; Mongo 949 MB → empty; TimescaleDB 1.8 GB → empty; anon postgres + garage_data + garage_meta volumes destroyed. Pre-reset counts snapshot at `/tmp/preset-20260528-181423/`: 17 Collections / 17,324 DataObjects / 22,126 ShepardFiles / 22,336 BasicRefs / 238,525 SemanticAnnotations / 328,618 Activities / 379,771 Resources / 5 Users. Post-seed live counts (2026-05-28 19:10 UTC): **2 Collections, 46 DataObjects, 95 ShepardFiles, 112 BasicReferences, 113 Timeseries, 252 TimeseriesAnnotations, 2827 Activities, 97 Garage objects (1.8 MB), 113 channel_metadata rows + 82 TS chunks**. Public reachability green: shepard.nuclide.systems 200, shepard-api.nuclide.systems/healthz/ready 200, shepard-auth realm 200, /shepard/doc/openapi/v2.json 200.
 
 Two real upstream-of-upgrader bugs uncovered during the reset and shipped on `main` (`1508a50a4` + `b2d40b525`):
 1. `V20__Add_appId_constraint_GitCredential.cypher` used SQL `--` comments — Cypher rejects them. Every fork-fresh-init was failing on this. Fixed to `//`.
@@ -12,20 +12,33 @@ Confluence wiki seed (task #137) directive remains in force — "dont seed wiki 
 
 ---
 
-## Immediate next action
+## Hot artefacts (live, post-reset, post-seed)
 
-**For the operator (flo) — Phase 5 of runbook 13 (re-seed) is blocked on a long-lived API key:**
+| Artefact | appId | Live URL |
+|---|---|---|
+| LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) | `019e6ffc-89a4-76b5-8dbb-15888646a904` | https://shepard.nuclide.systems/collections/019e6ffc-89a4-76b5-8dbb-15888646a904 |
+| MFFD Upper Shell — AFP Process Chain (synthetic) | `019e6ff9-2bf7-732c-aa1c-2b504302a1e4` | https://shepard.nuclide.systems/collections/019e6ff9-2bf7-732c-aa1c-2b504302a1e4 |
+| Anomaly Investigation — TR-004 Fuel Turbopump | `019e6ffc-8d2e-73b4-b54e-ebf22eae797b` | (inside LUMEN) |
+| Publications | `019e6ffd-82b9-7f2e-ae23-b762b0eeb904` | (inside LUMEN) |
+| bob (Bob Reviewer, instance-admin) | Keycloak sub `14bbe5f9-3d7b-4514-b83e-3c237d62e81b` | https://shepard.nuclide.systems/ |
+| Garage bucket | `shepard-files` (key `GK6f1eb80a3f7237cda3cf5830`, RWO bob's `shepard-key`) | n/a |
+| Bootstrap token | **CONSUMED** by bob — re-issued on next restart if no admin exists; today an existing-admin grant goes through `POST /v2/admin/users/{username}/roles` |
 
-1. Sign in once via Keycloak at https://shepard.nuclide.systems/ — confirms OIDC roundtrip; populates flo's User node email/firstName/lastName from the JWT.
-2. Mint a long-lived API key in `/me` profile UI; export as `APIKEY=<token>`.
-3. Re-seed LUMEN + MFFD synthetic (Phase 5.1 + 5.2):
-   ```bash
-   cd /opt/shepard/examples/lumen-showcase && HOST=https://shepard-api.nuclide.systems APIKEY=$APIKEY python3 seed.py
-   cd /opt/shepard/examples/mffd-showcase  && HOST=https://shepard-api.nuclide.systems APIKEY=$APIKEY python3 seed.py
-   ```
-4. Phase 5.3 (MFFD-Dropbox real-data ingest from cube3) needs a fresh DLR cube JWT before it can resume; v16 import script will recreate the dest tree.
+## Soft fails worth tracking (all "post-2026-05-26-build" debt)
 
-**Backend Jandex hang investigation remains deferred** — running image (cut 2026-05-26) survives the reset. Filing the Quarkus issue with the jstack remains a TODO; revisit when the next backend feature needs a rebuild (TS-AXIS-VERIFY #236 still waits on it).
+- Some SemanticAnnotations 400 — m4i predicates not seeded by the in-image preset; M4i deepening (`aidocs/semantics/94`) ships them.
+- TS-AXIS-AUTO 404 on MFFD spatial-roles — endpoint on the post-2026-05-26 build, not live (task #236 waits on the next backend rebuild).
+- VideoStreamReference upload 500 — pre-existing video plugin behavior.
+- ApiKeyApi missing in shepard_client Python SDK (lag vs. backend).
+- ShepardTemplate create 400 — `Rocket Engine Hot-Fire Test Run` template; seed.py treats as SKIP.
+
+## Immediate next actions
+
+- **Backend Jandex hang investigation** — file the Quarkus issue with the jstack; the next live cut (TS-AXIS-AUTO endpoint, OTvis tier-1 plugin, REF-EDIT-6 PATCH, TS-SEMANTIC-REST) is gated on it.
+- **MFFD-Dropbox real-data ingest (Phase 5.3)** — needs a fresh DLR cube JWT; v16 import script will rebuild the dest tree organically when given one.
+- **Phase 7 housekeeping**:
+  - Patch runbook 13 §0.2 to say "stop Keycloak briefly before `kc.sh export` — the H2 file lock blocks online export"; the preserved volume is the real safety net but the runbook should reflect what actually works.
+  - PRE-MUT-SNAP rule resumes (the suspension recorded in `feedback_pre_mut_snap_suspended_pre_reset.md` is now fired).
 
 **Cube-side (Track A) — RUNNING:**
 - AFP tapelaying export (cube3 → ts-export/) tmux session
