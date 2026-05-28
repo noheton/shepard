@@ -83,7 +83,7 @@ Operators running the old separate `postgis` container must:
 
 | Key | Default | Description |
 |---|---|---|
-| `shepard.plugins.spatiotemporal.enabled` | `false` | Gates the plugin lifecycle hook in `GET /v2/admin/plugins`. |
+| `shepard.plugins.spatiotemporal.enabled` | **`true`** | Gates the plugin lifecycle hook in `GET /v2/admin/plugins`.  Default-on since 2026-05-28 (SPATIAL-V6-001 is the v6 flagship payload kind per `aidocs/data/90 §1`).  Set to `false` to opt out. |
 | `quarkus.datasource."spatial".db-kind` | — | Must be `postgresql`. |
 | `quarkus.datasource."spatial".jdbc.url` | — | JDBC URL to the TimescaleDB instance, e.g. `jdbc:postgresql://timescaledb:5432/postgres`. |
 | `quarkus.datasource."spatial".username` | — | Database user with read+write. |
@@ -93,11 +93,16 @@ Operators running the old separate `postgis` container must:
 Note: the Quarkus datasource qualifier stays `"spatial"` (not `"spatiotemporal"`) for backward
 compatibility with any `application.properties` keys that already configure this datasource.
 
-Minimal `application.properties` addition:
+**Legacy v5 gate removed.** `SHEPARD_SPATIAL_DATA_ENABLED` was the env var that gated the
+pre-SPATIAL-V6-001 plugin (`shepard-plugin-spatial`).  It has been removed from `.env`,
+`docker-compose.yml`, and the manifest's sidecar env declaration as of 2026-05-28.
+Operators upgrading should delete any local `SHEPARD_SPATIAL_DATA_ENABLED=...` line; the
+plugin's own `shepard.plugins.spatiotemporal.enabled` toggle now governs activation.
+
+Minimal `application.properties` addition (only the datasource — the plugin enable key
+is on by default):
 
 ```properties
-shepard.plugins.spatiotemporal.enabled=true
-
 quarkus.datasource."spatial".db-kind=postgresql
 quarkus.datasource."spatial".jdbc.url=jdbc:postgresql://timescaledb:5432/postgres
 quarkus.datasource."spatial".username=shepard

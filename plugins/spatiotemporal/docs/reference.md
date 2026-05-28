@@ -66,7 +66,7 @@ automatically on backend startup.
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `shepard.plugins.spatiotemporal.enabled` | `false` | Gates the plugin lifecycle hook in `GET /v2/admin/plugins`. |
+| `shepard.plugins.spatiotemporal.enabled` | **`true`** | Gates the plugin lifecycle hook in `GET /v2/admin/plugins`.  Default-on since 2026-05-28 (SPATIAL-V6-001 is the v6 flagship payload kind).  Set to `false` to opt out.  The legacy v5 `SHEPARD_SPATIAL_DATA_ENABLED` env gate has been removed. |
 | `quarkus.datasource."spatial".db-kind` | — | Must be `postgresql`. |
 | `quarkus.datasource."spatial".jdbc.url` | — | JDBC URL to the TimescaleDB instance, e.g. `jdbc:postgresql://timescaledb:5432/postgres`. |
 | `quarkus.datasource."spatial".username` | — | Database user. |

@@ -143,15 +143,16 @@ public final class SpatiotemporalPluginManifest implements PluginManifest {
           "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE EXTENSION IF NOT EXISTS postgis;'",
           "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE EXTENSION IF NOT EXISTS timescaledb;'"
         ),
+        // SHEPARD_SPATIAL_DATA_ENABLED removed 2026-05-28: was the legacy
+        // v5 gate.  The plugin's own shepard.plugins.spatiotemporal.enabled
+        // default-on toggle now governs activation; no per-sidecar env needed.
         Map.of(
           "QUARKUS_DATASOURCE_SPATIAL_JDBC_URL",
           "jdbc:postgresql://{{sidecar.host}}:5432/{{operator:POSTGRES_DB}}",
           "QUARKUS_DATASOURCE_SPATIAL_USERNAME",
           "{{operator:POSTGRES_SHEPARD_USER}}",
           "QUARKUS_DATASOURCE_SPATIAL_PASSWORD",
-          "{{from:env.POSTGRES_SHEPARD_USER_PW}}",
-          "SHEPARD_SPATIAL_DATA_ENABLED",
-          "true"
+          "{{from:env.POSTGRES_SHEPARD_USER_PW}}"
         ),
         "512m"
       )
