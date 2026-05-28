@@ -9,7 +9,17 @@ import {
   type URIReferenceData,
 } from "../../display-components/relationships/add-dialog/relationshipTypes";
 
-defineProps<{ collectionId: number }>();
+const props = defineProps<{
+  collectionId: number;
+  /**
+   * REF-EDIT-TPL-6 — Optional template-driven defaults for the URI sub-form.
+   * `defaultUriRelationship` pre-fills the relationship label when the URI
+   * mode is first selected. `uriPlaceholder` shapes the URI input's empty
+   * label. Neither overrides a value the user has already typed.
+   */
+  defaultUriRelationship?: string;
+  uriPlaceholder?: string;
+}>();
 const relationshipModel = defineModel<ReferenceData>();
 
 const relationshipType = ref<RelationshipType>(RelationshipType.PREDECESSOR);
@@ -33,9 +43,24 @@ const dataobjectReference = ref<DataObjectReferenceData>({
   type: CustomRelationshipType.DATA_OBJECT,
 });
 const uriReference = ref<URIReferenceData>({
-  relationshipName: "URI",
+  // REF-EDIT-TPL-6 — seed relationship from template hint if present, else
+  // fall back to the legacy "URI" default. The user can override.
+  relationshipName: props.defaultUriRelationship ?? "URI",
   type: CustomRelationshipType.URI,
 });
+
+// REF-EDIT-TPL-6 — when the template hint resolves after first render (async
+// fetch), apply it once as long as the user has not already typed.
+watch(
+  () => props.defaultUriRelationship,
+  hint => {
+    if (!hint) return;
+    const current = uriReference.value.relationshipName?.trim() ?? "";
+    if (current.length === 0 || current === "URI") {
+      uriReference.value.relationshipName = hint;
+    }
+  },
+);
 
 // watch on changes of the refs and update model accordingly
 watch(collectionReference.value, async changedCollectionReference => {
@@ -144,6 +169,7 @@ watch(relationshipType, newType => {
         customRelationshipType === CustomRelationshipType.URI
       "
       v-model="uriReference"
+      :uri-placeholder="uriPlaceholder"
     />
 
     <v-row class="pt-8">

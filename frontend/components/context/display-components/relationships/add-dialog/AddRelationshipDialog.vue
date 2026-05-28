@@ -4,6 +4,12 @@ import RelationshipInput from "~/components/context/input-components/relationshi
 import { useCreateReferences } from "~/composables/references/useCreateReferences";
 import { useUpdateDataObjectRelationship } from "~/composables/references/useUpdateDataObjectPredecessor";
 import {
+  REFERENCE_PREDICATE,
+  fetchReferencePrefillAnnotations,
+  findAnnotationByPredicate,
+  parseUriRelationshipHint,
+} from "~/composables/references/useReferenceTemplatePrefill";
+import {
   CustomRelationshipType,
   isValidCollectionReference,
   isValidDataObjectReference,
@@ -21,6 +27,40 @@ const showDialog = defineModel<boolean>("showDialog", {
 
 const relationshipModel = ref<ReferenceData>();
 const isValid = ref<boolean>(false);
+
+// REF-EDIT-TPL-6 — template-driven URI prefill. On dialog open, fetch the
+// parent DataObject's annotations and resolve any
+// `urn:shepard:reference:uriRelationship` hint into a default relationship
+// label + uri placeholder. The hints flow into `RelationshipInput` as props;
+// the user can override before submit.
+const defaultUriRelationship = ref<string | undefined>(undefined);
+const uriPlaceholder = ref<string | undefined>(undefined);
+
+async function loadUriRelationshipHint(): Promise<void> {
+  const annotations = await fetchReferencePrefillAnnotations(
+    props.collectionId,
+    props.dataObjectId,
+  );
+  const annotation = findAnnotationByPredicate(
+    annotations,
+    REFERENCE_PREDICATE.URI_RELATIONSHIP,
+  );
+  const hint = parseUriRelationshipHint(annotation);
+  if (!hint) return;
+  if (hint.relationship) defaultUriRelationship.value = hint.relationship;
+  if (hint.uriPrefix) uriPlaceholder.value = hint.uriPrefix;
+}
+
+watch(
+  showDialog,
+  open => {
+    if (!open) return;
+    defaultUriRelationship.value = undefined;
+    uriPlaceholder.value = undefined;
+    void loadUriRelationshipHint();
+  },
+  { immediate: true },
+);
 
 const { addPredecessor, addSuccessor, loading } =
   useUpdateDataObjectRelationship(
@@ -127,6 +167,8 @@ const onSubmit = () => {
         <RelationshipInput
           v-model="relationshipModel"
           :collection-id="collectionId"
+          :default-uri-relationship="defaultUriRelationship"
+          :uri-placeholder="uriPlaceholder"
         />
       </v-form>
     </template>

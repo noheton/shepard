@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import type { URIReferenceData } from "../../display-components/relationships/add-dialog/relationshipTypes";
 
+defineProps<{
+  /**
+   * REF-EDIT-TPL-6 — Placeholder for the URI input, surfaced from a parent
+   * `urn:shepard:reference:uriRelationship` template hint (`uriPrefix`).
+   * The hint never overwrites the bound value; it only shapes the empty-state
+   * placeholder so the user knows what URI shape is expected (e.g. DOI URL,
+   * ORCID prefix). Defaults to "Paste URI...*" when no hint is present.
+   */
+  uriPlaceholder?: string;
+}>();
+
 const uriModel = defineModel<URIReferenceData>({ required: true });
 </script>
 
@@ -10,7 +21,7 @@ const uriModel = defineModel<URIReferenceData>({ required: true });
     <v-row class="pt-5">
       <v-text-field
         v-model:model-value="uriModel.referenceURI"
-        label="Paste URI...*"
+        :label="uriPlaceholder ? `Paste URI...* (e.g. ${uriPlaceholder})` : 'Paste URI...*'"
         variant="outlined"
         density="compact"
         color="primary"
