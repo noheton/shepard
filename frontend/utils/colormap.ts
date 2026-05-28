@@ -53,9 +53,7 @@ export type ColormapName = "inferno" | "viridis" | "plasma" | "heat" | "cool";
 function interpolateStops(stops: [number, RGB][], t: number): RGB {
   const clamped = Math.max(0, Math.min(1, t));
   for (let i = 1; i < stops.length; i++) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const [t0, c0] = stops[i - 1]!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const [t1, c1] = stops[i]!;
     if (clamped <= t1) {
       const alpha = (clamped - t0) / (t1 - t0);
@@ -66,7 +64,6 @@ function interpolateStops(stops: [number, RGB][], t: number): RGB {
       ];
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return stops[stops.length - 1]![1];
 }
 
@@ -94,21 +91,16 @@ export function normalizeValues(values: number[]): number[] {
 export function lerpSeries(pts: [number, number][], t: number): number {
   if (pts.length === 0) return 0;
   /* noUncheckedIndexedAccess — bounds are known at these points */
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (t <= pts[0]![0]) return pts[0]![1];
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (t >= pts[pts.length - 1]![0]) return pts[pts.length - 1]![1];
   let lo = 0;
   let hi = pts.length - 1;
   while (lo < hi - 1) {
     const mid = (lo + hi) >> 1;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (pts[mid]![0] <= t) lo = mid;
     else hi = mid;
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [t0, v0] = pts[lo]!;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [t1, v1] = pts[hi]!;
   return v0 + ((t - t0) / (t1 - t0)) * (v1 - v0);
 }
