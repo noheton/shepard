@@ -647,23 +647,18 @@
         </executions>
       </plugin>
       <!--
-        Publish a `tests` classifier JAR so plugin modules can extend
-        AbstractPluginManifestTest (and any other backend test base classes)
-        without copying them. Plugins depend on it via
-        `<type>test-jar</type>` + `<scope>test</scope>`.
+        NOTE: the `maven-jar-plugin` test-jar execution was reverted on
+        2026-05-28 (commit jandex-fix-revert-test-jar-coupling) — it
+        introduced a cross-module test-jar dependency from 16 plugin
+        modules onto the backend test classpath, suspected of triggering
+        a Quarkus/Jandex `CompositeIndex.getClassByName` infinite-loop
+        during ArC augmentation. See `aidocs/agent-findings/
+        backend-jandex-hang-investigation-2026-05-28.md` Suspect S1.
+        `AbstractPluginManifestTest` is preserved under
+        `backend/src/test/...`; once the build path is healthy it can
+        be re-introduced as a published test-jar OR copied into each
+        plugin module as a non-shared base class.
       -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <!--
         OWASP Dependency-Check. NOT bound to a phase by default — runs only
         when invoked explicitly (`mvn dependency-check:check`) because

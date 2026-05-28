@@ -183,7 +183,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
-| [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | — |
+| [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
