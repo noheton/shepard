@@ -1,0 +1,208 @@
+# m4i-dataobject-shape.ttl — SHACL contract for Shepard's m4i DataObject
+# projection (M4I-c).
+#
+# Design source: aidocs/semantics/94 §4.3.
+#
+# This shape declares what a DataObject *must* and *may* carry when it
+# is rendered under the m4i (metadata4ing 1.4.0) JSON-LD profile via
+# the M4iDataObjectRenderer. It is the read-time contract: a caller
+# requesting
+#     GET /v2/collections/{cid}/data-objects/{doid}
+#     Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"
+# receives a JSON-LD body that pyShacl validates against this file
+# with zero violations on every DataObject in the LUMEN + MFFD seeds.
+#
+# The shape is also the structural model that the M4iDataObjectRenderer
+# emits from — Java-side constants in M4iDataObjectRenderer mirror the
+# property paths declared here. (Treat this file as documentation
+# co-equal with the Java code; future M4I-d-3 expansions of the
+# m4i:hasNumericalVariable property tree happen here first, then in
+# the renderer.)
+
+@prefix m4i:     <http://w3id.org/nfdi4ing/metadata4ing#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix schema:  <http://schema.org/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix obo:     <http://purl.obolibrary.org/obo/> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── m4i:DataObjectShape ───────────────────────────────────────────────
+#
+# Targets the m4i:InvestigatedObject class because the m4i projection
+# of a Shepard :DataObject is — by definition — the m4i view of the
+# investigated artefact. Every node the renderer emits as a Shepard
+# DataObject carries `a m4i:InvestigatedObject` (alongside the
+# upstream PROV-O `prov:Entity` type).
+
+m4i:DataObjectShape a sh:NodeShape ;
+    sh:targetClass m4i:InvestigatedObject ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "m4i DataObject shape"@en ;
+    rdfs:comment "Contract for the m4i JSON-LD projection of a Shepard :DataObject. Designed in aidocs/semantics/94 §4.3."@en ;
+
+    # ── Mandatory triples (§4.3 design) ──
+
+    # dcterms:identifier — the DataObject's UUID v7 appId, as a literal string.
+    sh:property [
+        sh:path    dcterms:identifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:name    "Identifier (appId)"@en ;
+        sh:order   10 ;
+        sh:message "A DataObject m4i projection requires a non-empty dcterms:identifier (the appId)."@en
+    ] ;
+
+    # dcterms:title — DataObject.name; non-blank.
+    sh:property [
+        sh:path    dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:name    "Title (name)"@en ;
+        sh:order   20 ;
+        sh:message "A DataObject m4i projection requires a non-empty dcterms:title (DataObject.name)."@en
+    ] ;
+
+    # schema:dateCreated — DataObject.createdAt; ISO-8601 dateTime.
+    sh:property [
+        sh:path    schema:dateCreated ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Date created"@en ;
+        sh:order   30 ;
+        sh:message "A DataObject m4i projection requires schema:dateCreated (DataObject.createdAt) as xsd:dateTime."@en
+    ] ;
+
+    # ── Optional / shape-derived triples (§4.3 design) ──
+
+    # dcterms:description — DataObject.description; free-form CommonMark.
+    sh:property [
+        sh:path    dcterms:description ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Description"@en ;
+        sh:order   40
+    ] ;
+
+    # m4i:hasIdentifier — nested KIP1a PID block when a Publication exists
+    # for this DataObject (currently only Collections are published; this
+    # slot exists for forward compatibility with per-DataObject KIP-PID
+    # minting). Multi-cardinality (one PID per identifier scheme).
+    sh:property [
+        sh:path    m4i:hasIdentifier ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:name    "Identifier (KIP1a PID)"@en ;
+        sh:order   50
+    ] ;
+
+    # obo:RO_0002233 — has input (predecessor chain in Shepard's DataObject
+    # graph). Multi-cardinality: a DataObject may have multiple predecessors.
+    sh:property [
+        sh:path    obo:RO_0002233 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Has input (predecessor)"@en ;
+        sh:order   60
+    ] ;
+
+    # obo:RO_0002234 — has output (successor chain). Multi-cardinality.
+    sh:property [
+        sh:path    obo:RO_0002234 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Has output (successor)"@en ;
+        sh:order   70
+    ] ;
+
+    # prov:wasGeneratedBy — the most-recent :Activity targeting this
+    # DataObject. At most one (the renderer picks the latest by
+    # endedAtMillis); a DataObject with no activity history has none.
+    sh:property [
+        sh:path    prov:wasGeneratedBy ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "Was generated by (most-recent Activity)"@en ;
+        sh:order   80
+    ] ;
+
+    # m4i:realizesMethod — the m4i:Method instance corresponding to the
+    # most-recent :Activity's actionKind (M4I-d-1: shepard:method/<kind>).
+    sh:property [
+        sh:path    m4i:realizesMethod ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "Realizes method"@en ;
+        sh:order   90
+    ] ;
+
+    # m4i:hasEmployedTool — the m4i:Tool instance corresponding to the
+    # most-recent :Activity's targetKind (M4I-d-2: shepard:tool/<kind>).
+    sh:property [
+        sh:path    m4i:hasEmployedTool ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "Has employed tool"@en ;
+        sh:order   100
+    ] ;
+
+    # m4i:hasNumericalVariable — numeric SemanticAnnotations attached to
+    # the DataObject (M4I-d-3 direct path). Each is a blank node typed
+    # m4i:NumericalVariable carrying m4i:hasValue + qudt:unit. Multi.
+    sh:property [
+        sh:path    m4i:hasNumericalVariable ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:name    "Has numerical variable"@en ;
+        sh:order   110
+    ] ;
+
+    # schema:keywords — free-text or vocabulary-bound annotation keys
+    # that did NOT match the m4i:hasNumericalVariable slot. The
+    # unstructured fallback per §4.4 (d-3).
+    sh:property [
+        sh:path    schema:keywords ;
+        sh:datatype xsd:string ;
+        sh:name    "Keywords (free-text annotations)"@en ;
+        sh:order   120
+    ] .
+
+# ─── m4i:NumericalVariableShape ────────────────────────────────────────
+#
+# Inner shape for the m4i:NumericalVariable blank nodes emitted under
+# m4i:hasNumericalVariable. Minimum: m4i:hasValue + a unit reference
+# (qudt:unit when available, else a fallback rdfs:label).
+
+m4i:NumericalVariableShape a sh:NodeShape ;
+    sh:targetClass m4i:NumericalVariable ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "m4i NumericalVariable shape"@en ;
+    rdfs:comment "Inner shape for typed numeric annotation values. Designed in aidocs/semantics/94 §4.4 (d-3)."@en ;
+
+    sh:property [
+        sh:path    rdfs:label ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Variable label"@en ;
+        sh:message "A NumericalVariable requires a label (typically the SemanticAnnotation propertyName)."@en
+    ] ;
+    sh:property [
+        sh:path    m4i:hasValue ;
+        sh:datatype xsd:double ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Numeric value"@en ;
+        sh:message "A NumericalVariable requires a numeric m4i:hasValue."@en
+    ] ;
+    sh:property [
+        sh:path    qudt:unit ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "QUDT unit IRI"@en
+    ] .

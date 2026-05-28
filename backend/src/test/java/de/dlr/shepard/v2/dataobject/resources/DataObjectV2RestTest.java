@@ -277,7 +277,7 @@ class DataObjectV2RestTest {
   void getReturns404WhenDataObjectUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
     assertEquals(404, r.getStatus());
     verify(permissionsService, never()).isAccessAllowedForDataObjectAppId(any(), any(), any());
   }
@@ -288,7 +288,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -301,7 +301,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
     assertEquals(200, r.getStatus());
     DataObjectIO io = (DataObjectIO) r.getEntity();
@@ -509,7 +509,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
     assertEquals(200, r.getStatus());
     // Response must be a DataObjectDetailV2IO (subtype of DataObjectIO).
@@ -561,7 +561,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findContainersByDataObjectAppId(DO_APP_ID))
       .thenReturn(Map.of("tsRefs", List.of(tsRef), "fileRefs", List.of(), "sdRefs", List.of()));
 
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
     assertEquals(200, r.getStatus());
     DataObjectDetailV2IO detail = (DataObjectDetailV2IO) r.getEntity();
@@ -589,7 +589,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
     assertEquals(200, r.getStatus());
     DataObjectDetailV2IO detail = (DataObjectDetailV2IO) r.getEntity();

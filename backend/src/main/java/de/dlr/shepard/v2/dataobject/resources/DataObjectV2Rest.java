@@ -15,10 +15,13 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
+import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolation;
@@ -118,6 +121,9 @@ public class DataObjectV2Rest {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  M4iDataObjectRenderer m4iDataObjectRenderer;
 
   @GET
   @Operation(
@@ -242,11 +248,21 @@ public class DataObjectV2Rest {
 
   @GET
   @Path("/{dataObjectAppId}")
+  @Produces({ MediaType.APPLICATION_JSON, "application/ld+json" })
   @Operation(
     summary = "Get a DataObject by appId.",
     description =
       "Returns the full `DataObjectIO` shape for the DataObject identified by " +
       "`dataObjectAppId` (UUID v7) within the Collection identified by `collectionAppId`.\n\n" +
+      "Content negotiation (M4I-c): Pass `Accept: application/ld+json; profile=\"https://w3id.org/nfdi4ing/metadata4ing/\"` " +
+      "(or short `profile=metadata4ing`) to receive a metadata4ing (NFDI4Ing m4i 1.4.0) " +
+      "JSON-LD projection of the DataObject — m4i:InvestigatedObject type, dcterms:identifier/title, " +
+      "schema:dateCreated, m4i:hasIdentifier (KIP1a PID), obo:RO_0002233/4 (predecessor/successor), " +
+      "prov:wasGeneratedBy + m4i:realizesMethod (most-recent Activity), m4i:hasEmployedTool, " +
+      "and m4i:hasNumericalVariable (numeric SemanticAnnotations with QUDT unit refs) + " +
+      "schema:keywords (free-text annotations). Plain JSON callers see no change. " +
+      "Unknown profile → 406 RFC 7807 `dataobject.unsupported-profile`. Shape contract: " +
+      "`backend/src/main/resources/shapes/m4i-dataobject-shape.ttl`. Design: aidocs/semantics/94 §4.3.\n\n" +
       "The response includes `id` (legacy long), `appId` (UUID v7, canonical), `name`, " +
       "`description`, `status`, `attributes` (string-to-string map), `referenceIds[]` " +
       "(legacy long ids of all references — timeseries, file, structured-data — attached " +
@@ -270,6 +286,7 @@ public class DataObjectV2Rest {
   public Response get(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext sc
   ) {
     Long collectionOgmId = resolveOrNull(collectionAppId);
@@ -286,6 +303,28 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+
+    // M4I-c — content-negotiation. Caller requested
+    // `Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"`
+    // (or the short `profile=metadata4ing`) → return the m4i flavoured
+    // projection. Plain `application/json` (no profile) → today's
+    // DataObjectDetailV2IO shape. Unknown profile → 406 RFC 7807.
+    if (isJsonLdRequested(acceptHeader)) {
+      Response profileError = enforceM4iProfile(acceptHeader);
+      if (profileError != null) return profileError;
+      ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+      if (profile == ProvJsonLdRenderer.ProfileChoice.M4I) {
+        Map<String, Object> body = m4iDataObjectRenderer.renderDataObject(d);
+        return Response.ok(body)
+          .type(M4iDataObjectRenderer.MEDIA_TYPE + ";profile=\"" + M4iDataObjectRenderer.M4I_PROFILE_URI + "\"")
+          .header("Cache-Control", "max-age=300, must-revalidate")
+          .build();
+      }
+      // PROV_O on a DataObject doesn't have a defined projection in
+      // this slice; fall through to default JSON. (Reserved for a
+      // future PROV-O DataObject view.)
+    }
+
     DataObjectDetailV2IO io = new DataObjectDetailV2IO(d);
     DataObjectDetailV2IO.Containers containers = buildContainersFromCypher(dataObjectAppId);
     io.setContainers(containers);
@@ -796,5 +835,52 @@ public class DataObjectV2Rest {
     }
 
     return new DataObjectDetailV2IO.Containers(timeseries, files, structuredData);
+  }
+
+  // ── M4I-c content-negotiation helpers ─────────────────────────────────
+
+  /**
+   * Returns {@code true} iff the {@code Accept} header carries an
+   * {@code application/ld+json} clause. Used to decide whether to enter
+   * the M4I-c content-neg branch; absent or other media types fall
+   * through to the default JSON projection.
+   */
+  private static boolean isJsonLdRequested(String acceptHeader) {
+    if (acceptHeader == null || acceptHeader.isBlank()) return false;
+    String[] clauses = acceptHeader.split(",");
+    for (String clause : clauses) {
+      String mediaType = clause.split(";", 2)[0].trim();
+      if (mediaType.equalsIgnoreCase("application/ld+json")) return true;
+    }
+    return false;
+  }
+
+  /**
+   * If the caller's {@code Accept} header carries a
+   * {@code profile=} parameter that resolves neither to PROV-O nor to
+   * the m4i profile, surface a 406 RFC 7807. {@code null} return means
+   * "no objection — proceed."
+   *
+   * <p>Mirrors {@code ProvenanceRest.enforceJsonLdProfile} but with a
+   * DataObject-scoped problem type.
+   */
+  private static Response enforceM4iProfile(String acceptHeader) {
+    String raw = ProvJsonLdRenderer.extractProfileParam(acceptHeader);
+    if (raw == null || raw.isBlank()) return null;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+    if (profile != null) return null;
+    de.dlr.shepard.common.exceptions.ProblemJson body = new de.dlr.shepard.common.exceptions.ProblemJson(
+      "https://noheton.github.io/shepard/errors/dataobject.unsupported-profile",
+      "Unsupported JSON-LD profile",
+      Response.Status.NOT_ACCEPTABLE.getStatusCode(),
+      "The profile= parameter '" + raw + "' on the Accept header is not recognised. " +
+      "Supported: '" + M4iDataObjectRenderer.M4I_PROFILE_URI + "' (or short 'metadata4ing'). " +
+      "Omit the parameter for the canonical JSON projection.",
+      null
+    );
+    return Response.status(Response.Status.NOT_ACCEPTABLE)
+      .entity(body)
+      .type(MediaType.APPLICATION_JSON)
+      .build();
   }
 }
