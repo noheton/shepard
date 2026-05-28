@@ -17,9 +17,25 @@ const props = defineProps<{
   containerType: string;
 }>();
 
+// UI21 — when the fetch resolves, surface the result to the parent so
+// the bulk-delete orphan guard can read it without firing a second
+// network request. `refs` is null for unsupported types, [] for true
+// orphans, or the list of referencing collection IDs.
+const emit = defineEmits<{
+  (e: "refs-resolved", payload: { id: number; refs: number[] | null }): void;
+}>();
+
 const { collectionIds, isLoading } = useContainerReferencedByCollections(
   props.containerId,
   props.containerType,
+);
+
+watch(
+  collectionIds,
+  v => {
+    emit("refs-resolved", { id: props.containerId, refs: v });
+  },
+  { immediate: true },
 );
 
 const count = computed(() => collectionIds.value?.length ?? 0);

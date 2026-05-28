@@ -173,7 +173,7 @@ export function sizeBarFraction(value: number, max: number): number {
  *    refuse to bulk delete these because we cannot prove they are
  *    orphans; the per-row delete affordance is the explicit path.
  */
-export function partitionOrphans<T extends ContainerRow>(
+export function partitionOrphans(
   selectedIds: number[],
   refsById: Map<number, number[] | null>,
 ): OrphanPartition {
