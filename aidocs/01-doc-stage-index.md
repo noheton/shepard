@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 68 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **375** |
+| **total docs** | **376** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
