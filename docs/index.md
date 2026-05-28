@@ -18,7 +18,7 @@ shepard ("Storage for HEterogeneous Product And Research Data") is a multi-datab
 research-data platform developed by DLR's Center for Lightweight Production Technology
 (Augsburg). It exposes a single REST API that stores timeseries, files, structured
 documents, spatial data, and semantic annotations alongside metadata, in support of
-FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
+FAIR research-data management. (Source: `aidocs/archive/01-repo-overview.md`.)
 
 ## What it is for
 

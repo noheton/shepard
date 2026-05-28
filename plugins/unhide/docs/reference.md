@@ -506,7 +506,7 @@ Read-permission check → 200 (if public/auth'd) or 401
 - **Design**:
   [`aidocs/67-unhide-publish-plugin.md`](https://github.com/noheton/shepard/blob/main/aidocs/67-unhide-publish-plugin.md)
 - **Plugin distribution**:
-  [`aidocs/63` ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/63-architecture-decision-log.md#adr-0023)
+  [`aidocs/63` ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/platform/63-architecture-decision-log.md#adr-0023)
 - **PROV1a's role**:
   [`aidocs/55` provenance capture](https://github.com/noheton/shepard/blob/main/aidocs/55-provenance.md)
   — why the harvest-key plaintext never enters `:Activity`.

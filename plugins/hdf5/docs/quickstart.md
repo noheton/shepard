@@ -181,4 +181,4 @@ touching HSDS directly.
 - [`install.md`](install.md) — HSDS sidecar + config.
 - [`h5pyd` upstream](https://github.com/HDFGroup/h5pyd).
 - [`h5py` upstream](https://docs.h5py.org/).
-- `aidocs/35-hdf5-hsds-implementation-design.md` — full A5 design.
+- `aidocs/data/35-hdf5-hsds-implementation-design.md` — full A5 design.

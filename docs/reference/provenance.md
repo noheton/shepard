@@ -327,9 +327,9 @@ pruned — the operator can flip the retention to your needs.
 
 ## Design references
 
-- `aidocs/55-provenance-and-activity-overhaul.md` — the PROV1
+- `aidocs/workflows/55-provenance-and-activity-overhaul.md` — the PROV1
   design doc (capture filter, dashboard, retention).
-- `aidocs/64-provenance-architecture.md` §3.2 — the PROV1h /
+- `aidocs/workflows/64-provenance-architecture.md` §3.2 — the PROV1h /
   m4i content-negotiation design.
-- `aidocs/63-architecture-decision-log.md` ADR-0004 — why
+- `aidocs/platform/63-architecture-decision-log.md` ADR-0004 — why
   PROV-O over OpenLineage.

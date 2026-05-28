@@ -256,7 +256,7 @@ No data migration risk; the addition is additive and idempotent.
 
 ## 6. Cross-references
 
-- `aidocs/48-internal-semantic-repository-design.md` — n10s
+- `aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md` — n10s
   internal repo design.
 - `aidocs/16-dispatcher-backlog.md` — N1b / ONT1a / ONT1b / N1c
   predecessors; new N1c2 row to be added in the implementation

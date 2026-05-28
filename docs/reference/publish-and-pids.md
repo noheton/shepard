@@ -8,14 +8,14 @@ audience: user
 
 shepard publishes entities by minting persistent identifiers (PIDs)
 through the HMC Kernel Information Profile (KIP) integration
-designed in [`aidocs/66`](https://github.com/noheton/shepard/blob/main/aidocs/66-hmc-kip-integration.md).
+designed in [`aidocs/66`](https://github.com/noheton/shepard/blob/main/aidocs/integrations/66-hmc-kip-integration.md).
 The KIP1a baseline (this page) ships the `Minter` SPI seam, the
 publish + resolver REST endpoints, and the `:Publication` Neo4j
 entity. Post-KIP1h every minter — including the legitimate-default
 `LocalMinter` — lives in a plugin per CLAUDE.md's plugin-first
 heuristic #3. Production adapters (ePIC handles, DataCite DOIs) ship
 as drop-in plugin JARs in KIP1c / KIP1d per the
-[plugin-distribution ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/63-architecture-decision-log.md#adr-0023).
+[plugin-distribution ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/platform/63-architecture-decision-log.md#adr-0023).
 
 For the casual-task expression see [Publish a DataObject or
 Collection](/help/publish-data-object/).

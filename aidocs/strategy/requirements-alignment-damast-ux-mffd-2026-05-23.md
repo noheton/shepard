@@ -119,7 +119,7 @@ A MFFD-specific case: AFP run TR-004 should be discoverable by a colleague in TE
 **Proposed row.**
 
 - **PERM-3TIER (new, design-first):** Add a third permission band `GENERAL_METADATA` to the Permissions tuple. `AbstractDataObjectIO` projection respects band: GENERAL_METADATA tier sees only `{appId, name, createdAt, ownerOrcid, accessRights, count-of-children}`; specific-metadata adds all `attributes` + `annotations`; data tier adds reference payloads. Backend: extend `PermissionsService.Roles(generalRead, metadataRead, dataRead, …)`; add `GENERAL_METADATA_READ` AccessType; F4 cache key absorbs the new tier without signature growth. Frontend: low-tier viewers get a stub card with a "request access" CTA. Size: M (backend additive + cache + IO projection) + S (frontend stub card) = M–L.
-- **DOC.** Update `aidocs/24-permission-system-review.md` with the third-band proposal; new ADR.
+- **DOC.** Update `aidocs/platform/24-permission-system-review.md` with the third-band proposal; new ADR.
 
 **Adjacent existing rows.** A0 (instance-admin) is orthogonal; C5/C5b are upstream cleanup work — neither extends the band model. PR-1d (permission audit trail) already lives on PROV1a + `/v2/admin/permission-audit`.
 

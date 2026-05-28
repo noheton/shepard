@@ -13,7 +13,7 @@ PID resolvers.
 
 **Originating items.** User request 2026-05-13 (KIT publication
 `10.5445/IR/1000173746` / HMC doc `10.3289/HMC_publ_03`). Couples
-to `aidocs/workflows/64-provenance-architecture.md` §4, `aidocs/31-rocrate-export.md`,
+to `aidocs/workflows/64-provenance-architecture.md` §4, `aidocs/workflows/31-rocrate-export-optimisation.md`,
 `aidocs/63` ADR-0004 (PROV-O choice), and the future `aidocs/67`
 Unhide-publish plugin.
 

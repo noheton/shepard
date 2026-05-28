@@ -536,12 +536,12 @@ CRUD) is byte-identical to upstream.
 
 ## See also
 
-- `aidocs/45-gridfs-to-s3-evaluation.md` — the underlying design
+- `aidocs/data/45-gridfs-to-s3-evaluation.md` — the underlying design
   doc covering the SPI shape, the wins / costs of S3, and the
   full backend matrix.
 - `aidocs/16-dispatcher-backlog.md` FS1 row — current phase
   status across FS1a–FS1g.
-- `aidocs/63-architecture-decision-log.md` ADR-0024 — the
+- `aidocs/platform/63-architecture-decision-log.md` ADR-0024 — the
   `infrastructure-local/` reference-image choice (Garage replaces
   MinIO when FS1d lands).
 - `docs/reference/admin-cli.md` — the broader `shepard-admin` CLI

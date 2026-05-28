@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
-| `deployed` | 68 |
+| `deployed` | 69 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **374** |
+| **total docs** | **375** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
@@ -149,7 +149,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
-| [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | — |
+| [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -335,7 +335,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (68)
+## deployed (69)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -354,6 +354,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt3-timescaledb-tuning.md`](agent-findings/db-opt3-timescaledb-tuning.md) | DB-OPT3 — TimescaleDB Chunk + Compression Analysis | 2026-05-26 | 2026-05-26 |
+| [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | — |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |

@@ -204,4 +204,4 @@ PUBLISHED (TR-004)  →  DRAFT (investigation DO)  →  READY  →  PUBLISHED
 
 - [Reference: Publishing and PIDs](/reference/publish-and-pids/) — full schema, every endpoint, every config knob.
 - [HMC KIP background](https://doi.org/10.3289/HMC_publ_03) — the published spec the shape implements.
-- [Design doc: `aidocs/66`](https://github.com/noheton/shepard/blob/main/aidocs/66-hmc-kip-integration.md) — the full design with ePIC + DataCite plugin shapes (KIP1c/d, queued).
+- [Design doc: `aidocs/66`](https://github.com/noheton/shepard/blob/main/aidocs/integrations/66-hmc-kip-integration.md) — the full design with ePIC + DataCite plugin shapes (KIP1c/d, queued).

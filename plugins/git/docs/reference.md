@@ -121,6 +121,6 @@ PINNED_SNAPSHOT entry.
 ## See also
 
 - `aidocs/38-git-integration-design.md` — full design.
-- `aidocs/63-architecture-decision-log.md` ADR-0021 — adapter-seam
+- `aidocs/platform/63-architecture-decision-log.md` ADR-0021 — adapter-seam
   decision.
 - `aidocs/16-dispatcher-backlog.md` G1a-G1f — slice-by-slice status.

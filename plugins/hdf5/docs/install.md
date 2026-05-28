@@ -211,6 +211,6 @@ for details.
 - [`reference.md`](reference.md) — payload kind, REST surface,
   ACL bridge.
 - [`quickstart.md`](quickstart.md) — upload your first HDF5 file.
-- `aidocs/35-hdf5-hsds-implementation-design.md` — full A5 design.
+- `aidocs/data/35-hdf5-hsds-implementation-design.md` — full A5 design.
 - [HSDS upstream](https://github.com/HDFGroup/hsds).
 - [HDF5 spec](https://docs.hdfgroup.org/hdf5/develop/).

@@ -25,7 +25,7 @@
 > Do not run this fork in production unless you understand the above
 > trade-offs. See [`aidocs/34-upstream-upgrade-path.md`](aidocs/34-upstream-upgrade-path.md)
 > for the change ledger; [`aidocs/44-fork-vs-upstream-feature-matrix.md`](aidocs/44-fork-vs-upstream-feature-matrix.md)
-> for the per-feature status; [`aidocs/63-architecture-decision-log.md`](aidocs/63-architecture-decision-log.md)
+> for the per-feature status; [`aidocs/platform/63-architecture-decision-log.md`](aidocs/platform/63-architecture-decision-log.md)
 > for the architectural decisions.
 
 This is the source code repository for the shepard core system.

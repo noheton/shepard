@@ -19,7 +19,7 @@ generation_rule: feedback_no_synthetic_provenance.md
 S3-via-Garage, in 5 minutes.
 
 Garage is the canonical S3 backend per
-[ADR-0024](../../../aidocs/63-architecture-decision-log.md#adr-0024)
+[ADR-0024](../../../aidocs/platform/63-architecture-decision-log.md#adr-0024)
 — self-hosted, no AWS account required, single-binary deploy.
 
 ---
@@ -189,4 +189,4 @@ there until migrated — see the GridFS → S3 migration section in
 - [`reference.md`](reference.md) — full config + locator format.
 - [`install.md`](install.md) — per-backend setup table.
 - [Garage docs](https://garagehq.deuxfleurs.fr/documentation/quick_start/).
-- [`aidocs/63-architecture-decision-log.md` ADR-0024](../../../aidocs/63-architecture-decision-log.md).
+- [`aidocs/platform/63-architecture-decision-log.md` ADR-0024](../../../aidocs/platform/63-architecture-decision-log.md).

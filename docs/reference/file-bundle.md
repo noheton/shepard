@@ -130,4 +130,4 @@ ships alongside; it refuses to run if any user-created groups exist
 
 - [Upstream upgrade path](https://github.com/shepard-dlr/shepard/blob/main/aidocs/34-upstream-upgrade-path.md) — admin-facing ledger.
 - [Fork-vs-upstream feature matrix](https://github.com/shepard-dlr/shepard/blob/main/aidocs/44-fork-vs-upstream-feature-matrix.md) — contributor-facing status.
-- [FR1 design doc](https://github.com/shepard-dlr/shepard/blob/main/aidocs/53-file-reference-rename-video-content.md) — full FR1 design.
+- [FR1 design doc](https://github.com/shepard-dlr/shepard/blob/main/aidocs/data/53-file-reference-rename-video-content.md) — full FR1 design.

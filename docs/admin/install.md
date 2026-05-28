@@ -152,7 +152,7 @@ client is ever instantiated. See [`docs/reference/hdf-container.md`]({{ '/refere
 for the API surface; this section covers the operator side.
 
 **Phase 1 only.** The current slice (backlog ID A5a — see
-[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md))
+[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md))
 ships `HdfContainer` create / read / delete plus the HSDS sidecar
 itself. The per-DataObject `HdfReference`, the byte-identical
 download fallback, and the shared-Keycloak token relay are deferred
@@ -229,7 +229,7 @@ backend and the HSDS sidecar.
 The compose service mounts `./hsds-storage` for the **POSIX** storage
 backend (HSDS's default). Object-store backends (S3 / MinIO / Azure
 Blob) are opt-in via HSDS upstream env vars — see
-[`aidocs/35` §3](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md#3-storage-layer).
+[`aidocs/35` §3](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md#3-storage-layer).
 
 **Rule of thumb** (per HSDS docs): plan for **~1.2× the raw HDF5
 size** on disk because of HSDS's chunk-store overhead. A 100 GB HDF5
@@ -247,7 +247,7 @@ directly** with the admin credentials configured here (or per-user
 Basic credentials you provision via `hsadmin`). Once A5e lands,
 shepard mints per-user JWTs signed by a shared Keycloak realm and
 the `h5pyd` ergonomics ("one credential, the shepard API key")
-arrive — see [`aidocs/35` §5](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md#5-auth-bridge-the-trickiest-piece).
+arrive — see [`aidocs/35` §5](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md#5-auth-bridge-the-trickiest-piece).
 
 ## Neo4j plugins
 
