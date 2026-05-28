@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 69 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **375** |
+| **total docs** | **377** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
@@ -215,7 +215,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/101-canonical-iris.md`](semantics/101-canonical-iris.md) | 101 — Canonical IRI namespaces for Shepard semantic documents | 2026-05-27 | 2026-05-27 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-28 |
-| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-27 |
+| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-28 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-26 | 2026-05-26 |
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-26 |
@@ -344,9 +344,9 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-29 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-28 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-28 |
-| [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-26 |
+| [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-28 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-27 |
 | [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-28 |
@@ -402,7 +402,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/87-timeseries-appid-migration.md`](platform/87-timeseries-appid-migration.md) | 87 — Timeseries appId Migration (TS-ID) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/plugins/69-aas-plugin-extraction-design.md`](plugins/69-aas-plugin-extraction-design.md) | AAS → plugin extraction — Design (AAS1-plugin) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/reading-list.md`](reading-list.md) | Reading list | 2026-05-23 | 2026-05-23 |
-| [`aidocs/roadmap.md`](roadmap.md) | Shepard Fork — Roadmap | 2026-05-23 | 2026-05-23 |
+| [`aidocs/roadmap.md`](roadmap.md) | Shepard Fork — Roadmap | 2026-05-23 | 2026-05-28 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/85-github-project-management-policies.md`](strategy/85-github-project-management-policies.md) | 85 — GitHub project-management policies (traceability SSOT) | 2026-05-23 | 2026-05-27 |
 | [`aidocs/ux/82-basic-vs-advanced-mode-matrix.md`](ux/82-basic-vs-advanced-mode-matrix.md) | 82 — Basic vs Advanced Mode Feature Matrix | 2026-05-23 | 2026-05-23 |
