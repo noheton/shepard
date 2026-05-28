@@ -1791,3 +1791,26 @@ Design ref: [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](pla
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
 | PRIN-REVIEW-01 | **Read principle candidates from agent findings.** Agent dispatched 2026-05-27 mined the codebase + design docs for implicit design principles that should be named and formalised. Findings at `aidocs/agent-findings/principle-candidates.md`. Review and decide: (a) which candidates to promote to named principles (add memory entry + CLAUDE.md rule), (b) which are already covered, (c) which are worth capturing as backlog items. | S (review) | **queued** | Agent output: `aidocs/agent-findings/principle-candidates.md`. Precedent: `project_annotation_preselection_principle.md` (memory) shows the capture format. |
+
+## FRONTEND-LINT-DEBT — remaining `npm run lint` debt in frontend/
+
+After commit `20cd6a0f7` (lint runner fixed) and the 2026-05-28 bulk pass on
+`import/first` (10 Vitest mock-factory files) plus the colormap.ts unused-disable
+sweep, `npm run lint` still reports approximately 90 problems across the rest of
+the frontend tree. The remaining categories are out of scope for the bulk fix
+and need targeted attention.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| FRONTEND-LINT-DEBT-01 | **`@typescript-eslint/no-unused-vars`** — unused imports, params, and assigned-but-never-read locals across `frontend/components/`, `frontend/pages/`, `frontend/composables/`, and `frontend/tests/`. Standard fix: delete or prefix with `_`. Most are leftovers from recent refactors. | S | **queued** | Run `npx eslint . --rule '@typescript-eslint/no-unused-vars: error'` to enumerate. ~30 instances at the time the bulk pass landed. |
+| FRONTEND-LINT-DEBT-02 | **`@typescript-eslint/no-explicit-any`** — `any` casts in test files (notably `useLineageGraph.test.ts`) and a handful of component shims. Replace with `unknown` + narrowing, or a domain-specific type. | M | **queued** | ~10 instances. Higher friction than no-unused-vars because each one needs an actual type chosen, not just deletion. |
+| FRONTEND-LINT-DEBT-03 | **`@typescript-eslint/no-dynamic-delete`** — `delete obj[computedKey]` patterns in `usePinnedChannels.test.ts`. Refactor to a Map or rebuild the object without the key. | XS | **queued** | 2 instances confirmed in lint output. |
+| FRONTEND-LINT-DEBT-04 | **`@typescript-eslint/ban-ts-comment`** — `@ts-expect-error` and `@ts-ignore` without an accompanying explanation. Either add an explanation or fix the underlying type. | S | **queued** | A few scattered instances in components. |
+| FRONTEND-LINT-DEBT-05 | **Unused `eslint-disable` directives outside `utils/colormap.ts`** — colormap.ts was fixed in the 2026-05-28 bulk pass; remaining unused-disable warnings sit in `frontend/components/` (touched by UI21 in parallel) and `frontend/pages/containers/`. Wait for UI21 to land then sweep the residue. | XS | **queued** | Sequence after UI21 merges to avoid conflicts. |
+
+**Why not fix all in one pass:** The bulk import/first sweep limits blast
+radius to two paths so a parallel UI21 agent touching components is not
+blocked by overlapping edits. Items 1, 4, 5 in this list will overlap with
+component-touching work; better to defer until the surrounding tree
+stabilises. Item 2 needs per-instance type decisions and is not a mechanical
+fix. Item 3 is small and self-contained — pick up first when revisiting.
