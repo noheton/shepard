@@ -3,6 +3,10 @@ import {
   useWatchedContainers,
   type WatchedContainerKind,
 } from "~/composables/context/useWatchedContainers";
+import {
+  iconForContainerType,
+  urlSegmentForContainerType,
+} from "~/utils/containerTypeRegistry";
 
 const props = defineProps<{
   collectionAppId: string;
@@ -13,15 +17,18 @@ const collectionAppIdRef = toRef(props, "collectionAppId");
 const { watches, loading, mutating, add, remove } =
   useWatchedContainers(collectionAppIdRef);
 
+// The watch-list uses STRUCTURED_DATA (underscore); the registry uses
+// STRUCTUREDDATA (canonical `BasicContainer.type` casing). Map at the
+// call site rather than mutating either source of truth.
 const containerKindIcons: Record<WatchedContainerKind, string> = {
-  TIMESERIES: "mdi-chart-line",
-  FILE: "mdi-file-multiple-outline",
-  STRUCTURED_DATA: "mdi-code-json",
+  TIMESERIES: iconForContainerType("TIMESERIES"),
+  FILE: iconForContainerType("FILE"),
+  STRUCTURED_DATA: iconForContainerType("STRUCTUREDDATA"),
 };
 const containerKindRoutes: Record<WatchedContainerKind, string> = {
-  TIMESERIES: "/containers/timeseries/",
-  FILE: "/containers/files/",
-  STRUCTURED_DATA: "/containers/structureddata/",
+  TIMESERIES: `/containers/${urlSegmentForContainerType("TIMESERIES")}`,
+  FILE: `/containers/${urlSegmentForContainerType("FILE")}`,
+  STRUCTURED_DATA: `/containers/${urlSegmentForContainerType("STRUCTUREDDATA")}`,
 };
 
 // Add-watch form state.

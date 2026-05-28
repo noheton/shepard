@@ -2,10 +2,10 @@
 import type { ContainerSummary } from "@dlr-shepard/backend-client";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import {
-  fileContainerPath,
-  structureddataContainerPath,
-  timeseriesContainerPath,
-} from "~/utils/constants";
+  iconForContainerType,
+  labelForContainerType,
+  urlSegmentForContainerType,
+} from "~/utils/containerTypeRegistry";
 
 const props = defineProps<{
   collectionAppId: string | null;
@@ -15,30 +15,16 @@ const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
 function containerPath(c: ContainerSummary): string {
-  switch (c.containerType) {
-    case "TIMESERIES":    return timeseriesContainerPath + c.id + "/";
-    case "FILE":          return fileContainerPath + c.id + "/";
-    case "STRUCTUREDDATA": return structureddataContainerPath + c.id + "/";
-    default:              return "/containers/";
-  }
+  // Detail-page route is `/containers/<segment>/<id>/`.
+  return `/containers/${urlSegmentForContainerType(c.containerType)}${c.id}/`;
 }
 
 function containerIcon(type: string): string {
-  switch (type) {
-    case "TIMESERIES":    return "mdi-chart-line";
-    case "FILE":          return "mdi-folder-outline";
-    case "STRUCTUREDDATA": return "mdi-table-large";
-    default:              return "mdi-database-outline";
-  }
+  return iconForContainerType(type);
 }
 
 function containerLabel(type: string): string {
-  switch (type) {
-    case "TIMESERIES":    return "Timeseries";
-    case "FILE":          return "File";
-    case "STRUCTUREDDATA": return "Structured Data";
-    default:              return "Container";
-  }
+  return labelForContainerType(type);
 }
 </script>
 
