@@ -18,6 +18,28 @@ related:
 
 # aidocs/90 — Spatial as temporal sweep (v6 SSOT)
 
+> **Live runtime status (2026-05-28 PM):** SPATIAL-V6-001 plugin code
+> shipped on `main`; `postgis-3.5.2-r0` package installed in the
+> `infrastructure-timescaledb` image; the legacy v5 gate
+> `SHEPARD_SPATIAL_DATA_ENABLED` has been **removed entirely** from
+> `.env`, `docker-compose.yml`, and the manifest's sidecar declaration.
+> `shepard.plugins.spatiotemporal.enabled` now defaults to `true` in
+> `application.properties` (the v6 flagship payload kind ships on
+> default-on posture, same shape as `kip` / `minter-local` / `git`).
+> On the next backend redeploy on `shepard.nuclide.systems`, the
+> plugin's Flyway runner fires, `CREATE EXTENSION postgis` runs, the
+> `shepard_spatial` schema lands, and `V2.0.0__green_field_schema.sql`
+> executes — the substrate is **LIVE by default** after that one
+> redeploy.  The remaining work to make v6 user-observable is the
+> SHACL VIEW_RECIPE consumer (`vis-trace3d` plugin, VIS-T1) plus the
+> MFFD seed extension that writes the AFP TCP brush trace (§3+§10).
+>
+> **PostGIS as a chosen extension is not sunsetted** — what was
+> retired is the *separate `postgis` compose container*, collapsed
+> into `timescaledb` per Decision D2 + `aidocs/strategy/105`.  Future
+> readers who see "postgis container retired" should not infer that
+> PostGIS itself is gone.
+
 The `shepard-plugin-spatial` reshape for v6. Time-varying engineering
 geometry as a first-class payload kind. Green-field schema (no
 backward compat with the current experimental `spatial_data_points`

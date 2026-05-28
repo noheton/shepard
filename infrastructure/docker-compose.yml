@@ -21,7 +21,11 @@ services:
       QUARKUS_DATASOURCE_SPATIAL_USERNAME: ${POSTGRES_SHEPARD_USER}
       QUARKUS_DATASOURCE_SPATIAL_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
       SHEPARD_MIGRATION_MODE_ENABLED: ${SHEPARD_MIGRATION_MODE_ENABLED}
-      SHEPARD_SPATIAL_DATA_ENABLED: ${SHEPARD_SPATIAL_DATA_ENABLED}
+      # SHEPARD_SPATIAL_DATA_ENABLED removed 2026-05-28: was the legacy
+      # v5 spatial-plugin gate.  shepard-plugin-spatiotemporal (SPATIAL-V6-001)
+      # is the v6 flagship payload kind, enabled by default in
+      # application.properties.  Operators opt out via
+      # shepard.plugins.spatiotemporal.enabled=false.
       SHEPARD_AUTOCONVERT_INT: ${SHEPARD_AUTOCONVERT_INT}
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs

@@ -106,7 +106,8 @@ services:
       # this instance are listed; add / remove to control the active surface.
       SHEPARD_PLUGINS_KIP_ENABLED: "true"
       SHEPARD_PLUGINS_MINTER_LOCAL_ENABLED: "true"
-      SHEPARD_PLUGINS_SPATIOTEMPORAL_ENABLED: "true"
+      # SHEPARD_PLUGINS_SPATIOTEMPORAL_ENABLED override removed 2026-05-28
+      # — now ON by default in application.properties per SPATIAL-V6-001.
       SHEPARD_PLUGINS_GIT_ENABLED: "true"
       # AAS plugin — disabled by default (endpoints return 501 when `:AasConfig.enabled=false`).
       # Enable at runtime via PATCH /v2/admin/aas/config or set SHEPARD_PLUGINS_AAS_ENABLED=true.
