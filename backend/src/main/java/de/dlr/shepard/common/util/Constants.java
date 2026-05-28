@@ -282,4 +282,18 @@ public class Constants {
    * auto-populate the dialog on next open.
    */
   public static final String TS_AXIS_PREDICATE = "urn:shepard:spatial:axis";
+
+  // AI1v — channel unit auto-inference constants
+  /**
+   * Predicate IRI that identifies a channel's physical-unit annotation. The
+   * {@code valueIRI} on the linked {@link de.dlr.shepard.context.semantic.entities.SemanticAnnotation}
+   * is a QUDT canonical IRI (e.g. {@code http://qudt.org/vocab/unit/MilliM}). Written
+   * automatically on channel creation by the AI1v Phase-1 suffix matcher
+   * ({@code ChannelUnitInferenceService}); read by the M4I-d-3 renderer to derive
+   * the matching QUDT QuantityKind at presentation time.
+   */
+  public static final String TS_UNIT_PREDICATE = "urn:shepard:unit";
+
+  /** Source tag written onto AI1v Phase-1 (deterministic suffix) unit annotations. */
+  public static final String ANNOTATION_SOURCE_TS_CHANNEL_UNIT_SUFFIX = "ts-channel-unit-suffix";
 }

@@ -15,6 +15,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.services.ChannelUnitInferenceService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
@@ -39,7 +40,10 @@ import org.mockito.ArgumentCaptor;
  *   <li>Annotation predicate for measurement is {@value Constants#TS_PREDICATE_MEASUREMENT}.</li>
  * </ol>
  */
-@QuarkusComponentTest
+@QuarkusComponentTest({
+  TimeseriesSemanticDualWriteService.class,
+  ChannelUnitInferenceService.class
+})
 public class TimeseriesSemanticDualWriteServiceTest {
 
   @InjectMock
@@ -283,6 +287,110 @@ public class TimeseriesSemanticDualWriteServiceTest {
     );
     verify(annotatableTimeseriesDAO, never()).findByTimeseries(anyLong(), any(Integer.class));
     verify(annotatableTimeseriesDAO, never()).createOrUpdate(any());
+  }
+
+  // ─── AI1v Phase 1: unit auto-inference appends a sixth (unit) annotation ──
+
+  @Test
+  public void ai1v_suffixMatch_appendsUnitAnnotation() {
+    when(annotatableTimeseriesDAO.findByTimeseries(CONTAINER_ID, TS_ID))
+      .thenReturn(Optional.empty());
+    stubCreateOrUpdate();
+
+    // field "tcp_x_mm" → suffix "_mm" → http://qudt.org/vocab/unit/MilliM
+    service.dualWriteChannelMetadata(
+      CONTAINER_ID, TS_ID, SHEPARD_UUID,
+      "position", "tcp_x_mm", "AFP-AFPT-MTLH-S1", null, null
+    );
+
+    ArgumentCaptor<AnnotatableTimeseries> captor = ArgumentCaptor.forClass(AnnotatableTimeseries.class);
+    verify(annotatableTimeseriesDAO).createOrUpdate(captor.capture());
+
+    SemanticAnnotation unitAnn = captor.getValue().getAnnotations().stream()
+      .filter(a -> Constants.TS_UNIT_PREDICATE.equals(a.getPropertyIRI()))
+      .findFirst()
+      .orElse(null);
+
+    assertNotNull(unitAnn, "AI1v: unit annotation must be appended for field 'tcp_x_mm'");
+    assertEquals(
+      "http://qudt.org/vocab/unit/MilliM", unitAnn.getValueIRI(),
+      "AI1v: '_mm' suffix must map to QUDT MilliM"
+    );
+    assertEquals("ai", unitAnn.getSourceMode());
+    assertEquals(Constants.ANNOTATION_SOURCE_TS_CHANNEL_UNIT_SUFFIX, unitAnn.getSource());
+    assertEquals(SHEPARD_UUID, unitAnn.getSubjectAppId());
+    assertEquals(Constants.SUBJECT_KIND_ANNOTATABLE_TIMESERIES, unitAnn.getSubjectKind());
+    assertEquals(Double.valueOf(1.0), unitAnn.getConfidence(), "AI1v: SUFFIX tier carries confidence=1.0");
+  }
+
+  @Test
+  public void ai1v_prefixMatch_appendsUnitAnnotation() {
+    when(annotatableTimeseriesDAO.findByTimeseries(CONTAINER_ID, TS_ID))
+      .thenReturn(Optional.empty());
+    stubCreateOrUpdate();
+
+    // field "tc_chamber_1" → prefix "tc_" → Kelvin
+    service.dualWriteChannelMetadata(
+      CONTAINER_ID, TS_ID, SHEPARD_UUID,
+      "temperature", "tc_chamber_1", null, null, null
+    );
+
+    ArgumentCaptor<AnnotatableTimeseries> captor = ArgumentCaptor.forClass(AnnotatableTimeseries.class);
+    verify(annotatableTimeseriesDAO).createOrUpdate(captor.capture());
+
+    SemanticAnnotation unitAnn = captor.getValue().getAnnotations().stream()
+      .filter(a -> Constants.TS_UNIT_PREDICATE.equals(a.getPropertyIRI()))
+      .findFirst()
+      .orElse(null);
+    assertNotNull(unitAnn, "AI1v: unit annotation must be appended for prefix-matching field");
+    assertEquals("http://qudt.org/vocab/unit/K", unitAnn.getValueIRI());
+    assertEquals(Double.valueOf(0.85), unitAnn.getConfidence(), "AI1v: PREFIX_HEURISTIC tier confidence=0.85");
+  }
+
+  @Test
+  public void ai1v_ambiguousField_noUnitAnnotation() {
+    when(annotatableTimeseriesDAO.findByTimeseries(CONTAINER_ID, TS_ID))
+      .thenReturn(Optional.empty());
+    stubCreateOrUpdate();
+
+    // "valve_fuel" is one of the 18 ambiguous fields from the recovery script.
+    service.dualWriteChannelMetadata(
+      CONTAINER_ID, TS_ID, SHEPARD_UUID,
+      "valve_state", "valve_fuel", null, null, null
+    );
+
+    ArgumentCaptor<AnnotatableTimeseries> captor = ArgumentCaptor.forClass(AnnotatableTimeseries.class);
+    verify(annotatableTimeseriesDAO).createOrUpdate(captor.capture());
+
+    boolean hasUnit = captor.getValue().getAnnotations().stream()
+      .anyMatch(a -> Constants.TS_UNIT_PREDICATE.equals(a.getPropertyIRI()));
+    org.junit.jupiter.api.Assertions.assertFalse(
+      hasUnit, "AI1v: ambiguous field must NOT receive a unit annotation"
+    );
+  }
+
+  @Test
+  public void ai1v_weldingCap_appendsCurrentAnnotation() {
+    when(annotatableTimeseriesDAO.findByTimeseries(CONTAINER_ID, TS_ID))
+      .thenReturn(Optional.empty());
+    stubCreateOrUpdate();
+
+    // "CM_I" → cap-current annotation (Ampere)
+    service.dualWriteChannelMetadata(
+      CONTAINER_ID, TS_ID, SHEPARD_UUID,
+      "weld_cap", "CM_I", "welding-controller-Q1", null, null
+    );
+
+    ArgumentCaptor<AnnotatableTimeseries> captor = ArgumentCaptor.forClass(AnnotatableTimeseries.class);
+    verify(annotatableTimeseriesDAO).createOrUpdate(captor.capture());
+
+    SemanticAnnotation unitAnn = captor.getValue().getAnnotations().stream()
+      .filter(a -> Constants.TS_UNIT_PREDICATE.equals(a.getPropertyIRI()))
+      .findFirst()
+      .orElse(null);
+    assertNotNull(unitAnn, "AI1v: welding-cap CM_I must produce a unit annotation");
+    assertEquals("http://qudt.org/vocab/unit/A", unitAnn.getValueIRI());
+    assertEquals(Double.valueOf(0.9), unitAnn.getConfidence(), "AI1v: WELDING_CAP tier confidence=0.9");
   }
 
   // ─── Static helper: localName ───────────────────────────────────────────────

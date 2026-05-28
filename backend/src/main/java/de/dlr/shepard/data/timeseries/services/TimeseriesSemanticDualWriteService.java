@@ -5,6 +5,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.services.ChannelUnitInferenceService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -63,6 +64,9 @@ public class TimeseriesSemanticDualWriteService {
 
   @Inject
   AnnotatableTimeseriesDAO annotatableTimeseriesDAO;
+
+  @Inject
+  ChannelUnitInferenceService channelUnitInferenceService;
 
   /**
    * Dual-write the 5-tuple channel identity as {@link SemanticAnnotation} nodes attached
@@ -127,10 +131,14 @@ public class TimeseriesSemanticDualWriteService {
           return newNode;
         });
 
-      // Purge any stale ts-channel-metadata annotations to ensure idempotency
+      // Purge any stale ts-channel-metadata + ts-channel-unit-suffix annotations
+      // to ensure idempotency on re-call (e.g. operator-triggered re-upsert).
       List<SemanticAnnotation> existing = new ArrayList<>(subject.getAnnotations());
       List<SemanticAnnotation> stale = existing.stream()
-        .filter(a -> Constants.ANNOTATION_SOURCE_TS_CHANNEL_METADATA.equals(a.getSource()))
+        .filter(a ->
+          Constants.ANNOTATION_SOURCE_TS_CHANNEL_METADATA.equals(a.getSource())
+          || Constants.ANNOTATION_SOURCE_TS_CHANNEL_UNIT_SUFFIX.equals(a.getSource())
+        )
         .toList();
       for (SemanticAnnotation staleAnn : stale) {
         if (staleAnn.getId() != null) {
@@ -172,6 +180,59 @@ public class TimeseriesSemanticDualWriteService {
         annotation.setConfidence(null);
 
         subject.addAnnotation(annotation);
+      }
+
+      // ── AI1v Phase 1 — deterministic unit inference from `field` name ─────
+      // We co-locate the unit annotation with the 5-tuple write because (a) we
+      // already hold the bridge node and the transaction, and (b) "data
+      // complete at write" beats a separate periodic job. The AI1c quality
+      // score is intentionally (b)-shaped because it needs data points to
+      // score; unit inference is a pure function of the field name and has no
+      // such prerequisite. See aidocs/16 row AI1v for the full design
+      // argument and persona consult.
+      if (isNonBlank(field)) {
+        var guess = channelUnitInferenceService.infer(field);
+        if (guess.isPresent() && guess.get().isResolved()) {
+          var g = guess.get();
+          SemanticAnnotation unitAnnotation = new SemanticAnnotation();
+          unitAnnotation.setAppId(AppIdGenerator.next());
+          unitAnnotation.setPropertyIRI(Constants.TS_UNIT_PREDICATE);
+          unitAnnotation.setPropertyName("unit");
+          unitAnnotation.setValueIRI(g.unitIri());
+          unitAnnotation.setValueName(g.label());
+          unitAnnotation.setSource(Constants.ANNOTATION_SOURCE_TS_CHANNEL_UNIT_SUFFIX);
+          unitAnnotation.setSubjectKind(Constants.SUBJECT_KIND_ANNOTATABLE_TIMESERIES);
+          unitAnnotation.setSubjectAppId(shepardId);
+          unitAnnotation.setVocabularyId(null);
+          // sourceMode "ai" per AI1v contract — the inference is automated and
+          // not yet operator-confirmed.  A human accept-flip via the UI will
+          // promote this to "collaborative" (AI1v Phase 3).
+          unitAnnotation.setSourceMode("ai");
+          unitAnnotation.setSourceActivityAppId(null);
+          unitAnnotation.setValidFromMillis(null);
+          unitAnnotation.setValidUntilMillis(null);
+          // Confidence is tier-derived: SUFFIX is the strongest signal (1.0),
+          // PREFIX_HEURISTIC slightly less (0.85), WELDING_CAP domain-specific
+          // (0.9). Phase 2 LLM outputs will populate this directly.
+          unitAnnotation.setConfidence(switch (g.tier()) {
+            case SUFFIX -> 1.0;
+            case WELDING_CAP -> 0.9;
+            case PREFIX_HEURISTIC -> 0.85;
+            case AMBIGUOUS -> null;
+          });
+          subject.addAnnotation(unitAnnotation);
+          Log.debugf(
+            "AI1v: container=%d tsId=%d shepardId=%s field=%s → %s (tier=%s)",
+            containerId, timeseriesId, shepardId, field, g.unitIri(), g.tier()
+          );
+        } else if (guess.isPresent()) {
+          // AMBIGUOUS — Phase 2 (LLM) will resolve once AI1a is wired.
+          Log.warnf(
+            "AI1v: container=%d tsId=%d shepardId=%s field=%s → AMBIGUOUS (Phase 1 cannot resolve; "
+            + "Phase 2 LLM gate AI1a is pending — annotation skipped)",
+            containerId, timeseriesId, shepardId, field
+          );
+        }
       }
 
       annotatableTimeseriesDAO.createOrUpdate(subject);
