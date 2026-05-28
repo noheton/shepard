@@ -1,6 +1,6 @@
 ---
-stage: fragment
-last-stage-change: 2026-05-27
+stage: deployed
+last-stage-change: 2026-05-28
 ---
 
 # Implicit Design Principles — Candidate Discovery
@@ -8,6 +8,26 @@ last-stage-change: 2026-05-27
 *Agent findings — 2026-05-27. These are patterns observed recurring across the
 codebase and design docs that are not yet explicitly named in CLAUDE.md. Each
 candidate is grounded in file-level evidence, not inference.*
+
+**Promotion status (verified 2026-05-28):** All 10 principles are now codified as
+`## Always:` rules in [`CLAUDE.md`](../../CLAUDE.md):
+
+| # | Principle | CLAUDE.md anchor |
+|---|---|---|
+| 1 | Best-Effort Secondary Writes | "secondary writes are fire-and-forget" |
+| 2 | Fail-Soft Registry | "registries are fail-soft" |
+| 3 | Runtime-Mutable Config Singleton | "surface operator knobs in the admin config" |
+| 4 | Schema-Free Additive Extension | "schema changes are additive and nullable" |
+| 5 | Auditing-as-Graph | "the audit trail is a graph, not a log" |
+| 6 | HTTP Header as Cross-Cutting Context Channel | "cross-cutting context travels in HTTP headers, not request bodies" |
+| 7 | Capability-Slot Indirection | "resolve capabilities through slots, not class names" |
+| 8 | appId as Universal Cross-Substrate Handle | "every persisted entity carries a single stable shepardId" |
+| 9 | Skip-Capture Handoff | "handlers that record their own Activity hand off skip-capture" (added 2026-05-28) |
+| 10 | Evolve in New Namespace, Never Mutate Old | "evolve in a new namespace; never mutate an existing one" |
+
+This doc remains as the **evidence ledger** — each principle below cites the
+specific code instances that motivated the rule. Reviewers can chase a rule back
+to its observed pattern when judging edge cases.
 
 ---
 

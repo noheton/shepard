@@ -472,6 +472,39 @@ Rules:
 "show me all AI annotations on TR-004 after June 1" is one Cypher query — no ETL,
 no log-sink correlation, no separate audit system to keep in sync.
 
+## Always: handlers that record their own Activity hand off skip-capture
+
+The `ProvenanceCaptureFilter` automatically writes one generic `:Activity` per
+mutating 2xx request. Handlers that need a richer or differently-typed Activity
+— semantic annotation writes, AI invocation, importer commits — record their own
+via `ProvenanceService.record()` and then signal the filter to step back by
+setting the request property `PROP_SKIP_CAPTURE`. Without that handoff, every
+such mutation produces two duplicate Activities.
+
+Rules:
+- A REST resource that calls `ProvenanceService.record()` directly MUST
+  immediately set `requestContext.setProperty(PROP_SKIP_CAPTURE, true)` before
+  returning. Pair the two — never call `record()` without the skip, never set
+  the skip without recording.
+- The handler-written Activity must include at minimum the fields the filter
+  would have captured (userId, resourcePath, httpMethod, timestamp) plus the
+  domain-specific enrichment that justified bypassing the filter (e.g.
+  `vocabularyId`, `sourceMode`, `agentId`, `inputDataObjectAppIds`).
+- New `:*Activity` subtypes (e.g. `:AiActivity`, `:ImportActivity`) follow the
+  same handoff pattern — the filter cannot know the subtype is wanted, so the
+  handler declares it.
+- If a handler considers letting the filter do the capture instead, that is
+  fine — but then it must NOT call `ProvenanceService.record()` itself. The
+  invariant is one Activity per mutation, with the richest available shape.
+
+**Why:** The filter is a least-common-denominator capture; handlers with domain
+knowledge of the mutation produce a richer Activity that better serves SPARQL/
+Cypher queries and the EU AI Act Art. 50 disclosure (which needs the
+header-derived `sourceMode` plus the domain context). Duplicate Activity rows
+clutter the activity feed, distort provenance counts, and make orphan-resolver
+jobs harder to write — the skip-capture handoff is the cheap, explicit signal
+that prevents this.
+
 ## Always: cross-cutting context travels in HTTP headers, not request bodies
 
 Context that cuts across many endpoints — AI agent identity, delegation chain,
@@ -1426,9 +1459,13 @@ completeness.
 **Minimum UI bar per reference type:**
 
 1. **Create** — a dialog or guided form with all required fields explicitly exposed
-   (not a raw JSON dump). Template-system integration (T1e) is preferred: if a
-   `ShepardTemplate` exists for the parent DataObject type, the creation wizard
-   should pre-fill from it.
+   (not a raw JSON dump). **Template-system integration (T1e) is required for every
+   reference type, not just TimeseriesReference**: if a `ShepardTemplate` exists for
+   the parent DataObject type and carries reference-creation hints (channel keys,
+   default window, clip bounds, bundle layout, URI relationship type, schema
+   skeleton, …), the creation wizard MUST pre-fill from it. A reference type whose
+   Create dialog ignores a parent template fails the beta gate even if edit + delete
+   + list are complete.
 2. **Edit** — an edit dialog accessible from the reference detail page (or the
    DataObject detail panel) covering every mutable field. A `PATCH` endpoint must
    exist on the backend for the editable fields; the frontend calls it. Read-only
