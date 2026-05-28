@@ -18,6 +18,7 @@
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
 import type { Trace3DColorScheme } from "~/components/container/timeseries/Trace3DView.vue";
 import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
+import UrdfView from "~/components/container/timeseries/UrdfView.vue";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import Trace3DEditChannelsDialog from "~/components/container/timeseries/Trace3DEditChannelsDialog.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/components/container/timeseries/Trace3DChannelPicker.vue";
@@ -478,12 +479,22 @@ const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
 // ── renderer dispatch helpers ─────────────────────────────────────────────────
 
-const rendererKind = computed<"trace-3d" | "table" | "unknown">(() => {
+const rendererKind = computed<"trace-3d" | "urdf" | "table" | "unknown">(() => {
   const r = renderer.value?.toLowerCase() ?? "";
   if (r === "trace-3d" || r === "tresjs") return "trace-3d";
+  if (r === "urdf")                        return "urdf";
   if (r === "table")                       return "table";
   return "unknown";
 });
+
+// ── URDF renderer state ───────────────────────────────────────────────────────
+//
+// URDF is a SEPARATELY SELECTABLE renderer alongside Trace3D — same
+// VIEW_RECIPE template kind, same shapes/render delegation, but rendered by
+// UrdfView instead of Trace3DView. Driven by query params:
+//   ?renderer=urdf&urdfUrl=<encoded>&packagePath=<encoded>
+const urdfUrl     = ref<string>("");
+const urdfPackage = ref<string>("");
 
 const trace3DColorScheme = computed<Trace3DColorScheme>(() => {
   switch (colormapName.value) {
@@ -507,6 +518,16 @@ const canRender = computed(() =>
 // ── bootstrap from query params (ViewRecipeBuilderDialog → this page) ─────────
 onMounted(() => {
   const q = useRoute().query;
+
+  // URDF renderer — different bootstrap shape: ?renderer=urdf&urdfUrl=…
+  if (q.renderer === "urdf" || (q.urdfUrl && !q.roles)) {
+    renderer.value     = "urdf";
+    urdfUrl.value      = q.urdfUrl     ? decodeURIComponent(String(q.urdfUrl))     : "/urdf-samples/two-link-arm.urdf";
+    urdfPackage.value  = q.packagePath ? decodeURIComponent(String(q.packagePath)) : "";
+    fromReference.value = true;
+    return;
+  }
+
   if (!q.roles || !q.containerId) return;
 
   try {
@@ -607,8 +628,21 @@ onMounted(() => {
       <pre class="text-caption">{{ fetchError }}</pre>
     </v-alert>
 
+    <!-- ── URDF renderer ─────────────────────────────────────────────────────
+         URDF is a SEPARATELY SELECTABLE renderer alongside Trace3D. It does
+         not require channel bindings to render a robot (static view); when
+         joint-bound channels are bound, UrdfAnimator wraps UrdfView. -->
+    <template v-if="rendererKind === 'urdf'">
+      <ClientOnly>
+        <UrdfView :urdf-url="urdfUrl" :package-path="urdfPackage" label="URDF view" />
+        <template #fallback>
+          <v-skeleton-loader type="image" height="500" />
+        </template>
+      </ClientOnly>
+    </template>
+
     <!-- ── binding declarations ───────────────────────────────────────────── -->
-    <template v-if="bindings.length > 0">
+    <template v-if="bindings.length > 0 && rendererKind !== 'urdf'">
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
           <v-icon>mdi-link-variant</v-icon>

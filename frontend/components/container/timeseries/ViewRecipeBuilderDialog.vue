@@ -14,6 +14,16 @@ const props = defineProps<{
 
 const open = defineModel<boolean>({ default: false });
 
+// Renderer selector — Trace3D and URDF are separately selectable. Future work
+// may compose them (URDF cell with Trace3D path overlaid); OUT OF SCOPE here.
+type RendererKind = "trace-3d" | "urdf";
+const rendererKind = ref<RendererKind>("trace-3d");
+
+// URDF binding state — when rendererKind === "urdf", the dialog asks for a
+// URDF source URL (signed Garage URL or a path under /urdf-samples/).
+const urdfUrl = ref<string>("/urdf-samples/two-link-arm.urdf");
+const urdfPackagePath = ref<string>("");
+
 const pickerRef = ref<InstanceType<typeof Trace3DChannelPicker> | null>(null);
 const canOpen = ref(false);
 const openCount = ref(0);
@@ -87,20 +97,59 @@ function openTrace3D() {
     },
   });
 }
+
+// ── open URDF render page ────────────────────────────────────────────────────
+function openUrdf() {
+  if (!urdfUrl.value.trim()) return;
+  navigateTo({
+    path: "/shapes/render",
+    query: {
+      renderer:    "urdf",
+      urdfUrl:     encodeURIComponent(urdfUrl.value.trim()),
+      packagePath: encodeURIComponent(urdfPackagePath.value.trim()),
+      containerId: String(props.containerId),
+      startNs:     String(props.startNs),
+      endNs:       String(props.endNs),
+    },
+  });
+}
+
+const canOpenAny = computed(() =>
+  (rendererKind.value === "trace-3d" && canOpen.value) ||
+  (rendererKind.value === "urdf" && urdfUrl.value.trim().length > 0),
+);
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="480">
+  <v-dialog v-model="open" max-width="520">
     <v-card>
       <v-card-title class="d-flex align-center ga-2 pt-4">
         <v-icon color="primary">mdi-cube-outline</v-icon>
         Visualize in 3D
       </v-card-title>
       <v-card-subtitle class="pb-2">
-        Assign channels to spatial axes, then open the Trace3D renderer.
+        Pick a renderer, configure it, then open the view.
       </v-card-subtitle>
       <v-card-text class="pt-2">
+        <!-- Renderer picker — Trace3D vs URDF (separately selectable; future work composes). -->
+        <v-btn-toggle
+          v-model="rendererKind"
+          mandatory
+          divided
+          density="compact"
+          variant="tonal"
+          class="mb-3"
+        >
+          <v-btn value="trace-3d" size="small" prepend-icon="mdi-vector-polyline">
+            Trace 3D
+          </v-btn>
+          <v-btn value="urdf" size="small" prepend-icon="mdi-robot-industrial">
+            URDF
+          </v-btn>
+        </v-btn-toggle>
+
         <Trace3DChannelPicker
+          v-if="rendererKind === 'trace-3d'"
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
@@ -108,18 +157,53 @@ function openTrace3D() {
           @update:can-confirm="canOpen = $event"
           @save-annotations-requested="saveAnnotations"
         />
+
+        <div v-else class="d-flex flex-column ga-3">
+          <div class="text-caption text-medium-emphasis">
+            Render a robot description (URDF) in the browser. The default sample
+            is a two-link demo arm; replace with a signed Garage URL of a real
+            URDF FileReference to render your own robot.
+          </div>
+          <v-text-field
+            v-model="urdfUrl"
+            label="URDF source URL"
+            density="compact"
+            variant="outlined"
+            hint="Signed URL of the .urdf file, or a static path under /urdf-samples/."
+            persistent-hint
+          />
+          <v-text-field
+            v-model="urdfPackagePath"
+            label="Mesh package path (optional)"
+            density="compact"
+            variant="outlined"
+            hint="Root used to resolve `package://` mesh URIs."
+            persistent-hint
+          />
+        </div>
       </v-card-text>
       <v-card-actions class="pb-4 px-4">
         <v-spacer />
         <v-btn variant="text" @click="open = false">Cancel</v-btn>
         <v-btn
+          v-if="rendererKind === 'trace-3d'"
           color="primary"
           variant="tonal"
-          :disabled="!canOpen"
+          :disabled="!canOpenAny"
           prepend-icon="mdi-cube-outline"
           @click="openTrace3D"
         >
           Open Trace3D
+        </v-btn>
+        <v-btn
+          v-else
+          color="primary"
+          variant="tonal"
+          :disabled="!canOpenAny"
+          prepend-icon="mdi-robot-industrial"
+          @click="openUrdf"
+        >
+          Open URDF
         </v-btn>
       </v-card-actions>
     </v-card>
