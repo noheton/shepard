@@ -5,6 +5,17 @@ last-stage-change: 2026-05-28
 audience: contributors, plugin authors
 ---
 
+> **Update 2026-05-28 (OTVIS-TIER2-LAYOUT):** Byte layout fully confirmed against the
+> official Edevis Rev H spec PDF AND empirically verified against the MFFD fixture.
+> §0 below is the original hypothesis (kept for history); the **authoritative byte
+> layout is now** [`plugins/fileformat-thermography/docs/byte-layout-notes.md`](../../plugins/fileformat-thermography/docs/byte-layout-notes.md).
+> Notable correction: `sequence0/f0.bin` holds the LOCK-IN COMPLEX result
+> (DataFormat=13, 8B/pixel, 1024×768×8 + 28 header = 6,291,484 B), not the raw or
+> preview frames as §0.1 hypothesised; `sequence1/f<N>.bin` holds a single uint16
+> reference frame (DataFormat=2). Calibration is a bare 65,536-float LUT (no header)
+> covering −273.15 °C to +382.20 °C. INFL compression exists per spec but the MFFD
+> fixture uses none.
+
 # 115 — OTvis tier-2 design
 
 **Status:** feature-defined · companion to [`114-process-monitoring-parser-plugin.md`](114-process-monitoring-parser-plugin.md) · prerequisite for [OTVIS-VIEW-1](../16-dispatcher-backlog.md) (full IR sequence player + lock-in amp/phase + 3D-on-CAD overlay)
