@@ -19,6 +19,8 @@ import { lerpSeries, type ColormapName } from "~/utils/colormap";
 import type { Trace3DColorScheme } from "~/components/container/timeseries/Trace3DView.vue";
 import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
 import UrdfView from "~/components/container/timeseries/UrdfView.vue";
+import ThermographyView from "~/components/container/timeseries/ThermographyView.vue";
+import type { AnnotationMap } from "~/utils/thermographyChannelPicker";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import Trace3DEditChannelsDialog from "~/components/container/timeseries/Trace3DEditChannelsDialog.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/components/container/timeseries/Trace3DChannelPicker.vue";
@@ -479,10 +481,11 @@ const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
 // ── renderer dispatch helpers ─────────────────────────────────────────────────
 
-const rendererKind = computed<"trace-3d" | "urdf" | "table" | "unknown">(() => {
+const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "unknown">(() => {
   const r = renderer.value?.toLowerCase() ?? "";
   if (r === "trace-3d" || r === "tresjs") return "trace-3d";
   if (r === "urdf")                        return "urdf";
+  if (r === "thermography")                return "thermography";
   if (r === "table")                       return "table";
   return "unknown";
 });
@@ -495,6 +498,11 @@ const rendererKind = computed<"trace-3d" | "urdf" | "table" | "unknown">(() => {
 //   ?renderer=urdf&urdfUrl=<encoded>&packagePath=<encoded>
 const urdfUrl     = ref<string>("");
 const urdfPackage = ref<string>("");
+
+// Thermography renderer state (tier-1) — purely annotation-driven, no
+// channel bindings yet. Channel-bound playback ships with tier-2
+// (OTVIS-PARSE-2 + THERMO-CHANNELS-1).
+const thermographyAnnotations = ref<AnnotationMap>({});
 
 const trace3DColorScheme = computed<Trace3DColorScheme>(() => {
   switch (colormapName.value) {
@@ -524,6 +532,22 @@ onMounted(() => {
     renderer.value     = "urdf";
     urdfUrl.value      = q.urdfUrl     ? decodeURIComponent(String(q.urdfUrl))     : "/urdf-samples/two-link-arm.urdf";
     urdfPackage.value  = q.packagePath ? decodeURIComponent(String(q.packagePath)) : "";
+    fromReference.value = true;
+    return;
+  }
+
+  // Thermography renderer (tier-1) — pure metadata-driven view, no
+  // channel bindings yet. Bootstrap shape: ?renderer=thermography
+  // (optional ?annotations=<base64-JSON-of-AnnotationMap>).
+  if (q.renderer === "thermography") {
+    renderer.value = "thermography";
+    if (q.annotations) {
+      try {
+        thermographyAnnotations.value = JSON.parse(atob(String(q.annotations)));
+      } catch {
+        thermographyAnnotations.value = {};
+      }
+    }
     fromReference.value = true;
     return;
   }
@@ -641,8 +665,24 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
+    <!-- ── Thermography renderer (tier-1, metadata-only) ─────────────────────
+         Renders the OTvis annotation summary + a Three.js placeholder
+         canvas. Tier-2 (OTVIS-PARSE-2) replaces the placeholder with
+         the IR sequence texture. See aidocs/integrations/114 §5. -->
+    <template v-if="rendererKind === 'thermography'">
+      <ClientOnly>
+        <ThermographyView
+          :annotations="thermographyAnnotations"
+          label="Thermography view"
+        />
+        <template #fallback>
+          <v-skeleton-loader type="image" height="500" />
+        </template>
+      </ClientOnly>
+    </template>
+
     <!-- ── binding declarations ───────────────────────────────────────────── -->
-    <template v-if="bindings.length > 0 && rendererKind !== 'urdf'">
+    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography'">
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
           <v-icon>mdi-link-variant</v-icon>

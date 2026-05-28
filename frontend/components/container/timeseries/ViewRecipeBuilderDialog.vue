@@ -14,9 +14,10 @@ const props = defineProps<{
 
 const open = defineModel<boolean>({ default: false });
 
-// Renderer selector — Trace3D and URDF are separately selectable. Future work
-// may compose them (URDF cell with Trace3D path overlaid); OUT OF SCOPE here.
-type RendererKind = "trace-3d" | "urdf";
+// Renderer selector — Trace3D, URDF, and Thermography are separately selectable.
+// Future work may compose them (URDF cell with Trace3D path overlaid, or a
+// Thermography surface tile registered against the URDF AFP cell); OUT OF SCOPE here.
+type RendererKind = "trace-3d" | "urdf" | "thermography";
 const rendererKind = ref<RendererKind>("trace-3d");
 
 // URDF binding state — when rendererKind === "urdf", the dialog asks for a
@@ -114,9 +115,29 @@ function openUrdf() {
   });
 }
 
+// ── open Thermography render page (tier-1, metadata-only) ────────────────────
+// Tier-1: no channel binding required — the renderer reads annotations
+// off the parent DataObject + FileReference directly. The dialog is a
+// pass-through: the user clicks Open and the render page shows the
+// annotation-driven summary + Three.js placeholder canvas. Tier-2
+// (OTVIS-PARSE-2 + THERMO-CHANNELS-1) will add a channel binding panel
+// here for IR-sequence playback.
+function openThermography() {
+  navigateTo({
+    path: "/shapes/render",
+    query: {
+      renderer:    "thermography",
+      containerId: String(props.containerId),
+      startNs:     String(props.startNs),
+      endNs:       String(props.endNs),
+    },
+  });
+}
+
 const canOpenAny = computed(() =>
   (rendererKind.value === "trace-3d" && canOpen.value) ||
-  (rendererKind.value === "urdf" && urdfUrl.value.trim().length > 0),
+  (rendererKind.value === "urdf" && urdfUrl.value.trim().length > 0) ||
+  (rendererKind.value === "thermography"),
 );
 </script>
 
@@ -146,6 +167,9 @@ const canOpenAny = computed(() =>
           <v-btn value="urdf" size="small" prepend-icon="mdi-robot-industrial">
             URDF
           </v-btn>
+          <v-btn value="thermography" size="small" prepend-icon="mdi-thermometer-lines">
+            Thermography
+          </v-btn>
         </v-btn-toggle>
 
         <Trace3DChannelPicker
@@ -158,7 +182,7 @@ const canOpenAny = computed(() =>
           @save-annotations-requested="saveAnnotations"
         />
 
-        <div v-else class="d-flex flex-column ga-3">
+        <div v-else-if="rendererKind === 'urdf'" class="d-flex flex-column ga-3">
           <div class="text-caption text-medium-emphasis">
             Render a robot description (URDF) in the browser. The default sample
             is a two-link demo arm; replace with a signed Garage URL of a real
@@ -181,6 +205,27 @@ const canOpenAny = computed(() =>
             persistent-hint
           />
         </div>
+
+        <div v-else class="d-flex flex-column ga-2">
+          <!-- Thermography (tier-1): no per-channel binding yet. -->
+          <div class="text-caption text-medium-emphasis">
+            Render the Edevis OTvis annotation summary + Three.js
+            placeholder canvas for the parent DataObject. Tier-1 is
+            metadata-driven: upload an <code>.OTvis</code> file, the
+            parser emits <code>urn:shepard:thermography:*</code>
+            annotations, the view reads them. IR-sequence playback
+            ships with tier-2 (<code>OTVIS-PARSE-2</code> +
+            <code>THERMO-CHANNELS-1</code>).
+          </div>
+          <v-alert
+            type="warning"
+            variant="tonal"
+            density="compact"
+            prepend-icon="mdi-alert-outline"
+          >
+            Tier-1 stub - no frame data, no channel-bound playback yet.
+          </v-alert>
+        </div>
       </v-card-text>
       <v-card-actions class="pb-4 px-4">
         <v-spacer />
@@ -196,7 +241,7 @@ const canOpenAny = computed(() =>
           Open Trace3D
         </v-btn>
         <v-btn
-          v-else
+          v-else-if="rendererKind === 'urdf'"
           color="primary"
           variant="tonal"
           :disabled="!canOpenAny"
@@ -204,6 +249,16 @@ const canOpenAny = computed(() =>
           @click="openUrdf"
         >
           Open URDF
+        </v-btn>
+        <v-btn
+          v-else
+          color="primary"
+          variant="tonal"
+          :disabled="!canOpenAny"
+          prepend-icon="mdi-thermometer-lines"
+          @click="openThermography"
+        >
+          Open Thermography
         </v-btn>
       </v-card-actions>
     </v-card>
