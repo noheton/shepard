@@ -1,16 +1,31 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-28 ~05:30 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
-**Active arc:** MFFD — cube3 AFP tapelaying + bridgewelding exports both running in tmux. Backend redeploy blocked on Quarkus/Jandex infinite-loop bug (`CompositeIndex.getClassByName` reproducible). TS-AXIS-VERIFY (#236) waits.
-**Status:** Confluence wiki seed (task #137) was the **wrong shape** per user directive 2026-05-28 — "dont seed wiki content with mfffd - we try to integrate on structure". Import script reverted (`0748f3a44`). Live 112 wiki DOs in collection 661923 await snapshot-then-delete. Structural integration filed as MFFD-WIKI-STRUCT umbrella (sub-rows A-E). 10 design principles now codified in CLAUDE.md as `## Always:` rules. REF-EDIT-TPL-3 + TPL-6 shipped (`71d5fada8`).
+**Updated:** 2026-05-28 ~16:35 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
+**Active arc:** **POST-RESET** — full-instance reset (runbook 13) executed on nuclide; stack rebuilt from scratch with Keycloak users + admin singletons preserved. LUMEN + MFFD synthetic re-seed pending operator long-lived API key (needs flo to sign in once + mint). Backend image stays at 2026-05-26 cut (post-#207 Permissions-seed fix); Jandex hang investigation remains deferred.
+**Status:** Wipe footprint: Neo4j 317 MB → 8 KB; Mongo 949 MB → empty; TimescaleDB 1.8 GB → empty; anon postgres + garage_data + garage_meta volumes destroyed. Pre-reset counts snapshot at `/tmp/preset-20260528-181423/`: 17 Collections / 17,324 DataObjects / 22,126 ShepardFiles / 22,336 BasicRefs / 238,525 SemanticAnnotations / 328,618 Activities / 379,771 Resources / 5 Users. Post-reset: 0 of each EXCEPT 1 User (flo bootstrapped pre-startup) + V49 preseed (Vocabulary×10, Resource×10, OntologyAlignment×12) + admin singletons (LegacyV1Config, SemanticConfig, InstanceRorConfig, SqlTimeseriesConfig, BootstrapState, _ShepardMigrationContext, SemanticRepository, Role). Public reachability green: shepard.nuclide.systems 200, shepard-api.nuclide.systems/healthz/ready 200, shepard-auth realm 200, /shepard/doc/openapi/v2.json 200.
+
+Two real upstream-of-upgrader bugs uncovered during the reset and shipped on `main` (`1508a50a4` + `b2d40b525`):
+1. `V20__Add_appId_constraint_GitCredential.cypher` used SQL `--` comments — Cypher rejects them. Every fork-fresh-init was failing on this. Fixed to `//`.
+2. `infrastructure/docker-compose.yml` `timescaledb.command:` was missing `-c timescaledb.enable_chunk_skipping=on`. Flyway `V1.8.0__optimize_timeseries_performance.sql` calls the feature and was failing on every fresh init.
+
+Confluence wiki seed (task #137) directive remains in force — "dont seed wiki content with mfffd - we try to integrate on structure". 112 wiki DOs went away with the reset (which was the intended cleanup). Structural integration is filed as MFFD-WIKI-STRUCT umbrella (sub-rows A-E).
 
 ---
 
 ## Immediate next action
 
-**BLOCKED — backend rebuild keeps hanging in Jandex infinite loop.** Two consecutive attempts (PIDs 354722, 500244) ran 40+ min and 5h respectively, both stuck at `org.jboss.jandex.CompositeIndex.getClassByName` inside `quarkus-arc AnnotationsTransformer.apply()`. The Makefile comment at the `build-backend` target attributes this to stale class files and prescribes `mvn clean` — but `rm -rf backend/target/` + `mvn clean package` reproduces the hang. Real root cause unclear; needs targeted investigation (Jandex index corruption in `~/.m2`? specific class with circular annotation? recent plugin commit introduced the trigger?).
+**For the operator (flo) — Phase 5 of runbook 13 (re-seed) is blocked on a long-lived API key:**
 
-**Backend in production stays at the 2026-05-26 image** until this is resolved. TS-AXIS-AUTO (`/v2/timeseries-containers/{id}/channels/spatial-roles`) and TS-SEMANTIC-REST (`POST .../channels/{shepardId}/annotations`) are in code (`483282896`, `babb5c8f6`) but NOT live.
+1. Sign in once via Keycloak at https://shepard.nuclide.systems/ — confirms OIDC roundtrip; populates flo's User node email/firstName/lastName from the JWT.
+2. Mint a long-lived API key in `/me` profile UI; export as `APIKEY=<token>`.
+3. Re-seed LUMEN + MFFD synthetic (Phase 5.1 + 5.2):
+   ```bash
+   cd /opt/shepard/examples/lumen-showcase && HOST=https://shepard-api.nuclide.systems APIKEY=$APIKEY python3 seed.py
+   cd /opt/shepard/examples/mffd-showcase  && HOST=https://shepard-api.nuclide.systems APIKEY=$APIKEY python3 seed.py
+   ```
+4. Phase 5.3 (MFFD-Dropbox real-data ingest from cube3) needs a fresh DLR cube JWT before it can resume; v16 import script will recreate the dest tree.
+
+**Backend Jandex hang investigation remains deferred** — running image (cut 2026-05-26) survives the reset. Filing the Quarkus issue with the jstack remains a TODO; revisit when the next backend feature needs a rebuild (TS-AXIS-VERIFY #236 still waits on it).
 
 **Cube-side (Track A) — RUNNING:**
 - AFP tapelaying export (cube3 → ts-export/) tmux session
