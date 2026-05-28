@@ -700,7 +700,92 @@ Use `prov:wasInformedBy` when the `fair2r:AuthoringPass` **influenced** the `m4i
 
 ---
 
-**Authorship.** Drafted 2026-05-23. Slices land via the backlog
-queue under `aidocs/16 §M4I`. The bug-shaped predicate finding
-in §3.2 / M4I-b should land first regardless of slice ordering —
-it's correctness, not deepening.
+## 12. M4I-c renderer architecture — overlay vs. parallel (board consultation)
+
+The M4I-c slice has to decide *how* the m4i projection composes
+with the canonical `DataObjectIO` JSON. Two distinct shapes were
+on the table.
+
+### 12.1 Shape A — parallel renderer
+
+A dedicated renderer that bypasses `DataObjectService.getDataObject`
+and runs its own Cypher fetch keyed on the m4i shape file. The
+renderer "owns" the read path under the m4i content-type; the
+canonical JSON path is untouched.
+
+**Reasoning.** A purist shape — one resource, two semantically
+independent representations, no shared in-memory entity. Easier to
+optimise the m4i path independently (could skip OGM, skip reference
+counts, skip everything `DataObjectIO` carries that the m4i
+projection doesn't need).
+
+**Opposing-lens paragraph.** The API Scrutinizer persona flagged
+this as a textbook antipattern: two read paths for one resource
+means permission checks, cache keys, version-tag generation, and
+audit trails all need to be consistent in both — a coordination
+debt that grows every time the DataObject entity changes shape. The
+Data Ontologist persona was indifferent (either shape produces
+valid m4i triples). The RDM persona pushed back from a different
+angle: the shape itself should be the contract, not the rendering
+path, so parallel-renderer is over-engineering — the SHACL file
+already declares what triples must appear, and a single overlay
+renderer suffices to emit them.
+
+### 12.2 Shape B — overlay renderer (CHOSEN)
+
+The renderer reads from the `DataObject` already loaded by the
+shared service path, then emits a JSON-LD body whose `@context`
+declares the m4i / PROV-O / OBO / QUDT / dcterms / schema.org
+namespaces. The canonical JSON shape (`DataObjectDetailV2IO`) and
+the m4i shape are both produced from the same in-memory entity;
+the resource method picks one or the other based on the `Accept`
+header's `profile=` parameter.
+
+**Reasoning.** One read path, two projections. The permission
+check, the Activity lookup, the entity load — all happen once.
+The m4i shape file declares what triples appear; the renderer
+emits them; pyShacl validates the emission. The "contract" is the
+SHACL shape, not the renderer's Cypher fetch.
+
+**Opposing-lens paragraph.** The Data Ontologist persona pushed
+back: the m4i projection bypasses lazy-loaded relationships
+(reference counts, children chains, container summaries) that the
+canonical JSON ships. The cost is read-time: m4i's lazy resolvers
+(`MethodResolver`, `ToolResolver`) add one Cypher hop for the
+most-recent Activity. Net cost: one round-trip per m4i request.
+Acceptable for the v1 slice; the parallel-renderer shape would
+have saved that hop at the cost of doubled read complexity.
+
+### 12.3 Convergence with UH1b
+
+UH1b's `renderActivityAsM4iNode` already shares
+`ProvJsonLdRenderer`'s namespace constants (post-M4I-b). The
+M4I-c overlay renderer further consolidates: the
+`buildDataObjectContext()` helper publishes the canonical
+`@context` block that future cross-cutting m4i emissions
+(per-DataObject embeds, export archives, MCP tool results) should
+consume. UH1b's top-level feed `@context` uses the Helmholtz
+Unhide-flavour prefix (`https://w3id.org/nfdi4ing/metadata4ing/`,
+with trailing slash, no `#`) because the Helmholtz feed reader
+expects that form; the M4I-c renderer uses the canonical
+namespace-IRI form (`http://w3id.org/nfdi4ing/metadata4ing#`)
+because pyShacl + RDFLib parse against it. Both are valid m4i;
+the prefix-layer adapter is documented in both renderers' Javadoc.
+
+### 12.4 Path mismatch with the design doc
+
+The §4.3 design names `/v2/data-objects/{appId}` as the
+content-neg target. The actual resource (post-L2d Phase A.2) is
+`/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` —
+nested under the parent Collection. Content-neg shipped on the
+existing nested path; a flat `/v2/data-objects/{appId}` shelf is
+an L2 follow-up tracked under `aidocs/strategy/25-neo4j-id-migration-design.md` (Phase B).
+
+---
+
+**Authorship.** Drafted 2026-05-23. §12 added 2026-05-28 with the
+M4I-c renderer architecture board consultation + UH1b
+convergence note. Slices land via the backlog queue under
+`aidocs/16 §M4I`. The bug-shaped predicate finding in §3.2 / M4I-b
+should land first regardless of slice ordering — it's correctness,
+not deepening.
