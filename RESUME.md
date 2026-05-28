@@ -1,31 +1,25 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-28 ~01:40 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
-**Active arc:** MFFD showcase — Task #137 DONE (111 wiki DOs + TOC imported). Backend rebuild in progress (PID 354722, TS-AXIS-AUTO + TS-SEMANTIC-REST activation). TS-AXIS-VERIFY pending backend deploy.
-**Status:** Task #137 COMPLETE — 111 Confluence wiki pages imported as DataObjects in MFFD-Dropbox (661923), TOC appId `019e6bc0-8481-7a6b-93f9-28b47b17c33e`. Backend image dated 2026-05-26 — needs rebuild for TS-AXIS-AUTO (`spatial-roles` endpoint) + TS-SEMANTIC-REST (channel annotations) to activate. Maven build PID 354722 in progress.
+**Updated:** 2026-05-28 ~05:30 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
+**Active arc:** MFFD — cube3 AFP tapelaying + bridgewelding exports both running in tmux. Backend redeploy blocked on Quarkus/Jandex infinite-loop bug (`CompositeIndex.getClassByName` reproducible). TS-AXIS-VERIFY (#236) waits.
+**Status:** Confluence wiki seed (task #137) was the **wrong shape** per user directive 2026-05-28 — "dont seed wiki content with mfffd - we try to integrate on structure". Import script reverted (`0748f3a44`). Live 112 wiki DOs in collection 661923 await snapshot-then-delete. Structural integration filed as MFFD-WIKI-STRUCT umbrella (sub-rows A-E). 10 design principles now codified in CLAUDE.md as `## Always:` rules. REF-EDIT-TPL-3 + TPL-6 shipped (`71d5fada8`).
 
 ---
 
 ## Immediate next action
 
-**Waiting on:** Maven build PID 354722. When jar appears at `backend/target/quarkus-app/quarkus-run.jar`:
-```
-make image-backend && cd infrastructure && docker compose up -d --no-build --force-recreate backend && make wait-for-health && make smoke
-```
+**BLOCKED — backend rebuild keeps hanging in Jandex infinite loop.** Two consecutive attempts (PIDs 354722, 500244) ran 40+ min and 5h respectively, both stuck at `org.jboss.jandex.CompositeIndex.getClassByName` inside `quarkus-arc AnnotationsTransformer.apply()`. The Makefile comment at the `build-backend` target attributes this to stale class files and prescribes `mvn clean` — but `rm -rf backend/target/` + `mvn clean package` reproduces the hang. Real root cause unclear; needs targeted investigation (Jandex index corruption in `~/.m2`? specific class with circular annotation? recent plugin commit introduced the trigger?).
 
-**After backend redeploys (TS-AXIS-AUTO + TS-SEMANTIC-REST activate):**
-1. TS-AXIS-VERIFY: channels in container 987749 have shepardIds; seed's `annotate_spatial_roles` got 404s when run — re-run annotation only:
-   ```bash
-   cd /opt/shepard/examples/mffd-showcase && python3 -c "
-   import sys; sys.path.insert(0, '.')
-   from seed import annotate_spatial_roles
-   APIKEY = 'eyJhbGciOiJSUzI1NiJ9...'  # nuclide long-lived key
-   annotate_spatial_roles('https://shepard-api.nuclide.systems', APIKEY, 987749, 'lbr')
-   annotate_spatial_roles('https://shepard-api.nuclide.systems', APIKEY, 987749, 'afp-s1')
-   "
-   ```
-   Then verify `/v2/timeseries-containers/987749/channels/spatial-roles` returns non-null roles.
-2. Track A: task #145 — fix fileRef parser bug for 8462 MFFD-Dropbox DOs (needs fresh DLR JWT from user-side)
+**Backend in production stays at the 2026-05-26 image** until this is resolved. TS-AXIS-AUTO (`/v2/timeseries-containers/{id}/channels/spatial-roles`) and TS-SEMANTIC-REST (`POST .../channels/{shepardId}/annotations`) are in code (`483282896`, `babb5c8f6`) but NOT live.
+
+**Cube-side (Track A) — RUNNING:**
+- AFP tapelaying export (cube3 → ts-export/) tmux session
+- **NEW:** Bridge-welding export (cube3 coll 163811 → ts-export-bridgewelding/) tmux session `mffd-fw-export`; uses `mffd-ts-export.py` with `SKIP_TAPELAYING=1 INCLUDE_BRIDGEWELDING=1`. Wrapper `mffd-fw-export.py` shipped in `bb8c99bcd`.
+
+**After backend rebuild is figured out:**
+1. TS-AXIS-VERIFY (#236): re-run `annotate_spatial_roles` for container 987749 (`lbr`, `afp-s1`); verify `/spatial-roles` returns non-null roles; confirm Trace3D dialog auto-populates.
+2. Track A: task #145 — fileRef parser bug for 8462 MFFD-Dropbox DOs (still needs fresh DLR JWT).
+3. Delete the 112 wiki DOs in collection 661923 (snapshot first per PRE-MUT-SNAP).
 
 ## Hot artefacts (verify before recommending)
 
