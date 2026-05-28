@@ -65,7 +65,6 @@ interface UPlotInstance {
 }
 
 // Runtime type — the class loaded via dynamic import.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UPlotConstructor = new (opts: UPlotOptions, data: (number | null)[][], targ: HTMLElement) => UPlotInstance;
 
 const props = withDefaults(
@@ -238,7 +237,6 @@ async function createPlot() {
   if (!UPlot) {
     const mod = await import("uplot");
     // uPlot uses `export =` so Vite resolves it as `mod.default`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     UPlot = (mod.default ?? mod) as unknown as UPlotConstructor;
   }
 
