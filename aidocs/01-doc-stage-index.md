@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 68 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **376** |
+| **total docs** | **375** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
@@ -325,7 +325,7 @@ section and the `upgrade-overlay` section.
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
-| [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | — |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
 ## tests-implemented (4)
