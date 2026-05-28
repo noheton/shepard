@@ -328,6 +328,6 @@ selecting from suggestions.
 
 ## See also
 
-- [Design: internal semantic repository via neosemantics](https://github.com/noheton/shepard/blob/main/aidocs/48-internal-semantic-repository-via-neosemantics.md)
+- [Design: internal semantic repository via neosemantics](https://github.com/noheton/shepard/blob/main/aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md)
 - [Admin guide — Neo4j section](/admin/)
 - [Upstream `SemanticRepository` REST docs](https://gitlab.com/dlr-shepard/shepard) (the byte-frozen API surface)

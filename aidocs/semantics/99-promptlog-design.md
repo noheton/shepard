@@ -1088,7 +1088,7 @@ Internal (Shepard) anchors:
   `shepard-plugin-mlops` baseline this depends on
 - `project_block_editor.md` — the §6 caller
 - `project_mcp_path.md` — the §9 hook site
-- `aidocs/65-admin-configurable-ontology-preseed.md` — the admin-config
+- `aidocs/semantics/65-admin-configurable-ontology-preseed.md` — the admin-config
   pattern PROMPT-h follows
 - `aidocs/semantics/94-metadata4ing-integration-design.md` — m4i M4I-b
   shared pre-seed

@@ -13,7 +13,7 @@ EN 9100 (aerospace quality management) and EASA Part 21 (G) demand immutable aud
 trails: once a `prov:Activity` is recorded, a third party must be able to independently
 verify that it has not been modified after the fact.  Shepard already maintains an
 HMAC chain on `:Activity` nodes (`auditHmac` / `auditPrevHmac`, shipped in the
-activity overhaul, see `aidocs/55-provenance-and-activity-overhaul.md`).  The HMAC chain
+activity overhaul, see `aidocs/workflows/55-provenance-and-activity-overhaul.md`).  The HMAC chain
 proves internal consistency but requires trust in the Shepard operator — anyone with
 the `instance_secret` can recompute the chain after tampering.
 
@@ -235,5 +235,5 @@ See `aidocs/34-upstream-upgrade-path.md` for the admin upgrade ledger row.
 - W3C PROV-O: https://www.w3.org/TR/prov-o/
 - EN 9100:2018 (aerospace QMS) — Section 8.5.2 (identification and traceability)
 - EASA Part 21 Subpart G — production organisation approval, record requirements
-- `aidocs/55-provenance-and-activity-overhaul.md` — the HMAC chain this extends
+- `aidocs/workflows/55-provenance-and-activity-overhaul.md` — the HMAC chain this extends
 - `aidocs/platform/47-dev-experience-and-plugin-system.md` — plugin SPI (ledger client may become a plugin)

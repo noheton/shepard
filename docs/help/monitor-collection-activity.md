@@ -125,6 +125,6 @@ Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"
 [Provenance reference](../reference/provenance.md) for the wire
 shapes and field mappings.
 
-See [aidocs/55](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/55-provenance-and-activity-overhaul.md)
-for the full design + [aidocs/64](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/64-provenance-architecture.md)
+See [aidocs/55](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/workflows/55-provenance-and-activity-overhaul.md)
+for the full design + [aidocs/64](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/workflows/64-provenance-architecture.md)
 for the m4i mapping rules.

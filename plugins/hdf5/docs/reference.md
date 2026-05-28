@@ -12,7 +12,7 @@ A5a–A5d have shipped: container create/read/delete (A5a), permission bridge
 (A5b), per-DataObject `HdfReference` anchors at specific dataset paths (A5c),
 and byte-identical offline HDF5 download (A5d). The shared-Keycloak token
 relay arrives in A5e — see
-[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md)
+[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md)
 for the rollout plan.
 
 ## Opt-in feature
@@ -43,7 +43,7 @@ on by:
    "ambient auth" mode.
 
 The HTTP Basic credential pair is the **only** auth Phase 1 supports.
-Per-user OIDC token relay arrives in [A5e](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md#5-auth-bridge-the-trickiest-piece).
+Per-user OIDC token relay arrives in [A5e](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md#5-auth-bridge-the-trickiest-piece).
 
 > Read-on note for admins: see [`docs/admin.md` §"HDF5 (HSDS)"](/admin/#hdf5-hsds-opt-in-sidecar)
 > for the host-side details (volume mount, capacity-planning rule of
@@ -297,7 +297,7 @@ The full E7 vision is rolling out across A5a – A5e:
 
 ## See also
 
-- [`aidocs/35-hdf5-hsds-implementation-design.md`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md)
+- [`aidocs/data/35-hdf5-hsds-implementation-design.md`](https://github.com/noheton/shepard/blob/main/aidocs/data/35-hdf5-hsds-implementation-design.md)
   — implementation design for the entire A5 series.
 - [`docs/admin.md` §"HDF5 (HSDS)"](/admin/#hdf5-hsds-opt-in-sidecar)
   — operator-side install steps.

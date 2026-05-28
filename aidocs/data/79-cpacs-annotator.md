@@ -524,14 +524,14 @@ The sidecar image is published alongside the main shepard images on each release
 
 ## 10. See also
 
-- `aidocs/78-cad-annotator.md` — 3D Geometry & FEM Annotator (shepard-plugin-cad);
+- `aidocs/data/78-cad-geometry-annotator.md` — 3D Geometry & FEM Annotator (shepard-plugin-cad);
   provides `CadReference`, CAD1b Three.js viewer, and `GeometryAnnotation` shape that
   CPACS1c–d reuse
 - `aidocs/integrations/80-rce-integration.md` — RCE workflow integration (CPACS provenance chain in §7
   requires RCE1b)
 - `aidocs/platform/47-dev-experience-and-plugin-system.md` — PayloadKind / PayloadStorage SPI that
   `CpacReference` follows
-- `aidocs/30-provenance-and-lineage.md` — provenance and lineage design (`DERIVED_FROM`
+- `aidocs/workflows/30-provenance-and-lineage-design.md` — provenance and lineage design (`DERIVED_FROM`
   edges in §7)
 - https://dlr-sl.github.io/cpacs-website/ — CPACS specification and schema documentation
 - https://github.com/DLR-SC/tigl — TiGL geometry library (source, Python bindings, examples)

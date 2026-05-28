@@ -19,7 +19,7 @@ generation_rule: feedback_no_synthetic_provenance.md
 adapter for shepard's `FileStorage` SPI. The plugin is **bundled
 with the standard image** but only activates when
 `shepard.storage.provider=s3` is set. The canonical S3 backend per
-[ADR-0024](../../../aidocs/63-architecture-decision-log.md#adr-0024)
+[ADR-0024](../../../aidocs/platform/63-architecture-decision-log.md#adr-0024)
 is **Garage**.
 
 ---
@@ -207,7 +207,7 @@ operations. Restart the backend to apply.
 - [`reference.md`](reference.md) — full plugin reference + config keys.
 - [`quickstart.md`](quickstart.md) — switch a bundled instance to
   Garage in 5 minutes.
-- [`aidocs/63-architecture-decision-log.md` ADR-0024](../../../aidocs/63-architecture-decision-log.md)
+- [`aidocs/platform/63-architecture-decision-log.md` ADR-0024](../../../aidocs/platform/63-architecture-decision-log.md)
   — Garage selection rationale.
 - [Garage docs](https://garagehq.deuxfleurs.fr/documentation/) —
   upstream.

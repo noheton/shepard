@@ -203,7 +203,7 @@ revision (the entry goes directly from `null` to the new value without a snapsho
 
 ## Related
 
-- `aidocs/37-lab-journal-and-jupyter-design.md` — design doc for the J1 series.
+- `aidocs/data/37-lab-journal-and-jupyter-design.md` — design doc for the J1 series.
 - J1b (shipped) — inline `.ipynb` static render (`GET /v2/lab-journal/{appId}/notebook`).
 - J1c (queued) — "Open in Jupyter" deep link.
 - J1d (shipped) — append-only edit history (`GET /v2/lab-journal/{entryAppId}/history`).

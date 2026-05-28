@@ -170,7 +170,7 @@ Per [`feedback_template_driven_create_all_refs.md`](../../-opt-shepard/memory/fe
 
 ## 5. Visualization recipes (separately filed)
 
-VIEW_RECIPE templates registered alongside Trace3D and URDF (see `aidocs/113-urdf-viewer.md` for the renderer-hint pattern):
+VIEW_RECIPE templates registered alongside Trace3D and URDF (see `aidocs/integrations/113-urdf-viewer.md` for the renderer-hint pattern):
 
 - `renderer = "thermography"` — IR sequence player + lock-in amplitude/phase image side-by-side; optional 3D overlay on the upper-shell CAD via gridPosition → CoordinateFrame.
 - `renderer = "cure-monitoring"` — ion-viscosity-vs-time chart with cure-cycle temperature program overlay + log-of-cure milestone markers. Same Three.js scene infra is irrelevant here (2-D chart), but the VIEW_RECIPE template-driven UX is identical.

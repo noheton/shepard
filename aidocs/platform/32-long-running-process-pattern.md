@@ -465,7 +465,7 @@ the migration epic.
   `migration_progress` table), P14 (NDJSON ingest), P10 (SQL surface),
   R2 (RO-Crate export), A1f (`quarkus-scheduler`, multi-replica),
   A4 (cache).
-- `aidocs/22-admin-cli.md` — bulk import / export of collections; future
+- `aidocs/ops/22-admin-cli-draft.md` — bulk import / export of collections; future
   caller of the same surface.
 - `aidocs/platform/24-permission-system-review.md` — admin role, principal
   identity model.

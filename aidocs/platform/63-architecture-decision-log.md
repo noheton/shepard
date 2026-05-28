@@ -171,7 +171,7 @@ design would require collapsing back through V23_R.
 ## ADR-0003 — NovaCrate integration via external link only
 
 **Status.** accepted. **Date.** 2026-05-12.
-**Applied in.** `aidocs/62-novacrate-evaluation.md`; R4 row in
+**Applied in.** `aidocs/data/r4-novacrate-evaluation.md`; R4 row in
 `aidocs/16`.
 
 ### Context
@@ -224,7 +224,7 @@ earlier in `aidocs/55`).
 
 Issue #695 ("Audit trail") suggested OpenLineage as the
 audit-trail / lineage specification. The PROV1 design
-(`aidocs/55-provenance-design.md`) picked W3C PROV-O instead.
+(`aidocs/workflows/55-provenance-and-activity-overhaul.md`) picked W3C PROV-O instead.
 
 ### Decision
 

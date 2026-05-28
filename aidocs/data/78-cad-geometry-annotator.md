@@ -415,7 +415,7 @@ DLR-internal adapters in a separate (potentially private) repository.
 - `aidocs/45-filestorage-s3-spi.md` — FileStorage S3 SPI (FS1a, prerequisite for CAD1a)
 - `aidocs/data/79-cpacs-annotator.md` — CPACS-specific annotator (separate plugin, built on the
   CAD1 foundation and `CadReference` payload kind)
-- `aidocs/30-provenance-and-lineage.md` — provenance and lineage design (geometry conversion
+- `aidocs/workflows/30-provenance-and-lineage-design.md` — provenance and lineage design (geometry conversion
   operations as PROV-O activities; links mesh upload → conversion → annotation)
 - `aidocs/archive/semantics/14-semantic-improvements.md` — semantic annotation vocabulary
   (`GeometryAnnotation.semanticTermIri` reuses the same metadata4ing vocabulary)

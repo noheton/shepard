@@ -185,7 +185,7 @@ shepard would emit both at publish time:
 - metadata4ing-flavoured JSON-LD as the entity body / RO-Crate
   manifest content (the rich description KIP points at)
 
-Design landing zone: `aidocs/64-hmc-kip-integration.md` (to be
+Design landing zone: `aidocs/integrations/66-hmc-kip-integration.md` (to be
 written when this slice is scheduled; not in scope here).
 
 ### 4.1 Unhide (Helmholtz Knowledge Graph) harvest
@@ -197,7 +197,7 @@ mappings. Plugin-shape suits this: `shepard-plugin-unhide` would
 expose `GET /v2/unhide/feed.jsonld` as schema.org + m4i JSON-LD
 of Collections flagged for publication.
 
-Design landing zone: `aidocs/65-unhide-publish-plugin.md` (to be
+Design landing zone: `aidocs/integrations/67-unhide-publish-plugin.md` (to be
 written; not in scope here). Plugin would depend on the m4i
 content-negotiation (§3.2) so the feed cites m4i terms natively.
 
@@ -244,9 +244,9 @@ unification target.
 - `aidocs/platform/63-architecture-decision-log.md` — ADR-0004 (PROV-O
   over OpenLineage), ADR-0019 (preseed default-on); future
   m4i-as-extension ADR lands when PROV1h ships.
-- `aidocs/31-rocrate-export.md` — m4i ↔ RO-Crate mapping is the
+- `aidocs/workflows/31-rocrate-export-optimisation.md` — m4i ↔ RO-Crate mapping is the
   natural composition point.
-- `aidocs/48-internal-semantic-repository-design.md` — n10s
+- `aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md` — n10s
   internal repo where the pre-seeded m4i terms live.
 - `aidocs/ops/27-convenience-clients-design.md` — the typed-client
   layer that would surface `m4i:Method` etc. once PROV1h ships.
