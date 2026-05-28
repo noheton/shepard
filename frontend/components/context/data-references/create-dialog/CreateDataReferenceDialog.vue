@@ -11,6 +11,13 @@ import {
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import {
+  REFERENCE_PREDICATE,
+  extractFileNamingPattern,
+  fetchReferencePrefillAnnotations,
+  findAnnotationByPredicate,
+  resolveFileNamingPlaceholders,
+} from "~/composables/references/useReferenceTemplatePrefill";
 import { toShortDateString } from "~/utils/helpers";
 import type { FileRef, TimeseriesRef } from "./DataRef";
 const props = defineProps<{ collectionId: number; dataObjectId: number }>();
@@ -32,6 +39,44 @@ const loading = ref<boolean>(false);
 const isValid = ref<boolean>(true);
 
 const chosenContainerType = ref<ContainerType | null>(null);
+
+// ── REF-EDIT-TPL-3 — template-driven name prefill ────────────────────────────
+//
+// On dialog open, fetch the parent DataObject's annotations and look for a
+// `urn:shepard:reference:fileNaming` hint. If found, prefill the name field
+// with the pattern (resolving the `{date}` placeholder to today's ISO date).
+// The user can still override before submit. Fires once per open; never
+// overwrites a name the user has already typed.
+const fileNamingPrefillApplied = ref<boolean>(false);
+
+async function applyFileNamingPrefill(): Promise<void> {
+  if (fileNamingPrefillApplied.value) return;
+  if (dataReferenceName.value.trim().length > 0) return;
+  const annotations = await fetchReferencePrefillAnnotations(
+    props.collectionId,
+    props.dataObjectId,
+  );
+  const annotation = findAnnotationByPredicate(
+    annotations,
+    REFERENCE_PREDICATE.FILE_NAMING,
+  );
+  const pattern = extractFileNamingPattern(annotation);
+  if (!pattern) return;
+  if (dataReferenceName.value.trim().length > 0) return;
+  dataReferenceName.value = resolveFileNamingPlaceholders(pattern);
+  fileNamingPrefillApplied.value = true;
+}
+
+watch(
+  showDialog,
+  open => {
+    if (open) {
+      fileNamingPrefillApplied.value = false;
+      void applyFileNamingPrefill();
+    }
+  },
+  { immediate: true },
+);
 
 async function createDataReference() {
   if (!dataReferenceContainerId.value) return;
