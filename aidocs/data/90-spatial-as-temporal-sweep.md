@@ -18,6 +18,29 @@ related:
 
 # aidocs/90 — Spatial as temporal sweep (v6 SSOT)
 
+> **Live runtime status (2026-05-28):** plugin code shipped on `main`
+> (SPATIAL-V6-001), `postgis-3.5.2-r0` package installed in the
+> `infrastructure-timescaledb` image, BUT the spatial substrate is
+> **DORMANT on `shepard.nuclide.systems`** — feature flag
+> `SHEPARD_SPATIAL_DATA_ENABLED=false` in `.env`, so the
+> `spatiotemporal` plugin's Flyway runner doesn't fire and
+> `CREATE EXTENSION postgis` + the `shepard_spatial` schema +
+> `V2.0.0__green_field_schema.sql` never execute. Activation is
+> tracked as **SPATIAL-V6-ACTIVATE** in `aidocs/16` (gated on
+> `vis-trace3d` plugin VIS-T1 landing — activating without a viewer
+> would create "substrate exists but nothing reads it" debt). The
+> three things that must happen at activation: (1) flip the env flag,
+> (2) `docker compose up -d backend` so the plugin's Flyway runner
+> picks up V2.0.0, (3) the MFFD seed gains a `profile_container`
+> writer producing the AFP TCP brush trace as the acceptance dataset
+> (§3 + §10 v0).
+>
+> **PostGIS as a chosen extension is not sunsetted** — what was
+> retired is the *separate `postgis` compose container*, collapsed
+> into `timescaledb` per Decision D2 + `aidocs/strategy/105`. Future
+> readers who see "postgis container retired" should not infer that
+> PostGIS itself is gone.
+
 The `shepard-plugin-spatial` reshape for v6. Time-varying engineering
 geometry as a first-class payload kind. Green-field schema (no
 backward compat with the current experimental `spatial_data_points`
