@@ -19,13 +19,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // The test environment is `node` (no JSDOM), so localStorage is undefined.
 // We provide a minimal in-memory stub before each test.
 
-const storage: Record<string, string> = {};
+const storage = new Map<string, string>();
 
 const localStorageMock = {
-  getItem: vi.fn((key: string) => storage[key] ?? null),
-  setItem: vi.fn((key: string, value: string) => { storage[key] = value; }),
-  removeItem: vi.fn((key: string) => { delete storage[key]; }),
-  clear: vi.fn(() => { Object.keys(storage).forEach(k => delete storage[k]); }),
+  getItem: vi.fn((key: string) => storage.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string) => { storage.set(key, value); }),
+  removeItem: vi.fn((key: string) => { storage.delete(key); }),
+  clear: vi.fn(() => { storage.clear(); }),
 };
 
 vi.stubGlobal("localStorage", localStorageMock);
@@ -127,7 +127,7 @@ describe("usePinnedChannels", () => {
   it("loads_from_localStorage_on_init — pre-seeded storage is read on module load", async () => {
     // Pre-seed localStorage with a serialised channel.
     const seed = [ch("uuid-seed")];
-    storage["shepard:pinnedChannels"] = JSON.stringify(seed);
+    storage.set("shepard:pinnedChannels", JSON.stringify(seed));
 
     const { pinnedChannels } = await freshComposable();
 

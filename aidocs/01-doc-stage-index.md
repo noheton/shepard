@@ -104,7 +104,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/r4-novacrate-evaluation.md`](data/r4-novacrate-evaluation.md) | R4 — NovaCrate evaluation for RO-Crate metadata editing | 2026-05-26 | 2026-05-26 |
 | [`aidocs/frontend/02-css-layout-conventions.md`](frontend/02-css-layout-conventions.md) | Frontend CSS layout conventions | 2026-05-27 | 2026-05-27 |
-| [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-26 |
+| [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-28 |
 | [`aidocs/integrations/52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | AAS Backend Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/60-shepard-edge.md`](integrations/60-shepard-edge.md) | shepard Edge — Concept Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/61-shepard-mount-as-network-drive.md`](integrations/61-shepard-mount-as-network-drive.md) | shepard Mount as a Network Drive — Concept Design | 2026-05-23 | 2026-05-23 |
