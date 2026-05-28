@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -54,6 +55,27 @@ class DataObjectV2RestTest {
   static final long COLL_OGM_ID = 42L;
   static final long DO_OGM_ID = 84L;
   static final String CALLER = "alice";
+
+  /** Test ObjectMapper used to deserialise the list-endpoint JSON body
+   *  (DB-OPT5 changed the entity from List<IO> to a serialised JSON string). */
+  static final ObjectMapper TEST_MAPPER = new ObjectMapper();
+
+  /** Parse the v2 list-endpoint body (now a JSON String — DB-OPT5) back
+   *  into typed IO objects so the existing assertion shape works unchanged. */
+  static List<DataObjectListItemV2IO> parseListBody(Response r) {
+    Object entity = r.getEntity();
+    if (entity instanceof String s) {
+      try {
+        return TEST_MAPPER.readValue(s, new TypeReference<List<DataObjectListItemV2IO>>() {});
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to parse list body JSON", e);
+      }
+    }
+    // Fall back to the legacy shape so any non-list endpoint tests keep working.
+    @SuppressWarnings("unchecked")
+    List<DataObjectListItemV2IO> cast = (List<DataObjectListItemV2IO>) entity;
+    return cast;
+  }
 
   /** Build a minimal DataObject with a stub Collection so DataObjectIO(d) does not NPE. */
   static DataObject makeDataObject(long ogmId, String appId, String name) {
@@ -124,7 +146,7 @@ class DataObjectV2RestTest {
   @Test
   void listReturns404WhenCollectionUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
     assertEquals(404, r.getStatus());
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
@@ -134,7 +156,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -147,11 +169,11 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    List<DataObjectListItemV2IO> body = parseListBody(r);
     assertEquals(1, body.size());
     assertEquals(DO_APP_ID, body.get(0).getAppId());
   }
@@ -168,11 +190,11 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
       .thenReturn(Map.of(DO_APP_ID, new long[] { 3L, 5L, 2L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    List<DataObjectListItemV2IO> body = parseListBody(r);
     assertEquals(1, body.size());
     DataObjectListItemV2IO item = body.get(0);
     assertEquals(DO_APP_ID, item.getAppId());
@@ -195,11 +217,11 @@ class DataObjectV2RestTest {
     when(timeseriesDataPointRepository.findTimeBoundsByContainerIds(List.of(containerNeo4jId)))
       .thenReturn(Map.of(containerNeo4jId, new long[] { 1_000_000L, 9_000_000L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    List<DataObjectListItemV2IO> body = parseListBody(r);
     assertEquals(1, body.size());
     DataObjectListItemV2IO item = body.get(0);
     assertEquals(1_000_000L, item.getTimeBoundsStart());
@@ -218,7 +240,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(8514L);
 
     // page=3, size=25 → firstIndex=75, lastIndex=75 (1 item)
-    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     // Content-Range must be present with format "dataobjects firstIndex-lastIndex/total"
@@ -241,7 +263,7 @@ class DataObjectV2RestTest {
       .thenReturn(Collections.emptyList());
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(0L);
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     String contentRange = (String) r.getHeaders().getFirst("Content-Range");
@@ -261,11 +283,11 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    List<DataObjectListItemV2IO> body = parseListBody(r);
     assertEquals(1, body.size());
     assertNull(body.get(0).getTimeBoundsStart());
     assertNull(body.get(0).getTimeBoundsEnd());
@@ -775,5 +797,151 @@ class DataObjectV2RestTest {
     Response r = resource.successorChain(COLL_APP_ID, DO_APP_ID, 10, securityContext);
     assertEquals(404, r.getStatus());
     verify(dataObjectDAO, never()).findSuccessorChain(any(), anyInt());
+  }
+
+  // ── DB-OPT5: ?fields= and default-trim payload diet ───────────────────────
+
+  /** Stub the standard 200 path for the DB-OPT5 list tests (auth + single DO). */
+  private DataObject stubListSingleDataObject() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.setDescription("Long markdown description that should be trimmed by default");
+    d.setAttributes(Map.of("bench", "P8", "propellant", "LOX/LH2", "test_engineer", "alice"));
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d));
+    return d;
+  }
+
+  @Test
+  void listDefaultTrimDropsHeavyFields() {
+    stubListSingleDataObject();
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    assertEquals(200, r.getStatus());
+    String body = (String) r.getEntity();
+    // Heavy fields gone by default
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"description\""), "description should be trimmed by default");
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"attributes\""), "attributes should be trimmed by default");
+    // Deprecated int counts gone by default
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"timeseriesReferenceCount\""), "deprecated timeseriesReferenceCount should be trimmed");
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"fileBundleCount\""), "deprecated fileBundleCount should be trimmed");
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"structuredDataReferenceCount\""), "deprecated structuredDataReferenceCount should be trimmed");
+    // Identity + v2 counts still present
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"name\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"timeseriesCount\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"fileCount\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"structuredDataCount\""));
+    // Diet header surfaces the mode
+    assertEquals("default-trim", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  @Test
+  void listIncludeFullReturnsFullShape() {
+    stubListSingleDataObject();
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext);
+    assertEquals(200, r.getStatus());
+    String body = (String) r.getEntity();
+    // All fields back including the heavy ones
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"description\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"attributes\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"timeseriesReferenceCount\""));
+    assertEquals("full", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  @Test
+  void listFieldsParamLimitsToRequestedFields() {
+    stubListSingleDataObject();
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,name,createdAt", securityContext);
+    assertEquals(200, r.getStatus());
+    String body = (String) r.getEntity();
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"name\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"createdAt\""));
+    // Not asked for → not emitted
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"timeseriesCount\""));
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"description\""));
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"attributes\""));
+    org.junit.jupiter.api.Assertions.assertFalse(body.contains("\"referenceIds\""));
+    assertEquals("fields", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  @Test
+  void listFieldsParamAlwaysIncludesIdentity() {
+    stubListSingleDataObject();
+    // Ask only for createdAt; id, appId, name should still come back as identity guarantees.
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "createdAt", securityContext);
+    assertEquals(200, r.getStatus());
+    String body = (String) r.getEntity();
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
+    org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"name\""));
+    // "id" key check would false-match other fields like fileId, so use the parsed body
+    List<DataObjectListItemV2IO> items = parseListBody(r);
+    assertEquals(1, items.size());
+    assertEquals(DO_APP_ID, items.get(0).getAppId());
+    assertEquals("sensor-track-1", items.get(0).getName());
+  }
+
+  @Test
+  void listFieldsParamEmptyStringTreatedAsAbsent() {
+    stubListSingleDataObject();
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "", securityContext);
+    assertEquals(200, r.getStatus());
+    // Empty fields → default-trim mode (not 400, not "fields" mode)
+    assertEquals("default-trim", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  @Test
+  void listFieldsParamUnknownFieldReturns400() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", securityContext);
+    assertEquals(400, r.getStatus());
+    // 400 returns Map entity with the offending field name in 'detail'
+    @SuppressWarnings("unchecked")
+    Map<String, Object> body = (Map<String, Object>) r.getEntity();
+    String detail = (String) body.get("detail");
+    org.junit.jupiter.api.Assertions.assertNotNull(detail);
+    org.junit.jupiter.api.Assertions.assertTrue(detail.contains("bogusField"), "400 body should cite the offending field name; got: " + detail);
+    // 400 must short-circuit before any DB hit
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+  }
+
+  @Test
+  void listFieldsParamWhitespaceTolerated() {
+    stubListSingleDataObject();
+    // Whitespace around commas should not produce 400.
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("fields", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  @Test
+  void listDefaultTrimYieldsSmallerPayloadThanIncludeFull() {
+    // The whole point of DB-OPT5: default response is meaningfully smaller
+    // than ?include=full on a DataObject with realistic-size description+attributes.
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.setDescription("X".repeat(800));
+    java.util.Map<String, String> attrs = new java.util.HashMap<>();
+    for (int i = 0; i < 12; i++) attrs.put("key_" + i, "value_" + i + "_with_some_text");
+    d.setAttributes(attrs);
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d, d, d, d, d));
+
+    String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext).getEntity();
+    String full = (String) resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext).getEntity();
+    System.out.printf(
+      "DB-OPT5 end-to-end measurement (5 DOs, 800-char description + 12-attr map per DO): full=%d B, default-trim=%d B (%.1f%% smaller)%n",
+      full.length(), trimmed.length(), 100.0 * (full.length() - trimmed.length()) / full.length()
+    );
+    org.junit.jupiter.api.Assertions.assertTrue(
+      trimmed.length() < full.length() / 2,
+      "DB-OPT5 default-trim should be < 50% of ?include=full payload (got " + trimmed.length() + " vs " + full.length() + ")"
+    );
   }
 }

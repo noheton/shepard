@@ -116,63 +116,84 @@ programmatically on PUT/PATCH or via the Edit dialog in the UI (they appear in
 the "Attributes" section of the dialog). Shepard does **not** infer them from
 timeseries payload automatically — set them explicitly.
 
-## metadata4ing (m4i) JSON-LD projection (M4I-c + M4I-d)
+## `?fields=` query parameter (DB-OPT5)
 
-DataObjects ship a NFDI4Ing-canonical `metadata4ing` (m4i 1.4.0)
-projection that any RDF-aware client (Apache Jena, RDFLib, pyShacl,
-ROBOT, the NFDI4Ing Terminology Service) can read directly.
-Request via content negotiation:
+The v2 list endpoint
+`GET /v2/collections/{collectionAppId}/data-objects` supports two
+payload-diet knobs to keep the wire small on collections with thousands
+of DataObjects:
 
-```bash
-curl -H 'Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"' \
-     -H "X-API-KEY: $KEY" \
-     https://shepard.example.dlr.de/v2/collections/<collection-appid>/data-objects/<do-appid>
+### Default-trim (no query param)
+
+By default, the list response drops fields that the collection-detail
+UI never renders. Three groups go quiet on the wire:
+
+| Field | Why dropped |
+|---|---|
+| `description` | Heavy CommonMark string; only shown on the detail page. |
+| `attributes` | Heavy key-value map; only shown on the detail page. |
+| `timeseriesReferenceCount` | Deprecated `int` sibling of the v2 `timeseriesCount` (`long`). |
+| `fileBundleCount` | Deprecated `int` sibling of the v2 `fileCount`. |
+| `structuredDataReferenceCount` | Deprecated `int` sibling of the v2 `structuredDataCount`. |
+
+These remain available on the detail endpoint:
+`GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}`.
+
+The response carries a single header so a caller can verify the diet
+mode at a glance:
+
+```
+X-Shepard-Payload-Diet: default-trim
 ```
 
-The short profile form `Accept: application/ld+json; profile=metadata4ing`
-also works. Without the `profile=` parameter, the canonical JSON
-shape (see the table above) is returned unchanged.
+### `?include=full` — opt back in
 
-The m4i body always carries the following mandatory triples:
+Pass `?include=full` to get the pre-DB-OPT5 wire shape, including the
+fields above. This is a transitional safety valve; future versions may
+drop the deprecated `int` counts unconditionally.
 
-| Predicate | Source | Notes |
-|---|---|---|
-| `@type` (`m4i:InvestigatedObject`, `prov:Entity`) | const | Dual-typed so PROV-O readers also parse. |
-| `dcterms:identifier` | DataObject.appId | UUID v7. |
-| `dcterms:title` | DataObject.name | Required, non-blank. |
-| `schema:dateCreated` | DataObject.createdAt | `xsd:dateTime`. |
-
-Optional triples — emitted when the underlying data carries them:
-
-| Predicate | Source | Notes |
-|---|---|---|
-| `dcterms:description` | DataObject.description | CommonMark, surfaced as plain string. |
-| `m4i:hasIdentifier` | KIP1a `Publication.pid` | A nested blank node with `m4i:identifierValue` + `m4i:hasIdentifierType "Handle"`. |
-| `obo:RO_0002233` | Predecessors | `has input` per OBO Relations Ontology; multi-valued. |
-| `obo:RO_0002234` | Successors | `has output`; multi-valued. |
-| `prov:wasGeneratedBy` | Most-recent `:Activity` targeting this DO | Single. |
-| `m4i:realizesMethod` | Activity.actionKind | `shepard:method/<kind>` IRI minted on the fly by `MethodResolver`. |
-| `m4i:hasEmployedTool` | Activity.targetKind | `shepard:tool/<kind>` minted by `ToolResolver`. |
-| `m4i:hasNumericalVariable` | Numeric `SemanticAnnotation`s | Blank nodes carrying `m4i:hasValue` + `qudt:unit`. |
-| `schema:keywords` | Text `SemanticAnnotation`s | Free-text fallback for non-numeric annotations. |
-
-The SHACL contract that pins this shape ships at
-`backend/src/main/resources/shapes/m4i-dataobject-shape.ttl`. Validate
-a live instance against it with the acceptance script:
-
-```bash
-pip install pyshacl rdflib requests
-python3 examples/mffd-showcase/scripts/validate_m4i_shape.py \
-    --shepard-url https://shepard.example.dlr.de \
-    --api-key "$KEY" \
-    --collection-id <collection-appid>
+```
+GET /v2/collections/{appId}/data-objects?include=full
+X-Shepard-Payload-Diet: full
 ```
 
-Unknown `profile=` value returns RFC 7807 problem+json with type
-`https://noheton.github.io/shepard/errors/dataobject.unsupported-profile`
-and status 406.
+### `?fields=foo,bar,baz` — explicit allow-list
 
-**Design source.** `aidocs/semantics/94 §4.3 / §4.4 / §12`.
+Pass `?fields=` (flat CSV, GitHub REST `fields=` convention) to ask for
+only the named top-level fields. The endpoint always includes `id`,
+`appId`, and `name` (resource-identity guarantees), even when not
+listed.
+
+Example — the exact field-set the Vue collection-detail panel uses:
+
+```
+GET /v2/collections/{appId}/data-objects?fields=id,appId,name,status,createdAt,referenceIds,childrenIds,incomingIds,timeseriesCount,fileCount,structuredDataCount,timeBoundsStart,timeBoundsEnd
+X-Shepard-Payload-Diet: fields
+```
+
+Unknown field names short-circuit the request with HTTP 400 before any
+database call:
+
+```json
+{
+  "title": "Unknown field in ?fields= query parameter",
+  "detail": "Field 'bogusField' does not exist on DataObjectListItemV2.",
+  "status": 400
+}
+```
+
+Dotted-path nested selection (e.g. `attributes.bench`) is not
+supported in this iteration — the default-trim already drops the heavy
+nested fields; track DB-OPT5-NESTED in `aidocs/16` for the follow-up.
+
+### When to use which
+
+| Caller | Recommended shape | Reason |
+|---|---|---|
+| Frontend collection-detail panel | `?fields=` | Smallest wire, highest cache locality. |
+| MCP agent crawling for full context | `?include=full` | Needs `attributes` + `description`. |
+| Operator / debugging via `curl` | default | Conservative trim; readable. |
+| Bulk ETL exporters | `?fields=` listing only what the export needs | Bandwidth + latency. |
 
 ## See also
 
@@ -180,5 +201,8 @@ and status 406.
   Collection level.
 - `aidocs/semantics/98-shapes-views-and-process-model.md §4.1` — funder-review
   rationale and the deferred items.
+- `examples/mffd-showcase/scripts/diagnostics/measure-payload-diet.sh` —
+  one-shot diagnostic to measure the payload-diet impact on a live
+  Shepard instance.
 - `provenance.md` — Predecessor/Successor chain semantics.
 - `nfdi4ing-federation.md` — m4i federation runbook (M4I-e).

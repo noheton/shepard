@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -27,7 +28,23 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "DataObjectListItemV2", description = "DataObject list item enriched with per-kind reference counts (v2).")
+@JsonFilter(DataObjectListItemV2IO.FILTER_ID)
 public class DataObjectListItemV2IO extends DataObjectIO {
+
+  /**
+   * DB-OPT5 — Jackson filter id used by the {@code ?fields=} payload-diet
+   * filter on {@code GET /v2/collections/{appId}/data-objects}. The filter
+   * is registered per-request from a {@code Set<String>} of allowed flat
+   * field names (no dotted paths). When the caller does not pass
+   * {@code ?fields=}, the resource registers a default-trim filter that
+   * drops the heavy nested fields (description, attributes, deprecated int
+   * counts); when {@code ?include=full} is also passed, a serialize-all
+   * filter is used instead.
+   *
+   * <p>See {@code aidocs/34-upstream-upgrade-path.md} row DB-OPT5 and the
+   * design notes in {@code aidocs/16-dispatcher-backlog.md} row DB-OPT5.
+   */
+  public static final String FILTER_ID = "doListV2";
 
   @Schema(
     readOnly = true,

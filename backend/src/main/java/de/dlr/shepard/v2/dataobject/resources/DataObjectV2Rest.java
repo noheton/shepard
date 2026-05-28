@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.dataobject.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -17,6 +18,7 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
+import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
@@ -145,11 +147,22 @@ public class DataObjectV2Rest {
       "latest data-point timestamps across all timeseries channels. Null on items " +
       "with no timeseries data. Omitted from the response entirely when " +
       "`?include=time-bounds` is not requested.\n\n" +
+      "**Payload diet (DB-OPT5).** By default the list response drops fields the " +
+      "collection-detail UI never reads — `description`, `attributes`, and the three " +
+      "deprecated `int` count siblings (`timeseriesReferenceCount`, `fileBundleCount`, " +
+      "`structuredDataReferenceCount`). Use `?include=full` to opt back into the full " +
+      "wire shape (transitional safety valve until a breaking-version bump can drop " +
+      "the deprecated ints unconditionally). For finer-grained control, pass " +
+      "`?fields=appId,name,createdAt,...` (flat CSV of field names; GitHub REST " +
+      "convention). `id`, `appId`, and `name` are always included as resource " +
+      "identity. Unknown field names return 400 with the offending name in the body. " +
+      "Dotted-path nested selection (e.g. `attributes.bench`) is not supported in this " +
+      "iteration — see DB-OPT5-NESTED in the backlog.\n\n" +
       "Auth: Read on the parent Collection. DataObjects inherit Collection " +
       "permissions; there is no per-DO permission gate.\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` " +
       "to fetch a specific DataObject with full reference detail.",
-    extensions = @Extension(name = "x-agent-hint", value = "Returns paginated list. Use ?include=time-bounds for timeseries coverage bars. timeseriesCount/fileCount/structuredDataCount give reference counts per kind.")
+    extensions = @Extension(name = "x-agent-hint", value = "Returns paginated list. Use ?include=time-bounds for timeseries coverage bars. timeseriesCount/fileCount/structuredDataCount give reference counts per kind. Default payload drops description/attributes; use ?include=full or ?fields= for finer control.")
   )
   @APIResponse(
     responseCode = "200",
@@ -170,8 +183,22 @@ public class DataObjectV2Rest {
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
     @QueryParam("include") String include,
+    @QueryParam("fields") String fields,
     @Context SecurityContext sc
   ) {
+    // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
+    if (fields != null && !fields.isBlank()) {
+      String unknown = DataObjectListFieldFilter.firstUnknownField(fields);
+      if (unknown != null) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity(Map.of(
+            "title", "Unknown field in ?fields= query parameter",
+            "detail", "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
+            "status", 400
+          ))
+          .build();
+      }
+    }
     Long collectionOgmId = resolveOrNull(collectionAppId);
     if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
 
@@ -198,6 +225,8 @@ public class DataObjectV2Rest {
     // Optional: per-DataObject time bounds from TimescaleDB.
     // Two extra round-trips (one Cypher + one SQL) only when ?include=time-bounds.
     boolean includeTimeBounds = include != null && include.contains("time-bounds");
+    // DB-OPT5: ?include=full opts back into the pre-diet wire shape.
+    boolean includeFull = include != null && include.contains("full");
     Map<String, List<Long>> doToContainerIds = Collections.emptyMap();
     Map<Long, long[]> containerTimeBounds = Collections.emptyMap();
     if (includeTimeBounds && !appIds.isEmpty()) {
@@ -239,10 +268,21 @@ public class DataObjectV2Rest {
     int lastIndex = result.isEmpty() ? -1 : firstIndex + result.size() - 1;
     String contentRange = "dataobjects " + firstIndex + "-" + lastIndex + "/" + total;
 
-    return Response.ok(result)
+    // DB-OPT5: serialise via the per-request Jackson writer so ?fields= /
+    // default-trim / ?include=full all flow through one code path.
+    ObjectWriter writer = DataObjectListFieldFilter.writerFor(objectMapper, fields, includeFull);
+    String body;
+    try {
+      body = writer.writeValueAsString(result);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException("Failed to serialise DataObject list response", e);
+    }
+
+    return Response.ok(body, MediaType.APPLICATION_JSON)
       .header("Content-Range", contentRange)
       .header("X-Total-Count", total)
       .header("Cache-Control", "max-age=300, must-revalidate")
+      .header("X-Shepard-Payload-Diet", fields != null && !fields.isBlank() ? "fields" : (includeFull ? "full" : "default-trim"))
       .build();
   }
 
