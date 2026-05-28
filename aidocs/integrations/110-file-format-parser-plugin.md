@@ -195,6 +195,23 @@ public record ParseCapability(
 
 ### 4.3 RoboDK Station File (`.rdk`)
 
+> **Namespace clarification (2026-05-28, with RDK-PARSE-1 ship).** The
+> table in this section originally listed predicates under
+> `chameo:*` / `m4i:*` / `ssn:*`. Implementation pinned the tier-1
+> output to **`urn:shepard:rdk:*`** instead (`appVersion`, `platform`,
+> `programSource`, `cadRef[]`, `stepRef[]`, `apiEndpoint`,
+> `robotController`, `companionSpatialAnalyzer`) — see
+> `plugins/fileformat-robotics/src/main/java/.../RdkAnnotations.java`
+> and `aidocs/16` RDK-PARSE-1. Rationale: the
+> `urn:shepard:<domain>:<role>` namespace is the canonical convention,
+> URDF-WEBVIEW-1 already consumes `urn:shepard:rdk:*` as the joint-
+> mapping signal, and the dispatcher-backlog RDK-PARSE-1 row pins the
+> contract there. The `chameo:*` / `m4i:*` mappings remain a useful
+> bridge for federated semantic queries and may be re-introduced as
+> `:owl:sameAs` aliases in a future tier without breaking the tier-1
+> contract.
+
+
 **Role:** Robot cell digital twin baseline — foundation for AFP R10+R20 robot workspace  
 **File in MFFD dataset:** `MFZ.rdk` (12.1 MB) — full robot cell model for the MFFD upper fuselage AFP manufacturing cell at ZLP Augsburg  
 **Companion SA file:** `MFZ.xit` (§4.1) — the *measured* coordinate calibration that registers against this *design* model
