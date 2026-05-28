@@ -7,6 +7,7 @@ import { collectionsPath } from "~/utils/constants";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
+import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
 
 definePageMeta({ layout: "collection" });
 
@@ -182,6 +183,15 @@ const collectionAccessRights = computed<string | null>(() => {
     .accessRights;
   return raw ?? null;
 });
+
+// MFFD-NDT-GRID-1 — cheap probe to decide whether the 14x14 thermography
+// coverage card should mount on this Collection page. Fetches the DO list
+// (cached) + samples the first 5 DOs' annotations for the
+// `urn:shepard:mffd:section` predicate. The widget renders only when the
+// probe flips `hasData` to true, so collections without OTvis data
+// pay only the probe cost (1 list + 5 small annotation fetches).
+const mffdNdtCollectionIdRef = computed<number | null>(() => collectionId);
+const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
 // this instance (INST2 — GET /v2/instance/capabilities, fetched in
@@ -406,6 +416,18 @@ useHead({
                  off the wire shape + three cheap fetches (annotations,
                  lab journal, creator ORCID). -->
             <MetadataCompletenessCard :collection="collection" />
+
+            <!-- MFFD-NDT-GRID-1: 14x14 OTvis thermography coverage tracker.
+                 Renders only when the cheap probe in useMffdNdtGridProbe
+                 finds at least one DataObject carrying
+                 urn:shepard:mffd:section -- collections without
+                 thermography data don't pay the rendering cost. The
+                 widget's own fetch (full per-DO annotation pull) only
+                 fires once it's mounted. -->
+            <MffdNdtGridCard
+              v-if="mffdNdtHasData === true"
+              :collection-id="collectionId"
+            />
 
             <!-- Always-visible: Semantic Annotation chips. Out of the
                  collapsibles so users see the tags at a glance. -->
