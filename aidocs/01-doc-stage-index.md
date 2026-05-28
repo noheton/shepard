@@ -77,7 +77,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/26-crud-consistency.md`](platform/26-crud-consistency.md) | 26. REST API CRUD Consistency Inventory | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/29-p10-implementation-design.md`](platform/29-p10-implementation-design.md) | P10 — `POST /sql/timeseries` Implementation Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/32-long-running-process-pattern.md`](platform/32-long-running-process-pattern.md) | Long-Running Process Pattern — Async Jobs | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/32-long-running-process-pattern.md`](platform/32-long-running-process-pattern.md) | Long-Running Process Pattern — Async Jobs | 2026-05-23 | 2026-05-28 |
 | [`aidocs/platform/A3c-namespace-migration.md`](platform/A3c-namespace-migration.md) | A3c: infrastructure-vs-feature toggle namespace split | 2026-05-23 | 2026-05-23 |
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-26 |
@@ -170,8 +170,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-ingestion-plan.md) | MFFD Dump Ingestion Plan | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-26 |
-| [`aidocs/data/79-cpacs-annotator.md`](data/79-cpacs-annotator.md) | aidocs/79 — CPACS Annotator (shepard-plugin-cpacs) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-28 |
+| [`aidocs/data/79-cpacs-annotator.md`](data/79-cpacs-annotator.md) | aidocs/79 — CPACS Annotator (shepard-plugin-cpacs) | 2026-05-23 | 2026-05-28 |
 | [`aidocs/data/81-spatial-data-binding.md`](data/81-spatial-data-binding.md) | aidocs/81 — Spatial Data Binding: Linking Geometry to Measurements | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/82-spatial-perf-evaluation.md`](data/82-spatial-perf-evaluation.md) | Spatial-data performance evaluation (PostGIS reassessment) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/83-pointcloud-and-live-overlay.md`](data/83-pointcloud-and-live-overlay.md) | aidocs/83 — Point Cloud Integration and Live Overlay Modalities | 2026-05-26 | 2026-05-26 |
@@ -182,11 +182,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | 2026-05-28 |
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-26 |
+| [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-28 |
 | [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
-| [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
+| [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/72-invenio-publishing-plugin.md`](integrations/72-invenio-publishing-plugin.md) | aidocs/72 — InvenioRDM publishing plugin (`shepard-plugin-invenio`) | 2026-05-23 | 2026-05-23 |
@@ -205,7 +205,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-28 |
 | [`aidocs/platform/69-runtime-plugin-cdi.md`](platform/69-runtime-plugin-cdi.md) | 69 — Runtime plugin CDI integration (deferred PM1b3) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md`](platform/83-tpl1-tpl2-shapes-templates-views.md) | TPL1+TPL2: Shapes as Templates + Views — M1 milestone tracker | 2026-05-26 | 2026-05-26 |
@@ -214,8 +214,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/101-canonical-iris.md`](semantics/101-canonical-iris.md) | 101 — Canonical IRI namespaces for Shepard semantic documents | 2026-05-27 | 2026-05-27 |
-| [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-28 |
+| [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-28 |
+| [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-26 | 2026-05-26 |
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-26 |
@@ -235,7 +235,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — institutional stack, governance frame, compliance gates | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/94-federation-and-dataspaces.md`](strategy/94-federation-and-dataspaces.md) | 94 — Federation and dataspaces: where Shepard sits in Manufacturing-X / Aerospace-X / Catena-X | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/ai-fork-production-readiness-2026-05-23.md`](strategy/ai-fork-production-readiness-2026-05-23.md) | Is the AI-collaborative `noheton/shepard` fork production-ready? | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md`](strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md) | Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md`](strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md) | Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis | 2026-05-23 | 2026-05-28 |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-26 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-27 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |
@@ -319,7 +319,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
-| [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-27 |
+| [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-28 |
 
 ## feedback-implemented (2)
 
@@ -356,7 +356,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt3-timescaledb-tuning.md`](agent-findings/db-opt3-timescaledb-tuning.md) | DB-OPT3 — TimescaleDB Chunk + Compression Analysis | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | — |
+| [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
@@ -409,7 +409,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/workflows/36-user-profile-and-settings-design.md`](workflows/36-user-profile-and-settings-design.md) | User Profile & Settings — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/38-git-integration-design.md`](workflows/38-git-integration-design.md) | Git Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/39-templates-design.md`](workflows/39-templates-design.md) | Templates — Implementation Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/workflows/64-provenance-architecture.md`](workflows/64-provenance-architecture.md) | 64 — Provenance architecture (what's shipped + where it's going) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/workflows/64-provenance-architecture.md`](workflows/64-provenance-architecture.md) | 64 — Provenance architecture (what's shipped + where it's going) | 2026-05-23 | 2026-05-28 |
 
 ## decommissioned (49)
 

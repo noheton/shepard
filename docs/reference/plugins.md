@@ -39,10 +39,11 @@ carrying:
    classpath or (in PM1b+) the runtime classloader.
 
 The first shipped plugin is `shepard-plugin-unhide` (UH1a — the
-Helmholtz Unhide publish feed). Future plugins follow the same
-shape: `shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
-`shepard-plugin-aas`, `shepard-plugin-minter-{epic,datacite}`,
-`shepard-plugin-spatial-postgis`, etc.
+Helmholtz Unhide publish feed). Subsequent shipped plugins follow the
+same shape: `shepard-plugin-hdf5`, `shepard-plugin-video`,
+`shepard-plugin-minter-{local,datacite,epic}`,
+`shepard-plugin-spatiotemporal` (SPATIAL-V6-001), `shepard-plugin-file-s3`,
+`shepard-plugin-git`, `shepard-plugin-ai`, `shepard-plugin-importer`, etc.
 
 ## Bundled plugins
 
