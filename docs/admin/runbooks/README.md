@@ -37,6 +37,7 @@ Operational runbooks for instance admins. Every runbook follows this contract:
 | 10 | [Cut a release](10-cut-a-release.md) | operator | Pre-flight → tag → build → GitHub Release + SBOM |
 | 11 | [Postgres restore](11-postgres-restore.md) | nuclide | Four recovery scenarios: corrupt schema, accidental table drop, full-instance loss, point-in-time (Wal-G) |
 | 12 | [Postgres collapse + restart](12-postgres-collapse-restart.md) | nuclide | Detect collapse → log capture → in-place restart → volume-preserving restart → wipe + restore |
+| 13 | [Full instance reset (preserving users)](13-full-instance-reset.md) | nuclide | Wipe all operational data, preserve Keycloak users + admin config, re-seed LUMEN + MFFD synthetic showcases, verify acceptance gates |
 
 ---
 
