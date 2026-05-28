@@ -32,6 +32,13 @@ Usage:
     # Include bridge welding:
     INCLUDE_BRIDGEWELDING=1 uv run python mffd-ts-export.py
 
+    # Bridge welding only (parallel run alongside a tapelaying export — use a
+    # distinct OUT_DIR so the two processes don't fight over manifest.json):
+    SKIP_TAPELAYING=1 INCLUDE_BRIDGEWELDING=1 OUT_DIR=ts-export-bridgewelding \\
+        uv run python mffd-ts-export.py
+    # Or just call the bridgewelding-only wrapper:
+    uv run python mffd-fw-export.py
+
     # Resume an interrupted run — idempotent, skips existing non-empty files:
     uv run python mffd-ts-export.py
 
@@ -75,16 +82,20 @@ SOURCE_KEY = os.environ.get(
 )
 
 INCLUDE_BRIDGEWELDING = os.environ.get("INCLUDE_BRIDGEWELDING", "").lower() in ("1", "true", "yes")
+SKIP_TAPELAYING       = os.environ.get("SKIP_TAPELAYING",  "").lower() in ("1", "true", "yes")
 SKIP_TS               = os.environ.get("SKIP_TS",         "").lower() in ("1", "true", "yes")
 SKIP_FILES            = os.environ.get("SKIP_FILES",      "").lower() in ("1", "true", "yes")
 SKIP_STRUCTURED       = os.environ.get("SKIP_STRUCTURED", "").lower() in ("1", "true", "yes")
 SKIP_METADATA         = os.environ.get("SKIP_METADATA",   "").lower() in ("1", "true", "yes")
 
-COLLECTIONS: dict[str, int] = {
-    "tapelaying": int(os.environ.get("TAPELAYING_COLL_ID", 48297)),
-}
+COLLECTIONS: dict[str, int] = {}
+if not SKIP_TAPELAYING:
+    COLLECTIONS["tapelaying"] = int(os.environ.get("TAPELAYING_COLL_ID", 48297))
 if INCLUDE_BRIDGEWELDING:
     COLLECTIONS["bridgewelding"] = int(os.environ.get("BRIDGEWELDING_COLL_ID", 163811))
+if not COLLECTIONS:
+    print("[ERROR] No collections selected. Set INCLUDE_BRIDGEWELDING=1 to enable bridge welding, or unset SKIP_TAPELAYING to include tapelaying.", file=sys.stderr)
+    sys.exit(2)
 
 OUT_DIR         = Path(os.environ.get("OUT_DIR", "ts-export"))
 PAGE_SIZE       = int(os.environ.get("PAGE_SIZE", "200"))
