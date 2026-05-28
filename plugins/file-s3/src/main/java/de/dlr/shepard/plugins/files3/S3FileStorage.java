@@ -118,17 +118,28 @@ public class S3FileStorage implements FileStorage {
     }
 
     String resolvedRegion = (region == null || region.isBlank()) ? "us-east-1" : region.trim();
+    // FS1b/VID1a — disable chunked encoding so the AWS SDK sends a full
+    // SigV4 payload hash in `x-amz-content-sha256` instead of the
+    // `STREAMING-AWS4-HMAC-SHA256-PAYLOAD` token.  Garage v1.0 rejects
+    // the latter with `Invalid content sha256 hash: Invalid character 'S'
+    // at position 0`, which surfaced first on video uploads
+    // (`RequestBody.fromInputStream(stream, sizeBytes)` triggers chunked
+    // mode whereas the hero-image path's `fromBytes(readAllBytes())` did
+    // not).  Real-AWS S3 still accepts the unchunked form, so this is
+    // a portable choice — no Garage-specific feature flag needed.
     S3ClientBuilder builder = S3Client.builder()
       .httpClientBuilder(UrlConnectionHttpClient.builder())
       .region(Region.of(resolvedRegion))
       .serviceConfiguration(S3Configuration.builder()
         .pathStyleAccessEnabled(pathStyleAccess)
+        .chunkedEncodingEnabled(false)
         .build());
 
     S3Presigner.Builder presignerBuilder = S3Presigner.builder()
       .region(Region.of(resolvedRegion))
       .serviceConfiguration(S3Configuration.builder()
         .pathStyleAccessEnabled(pathStyleAccess)
+        .chunkedEncodingEnabled(false)
         .build());
 
     if (endpoint != null && !endpoint.isBlank()) {
