@@ -35,12 +35,12 @@ section and the `upgrade-overlay` section.
 | `idea` | 11 |
 | `feature-defined` | 100 |
 | `audited-by-personas` | 73 |
-| `feedback-implemented` | 1 |
+| `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 68 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **374** |
+| **total docs** | **375** |
 | **UNTAGGED** | **0** |
 
 ## fragment (43)
@@ -149,7 +149,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
-| [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | — |
+| [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -320,10 +320,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-27 |
 
-## feedback-implemented (1)
+## feedback-implemented (2)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | — |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
 ## tests-implemented (4)
