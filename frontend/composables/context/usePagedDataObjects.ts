@@ -39,6 +39,34 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
 
+  // DB-OPT5: explicit ?fields= allow-list of exactly what the collection-detail
+  // panel renders. Drops description, attributes, predecessor/successor arrays,
+  // and the four deprecated int sibling counts. Backend always returns id/appId/
+  // name as identity even when not listed here.
+  //
+  // Fields actually read by CollectionDataObjectsPanel.vue (Row mapping):
+  //  - id, name, status, createdAt
+  //  - referenceIds[]  → row.refCount (.length)
+  //  - childrenIds[]   → row.childCount (.length)
+  //  - incomingIds[]   → row.incomingCount (.length)
+  //  - timeseriesCount, fileCount, structuredDataCount (v2 long counts)
+  //  - timeBoundsStart, timeBoundsEnd (when ?include=time-bounds)
+  const DO_LIST_FIELDS = [
+    "id",
+    "appId",
+    "name",
+    "status",
+    "createdAt",
+    "referenceIds",
+    "childrenIds",
+    "incomingIds",
+    "timeseriesCount",
+    "fileCount",
+    "structuredDataCount",
+    "timeBoundsStart",
+    "timeBoundsEnd",
+  ].join(",");
+
   const items = ref<DataObjectListItemV2[]>([]);
   const totalItems = ref<number | null>(null);
   const loading = ref(false);
@@ -64,6 +92,9 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
           page: currentPage,
           size: pageSize,
           include: includeTimeBounds ? 'time-bounds' : undefined,
+          // DB-OPT5: explicit allow-list = exactly the fields the panel renders.
+          // Saves ~50%+ on the wire vs the pre-diet shape with description + attributes.
+          fields: DO_LIST_FIELDS,
         });
         batch = fetched;
         totalItems.value = fetchedTotal;

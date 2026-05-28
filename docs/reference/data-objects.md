@@ -116,10 +116,92 @@ programmatically on PUT/PATCH or via the Edit dialog in the UI (they appear in
 the "Attributes" section of the dialog). Shepard does **not** infer them from
 timeseries payload automatically — set them explicitly.
 
+## `?fields=` query parameter (DB-OPT5)
+
+The v2 list endpoint
+`GET /v2/collections/{collectionAppId}/data-objects` supports two
+payload-diet knobs to keep the wire small on collections with thousands
+of DataObjects:
+
+### Default-trim (no query param)
+
+By default, the list response drops fields that the collection-detail
+UI never renders. Three groups go quiet on the wire:
+
+| Field | Why dropped |
+|---|---|
+| `description` | Heavy CommonMark string; only shown on the detail page. |
+| `attributes` | Heavy key-value map; only shown on the detail page. |
+| `timeseriesReferenceCount` | Deprecated `int` sibling of the v2 `timeseriesCount` (`long`). |
+| `fileBundleCount` | Deprecated `int` sibling of the v2 `fileCount`. |
+| `structuredDataReferenceCount` | Deprecated `int` sibling of the v2 `structuredDataCount`. |
+
+These remain available on the detail endpoint:
+`GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}`.
+
+The response carries a single header so a caller can verify the diet
+mode at a glance:
+
+```
+X-Shepard-Payload-Diet: default-trim
+```
+
+### `?include=full` — opt back in
+
+Pass `?include=full` to get the pre-DB-OPT5 wire shape, including the
+fields above. This is a transitional safety valve; future versions may
+drop the deprecated `int` counts unconditionally.
+
+```
+GET /v2/collections/{appId}/data-objects?include=full
+X-Shepard-Payload-Diet: full
+```
+
+### `?fields=foo,bar,baz` — explicit allow-list
+
+Pass `?fields=` (flat CSV, GitHub REST `fields=` convention) to ask for
+only the named top-level fields. The endpoint always includes `id`,
+`appId`, and `name` (resource-identity guarantees), even when not
+listed.
+
+Example — the exact field-set the Vue collection-detail panel uses:
+
+```
+GET /v2/collections/{appId}/data-objects?fields=id,appId,name,status,createdAt,referenceIds,childrenIds,incomingIds,timeseriesCount,fileCount,structuredDataCount,timeBoundsStart,timeBoundsEnd
+X-Shepard-Payload-Diet: fields
+```
+
+Unknown field names short-circuit the request with HTTP 400 before any
+database call:
+
+```json
+{
+  "title": "Unknown field in ?fields= query parameter",
+  "detail": "Field 'bogusField' does not exist on DataObjectListItemV2.",
+  "status": 400
+}
+```
+
+Dotted-path nested selection (e.g. `attributes.bench`) is not
+supported in this iteration — the default-trim already drops the heavy
+nested fields; track DB-OPT5-NESTED in `aidocs/16` for the follow-up.
+
+### When to use which
+
+| Caller | Recommended shape | Reason |
+|---|---|---|
+| Frontend collection-detail panel | `?fields=` | Smallest wire, highest cache locality. |
+| MCP agent crawling for full context | `?include=full` | Needs `attributes` + `description`. |
+| Operator / debugging via `curl` | default | Conservative trim; readable. |
+| Bulk ETL exporters | `?fields=` listing only what the export needs | Bandwidth + latency. |
+
 ## See also
 
 - `collections.md` — sibling page documenting the same fields at the
   Collection level.
 - `aidocs/semantics/98-shapes-views-and-process-model.md §4.1` — funder-review
   rationale and the deferred items.
+- `examples/mffd-showcase/scripts/diagnostics/measure-payload-diet.sh` —
+  one-shot diagnostic to measure the payload-diet impact on a live
+  Shepard instance.
 - `provenance.md` — Predecessor/Successor chain semantics.

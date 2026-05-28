@@ -10,8 +10,16 @@ export interface ListDataObjectsV2Request {
   status?: string;
   page?: number;
   size?: number;
-  /** Comma-separated enrichment flags. Pass "time-bounds" to populate timeBoundsStart/End on each item. */
+  /** Comma-separated enrichment flags. Pass "time-bounds" to populate timeBoundsStart/End on each item, or "full" to opt back into the pre-DB-OPT5 wire shape. */
   include?: string;
+  /**
+   * DB-OPT5 — flat CSV of field names to include in the response (GitHub REST convention).
+   * When omitted, the default-trim shape is returned (drops description, attributes, and
+   * the three deprecated `int` sibling counts). `id`, `appId`, and `name` are always
+   * included as resource identity. Unknown field names produce a 400 with the offending
+   * name in the response body.
+   */
+  fields?: string;
 }
 
 /**
@@ -37,6 +45,7 @@ export class DataObjectV2Api extends runtime.BaseAPI {
     if (requestParameters['page'] != null) queryParameters['page'] = requestParameters['page'];
     if (requestParameters['size'] != null) queryParameters['size'] = requestParameters['size'];
     if (requestParameters['include'] != null) queryParameters['include'] = requestParameters['include'];
+    if (requestParameters['fields'] != null) queryParameters['fields'] = requestParameters['fields'];
 
     const headerParameters: runtime.HTTPHeaders = {};
     if (this.configuration && this.configuration.accessToken) {
