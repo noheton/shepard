@@ -1,11 +1,23 @@
 ---
 title: Process-monitoring file-format parser plugin family — thermography (OTvis, FLIR, IRBIS) + thermal-analysis (NETZSCH DEA / DSC / TGA)
-stage: concept
+stage: feature-defined
 last-stage-change: 2026-05-28
 audience: contributors, plugin authors, RDM operators
 ---
 
 # 114 — Process-monitoring parser plugin family
+
+**Tier-1 implementation status (2026-05-28):** Edevis OTvis tier-1
+metadata parser shipped (`OTVIS-PARSE-1`) as the standalone Maven
+module [`plugins/fileformat-thermography/`](../../plugins/fileformat-thermography/).
+27 JUnit tests green against the real `sample_S4_M13_L18_F4.OTvis`
+fixture. VIEW_RECIPE "thermography" renderer (tier-1 stub) wired up
+in `shapes/render.vue` + `ViewRecipeBuilderDialog.vue` (`OTVIS-VIEW-1`).
+Tier-2 work (frame extraction, channel-bound playback) tracked as
+`OTVIS-PARSE-2` + `THERMO-CHANNELS-1`; aggregator wire-up as
+`OTVIS-WIRE-AGGREGATOR-1`.
+
+
 
 **Status:** Concept · MFFD-driven · companion to [`110-file-format-parser-plugin.md`](110-file-format-parser-plugin.md) (the SPI baseline) and [`112-mfg-plugin-design.md`](112-mfg-plugin-design.md) (manufacturing-domain ontology)
 

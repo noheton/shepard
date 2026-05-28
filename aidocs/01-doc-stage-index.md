@@ -31,9 +31,9 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 43 |
-| `concept` | 26 |
+| `concept` | 25 |
 | `idea` | 11 |
-| `feature-defined` | 96 |
+| `feature-defined` | 97 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
@@ -91,7 +91,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (26)
+## concept (25)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -105,7 +105,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/r4-novacrate-evaluation.md`](data/r4-novacrate-evaluation.md) | R4 — NovaCrate evaluation for RO-Crate metadata editing | 2026-05-26 | 2026-05-26 |
 | [`aidocs/frontend/02-css-layout-conventions.md`](frontend/02-css-layout-conventions.md) | Frontend CSS layout conventions | 2026-05-27 | 2026-05-27 |
 | [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-26 |
-| [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | AAS Backend Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/60-shepard-edge.md`](integrations/60-shepard-edge.md) | shepard Edge — Concept Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/61-shepard-mount-as-network-drive.md`](integrations/61-shepard-mount-as-network-drive.md) | shepard Mount as a Network Drive — Concept Design | 2026-05-23 | 2026-05-23 |
@@ -138,7 +137,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (96)
+## feature-defined (97)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -182,6 +181,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
