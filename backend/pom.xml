@@ -1093,6 +1093,25 @@
           <artifactId>shepard-plugin-v1-compat</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          VIS-T1 Phase 1 — `shepard-plugin-vis-trace3d`. Capability
+          manifest only: surfaces `vis-trace3d` in `GET /v2/admin/plugins`
+          with the `shepard.plugins.vis-trace3d.enabled` toggle, and
+          ships the Trace3DViewShape SHACL classpath resource at
+          `/shapes/trace-3d-view.shacl.ttl`. Renderer (`Trace3DView.vue`)
+          and the `POST /v2/shapes/render` dispatcher remain in-tree
+          for Phase 1; Phase 2 (gated on VIS-S1, the
+          ViewRecipeRenderer SPI) extracts them. The plugin has no
+          CDI beans, no `@Path` resources, and no sidecars in Phase 1
+          — no `quarkus.index-dependency.shepard-plugin-vis-trace3d.*`
+          entry is needed in `application.properties`.
+          See aidocs/16 VIS-T1 + aidocs/44 VIS-T1.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-trace3d</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

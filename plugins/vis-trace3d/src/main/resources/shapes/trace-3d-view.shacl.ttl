@@ -1,0 +1,165 @@
+# trace-3d-view.shacl.ttl — Trace3DViewShape, the first concrete VIEW_RECIPE.
+#
+# VIS-T1 phase 1. Extends the upstream `shepard-ui:ViewRecipeShape`
+# meta-shape from `backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl`
+# with the specific channel-role + colour-map + alignment slots that the
+# Trace3D renderer (`frontend/components/container/timeseries/Trace3DView.vue`)
+# consumes.
+#
+# A VIEW_RECIPE template body that targets this shape declares three (or four)
+# `shepard-ui:hasChannelBinding` entries with roles `x` / `y` / `z` (and
+# optionally `color`), plus the trace3d-specific scalar properties
+# (`trace3d:colorMap`, `trace3d:interpolation`, `trace3d:alignment`, ...).
+#
+# Consumed by:
+#   • POST /v2/shapes/validate — Jena SHACL validator (TPL2a) accepts this
+#     shape as one of the allow-listed VIEW_RECIPE concretions.
+#   • POST /v2/shapes/render — projects the channel bindings, returns the
+#     channel-selector envelope the renderer reads. Beta status: all
+#     bindings return status=DECLARED until VIS-S1 ships the
+#     ViewRecipeRenderer SPI + live channel-resolution (TPL2c).
+#   • frontend/components/container/timeseries/Trace3DView.vue — reads the
+#     rendered envelope and produces the Three.js Line2 fat-line shader
+#     output.
+#
+# Cross-refs:
+#   aidocs/16-dispatcher-backlog.md — VIS-T1 row
+#   aidocs/agent-findings/trace3d-spike.md §2 — canonical TTL contract
+#   aidocs/semantics/98 §1.1 — TemplateKind=VIEW_RECIPE
+#   aidocs/data/90-spatial-as-temporal-sweep.md §3 — schema; §7 render modes
+#   backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl — meta-shape
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix shepard-ui:<http://semantics.dlr.de/shepard-ui#> .
+@prefix trace3d:   <http://semantics.dlr.de/shepard-ui/trace3d#> .
+@prefix dcterms:   <http://purl.org/dc/terms/> .
+@prefix qudt:      <http://qudt.org/schema/qudt/> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: Trace3DViewRecipe ─────────────────────────────────────────
+
+trace3d:Trace3DViewRecipe a owl:Class ;
+    rdfs:label "Trace3D view recipe"@en ;
+    rdfs:comment "A VIEW_RECIPE specialisation that renders an end-effector path as a colour-mapped 3D brush trace. Consumed by the in-tree Trace3DView (Three.js Line2) renderer."@en ;
+    rdfs:subClassOf shepard-ui:ViewRecipe .
+
+# ─── Shape: Trace3DViewShape ──────────────────────────────────────────
+
+trace3d:Trace3DViewShape a sh:NodeShape ;
+    sh:targetClass trace3d:Trace3DViewRecipe ;
+
+    # Required channel-binding count: at least three (x/y/z); optional
+    # `color` (the scalar mapped to the colour map) brings the count to
+    # four. The meta-shape (`shepard-ui:ViewRecipeShape`) already asserts
+    # `sh:minCount 1` on `hasChannelBinding`; this concretion tightens
+    # the lower bound to 3.
+    sh:property [
+        sh:path     shepard-ui:hasChannelBinding ;
+        sh:node     shepard-ui:ChannelBindingShape ;
+        sh:minCount 3 ;
+        sh:maxCount 4 ;
+        sh:name     "X / Y / Z (+ optional colour) channel bindings" ;
+        sh:description "Three required bindings with role=x|y|z (TimeseriesChannel sources). An optional fourth binding with role=color carries the scalar mapped to the colour map (e.g. TCP temperature). Each binding's `channelSelector` is the same 5-tuple JSON the focus DataObject's TS bag exposes; post TS-ID migration (aidocs/platform/87) a single shepardId string." ;
+        sh:order    10 ;
+    ] ;
+
+    # ─── Trace3D-specific render parameters ──────────────────────────
+
+    sh:property [
+        sh:path     trace3d:colorMap ;
+        sh:datatype xsd:string ;
+        sh:in       ( "viridis" "plasma" "inferno" "magma" "cividis" "turbo" "rdbu" "jet" "heat" "cool" ) ;
+        sh:name     "Colour map" ;
+        sh:description "Sequential colour map applied to the optional scalar channel. Defaults to `viridis` when omitted. The renderer's in-tree colormap table (`frontend/utils/colormap.ts`) provides the RGB lookup." ;
+        sh:order    20 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:interpolation ;
+        sh:datatype xsd:string ;
+        sh:in       ( "none" "linear" "catmull-rom" ) ;
+        sh:name     "Path interpolation" ;
+        sh:description "How the renderer joins consecutive frames. `linear` is the cheap default the in-tree Line2 shader expects; `catmull-rom` produces a C2-continuous curve at higher CPU cost." ;
+        sh:order    21 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:alignment ;
+        sh:datatype xsd:string ;
+        sh:in       ( "nearest" "linear-resample" "snap-to-x" ) ;
+        sh:name     "Timestamp alignment" ;
+        sh:description "How the resolver aligns timestamps across the 3 (or 4) bound channels. `linear-resample` is the default — produces uniform 1/sampleRate frames; `nearest` picks the closest sample per channel without interpolation; `snap-to-x` resamples Y/Z/colour onto the X channel's timestamps." ;
+        sh:order    22 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:sampleRate ;
+        sh:datatype xsd:double ;
+        sh:name     "Output sample rate (Hz)" ;
+        sh:description "Frames per second the resolver emits. Omitted = use the lowest input channel rate so the renderer never up-samples beyond the slowest source." ;
+        sh:order    23 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:lineWidth ;
+        sh:datatype xsd:double ;
+        sh:name     "Line width (world units)" ;
+        sh:description "Width of the Line2 fat-line shader. Defaults to 2.0 world units; the renderer enforces a viewport-relative floor so the line never disappears at zoom-out." ;
+        sh:order    24 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:valueRange ;
+        sh:datatype xsd:string ;
+        sh:name     "Colour map domain" ;
+        sh:description "Optional 2-element JSON array `[min, max]` clamping the colour-map domain. Omitted = auto-scale to the value channel's observed min/max." ;
+        sh:order    25 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:timeRange ;
+        sh:datatype xsd:string ;
+        sh:name     "Time window (ISO interval)" ;
+        sh:description "Optional ISO-8601 interval (`<start>/<end>`) restricting which frames render. Omitted = the channels' shared time domain. Used by the time-scrubber UI for windowed playback." ;
+        sh:order    26 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:frameKey ;
+        sh:nodeKind sh:IRI ;
+        sh:name     "Coordinate frame" ;
+        sh:description "Optional CST1-style `:CoordinateFrame` IRI giving the spatial frame the X/Y/Z channels are expressed in. Renderer surfaces the frame name in the legend; resolver does no transform in v1 (frame-conversion is CST1's job)." ;
+        sh:order    27 ;
+    ] ;
+
+    sh:property [
+        sh:path     trace3d:rendererUrl ;
+        sh:datatype xsd:string ;
+        sh:name     "Renderer URL" ;
+        sh:description "Optional URL of an ES module exporting a `mount(canvas, envelope)` entry point. Omitted = the in-tree Trace3DView component renders. Future VIS-S3 stretch goal: point at an Isaac Lab WebRTC bridge for server-side rendering." ;
+        sh:order    28 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A VIEW_RECIPE template instance targeting Trace3DViewShape:
+#
+# {
+#   "templateKind": "VIEW_RECIPE",
+#   "title": "AFP TCP thermal trail — Tapelaying TR-2026-05-28",
+#   "renderer": "tresjs",
+#   "channelBindings": [
+#     { "role": "x",     "channelSelector": "{\"measurement\":\"afp\",...,\"field\":\"tcp_x\"}", "unit": "http://qudt.org/vocab/unit/MilliM", "required": true },
+#     { "role": "y",     "channelSelector": "{...,\"field\":\"tcp_y\"}", "unit": "http://qudt.org/vocab/unit/MilliM", "required": true },
+#     { "role": "z",     "channelSelector": "{...,\"field\":\"tcp_z\"}", "unit": "http://qudt.org/vocab/unit/MilliM", "required": true },
+#     { "role": "color", "channelSelector": "{...,\"field\":\"tcp_temperature\"}", "unit": "http://qudt.org/vocab/unit/DEG_C", "required": false }
+#   ],
+#   "trace3d:colorMap": "inferno",
+#   "trace3d:interpolation": "linear",
+#   "trace3d:alignment": "linear-resample",
+#   "trace3d:sampleRate": 30.0,
+#   "trace3d:lineWidth": 2.0
+# }
