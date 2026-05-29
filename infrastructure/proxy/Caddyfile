@@ -31,6 +31,20 @@
 		}
 	}
 
+	# JupyterHub (J1e plugin) path-mounted at /jupyterhub.
+	# Per CLAUDE.md "Always: mount plugin UI sidecars as paths" rule.
+	# JupyterHub serves WebSocket connections for live kernel comms — Caddy's
+	# `reverse_proxy` upgrades `Connection: Upgrade` headers transparently.
+	# Long timeouts so kernel sessions don't drop.
+	handle /jupyterhub/* {
+		reverse_proxy jupyterhub:8000 {
+			transport http {
+				read_timeout 24h
+				write_timeout 24h
+			}
+		}
+	}
+
 	# Native Quarkus MCP server (MCP-2) — same backend that serves /shepard/api/*.
 	# SSE URL:           https://shepard.nuclide.systems/v2/mcp/sse
 	# Streamable HTTP:   https://shepard.nuclide.systems/v2/mcp

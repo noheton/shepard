@@ -28,7 +28,13 @@ services:
   jupyterhub:
     # JupyterHub 5.x is the current stable major (5.2.1 as of 2026-05; pinned
     # to the minor band rather than `:latest` per ADR-0020).
-    image: jupyterhub/jupyterhub:5
+    # Build a tiny derived image that pip-installs oauthenticator + dockerspawner
+    # on top of the upstream jupyterhub/jupyterhub:5 (those packages aren't in
+    # the base image). Build context is the plugin dir, NOT infrastructure/.
+    build:
+      context: ../plugins/jupyter
+      dockerfile: Dockerfile
+    image: shepard-jupyterhub:local
     container_name: shepard-jupyterhub
     restart: unless-stopped
     environment:
@@ -43,7 +49,10 @@ services:
       # The public-facing URL JupyterHub redirects users back to after
       # OIDC sign-in.  Operator sets this in the env file once the
       # reverse-proxy route exists.
-      JUPYTERHUB_PUBLIC_URL: ${JUPYTERHUB_PUBLIC_URL:-https://jupyterhub.nuclide.systems}
+      JUPYTERHUB_PUBLIC_URL: ${JUPYTERHUB_PUBLIC_URL:-https://shepard.nuclide.systems/jupyterhub}
+      # auth_state encryption — used to encrypt user OIDC tokens stored server-side.
+      # Operator sets a 32-byte hex string in .env; not optional when auth_state is enabled.
+      JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY:-}
       # --- single-user notebook image ---
       # Pinned scipy-notebook for predictable size + scientific deps.
       # Operators wanting a different image set
@@ -57,7 +66,11 @@ services:
       # Mount the rendered jupyterhub_config.py from the plugin's config
       # directory.  Read-only — config is source-controlled, not mutated
       # by the running hub.
-      - ./plugins/jupyter/config/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
+      # Relative paths in compose-profile.yml resolve against the FIRST
+      # `-f` file's directory (infrastructure/docker-compose.yml here),
+      # so `./plugins/...` would wrongly look in infrastructure/plugins/.
+      # `../plugins/...` goes up one level from infrastructure/ → /opt/shepard/plugins/.
+      - ../plugins/jupyter/config/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
       # JupyterHub needs to talk to the docker daemon to spawn single-user
       # containers (DockerSpawner).  Operators using Kubernetes swap this
       # for a service-account binding — see install.md §"Kubernetes notes".
@@ -72,8 +85,10 @@ services:
     networks:
       - shepard
       - frontend
-    profiles:
-      - jupyter
+    # No COMPOSE_PROFILES gate — operator-preference 2026-05-29: the act of
+    # including `-f plugins/jupyter/compose-profile.yml` in the docker compose
+    # invocation IS the opt-in. Deployments that don't want JupyterHub omit
+    # the file; deployments that do, get the service unconditionally.
 
 networks:
   # Re-declare the networks the parent compose file owns so this overlay
