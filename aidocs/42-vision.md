@@ -153,7 +153,13 @@ Plus payload kinds (the things References point at):
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
-  PostGIS (optional feature toggle).
+  PostGIS (optional feature toggle). *(SPATIAL-V6-004 shipped: the
+  spatial container page now shows a live **BrushTrace 3D viewer** —
+  Three.js BufferGeometry line trace of the stored XYZ point cloud
+  with orbit controls, loading/error/empty states. Accessible via
+  `GET /v2/spatial-containers/{appId}/trace`. The
+  `BrushTraceViewRecipeRenderer` SPI resolves
+  `shepard:BrushTraceShape` VIEW_RECIPE templates.)*
 - **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
   create/read/delete + opt-in `hdf` compose profile + HTTP Basic
   Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the

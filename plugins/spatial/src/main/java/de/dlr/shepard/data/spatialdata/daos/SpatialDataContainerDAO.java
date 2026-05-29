@@ -47,6 +47,22 @@ public class SpatialDataContainerDAO extends GenericDAO<SpatialDataContainer> {
     return name == null || container.getName().equalsIgnoreCase(name);
   }
 
+  /**
+   * SPATIAL-V6-004 — look up a SpatialDataContainer by its UUID v7 {@code appId}.
+   *
+   * @param appId the container's appId
+   * @return the matching entity, or {@code null} when not found / deleted
+   */
+  public SpatialDataContainer findByAppId(String appId) {
+    if (appId == null || appId.isBlank()) {
+      return null;
+    }
+    String query =
+      "MATCH (c:SpatialDataContainer) WHERE c.appId = $appId AND (c.deleted IS NULL OR c.deleted = false) RETURN c LIMIT 1";
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
   @Override
   public Class<SpatialDataContainer> getEntityType() {
     return SpatialDataContainer.class;

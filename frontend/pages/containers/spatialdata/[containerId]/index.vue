@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * SPATIAL-V6-004: spatial container page now shows the BrushTraceView 3D viewer
+ * instead of the "in development" banner.
+ */
 import { SpatialDataContainerAccessor } from "~/composables/container/SpatialDataContainerAccessor";
 
 const { routeParams } = useContainerRouteParams();
@@ -6,8 +10,12 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.SPATIALDATA;
 
 const containerAccessor = new SpatialDataContainerAccessor(containerId);
+const isFetchError = ref(false);
 const fetchData = () => {
-  containerAccessor.fetchData();
+  isFetchError.value = false;
+  containerAccessor.fetchData().catch(() => {
+    isFetchError.value = true;
+  });
   containerAccessor.fetchRoles();
 };
 
@@ -64,7 +72,17 @@ useHead({
           </v-row>
         </v-container>
       </v-col>
+      <!-- SPATIAL-V6-004: BrushTrace 3D viewer — replaces the old "in development" banner. -->
+      <v-col cols="12" class="mt-4">
+        <ClientOnly>
+          <BrushTraceView
+            v-if="containerAccessor.spatialData.value.id != null"
+            :container-id="containerAccessor.spatialData.value.id"
+          />
+        </ClientOnly>
+      </v-col>
     </v-row>
+    <NotFoundPanel v-else-if="isFetchError" />
     <CenteredLoadingSpinner v-else />
   </v-container>
 </template>
