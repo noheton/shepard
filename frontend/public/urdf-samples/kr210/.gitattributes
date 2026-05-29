@@ -1,0 +1,3 @@
+# Preserve exact bytes of upstream-sourced URDF + Collada meshes.
+*.dae binary
+*.urdf binary

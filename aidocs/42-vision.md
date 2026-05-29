@@ -366,6 +366,25 @@ These work the same way across every primitive:
   an operator opts in once their `contactEmail` and harvest key
   are in place. Refinements (per-Collection toggle UI, SHACL
   diagnostic) queued as UH1d–UH1e.
+- **3D visualisation via VIEW_RECIPE templates** *(TPL1+TPL2,
+  URDF-WEBVIEW-1 phase 1 shipped)*. Three browser renderers ship
+  in-tree: **Trace3D** (colour-mapped 3D path from X/Y/Z + value
+  channels), **URDF** (robot kinematics from a `.urdf` file +
+  optional joint-angle timeseries animator — play/pause/scrub +
+  0.1× / 1× / 10× speed), and **Thermography** (tier-1 IR-camera
+  metadata view). All three dispatch via the same
+  `POST /v2/shapes/render` VIEW_RECIPE plumbing; the renderer
+  toggle in the "Visualize in 3D" dialog picks one. Channel-to-axis
+  / channel-to-joint binding is **annotation-driven** —
+  `urn:shepard:spatial:axis` for Trace3D, `urn:shepard:urdf:joint`
+  for URDF — so a researcher who annotates once gets every future
+  visualisation auto-configured. Showcase demos for both wired
+  end-to-end (`examples/mffd-showcase/shapes.py` for Trace3D LBR
+  iiwa force traces; `examples/mffd-rdk-urdf-showcase/seed.py` for
+  RDK→URDF AFP-cell layup playback off real MFZ.rdk metadata).
+  Phase 2 — `RdkToUrdfExporter` sidecar, Foxglove iframe fallback,
+  in-browser trajectory record button, Trace3D+URDF scene
+  composition — queued under URDF-WEBVIEW-1.
 
 ## How you actually use it
 
