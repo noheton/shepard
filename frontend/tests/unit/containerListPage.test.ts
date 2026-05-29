@@ -155,7 +155,7 @@ describe("sortContainers", () => {
 
 describe("groupByCollection", () => {
   function withRefs(refs: (number[] | null)[]): ContainerWithRefs[] {
-    return ROWS.map((r, i) => ({ container: r, referencingCollectionIds: refs[i] }));
+    return ROWS.map((r, i) => ({ container: r, referencingCollectionIds: refs[i] ?? null }));
   }
 
   it("groups orphans into the synthetic key", () => {
