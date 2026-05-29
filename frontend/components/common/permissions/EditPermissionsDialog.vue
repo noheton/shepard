@@ -20,10 +20,8 @@ import { UserRole } from "./UserRole";
 const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
 const shepardObjectAccessor = props.shepardObjectAccessor;
 
-export interface MemberPermissions {
-  member: Member;
-  roleList: UserRole[];
-}
+// MemberPermissions moved to ./permissionTypes — re-exported here for backward compat.
+export type { MemberPermissions } from "./permissionTypes";
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,

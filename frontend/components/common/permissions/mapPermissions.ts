@@ -9,7 +9,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import type { MemberPermissions } from "./EditPermissionsDialog.vue";
+import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
 export async function mapPermissions(

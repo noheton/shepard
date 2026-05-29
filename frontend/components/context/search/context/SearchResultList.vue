@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-export type SearchResult = { id: number; name: string; url: string };
+// SearchResult moved to ./searchResultTypes — re-exported here for backward compat.
+export type { SearchResult } from "./searchResultTypes";
+import type { SearchResult } from "./searchResultTypes";
 
 defineProps<{ searchResults: SearchResult[]; loading: boolean }>();
 

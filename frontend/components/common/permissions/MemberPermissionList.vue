@@ -3,7 +3,7 @@ import {
   instanceOfUser,
   instanceOfUserGroup,
 } from "@dlr-shepard/backend-client";
-import type { MemberPermissions } from "./EditPermissionsDialog.vue";
+import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
 const memberPermissionsList = defineModel<MemberPermissions[]>(

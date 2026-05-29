@@ -7,7 +7,7 @@ import {
   type SearchParams,
   type SearchScope,
 } from "@dlr-shepard/backend-client";
-import type { SearchResult } from "~/components/context/search/context/SearchResultList.vue";
+import type { SearchResult } from "~/components/context/search/context/searchResultTypes";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 export function search(
