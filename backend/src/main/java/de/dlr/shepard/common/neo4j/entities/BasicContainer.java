@@ -13,6 +13,20 @@ import org.neo4j.ogm.annotation.Relationship;
 @NoArgsConstructor
 public class BasicContainer extends BasicEntity implements HasPermissions {
 
+  /**
+   * Lifecycle status string. Nullable; null on legacy nodes means "not yet set".
+   *
+   * <p>Allowed values: {@code DRAFT}, {@code IN_REVIEW}, {@code READY},
+   * {@code PUBLISHED}, {@code ARCHIVED}. Mirrors the same vocabulary on
+   * {@link de.dlr.shepard.common.neo4j.entities.AbstractDataObject}.
+   *
+   * <p>Additive nullable field — no Neo4j migration needed. Pre-existing
+   * {@code :*Container} nodes without this property are read as {@code null}.
+   * {@code ARCHIVED} was added in #27-ARCHIVED-01; transition guards are
+   * deferred to #27-ARCHIVED-02.
+   */
+  private String status;
+
   @ToString.Exclude
   @Relationship(type = Constants.HAS_PERMISSIONS)
   private Permissions permissions;

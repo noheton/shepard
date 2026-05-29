@@ -63,11 +63,18 @@ export interface SpatialDataContainer {
      */
     name: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof SpatialDataContainer
      */
     readonly type: ContainerType;
+    /**
+     * Lifecycle status. One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED.
+     * Absent when null (not yet set on legacy nodes).
+     * @type {string}
+     * @memberof SpatialDataContainer
+     */
+    readonly status?: string | null;
 }
 
 
@@ -103,10 +110,11 @@ export function SpatialDataContainerFromJSONTyped(json: any, ignoreDiscriminator
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
-export function SpatialDataContainerToJSON(value?: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'> | null): any {
+export function SpatialDataContainerToJSON(value?: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'status'> | null): any {
     if (value == null) {
         return value;
     }

@@ -5,6 +5,9 @@ interface ContainerTitleAndMetadataDisplayProps {
   typeLabel: string;
   nItems?: number;
   database?: string;
+  /** Lifecycle status string (DRAFT / IN_REVIEW / READY / PUBLISHED / ARCHIVED).
+   *  When present, a StatusChip is rendered next to the title. Null/undefined = no chip. */
+  status?: string | null;
 }
 
 defineProps<ContainerTitleAndMetadataDisplayProps>();
@@ -13,8 +16,9 @@ defineProps<ContainerTitleAndMetadataDisplayProps>();
 <template>
   <v-container class="pt-0 pl-0 pr-0" fluid>
     <v-row no-gutters>
-      <v-col class="ml-n1 pb-6" cols="12">
+      <v-col class="ml-n1 pb-6 d-flex align-center ga-3" cols="12">
         <h1 class="text-h1">{{ name }}</h1>
+        <StatusChip v-if="status" :status="status" />
       </v-col>
     </v-row>
     <v-row class="text-body-2 text-medium-emphasis">

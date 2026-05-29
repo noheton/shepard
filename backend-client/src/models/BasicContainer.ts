@@ -63,11 +63,18 @@ export interface BasicContainer {
      */
     name: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof BasicContainer
      */
     readonly type: ContainerType;
+    /**
+     * Lifecycle status. One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED.
+     * Absent when null (not yet set on legacy nodes).
+     * @type {string}
+     * @memberof BasicContainer
+     */
+    readonly status?: string | null;
 }
 
 
@@ -95,7 +102,7 @@ export function BasicContainerFromJSONTyped(json: any, ignoreDiscriminator: bool
         return json;
     }
     return {
-        
+
         'id': json['id'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],
@@ -103,15 +110,16 @@ export function BasicContainerFromJSONTyped(json: any, ignoreDiscriminator: bool
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
-export function BasicContainerToJSON(value?: Omit<BasicContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'> | null): any {
+export function BasicContainerToJSON(value?: Omit<BasicContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'status'> | null): any {
     if (value == null) {
         return value;
     }
     return {
-        
+
         'name': value['name'],
     };
 }

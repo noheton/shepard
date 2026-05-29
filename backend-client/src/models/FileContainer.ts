@@ -87,6 +87,13 @@ export interface FileContainer {
      * @memberof FileContainer
      */
     readonly defaultCollectionIdList?: Array<number> | null;
+    /**
+     * Lifecycle status. One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED.
+     * Absent when null (not yet set on legacy nodes).
+     * @type {string}
+     * @memberof FileContainer
+     */
+    readonly status?: string | null;
 }
 
 
@@ -126,10 +133,11 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
         'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
         'defaultCollectionIdList': json['defaultCollectionIdList'] == null ? undefined : json['defaultCollectionIdList'],
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
-export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'appId'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'defaultCollectionIdList'> | null): any {
+export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'appId'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'defaultCollectionIdList'|'status'> | null): any {
     if (value == null) {
         return value;
     }

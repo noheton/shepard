@@ -48,6 +48,7 @@ useHead({
               :id="containerAccessor.spatialData.value.id"
               :name="containerAccessor.spatialData.value.name"
               :type-label="'Spatial Data Container'"
+              :status="containerAccessor.spatialData.value.status"
             >
               <template #buttons>
                 <EditPermissionsButton

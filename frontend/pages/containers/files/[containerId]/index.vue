@@ -79,6 +79,7 @@ useHead({
               :n-items="containerAccessor.files.value?.length"
               :name="containerAccessor.fileContainer.value.name"
               :type-label="'File Container'"
+              :status="containerAccessor.fileContainer.value.status"
             >
               <template #buttons>
                 <UploadFilesButton
