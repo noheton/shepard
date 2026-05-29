@@ -303,12 +303,12 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/strategy-advisor.md`](agent-findings/strategy-advisor.md) | Shepard — Strategic Advisor Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/test-cleanup-2026-05-22.md`](agent-findings/test-cleanup-2026-05-22.md) | Backend test cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/trace3d-spike.md`](agent-findings/trace3d-spike.md) | Trace3D view — spike: library shortlist + view-shape input contract | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/ui-annoyances.md`](agent-findings/ui-annoyances.md) | UI annoyances — running log | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/ui-annoyances.md`](agent-findings/ui-annoyances.md) | UI annoyances — running log | 2026-05-23 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-24.md`](agent-findings/ui-scrutinizer-2026-05-24.md) | UI Scrutinizer — live-shepard systematic walk, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-auditor.md`](agent-findings/ux-auditor.md) | UX Auditor — Discovery Report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-progress-indicators-sweep.md`](agent-findings/ux-progress-indicators-sweep.md) | UX progress indicators — Playwright-driven sweep (task #136) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md`](agent-findings/ux-survey-collections-containers-2026-05-24.md) | UX survey — collections + containers pages (barely-usable triage) | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/ux-walk-2026-05-29.md`](agent-findings/ux-walk-2026-05-29.md) | UX Walk 2026-05-29 — Live 4K regression sweep | 2026-05-29 | — |
+| [`aidocs/agent-findings/ux-walk-2026-05-29.md`](agent-findings/ux-walk-2026-05-29.md) | UX Walk 2026-05-29 — Live 4K regression sweep | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/v15-import-implementation.md`](agent-findings/v15-import-implementation.md) | v15 MFFD-import — implementation report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15-review-data-ontologist.md`](agent-findings/v15-review-data-ontologist.md) | v15 review — Data & Process Ontologist lens | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15-review-ime-aqe.md`](agent-findings/v15-review-ime-aqe.md) | v15 review — IME + AQE lens | 2026-05-23 | 2026-05-23 |
@@ -349,11 +349,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-29 |
-| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-28 |
+| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-29 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-28 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-27 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-28 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-29 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |
@@ -404,7 +404,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/25-neo4j-id-migration-design.md`](platform/25-neo4j-id-migration-design.md) | Neo4j ID Migration — Design (L2) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/platform/47-dev-experience-and-plugin-system.md`](platform/47-dev-experience-and-plugin-system.md) | Dev Experience + Storage-Backend Plugin System — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/85-openapi-llm-readable.md`](platform/85-openapi-llm-readable.md) | OpenAPI documentation standard — LLM-readable | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/87-timeseries-appid-migration.md`](platform/87-timeseries-appid-migration.md) | 87 — Timeseries appId Migration (TS-ID) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/87-timeseries-appid-migration.md`](platform/87-timeseries-appid-migration.md) | 87 — Timeseries appId Migration (TS-ID) | 2026-05-23 | 2026-05-29 |
 | [`aidocs/plugins/69-aas-plugin-extraction-design.md`](plugins/69-aas-plugin-extraction-design.md) | AAS → plugin extraction — Design (AAS1-plugin) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/reading-list.md`](reading-list.md) | Reading list | 2026-05-23 | 2026-05-23 |
 | [`aidocs/roadmap.md`](roadmap.md) | Shepard Fork — Roadmap | 2026-05-23 | 2026-05-28 |

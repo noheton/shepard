@@ -381,8 +381,10 @@ Five typical entry points:
    the collection page (create/list/delete/diff point-in-time snapshots),
    **Templates admin page** (browse, create, edit, retire ShepardTemplates),
    **RO-Crate download button** on collection pages, **admin health
-   dashboard** (heap, uptime, HTTP metrics), and **JupyterHub URL in
-   user profile**. New in 2026-05-19: **inline timeseries charting**
+   dashboard** (heap, uptime, HTTP metrics), and **admin-configurable
+   instance-wide JupyterHub link-out** (J1e — replaces the earlier
+   per-user JupyterHub URL preference; the affordance is now a per-row
+   action in the unified Data References table). New in 2026-05-19: **inline timeseries charting**
    (Apache ECharts line chart on every timeseries container page, with
    channel selection, live-mode auto-refresh, step-line toggle for
    boolean channels, smooth toggle, and per-container curated channel
@@ -502,13 +504,17 @@ Mid-horizon:
 - **Lab journal + Jupyter** (`aidocs/37`, J1 series). **J1a shipped** —
   `GET /v2/lab-journal/{appId}/render` delivers sanitised CommonMark + GFM
   HTML. **J1b shipped** — `GET /v2/lab-journal/{dataObjectAppId}/notebooks`
-  lists `.ipynb` file refs for inline render. **J1c shipped** — "Open in
-  JupyterHub" deep link: the DataObject page shows a "Jupyter Notebooks" panel
-  listing all `.ipynb` files with download links and an "Open in JupyterHub"
-  button that opens the researcher's preferred JupyterHub URL (stored in user
-  preferences as `editor.preferredJupyter`). **J1d shipped** — append-only
+  lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
-  versions of a note so researchers can recover earlier drafts.
+  versions of a note so researchers can recover earlier drafts. **J1e shipped
+  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
+  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
+  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
+  they show up as **Notebook**-kind rows in the unified Data References table
+  with a one-click "Open in JupyterHub" launch button gated on the admin
+  config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
+  `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
+  can absorb it.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
