@@ -32,7 +32,7 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 42 |
 | `concept` | 25 |
-| `idea` | 11 |
+| `idea` | 12 |
 | `feature-defined` | 104 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 2 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 69 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **379** |
+| **total docs** | **380** |
 | **UNTAGGED** | **0** |
 
 ## fragment (42)
@@ -120,7 +120,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-26 |
 
-## idea (11)
+## idea (12)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -129,6 +129,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/109-mffd-scan-line-join-key.md`](data/109-mffd-scan-line-join-key.md) | 109 — MFFD scan-line join key across TPS stores | 2026-05-27 | 2026-05-27 |
 | [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | 2026-05-27 |
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/110-permissions-redesign-decision.md`](platform/110-permissions-redesign-decision.md) | 110 — Permissions: redesign or extend in place? | 2026-05-29 | — |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
@@ -180,7 +181,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | 2026-05-28 |
-| [`aidocs/data/PERM-INHERIT-MATRIX.md`](data/PERM-INHERIT-MATRIX.md) | PERM-INHERIT-MATRIX — entity → permission source | 2026-05-29 | — |
+| [`aidocs/data/PERM-INHERIT-MATRIX.md`](data/PERM-INHERIT-MATRIX.md) | PERM-INHERIT-MATRIX — entity → permission source | 2026-05-29 | 2026-05-29 |
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-28 |
@@ -204,7 +205,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-05-26 |
-| [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-05-23 |
+| [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-28 |
