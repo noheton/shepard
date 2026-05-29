@@ -126,6 +126,8 @@ public class NeoConnector implements IConnector {
           InstanceRorConfig.class.getPackageName(),
           // SQL timeseries admin config (parallel to ROR1).
           SqlTimeseriesConfig.class.getPackageName(),
+          // J1e — JupyterHub link-out admin config singleton (parallel to ROR1 / P10c).
+          de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig.class.getPackageName(),
           // /v2/timeseries-references annotation entity.
           TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),
