@@ -2135,3 +2135,36 @@ exactly what was missing from the showcase portfolio.
 Source: `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`
 (full findings, 8 sections, decoded drawio schema, JSON shape map,
 4 open questions for operator + persona-board read before Phase B).
+
+## BTKVS-DOCKET-SHOWCASE — Targets.md realignment follow-ups
+
+Per the realigned `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md §5`:
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| BTKVS-A3 | **Server-side decompose endpoint** — `POST /v2/plugins/btkvs/dockets` accepts a full v3 docket JSON, validates against the registered SHACL shapes, decomposes server-side into Collection + child DOs + StructuredDataReferences + Predecessor links per `findings §3`. **Retires** Nils's `fastapi_simple_server`-fork-to-split-JSON (Targets.md §3 "modifier FastAPI_Simple_Server split the json into sub-jsons"). | M | queued | Shepard's contribution makes Nils's split-fork unnecessary — every operator-side python module the plugin retires is one less the BT-KVS group maintains. Pairs with `BTKVS-C1` (the plugin itself); ship this endpoint as the first plugin REST surface. |
+| BTKVS-A4 | **Improved schema doc + drawio** per Nils's explicit invitation in `Targets.md §3` ("if you have ideas how to improve the setup structure, create a .md with the description and a new drawio with the improved structure"). Three structural refinements vs `Shepard_Database_Setup.drawio`: (1) **linear `:Predecessor` chain** on process steps (Polymerisation → Tempering → Pyrolysis → Siliconization), not tree under root — captures the actual fabrication temporal order; (2) **per-post_analysis DO** so NDT scans (CT images, Röntgen scans) can attach as `:FileReference` not be buried in JSON; (3) **editor stamps → `:Activity` PROV-O nodes** consumed by f(ai)²r — `editor.{name, date}` is provenance, not free-text. Output: `aidocs/integrations/116-btkvs-improved-schema.md` + `aidocs/integrations/116-btkvs-improved-schema.drawio`. | S | queued | Operator invitation = de-risked architectural input. Nils gets the doc + drawio + can react. |
+
+## J1e-PR-05 — SSO + credential-sharing follow-ups
+
+Operator confirmed 2026-05-29 the requirement that JupyterHub share
+credentials with Shepard. Inspection of the shipped sidecar shows
+the agent already wired this:
+
+- `c.GenericOAuthenticator` against the same Keycloak realm via
+  `SHEPARD_OIDC_ISSUER_URL` (which `install.md §3` documents must
+  match Shepard backend's `OIDC_AUTHORITY`)
+- `c.GenericOAuthenticator.enable_auth_state = True` +
+  `auth_state_hook` exposes the user's OIDC `access_token` to the
+  kernel as `SHEPARD_OIDC_ACCESS_TOKEN` env var, so `shepard-py`
+  calls inherit identity (no per-kernel re-auth)
+- `allow_all = True` (anyone with a valid Shepard OIDC token can
+  spawn a kernel; Shepard's permission system controls what they can
+  see via the notebook-row action button)
+
+**The remaining gap is verification, not implementation.** Filed:
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| J1e-PR-05-VERIFY-SSO | **End-to-end SSO verify** once the rename agent merges + the plugin can be brought up: (a) flo signs in to Shepard via OIDC; (b) clicks "Open in JupyterHub" on a microsections `.ipynb` row; (c) JupyterHub redirects to Keycloak — Keycloak SSO → no re-login prompt; (d) kernel spawns with `SHEPARD_OIDC_ACCESS_TOKEN` populated; (e) inside the kernel, `shepard-py` calls `/v2/users/me` and gets flo's identity back. Playwright + Python check. | XS | queued | Cannot run until the rename agent lands + the plugin admin endpoint is reachable + a JupyterHub Keycloak OIDC client is provisioned (per `plugins/jupyter/docs/install.md §2`). |
+| J1e-PR-05-KEYCLOAK-CLIENT-SEED | **Bootstrap Keycloak client for JupyterHub** — add a Keycloak realm-export entry for `jupyterhub-prod` (or similar) client-id during shepard's bootstrap so an operator running the standard install doesn't need to manually provision the OIDC client. Optional but operator-comfort per CLAUDE.md "Comfort over cleverness". | XS | queued | Tracked under the demo-realm seed flow (Keycloak demo realm import path). |

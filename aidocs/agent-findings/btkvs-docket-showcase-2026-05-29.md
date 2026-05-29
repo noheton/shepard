@@ -180,16 +180,26 @@ production process" feature.
 
 ## 5. Mapping to Targets.md (operator's work items)
 
-The operator's `Targets.md` lists 5 tasks. Mapping each to a Shepard-side
-deliverable:
+The operator's `Targets.md` lists 5 tasks. **Refined alignment** — the
+original framing dismissed tasks 1/2/4/5 as "operator-side"; in fact
+each has a Shepard-side contribution that reshapes the operator's
+workload:
 
-| Operator task | Shepard-side mirror |
+| Operator task | Shepard contribution |
 |---|---|
-| 1. Update `laufzettel-readout` to v3 | Out of scope for Shepard; pure operator-side python work. |
-| 2. v3 JSON → Excel converter | Out of scope for Shepard; pure operator-side. But the SHACL-driven shape (§4) means the converter can read the shape to know the cell mapping. |
-| 3. **Create Shepard Setup** | **This is the prime Shepard deliverable.** Two PRs: (a) seed script + showcase Collection structure following §3 above; (b) the SHACL templates per §4 registered via TPL5 git-ontology ingestion or `:ShepardTemplate` upload. |
-| 4. Frontend Excel upload + auto-convert | Mostly operator-side. Shepard contribution: ensure the SHACL shape can drive the Excel → JSON parse direction (same shape, different consumer). |
-| 5. Frontend Excel download | Same as (2) — operator-side with the SHACL shape as the schema spine. |
+| 1. Update `laufzettel-readout` to v3 | Indirect Shepard role: the controlled-vocabulary dicts inside `laufzettel-readout/src/material_database.py` (`fiber_database` + `fabric_database`) become the seed payload for `:SemanticRepository` `urn:btkvs:fiber` + `urn:btkvs:fabric` (per `BTKVS-A2`). Their v3 upgrade and Shepard's vocab seed share a source of truth. **Reuse-before-reimplement applies.** |
+| 2. v3 JSON → Excel converter | Lives Shepard-side as part of the `shepard-plugin-btkvs-docket` (per `BTKVS-C1` / `BTKVS-C2`). The plugin's typed payload kind owns the docket JSON shape; export-to-Excel is one of the consumers (PDF, BagIt, RO-Crate exports are siblings). The SHACL shape (per §4 + `BTKVS-B1`) is the schema spine that drives the cell mapping via `urn:btkvs:cell-mapping` annotations. Eliminates Nils's standalone python utility — it becomes a plugin endpoint. |
+| 3. **Create Shepard Setup** | **The prime Shepard deliverable.** Two angles: (a) the **showcase shape** — `BTKVS-A1` seed script + collection structure per §3; (b) the **improved schema** Nils explicitly invited ("if you have ideas how to improve the setup structure, create a .md with the description and a new drawio"). Filed as `BTKVS-A4` — write an improved schema doc + drawio that addresses three structural refinements vs the original sketch: linear `:Predecessor` chain on process steps (not tree under root), per-post_analysis DO so NDT scans can attach as `:FileReference`, editor stamps → `:Activity` PROV-O nodes (not just JSON fields). |
+| 3b. **Nils's FastAPI-Simple-Server fork to split JSON into sub-JSONs** | **The Shepard contribution retires this fork.** Filed as `BTKVS-A3` — Shepard-side `POST /v2/plugins/btkvs/dockets` endpoint that accepts the full v3 docket JSON and decomposes it server-side into the Collection structure per §3, using the SHACL shapes (§4) as the decomposition rules. Nils's FastAPI server then becomes a thin pass-through OR can be deprecated entirely. This is the structural argument FOR shipping `BTKVS-C1` early — every operator-side python module the plugin retires is one less thing the BT-KVS group maintains. |
+| 4. Frontend Excel upload + auto-convert | Shepard-side contribution: the SHACL shape (per `BTKVS-B1`) drives Excel → JSON parse as the inverse of the cell-mapping export. Their Streamlit upload flow stays Streamlit; what changes is that **the parse-validate-decompose step happens server-side at the Shepard endpoint, not client-side in `laufzettel-readout`**. The Streamlit form becomes a thin uploader; the heavy lifting is shape-driven on Shepard. |
+| 5. Frontend Excel download | Same as task 2 — exported by the plugin's typed payload kind, driven by the SHACL shape's `urn:btkvs:cell-mapping`. The Streamlit "Download as Excel" button becomes `GET /v2/plugins/btkvs/dockets/{appId}/export.xlsx`. Their downstream tooling that opens the Excel keeps working unchanged. |
+
+**Key reframe:** the original "out of scope" framing missed that
+Nils's tasks 2/3b/4/5 are all **format conversions and parse/split
+operations on the same JSON schema**. Once the SHACL shape is the
+schema spine (§4 + `BTKVS-B1`), all four operations become consumers
+of one shape declaration — the python tooling Nils is currently
+writing is the workaround for not having that shape.
 
 ---
 
