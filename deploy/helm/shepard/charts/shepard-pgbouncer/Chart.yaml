@@ -1,0 +1,10 @@
+apiVersion: v2
+name: shepard-pgbouncer
+description: |
+  PgBouncer connection pooler — Phase 1 STUB sub-chart.
+  Sits between backend + plugins and Postgres to manage connection counts under
+  parallel timeseries ingest load.
+type: application
+version: 0.1.0
+appVersion: "1.23.1"
+kubeVersion: ">= 1.28.0-0"

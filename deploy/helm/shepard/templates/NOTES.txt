@@ -1,0 +1,42 @@
+────────────────────────────────────────────────────────────────────────
+  Shepard {{ .Chart.AppVersion }} — Phase 1 chart skeleton installed.
+  Release: {{ .Release.Name }}    Namespace: {{ .Release.Namespace }}
+────────────────────────────────────────────────────────────────────────
+
+⚠ PHASE 1 SKELETON: This release contains stub templates. Production
+  templates ship in HELM-K8S-DEPLOY-03. Do NOT run this against a
+  production cluster.
+
+1. Front-channel URL (browsers / OIDC redirect target):
+
+{{- if .Values.ingress.enabled }}
+   https://{{ .Values.ingress.host }}/
+{{- else }}
+   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "shepard.fullname" . }}-frontend 3000:{{ .Values.frontend.service.port }}
+   → http://localhost:3000
+{{- end }}
+
+2. Admin first-login:
+
+   - The default admin account is provisioned by the Keycloak realm
+     import (see infrastructure/keycloak/shepard-demo-realm.json shape).
+   - First login URL: {{ .Values.oidc.frontChannelIssuer }}/account
+   - Rotate the bootstrap admin password immediately.
+
+{{- if .Values.plugins.jupyter.enabled }}
+
+3. JupyterHub plugin (path-mounted per CLAUDE.md):
+
+   https://{{ .Values.ingress.host }}{{ .Values.plugins.jupyter.pathMount }}
+{{- end }}
+
+4. Verify substrate reachability:
+
+   kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+5. Operator runbook (queued — HELM-K8S-DEPLOY-04):
+
+   docs/admin/runbooks/15-helm-deploy.md  (NOT YET WRITTEN — Phase 3)
+
+Design doc: aidocs/ops/88-helm-deployment.md
+Backlog:    aidocs/16-dispatcher-backlog.md §HELM-K8S-DEPLOY

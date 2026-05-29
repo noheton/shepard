@@ -1,0 +1,65 @@
+{{- if .Values.ingress.enabled -}}
+{{/*
+  Ingress — Phase 1 STUB.
+  TODO Phase 2: per-plugin path entries assembled by PM1f SidecarsAssembler
+  (HELM-K8S-DEPLOY-05). Path-mount default per CLAUDE.md
+  "## Always: mount plugin UI sidecars as paths, not subdomains".
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "shepard.fullname" . }}
+  labels:
+    {{- include "shepard.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /shepard/api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "shepard.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          - path: /v2
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "shepard.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          {{- if .Values.plugins.jupyter.enabled }}
+          - path: {{ .Values.plugins.jupyter.pathMount }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "shepard.fullname" . }}-jupyterhub
+                port:
+                  number: 8000
+          {{- end }}
+          {{- range .Values.ingress.extraPaths }}
+          - {{ toYaml . | nindent 12 | trim }}
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "shepard.fullname" . }}-frontend
+                port:
+                  number: {{ .Values.frontend.service.port }}
+{{- end }}

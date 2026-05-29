@@ -1,0 +1,10 @@
+apiVersion: v2
+name: shepard-garage
+description: |
+  Garage S3-compatible object storage substrate for shepard — Phase 1 STUB sub-chart.
+  Default is single-node for cheap deployments; 3-node HA in Phase 2.
+  Garage is the canonical default per project_storage_s3_garage (MinIO archived).
+type: application
+version: 0.1.0
+appVersion: "1.0.1"
+kubeVersion: ">= 1.28.0-0"

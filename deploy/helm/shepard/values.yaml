@@ -1,0 +1,228 @@
+# Shepard umbrella chart values.
+#
+# Phase 1 SKELETON: this surfaces the full operator-knob shape. Production templates
+# (HELM-K8S-DEPLOY-03) consume these values. Stubs in this phase emit minimal K8s
+# resources sufficient for `helm template --dry-run` to render the expected shape.
+#
+# See aidocs/ops/88-helm-deployment.md for the full design.
+
+# -- Global naming / labels -------------------------------------------------
+nameOverride: ""
+fullnameOverride: ""
+
+# -- Container image config -------------------------------------------------
+image:
+  registry: ghcr.io
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+  backend:
+    repository: dlr-shepard/shepard-backend
+    tag: ""  # defaults to .Chart.AppVersion
+  frontend:
+    repository: dlr-shepard/shepard-frontend
+    tag: ""
+
+# -- OIDC config — split-horizon per J1e fix (2026-05-29) -------------------
+# Front-channel issuer: the URL browsers hit (public; matches the token's iss claim).
+# Back-channel issuer: the URL the backend hits server-to-server (often in-cluster
+# Service DNS, e.g. http://shepard-keycloak.svc.cluster.local:8080/realms/shepard).
+# Both must validate against the same realm; the JWT iss claim is always
+# frontChannelIssuer.
+oidc:
+  enabled: true
+  realm: shepard
+  clientId: shepard-frontend
+  frontChannelIssuer: "https://auth.example.com/realms/shepard"
+  backChannelIssuer: ""  # empty => same as frontChannelIssuer
+  # Existing-secret reference for client-secret. If empty, a Secret is generated.
+  existingSecret: ""
+  existingSecretKey: "client-secret"
+
+# -- S3-compatible object storage ------------------------------------------
+# Default = the bundled shepard-garage sub-chart. To use external S3 (Ceph+RGW,
+# MinIO, AWS, institutional storage), set garage.enabled=false and override
+# storage.s3.endpoint + credentials.
+storage:
+  s3:
+    endpoint: "http://shepard-garage:3900"
+    region: "garage"
+    accessKey: ""  # if empty, read from existingSecret
+    secretKey: ""
+    existingSecret: ""
+    existingSecretKey: ""
+    bucket: shepard
+    forcePathStyle: true  # required for Garage / MinIO / RGW
+
+# -- Ingress / reverse-proxy -----------------------------------------------
+# Path-mount default applies to plugin sidecars per CLAUDE.md
+# "Always: mount plugin UI sidecars as paths, not subdomains".
+# JupyterHub example: enabled JH mounts at <host>/jupyterhub via Ingress
+# (no new DNS / TLS cert needed).
+ingress:
+  enabled: true
+  className: ""  # e.g. "nginx", "traefik"
+  host: shepard.example.com
+  tls:
+    enabled: true
+    secretName: shepard-tls
+  annotations: {}
+  # Paths array allows plugin UIs to declare their own /path mount.
+  # Phase 4 (HELM-K8S-DEPLOY-05) generates these from plugin manifest.
+  extraPaths: []
+  #  - path: /jupyterhub
+  #    pathType: Prefix
+  #    backend:
+  #      service:
+  #        name: shepard-jupyterhub
+  #        port:
+  #          number: 8000
+
+# -- Migrations strategy ---------------------------------------------------
+# HELM-K8S-DEPLOY-02 refactors MigrationsRunner. Until then, "disabled" means the
+# backend runs migrations in startup (current behaviour, CLAUDE.md fail-fast rule).
+# - "disabled": backend handles migrations in-process at startup (current default).
+# - "init-container": backend Deployment gains an init-container that runs migrations.
+# - "job": a separate Helm pre-upgrade Hook Job runs migrations.
+migrations:
+  mode: disabled
+  image:
+    repository: dlr-shepard/shepard-backend  # same image, different command
+    tag: ""
+  # When job mode is selected, restart policy + backoff for the Job spec.
+  backoffLimit: 0  # fail-fast per CLAUDE.md
+  ttlSecondsAfterFinished: 3600
+
+# -- Backend service config ------------------------------------------------
+backend:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  # application.properties overrides — merged with chart defaults.
+  config: {}
+  livenessProbe:
+    httpGet:
+      path: /q/health/live
+      port: http
+    initialDelaySeconds: 60
+  readinessProbe:
+    httpGet:
+      path: /q/health/ready
+      port: http
+    initialDelaySeconds: 30
+
+# -- Frontend service config ----------------------------------------------
+frontend:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# -- Plugin toggles -------------------------------------------------------
+# Per CLAUDE.md "Always: think plugin-first" — every plugin is independently
+# togglable. Path-mount default applies to plugin UIs.
+plugins:
+  jupyter:
+    enabled: false
+    # Path-mount per CLAUDE.md "## Always: mount plugin UI sidecars as paths".
+    pathMount: /jupyterhub
+    image:
+      repository: jupyterhub/jupyterhub
+      tag: "5"
+  tableContainer:
+    enabled: false
+    image:
+      repository: dlr-shepard/shepard-plugin-tablecontainer
+      tag: ""
+
+# -- Observability --------------------------------------------------------
+observability:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    namespace: ""  # defaults to release namespace
+    labels: {}
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/q/metrics"
+
+# -- Persistence ----------------------------------------------------------
+# Per-substrate sizing. Production sizing guidance lives in the operator runbook
+# (HELM-K8S-DEPLOY-04, queued).
+persistence:
+  storageClassName: ""  # cluster-default if empty
+  backend:
+    size: 5Gi  # for any local backend cache; tiny
+  neo4j:
+    size: 50Gi
+  postgres:
+    size: 100Gi  # large because timeseries lives here
+  mongodb:
+    size: 20Gi
+  garage:
+    size: 200Gi  # file payloads; tune per deployment
+
+# -- Sub-chart toggles ----------------------------------------------------
+# Each substrate can be disabled if the operator brings their own external instance
+# (e.g. institutional managed Postgres, S3, Keycloak). Pair with the matching
+# *.external.* values below.
+neo4j:
+  enabled: true
+postgres:
+  enabled: true
+mongodb:
+  enabled: true
+garage:
+  enabled: true
+keycloak:
+  enabled: true
+pgbouncer:
+  enabled: true
+
+# -- External-substrate overrides (when matching sub-chart is disabled) ---
+externalServices:
+  neo4j:
+    uri: ""  # bolt://neo4j.example.com:7687
+    existingSecret: ""
+  postgres:
+    host: ""
+    port: 5432
+    database: shepard
+    existingSecret: ""
+  mongodb:
+    uri: ""  # mongodb://...
+    existingSecret: ""
+  keycloak:
+    # see oidc.* above
+    {}
+
+# -- Service account ------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -- Security context -----------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+securityContext: {}
+
+# -- Pod scheduling --------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}

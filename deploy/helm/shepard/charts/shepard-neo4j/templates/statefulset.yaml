@@ -1,0 +1,38 @@
+{{/*
+  Neo4j StatefulSet — Phase 1 STUB.
+  TODO Phase 2 (HELM-K8S-DEPLOY-03): real volumeClaimTemplates, init-container for
+  plugin install (n10s + APOC), Service (bolt + http), Secret for password,
+  PodDisruptionBudget, readiness + liveness against /db/neo4j/cluster/available.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-neo4j
+  labels:
+    app.kubernetes.io/name: shepard-neo4j
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: graph-substrate
+spec:
+  serviceName: {{ .Release.Name }}-neo4j
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shepard-neo4j
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shepard-neo4j
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: neo4j
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: bolt
+              containerPort: 7687
+            - name: http
+              containerPort: 7474
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

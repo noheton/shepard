@@ -1,0 +1,23 @@
+# Phase 1 dry-run test values.
+# Forces every conditional path to render so the reviewer-test counts a maximal
+# resource set.
+ingress:
+  enabled: true
+  host: shepard.test.local
+  className: nginx
+migrations:
+  mode: job  # exercise the conditional migrations Job
+plugins:
+  jupyter:
+    enabled: true
+oidc:
+  frontChannelIssuer: "https://auth.test.local/realms/shepard"
+  backChannelIssuer: "http://shepard-keycloak.svc.cluster.local:8080/realms/shepard"
+storage:
+  s3:
+    endpoint: "http://shepard-garage:3900"
+    accessKey: "test-access-key"
+    secretKey: "test-secret-key"
+observability:
+  serviceMonitor:
+    enabled: true
