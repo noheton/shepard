@@ -89,8 +89,10 @@ services:
       # for a service-account binding — see install.md §"Kubernetes notes".
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      # JupyterHub exposes /hub/health unauthenticated for liveness probes.
-      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8000/hub/health || exit 1"]
+      # JupyterHub exposes a /hub/health endpoint, but with base_url=/jupyterhub
+      # it's served at /jupyterhub/hub/health. The mismatch was producing a 404
+      # every 30s in the logs (cosmetic — container stayed up via restart policy).
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8000/jupyterhub/hub/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5
