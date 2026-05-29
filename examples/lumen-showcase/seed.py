@@ -1346,7 +1346,10 @@ def best_effort_user_orcid_preseed(apis: Apis) -> None:
 
     User pairs (username, orcid) live in DEMO_USER_ORCIDS below."""
     DEMO_USER_ORCIDS = [
-        ("flo", "0000-0001-6033-801X"),
+        # Demo realm user renamed 2026-05-29 from "flo" to "flodemo" per
+        # ROLE-GRANT-DEMO-FLO-DISAMBIGUATE (real Florian Krebs and demo Flo
+        # Researcher both round-tripped as "flo"; verify agents confused them).
+        ("flodemo", "0000-0001-6033-801X"),
     ]
     try:
         import urllib.error
@@ -2475,10 +2478,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # Git credential preseed — DB-only, no Keycloak dependency (same as ORCID).
     # PAT passed via --github-pat or GITHUB_PAT env var; skips when absent.
-    # flo must have logged in at least once for the :User node to exist;
+    # flodemo must have logged in at least once for the :User node to exist;
     # the preseed gracefully SKIPs with HTTP 404 if the node isn't there yet.
+    # (Demo realm user renamed 2026-05-29 — see ROLE-GRANT-DEMO-FLO-DISAMBIGUATE.)
     best_effort_git_credential_preseed(apis, [
-        ("flo", "github.com", "noheton", args.github_pat),
+        ("flodemo", "github.com", "noheton", args.github_pat),
     ], enabled_plugins=enabled_plugins)
 
     # Hero image — S3 upload + heroImageUrl PATCH (best-effort).

@@ -38,7 +38,7 @@ async function loginLocal(page: Page, username: string, password: string): Promi
   throw new Error("loginLocal failed after 3 retries");
 }
 
-const USERNAME = process.env.KC_USERNAME || "flo";
+const USERNAME = process.env.KC_USERNAME || "flodemo";
 const PASSWORD = process.env.KC_PASSWORD || "flo-demo";
 const SHOT_DIR = "/opt/shepard/aidocs/agent-findings/screenshots-ux-survey-2026-05-24";
 const STORAGE_FILE = path.join(SHOT_DIR, "_storageState.json");

@@ -29,8 +29,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * Admin preseed endpoint for git credentials — lets an instance-admin set a
- * PAT for another user (e.g. the demo showcase user "flo") without that user
- * needing to log in and navigate to Profile → Git credentials.
+ * PAT for another user (e.g. the demo showcase user "flodemo") without that
+ * user needing to log in and navigate to Profile → Git credentials.
  *
  * <p>POST is idempotent for the same host: if a credential for that host
  * already exists under the user, it is replaced in-place (same node,

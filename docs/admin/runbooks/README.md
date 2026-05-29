@@ -38,6 +38,7 @@ Operational runbooks for instance admins. Every runbook follows this contract:
 | 11 | [Postgres restore](11-postgres-restore.md) | nuclide | Four recovery scenarios: corrupt schema, accidental table drop, full-instance loss, point-in-time (Wal-G) |
 | 12 | [Postgres collapse + restart](12-postgres-collapse-restart.md) | nuclide | Detect collapse → log capture → in-place restart → volume-preserving restart → wipe + restore |
 | 13 | [Full instance reset (preserving users)](13-full-instance-reset.md) | nuclide | Wipe all operational data, preserve Keycloak users + admin config, re-seed LUMEN + MFFD synthetic showcases, verify acceptance gates |
+| 14 | [Role grants + session refresh](14-role-grants.md) | nuclide | Grant `instance-admin` (REST or Cypher); explain why the user must sign out + back in for the new JWT to carry the role |
 
 ---
 
@@ -69,6 +70,9 @@ Garage S3 shows objects but API can't serve them / referencing nodes missing
 
 Need to grant first admin to a fresh instance
   → 07-add-instance-admin.md
+
+User was just granted a role but `@RolesAllowed` still 403s for them
+  → 14-role-grants.md (they need to sign out + back in)
 
 Need to roll out a hotfix to the DLR cube instance
   → 01-generic-cube-hotpatch.md
