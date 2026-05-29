@@ -546,4 +546,84 @@ public class TestNeo4jMigrations {
     assertEquals(10, withLabel.intValue(),
       "Every V61-registered Resource must carry a non-empty rdfs__label@en");
   }
+
+  /**
+   * DT1-PHASE-0 — V95 lands the three appId uniqueness constraints for
+   * the digital-twin scene scaffold (`:DigitalTwinScene`,
+   * `:CoordinateFrame`, `:Joint`). This test asserts:
+   *
+   * <ul>
+   *   <li>All three constraints exist after V95.</li>
+   *   <li>The constraints reject a duplicate-appId insert at the
+   *       database boundary.</li>
+   *   <li>Re-running V95 is a no-op.</li>
+   * </ul>
+   *
+   * <p>The destructive V95_R rollback path is NOT exercised here —
+   * applying it would clobber any later-migration fixtures that depend
+   * on a clean graph. The rollback is documented as irreversible-for-
+   * data in its top comment; production rollback paths should be tested
+   * by an out-of-band operator runbook scenario, not in the in-process
+   * regression suite.
+   */
+  @Test
+  public void testV95_DT1Phase0Scaffold() {
+    runMigrations("V95");
+
+    String[] constraintNames = {
+      "appId_unique_DigitalTwinScene",
+      "appId_unique_CoordinateFrame",
+      "appId_unique_Joint",
+    };
+
+    for (String constraintName : constraintNames) {
+      var count = (Number) session
+        .query(
+          "SHOW CONSTRAINTS YIELD name WHERE name = $cn RETURN count(*) AS c",
+          Map.of("cn", constraintName)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V95 must create the " + constraintName + " constraint");
+    }
+
+    // Per-label uniqueness: inserting two :DigitalTwinScene nodes with
+    // the same appId must violate the V95 constraint.
+    String marker = "DT1-V95-test-" + randomElement;
+    String dupAppId = "dt1-dup-" + randomElement;
+
+    session.query(
+      "CREATE (n:DigitalTwinScene {testMarker: $marker, appId: $appId, name: 'a'})",
+      Map.of("marker", marker, "appId", dupAppId)
+    );
+
+    boolean threw = false;
+    try {
+      session.query(
+        "CREATE (n:DigitalTwinScene {testMarker: $marker, appId: $appId, name: 'b'})",
+        Map.of("marker", marker, "appId", dupAppId)
+      );
+    } catch (Exception e) {
+      threw = true;
+    }
+    assertTrue(threw,
+      "second :DigitalTwinScene with the same appId must violate the V95 unique constraint");
+
+    // Idempotency — re-running V95 must not duplicate constraints.
+    runMigrations("V95");
+    for (String constraintName : constraintNames) {
+      var count = (Number) session
+        .query(
+          "SHOW CONSTRAINTS YIELD name WHERE name = $cn RETURN count(*) AS c",
+          Map.of("cn", constraintName)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V95 re-run must remain idempotent for " + constraintName);
+    }
+  }
 }
