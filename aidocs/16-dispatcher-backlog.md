@@ -2168,3 +2168,61 @@ the agent already wired this:
 |---|---|---|---|---|
 | J1e-PR-05-VERIFY-SSO | **End-to-end SSO verify** once the rename agent merges + the plugin can be brought up: (a) flo signs in to Shepard via OIDC; (b) clicks "Open in JupyterHub" on a microsections `.ipynb` row; (c) JupyterHub redirects to Keycloak — Keycloak SSO → no re-login prompt; (d) kernel spawns with `SHEPARD_OIDC_ACCESS_TOKEN` populated; (e) inside the kernel, `shepard-py` calls `/v2/users/me` and gets flo's identity back. Playwright + Python check. | XS | queued | Cannot run until the rename agent lands + the plugin admin endpoint is reachable + a JupyterHub Keycloak OIDC client is provisioned (per `plugins/jupyter/docs/install.md §2`). |
 | J1e-PR-05-KEYCLOAK-CLIENT-SEED | **Bootstrap Keycloak client for JupyterHub** — add a Keycloak realm-export entry for `jupyterhub-prod` (or similar) client-id during shepard's bootstrap so an operator running the standard install doesn't need to manually provision the OIDC client. Optional but operator-comfort per CLAUDE.md "Comfort over cleverness". | XS | queued | Tracked under the demo-realm seed flow (Keycloak demo realm import path). |
+
+## J1e-PR-05-CADDY-PATH-MOUNT — JupyterHub at /jupyterhub via Caddy
+
+Operator preference 2026-05-29: instead of `jupyterhub.nuclide.systems`
+subdomain (per `plugins/jupyter/docs/install.md §4`), mount JupyterHub
+at `https://shepard.nuclide.systems/jupyterhub` via a path-based Caddy
+reverse-proxy. Eliminates the new DNS record, eliminates the new TLS
+cert, eliminates a new Zoraxy host entry, and shares the OIDC cookie
+domain (cleaner SSO).
+
+**Three changes:**
+
+1. `plugins/jupyter/config/jupyterhub_config.py` — add:
+   ```python
+   c.JupyterHub.base_url = "/jupyterhub"
+   c.GenericOAuthenticator.oauth_callback_url = (
+       f"https://shepard.nuclide.systems/jupyterhub/hub/oauth_callback"
+   )
+   ```
+   JH official docs confirm `base_url` is supported; single-user notebook URLs become `/jupyterhub/user/<name>/...` automatically. Verify the Keycloak client's registered redirect URI matches the new callback exactly.
+
+2. **Caddyfile** in `plugins/jupyter/Caddyfile` (or merge into a top-level `infrastructure/Caddyfile` if the migration off Zoraxy is happening). Path-mount block:
+   ```caddyfile
+   shepard.nuclide.systems {
+     handle_path /jupyterhub/* {
+       reverse_proxy jupyterhub:8000
+     }
+     handle {
+       reverse_proxy frontend:3000
+     }
+   }
+   ```
+   Caddy's `reverse_proxy` auto-upgrades `Connection: Upgrade` headers for kernel WebSockets — no additional config needed.
+
+3. **`plugins/jupyter/docs/install.md` §4** — replace the Zoraxy subdomain instructions with the path-mount instructions + the design caveat (shared cookie domain).
+
+**Design caveat (document in §4):** path-mounting shares the cookie
+domain with Shepard. Pro: trivial SSO + no cross-subdomain CORS. Con:
+a JH cookie-handling bug could theoretically clobber a Shepard cookie.
+Low real-world risk (JH's Cookie scope is `Path=/jupyterhub` by
+default) but worth a one-line note in the runbook.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| J1e-PR-05-CADDY-PATH-MOUNT-01 | Update `jupyterhub_config.py`: `base_url + oauth_callback_url` for path-mount. | XS | queued | One-block edit. |
+| J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile` with the `handle_path /jupyterhub/*` block. Decide: standalone sidecar Caddy, OR a fragment for a future top-level `infrastructure/Caddyfile`. | S | queued | If migrating off Zoraxy, this is the entry point for the broader Caddy adoption. |
+| J1e-PR-05-CADDY-PATH-MOUNT-03 | Rewrite `plugins/jupyter/docs/install.md §4` for path-mount + add the shared-cookie-domain caveat. | XS | queued | Update the `JUPYTERHUB_PUBLIC_URL` example in `.env.example` to the path-based URL. |
+| J1e-PR-05-CADDY-PATH-MOUNT-04 | If this triggers a broader switch from Zoraxy to Caddy: file `INFRA-REVERSE-PROXY-CADDY-MIGRATION` as a separate row. (Don't bundle here.) | — | queued (conditional) | Operator decision: is this an isolated change for JH, or the start of a Zoraxy→Caddy migration? |
+
+**Supersedes:** the `jupyterhub.nuclide.systems` subdomain instructions
+in `plugins/jupyter/docs/install.md §4` (filed 2026-05-29 by the
+J1e-PR-05 sidecar agent). The original sidecar work was correct
+under the subdomain assumption; this row swaps the assumption.
+
+**Cross-reference:** `J1e-PR-05-VERIFY-SSO` should run AFTER this
+lands — with path-mount, the Playwright spec needs to assert the
+redirect goes to `https://shepard.nuclide.systems/jupyterhub/hub/...`
+not the subdomain.
