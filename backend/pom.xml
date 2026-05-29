@@ -1114,28 +1114,44 @@
         </dependency>
         <!--
           JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
-          is added at `<scope>provided</scope>` so Quarkus' Jandex
+          is added at **default (compile) scope** so Quarkus' Jandex
           composite index can resolve the `AdminCliCommandProvider`
           SPI interface + the `AbstractCommand` base class referenced
           by plugin-side CLI command providers (UnhideCommand,
-          MintersCommand, VideoCommand, …). Without this, plugin
-          classes that `implements AdminCliCommandProvider` or
-          `extends AbstractCommand` cause Quarkus' AutoAddScope build
-          step to walk the class hierarchy via
-          `CompositeIndex.getClassByName`, the lookup misses on the
-          unindexed interface, AnnotationOverlayImpl re-enters via
-          AnnotationsTransformer.apply, and the
-          `ConcurrentHashMap.computeIfAbsent` ReservationNode spins
-          (jstack shows RUNNABLE with 18 628 s CPU consumed). Provided
-          scope keeps the CLI classes OUT of the runtime uberjar —
-          only the build-time index needs them. See
-          `aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`.
+          MintersCommand, VideoCommand, …).
+
+          ROOT CAUSE — `io.quarkus.arc.deployment.AutoAddScopeBuildItem
+          .Builder.implementsInterface` (Quarkus 3.27.2, line 222)
+          contains a loop that walks the class hierarchy via
+          `index.getClassByName(superName)`. When `getClassByName`
+          returns `null` (because the superclass isn't in the Jandex
+          composite index), the loop **never advances `superName`**
+          and spins forever. With plugin CLI classes that
+          `extends AbstractCommand` (declared in shepard-admin),
+          backend's pre-fix posture left `AbstractCommand` unindexed
+          → infinite loop, RUNNABLE worker burning CPU
+          (jstack: 18 628 s CPU consumed on `build-N` thread).
+
+          Why compile scope and not provided: `quarkus.index-dependency`
+          is silently inert if the artifact isn't on the Deployment
+          ClassLoader. `provided` scope keeps shepard-admin OFF the
+          ClassLoader, so the index-dep entry doesn't actually pull
+          the classes into the composite index, the warn
+          `Failed to index de.dlr.shepard.cli.AbstractCommand: Class
+          does not exist in ClassLoader` recurs, and the hang
+          reproduces. Compile scope adds ~3 MB of CLI + picocli +
+          jackson to the runtime uberjar — acceptable cost for a
+          green build; can be optimised later (CLI-SPLIT-1: split
+          shepard-admin into shepard-admin-api + shepard-admin-cli,
+          OR ship a precomputed `META-INF/jandex.idx` inside the
+          shepard-admin jar via the `jandex-maven-plugin`).
+
+          See `aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`.
         -->
         <dependency>
           <groupId>de.dlr.shepard</groupId>
           <artifactId>shepard-admin</artifactId>
           <version>${revision}</version>
-          <scope>provided</scope>
         </dependency>
       </dependencies>
     </profile>
