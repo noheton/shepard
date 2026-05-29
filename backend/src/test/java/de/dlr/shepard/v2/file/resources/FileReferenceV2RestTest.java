@@ -473,4 +473,94 @@ class FileReferenceV2RestTest {
     assertEquals("v", sub.get("k"));
     assertNull(sub.get("e"));
   }
+
+  // ─── GET /v2/files/by-data-object/{dataObjectAppId} (REF-UNIFIED-TABLE-FR1B) ──
+
+  @Test
+  void listByDataObject_returns200WithSingletons() {
+    var ref1 = existing();
+    var ref2 = new FileReference(8L);
+    ref2.setAppId("singleton-app-2");
+    ref2.setName("notes");
+    var parent = new DataObject(PARENT_DO_OGM_ID);
+    parent.setAppId(PARENT_DO_APP_ID);
+    ref2.setDataObject(parent);
+    ref2.setFile(new ShepardFile(new Date(), "notes.ipynb", "abcd1234"));
+
+    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of(ref1, ref2));
+
+    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
+    assertEquals(2, body.size());
+    assertEquals(SINGLETON_APP_ID, body.get(0).getAppId());
+    assertEquals("singleton-app-2", body.get(1).getAppId());
+  }
+
+  @Test
+  void listByDataObject_filtersSoftDeleted() {
+    var ref = existing();
+    ref.setDeleted(true);
+
+    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of(ref));
+
+    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
+    assertTrue(body.isEmpty());
+  }
+
+  @Test
+  void listByDataObject_emptyListWhenNoSingletons() {
+    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of());
+
+    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
+    assertTrue(body.isEmpty());
+  }
+
+  @Test
+  void listByDataObject_returns401WhenNoPrincipal() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void listByDataObject_returns400WhenAppIdBlank() {
+    var r = resource.listByDataObject("  ", securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void listByDataObject_returns404WhenDoUnknown() {
+    when(singletonService.getDataObjectOgmId("missing")).thenReturn(null);
+    var r = resource.listByDataObject("missing", securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void listByDataObject_returns403WhenNoReadPermission() {
+    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+  }
 }
