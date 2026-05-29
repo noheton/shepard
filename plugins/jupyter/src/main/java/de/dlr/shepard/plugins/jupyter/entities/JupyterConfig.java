@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.admin.jupyter.entities;
+package de.dlr.shepard.plugins.jupyter.entities;
 
 import de.dlr.shepard.common.identifier.HasAppId;
 import java.util.Objects;

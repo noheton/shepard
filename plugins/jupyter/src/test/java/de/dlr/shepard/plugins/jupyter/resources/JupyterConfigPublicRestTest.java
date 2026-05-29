@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.admin.jupyter.resources;
+package de.dlr.shepard.plugins.jupyter.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -8,9 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
-import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigIO;
+import de.dlr.shepard.plugins.jupyter.services.JupyterConfigService;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -41,10 +41,11 @@ class JupyterConfigPublicRestTest {
   }
 
   @Test
-  void pathIsV2JupyterConfig() {
+  void pathIsV2PluginsJupyterConfig() {
     Path p = JupyterConfigPublicRest.class.getAnnotation(Path.class);
     assertNotNull(p);
-    assertEquals("/v2/jupyter/config", p.value());
+    assertEquals("/v2/plugins/jupyter/config", p.value(),
+        "canonical public path per J1e-PLUGIN-REFACTOR (2026-05-29) plugin-routing convention");
   }
 
   @Test

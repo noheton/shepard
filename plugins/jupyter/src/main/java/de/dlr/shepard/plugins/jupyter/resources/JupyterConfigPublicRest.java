@@ -1,8 +1,8 @@
-package de.dlr.shepard.v2.admin.jupyter.resources;
+package de.dlr.shepard.plugins.jupyter.resources;
 
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
-import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigIO;
+import de.dlr.shepard.plugins.jupyter.services.JupyterConfigService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -32,16 +32,21 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>The two endpoints return byte-identical JSON shapes
  * ({@link JupyterConfigIO}). The split is purely an authorisation
- * concern: {@code /v2/admin/jupyter/config} requires the
- * {@code instance-admin} role; {@code /v2/jupyter/config} requires
- * only an authenticated principal.
+ * concern: {@code /v2/admin/plugins/jupyter/config} requires the
+ * {@code instance-admin} role; {@code /v2/plugins/jupyter/config}
+ * requires only an authenticated principal.
+ *
+ * <p>The legacy {@code /v2/jupyter/config} path remains callable via
+ * {@link JupyterConfigLegacyPublicRest} (J1e-PLUGIN-REFACTOR,
+ * 2026-05-29) — same shape, plus a {@code Deprecation} header. The
+ * shim is scheduled for removal one deprecation window after PR-07.
  *
  * <p>No role gate at the class level — the JAX-RS principal check
  * happens at the method level via {@link SecurityContext}. This
  * matches the JWTFilter posture for other "any authenticated user can
  * read this" endpoints.
  */
-@Path("/v2/jupyter/config")
+@Path("/v2/plugins/jupyter/config")
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Tag(name = "Jupyter")

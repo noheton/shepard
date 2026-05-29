@@ -1,11 +1,11 @@
-package de.dlr.shepard.v2.admin.jupyter.io;
+package de.dlr.shepard.plugins.jupyter.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
 import org.junit.jupiter.api.Test;
 
 /** J1e — projection from entity → IO, with deploy-time-default fallback. */

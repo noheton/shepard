@@ -1,11 +1,11 @@
-package de.dlr.shepard.v2.admin.jupyter.resources;
+package de.dlr.shepard.plugins.jupyter.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigPatchIO;
-import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigIO;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigPatchIO;
+import de.dlr.shepard.plugins.jupyter.services.JupyterConfigService;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -29,10 +29,18 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * J1e — admin REST surface for the JupyterHub config singleton.
  *
- * <p>Lives under {@code /v2/admin/jupyter/config} — exclusively
- * {@code @RolesAllowed("instance-admin")}. All response bodies are
- * {@code application/json} except the {@code application/problem+json}
- * envelope on error paths.
+ * <p>Lives under {@code /v2/admin/plugins/jupyter/config} per the
+ * plugin-routing convention (J1e-PLUGIN-REFACTOR, 2026-05-29) —
+ * exclusively {@code @RolesAllowed("instance-admin")}. All response
+ * bodies are {@code application/json} except the
+ * {@code application/problem+json} envelope on error paths.
+ *
+ * <p>The legacy in-tree path {@code /v2/admin/jupyter/config} remains
+ * callable through {@link JupyterConfigLegacyRest}, which delegates
+ * to this resource via {@link JupyterConfigService} and stamps a
+ * {@code Deprecation} header on every response. The shim is scheduled
+ * for removal one deprecation window after PR-07 lands the
+ * aidocs/34 row.
  *
  * <p>The endpoint is purely additive (new path on the {@code /v2/}
  * development surface); no upstream {@code /shepard/api/} surface is
@@ -43,8 +51,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * @see JupyterConfigService
  * @see JupyterConfig
+ * @see JupyterConfigLegacyRest
  */
-@Path("/v2/admin/jupyter/config")
+@Path("/v2/admin/plugins/jupyter/config")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped

@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.admin.jupyter.resources;
+package de.dlr.shepard.plugins.jupyter.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,10 +13,10 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
-import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigPatchIO;
-import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigIO;
+import de.dlr.shepard.plugins.jupyter.io.JupyterConfigPatchIO;
+import de.dlr.shepard.plugins.jupyter.services.JupyterConfigService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -60,11 +60,11 @@ class JupyterConfigRestTest {
   }
 
   @Test
-  void pathIsV2AdminJupyterConfig() {
+  void pathIsV2AdminPluginsJupyterConfig() {
     Path p = JupyterConfigRest.class.getAnnotation(Path.class);
     assertNotNull(p);
-    assertEquals("/v2/admin/jupyter/config", p.value(),
-        "endpoint lives on the /v2/ shelf per fork policy");
+    assertEquals("/v2/admin/plugins/jupyter/config", p.value(),
+        "canonical admin path per J1e-PLUGIN-REFACTOR (2026-05-29) plugin-routing convention");
   }
 
   // ─── GET ─────────────────────────────────────────────────────────────────

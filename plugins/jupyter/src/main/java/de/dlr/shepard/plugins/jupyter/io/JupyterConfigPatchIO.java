@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.admin.jupyter.io;
+package de.dlr.shepard.plugins.jupyter.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;

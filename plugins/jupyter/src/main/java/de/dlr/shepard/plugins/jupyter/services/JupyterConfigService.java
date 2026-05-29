@@ -1,7 +1,7 @@
-package de.dlr.shepard.v2.admin.jupyter.services;
+package de.dlr.shepard.plugins.jupyter.services;
 
-import de.dlr.shepard.v2.admin.jupyter.daos.JupyterConfigDAO;
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.daos.JupyterConfigDAO;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;

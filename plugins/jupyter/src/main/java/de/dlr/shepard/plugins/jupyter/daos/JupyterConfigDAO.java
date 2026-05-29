@@ -1,8 +1,8 @@
-package de.dlr.shepard.v2.admin.jupyter.daos;
+package de.dlr.shepard.plugins.jupyter.daos;
 
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Collection;
 import java.util.List;

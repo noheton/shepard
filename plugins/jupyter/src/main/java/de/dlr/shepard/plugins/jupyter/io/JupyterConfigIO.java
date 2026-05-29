@@ -1,6 +1,6 @@
-package de.dlr.shepard.v2.admin.jupyter.io;
+package de.dlr.shepard.plugins.jupyter.io;
 
-import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.entities.JupyterConfig;
 
 /**
  * J1e — JSON shape returned by {@code GET/PATCH /v2/admin/jupyter/config}.
