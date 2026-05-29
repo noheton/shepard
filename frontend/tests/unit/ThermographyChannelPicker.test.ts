@@ -145,7 +145,7 @@ describe("projectMetadataRows", () => {
 
   it("preserves predicate IRI on each row for debugging / advanced mode", () => {
     const a: AnnotationMap = { [THERMOGRAPHY_PREDICATES.frameRateHz]: "30" };
-    expect(projectMetadataRows(a)[0].predicate).toBe(THERMOGRAPHY_PREDICATES.frameRateHz);
+    expect(projectMetadataRows(a)[0]!.predicate).toBe(THERMOGRAPHY_PREDICATES.frameRateHz);
   });
 
   it("ignores blank string values", () => {
@@ -155,7 +155,7 @@ describe("projectMetadataRows", () => {
     };
     const rows = projectMetadataRows(a);
     expect(rows.length).toBe(1);
-    expect(rows[0].label).toBe("Section");
+    expect(rows[0]!.label).toBe("Section");
   });
 });
 

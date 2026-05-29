@@ -141,7 +141,7 @@ describe("sortContainers", () => {
 
   it("sorts nulls last", () => {
     const out = sortContainers(ROWS, "updatedAt", "asc");
-    expect(out[out.length - 1].id).toBe(4); // updatedAt: null lands last
+    expect(out[out.length - 1]!.id).toBe(4); // updatedAt: null lands last
   });
 
   it("does not mutate the input array", () => {
