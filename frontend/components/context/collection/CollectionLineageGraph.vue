@@ -28,11 +28,11 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function statusColor(do_: DataObjectListItemV2): string {
-  return STATUS_COLORS[(do_ as any).status ?? ""] ?? "#8C8C8C";
+  return STATUS_COLORS[do_.status ?? ""] ?? "#8C8C8C";
 }
 
 function doLabel(do_: DataObjectListItemV2): string {
-  return (do_ as any).name ?? String((do_ as any).id);
+  return do_.name ?? String(do_.id);
 }
 
 function dagreLayout(dos: DataObjectListItemV2[]): Map<number, { x: number; y: number }> {
@@ -40,20 +40,20 @@ function dagreLayout(dos: DataObjectListItemV2[]): Map<number, { x: number; y: n
   g.setGraph({ rankdir: "LR", nodesep: 55, ranksep: 200, marginx: 60, marginy: 40 });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const visibleIds = new Set(dos.map(d => (d as any).id as number));
+  const visibleIds = new Set(dos.map(d => d.id));
 
   for (const d of dos) {
-    g.setNode(String((d as any).id), { width: 90, height: 30 });
+    g.setNode(String(d.id), { width: 90, height: 30 });
   }
   for (const d of dos) {
-    for (const predId of ((d as any).predecessorIds ?? []) as number[]) {
+    for (const predId of d.predecessorIds ?? []) {
       if (visibleIds.has(predId)) {
-        g.setEdge(String(predId), String((d as any).id));
+        g.setEdge(String(predId), String(d.id));
       }
     }
-    const parentId = (d as any).parentId as number | null;
+    const parentId = d.parentId;
     if (parentId && visibleIds.has(parentId)) {
-      g.setEdge(String(parentId), String((d as any).id));
+      g.setEdge(String(parentId), String(d.id));
     }
   }
 
@@ -61,8 +61,8 @@ function dagreLayout(dos: DataObjectListItemV2[]): Map<number, { x: number; y: n
 
   const positions = new Map<number, { x: number; y: number }>();
   for (const d of dos) {
-    const node = g.node(String((d as any).id));
-    positions.set((d as any).id as number, { x: node.x, y: node.y });
+    const node = g.node(String(d.id));
+    positions.set(d.id, { x: node.x, y: node.y });
   }
   return positions;
 }
@@ -74,11 +74,11 @@ const chartOption = computed(() => {
   const dos = visibleDos.value;
   if (!dos.length) return {};
 
-  const visibleIds = new Set(dos.map(d => (d as any).id as number));
+  const visibleIds = new Set(dos.map(d => d.id));
   const positions  = dagreLayout(dos);
 
   const nodes = dos.map(d => {
-    const id  = (d as any).id as number;
+    const id  = d.id;
     const pos = positions.get(id) ?? { x: 0, y: 0 };
     return {
       id:         String(id),
@@ -94,8 +94,8 @@ const chartOption = computed(() => {
 
   const edges: Array<{ source: string; target: string; lineStyle: object }> = [];
   dos.forEach(d => {
-    const id       = (d as any).id as number;
-    const parentId = (d as any).parentId as number | null;
+    const id       = d.id;
+    const parentId = d.parentId;
     if (parentId && visibleIds.has(parentId)) {
       edges.push({
         source:    String(parentId),
@@ -103,7 +103,7 @@ const chartOption = computed(() => {
         lineStyle: { type: "solid", color: "#888", opacity: 0.5 },
       });
     }
-    for (const predId of ((d as any).predecessorIds ?? []) as number[]) {
+    for (const predId of d.predecessorIds ?? []) {
       if (visibleIds.has(predId)) {
         edges.push({
           source:    String(predId),
@@ -114,12 +114,18 @@ const chartOption = computed(() => {
     }
   });
 
+  type TooltipParams = {
+    dataType: string;
+    name: string;
+    data: { value: number; lineStyle?: { type?: string } };
+  };
+
   return {
     backgroundColor: "transparent",
     tooltip: {
-      formatter: (params: any) => {
+      formatter: (params: TooltipParams) => {
         if (params.dataType === "node") {
-          const d = dos.find(x => (x as any).id === params.data.value) as any;
+          const d = dos.find(x => x.id === params.data.value);
           if (!d) return params.name;
           const desc = d.description
             ? `<br/><span style="color:#999;font-size:11px">${String(d.description).substring(0, 120)}${d.description.length > 120 ? "…" : ""}</span>`
@@ -153,7 +159,7 @@ const chartOption = computed(() => {
           position: "bottom",
           fontSize:  11,
           color:    "inherit",
-          formatter: (params: any) => {
+          formatter: (params: { name?: string }) => {
             const n: string = params.name ?? "";
             return n.length > 18 ? n.substring(0, 16) + "…" : n;
           },

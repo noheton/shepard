@@ -13,10 +13,12 @@ const emit = defineEmits<{
   (e: "download-file" | "delete-file", value: ShepardFile): void;
 }>();
 
+type DataTableHeader = { title: string; key?: string; value?: string; sortable?: boolean; width?: string };
+
 // UI-015: the `header.createdAt` slot below wraps the column title in a
 // `text-no-wrap` span so the two-word "Created at" stays on one line and
 // doesn't push every row half a line down.
-const headers = computed(() => [
+const headers = computed<DataTableHeader[]>(() => [
   ...(props.containerAppId
     ? [{ title: "", key: "thumbnail", sortable: false, width: "64px" }]
     : []),
@@ -54,7 +56,7 @@ const openHistory = (file: ShepardFile) => {
       :header-props="{
         class: 'text-subtitle-2 text-textbody1',
       }"
-      :headers="(headers as any)"
+      :headers="headers"
       :items-for-pagination="files"
       :loading="loading"
     >

@@ -36,8 +36,8 @@ watch(
       return;
     }
     // Only probe when an INTERNAL repository is present.
-    // The TypeScript client predates the INTERNAL type, so cast to any.
-    if (!repos.some(r => (r as any).type === "INTERNAL")) return;
+    // The TypeScript client predates the INTERNAL type; cast to string for the unknown enum value.
+    if (!repos.some(r => (r.type as string) === "INTERNAL")) return;
     const results = await search("aa", 1);
     noLabelsWarning.value = results.length === 0;
   },

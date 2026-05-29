@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { LabJournalEntry } from "@dlr-shepard/backend-client";
 
 // Mock BEFORE importing the module under test so the mock is hoisted.
 vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
@@ -23,7 +24,7 @@ beforeEach(() => {
 /** Flush micro-task queue (watch({ immediate }) fires after the current tick). */
 const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
-const fakeEntry = (id: number, dataObjectId: number, content = "x"): unknown => ({
+const fakeEntry = (id: number, dataObjectId: number, content = "x"): LabJournalEntry => ({
   id,
   dataObjectId,
   journalContent: content,
@@ -89,11 +90,10 @@ describe("useFetchCollectionLabJournalEntries — single bulk fetch", () => {
 
 describe("groupByDataObjectId", () => {
   it("groups multiple entries under the same dataObjectId", () => {
-    const a = fakeEntry(1, 100) as { dataObjectId: number };
-    const b = fakeEntry(2, 100) as { dataObjectId: number };
-    const c = fakeEntry(3, 200) as { dataObjectId: number };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const grouped = groupByDataObjectId([a, b, c] as any);
+    const a = fakeEntry(1, 100);
+    const b = fakeEntry(2, 100);
+    const c = fakeEntry(3, 200);
+    const grouped = groupByDataObjectId([a, b, c]);
     expect(grouped.get(100)).toHaveLength(2);
     expect(grouped.get(200)).toHaveLength(1);
   });
@@ -104,10 +104,9 @@ describe("groupByDataObjectId", () => {
   });
 
   it("preserves input order within a group (createdAt DESC from server)", () => {
-    const newer = fakeEntry(11, 50) as { id: number; dataObjectId: number };
-    const older = fakeEntry(7, 50) as { id: number; dataObjectId: number };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const grouped = groupByDataObjectId([newer, older] as any);
+    const newer = fakeEntry(11, 50);
+    const older = fakeEntry(7, 50);
+    const grouped = groupByDataObjectId([newer, older]);
     const bucket = grouped.get(50);
     expect(bucket).toBeDefined();
     expect(bucket![0]).toEqual(newer);
