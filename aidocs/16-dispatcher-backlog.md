@@ -330,14 +330,14 @@ surfaced during the JH path-mount session. Each line is the approved
 direction; implementation tracked under its own row elsewhere in this
 file.
 
-| Decision ID | Approved direction | Implementation row |
+| Decision ID | Approved direction | Implementation row + status |
 |---|---|---|
-| P21-File-prereq + P21-References-prereq | **YES** — ship `PUT /v2/<container>/{id}` and `PUT /v2/<reference>/{id}` for metadata edits. Delete-and-recreate destroys provenance continuity. | Files this PR's follow-on; unblocks the P21 PATCH family. |
-| PROV-CAPTURE-READS-DECISION | **YES, for `/v2/` paths only** — flip `shepard.provenance.capture-reads=true`. AFTER PROV-RESOLVER-PATHWALK ships, so NULL-target Activity rows don't multiply. v1 stays off (upstream-compat cost). | Sequencing: PROV-RESOLVER-PATHWALK first (shipped #198), then the flip. |
-| #27 Archive state | **YES** — add `ARCHIVED` to Container + Collection status enum (frozen, prune-only). Simple additive; RBAC gate on transition. | `aidocs/16` row #27 (now operator-approved). |
-| CHOKE-08 (NFS extract) | **YES — pre-stage 107 GB to local disk** before importer starts. Single-threaded NFS extract throttles ingest. | Operator runbook step; CHOKE-08 row updated. |
-| BTKVS-A2 user-bundles-dir | **`/data/shepard/semantic-bundles`** under existing backend volume + bind-mount. | Row 2122 (BTKVS-A2) gets a follow-on infra fix. |
-| J1e Caddy path-mount | **Isolated change** — not the start of a Zoraxy→Caddy migration. Zoraxy still owns TLS/DNS. | J1e-PR-05-CADDY-PATH-MOUNT-04 row marked **decided: isolated**. |
+| P21-File-prereq + P21-References-prereq | **YES** — ship `PUT /v2/<container>/{id}` and `PUT /v2/<reference>/{id}` for metadata edits. Delete-and-recreate destroys provenance continuity. | Unblocks the P21 PATCH family. Implementation row queued — see P21-File row. |
+| PROV-CAPTURE-READS-DECISION | **YES, for `/v2/` paths only** — flip `shepard.provenance.capture-reads=true`. AFTER PROV-RESOLVER-PATHWALK ships, so NULL-target Activity rows don't multiply. v1 stays off (upstream-compat cost). | PROV-RESOLVER-PATHWALK ✓ shipped (`80af4e28e`, merged `ffcf45b7d`); the config flip itself still queued (one-line `application.properties` change). |
+| #27 Archive state | **YES** — add `ARCHIVED` to Container + Collection status enum (frozen, prune-only). Simple additive; RBAC gate on transition. | Partially shipped: COMP-NCR-STATUS (done 2026-05-26, `5565e2beb`) added ARCHIVED to DataObject status; Container + Collection ARCHIVED still queued as `#27-ARCHIVED-CONTAINER-COLLECTION` (filed below). |
+| CHOKE-08 (NFS extract) | **YES — pre-stage 107 GB to local disk** before importer starts. Single-threaded NFS extract throttles ingest. | Operator runbook step; CHOKE-08 row marked operator-approved below. |
+| BTKVS-A2 user-bundles-dir | **`/data/shepard/semantic-bundles`** under existing backend volume + bind-mount. | BTKVS-A2-OPS row marked operator-approved; queued for infra deploy. |
+| J1e Caddy path-mount | **Isolated change** — not the start of a Zoraxy→Caddy migration. Zoraxy still owns TLS/DNS. | J1e-PR-05-CADDY-PATH-MOUNT-04 row marked **decided: isolated** (above). |
 
 Lower-priority deferred-until-pulled (operator ack 2026-05-29):
 **#22** Collection bundling vocab — defer until cross-Collection grouping
@@ -1944,7 +1944,7 @@ Live regression-sweep dispatch results. Full report:
 | UX-WALK-2026-05-29-01 | Microsections collection unreachable via `/collections/{appId}` — "Not found" + raw "ID ERROR - Collection with id 19 is null or deleted" toast. Two distinct toasts on related routes: `fetching collection roles` (step 3) and `fetchTreeviewItem` (step 4). Microsections shows on the collections list but the detail page 404s. Blocks visual confirmation of `c13464abf` (FR1b) end-to-end. | S | queued | CRITICAL | Repro: sign in as flo, click Microsections row on `/collections`. Likely interaction with the L2d appId-routing work + a stale prior-seed treeview cache referencing "id 19". |
 | UX-WALK-2026-05-29-02 | TS-AXIS `spatial:axis` chips not visible on `/containers/timeseries/1772` Semantic Annotations table. The TS-AXIS-VERIFY commits (`cce854736` + `6f28e7796`) wrote the annotations; the container view does not render them. Either (a) annotations live on `:AnnotatableTimeseries` bridge nodes the container view doesn't query, or (b) chips only render on TimeseriesReference detail. 5-line Cypher probe will disambiguate before UI bug vs. data-write bug. | S | queued | MAJOR | Step 5 evidence: `05-mffd-ts-container-4k.png`. Channel rows show `consolidation_force_N`, `head_temp_C`, etc. but no axis chip. |
 | UX-WALK-2026-05-29-03 | Frontend `/collections/{id}` route loader should accept appId UUID, not just numeric id. Root cause of -01 and any future appId-linked feature. Either accelerate the L2d resolver (`aidocs/platform/25`) or add a v1-path appId→numericId resolver before calling the v1 endpoint. | M | queued | MAJOR | Reach affects every UUID-routed page when the loader still calls v1 numeric endpoints. |
-| UX-WALK-2026-05-29-04 | Error toast text should not surface substrate-internal IDs to end users. "ID ERROR - Collection with id 19 is null or deleted" → "This collection isn't available — it may have been deleted or you may not have access". Affects three observed toasts (`fetching collection`, `fetching collection roles`, `fetchTreeviewItem`). | XS | queued | MINOR | UI-only fix; backend may continue logging the internal detail. |
+| UX-WALK-2026-05-29-04 | Error toast text should not surface substrate-internal IDs to end users. "ID ERROR - Collection with id 19 is null or deleted" → "This collection isn't available — it may have been deleted or you may not have access". Affects three observed toasts (`fetching collection`, `fetching collection roles`, `fetchTreeviewItem`). | XS | **✓ done (2026-05-29, `f15126a35`)** | MINOR | `fix(UX-WALK-2026-05-29-04): humanize ID-ERROR backend messages in error toast`. UI-only fix; backend may continue logging the internal detail. |
 | UX-WALK-2026-05-29-05 | Collections list at 4K leaves ~1500 px of empty whitespace below 3-row table. Add either a dense view toggle, a "Create another collection" CTA in the void, or skeleton rows scaled to viewport height. Pre-existing pattern but flo's hardware makes it acute. | S | queued | MINOR | Step 2 evidence. UX-PATTERN-D sibling concern. |
 | UX-WALK-2026-05-29-06 | DataObject detail page perpetually shows `v-progress-circular` when `fetchTreeviewItem` fails. Render the parts that loaded (name, attributes, panes) and surface a dismissable "Some data couldn't load" banner instead of blocking the whole page on one failed dependency. | M | queued | MAJOR | Graceful-degradation pattern. Currently makes the entire DO page useless on any single sub-fetch failure. |
 | UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" / Trace3D CTA on the TS container page (one click upstream of the current TimeseriesReference-level entry point per `aidocs/platform/98`). Shortens the path for researchers who land on the container first. NICE — not a regression. | S | queued | NICE | Step 6 evidence: no affordance found via `getByRole("button", { name: /trace3d\|3d\|visualize/i })`. |
@@ -1976,7 +1976,7 @@ Snapshot 2026-05-29 09:53 UTC against live `shepard.nuclide.systems` (post J1e +
 | CHOKE-05 | 🟡 MEDIUM | `:Activity` baseline = 2925 rows. **If the importer captures per-data-point Activity (vs per-import-run), 1B rows → 1B Activities** → Neo4j page-cache pressure. Per PROV-USER-MIRROR-ENDPOINT (#229) the importer carries `X-Source-User-*` headers and ProvenanceCaptureFilter should batch at HTTP-request granularity (1 Activity per import-batch HTTP call). | Verify importer uses bulk endpoint (TS-OPT2) so 1 HTTP = N data points = 1 Activity. Already shipped per task #226. Confirm via post-import Activity count. |
 | CHOKE-06 | 🟡 MEDIUM | Backend Quarkus worker thread pool size not explicitly tuned in `application.properties`. Default = 2× cores. Under 4-worker importer concurrency with bulk-endpoint payloads, queue depth could spike. | Add `quarkus.thread-pool.queue-size=1000` + `quarkus.thread-pool.max-threads=64` to handle burst absorption. Cheap to add pre-ingest. |
 | CHOKE-07 | 🟡 MEDIUM | The Postgres `channel_metadata` 5-tuple unique constraint causes a per-channel index-only scan on each registration. At ingest time the importer creates channels once → not hot path. **But the resolver hot-path that follows still walks the 5-tuple** — see CHOKE-02. | Bundled with CHOKE-02. The `idx_timeseries_shepard_id` UNIQUE B-tree index already exists (V1.11.0); the resolver just needs to use it. |
-| CHOKE-08 | 🟢 LOW | NFS read throughput from UNAS (`/mnt/pve/unas/dump/`) — source archive is 107 GB raw 7z. Single-threaded extract on NFS could limit ingestion start time. | Pre-stage: extract to local disk OR launch importer with `--extract-on-the-fly` if supported. Operator decision. |
+| CHOKE-08 | 🟢 LOW | NFS read throughput from UNAS (`/mnt/pve/unas/dump/`) — source archive is 107 GB raw 7z. Single-threaded extract on NFS could limit ingestion start time. | **Operator-approved 2026-05-29 (`b6b165e25`): pre-stage 107 GB to local disk before importer starts.** Runbook step; not a code change. |
 
 **Acceptance checklist before kicking off the 222 GB ingest:**
 
@@ -2021,9 +2021,10 @@ image build inside `make redeploy`. Add `npm run typecheck` (alias for
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| FE-BUILD-01 | Extract `MemberPermissions` type from `EditPermissionsDialog.vue` to `permissionTypes.ts`. | XS | queued | Unblocks frontend build. |
-| FE-BUILD-02 | Extract `SearchResult` type from `SearchResultList.vue` to `searchResultTypes.ts`. | XS | queued | Unblocks frontend build. |
-| FE-BUILD-03 | Regenerate `@dlr-shepard/backend-client` from current OpenAPI spec OR cast the call site. | S (regen) / XS (cast) | queued | Unblocks frontend build. The cast is a holdover; client regen is the real fix. |
+| FE-BUILD-01 | Extract `MemberPermissions` type from `EditPermissionsDialog.vue` to `permissionTypes.ts`. | XS | **✓ done (2026-05-29, `48f18dfb2`)** | `fix(frontend): FE-BUILD-01/02/03 — extract types from .vue SFCs + cast stale client`. Unblocks frontend build. Re-import follow-on: `618b3d7c5`. |
+| FE-BUILD-02 | Extract `SearchResult` type from `SearchResultList.vue` to `searchResultTypes.ts`. | XS | **✓ done (2026-05-29, `48f18dfb2`)** | Bundled with FE-BUILD-01/03. |
+| FE-BUILD-03 | Regenerate `@dlr-shepard/backend-client` from current OpenAPI spec OR cast the call site. | S (regen) / XS (cast) | **✓ done (cast holdover, 2026-05-29, `48f18dfb2`)** | Cast holdover shipped to unblock build; client regen is still the structural fix and a queued follow-on (filed as FE-BUILD-03-REGEN below). |
+| FE-BUILD-03-REGEN | Real fix: regenerate `@dlr-shepard/backend-client` from current OpenAPI spec so `fields` lives on `ListDataObjectsV2Request` natively (retires the `as unknown as` cast in `usePagedDataObjects.ts`). | S | queued | Follow-on from FE-BUILD-03 holdover. |
 | FE-BUILD-GATE | Add `npm run typecheck` to the agent acceptance gate set (the 5 gates in the standing instructions). | XS | done | Shipped 2026-05-29 (branch `choke-04-06-and-build-gate`): (1) `frontend/package.json` `typecheck` script switched from `nuxt typecheck` to the explicit `vue-tsc --noEmit -p tsconfig.json` form; (2) new `## Always: run the six agent acceptance gates before reporting` section in `CLAUDE.md` enumerating mvn verify / lint / test / typecheck / redeploy / Playwright as the six gates, with `typecheck` called out as the one that would have caught `FRONTEND-BUILD-BLOCKED-2026-05-29`. |
 
 ## ROLE-GRANT-STALE-SESSION — Cypher `:HAS_ROLE` grant doesn't kick existing JWT
@@ -2106,12 +2107,12 @@ from day one rather than perpetuating the in-tree mistake.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| J1e-PR-01 | Plugin module scaffold | XS | queued | |
-| J1e-PR-02 | Move backend J1e classes to plugin | M | queued | Includes Neo4j migration relocation. |
-| J1e-PR-03 | Move CLI commands to plugin | S | queued | CLI plugin SPI discovers at runtime. |
+| J1e-PR-01 | Plugin module scaffold | XS | **✓ done (2026-05-29, `c97c8640e`)** | `refactor(J1e-PR-01): scaffold shepard-plugin-jupyter Maven module`. |
+| J1e-PR-02 | Move backend J1e classes to plugin | M | **✓ done (2026-05-29, `4f528db41`)** | `refactor(J1e-PR-02): move backend JupyterConfig classes to plugins/jupyter`. Includes Neo4j migration relocation. |
+| J1e-PR-03 | Move CLI commands to plugin | S | **✓ done (2026-05-29, `7c64af3d0`)** | `refactor(J1e-PR-03): move Jupyter CLI commands to plugins/jupyter`. CLI plugin SPI discovers at runtime. |
 | J1e-PR-04 | Move frontend J1e UI to plugin + RowActionProvider SPI for unified-table action button | M | queued | Notebook-classifier hook on `.ipynb` mime can stay in core; the JupyterHub-specific row action must move. |
-| J1e-PR-05 | JupyterHub sidecar in plugin compose profile | M | queued | Per `feedback_plugins_declare_sidecars.md`. OIDC auth-proxy wiring to shepard's IdP. |
-| J1e-PR-06 | Plugin docs (3-audience rule) | S | queued | reference.md + quickstart.md + install.md. |
+| J1e-PR-05 | JupyterHub sidecar in plugin compose profile | M | **✓ done (2026-05-29, `6fb84ac7c` + `7b904b534`)** | `feat(J1e-PR-05): JupyterHub sidecar compose profile + install docs` + live bring-up `feat(J1e): JupyterHub plugin live bring-up — Caddy path-mount + Dockerfile + runtime fixes`. Path-mount config follow-on tracked under J1e-PR-05-CADDY-PATH-MOUNT-* below. |
+| J1e-PR-06 | Plugin docs (3-audience rule) | S | **partially done** | reference.md + install.md shipped with PR-05; quickstart.md `Open in Jupyter` section landed with J1e-PR-06-AUTOFETCH-01. Index cross-link in `docs/reference/plugins.md` still queued. |
 | J1e-PR-07 | `aidocs/34` row + REST path migration shim | XS | queued | `/v2/admin/jupyter/config` → `/v2/admin/plugins/jupyter/config` with v2 wire-compat shim. |
 | J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | queued | Move J1e from "core" column to "plugin" column. |
 | J1e-PR-09 | Reconcile with existing J2 row (#60) | XS | queued | J1e is J2a; J2b/c/d retain their original meaning. |
@@ -2143,7 +2144,7 @@ pattern in production, just on a bespoke wiring.
 |---|---|---|---|---|
 | BTKVS-A1 | `examples/btkvs-docket-showcase/` seed script + SHOWCASE.md mirroring LUMEN/MFFD/microsections pattern; reads `example.json`, creates Collection structure per `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md §3`, decomposes general/structure/processing into DOs + StructuredDataReferences + Predecessor links per process step. | S | ✓ shipped (2026-05-29) | Phase A — lightweight third showcase. Live: Collection `019e73b4-a737-72b0-ac11-ba1064bb90fc` on shepard-api.nuclide.systems — 12 DOs + 11 SDRs landed. Applies BTKVS-A4 refinements 1+2 (linear `:Predecessor` chain via `typedPredecessors[]`, per-step post-analysis child DO). Refinement 3 (editor→`:Activity`) deferred to BTKVS-A3. Branch `btkvs-a1-a2-seed`. |
 | BTKVS-A2 | Controlled-vocab seed: `:SemanticRepository` `urn:btkvs:fiber` + `urn:btkvs:fabric` + `urn:btkvs:precursor` + `urn:btkvs:additive`. Reuse `material_database.py` fiber+fabric dicts from `laufzettel-readout` as the seed payload. | S | 🚧 code-ready, blocked on deploy infra (2026-05-29) | `seed_vocab.py` ships: imports `material_database.py` via `--source`, generates Turtle (9 fibers + 20 fabrics with `rdfs:label` + 14 `owl:DatatypeProperty` predicates), multipart-uploads to `/v2/admin/semantic/ontologies` per N1c2. Live upload returns 500 `semantic.bundle.invalid-ttl: could not write bundle to disk: /var/lib/shepard` — the `shepard.semantic.internal.user-bundles-dir` knob isn't on a writable mount on the nuclide deploy. Code unchanged when infra unblocks. Branch `btkvs-a1-a2-seed`. |
-| BTKVS-A2-OPS | Mount a writable `user-bundles-dir` on the nuclide Shepard deploy (default `/var/lib/shepard`), or set `shepard.semantic.internal.user-bundles-dir` to a bound location, to unblock BTKVS-A2's live upload. | XS | queued | Spotted during BTKVS-A1+A2 ship (2026-05-29). |
+| BTKVS-A2-OPS | Mount a writable `user-bundles-dir` on the nuclide Shepard deploy (default `/var/lib/shepard`), or set `shepard.semantic.internal.user-bundles-dir` to a bound location, to unblock BTKVS-A2's live upload. | XS | **operator-approved 2026-05-29** — queued | Approved direction (`b6b165e25`): mount at `/data/shepard/semantic-bundles` under existing backend volume + bind-mount. Spotted during BTKVS-A1+A2 ship (2026-05-29). |
 | BTKVS-B1 | **Design doc `aidocs/integrations/116-btkvs-shacl-form-templates.md`** — the form-as-SHACL-shape architectural pattern. Define `FORM_RECIPE` vs reuse `VIEW_RECIPE` (open question per findings §7.1); the `shepard:formHint` SHACL annotation; the render endpoint shape; round-trip Excel ↔ JSON via shape-as-schema-spine. Persona consult: Role 5 (RDM) + Role 2 (Data Ontologist). | M | queued | Phase B — the validating slice. **This is where T1 stops being theoretical.** |
 | BTKVS-B2 | Register ONE SHACL shape (`docket-root :general` section is the simplest target) as a `:ShepardTemplate`; verify `POST /v2/shapes/render` produces a form-friendly response. Tiny Streamlit demo that renders the form from the shape. | S | queued | Acceptance test for BTKVS-B1. |
 | BTKVS-C1 | `shepard-plugin-btkvs-docket` — typed payload kind for v3 docket JSON + `POST /v2/btkvs/dockets` ingestion endpoint with SHACL validation against the registered shapes. Plugin-first per CLAUDE.md §47. | M | queued | Phase C — full integration. Replaces BT-KVS's FastAPI `templates_api.py` bespoke wiring. |
@@ -2236,10 +2237,10 @@ default) but worth a one-line note in the runbook.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| J1e-PR-05-CADDY-PATH-MOUNT-01 | Update `jupyterhub_config.py`: `base_url + oauth_callback_url` for path-mount. | XS | done | Shipped on `j1e-path-mount-config` (SHA recorded at merge). Adds `c.JupyterHub.base_url = "/jupyterhub"` and flips `JUPYTERHUB_PUBLIC_URL` default to `https://shepard.nuclide.systems/jupyterhub`. Bundled with `.env.example` retemplating + new `jupyterhub` Keycloak client in `shepard-demo-realm.json` (placeholder secret `REPLACE_ME_AT_OPERATOR_BOOTSTRAP`). |
+| J1e-PR-05-CADDY-PATH-MOUNT-01 | Update `jupyterhub_config.py`: `base_url + oauth_callback_url` for path-mount. | XS | **✓ done (2026-05-29, `f13e3abb4` merged via `d1a3df0c1`)** | Adds `c.JupyterHub.base_url = "/jupyterhub"` and flips `JUPYTERHUB_PUBLIC_URL` default to `https://shepard.nuclide.systems/jupyterhub`. Bundled with `.env.example` retemplating + new `jupyterhub` Keycloak client in `shepard-demo-realm.json` (placeholder secret `REPLACE_ME_AT_OPERATOR_BOOTSTRAP`). Healthcheck path follow-on: `2c6edbf68`. |
 | J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile` with the `handle_path /jupyterhub/*` block. Decide: standalone sidecar Caddy, OR a fragment for a future top-level `infrastructure/Caddyfile`. | S | queued | Gated on the broader Zoraxy → Caddy migration decision (-04). install.md §4.2 already documents the Caddyfile fragment as the preferred-future shape. |
-| J1e-PR-05-CADDY-PATH-MOUNT-03 | Rewrite `plugins/jupyter/docs/install.md §4` for path-mount + add the shared-cookie-domain caveat. | XS | done | Shipped on `j1e-path-mount-config` (SHA recorded at merge). New §4 covers: §4.1 Zoraxy operator UI walk (current infra), §4.2 Caddy preferred-future Caddyfile block, §4.3 Keycloak client secret regen step, §4.4 shared-cookie-domain caveat (`Path=/jupyterhub`). Prerequisites + verify probes + admin PATCH example all rewritten for the path-mounted URL. |
-| J1e-PR-05-CADDY-PATH-MOUNT-04 | If this triggers a broader switch from Zoraxy to Caddy: file `INFRA-REVERSE-PROXY-CADDY-MIGRATION` as a separate row. (Don't bundle here.) | — | queued (conditional) | Operator decision: is this an isolated change for JH, or the start of a Zoraxy→Caddy migration? |
+| J1e-PR-05-CADDY-PATH-MOUNT-03 | Rewrite `plugins/jupyter/docs/install.md §4` for path-mount + add the shared-cookie-domain caveat. | XS | **✓ done (2026-05-29, bundled with `f13e3abb4`)** | New §4 covers: §4.1 Zoraxy operator UI walk (current infra), §4.2 Caddy preferred-future Caddyfile block, §4.3 Keycloak client secret regen step, §4.4 shared-cookie-domain caveat (`Path=/jupyterhub`). Prerequisites + verify probes + admin PATCH example all rewritten for the path-mounted URL. |
+| J1e-PR-05-CADDY-PATH-MOUNT-04 | If this triggers a broader switch from Zoraxy to Caddy: file `INFRA-REVERSE-PROXY-CADDY-MIGRATION` as a separate row. (Don't bundle here.) | — | **decided: isolated (operator-ack 2026-05-29)** | Operator-approved 2026-05-29: this is an **isolated** change for JH, not the start of a Zoraxy→Caddy migration. Zoraxy still owns TLS/DNS. No follow-on row needed unless operator priorities shift. |
 
 **Supersedes:** the `jupyterhub.nuclide.systems` subdomain instructions
 in `plugins/jupyter/docs/install.md §4` (filed 2026-05-29 by the
@@ -2308,7 +2309,7 @@ extension in the single-user image) that:
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| J1e-PR-06-AUTOFETCH-01 | Add `pre_spawn_hook` to `jupyterhub_config.py` that reads `?file=`, validates allowlist, fetches via auth_state, writes to user volume. | M | in-flight | Allowlist hostnames come from `JUPYTERHUB_SHEPARD_ALLOWED_HOSTS` env (default `shepard.nuclide.systems,shepard-api.nuclide.systems`). PR open `j1e-pr-06-autofetch-01`: hook + 4 module-level helpers (is_url_allowed/sanitize_filename/derive_filename/render_readme) + 14 unit tests + quickstart.md + install.md §4.4. |
+| J1e-PR-06-AUTOFETCH-01 | Add `pre_spawn_hook` to `jupyterhub_config.py` that reads `?file=`, validates allowlist, fetches via auth_state, writes to user volume. | M | **✓ done (2026-05-29, `27af5a758` merged via PR #1574 / `31e782946`)** | Allowlist hostnames come from `JUPYTERHUB_SHEPARD_ALLOWED_HOSTS` env (default `shepard.nuclide.systems,shepard-api.nuclide.systems`). Hook + 4 module-level helpers (is_url_allowed/sanitize_filename/derive_filename/render_readme) + 14 unit tests + quickstart.md + install.md §4.4. |
 | J1e-PR-06-AUTOFETCH-02 | Frontend: ensure "Open in Jupyter" action emits the canonical `?file=` URL with proper encoding + tests the round-trip. | S | queued | Reference-edit UI per `plugins/jupyter/docs/quickstart.md`. |
 | J1e-PR-06-AUTOFETCH-03 | Plugin docs: `plugins/jupyter/docs/quickstart.md` section on "Open in Jupyter" — what it does, what it doesn't (no write-back), workaround for the unallow-listed case. | XS | queued | Required by CLAUDE.md "plugins ship their own documentation" rule. |
 | J1e-PR-06-AUTOFETCH-04 | Operator workaround for now: kernel-side cell using `SHEPARD_OIDC_ACCESS_TOKEN`. Document in `plugins/jupyter/docs/quickstart.md §Troubleshooting`. | XS | done (this row's notes) | The 4-line `requests.get` snippet is the bridge until -01 ships. |
@@ -2458,3 +2459,137 @@ up autonomously; needs a dedicated design pass.
 | HELM-K8S-DEPLOY-05 | Phase 4: PM1f SidecarsAssembler emits Helm values for enabled plugin sidecars. First target: JH (J2a–J2d). | L | queued | Blocked on PM1f shipping + -03 stable. |
 | HELM-K8S-DEPLOY-06 | Phase 5: CI gate — `chart-testing`, `helm lint`, template diff against previous release. | S | queued | Blocked on -03. Wire to existing `.github/workflows/`. |
 | HELM-K8S-DEPLOY-07 | Phase 6: publish chart as OCI artifact on ghcr.io + GitHub Pages Helm repo index. | S | queued | Blocked on -05 (don't ship un-CI'd charts). Update `aidocs/34` upgrade ledger row. |
+
+## #27-ARCHIVED-CONTAINER-COLLECTION — extend ARCHIVED status to Container + Collection
+
+Filed during 2026-05-29 reconcile pass. The operator-approved decision
+(`b6b165e25`) on "#27 Archive state" was to add `ARCHIVED` to **Container +
+Collection** status enums (frozen, prune-only). COMP-NCR-STATUS (done 2026-05-26,
+`5565e2beb`) added it to DataObject only. The Container + Collection slice is
+still queued.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| #27-ARCHIVED-01 | Extend `Collection.status` + `*Container.status` enums with `ARCHIVED`. Additive; default-current is unchanged. | XS | queued | Mirrors COMP-NCR-STATUS shape; new enum value lands in `Status.java` + each Container subtype. |
+| #27-ARCHIVED-02 | RBAC gate on `READY` → `ARCHIVED` transition (only Owner/instance-admin) + `ARCHIVED` → any (prune-only, no resurrection). | S | queued | Pairs with the PermissionsService isWritable check; PATCH endpoint adds an explicit 409 on resurrection attempt. |
+| #27-ARCHIVED-03 | Frontend status chip + "Archive collection / container" action under the kebab menu on detail pages. | XS | queued | Single-line addition to the status enum mapper; chip colour = grey (frozen). |
+
+## Open queue snapshot 2026-05-29
+
+Reconcile pass output — **what's actually open as of 2026-05-29 EOD.**
+Excludes rows already flipped to `done` / `shipped` / `✓`. Designed to be
+the single page an operator or dispatcher reads to see "what could go out
+next." For row context, jump to the matching section above.
+
+**Headline totals:** roughly 130+ open rows across all sections; the
+groupings below surface the actionable subset (~30 high-signal items).
+"Genuinely open" excludes parked / deferred / superseded.
+
+### Now shippable (no blocker)
+
+These have clear scope, no design gate, and an agent or human could pick
+them up immediately.
+
+| ID | One-line | Size | Notes |
+|---|---|---|---|
+| BTKVS-A2-OPS | Mount `/data/shepard/semantic-bundles` as writable backend volume; unblocks BTKVS-A2 live upload. | XS | Operator-approved direction; pure infra. |
+| FE-BUILD-03-REGEN | Regenerate `@dlr-shepard/backend-client` from current OpenAPI; retires the `as unknown as` cast in `usePagedDataObjects.ts`. | S | Real fix; cast holdover is shipped. |
+| UX-WALK-2026-05-29-05 | Collections list at 4K leaves ~1500 px whitespace; add density toggle or skeleton rows. | S | UX-PATTERN-D sibling concern. |
+| UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" CTA to TS container page; shortens click-path to Trace3D. | S | NICE — not a regression. |
+| UX-WALK-2026-05-29-08 | Replace `—` in Collections list Access column with controlled-vocab chip (Open / Shared / Restricted / Closed). | S | Closes one FAIR-A surface gap. |
+| FRONTEND-LINT-DEBT-02 | Replace `any` casts with `unknown` + narrowing (~10 instances). | M | Each instance needs a real type. |
+| FRONTEND-LINT-DEBT-04 | Add explanations to `@ts-expect-error` / `@ts-ignore`. | S | Trivial doc-style fix per instance. |
+| TS-INGEST-222GB-DASHBOARD | Lightweight live-ingest watch page polling capacity + chunk counts + Activity row growth. | S | Reuses `shepard.measures.itself` observability primitives. |
+| J1e-PR-06-AUTOFETCH-02 | Frontend: ensure "Open in Jupyter" action emits canonical `?file=` URL with proper encoding + round-trip test. | S | Required to fully close the J1e-PR-06 loop. |
+| J1e-PR-06-AUTOFETCH-03 | Plugin docs: `quickstart.md` section on "Open in Jupyter" behaviour. | XS | Required by `## Always: plugins ship their own documentation`. |
+| J1e-PR-05-VERIFY-SSO | End-to-end SSO verify (Playwright + Python kernel-side `/v2/users/me` check). | XS | Cannot run until J1e plugin admin endpoint is reachable on demo deploy. |
+| J1e-PR-05-KEYCLOAK-CLIENT-SEED | Bootstrap Keycloak client `jupyterhub-prod` via realm-export entry. | XS | Operator-comfort; not blocking. |
+| #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | Mirrors COMP-NCR-STATUS shape. |
+| PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | PROV-RESOLVER-PATHWALK prerequisite shipped. |
+| J1e-PR-07/08/09 | aidocs/34 path-migration row + aidocs/42/44 corrections + reconcile with J2 plan. | XS each | Docs follow-on for the in-flight J1e plugin refactor. |
+
+### Blocked on design
+
+Need a written design doc or persona-board review before implementation
+can start.
+
+| ID | One-line | Size | Blocking gate |
+|---|---|---|---|
+| BTKVS-B1 | Form-as-SHACL-shape architectural pattern + render endpoint shape. | M | `aidocs/integrations/116-btkvs-shacl-form-templates.md` not yet written. |
+| BTKVS-B2 | Register one SHACL shape as `:ShepardTemplate`; verify `POST /v2/shapes/render`. | S | Gated on BTKVS-B1. |
+| BTKVS-C1 | `shepard-plugin-btkvs-docket` typed payload kind + ingestion endpoint. | M | Gated on BTKVS-B1; plugin scaffold per CLAUDE.md §47. |
+| HELM-K8S-DEPLOY-01..07 | Helm umbrella chart for K8s deployment alternative to docker-compose. | XL total | Phase 1 needs `aidocs/ops/[number]-helm-deployment.md` first. |
+| PERM-REDESIGN-DECISION | Permissions redesign-or-extend decision (A/B/C/D/E option matrix). | S (decision) | `aidocs/platform/110` filed; awaiting operator + persona sign-off to flip stage `idea` → `feature-defined`. |
+| LABJOURNAL-SCIENTIFIC-TWITTER | Lab journal as scientific-twitter with plugin-driven artefact render. | XL | Depends on HTML-TO-MD-MIGRATION (block editor substrate). |
+| HTML-TO-MD-MIGRATION | HTML → markdown migration + block-editor (editor.js vs BlockNote) reuse survey. | L | Pairs with LABJOURNAL-SCIENTIFIC-TWITTER. |
+
+### Blocked on dependency
+
+Specific known prerequisite must land first.
+
+| ID | One-line | Blocked on |
+|---|---|---|
+| L2e | Drop legacy `/v1/` long-id paths + flip permissions-cache key shape. | Deprecation-window exit (no fixed date). |
+| A5e | HSDS auth bridge `/api-keys/{id}/hsds-token`. | Shared-Keycloak realm config (operator-side). |
+| BTKVS-A2 (live upload) | Live BT-KVS vocab upload returns 500. | BTKVS-A2-OPS (writable user-bundles-dir mount). |
+| TS-INGEST-222GB-NEO4J / PGBOUNCER / COMPRESSION / DOSPRAWL / PROVENANCE / GARAGE | 222 GB ingest risk monitoring. | Source export of 222 GB raw still in progress; live verification waits on import day. |
+| PERM-INHERIT-03 | `POST /v2/collections/{appId}/permissions/cascade` cascade endpoint. | Blocked on PERM-REDESIGN-DECISION resolution. |
+| HELM-K8S-DEPLOY-02..07 | K8s chart phases. | Blocked on HELM-K8S-DEPLOY-01 (design doc). |
+| #27-ARCHIVED-02/03 | RBAC gate + frontend status chip. | Blocked on #27-ARCHIVED-01 enum addition. |
+| J1e-PR-04 | Move frontend J1e UI to plugin + RowActionProvider SPI. | Blocked on J1e-PR-02 (backend move) + RowActionProvider SPI design. |
+| J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile`. | Operator decision on broader Zoraxy → Caddy migration (-04 already decided isolated). |
+
+### Blocked on operator decision
+
+Open questions that block implementation.
+
+| ID | Question | Affects |
+|---|---|---|
+| Leaked JWTs in `aidocs/input/input_raw.md:222,360` | Rotate tokens + decide whether to redact in file + whether to rewrite history. | Already on `origin`; security hygiene. |
+| Admin role mechanism (legacy A0 question) | A0 SHIPPED; the legacy decision-doc question is now obsolete. | Marked retained-for-history only. |
+| R-series items (R1–R9) from second-pass input analysis | Design / framework / asset decisions. | See "Newly surfaced" table; mostly DLR CD theming-adjacent. |
+| BTKVS-B1 open questions | 4 questions enumerated in `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md §5`. | Gates Phase B implementation. |
+| BTKVS-A4 open questions | 5 questions enumerated in `aidocs/integrations/116-btkvs-improved-schema.md §5`. | Nils-side input required. |
+| PERM-REDESIGN-DECISION | A/B/C/D/E options + operator-preferred direction. | Gates PERM-INHERIT-03 cascade implementation. |
+
+### Deferred-until-pulled (low priority)
+
+Operator-acknowledged 2026-05-29 as deferred; surface when pulled.
+
+| ID | One-line | Defer reason |
+|---|---|---|
+| #22 Collection bundling vocab | Cross-Collection grouping primitive. | Defer until cross-Collection grouping demand. |
+| LANDING-MY-DATA-GRAPH | "My data graph" landing widget. | Defer; temporal heatmap recommended when picked up. |
+| WIZARD-JSON-INTERPRETABLE | Wizard form JSON shape. | Defer; FileReference shape recommended. |
+| R8 DLR CD theming | DLR Corporate Design theming pass. | Defer until DLR adoption push (needs fresh design assets). |
+| J1f Live kernel via JupyterHub bridge | XL; explicit non-goal. | Out of scope for v1. |
+| G1e Webhook from git host | Subscriptions integration. | Defer until subscription system matures. |
+| G1f shepard → git push sidecar | "Gitops shepard". | Explicit non-goal for v1. |
+| PR1e Headless ProcessRun mode | API-driven run mode (cron, CI). | Useful but not v1. |
+| T1g Update instance to latest template version | Manual opt-in. | Defer for individual instances. |
+| T1h Collection-level templates | L3-original ambition. | Out of scope for v1. |
+| V2f Branch from snapshot | Fork a snapshot into a writable child Collection. | Significant scope; only on real demand. |
+| U1f Verified-ORCID via OAuth flow | Verified ORCID badge. | Optional once #29 (U1a) closed it. |
+| J1e-NBCONVERT | Server-side `nbconvert` for very large notebooks. | When notebook size becomes a real perf gap. |
+| A4b TimescaleDB + PostGIS instance consolidation | Infra/ops decision. | Parked. |
+
+### Reconcile-pass meta
+
+- **Rows flipped to done in this pass:** J1e-PR-01, J1e-PR-02, J1e-PR-03,
+  J1e-PR-05, J1e-PR-05-CADDY-PATH-MOUNT-01, J1e-PR-05-CADDY-PATH-MOUNT-03,
+  J1e-PR-06-AUTOFETCH-01, FE-BUILD-01, FE-BUILD-02, FE-BUILD-03 (cast
+  holdover; regen tracked as new row FE-BUILD-03-REGEN).
+- **Rows marked decided / operator-approved (not yet shipped):**
+  J1e-PR-05-CADDY-PATH-MOUNT-04 (isolated), CHOKE-08 (pre-stage),
+  BTKVS-A2-OPS (mount path).
+- **New rows filed:** FE-BUILD-03-REGEN, #27-ARCHIVED-01/02/03,
+  PROV-CAPTURE-READS-FLIP (one-line `application.properties` change).
+- **Open queue total (excluding parked + done):** ~30 high-signal items,
+  16 in "Now shippable", remainder distributed across blocker buckets.
+- **Top 5 by value (operator may dispatch directly):**
+  1. **BTKVS-A2-OPS** (XS, unblocks BT-KVS Phase A live upload — third showcase).
+  2. **PROV-CAPTURE-READS-FLIP** (XS, one-line config; closes EU AI Act Art-50 read-side disclosure gap on `/v2/`).
+  3. **#27-ARCHIVED-01** (XS, additive enum; unblocks Container/Collection archival workflow).
+  4. **FE-BUILD-03-REGEN** (S, retires the cast holdover; clean OpenAPI client).
+  5. **UX-WALK-2026-05-29-05** (S, 4K Collections-list whitespace fix; visible polish on the operator's primary viewport).
+
