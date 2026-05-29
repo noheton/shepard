@@ -2250,3 +2250,149 @@ under the subdomain assumption; this row swaps the assumption.
 lands — with path-mount, the Playwright spec needs to assert the
 redirect goes to `https://shepard.nuclide.systems/jupyterhub/hub/...`
 not the subdomain.
+
+## HELM-K8S-DEPLOY — Helm charts for Kubernetes deployment (alternative to docker-compose)
+
+Filed 2026-05-29 by operator request. Shepard today deploys via
+`docker compose -f infrastructure/docker-compose.yml [+ plugin overlays]`
+on a single host. For institutes evaluating adoption on a K8s
+cluster — DLR institutional infrastructure increasingly is K8s + ArgoCD —
+the compose surface needs a sibling: a Helm chart per major service +
+an umbrella chart that wires them. Compose stays the dev / showcase /
+single-node default; Helm is the production-cluster path.
+
+**Why a chart, not "convert to Kompose":** the compose file embeds
+plugin-specific overlays (`plugins/<id>/compose-profile.yml`), bind
+mounts that assume host paths, and operator-side decisions
+(reverse-proxy choice, OIDC issuer URL, storage backend selection).
+A real chart restructures these into idiomatic K8s primitives
+(StatefulSets for stateful substrates, PVCs, ConfigMaps, Secrets,
+Ingress, NetworkPolicy) — not a 1:1 translation.
+
+**Scope (umbrella chart `shepard/`):**
+
+- `charts/shepard-backend` — Quarkus backend StatefulSet (or
+  Deployment if MigrationsRunner moves to a Job — see migration row
+  below); ConfigMap for `application.properties`; Secret for OIDC +
+  storage credentials; Service; ServiceMonitor for Prometheus.
+- `charts/shepard-frontend` — Nuxt frontend Deployment + Service.
+- `charts/shepard-neo4j` — sub-chart wrapping the
+  [neo4j-helm](https://github.com/neo4j/helm-charts) standalone or
+  cluster mode; preconfigured with our plugins (n10s, APOC).
+- `charts/shepard-postgres` — postgres StatefulSet with TimescaleDB
+  extension; PVC for hot data + cold-data archive policy.
+- `charts/shepard-mongodb` — MongoDB sub-chart (Bitnami or
+  community) with our schema bootstrap Job.
+- `charts/shepard-garage` — Garage S3 StatefulSet (3-node minimum
+  for HA) or single-node for cheap deployments; bucket bootstrap
+  Job.
+- `charts/shepard-keycloak` — Keycloak sub-chart with realm import
+  ConfigMap (the `infrastructure/keycloak/shepard-demo-realm.json`
+  shape).
+- `charts/shepard-pgbouncer` — sidecar Deployment.
+- **Plugin sub-charts** — every plugin that ships a sidecar
+  declares both a `compose-profile.yml` (existing) AND a sibling
+  `helm/` subdir with its own templates. The umbrella chart
+  conditionally renders enabled plugins (`plugins.jupyter.enabled:
+  true`).
+
+**Cross-cutting work the chart forces:**
+
+- **Migrations as Jobs.** The current `MigrationsRunner` runs in
+  backend startup with `fail-fast`. In K8s the canonical shape is an
+  init-container or a Job that gates the Deployment. Pick init-container
+  for simplicity; document the rollback semantics (`V##_R__*.cypher`
+  rollback files already exist).
+- **Plugin SidecarsAssembler is now load-bearing** (PM1f, currently
+  queued). Today plugins are overlaid by hand via `-f` chains; the K8s
+  story needs a real assembler that walks the plugin manifest and
+  emits Helm values or a generated values.yaml.
+- **Reverse-proxy story.** Compose uses Caddy in the network; K8s
+  uses Ingress. The Caddyfile blocks for path-mounted plugin sidecars
+  (J1e, future TableContainer admin UI, etc.) translate to per-plugin
+  Ingress rules with `path: /<plugin>` + `pathType: Prefix`. Document
+  the pattern in the umbrella chart's README.
+- **Storage backend selection.** Compose hardcodes Garage; K8s
+  deployments at DLR will more often want existing institutional S3
+  (Ceph + RGW, MinIO, AWS). The chart's values surface MUST allow
+  `storage.s3.endpoint`, `accessKey`, `secretKey` overrides without
+  rebuilding.
+- **OIDC issuer.** Mirror the JH split-horizon pattern (J1e fix
+  2026-05-29) — the chart's values expose front-channel + back-channel
+  issuer URLs separately. In-cluster Keycloak gets the cluster-internal
+  Service DNS; external Keycloak gets the public URL with optional
+  internal override.
+- **Observability.** ServiceMonitor + PodMonitor for Prometheus;
+  PrometheusRule for the alerting docs already filed in
+  `aidocs/ops/77`. PodLogs aggregation via the cluster's existing
+  Loki / Elastic stack — chart annotates pods, doesn't ship the log
+  collector.
+
+**Lifecycle:**
+
+- **Phase 1 (design):** umbrella chart skeleton + per-substrate
+  sub-chart skeletons + values.yaml shape. NO actual templating yet.
+  Reviewer test: an operator can `helm install shepard . --dry-run`
+  and see all expected resources, even if backed by stubs.
+- **Phase 2 (substrate templates):** backend + frontend + Postgres +
+  Neo4j + Mongo + Garage + Keycloak templates with healthchecks,
+  resource limits, anti-affinity, PDB. Skip plugin sidecars.
+- **Phase 3 (operator runbook):** install / upgrade / rollback
+  runbooks in `docs/admin/runbooks/15-helm-deploy.md`. Worked example
+  on a kind / k3s cluster.
+- **Phase 4 (plugin assembler):** PM1f SidecarsAssembler emits Helm
+  values for plugin sidecars; first integration target is JH (J2a–J2d
+  shape).
+- **Phase 5 (CI):** chart-testing in CI (chart-testing-action),
+  helm lint, helm template diff against the previous release.
+- **Phase 6 (operator-facing distribution):** publish chart to a
+  Helm repo (ghcr.io as OCI artifact + a GitHub Pages index for the
+  classic Helm repo flavour).
+
+**Effort sizing:** L per phase; total XL — multi-sprint, plausibly
+parked between other priorities. The dispatcher will NOT pick this
+up autonomously; needs a dedicated design pass.
+
+**Dependencies:**
+
+- **PM1f SidecarsAssembler** must ship before Phase 4 — otherwise
+  plugin sidecar templating is hand-maintained twice.
+- **Migrations as Job** is a small backend-side refactor that gates
+  Phase 2 cleanly (don't ship the chart with the in-startup migration
+  pattern; init-container or Job is idiomatic).
+- **Admin-configurable storage backend selection** (the LIC1 /
+  storage backend swap pattern, FS1e shape) needs operator-side knobs
+  exposed in values.yaml; the existing `:StorageConfig` design is
+  compatible.
+
+**Cross-references:**
+
+- `aidocs/platform/47-dev-experience-and-plugin-system.md §2.6` — plugin
+  sidecar declaration pattern.
+- `feedback_plugins_declare_sidecars.md` — plugin manifest contract.
+- `feedback_plugin_ui_path_mount.md` — path-mount default applies to
+  K8s Ingress rules too.
+- `aidocs/34-upstream-upgrade-path.md` — upstream operator upgrade
+  story. Helm is the K8s equivalent; the §"upgrade ledger" gains a
+  K8s column for breaking-change visibility.
+- `aidocs/16` §J1e-PR-05-CADDY-PATH-MOUNT — sets the path-mount
+  precedent; chart Ingress rules follow same shape.
+
+**Out of scope (explicitly):**
+
+- Bare-metal Kubernetes operators (KubeBuilder etc.). The chart is
+  the K8s-idiomatic deployment unit; an Operator would be a separate
+  follow-on if cluster-day-2 ops (upgrades, backups, scaling) need
+  imperative control.
+- ArgoCD / Flux deployment automation — chart consumers wire those.
+- Multi-cluster federation — single-cluster only for v1.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| HELM-K8S-DEPLOY-01 | Phase 1: umbrella chart skeleton + sub-chart skeletons + values.yaml shape. `helm install --dry-run` works. | L | queued (design) | Gate: design doc `aidocs/ops/[number]-helm-deployment.md` first; reviewer-test = dry-run lists expected resources. |
+| HELM-K8S-DEPLOY-02 | Backend `MigrationsRunner` refactor: extract to init-container OR Job. Idempotent + fail-fast preserved. | M | queued | Backend-side gate for Phase 2; relevant CLAUDE.md `## Always: maintain the upstream upgrade path` rule applies — migration shape must stay compatible. |
+| HELM-K8S-DEPLOY-03 | Phase 2: per-substrate sub-chart templates (backend / frontend / neo4j / postgres / mongo / garage / keycloak / pgbouncer). | L | queued | Blocked on -01 + -02. |
+| HELM-K8S-DEPLOY-04 | Phase 3: operator runbook `docs/admin/runbooks/15-helm-deploy.md` — install / upgrade / rollback on k3s + kind worked example. | M | queued | Blocked on -03. |
+| HELM-K8S-DEPLOY-05 | Phase 4: PM1f SidecarsAssembler emits Helm values for enabled plugin sidecars. First target: JH (J2a–J2d). | L | queued | Blocked on PM1f shipping + -03 stable. |
+| HELM-K8S-DEPLOY-06 | Phase 5: CI gate — `chart-testing`, `helm lint`, template diff against previous release. | S | queued | Blocked on -03. Wire to existing `.github/workflows/`. |
+| HELM-K8S-DEPLOY-07 | Phase 6: publish chart as OCI artifact on ghcr.io + GitHub Pages Helm repo index. | S | queued | Blocked on -05 (don't ship un-CI'd charts). Update `aidocs/34` upgrade ledger row. |
