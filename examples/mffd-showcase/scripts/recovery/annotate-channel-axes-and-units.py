@@ -188,6 +188,7 @@ def build_cypher_rows(channels, today):
     # (lowercase). Idempotent: a clean Neo4j matches nothing here.
     parts.append("""MATCH (a:AnnotatableTimeseries)-[r:HAS_ANNOTATION]->(sa:SemanticAnnotation)
 WHERE sa.source STARTS WITH 'TS-AXIS-VERIFY-recovery'
+   OR sa.source STARTS WITH 'TS-AXIS-VERIFY-manual'
    OR sa.source STARTS WITH 'TS-CHANNEL-UNITS-suffix-heuristic'
 DETACH DELETE sa
 RETURN count(sa) AS dangling_uppercase_edge_annotations_cleaned;""")
