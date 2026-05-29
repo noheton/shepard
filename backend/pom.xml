@@ -460,6 +460,15 @@
               <version>${lombok.version}</version>
             </path>
           </annotationProcessorPaths>
+          <testExcludes>
+            <!-- These test files reference spatiotemporal/git plugin classes
+                 that are not on the classpath when building with -DnoPlugins.
+                 Excluded from test compilation; the tests run in CI where
+                 plugins are installed first. -->
+            <exclude>**/data/model/GeometryBuilderTest.java</exclude>
+            <exclude>**/context/references/git/services/GitArtifactCacheQuarkusTest.java</exclude>
+            <exclude>**/integrationtests/**/*.java</exclude>
+          </testExcludes>
         </configuration>
       </plugin>
       <plugin>
