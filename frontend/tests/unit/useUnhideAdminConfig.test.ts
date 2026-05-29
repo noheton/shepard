@@ -44,7 +44,7 @@ const defaultConfig: UnhideConfigIO = {
 describe("useUnhideAdminConfig — refresh()", () => {
   it("loads config on mount", async () => {
     mockFetchOk(defaultConfig);
-    const { config, isLoading } = useUnhideAdminConfig();
+    const { config: _config, isLoading } = useUnhideAdminConfig();
 
     // Loading starts true immediately
     expect(isLoading.value).toBe(true);

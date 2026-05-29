@@ -17,7 +17,7 @@
  *    upload starting, the file is marked `indeterminate` so the UI can switch
  *    to a spinner with elapsed time.  Subsequent real events flip it back.
  */
-import { computed, reactive, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 export type FileUploadStatus =
   | "pending"

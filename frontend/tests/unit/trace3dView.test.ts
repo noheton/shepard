@@ -151,7 +151,7 @@ describe("computeValueStats", () => {
 
 describe("colormapRgb — heat (added for Trace3DView)", () => {
   it("low end (t=0) is blue", () => {
-    const [r, g, b] = colormapRgb(0, "heat");
+    const [r, , b] = colormapRgb(0, "heat");
     expect(b).toBeGreaterThan(0.9);
     expect(r).toBeLessThan(0.1);
   });

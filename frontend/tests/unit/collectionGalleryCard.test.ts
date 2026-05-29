@@ -14,7 +14,7 @@
  * + Vuetify plugin + Nuxt composable context). The component's template
  * logic is trivially exercised by the seed scripts' e2e smoke run.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import type { Collection } from "@dlr-shepard/backend-client";
 import { computeMetadataCompleteness } from "../../utils/metadataCompleteness";
 import { descriptionPreview } from "../../utils/helpers";

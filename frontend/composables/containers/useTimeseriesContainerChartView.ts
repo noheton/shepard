@@ -61,7 +61,7 @@ export function useTimeseriesContainerChartView(containerId: number) {
       } else {
         selectedChannelKeys.value = [];
       }
-    } catch (e) {
+    } catch {
       // Permission errors or backend-not-ready — treat as "no curated view".
       // The chart falls back to first-MAX_CHANNELS in that case.
       selectedChannelKeys.value = [];

@@ -21,7 +21,7 @@ const {
   refreshItems,
   collapseItem,
 } = useTreeviewItems(routeParams);
-const { advancedMode } = useAdvancedMode();
+const { advancedMode: _advancedMode } = useAdvancedMode();
 
 const collectionAppId = computed<string | undefined>(() => {
   const raw = (collection.value as unknown as { appId?: string | null })?.appId;
