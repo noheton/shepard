@@ -74,8 +74,7 @@ below.
 
 ### Manual fallback — kernel-side fetch
 
-Until **J1e-PR-06-AUTOFETCH-01** is deployed (or for files the
-allowlist rejects), use the forwarded OIDC token directly:
+For files the allowlist rejects, use the forwarded OIDC token directly:
 
 ```python
 import os, requests
