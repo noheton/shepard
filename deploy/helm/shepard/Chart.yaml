@@ -1,0 +1,70 @@
+apiVersion: v2
+name: shepard
+description: |
+  Shepard research data management platform — umbrella chart for Kubernetes deployment.
+
+  Phase 1 SKELETON ONLY: this chart proves the umbrella + sub-chart shape and surfaces
+  the operator-facing values.yaml contract. Production-grade templates land in
+  HELM-K8S-DEPLOY-03 (Phase 2). See aidocs/ops/88-helm-deployment.md.
+type: application
+version: 0.1.0
+appVersion: "6.0.0-SNAPSHOT"
+kubeVersion: ">= 1.28.0-0"
+keywords:
+  - research-data-management
+  - fair-data
+  - aerospace
+  - provenance
+  - dlr-shepard
+home: https://github.com/dlr-shepard/shepard
+sources:
+  - https://github.com/dlr-shepard/shepard
+maintainers:
+  - name: Shepard contributors
+    url: https://github.com/dlr-shepard/shepard
+annotations:
+  category: ResearchDataManagement
+  licenses: Apache-2.0
+dependencies:
+  - name: shepard-neo4j
+    version: "0.1.0"
+    repository: "file://charts/shepard-neo4j"
+    condition: neo4j.enabled
+    tags:
+      - substrate
+      - graph
+  - name: shepard-postgres
+    version: "0.1.0"
+    repository: "file://charts/shepard-postgres"
+    condition: postgres.enabled
+    tags:
+      - substrate
+      - relational
+      - timeseries
+  - name: shepard-mongodb
+    version: "0.1.0"
+    repository: "file://charts/shepard-mongodb"
+    condition: mongodb.enabled
+    tags:
+      - substrate
+      - document
+  - name: shepard-garage
+    version: "0.1.0"
+    repository: "file://charts/shepard-garage"
+    condition: garage.enabled
+    tags:
+      - substrate
+      - object-storage
+  - name: shepard-keycloak
+    version: "0.1.0"
+    repository: "file://charts/shepard-keycloak"
+    condition: keycloak.enabled
+    tags:
+      - identity
+  - name: shepard-pgbouncer
+    version: "0.1.0"
+    repository: "file://charts/shepard-pgbouncer"
+    condition: pgbouncer.enabled
+    tags:
+      - substrate
+      - relational

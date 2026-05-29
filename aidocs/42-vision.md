@@ -616,6 +616,22 @@ Mid-horizon:
   Nuxt hooks — no CDN, offline-friendly). Still ahead: Playwright
   screenshot pipeline (D1b), additional task-shaped pages (D1c),
   version stamping (D1d).
+- **Kubernetes / Helm deployment** (`aidocs/ops/88`, HELM-K8S-DEPLOY
+  series). A Helm umbrella chart at `deploy/helm/shepard/` ships
+  alongside `infrastructure/docker-compose.yml` — compose stays the
+  dev / showcase / single-node default, Helm becomes the
+  production-cluster path for institutes on K8s + ArgoCD. **Phase 1
+  shipped** (HELM-K8S-DEPLOY-01): umbrella + six sub-chart skeletons
+  (Neo4j, Postgres+TimescaleDB, Mongo, Garage, Keycloak, PgBouncer);
+  full `values.yaml` surface covering image overrides, OIDC split-
+  horizon front/back-channel issuers (the J1e lesson), external-S3
+  override, Ingress with path-mount support for plugin sidecars per
+  CLAUDE.md, `migrations.mode = disabled|init-container|job`, per-
+  plugin toggles; `helm template --dry-run` renders 13 resources
+  cleanly. Production-grade templates (Phase 2 = HELM-K8S-DEPLOY-03),
+  operator runbook (Phase 3), PM1f-driven sidecar value emission
+  (Phase 4), CI gate (Phase 5), and ghcr.io OCI / GitHub Pages
+  distribution (Phase 6) queue behind it.
 - **Experiment orchestration** (`aidocs/50`, EXP1 series). A new
   `shepard-experiment-coordinator` service drives manufacturing-
   style experiments end-to-end (PLC / SPS / KUKA robot / OPC/UA /

@@ -1,0 +1,28 @@
+# Postgres + TimescaleDB sub-chart values — Phase 1 STUB.
+# NOTE: image must carry the TimescaleDB extension. Default points at
+# timescale/timescaledb-ha which bundles both. pgvector extension is enabled by
+# default for AI-substrate use.
+image:
+  repository: timescale/timescaledb-ha
+  tag: "pg16.4-ts2.16.1"
+  pullPolicy: IfNotPresent
+service:
+  port: 5432
+auth:
+  database: shepard
+  username: shepard
+  password: ""
+  existingSecret: ""
+persistence:
+  size: 100Gi  # timeseries-heavy default
+  storageClassName: ""
+extensions:
+  timescaledb: true  # mandatory
+  pgvector: true     # for AI / embedding use cases
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 4000m
+    memory: 8Gi

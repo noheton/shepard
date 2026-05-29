@@ -1,0 +1,28 @@
+# Neo4j sub-chart values — Phase 1 STUB.
+# Production sub-chart (Phase 2) likely wraps neo4j/helm-charts standalone or cluster
+# mode and preconfigures n10s + APOC plugins (mirrors infrastructure/docker-compose.yml
+# neo4j service).
+image:
+  repository: neo4j
+  tag: "5.20.0"
+  pullPolicy: IfNotPresent
+service:
+  port: 7687
+  httpPort: 7474
+auth:
+  # If empty, a random password is generated and stored in a Secret.
+  password: ""
+  existingSecret: ""
+persistence:
+  size: 50Gi
+  storageClassName: ""
+plugins:
+  apoc: true
+  n10s: true  # required for SHACL + RDF ingest paths
+resources:
+  requests:
+    cpu: 500m
+    memory: 2Gi
+  limits:
+    cpu: 2000m
+    memory: 8Gi

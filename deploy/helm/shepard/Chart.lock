@@ -1,0 +1,21 @@
+dependencies:
+- name: shepard-neo4j
+  repository: file://charts/shepard-neo4j
+  version: 0.1.0
+- name: shepard-postgres
+  repository: file://charts/shepard-postgres
+  version: 0.1.0
+- name: shepard-mongodb
+  repository: file://charts/shepard-mongodb
+  version: 0.1.0
+- name: shepard-garage
+  repository: file://charts/shepard-garage
+  version: 0.1.0
+- name: shepard-keycloak
+  repository: file://charts/shepard-keycloak
+  version: 0.1.0
+- name: shepard-pgbouncer
+  repository: file://charts/shepard-pgbouncer
+  version: 0.1.0
+digest: sha256:bf2fe8cb523a7929fc334b29822eca2bcd07456820956ff524b3a69e67bfad49
+generated: "2026-05-29T18:44:18.136086666+02:00"

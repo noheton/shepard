@@ -1,0 +1,23 @@
+# Garage sub-chart values — Phase 1 STUB.
+image:
+  repository: dxflrs/garage
+  tag: "v1.0.1"
+  pullPolicy: IfNotPresent
+service:
+  s3Port: 3900
+  adminPort: 3903
+persistence:
+  size: 200Gi
+  storageClassName: ""
+# replication mode (1 = single-node dev; 3 = HA prod).
+replicationMode: "1"
+bucket:
+  name: shepard
+  bootstrap: true
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 4Gi

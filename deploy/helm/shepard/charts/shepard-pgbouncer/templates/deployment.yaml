@@ -1,0 +1,34 @@
+{{/*
+  PgBouncer Deployment — Phase 1 STUB.
+  TODO Phase 2: ConfigMap with pgbouncer.ini + userlist.txt sourced from the
+  Postgres sub-chart's Secret, Service, ServiceMonitor.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-pgbouncer
+  labels:
+    app.kubernetes.io/name: shepard-pgbouncer
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: connection-pool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shepard-pgbouncer
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shepard-pgbouncer
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: pgbouncer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: pgbouncer
+              containerPort: 6432
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

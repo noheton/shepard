@@ -1,0 +1,46 @@
+{{/*
+  Backend Deployment — Phase 1 STUB.
+  TODO Phase 2 (HELM-K8S-DEPLOY-03): wire migrations init-container, real probes,
+  Secret refs (OIDC + S3 creds), ConfigMap mount, ServiceAccount, securityContext,
+  resource limits, anti-affinity, PodDisruptionBudget.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shepard.fullname" . }}-backend
+  labels:
+    {{- include "shepard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "shepard.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "shepard.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+      annotations:
+        {{- toYaml .Values.observability.podAnnotations | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "shepard.serviceAccountName" . }}
+      containers:
+        - name: backend
+          image: {{ include "shepard.backendImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # TODO Phase 2: real env vars from Secret + ConfigMap.
+          env:
+            - name: SHEPARD_OIDC_FRONT_CHANNEL_ISSUER
+              value: {{ .Values.oidc.frontChannelIssuer | quote }}
+            - name: SHEPARD_OIDC_BACK_CHANNEL_ISSUER
+              value: {{ default .Values.oidc.frontChannelIssuer .Values.oidc.backChannelIssuer | quote }}
+            - name: SHEPARD_STORAGE_S3_ENDPOINT
+              value: {{ .Values.storage.s3.endpoint | quote }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

@@ -1,0 +1,41 @@
+{{- if eq .Values.migrations.mode "job" -}}
+{{/*
+  Migrations Job — Phase 1 STUB.
+  TODO Phase 2 (depends on HELM-K8S-DEPLOY-02): real command + env, Secret refs,
+  pre-upgrade Hook annotation, fail-fast backoffLimit=0 per CLAUDE.md migrations
+  invariant.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "shepard.fullname" . }}-migrations-{{ .Release.Revision }}
+  labels:
+    {{- include "shepard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "shepard.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrations
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrations
+          image: {{ printf "%s/%s:%s" .Values.image.registry .Values.migrations.image.repository (default .Chart.AppVersion .Values.migrations.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/opt/shepard/run-migrations.sh"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+{{- end }}

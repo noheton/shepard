@@ -1,0 +1,35 @@
+{{/*
+  Frontend Deployment — Phase 1 STUB.
+  TODO Phase 2: runtime config injection (OIDC issuer, API base URL), pod
+  anti-affinity, readiness probe against Nuxt healthcheck.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shepard.fullname" . }}-frontend
+  labels:
+    {{- include "shepard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "shepard.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "shepard.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      serviceAccountName: {{ include "shepard.serviceAccountName" . }}
+      containers:
+        - name: frontend
+          image: {{ include "shepard.frontendImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}

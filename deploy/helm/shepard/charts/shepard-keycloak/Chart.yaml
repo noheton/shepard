@@ -1,0 +1,10 @@
+apiVersion: v2
+name: shepard-keycloak
+description: |
+  Keycloak identity provider for shepard — Phase 1 STUB sub-chart.
+  Realm bootstrap mirrors infrastructure/keycloak/shepard-demo-realm.json. Production
+  chart in HELM-K8S-DEPLOY-03 (likely wrapping bitnami/keycloak).
+type: application
+version: 0.1.0
+appVersion: "25.0.6"
+kubeVersion: ">= 1.28.0-0"

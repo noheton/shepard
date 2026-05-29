@@ -2453,7 +2453,7 @@ up autonomously; needs a dedicated design pass.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| HELM-K8S-DEPLOY-01 | Phase 1: umbrella chart skeleton + sub-chart skeletons + values.yaml shape. `helm install --dry-run` works. | L | queued (design) | Gate: design doc `aidocs/ops/[number]-helm-deployment.md` first; reviewer-test = dry-run lists expected resources. |
+| HELM-K8S-DEPLOY-01 | Phase 1: umbrella chart skeleton + sub-chart skeletons + values.yaml shape. `helm install --dry-run` works. | L | in-flight | Design doc shipped: `aidocs/ops/88-helm-deployment.md`. Chart at `deploy/helm/shepard/`; `helm template . -f tests/test-values.yaml` renders 13 resources cleanly (gate ≥ 10). Branch `helm-k8s-deploy-01-skeleton`. |
 | HELM-K8S-DEPLOY-02 | Backend `MigrationsRunner` refactor: extract to init-container OR Job. Idempotent + fail-fast preserved. | M | queued | Backend-side gate for Phase 2; relevant CLAUDE.md `## Always: maintain the upstream upgrade path` rule applies — migration shape must stay compatible. |
 | HELM-K8S-DEPLOY-03 | Phase 2: per-substrate sub-chart templates (backend / frontend / neo4j / postgres / mongo / garage / keycloak / pgbouncer). | L | queued | Blocked on -01 + -02. |
 | HELM-K8S-DEPLOY-04 | Phase 3: operator runbook `docs/admin/runbooks/15-helm-deploy.md` — install / upgrade / rollback on k3s + kind worked example. | M | queued | Blocked on -03. |

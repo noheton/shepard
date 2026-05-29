@@ -1,0 +1,19 @@
+{{/*
+  Backend ConfigMap for application.properties overrides — Phase 1 STUB.
+  TODO Phase 2: render full application.properties from .Values.backend.config plus
+  computed substrate endpoints (Neo4j Service DNS, Postgres pgbouncer Service DNS,
+  Mongo, Garage).
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shepard.fullname" . }}-backend
+  labels:
+    {{- include "shepard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  application.properties: |
+    # Phase 1 placeholder — real overrides land in Phase 2.
+    {{- range $key, $val := .Values.backend.config }}
+    {{ $key }}={{ $val }}
+    {{- end }}

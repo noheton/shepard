@@ -1,0 +1,10 @@
+apiVersion: v2
+name: shepard-mongodb
+description: |
+  MongoDB substrate for shepard — Phase 1 STUB sub-chart.
+  Stores structured-data payloads (StructuredDataContainer). Production chart in
+  HELM-K8S-DEPLOY-03 (likely wrapping bitnami/mongodb).
+type: application
+version: 0.1.0
+appVersion: "7.0.14"
+kubeVersion: ">= 1.28.0-0"
