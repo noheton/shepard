@@ -65,6 +65,12 @@ services:
       # Operators wanting a different image set
       # JUPYTERHUB_SINGLEUSER_IMAGE in their env file.
       DOCKER_NOTEBOOK_IMAGE: ${JUPYTERHUB_SINGLEUSER_IMAGE:-jupyter/scipy-notebook:python-3.11}
+      # --- J1e-PR-06 auto-fetch allowlist ---
+      # Comma-separated list of hostnames the pre-spawn hook is allowed to
+      # fetch `?file=<url>` from. SSRF defense — anything not in this set
+      # is rejected without an outbound call. Default covers the canonical
+      # nuclide.systems hosts; operators on other domains override.
+      JUPYTERHUB_SHEPARD_ALLOWED_HOSTS: ${JUPYTERHUB_SHEPARD_ALLOWED_HOSTS:-shepard.nuclide.systems,shepard-api.nuclide.systems}
     volumes:
       # Persistent user state (notebooks, dotfiles).
       - jupyterhub_data:/data

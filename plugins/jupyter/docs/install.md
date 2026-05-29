@@ -97,6 +97,7 @@ already added):
 | `JUPYTERHUB_PUBLIC_URL` | yes | `https://shepard.nuclide.systems/jupyterhub` | Path-mounted public URL the user is redirected back to after sign-in. Must match Keycloak's valid-redirect-URI. |
 | `JUPYTERHUB_SINGLEUSER_IMAGE` | no | `jupyter/scipy-notebook:python-3.11` | The image spawned per user. Override for domain-specific notebook environments. |
 | `SHEPARD_BACKEND_URL` | no | `http://backend:8080` | Used by the kernel to call back into Shepard. The `backend` hostname is the compose service name. |
+| `JUPYTERHUB_SHEPARD_ALLOWED_HOSTS` | no | `shepard.nuclide.systems,shepard-api.nuclide.systems` | Comma-separated allowlist of hostnames the **`?file=<url>` auto-fetch pre-spawn hook** (J1e-PR-06) will fetch from. SSRF defense — see §4.5. Add your deployment's actual hostnames here; the default only covers `nuclide.systems`. |
 
 The Shepard backend itself does **not** need any new env vars — the
 hub URL is stored at runtime in `:JupyterConfig.hubUrl` and configured
@@ -191,7 +192,38 @@ generate a real secret:**
    drop the `shepard.example.org` template default once
    `shepard.nuclide.systems` is the live host).
 
-### 4.4 Caveat — shared cookie domain
+### 4.4 `?file=<url>` auto-fetch allowlist (J1e-PR-06)
+
+JupyterHub's pre-spawn hook reads a `?file=<encoded-url>` query param
+from the spawn URL, fetches that URL using the user's forwarded OIDC
+token, and writes the result into the per-user notebook volume at
+`/home/jovyan/work/shepard-imports/`.
+
+**The allowlist is the SSRF perimeter.** The hook validates the URL's
+hostname against `JUPYTERHUB_SHEPARD_ALLOWED_HOSTS` (comma-separated)
+BEFORE any outbound call. Hosts not in the list are rejected with a
+README sidecar noting `Status: allowlist-miss` — the kernel still
+spawns, the user sees what happened, no outbound request is made.
+
+For the live `nuclide.systems` deployment, the default
+(`shepard.nuclide.systems,shepard-api.nuclide.systems`) is correct.
+For other deployments, add your real hostname(s) — both the user-facing
+host (where "Open in Jupyter" URLs are constructed) and the API host
+(where the fetch resolves) — to `infrastructure/.env`:
+
+```ini
+JUPYTERHUB_SHEPARD_ALLOWED_HOSTS=shepard.example.org,shepard-api.example.org
+```
+
+This is a **deploy-time** knob (defines the security perimeter, not a
+runtime toggle); change requires a `docker compose up -d jupyterhub`
+to take effect. The runtime `:JupyterConfig` admin endpoint does not
+expose it — by design.
+
+User-facing behavior (status codes, manual fallback) is documented in
+[`plugins/jupyter/docs/quickstart.md §Open in Jupyter`](./quickstart.md#open-in-jupyter).
+
+### 4.5 Caveat — shared cookie domain
 
 Path-mounting shares the cookie domain with Shepard. JupyterHub's
 session cookie defaults to `Path=/jupyterhub` so it doesn't collide
