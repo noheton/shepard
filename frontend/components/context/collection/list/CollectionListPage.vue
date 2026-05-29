@@ -99,6 +99,23 @@ const isSearchEmpty = computed(
               :page-count="pageCount"
             />
           </v-col>
+          <!-- UX-WALK-2026-05-29-05: nudge for sparse list at wide viewport -->
+          <v-col
+            v-if="serverItems.length > 0 && serverItems.length < itemsPerPage"
+            cols="12"
+            class="d-flex justify-center pt-8 pb-4"
+          >
+            <v-btn
+              variant="tonal"
+              color="primary"
+              @click="showCreateDialog = true"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-plus-circle" />
+              </template>
+              Create another collection
+            </v-btn>
+          </v-col>
         </template>
       </v-row>
     </v-container>
