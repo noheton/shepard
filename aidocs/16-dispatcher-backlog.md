@@ -2026,3 +2026,75 @@ operators must be explicit about which sub they're working with.
 | ROLE-GRANT-STALE-SESSION-02 | **Backend admin endpoint** to forcibly invalidate a user's active sessions after a role change. Either delete their Keycloak session via admin REST (Keycloak `/admin/realms/{r}/users/{id}/logout`) OR add a Shepard-side "role-changed-at" timestamp the JWT filter checks per request and rejects pre-change tokens. Size depends on which path. | M (Keycloak path) / S (timestamp gate) | queued | Per-token rejection is the cleaner shape and doesn't depend on Keycloak admin creds. |
 | ROLE-GRANT-STALE-SESSION-03 | **Frontend stale-role hint:** when a 403 fires on an admin route, surface a "your session may be out of date — sign out + back in" link in the error toast instead of the generic "Required role" message. | XS | queued | Hint-only; the real fix is in -02. |
 | ROLE-GRANT-DEMO-FLO-DISAMBIGUATE | **Demo realm cleanup:** the demo `flo` and the real Florian Krebs both round-trip as "flo" in casual usage. Rename the demo realm user to `flodemo` or similar to remove the ambiguity, OR drop the demo flo entirely. | XS | queued | Verify agents have already confused them once today; operators are likely next. |
+
+## J1e-PLUGIN-REFACTOR — relocate JupyterHub integration to a plugin + sidecar
+
+**Architectural correction filed 2026-05-29 by operator.**
+
+J1e (the JupyterHub link-out admin gate) and `REF-UNIFIED-TABLE-FR1B`'s
+notebook-row classifier shipped TODAY as in-tree code under
+`backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/` + frontend
+`AdminJupyterPane.vue` + CLI `Jupyter*Command.java`. Per CLAUDE.md
+"Always: think plugin-first for new features" §2, **JupyterHub
+integration is a textbook external integration** — it has its own
+release cadence, its own admin-config surface, its own external
+service to point at, and a clear seam where a plugin would naturally
+attach. It should never have landed in-tree without the design-doc
+justification CLAUDE.md requires.
+
+The corrected shape: `shepard-plugin-jupyter` (Maven module under
+`plugins/jupyter/`) **plus** a JupyterHub docker compose sidecar that
+the plugin's compose profile brings up when the plugin is enabled
+(per `feedback_plugins_declare_sidecars.md`).
+
+**Migration plan:**
+
+| ID | Step | Size |
+|---|---|---|
+| J1e-PR-01 | New Maven module `plugins/jupyter/` scaffold (pom + plugin SPI manifest + module registration in `plugins/pom.xml`'s `<modules>` + backend `with-plugins` profile). | XS |
+| J1e-PR-02 | Move `:JupyterConfig` entity + DAO + service + admin REST + public REST + 2 IO records from `backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/` → `plugins/jupyter/src/main/java/de/dlr/shepard/plugins/jupyter/`. Repackage all to `de.dlr.shepard.plugins.jupyter.*`. Keep the Neo4j migration `V94__Add_appId_constraint_JupyterConfig.cypher` in the plugin's `resources/neo4j/migrations/` (per the plugin SPI's migration discovery). | M |
+| J1e-PR-03 | Move CLI commands from `cli/src/main/java/de/dlr/shepard/cli/commands/Jupyter*.java` → `plugins/jupyter/src/main/java/de/dlr/shepard/plugins/jupyter/cli/`. CLI plugin SPI discovers the commands at runtime. | S |
+| J1e-PR-04 | Move frontend `AdminJupyterPane.vue` + `useJupyterConfig.ts` + `singletonFileMapper.test.ts` notebook-classifier hook into the plugin's frontend slice. The unified Data References table's `.ipynb`-row classifier can stay in core (it's a generic mime-type-based UI hint) but the "Open in JupyterHub" action button must move to the plugin and register via a `RowActionProvider` SPI hook on the references table. | M |
+| J1e-PR-05 | Add JupyterHub sidecar to the plugin's `compose-profile.yml` per `feedback_plugins_declare_sidecars.md`. Service `jupyterhub` (image `jupyterhub/jupyterhub:5` or pinned), single-user image, network shared with backend, auth proxy hook so shepard's OIDC issuer is the IdP. The plugin's `install.md` documents the compose-profile flag operators flip to bring it up. | M |
+| J1e-PR-06 | Plugin docs per the three-audience rule: `plugins/jupyter/docs/reference.md`, `quickstart.md`, `install.md`. Cross-link from `docs/reference/plugins.md`. | S |
+| J1e-PR-07 | `aidocs/34-upstream-upgrade-path.md` row: J1e shipped in-tree on 2026-05-29 then relocated to plugin in this PR; admin REST paths move from `/v2/admin/jupyter/config` → `/v2/admin/plugins/jupyter/config` (per plugin SPI conventions). v2 wire-compat shim retains the old path during a deprecation window. | XS |
+| J1e-PR-08 | `aidocs/44-fork-vs-upstream-feature-matrix.md` + `aidocs/42-vision.md`: mark J1e in the plugins column instead of core. | XS |
+| J1e-PR-09 | Reconcile with existing `J2 — JupyterHub integration plugin (J2a–J2d)` row (task #60). The J2 row already describes the plugin shape; J1e was a prefix-of-J2 implementation that landed in the wrong place. Merge J1e's shipped functionality into J2's plan as `J2a` (admin link-out + sidecar) and renumber J2b/c/d accordingly. | XS (doc) |
+
+**Why this matters even though it works today:**
+- The plugin-first principle is the structural argument for shepard's
+  long-term modularity (`aidocs/platform/47 §2`). Every in-tree integration
+  raises the floor on what someone has to maintain to use the core,
+  and weakens the SPI's load-bearing role.
+- Operators who don't run JupyterHub still ship the admin-tile +
+  entity + Neo4j constraint + REST surface today. With the plugin
+  shape, they ship nothing extra.
+- The JupyterHub sidecar is the natural completion: a plugin that
+  links to an external service should bring that service with it
+  (or document how to point at an existing instance). Today the
+  operator must stand up JupyterHub themselves with zero guidance.
+
+**Risk:** the J2 plan (#60 row) is still listed as M-L total work.
+Today's J1e shipped roughly half of J2's surface area. Doing the
+refactor properly = ~M effort but well-bounded (move + repackage +
+sidecar). Cost is paid once; benefit is that J2's remaining work
+(real notebook spawn + result writeback) lands in the right place
+from day one rather than perpetuating the in-tree mistake.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| J1e-PR-01 | Plugin module scaffold | XS | queued | |
+| J1e-PR-02 | Move backend J1e classes to plugin | M | queued | Includes Neo4j migration relocation. |
+| J1e-PR-03 | Move CLI commands to plugin | S | queued | CLI plugin SPI discovers at runtime. |
+| J1e-PR-04 | Move frontend J1e UI to plugin + RowActionProvider SPI for unified-table action button | M | queued | Notebook-classifier hook on `.ipynb` mime can stay in core; the JupyterHub-specific row action must move. |
+| J1e-PR-05 | JupyterHub sidecar in plugin compose profile | M | queued | Per `feedback_plugins_declare_sidecars.md`. OIDC auth-proxy wiring to shepard's IdP. |
+| J1e-PR-06 | Plugin docs (3-audience rule) | S | queued | reference.md + quickstart.md + install.md. |
+| J1e-PR-07 | `aidocs/34` row + REST path migration shim | XS | queued | `/v2/admin/jupyter/config` → `/v2/admin/plugins/jupyter/config` with v2 wire-compat shim. |
+| J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | queued | Move J1e from "core" column to "plugin" column. |
+| J1e-PR-09 | Reconcile with existing J2 row (#60) | XS | queued | J1e is J2a; J2b/c/d retain their original meaning. |
+
+**Sequencing:** PR-01 first (module scaffold). PR-02 + PR-03 + PR-04
+can land as one larger commit since the rename is atomic across
+backend/cli/frontend; trying to split risks broken-state intermediate
+commits. PR-05 (sidecar) is independent and can land in parallel.
+PR-06/07/08/09 are docs; land in the final PR alongside the test pass.
