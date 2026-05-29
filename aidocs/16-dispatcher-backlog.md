@@ -1926,3 +1926,48 @@ Live regression-sweep dispatch results. Full report:
 | UX-WALK-2026-05-29-06 | DataObject detail page perpetually shows `v-progress-circular` when `fetchTreeviewItem` fails. Render the parts that loaded (name, attributes, panes) and surface a dismissable "Some data couldn't load" banner instead of blocking the whole page on one failed dependency. | M | queued | MAJOR | Graceful-degradation pattern. Currently makes the entire DO page useless on any single sub-fetch failure. |
 | UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" / Trace3D CTA on the TS container page (one click upstream of the current TimeseriesReference-level entry point per `aidocs/platform/98`). Shortens the path for researchers who land on the container first. NICE — not a regression. | S | queued | NICE | Step 6 evidence: no affordance found via `getByRole("button", { name: /trace3d\|3d\|visualize/i })`. |
 | UX-WALK-2026-05-29-08 | "Access" column on `/collections` shows ambiguous `—` for two of three rows. Replace with a controlled vocabulary chip (Open / Shared / Restricted / Closed) — closes one of the FAIR-A surface gaps surfaced in `research-data-manager.md`. | S | queued | MINOR | Step 2 evidence. |
+
+## TS-INGEST-222GB-CHOKEPOINTS — pre-flight bottleneck review
+
+Snapshot 2026-05-29 09:53 UTC against live `shepard.nuclide.systems` (post J1e + TS-IDc merge). Identifies what actually limits throughput when the 222 GB MFFD timeseries export lands.
+
+**Substrate posture:**
+
+| Substrate | Current | Headroom | Verdict |
+|---|---|---|---|
+| Host disk | 81 G / 500 G | 419 G free | OK — 222 G raw → ~30 G after compression |
+| TimescaleDB hypertable | 18 MB / 82 chunks / 113 channels / 1.17M points | unbounded | OK |
+| TS compression policy | 82/82 chunks compressed (100%) | applies on chunk close | OK |
+| PgBouncer | `pool_mode=transaction`, `max_client_conn=200`, `default_pool_size=20` | comfortable for 4-worker importer | OK |
+| Garage S3 | 98 objects / 1.7 MB / bucket alive | shared with rpool | OK |
+| Neo4j entity counts | `:Activity` 2925 / `:Timeseries` 113 / `:AnnotatableTimeseries` 95 / `:SemanticAnnotation` 87 | scales linearly | OK at this baseline; **see CHOKE-04** |
+
+**Chokepoints, ordered by 222 GB impact:**
+
+| ID | Severity | Finding | Mitigation |
+|---|---|---|---|
+| CHOKE-01 | 🔴 CRITICAL | `INSERT INTO timeseries_data_points` mean = **23.30 ms / row** over 2213 baseline calls. At ~1B rows for 222 GB, naïve serial = 266 days. The v15 importer's 4 workers + batching only mitigate if the script uses **multi-row INSERT or `COPY`**, not single-row statements. | Pre-ingest: verify the importer batches at row-count > 1000 per statement, ideally `COPY FROM STDIN`. If not, ship a fix BEFORE landing the 222 GB. Single highest-leverage change. |
+| CHOKE-02 | 🔴 CRITICAL | `id_cte` Hibernate-style entity-resolver query was 1579 ms on ONE call (baseline). TS-IDc unblocks the read path but only the live-window endpoint was migrated; **the importer's channel-resolution path is still on the 5-tuple resolver** (`TsChannelResolver.findByContainerAndPartialTuple`). 113 baseline channels → 17× planning cost; 1000+ channels at ingest scale could 100× it. | Audit `mffd-import-v15.py` channel-resolution lookup pattern. If it hits the 5-tuple path, route through `TsChannelResolver.findByContainerAndShepardId` (the new TS-IDc method) or batch resolve via `findCandidateContainers` per `TimeseriesReferenceDAO`. |
+| CHOKE-03 | 🟠 MAJOR (latent) | The jupyter-unified-refs agent caught **3 OGM session-null races** today on `:*Config` singletons (`JupyterConfig` fixed; the agent flagged `SqlTimeseriesConfig` + `InstanceRorConfig` as having the same pattern). NPE on first-access at restart-race. Under high-throughput ingest, any race-window NPE could cascade if a config-reload is triggered. | Sweep ALL `:*Config` singletons that follow A3b/UH1a/N1c2/J1e pattern. Replace cached `session` with per-call `sessionFactory.openSession()`. Audit list: `:SqlTimeseriesConfig` (P10), `:InstanceRorConfig`, `:SemanticConfig` (N1c2), `:UnhideConfig` (UH1a), `:VideoConfig` (VID1c), `:FeatureToggleRegistry` (A3b). |
+| CHOKE-04 | 🟠 MAJOR | TS-SEMANTIC-01 dual-writes to Neo4j on every `channel_metadata` INSERT (`AnnotatableTimeseries` + `SemanticAnnotation` per non-blank field). At ~1000 channels × ~10 fields/channel = 10K Neo4j writes during initial channel registration. **If dual-write is synchronous, it stalls the Postgres INSERT.** Per `feedback_referenced_data_infinite_retention.md` + secondary-write principle, this must be fire-and-forget. | Verify `TimeseriesSemanticDualWriteService.dualWriteChannelMetadata()` runs after the Postgres commit + catches Neo4j exceptions at WARN without rolling back. If it doesn't, fix BEFORE ingest. |
+| CHOKE-05 | 🟡 MEDIUM | `:Activity` baseline = 2925 rows. **If the importer captures per-data-point Activity (vs per-import-run), 1B rows → 1B Activities** → Neo4j page-cache pressure. Per PROV-USER-MIRROR-ENDPOINT (#229) the importer carries `X-Source-User-*` headers and ProvenanceCaptureFilter should batch at HTTP-request granularity (1 Activity per import-batch HTTP call). | Verify importer uses bulk endpoint (TS-OPT2) so 1 HTTP = N data points = 1 Activity. Already shipped per task #226. Confirm via post-import Activity count. |
+| CHOKE-06 | 🟡 MEDIUM | Backend Quarkus worker thread pool size not explicitly tuned in `application.properties`. Default = 2× cores. Under 4-worker importer concurrency with bulk-endpoint payloads, queue depth could spike. | Add `quarkus.thread-pool.queue-size=1000` + `quarkus.thread-pool.max-threads=64` to handle burst absorption. Cheap to add pre-ingest. |
+| CHOKE-07 | 🟡 MEDIUM | The Postgres `channel_metadata` 5-tuple unique constraint causes a per-channel index-only scan on each registration. At ingest time the importer creates channels once → not hot path. **But the resolver hot-path that follows still walks the 5-tuple** — see CHOKE-02. | Bundled with CHOKE-02. The `idx_timeseries_shepard_id` UNIQUE B-tree index already exists (V1.11.0); the resolver just needs to use it. |
+| CHOKE-08 | 🟢 LOW | NFS read throughput from UNAS (`/mnt/pve/unas/dump/`) — source archive is 107 GB raw 7z. Single-threaded extract on NFS could limit ingestion start time. | Pre-stage: extract to local disk OR launch importer with `--extract-on-the-fly` if supported. Operator decision. |
+
+**Acceptance checklist before kicking off the 222 GB ingest:**
+
+1. ✅ Backend deployed at `d99cc6372` (J1e + TS-IDc landed)
+2. ⏳ Verify v15 importer's INSERT mode is bulk (CHOKE-01)
+3. ⏳ Verify v15 importer routes channel lookup through `shepardId`, not 5-tuple (CHOKE-02)
+4. ⏳ Verify `:SqlTimeseriesConfig` + `:InstanceRorConfig` patched against session-null race (CHOKE-03)
+5. ⏳ Verify TS-SEMANTIC-01 dual-write is fire-and-forget (CHOKE-04)
+6. ⏳ Add Quarkus thread-pool tuning (CHOKE-06) — XS
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| TS-INGEST-222GB-CHOKE-01 | Verify + (if needed) fix v15 importer to use multi-row INSERT or COPY. | S–M | queued | Pre-ingest audit + scripted fix if naïve serial. |
+| TS-INGEST-222GB-CHOKE-02 | Route importer channel-lookup through `shepardId` instead of 5-tuple. | S | queued | TS-IDc shipped the resolver method; importer just needs to call it. |
+| TS-INGEST-222GB-CHOKE-03 | Sweep all `:*Config` singletons for the OGM session-null race; apply per-call session pattern uniformly. | S | queued | Backlog of 5 affected entity types (SqlTimeseriesConfig, InstanceRorConfig, SemanticConfig, UnhideConfig, VideoConfig, FeatureToggleRegistry). Each is a 20-line fix mirroring `JupyterConfigDAO` post-jupyter-unified-refs. |
+| TS-INGEST-222GB-CHOKE-04 | Verify TS-SEMANTIC-01 dual-write is fire-and-forget (catches Neo4j exceptions at WARN, doesn't roll back Postgres). | XS | queued | Read-and-verify; fix if not. |
+| TS-INGEST-222GB-CHOKE-06 | Tune Quarkus thread-pool for ingest burst: `queue-size=1000` + `max-threads=64`. | XS | queued | Pure properties addition. |
