@@ -534,6 +534,18 @@ Mid-horizon:
   config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
   `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
   can absorb it.
+- **REST-driven digital-twin scene editing** (`aidocs/data/85`, DT1
+  + SCENEGRAPH-REST-1). **SCENEGRAPH-REST-1 shipped** — nine
+  `/v2/scene-graphs/...` endpoints + seven MCP tools + URDF XML
+  exporter against the DT1-PHASE-0 substrate. Researchers (and AI
+  agents) can build / mutate kinematic scenes via REST or MCP; every
+  edit produces a `:Activity` with a `:WAS_DERIVED_FROM` link back to
+  the prior activity for the same scene, giving the audit chain a
+  proper graph walk. URDF export pipes the scene into Foxglove / RViz
+  / Isaac via the canonical robot-description format. Real graph
+  browser UI (SCENEGRAPH-REST-1-UI) and per-scene permission anchor
+  (SCENEGRAPH-PERMS-1) queued; placeholder page at `/scene-graphs/<appId>`
+  ships meanwhile.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
