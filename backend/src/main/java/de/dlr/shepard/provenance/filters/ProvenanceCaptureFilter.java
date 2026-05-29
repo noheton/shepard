@@ -23,9 +23,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * request that returns a 2xx response. Designed in {@code aidocs/55 §4}.
  *
  * <p>Mutating methods are POST / PUT / PATCH / DELETE.
- * Reads (GET / HEAD / OPTIONS) are captured only when
- * {@code shepard.provenance.capture-reads=true}; default off so
- * activity-log volume stays bounded.
+ * Reads (GET / HEAD / OPTIONS) are captured unconditionally on {@code /v2/} paths
+ * (EU AI Act Art. 50 read-side disclosure; operator-approved 2026-05-29 as
+ * PROV-CAPTURE-READS-FLIP). On legacy {@code /shepard/api/} and non-versioned
+ * paths reads are captured only when
+ * {@code shepard.provenance.capture-reads=true} (default {@code false}) so
+ * upstream-compat activity-log volume stays bounded.
  *
  * <p>The filter implements both
  * {@link ContainerRequestFilter} (to stamp the start-time millis
@@ -125,7 +128,13 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);
-    if (!isMutation && !captureReads) return;
+    // PROV-CAPTURE-READS-FLIP (2026-05-29): reads are always captured on /v2/ paths
+    // (EU AI Act Art. 50 read-side disclosure gap — operator-approved 2026-05-29).
+    // The global `capture-reads` flag still controls v1 (/shepard/api/...) and
+    // non-versioned paths so the upstream-compat surface is not affected.
+    String earlyPath = request.getUriInfo().getPath();
+    boolean isV2Path = earlyPath != null && earlyPath.startsWith("v2/");
+    if (!isMutation && !captureReads && !isV2Path) return;
 
     int status = response.getStatus();
     // Only capture successful writes; failures aren't activities in
