@@ -2002,3 +2002,27 @@ image build inside `make redeploy`. Add `npm run typecheck` (alias for
 | FE-BUILD-02 | Extract `SearchResult` type from `SearchResultList.vue` to `searchResultTypes.ts`. | XS | queued | Unblocks frontend build. |
 | FE-BUILD-03 | Regenerate `@dlr-shepard/backend-client` from current OpenAPI spec OR cast the call site. | S (regen) / XS (cast) | queued | Unblocks frontend build. The cast is a holdover; client regen is the real fix. |
 | FE-BUILD-GATE | Add `npm run typecheck` to the agent acceptance gate set (the 5 gates in the standing instructions). | XS | done | Shipped 2026-05-29 (branch `choke-04-06-and-build-gate`): (1) `frontend/package.json` `typecheck` script switched from `nuxt typecheck` to the explicit `vue-tsc --noEmit -p tsconfig.json` form; (2) new `## Always: run the six agent acceptance gates before reporting` section in `CLAUDE.md` enumerating mvn verify / lint / test / typecheck / redeploy / Playwright as the six gates, with `typecheck` called out as the one that would have caught `FRONTEND-BUILD-BLOCKED-2026-05-29`. |
+
+## ROLE-GRANT-STALE-SESSION — Cypher `:HAS_ROLE` grant doesn't kick existing JWT
+
+Surfaced 2026-05-29 during the post-deploy verify. flo was granted
+`instance-admin` via direct Cypher (`MERGE (u)-[:HAS_ROLE]->(:Role
+{name:'instance-admin'})`) but the still-active OIDC session continued
+to fail the `@RolesAllowed("instance-admin")` gate on `/admin`. The
+backend's `resolveDualSourceRoles(username, idpRoles)` reads the
+`:HAS_ROLE` edge AT JWT-PARSE TIME — so existing JWTs (issued before
+the grant) carry the stale role set. User must sign out + back in.
+
+**Sister issue surfaced same time:** two demo users named "flo" exist
+on the demo realm — `Florian Krebs` (real, `fkrebs@nucli.de`, sub
+`7eead942-...`) and `Flo Researcher` (demo, `flo@demo.shepard.local`,
+sub `ee4c010f-...`). The Keycloak realm exports `flo` as the demo
+user. A grant to one does not grant to the other. Verify agents and
+operators must be explicit about which sub they're working with.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| ROLE-GRANT-STALE-SESSION-01 | **Operator runbook:** document that role grants via Cypher OR via `POST /v2/admin/instance-admins` require the affected user to sign out + back in. Add to `docs/admin/runbooks/`. | XS | queued | Two-paragraph runbook citing the dual-source role resolver (`JwtTokenAuthService.resolveDualSourceRoles`). |
+| ROLE-GRANT-STALE-SESSION-02 | **Backend admin endpoint** to forcibly invalidate a user's active sessions after a role change. Either delete their Keycloak session via admin REST (Keycloak `/admin/realms/{r}/users/{id}/logout`) OR add a Shepard-side "role-changed-at" timestamp the JWT filter checks per request and rejects pre-change tokens. Size depends on which path. | M (Keycloak path) / S (timestamp gate) | queued | Per-token rejection is the cleaner shape and doesn't depend on Keycloak admin creds. |
+| ROLE-GRANT-STALE-SESSION-03 | **Frontend stale-role hint:** when a 403 fires on an admin route, surface a "your session may be out of date — sign out + back in" link in the error toast instead of the generic "Required role" message. | XS | queued | Hint-only; the real fix is in -02. |
+| ROLE-GRANT-DEMO-FLO-DISAMBIGUATE | **Demo realm cleanup:** the demo `flo` and the real Florian Krebs both round-trip as "flo" in casual usage. Rename the demo realm user to `flodemo` or similar to remove the ambiguity, OR drop the demo flo entirely. | XS | queued | Verify agents have already confused them once today; operators are likely next. |
