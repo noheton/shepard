@@ -2251,6 +2251,68 @@ lands — with path-mount, the Playwright spec needs to assert the
 redirect goes to `https://shepard.nuclide.systems/jupyterhub/hub/...`
 not the subdomain.
 
+## J1e-PR-06-OPEN-IN-JUPYTER-AUTOFETCH — kernel-side handler for `?file=<url>` spawn param
+
+Surfaced 2026-05-29 by operator: clicked an "Open in Jupyter" action on a
+FileReference, landed in the notebook environment, but the file wasn't
+in the workspace. Browser shows `webpage might be temporarily down` if
+the user follows the URL manually — that's the standard Chrome message
+for an unauth'd 401 with no challenge body. Not an outage; UX gap.
+
+**Current state:**
+
+- The `?file=<encoded shepard-api URL>` query param is passed to JH's
+  spawn endpoint (already wired by an earlier J1e iteration).
+- `jupyterhub_config.py` sets `c.GenericOAuthenticator.enable_auth_state
+  = True` and the `auth_state_hook` forwards
+  `SHEPARD_OIDC_ACCESS_TOKEN` into the kernel env.
+- But no spawner hook reads the `?file=` param. The kernel boots with
+  the token but no pre-fetched file; the user has to manually `requests.get`
+  using the token.
+
+**Spec:**
+
+Add a `pre_spawn_hook` on the DockerSpawner (or a thin Jupyter server
+extension in the single-user image) that:
+
+1. Reads `spawner.user_options.get("file")` — JH stores spawn query
+   params here via `c.Spawner.options_form` or `options_from_form`.
+2. If present + valid URL on the shepard-api hostname (allowlist:
+   `shepard-api.nuclide.systems` + `shepard.nuclide.systems`) →
+3. Fetches the file using the user's access token from `auth_state`.
+4. Writes it to the user's volume at
+   `/home/jovyan/work/shepard-imports/<filename-from-Content-Disposition>`.
+5. Emits a small `README.md` next to it noting:
+   - source URL
+   - DataObject appId
+   - download time
+   - "this is a pre-fetch; the file is yours to modify, modifications
+     stay in the notebook volume, not back to shepard"
+
+**Edge cases:**
+
+- Multiple `?file=` params (operator might extend to bulk) → fetch all.
+- File > 100 MB → stream to disk, not buffer in memory.
+- 401 / 403 → still spawn the kernel, write the error into the README so
+  the user sees what happened.
+- Allowlist hostname check is REQUIRED — `?file=https://evil.com/...`
+  must not be fetched. Per the SSRF defense pattern.
+
+**Cross-references:**
+
+- `plugins/jupyter/config/jupyterhub_config.py` — `auth_state_hook` already
+  passes the token; pre_spawn_hook is the missing piece.
+- `feedback_completeness_nonnegotiable.md` — if the fetch fails, the kernel
+  still spawns + the failure is surfaced to the user (no silent skip).
+- J1e-PR-05 (path-mount) — landed; this is the next J1e iteration.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| J1e-PR-06-AUTOFETCH-01 | Add `pre_spawn_hook` to `jupyterhub_config.py` that reads `?file=`, validates allowlist, fetches via auth_state, writes to user volume. | M | queued | Allowlist hostnames come from `JUPYTERHUB_SHEPARD_ALLOWED_HOSTS` env (default `shepard.nuclide.systems,shepard-api.nuclide.systems`). |
+| J1e-PR-06-AUTOFETCH-02 | Frontend: ensure "Open in Jupyter" action emits the canonical `?file=` URL with proper encoding + tests the round-trip. | S | queued | Reference-edit UI per `plugins/jupyter/docs/quickstart.md`. |
+| J1e-PR-06-AUTOFETCH-03 | Plugin docs: `plugins/jupyter/docs/quickstart.md` section on "Open in Jupyter" — what it does, what it doesn't (no write-back), workaround for the unallow-listed case. | XS | queued | Required by CLAUDE.md "plugins ship their own documentation" rule. |
+| J1e-PR-06-AUTOFETCH-04 | Operator workaround for now: kernel-side cell using `SHEPARD_OIDC_ACCESS_TOKEN`. Document in `plugins/jupyter/docs/quickstart.md §Troubleshooting`. | XS | done (this row's notes) | The 4-line `requests.get` snippet is the bridge until -01 ships. |
+
 ## HELM-K8S-DEPLOY — Helm charts for Kubernetes deployment (alternative to docker-compose)
 
 Filed 2026-05-29 by operator request. Shepard today deploys via
