@@ -6,6 +6,14 @@ REST endpoints that aren't on the live image yet (TS-AXIS-AUTO,
 TS-SEMANTIC-REST). One-shot recovery; idempotent (MERGE on the bridge
 + annotation key tuple); safe to re-run.
 
+BUGFIX 2026-05-29 (TS-AXIS-VERIFY): edge type is `:has_annotation`
+(lowercase, per Constants.HAS_ANNOTATION = "has_annotation"); the
+earlier revision wrote `:HAS_ANNOTATION` (uppercase) which OGM does
+not traverse, leaving SemanticAnnotation nodes dangling and the
+`/channels/spatial-roles` endpoint returning all-null. The cleanup
+prelude removes any leftover dangling nodes from the earlier shape
+so re-running this script is safe.
+
 When the next backend cut goes live with the channel-annotation REST
 + /v2/.../channels/spatial-roles read endpoint, this data is already in
 place — no re-seed needed. The script also doubles as a reference impl
@@ -174,6 +182,15 @@ def build_cypher_rows(channels, today):
                  r["unitIri"], lbl, r["tier"], r["saAppId"]))
 
     parts = []
+    # Cleanup any dangling SemanticAnnotation rows from a pre-fix run of this
+    # script that wrote [:HAS_ANNOTATION] (uppercase) edges, which OGM does
+    # not traverse because Constants.HAS_ANNOTATION is "has_annotation"
+    # (lowercase). Idempotent: a clean Neo4j matches nothing here.
+    parts.append("""MATCH (a:AnnotatableTimeseries)-[r:HAS_ANNOTATION]->(sa:SemanticAnnotation)
+WHERE sa.source STARTS WITH 'TS-AXIS-VERIFY-recovery'
+   OR sa.source STARTS WITH 'TS-CHANNEL-UNITS-suffix-heuristic'
+DETACH DELETE sa
+RETURN count(sa) AS dangling_uppercase_edge_annotations_cleaned;""")
     if axis_rows:
         axis_arr = "[" + ",\n  ".join(fmt_axis(r) for r in axis_rows) + "]"
         parts.append(f"""WITH {axis_arr} AS axisRows
@@ -181,7 +198,7 @@ UNWIND axisRows AS r
 MERGE (a:AnnotatableTimeseries {{appId: r.shepardId}})
   ON CREATE SET a.containerId = r.containerId, a.timeseriesId = r.timeseriesId
 WITH a, r
-MERGE (a)-[:HAS_ANNOTATION]->(sa:SemanticAnnotation {{propertyIRI: 'urn:shepard:spatial:axis', valueIRI: r.role, subjectAppId: r.shepardId}})
+MERGE (a)-[:has_annotation]->(sa:SemanticAnnotation {{propertyIRI: 'urn:shepard:spatial:axis', valueIRI: r.role, subjectAppId: r.shepardId}})
   ON CREATE SET
     sa.appId = r.saAppId,
     sa.propertyName = 'spatial:axis',
@@ -198,7 +215,7 @@ UNWIND unitRows AS r
 MERGE (a:AnnotatableTimeseries {{appId: r.shepardId}})
   ON CREATE SET a.containerId = r.containerId, a.timeseriesId = r.timeseriesId
 WITH a, r
-MERGE (a)-[:HAS_ANNOTATION]->(sa:SemanticAnnotation {{propertyIRI: 'urn:shepard:unit', subjectAppId: r.shepardId, unitIRI: r.unitIri}})
+MERGE (a)-[:has_annotation]->(sa:SemanticAnnotation {{propertyIRI: 'urn:shepard:unit', subjectAppId: r.shepardId, unitIRI: r.unitIri}})
   ON CREATE SET
     sa.appId = r.saAppId,
     sa.propertyName = 'unit',
