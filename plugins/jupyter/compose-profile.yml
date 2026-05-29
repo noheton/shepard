@@ -1,0 +1,88 @@
+# shepard-plugin-jupyter — JupyterHub sidecar compose fragment (J1e-PR-05)
+#
+# This file is the plugin's declaration of its external sidecar service
+# (per the principle in `aidocs/platform/47-dev-experience-and-plugin-system.md §2.6`
+# and the memory rule `feedback_plugins_declare_sidecars.md`).
+#
+# Until the `SidecarsAssembler` operator-side renderer ships (PM1f), this
+# fragment is overlaid by hand:
+#
+#   docker compose \
+#     -f infrastructure/docker-compose.yml \
+#     -f plugins/jupyter/compose-profile.yml \
+#     --profile jupyter \
+#     up -d
+#
+# The fragment defines:
+#   * `jupyterhub` — the multi-user notebook spawner
+#   * `jupyterhub_data` / `jupyterhub_config` — named volumes for persistent state
+#
+# It joins the existing `shepard` and `frontend` compose networks so:
+#   * JupyterHub can reach Keycloak via the same network the backend uses
+#   * the reverse proxy (Caddy / Zoraxy) can route to it
+#
+# Operators: see `plugins/jupyter/docs/install.md` for the full runbook,
+# OIDC client provisioning, env-var checklist, and Zoraxy route notes.
+
+services:
+  jupyterhub:
+    # JupyterHub 5.x is the current stable major (5.2.1 as of 2026-05; pinned
+    # to the minor band rather than `:latest` per ADR-0020).
+    image: jupyterhub/jupyterhub:5
+    container_name: shepard-jupyterhub
+    restart: unless-stopped
+    environment:
+      # --- OIDC wiring ---
+      # Source of truth for the realm URL is the same env var Shepard's
+      # backend reads (`OIDC_AUTHORITY`).  JupyterHub's GenericOAuth
+      # authenticator reads our derived names below; the
+      # `jupyterhub_config.py` mounts the translation.
+      SHEPARD_OIDC_ISSUER_URL: ${OIDC_AUTHORITY}
+      JUPYTERHUB_KEYCLOAK_CLIENT_ID: ${JUPYTERHUB_KEYCLOAK_CLIENT_ID:-jupyterhub}
+      JUPYTERHUB_KEYCLOAK_CLIENT_SECRET: ${JUPYTERHUB_KEYCLOAK_CLIENT_SECRET}
+      # The public-facing URL JupyterHub redirects users back to after
+      # OIDC sign-in.  Operator sets this in the env file once the
+      # reverse-proxy route exists.
+      JUPYTERHUB_PUBLIC_URL: ${JUPYTERHUB_PUBLIC_URL:-https://jupyterhub.nuclide.systems}
+      # --- single-user notebook image ---
+      # Pinned scipy-notebook for predictable size + scientific deps.
+      # Operators wanting a different image set
+      # JUPYTERHUB_SINGLEUSER_IMAGE in their env file.
+      DOCKER_NOTEBOOK_IMAGE: ${JUPYTERHUB_SINGLEUSER_IMAGE:-jupyter/scipy-notebook:python-3.11}
+    volumes:
+      # Persistent user state (notebooks, dotfiles).
+      - jupyterhub_data:/data
+      # JupyterHub config + cookie secret + sqlite db.
+      - jupyterhub_config:/srv/jupyterhub
+      # Mount the rendered jupyterhub_config.py from the plugin's config
+      # directory.  Read-only — config is source-controlled, not mutated
+      # by the running hub.
+      - ./plugins/jupyter/config/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
+      # JupyterHub needs to talk to the docker daemon to spawn single-user
+      # containers (DockerSpawner).  Operators using Kubernetes swap this
+      # for a service-account binding — see install.md §"Kubernetes notes".
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      # JupyterHub exposes /hub/health unauthenticated for liveness probes.
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8000/hub/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - shepard
+      - frontend
+    profiles:
+      - jupyter
+
+networks:
+  # Re-declare the networks the parent compose file owns so this overlay
+  # parses standalone (`docker compose -f plugins/jupyter/compose-profile.yml config`).
+  # `external: true` would be wrong — the parent file creates them; here we
+  # just declare them as already-existing references.
+  shepard:
+  frontend:
+
+volumes:
+  jupyterhub_data:
+  jupyterhub_config:
