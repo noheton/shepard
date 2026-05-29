@@ -1853,3 +1853,56 @@ behaviour. But for any showcase that uses top-level `FileContainer` /
 `TimeseriesContainer` (e.g. LUMEN, MFFD), the same one-call grant would
 silently miss the container payloads. That's a real footgun for operators
 and worth fixing structurally rather than documenting around.
+
+## TS-INGEST-222GB-READINESS — MFFD timeseries ingest pre-flight
+
+**Status 2026-05-29:** operator reports ~222 GB of timeseries data still
+exporting from the MFFD source instance. `mffd-data.7z` (107 GB raw archive)
+is already on UNAS at `/mnt/pve/unas/dump/mffd-data.7z`. Once the export
+completes the v15 importer (see `examples/mffd-showcase/scripts/`) will run
+against the live shepard backend.
+
+**Capacity snapshot (2026-05-29):**
+
+| Substrate | Now | Headroom | 222 GB raw impact |
+|---|---|---|---|
+| Host disk (rpool) | 79 G / 500 G (16%) | 421 G | ~15-22 G after TimescaleDB compression → fits |
+| TimescaleDB hypertable | 18 MB / 113 channels / 82 chunks (all compressed) / 1.17 M points | unlimited | DB-OPT3 chunk policy already tuned; no schema migration needed |
+| Garage S3 | 30 blocks (~minimal) | shared with rpool | absorbs NDT/file payloads, OTvis stores |
+| UNAS (staging) | 2.1 T / 19 T | 17 T free | source archive lives here; landing-zone OK |
+| Neo4j metadata | (not measured here, presumed OK) | watch | **real risk** — channel cardinality × DO fanout |
+
+**Real risks (not disk-space):**
+
+| ID | Risk | Status | Mitigation |
+|---|---|---|---|
+| TS-INGEST-222GB-NEO4J | Neo4j `:Timeseries` metadata sprawl — every channel becomes one `:Timeseries` node + one `:TimeseriesReference` per DataObject that exposes it. At 222 GB raw, channel count likely 1000+; per-DO referenceIds array balloons. OGM hydration cost on DataObject GET. | queued | DB-OPT5 already trims `referenceIds` from the default DataObject list payload (shipped); per-DO `referenceCount` covers the count case. The full ref list is still on the detail page. Verify post-ingest. |
+| TS-INGEST-222GB-PGBOUNCER | PgBouncer pool exhaustion during peak write burst. | queued | PgBouncer is already in stack (#77 shipped). The v15 importer uses 4 worker processes; check `pgbouncer_stats` mid-ingest. If saturated: bump `max_client_conn` or stagger workers. |
+| TS-INGEST-222GB-COMPRESSION | Live writes land in the latest uncompressed chunk; compression policy sweeps after a chunk closes. During 222 GB ingest, the active chunk could grow large before the policy fires. | queued | DB-OPT3 set `chunk_time_interval`; verify a closed chunk fires recompression within minutes (timescale `compress_chunk_policy`). Watch `timescaledb_information.jobs` next_start vs last_finish. |
+| TS-INGEST-222GB-DOSPRAWL | If the v15 importer creates one DataObject per process-step × channel-group, the per-Collection DataObject count could reach 5-figure territory. Collection landing page rendering breaks per task #25 (graph displays scale linearly, BATCH-API mitigations land later). | queued | Verify the importer's DO-fanout shape before ingest. If high-fanout, pre-import: stage with `--dry-run` and review the DO plan. UI-020 bulk lab-journal endpoint (#194) already mitigated one N+1 at MFFD scale; check for analogous N+1 risks on the new shape. |
+| TS-INGEST-222GB-PROVENANCE | Every channel write should produce a typed `:Activity` per f(ai)²r. At 1000+ channels × millions of writes, `:Activity` row count could outpace useful query plans. | queued | Activity capture for TS data is **disabled by default** today; the importer writes through `X-Source-User-*` headers but no per-data-point activity. PROV-USER-MIRROR-ENDPOINT (#229) + PROV-USER-ENRICH (#234) already wire the importer-run granularity. Verify post-ingest that Activity row growth is bounded to per-import-run, not per-data-point. |
+| TS-INGEST-222GB-GARAGE | Binary file attachments (NDT scans, calibration files, OTvis tar bundles, mesh files) accompany the TS export. Garage S3 bucket lifecycle policy + chunk-size + replication factor (set to 1 today, single-node) need verification. | queued | `shepard-garage` is the only s3 backend; bucket is `shepard-files`; chunked-encoding disabled. Verify bucket has no quota; pre-create lifecycle rules for retention if downstream requires them. |
+
+**Pre-flight checklist (run before `make redeploy-backend` + before `python3 examples/mffd-showcase/scripts/import_mffd.py`):**
+
+1. Snapshot the current TimescaleDB hypertable + Neo4j (per PRE-MUT-SNAP family).
+2. Confirm `mffd-data.7z` is fully transferred + unpacks cleanly on UNAS.
+3. Re-run `examples/mffd-showcase/seed.py --warmup-only` to confirm v15 importer can reach the backend with the current bob/flo API keys.
+4. Verify `application.properties` does NOT have a permissive `shepard.timeseries.cap` or `shepard.permissions.default-owner` mismatch.
+5. Tail `infrastructure-backend-1` logs for the first 10 minutes of ingest; check for adaptive-backoff log lines.
+6. Mid-ingest: every ~30 min, snapshot `pg_stat_activity` + `timescaledb_information.jobs` + Neo4j `dbms.queryJmx` for blocked queries.
+7. Post-ingest: re-run DB-OPT family probes — EXPLAIN ANALYZE on the hot-path queries against the now-realistic-volume data.
+
+**This row supersedes** the loose "MFFD timeseries ingest in progress"
+references in memory. It is the single planning-and-readiness ledger for the
+222 GB event.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| TS-INGEST-222GB-NEO4J | (see risks table above) | M | queued | Verify post-ingest; mitigations exist (DB-OPT5). |
+| TS-INGEST-222GB-PGBOUNCER | (see risks table above) | S | queued | Live tail mid-ingest. |
+| TS-INGEST-222GB-COMPRESSION | (see risks table above) | S | queued | Confirm policy sweep cadence. |
+| TS-INGEST-222GB-DOSPRAWL | (see risks table above) | M | queued | Pre-import dry-run inspection. |
+| TS-INGEST-222GB-PROVENANCE | (see risks table above) | S | queued | Verify Activity bounded to importer-run granularity. |
+| TS-INGEST-222GB-GARAGE | (see risks table above) | S | queued | Bucket lifecycle audit. |
+| TS-INGEST-222GB-DASHBOARD | Lightweight dashboard for live ingest watch — single page polling capacity + chunk counts + Activity row growth + ref counts. Reuses `shepard.measures.itself` observability primitives. | S | queued | NICE | Lets the operator watch a single page during the 222 GB write rather than juggling psql + cypher-shell + garage stats. |
