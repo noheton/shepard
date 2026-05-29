@@ -6,8 +6,10 @@ export interface PagedDataObjectsOptions {
   collectionId: number;
   collectionAppId: Ref<string | null>;
   name: Ref<string>;
+  status?: Ref<string | undefined>;
   page: Ref<number>;
   pageSize?: number;
+  includeTimeBounds?: Ref<boolean>;
 }
 
 export interface PagedDataObjectsResult {
@@ -18,20 +20,29 @@ export interface PagedDataObjectsResult {
 }
 
 /**
+ * Fields projected on each list row — enough for the panel + table
+ * without returning every container/annotation/attribute bag.
+ * DB-OPT5: trim heavy nested fields server-side to reduce payload.
+ */
+const DO_LIST_FIELDS = "appId,name,status,createdAt,updatedAt,containerSummary";
+
+/**
  * Server-side paginated DataObject list. Fires a single API call per
- * {collectionAppId, name, page} triple — does NOT exhaustively fetch all
- * pages into memory.  Designed for collections with O(10 000) DataObjects.
+ * {collectionAppId, name, status, page} tuple — does NOT exhaustively
+ * fetch all pages into memory.  Designed for collections with O(10 000)
+ * DataObjects.
  *
- * `totalItems` is `null` until a full count is available; the UI shows
- * "25 of ?" when the count is unknown (the backend list endpoint does not
- * yet return a total-count header).
+ * `totalItems` is null until the count endpoint response lands.
  *
- * When `name` or `collectionAppId` changes the page is reset to 0 externally
- * (the panel is responsible for resetting its own `page` ref on filter change).
+ * When `name`, `status`, or `collectionAppId` changes the page is reset
+ * to 0 externally (the panel is responsible for resetting its own `page`
+ * ref on filter change).
  */
 export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObjectsResult {
   const { collectionId, collectionAppId, name, page } = opts;
   const pageSize = opts.pageSize ?? 25;
+  const includeTimeBounds = opts.includeTimeBounds ?? ref(false);
+  const statusFilter = opts.status ?? ref<string | undefined>(undefined);
 
   const items = ref<DataObjectListItemV2[]>([]);
   const totalItems = ref<number | null>(null);
@@ -48,23 +59,28 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
 
     loading.value = true;
     try {
-      let batch: DataObjectListItemV2[];
       if (appId) {
-        batch = await v2Api.value.listDataObjects({
+        const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
           collectionAppId: appId,
           name: nameFilter,
+          status: statusFilter.value,
           page: currentPage,
           size: pageSize,
+          include: includeTimeBounds.value ? 'time-bounds' : undefined,
+          fields: DO_LIST_FIELDS,
         });
+        items.value = fetched;
+        totalItems.value = fetchedTotal;
+        hasMore.value = fetched.length >= pageSize;
       } else {
-        batch = (await v1Api.value.getAllDataObjects({
+        const batch = (await v1Api.value.getAllDataObjects({
           collectionId,
           page: currentPage,
           size: pageSize,
         })) as DataObjectListItemV2[];
+        items.value = batch;
+        hasMore.value = batch.length >= pageSize;
       }
-      items.value = batch;
-      hasMore.value = batch.length >= pageSize;
     } catch (e) {
       handleError(e, "fetchDataObjects");
       items.value = [];
@@ -74,7 +90,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  watch([collectionAppId, name, page], () => {
+  watch([collectionAppId, name, statusFilter, page], () => {
     void fetch();
   }, { immediate: true });
 
