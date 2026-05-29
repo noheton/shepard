@@ -1971,3 +1971,34 @@ Snapshot 2026-05-29 09:53 UTC against live `shepard.nuclide.systems` (post J1e +
 | TS-INGEST-222GB-CHOKE-03 | Sweep all `:*Config` singletons for the OGM session-null race; apply per-call session pattern uniformly. | S | queued | Backlog of 5 affected entity types (SqlTimeseriesConfig, InstanceRorConfig, SemanticConfig, UnhideConfig, VideoConfig, FeatureToggleRegistry). Each is a 20-line fix mirroring `JupyterConfigDAO` post-jupyter-unified-refs. |
 | TS-INGEST-222GB-CHOKE-04 | Verify TS-SEMANTIC-01 dual-write is fire-and-forget (catches Neo4j exceptions at WARN, doesn't roll back Postgres). | XS | queued | Read-and-verify; fix if not. |
 | TS-INGEST-222GB-CHOKE-06 | Tune Quarkus thread-pool for ingest burst: `queue-size=1000` + `max-threads=64`. | XS | queued | Pure properties addition. |
+
+## FRONTEND-BUILD-BLOCKED-2026-05-29 — TS errors gate the deploy
+
+3 pre-existing `tsc --noEmit` errors block `npm run build` and the
+docker image rebuild via `make redeploy`. Surfaced 2026-05-29 when the
+jupyter-unified-refs agent + the manual redeploy both hit them.
+**Backend is fully deployed at `d99cc6372`; frontend is stuck on the
+last successful image** (pre-J1e, pre-FR1b unified-table, pre-TS-IDc
+frontend client). Symptom: microsections Collection still shows zero
+references in the UI even though the FR1b endpoint
+`GET /v2/files/by-data-object/{appId}` returns the 2 singleton refs
+correctly on live.
+
+| ID | Error | Severity | Fix |
+|---|---|---|---|
+| FE-BUILD-01 | `mapPermissions.ts:12` — `Cannot find module './EditPermissionsDialog.vue'` (type-only import of `MemberPermissions`). The `.vue` file exists; TS can't resolve types exported from SFCs. | MAJOR | Move `MemberPermissions` type to a sibling `.ts` file (`permissionTypes.ts`). 5-line edit. Or add a shim that resolves Vue `<script setup lang="ts">` type exports. |
+| FE-BUILD-02 | `searchService.ts:10` — same shape: type-only import of `SearchResult` from `SearchResultList.vue`. | MAJOR | Same fix — extract `SearchResult` to `searchResultTypes.ts`. |
+| FE-BUILD-03 | `usePagedDataObjects.ts:97` — `'fields' does not exist in type 'ListDataObjectsV2Request'`. DB-OPT5 (#211) added the query param to the backend but the generated client wasn't regenerated. | MAJOR | (a) regenerate `@dlr-shepard/backend-client` from the current OpenAPI spec; OR (b) cast call site: `getAllDataObjectsV2({ ... fields: DO_LIST_FIELDS } as unknown as ListDataObjectsV2Request)` as a holdover. Real fix is client regen. |
+
+**Why this stuck without anyone noticing:** Vitest doesn't run `tsc`,
+so `npm run test` (used as the agent acceptance gate) passed. The full
+`tsc --noEmit` only fires in the `npm run build` chain inside the Nuxt
+image build inside `make redeploy`. Add `npm run typecheck` (alias for
+`tsc --noEmit`) to the agent acceptance gate set going forward.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| FE-BUILD-01 | Extract `MemberPermissions` type from `EditPermissionsDialog.vue` to `permissionTypes.ts`. | XS | queued | Unblocks frontend build. |
+| FE-BUILD-02 | Extract `SearchResult` type from `SearchResultList.vue` to `searchResultTypes.ts`. | XS | queued | Unblocks frontend build. |
+| FE-BUILD-03 | Regenerate `@dlr-shepard/backend-client` from current OpenAPI spec OR cast the call site. | S (regen) / XS (cast) | queued | Unblocks frontend build. The cast is a holdover; client regen is the real fix. |
+| FE-BUILD-GATE | Add `npm run typecheck` to the agent acceptance gate set (the 5 gates in the standing instructions). | XS | queued | Prevents this class of regression. |
