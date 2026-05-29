@@ -2212,9 +2212,9 @@ default) but worth a one-line note in the runbook.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| J1e-PR-05-CADDY-PATH-MOUNT-01 | Update `jupyterhub_config.py`: `base_url + oauth_callback_url` for path-mount. | XS | queued | One-block edit. |
-| J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile` with the `handle_path /jupyterhub/*` block. Decide: standalone sidecar Caddy, OR a fragment for a future top-level `infrastructure/Caddyfile`. | S | queued | If migrating off Zoraxy, this is the entry point for the broader Caddy adoption. |
-| J1e-PR-05-CADDY-PATH-MOUNT-03 | Rewrite `plugins/jupyter/docs/install.md §4` for path-mount + add the shared-cookie-domain caveat. | XS | queued | Update the `JUPYTERHUB_PUBLIC_URL` example in `.env.example` to the path-based URL. |
+| J1e-PR-05-CADDY-PATH-MOUNT-01 | Update `jupyterhub_config.py`: `base_url + oauth_callback_url` for path-mount. | XS | done | Shipped on `j1e-path-mount-config` (SHA recorded at merge). Adds `c.JupyterHub.base_url = "/jupyterhub"` and flips `JUPYTERHUB_PUBLIC_URL` default to `https://shepard.nuclide.systems/jupyterhub`. Bundled with `.env.example` retemplating + new `jupyterhub` Keycloak client in `shepard-demo-realm.json` (placeholder secret `REPLACE_ME_AT_OPERATOR_BOOTSTRAP`). |
+| J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile` with the `handle_path /jupyterhub/*` block. Decide: standalone sidecar Caddy, OR a fragment for a future top-level `infrastructure/Caddyfile`. | S | queued | Gated on the broader Zoraxy → Caddy migration decision (-04). install.md §4.2 already documents the Caddyfile fragment as the preferred-future shape. |
+| J1e-PR-05-CADDY-PATH-MOUNT-03 | Rewrite `plugins/jupyter/docs/install.md §4` for path-mount + add the shared-cookie-domain caveat. | XS | done | Shipped on `j1e-path-mount-config` (SHA recorded at merge). New §4 covers: §4.1 Zoraxy operator UI walk (current infra), §4.2 Caddy preferred-future Caddyfile block, §4.3 Keycloak client secret regen step, §4.4 shared-cookie-domain caveat (`Path=/jupyterhub`). Prerequisites + verify probes + admin PATCH example all rewritten for the path-mounted URL. |
 | J1e-PR-05-CADDY-PATH-MOUNT-04 | If this triggers a broader switch from Zoraxy to Caddy: file `INFRA-REVERSE-PROXY-CADDY-MIGRATION` as a separate row. (Don't bundle here.) | — | queued (conditional) | Operator decision: is this an isolated change for JH, or the start of a Zoraxy→Caddy migration? |
 
 **Supersedes:** the `jupyterhub.nuclide.systems` subdomain instructions

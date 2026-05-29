@@ -128,7 +128,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/v5-metadata-enrichment-survey-2026-05-23.md`](agent-findings/v5-metadata-enrichment-survey-2026-05-23.md) | v5 OpenAPI — metadata enrichment survey for the MFFD importer (v15.10 candidates) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/109-mffd-scan-line-join-key.md`](data/109-mffd-scan-line-join-key.md) | 109 — MFFD scan-line join key across TPS stores | 2026-05-27 | 2026-05-27 |
 | [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | 2026-05-27 |
-| [`aidocs/integrations/116-btkvs-improved-schema.md`](integrations/116-btkvs-improved-schema.md) | 116 — BT-KVS docket improved schema | 2026-05-29 | — |
+| [`aidocs/integrations/116-btkvs-improved-schema.md`](integrations/116-btkvs-improved-schema.md) | 116 — BT-KVS docket improved schema | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/110-permissions-redesign-decision.md`](platform/110-permissions-redesign-decision.md) | 110 — Permissions: redesign or extend in place? | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |

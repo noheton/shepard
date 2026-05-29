@@ -209,6 +209,48 @@
       "implicitFlowEnabled": false,
       "protocol": "openid-connect",
       "fullScopeAllowed": true
+    },
+    {
+      "clientId": "jupyterhub",
+      "name": "shepard-plugin-jupyter sidecar",
+      "description": "Confidential client for JupyterHub sidecar; path-mounted at /jupyterhub on the Shepard host (J1e-PR-05-CADDY-PATH-MOUNT).",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "secret": "REPLACE_ME_AT_OPERATOR_BOOTSTRAP",
+      "redirectUris": [
+        "https://shepard.nuclide.systems/jupyterhub/hub/oauth_callback",
+        "https://shepard.example.org/jupyterhub/hub/oauth_callback"
+      ],
+      "webOrigins": [
+        "https://shepard.nuclide.systems",
+        "https://shepard.example.org"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "implicitFlowEnabled": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+",
+        "pkce.code.challenge.method": "S256"
+      }
     }
   ],
   "defaultRoles": [
