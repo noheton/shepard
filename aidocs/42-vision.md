@@ -385,6 +385,21 @@ These work the same way across every primitive:
   Phase 2 — `RdkToUrdfExporter` sidecar, Foxglove iframe fallback,
   in-browser trajectory record button, Trace3D+URDF scene
   composition — queued under URDF-WEBVIEW-1.
+- **Digital twin scene graph (read + edit via `/v2/scene-graphs`)** *(SCENEGRAPH-REST-1
+  shipped 2026-05-29)*. A `DigitalTwinScene` groups a tree of
+  `CoordinateFrame` nodes (each carrying a translation/rotation
+  relative to its parent) and `Joint` nodes (URDF kinematic joint
+  types: REVOLUTE, PRISMATIC, FIXED, CONTINUOUS). REST surface:
+  `POST /v2/scene-graphs` (create scene), `GET /v2/scene-graphs/{appId}`
+  (returns scene header + frames flat-list + joints flat-list in one
+  payload), `POST /v2/scene-graphs/{appId}/frames` (add frame),
+  `PATCH /v2/scene-graphs/{appId}/frames/{frameAppId}` (merge-patch),
+  `DELETE` on scenes and frames, `POST /v2/scene-graphs/{appId}/joints`.
+  The five Neo4j relationship edges (`[:HAS_FRAME]`, `[:HAS_JOINT]`,
+  `[:HAS_PARENT_FRAME]`, `[:JOINT_PARENT]`, `[:JOINT_CHILD]`) are
+  written by the service layer on every create call. The first consumer
+  is RDK-PARSE-2 (RoboDK kinematic tree import); the data model is
+  aligned to the URDF joint-type taxonomy.
 
 ## How you actually use it
 
