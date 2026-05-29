@@ -2098,3 +2098,40 @@ can land as one larger commit since the rename is atomic across
 backend/cli/frontend; trying to split risks broken-state intermediate
 commits. PR-05 (sidecar) is independent and can land in parallel.
 PR-06/07/08/09 are docs; land in the final PR alongside the test pass.
+
+## BTKVS-DOCKET-SHOWCASE — C/C and C/SiC fabrication docket as third showcase
+
+Operator uploaded BT-KVS group's existing docket tooling on 2026-05-29
+(Nils-Packet — see `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`).
+The package contains a working FastAPI + Streamlit stack already
+talking to Shepard for templates, plus the v3 docket JSON schema
+and four supporting Python repos. **This is the strongest single
+validator of the T1 / TPL1 / TPL2 / SHACL design line we have to date.**
+
+The operator's headline observation: **form-based entry is a prime
+template use case.** The BT-KVS Streamlit frontend renders a process-
+step form driven by a Python dict (`STEP_TEMPLATES`); the natural
+Shepard-side shape is SHACL shapes stored as `:ShepardTemplate` nodes
+and rendered live by the form component. Their existing FastAPI
+already pulls Shepard templates this way — they validated the
+pattern in production, just on a bespoke wiring.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| BTKVS-A1 | `examples/btkvs-docket-showcase/` seed script + SHOWCASE.md mirroring LUMEN/MFFD/microsections pattern; reads `example.json`, creates Collection structure per `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md §3`, decomposes general/structure/processing into DOs + StructuredDataReferences + Predecessor links per process step. | S | queued | Phase A — lightweight third showcase. |
+| BTKVS-A2 | Controlled-vocab seed: `:SemanticRepository` `urn:btkvs:fiber` + `urn:btkvs:fabric` + `urn:btkvs:precursor` + `urn:btkvs:additive`. Reuse `material_database.py` fiber+fabric dicts from `laufzettel-readout` as the seed payload. | S | queued | Reuse-before-reimplement: don't re-author the vocab; ingest theirs. |
+| BTKVS-B1 | **Design doc `aidocs/integrations/116-btkvs-shacl-form-templates.md`** — the form-as-SHACL-shape architectural pattern. Define `FORM_RECIPE` vs reuse `VIEW_RECIPE` (open question per findings §7.1); the `shepard:formHint` SHACL annotation; the render endpoint shape; round-trip Excel ↔ JSON via shape-as-schema-spine. Persona consult: Role 5 (RDM) + Role 2 (Data Ontologist). | M | queued | Phase B — the validating slice. **This is where T1 stops being theoretical.** |
+| BTKVS-B2 | Register ONE SHACL shape (`docket-root :general` section is the simplest target) as a `:ShepardTemplate`; verify `POST /v2/shapes/render` produces a form-friendly response. Tiny Streamlit demo that renders the form from the shape. | S | queued | Acceptance test for BTKVS-B1. |
+| BTKVS-C1 | `shepard-plugin-btkvs-docket` — typed payload kind for v3 docket JSON + `POST /v2/btkvs/dockets` ingestion endpoint with SHACL validation against the registered shapes. Plugin-first per CLAUDE.md §47. | M | queued | Phase C — full integration. Replaces BT-KVS's FastAPI `templates_api.py` bespoke wiring. |
+| BTKVS-C2 | Excel ↔ JSON round-trip driven by SHACL `urn:btkvs:cell-mapping` per-field annotations. Eliminates the `laufzettel-readout` / `docket_version_upgrader` maintenance burden — shape edits = format edits. | M | queued | Pays back the BT-KVS team's existing Python maintenance. |
+| BTKVS-D1 | Operator-side: nominate `shepard-plugin-btkvs-docket` as the upstream contribution path for the BT-KVS group's Shepard usage. Cross-reference with `aidocs/strategy/40-ecosystem.md` ecosystem partner list. | XS | queued | External-team validation = adoption acceleration. |
+
+**Three-showcase coverage:** MFFD (timeseries + spatial), LUMEN
+(timeseries + anomaly + provenance), Microsections (file payloads +
+JupyterHub), **BT-KVS docket (structured-data + forms + cross-cutting
+controlled vocabularies)**. The fourth axis (forms-driven entry) is
+exactly what was missing from the showcase portfolio.
+
+Source: `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`
+(full findings, 8 sections, decoded drawio schema, JSON shape map,
+4 open questions for operator + persona-board read before Phase B).

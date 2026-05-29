@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 42 |
 | `concept` | 25 |
 | `idea` | 12 |
-| `feature-defined` | 105 |
+| `feature-defined` | 106 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 70 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **383** |
+| **total docs** | **384** |
 | **UNTAGGED** | **0** |
 
 ## fragment (42)
@@ -137,7 +137,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (105)
+## feature-defined (106)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -145,6 +145,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/185-v5-survey-bundle.md`](agent-findings/185-v5-survey-bundle.md) | v5 Survey Bundle (v15.10) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/backend-jandex-hang-investigation-2026-05-28.md`](agent-findings/backend-jandex-hang-investigation-2026-05-28.md) | Backend rebuild — Quarkus/Jandex infinite-loop investigation (2026-05-28) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`](agent-findings/btkvs-docket-showcase-2026-05-29.md) | BT-KVS docket showcase — C/C and C/SiC fabrication tracking | 2026-05-29 | — |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
