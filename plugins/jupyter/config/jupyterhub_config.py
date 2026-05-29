@@ -73,7 +73,13 @@ c.JupyterHub.spawner_class = "dockerspawner.DockerSpawner"
 c.DockerSpawner.image = os.environ.get(
     "DOCKER_NOTEBOOK_IMAGE", "jupyter/scipy-notebook:python-3.11"
 )
-c.DockerSpawner.network_name = "shepard"
+# Docker compose prefixes networks with the project name — `shepard` is the
+# logical name declared in compose-profile.yml but the actual network is
+# `<project>_shepard` (e.g. `infrastructure_shepard` on this deploy).
+# Operator sets JUPYTERHUB_DOCKER_NETWORK to the resolved name in .env.
+c.DockerSpawner.network_name = os.environ.get(
+    "JUPYTERHUB_DOCKER_NETWORK", "infrastructure_shepard"
+)
 c.DockerSpawner.remove = True
 c.DockerSpawner.notebook_dir = "/home/jovyan/work"
 c.DockerSpawner.volumes = {"jupyterhub-user-{username}": "/home/jovyan/work"}

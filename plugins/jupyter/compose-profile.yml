@@ -48,6 +48,9 @@ services:
       # Must be a network path the JH container can route (not the public Zoraxy IP).
       # Falls back to the front-channel issuer if unset.
       SHEPARD_OIDC_INTERNAL_ISSUER_URL: ${SHEPARD_OIDC_INTERNAL_ISSUER_URL:-}
+      # DockerSpawner's network — must be the compose-prefixed network name
+      # (e.g. `infrastructure_shepard`), not the logical declaration `shepard`.
+      JUPYTERHUB_DOCKER_NETWORK: ${JUPYTERHUB_DOCKER_NETWORK:-infrastructure_shepard}
       JUPYTERHUB_KEYCLOAK_CLIENT_ID: ${JUPYTERHUB_KEYCLOAK_CLIENT_ID:-jupyterhub}
       JUPYTERHUB_KEYCLOAK_CLIENT_SECRET: ${JUPYTERHUB_KEYCLOAK_CLIENT_SECRET}
       # The public-facing URL JupyterHub redirects users back to after
