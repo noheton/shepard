@@ -1,0 +1,271 @@
+<mxfile host="app.diagrams.net" modified="2026-05-29T12:00:00.000Z" agent="Shepard btkvs-a4 design" version="24.0.0" type="device">
+  <diagram name="BT-KVS improved schema" id="btkvs-a4-improved">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="BT-KVS docket — improved Shepard schema (BTKVS-A4)&#10;Three refinements vs Shepard_Database_Setup.drawio:&#10;  (1) linear :Predecessor chain on process steps  (2) per-post_analysis DO  (3) editor stamps → :Activity PROV-O" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fillColor=#FFF2CC;strokeColor=#D6B656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="LEGEND&#10;━━━━━━━━━━━━━━━━&#10;:Collection — blue&#10;:DataObject — green&#10;:StructuredDataReference — orange&#10;:FileReference — purple&#10;:Activity (PROV-O) — pink&#10;:User — yellow&#10;━━━━━━━━━━━━━━━━&#10;edges:&#10;  CHILD_OF — solid grey&#10;  :Predecessor (prov:wasInformedBy) — red bold&#10;  HAS_REFERENCE — solid green&#10;  WAS_ASSOCIATED_WITH / GENERATED / USED — dashed PROV-O" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fillColor=#F5F5F5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="20" width="320" height="200" as="geometry" />
+        </mxCell>
+
+        <mxCell id="collection" value=":Collection&#10;name = &quot;BT-KVS dockets 2026&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="130" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="docket-root" value=":DataObject&#10;kind = &quot;btkvs:docket-root&quot;&#10;name = &quot;Docket I123&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="240" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="docket-general-sd" value=":StructuredDataReference&#10;payload = general + structure JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="240" width="240" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-collection-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#666666;fontSize=9;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="collection" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-collection-docket-label" value="HAS_DATAOBJECT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=9;" vertex="1" connectable="0" parent="edge-collection-docket">
+          <mxGeometry x="-0.2" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-docket-sd" style="endArrow=classic;html=1;rounded=0;strokeColor=#82B366;fontSize=9;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="docket-root" target="docket-general-sd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-docket-sd-label" value="HAS_REFERENCE" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;" vertex="1" connectable="0" parent="edge-docket-sd">
+          <mxGeometry x="0" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="step-poly" value=":DataObject&#10;kind = &quot;btkvs:process-step&quot;&#10;name = &quot;Polymerisation&quot;&#10;stepIndex = 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="420" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step-temp" value=":DataObject&#10;kind = &quot;btkvs:process-step&quot;&#10;name = &quot;Tempering&quot;&#10;stepIndex = 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="420" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step-pyro1" value=":DataObject&#10;kind = &quot;btkvs:process-step&quot;&#10;name = &quot;Pyrolysis (pass 1)&quot;&#10;stepIndex = 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="420" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step-pyro2" value=":DataObject&#10;kind = &quot;btkvs:process-step&quot;&#10;name = &quot;Pyrolysis (pass 2)&quot;&#10;stepIndex = 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="980" y="420" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step-sili" value=":DataObject&#10;kind = &quot;btkvs:process-step&quot;&#10;name = &quot;Siliconization&quot;&#10;stepIndex = 5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="420" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-poly-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.2;entryY=1;" edge="1" parent="1" source="step-poly" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-poly-docket-label" value="CHILD_OF" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;" vertex="1" connectable="0" parent="edge-poly-docket">
+          <mxGeometry x="-0.1" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-temp-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.4;entryY=1;" edge="1" parent="1" source="step-temp" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pyro1-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.6;entryY=1;" edge="1" parent="1" source="step-pyro1" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pyro2-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.8;entryY=1;" edge="1" parent="1" source="step-pyro2" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-sili-docket" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.95;entryY=1;" edge="1" parent="1" source="step-sili" target="docket-root">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-poly-temp" style="endArrow=classic;html=1;rounded=0;strokeColor=#B85450;strokeWidth=2.5;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="step-temp" target="step-poly">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-poly-temp-label" value=":Predecessor&#10;prov:wasInformedBy" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#B85450;" vertex="1" connectable="0" parent="edge-poly-temp">
+          <mxGeometry x="0" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-temp-pyro1" style="endArrow=classic;html=1;rounded=0;strokeColor=#B85450;strokeWidth=2.5;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="step-pyro1" target="step-temp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-temp-pyro1-label" value=":Predecessor&#10;prov:wasInformedBy" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#B85450;" vertex="1" connectable="0" parent="edge-temp-pyro1">
+          <mxGeometry x="0" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-pyro1-pyro2" style="endArrow=classic;html=1;rounded=0;strokeColor=#B85450;strokeWidth=2.5;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="step-pyro2" target="step-pyro1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pyro1-pyro2-label" value=":Predecessor&#10;prov:wasInformedBy" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#B85450;" vertex="1" connectable="0" parent="edge-pyro1-pyro2">
+          <mxGeometry x="0" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-pyro2-sili" style="endArrow=classic;html=1;rounded=0;strokeColor=#B85450;strokeWidth=2.5;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="step-sili" target="step-pyro2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pyro2-sili-label" value=":Predecessor&#10;prov:wasInformedBy" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=#B85450;" vertex="1" connectable="0" parent="edge-pyro2-sili">
+          <mxGeometry x="0" y="-1" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="pa-poly" value=":DataObject&#10;kind = &quot;btkvs:post-analysis&quot;&#10;name = &quot;PA: Polymerisation&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="620" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-temp" value=":DataObject&#10;kind = &quot;btkvs:post-analysis&quot;&#10;name = &quot;PA: Tempering&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="620" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-pyro1" value=":DataObject&#10;kind = &quot;btkvs:post-analysis&quot;&#10;name = &quot;PA: Pyrolysis (1)&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="620" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-pyro2" value=":DataObject&#10;kind = &quot;btkvs:post-analysis&quot;&#10;name = &quot;PA: Pyrolysis (2)&quot;&#10;[has FILES attached ↓]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="620" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-sili" value=":DataObject&#10;kind = &quot;btkvs:post-analysis&quot;&#10;name = &quot;PA: Siliconization&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="620" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pa-poly" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="pa-poly" target="step-poly">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pa-poly-label" value="CHILD_OF" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;" vertex="1" connectable="0" parent="edge-pa-poly">
+          <mxGeometry x="-0.1" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-pa-temp" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="pa-temp" target="step-temp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pa-pyro1" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="pa-pyro1" target="step-pyro1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pa-pyro2" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="pa-pyro2" target="step-pyro2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pa-sili" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="pa-sili" target="step-sili">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-pyro2-sd" value=":StructuredDataReference&#10;ndt[] + sampling + density+porosity + ..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="900" y="780" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-pyro2-ct" value=":FileReference&#10;method = &quot;CT&quot;&#10;contentType = application/dicom" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="870" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-pyro2-mikro" value=":FileReference&#10;method = &quot;Mikrometer&quot;&#10;contentType = text/csv" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="950" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-pa-pyro2-sd" style="endArrow=classic;html=1;rounded=0;strokeColor=#82B366;fontSize=8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="pa-pyro2" target="pa-pyro2-sd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pa-pyro2-sd-label" value="HAS_REFERENCE" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#82B366;" vertex="1" connectable="0" parent="edge-pa-pyro2-sd">
+          <mxGeometry x="-0.1" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-pa-pyro2-ct" style="endArrow=classic;html=1;rounded=0;strokeColor=#82B366;fontSize=8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="pa-pyro2-sd" target="pa-pyro2-ct">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pa-pyro2-ct-label" value="HAS_REFERENCE" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontColor=#82B366;" vertex="1" connectable="0" parent="edge-pa-pyro2-ct">
+          <mxGeometry x="-0.1" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-pa-pyro2-mikro" style="endArrow=classic;html=1;rounded=0;strokeColor=#82B366;fontSize=8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="pa-pyro2-ct" target="pa-pyro2-mikro">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pa-others-note" value="(Note: PA-Polymerisation / PA-Tempering / PA-Pyrolysis(1) / PA-Siliconization&#10;each also hold a :StructuredDataReference. Omitted here for clarity —&#10;they're JSON-only on this docket. PA-Pyrolysis(2) is the file-bearing one.)" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;fontStyle=2;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="80" y="780" width="650" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act-poly" value=":Activity&#10;type = &quot;btkvs:edit-step&quot;&#10;sourceMode = &quot;human&quot;&#10;startedAtMs = 2025-11-24T..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1100" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act-temp" value=":Activity&#10;type = &quot;btkvs:edit-step&quot;&#10;sourceMode = &quot;human&quot;&#10;startedAtMs = 2025-11-25T..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1100" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act-pyro1" value=":Activity&#10;type = &quot;btkvs:edit-step&quot;&#10;sourceMode = &quot;human&quot;&#10;startedAtMs = 2025-11-27T..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1100" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act-pyro2" value=":Activity&#10;type = &quot;btkvs:edit-step&quot;&#10;sourceMode = &quot;human&quot;&#10;startedAtMs = 2025-11-28T..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="980" y="1100" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="act-sili" value=":Activity&#10;type = &quot;btkvs:edit-step&quot;&#10;sourceMode = &quot;human&quot;&#10;startedAtMs = 2025-11-30T..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="1100" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-dennis" value=":User&#10;username = &quot;dennis&quot;&#10;isMirrored = true" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="180" y="1250" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user-nils" value=":User&#10;username = &quot;nils&quot;&#10;isMirrored = true" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1250" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-poly-step" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#B85450;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="act-poly" target="pa-poly">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-act-poly-step-label" value="GENERATED" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontStyle=2;fontColor=#B85450;" vertex="1" connectable="0" parent="edge-act-poly-step">
+          <mxGeometry x="0" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-act-temp-step" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#B85450;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="act-temp" target="pa-temp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-pyro1-step" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#B85450;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="act-pyro1" target="pa-pyro1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-pyro2-step" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#B85450;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="act-pyro2" target="pa-pyro2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-sili-step" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#B85450;fontSize=8;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="act-sili" target="pa-sili">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-poly-dennis" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#D6B656;fontSize=8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="act-poly" target="user-dennis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-act-poly-dennis-label" value="WAS_ASSOCIATED_WITH" style="edgeLabel;html=1;align=center;verticalAlign=middle;fontSize=8;fontStyle=2;fontColor=#996600;" vertex="1" connectable="0" parent="edge-act-poly-dennis">
+          <mxGeometry x="-0.1" y="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge-act-temp-dennis" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#D6B656;fontSize=8;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="act-temp" target="user-dennis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-pyro1-nils" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#D6B656;fontSize=8;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="act-pyro1" target="user-nils">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-pyro2-nils" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#D6B656;fontSize=8;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="act-pyro2" target="user-nils">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge-act-sili-nils" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeColor=#D6B656;fontSize=8;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="act-sili" target="user-nils">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="footer-note" value="WHAT CHANGED vs Shepard_Database_Setup.drawio:&#10;&#10;(1) Linear :Predecessor chain (red bold arrows) replaces the parallel-tree-under-root shape.&#10;    Each step's temporal predecessor is explicit; the docket-root keeps CHILD_OF edges for navigation only.&#10;&#10;(2) post_analysis is its own :DataObject per step (green box in row 4) — not a JSON section nested inside the step.&#10;    On PA-Pyrolysis(2) we show what this unblocks: a :StructuredDataReference for the metadata PLUS&#10;    :FileReference peers for actual CT and Mikrometer artefacts. JSON-only PAs (the other 4) work too.&#10;&#10;(3) Editor stamps become :Activity nodes (pink) with PROV-O edges:&#10;       GENERATED → the step or PA DO  (dashed red)&#10;       WAS_ASSOCIATED_WITH → :User    (dashed yellow)&#10;    sourceMode = &quot;human&quot; encodes the f(ai)²r triad; a future AI-assisted edit would carry sourceMode = &quot;ai&quot;.&#10;&#10;Cross-step semantic vocabularies (Fiber Material, Weave, Precursor, Additive) live in :SemanticRepository and are linked&#10;via :SemanticAnnotation on the structure DO (not shown in this diagram for clarity — see findings §3 of the BTKVS-DOCKET-SHOWCASE doc)." style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fillColor=#F5F5F5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1340" width="1500" height="180" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
