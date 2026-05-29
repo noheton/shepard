@@ -153,6 +153,35 @@ Raise the bundle floor incrementally — when the measured number is
 and the CI `min-coverage-overall` to the new floor. Don't ratchet
 in giant steps.
 
+## Always: run the six agent acceptance gates before reporting
+
+Every agent (in a worktree or on `main`) MUST run all six gates locally
+before reporting work as complete. CI runs these too — but an agent that
+ships without running them wastes a round-trip when CI catches what a
+local run would have.
+
+The six gates, in run-order:
+
+1. **`mvn verify -pl backend`** — JUnit + JaCoCo (≥ 60% line/branch) +
+   SpotBugs + findsecbugs. Backend Java surface.
+2. **`npm run lint`** (in `frontend/`) — ESLint. Style + obvious bugs.
+3. **`npm run test`** (in `frontend/`) — Vitest unit tests. Component
+   logic.
+4. **`npm run typecheck`** (in `frontend/`) — `vue-tsc --noEmit`.
+   Catches TS errors that Vitest skips (the `nuxt build` chain is the
+   only other place this fires; missing this gate is how
+   `FRONTEND-BUILD-BLOCKED-2026-05-29` snuck through).
+5. **`make redeploy-*`** (when shipping a user-visible feature) — full
+   image rebuild + container restart on the dev box. Smoke-test the
+   deployed surface, not just the source.
+6. **Playwright at 4K viewport** (when the change touches a frontend
+   surface) — see `feedback_validate_user_viewport.md`. Validate at the
+   user's actual viewport, not just 1440/1920.
+
+A worktree agent reporting "done" without all six having passed (or
+explicitly justified as N/A for backend-only / frontend-only / infra
+work) sends the work back to itself. Don't claim ready without proof.
+
 ## Always: keep the security gates green
 
 Six gates wired into CI:
