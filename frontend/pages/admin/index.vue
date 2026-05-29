@@ -13,6 +13,7 @@ import AdminActivityLogPane from "~/components/context/admin/AdminActivityLogPan
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
 import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
+import AdminJupyterPane from "~/components/context/admin/AdminJupyterPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
@@ -210,6 +211,13 @@ const landingCards = [
     title: "Instance Registry",
     description: "Register peer Shepard instances — resolves instanceId to friendly name in the provenance badge hover.",
   },
+  // J1e
+  {
+    fragment: AdminFragments.JUPYTER,
+    icon: "mdi-jupyter",
+    title: "JupyterHub link-out",
+    description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
+  },
 ];
 </script>
 
@@ -307,6 +315,10 @@ const landingCards = [
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.INSTANCE_REGISTRY"
       slug="instance-registry"
+    />
+    <!-- J1e: JupyterHub link-out config -->
+    <AdminJupyterPane
+      v-if="routeFragment === AdminFragments.JUPYTER"
     />
   </PaneLayout>
 </template>

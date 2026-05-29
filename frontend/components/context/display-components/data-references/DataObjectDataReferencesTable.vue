@@ -4,6 +4,7 @@ import type { DataReference } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
 import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
+import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
 
 interface DataObjectDataReferencesTableProps {
   collectionId: number;
@@ -90,6 +91,28 @@ async function confirmDelete() {
     return;
   }
 
+  // FR1b singletons: DELETE /v2/files/{appId}
+  if (item.type === "File" || item.type === "Notebook") {
+    const accessToken = session.value?.accessToken;
+    if (!accessToken) return;
+    const url = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}`;
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.ok || response.status === 204) {
+        showDeleteDialog.value = false;
+        emit("refresh");
+      } else {
+        handleError(`HTTP ${response.status}`, `delete ${item.type} reference`);
+      }
+    } catch (err) {
+      handleError(err, `delete ${item.type} reference`);
+    }
+    return;
+  }
+
   // Video: raw fetch DELETE
   const accessToken = session.value?.accessToken;
   if (!accessToken) return;
@@ -136,6 +159,8 @@ const kindCounts = computed<Record<RefKind, number>>(() => {
     TimeSeries: 0,
     "Structured Data": 0,
     "File Bundle": 0,
+    File: 0,
+    Notebook: 0,
     Git: 0,
     Video: 0,
   };
@@ -153,6 +178,9 @@ const kindIcons: Record<RefKind, string> = {
   TimeSeries: "mdi-chart-line",
   "Structured Data": "mdi-code-json",
   "File Bundle": "mdi-file-multiple-outline",
+  // REF-UNIFIED-TABLE-FR1B / J1c retirement
+  File: "mdi-file-outline",
+  Notebook: "mdi-notebook-outline",
   Git: "mdi-git",
   Video: "mdi-video-outline",
 };
@@ -160,6 +188,8 @@ const KIND_ORDER: RefKind[] = [
   "TimeSeries",
   "Structured Data",
   "File Bundle",
+  "File",
+  "Notebook",
   "Git",
   "Video",
 ];
@@ -198,12 +228,61 @@ const headers = [
 const itemsPerPage = 10;
 
 /** True for new-kind rows that have appId but no detail page yet. */
-const NEW_KINDS: ReadonlySet<RefKind> = new Set(["Git", "Video"]);
+const NEW_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook", "Git", "Video"]);
+
+/** True for kinds whose download URL is the FR1b singleton content endpoint. */
+const SINGLETON_FILE_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook"]);
 
 function semaKindFor(type: RefKind): string {
   if (type === "Git") return "GitReference";
   if (type === "Video") return "VideoStreamReference";
+  if (type === "File" || type === "Notebook") return "FileReference";
   return "DataObjectReference";
+}
+
+// ── JupyterHub link-out (J1e) ────────────────────────────────────────────
+//
+// The "Open in JupyterHub" action on Notebook rows is visible only when both
+// `enabled === true` AND `hubUrl != null && hubUrl !== ""`. Reads the public
+// /v2/jupyter/config endpoint so non-admin users can see (or not see) the
+// affordance without a 403.
+const { config: jupyterConfig } = useJupyterConfig();
+const jupyterAffordanceVisible = computed(
+  () =>
+    !!jupyterConfig.value &&
+    jupyterConfig.value.enabled === true &&
+    !!jupyterConfig.value.hubUrl &&
+    jupyterConfig.value.hubUrl.length > 0,
+);
+
+/**
+ * Build the JupyterHub launch URL for a singleton FileReference appId.
+ * Follows the `{hubUrl}/hub/spawn?file={downloadUrl}` shape — see
+ * docs/admin/runbooks/jupyterhub-config.md for the JupyterHub-side
+ * convention map (nbgitpuller / `?fromURL=` / `/user-redirect/`).
+ *
+ * Returns null when the affordance gate is closed.
+ */
+function jupyterLaunchUrl(appId: string): string | null {
+  const cfg = jupyterConfig.value;
+  if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
+  const downloadUrl = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  const hubBase = cfg.hubUrl.replace(/\/$/, "");
+  return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
+}
+
+/** Build the direct download URL for a FR1b singleton appId. */
+function singletonDownloadUrl(appId: string): string {
+  return `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+}
+
+/** Format a byte count as B / KB / MB / GB. */
+function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 /** Format duration in seconds as MM:SS or H:MM:SS. */
@@ -332,6 +411,24 @@ function formatDuration(seconds: number | null | undefined): string {
             >
               {{ value.resolution }}
             </v-chip>
+            <!-- REF-UNIFIED-TABLE-FR1B: filename + size on File / Notebook rows -->
+            <v-chip
+              v-if="(item.type === 'File' || item.type === 'Notebook') && value.filename"
+              size="x-small"
+              variant="tonal"
+              prepend-icon="mdi-file-document-outline"
+              :data-testid="`fr1b-filename-${item.meta.appId}`"
+            >
+              {{ value.filename }}
+            </v-chip>
+            <v-chip
+              v-if="(item.type === 'File' || item.type === 'Notebook') && value.fileSize != null"
+              size="x-small"
+              variant="tonal"
+              prepend-icon="mdi-database-outline"
+            >
+              {{ formatBytes(value.fileSize) }}
+            </v-chip>
           </div>
         </template>
       </template>
@@ -370,6 +467,39 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-tag-outline"
             @click="() => openSemaAnnotationDialog(item.meta.appId!, semaKindFor(item.type))"
           />
+          <!-- REF-UNIFIED-TABLE-FR1B: download for singleton File / Notebook -->
+          <v-btn
+            v-if="SINGLETON_FILE_KINDS.has(item.type) && item.meta.appId"
+            :href="singletonDownloadUrl(item.meta.appId)"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="text"
+            density="comfortable"
+            size="small"
+            icon="mdi-download-outline"
+            aria-label="Download"
+            :data-testid="`fr1b-download-${item.meta.appId}`"
+          />
+          <!--
+            J1e: Open in JupyterHub action — visible only on Notebook
+            rows when the admin-configured affordance gate is open
+            (enabled === true AND hubUrl != null). Hidden otherwise so
+            the row degrades gracefully to plain download + delete.
+          -->
+          <v-btn
+            v-if="item.type === 'Notebook' && item.meta.appId && jupyterAffordanceVisible"
+            :href="jupyterLaunchUrl(item.meta.appId) ?? '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="flat"
+            color="warning"
+            density="comfortable"
+            size="small"
+            prepend-icon="mdi-jupyter"
+            :data-testid="`jupyter-launch-${item.meta.appId}`"
+          >
+            Open in JupyterHub
+          </v-btn>
           <!-- New kinds: delete action -->
           <ActionButton
             v-if="isAllowedToEditCollection && NEW_KINDS.has(item.type)"

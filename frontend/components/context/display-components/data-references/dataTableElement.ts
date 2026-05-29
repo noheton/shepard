@@ -1,12 +1,12 @@
 import type { ReferencedContainerMeta } from "./dataReference";
 
 export type DataTableElement = {
-  type: "TimeSeries" | "Structured Data" | "File Bundle" | "Git" | "Video";
+  type: "TimeSeries" | "Structured Data" | "File Bundle" | "File" | "Notebook" | "Git" | "Video";
   name: string;
   meta: {
-    /** Numeric id for legacy-v1 annotation path; undefined for appId-only kinds (Git/Video). */
+    /** Numeric id for legacy-v1 annotation path; undefined for appId-only kinds (File/Notebook/Git/Video). */
     id?: number;
-    /** appId string for SEMA-V6 annotation path; set for new kinds (Git/Video). */
+    /** appId string for SEMA-V6 annotation path; set for new kinds (File/Notebook/Git/Video). */
     appId?: string;
     containerId?: number;
     interval?: string;
@@ -24,6 +24,10 @@ export type DataTableElement = {
     durationSeconds?: number | null;
     /** Video: WxH resolution string e.g. "1920×1080" */
     resolution?: string | null;
+    /** FR1b singleton + Notebook: original upload filename (drives .ipynb detection + download). */
+    filename?: string;
+    /** FR1b singleton + Notebook: file size in bytes (nullable for pre-FB1a uploads). */
+    fileSize?: number | null;
   } & Partial<ReferencedContainerMeta>;
   created: {
     createdBy: string;

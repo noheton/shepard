@@ -29,6 +29,8 @@ export enum AdminFragments {
   SEMANTIC_CONFIG = "semantic-config",
   // FE-PROV-INSTANCE-REGISTRY
   INSTANCE_REGISTRY = "instance-registry",
+  // J1e
+  JUPYTER = "jupyter",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -159,5 +161,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Instance Registry",
     fragment: AdminFragments.INSTANCE_REGISTRY,
     icon: "mdi-map-marker-multiple-outline",
+  },
+  // J1e
+  {
+    name: "JupyterHub link-out",
+    fragment: AdminFragments.JUPYTER,
+    icon: "mdi-jupyter",
   },
 ];

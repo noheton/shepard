@@ -7,6 +7,7 @@ import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
 import type { GitReferenceIO } from "@dlr-shepard/backend-client";
 import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
+import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
 
 export const mapDataReferenceToDataTableElement = (
   ref: DataReference,
@@ -45,6 +46,44 @@ export const mapGitReferenceToDataTableElement = (
     showDetails: { enabled: false, pathFragment: "" },
   },
 });
+
+/**
+ * REF-UNIFIED-TABLE-FR1B — map a FR1b singleton FileReference into a
+ * unified-table row. The row is classified as "Notebook" when the
+ * embedded filename ends in `.ipynb` (case-insensitive); otherwise
+ * "File". The "Notebook" type drives the icon + the conditional
+ * "Open in JupyterHub" action; both share the same download +
+ * delete affordances.
+ *
+ * J1c retirement: the dedicated DataObjectNotebooksPane was removed
+ * in this PR — notebooks now live as regular rows here.
+ */
+export const isIpynbFilename = (filename: string | undefined | null): boolean =>
+  !!filename && filename.toLowerCase().endsWith(".ipynb");
+
+export const mapSingletonFileReferenceToDataTableElement = (
+  ref: SingletonFileReferenceIO,
+): DataTableElement => {
+  const filename = ref.file?.filename;
+  const isNotebook = isIpynbFilename(filename);
+  return {
+    type: isNotebook ? "Notebook" : "File",
+    name: ref.name,
+    meta: {
+      appId: ref.appId,
+      filename: filename ?? undefined,
+      fileSize: ref.file?.fileSize ?? null,
+    },
+    created: {
+      createdAt: ref.createdAt ? new Date(ref.createdAt) : FALLBACK_DATE,
+      createdBy: ref.createdBy ?? "—",
+    },
+    actions: {
+      elementAppId: ref.appId,
+      showDetails: { enabled: false, pathFragment: "" },
+    },
+  };
+};
 
 export const mapVideoReferenceToDataTableElement = (
   ref: VideoStreamReferenceIO,

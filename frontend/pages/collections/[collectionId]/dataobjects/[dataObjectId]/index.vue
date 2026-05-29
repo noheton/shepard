@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
-import DataObjectNotebooksPane from "~/components/context/lab-journal/DataObjectNotebooksPane.vue";
 // REF-UNIFIED-TABLE: GitReferencesPane, VideoStreamReferencesPane, HdfReferencesPane removed
 // from this page; they now live in frontend/components/context/dataobject/legacy/ for reuse.
+// J1c retirement (2026-05-29): DataObjectNotebooksPane is gone too — notebooks
+// now appear as rows in the unified data-references table with a notebook icon
+// and a per-row "Open in JupyterHub" action (J1e).
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
@@ -14,8 +16,10 @@ import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
+import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
 import {
   mapGitReferenceToDataTableElement,
+  mapSingletonFileReferenceToDataTableElement,
   mapVideoReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
@@ -45,6 +49,9 @@ const extraReferenceItems = ref<DataTableElement[]>([]);
 // Hold refs to sub-composable refresh functions so the panel can request re-fetch.
 const refreshGitRefs = ref<(() => void) | null>(null);
 const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
+// REF-UNIFIED-TABLE-FR1B / J1c retirement: FR1b singletons (incl. notebooks)
+// fetched via the additive /v2/files/by-data-object endpoint.
+const refreshFr1bRefs = ref<(() => void | Promise<void>) | null>(null);
 
 watch(
   () => dataObject.value?.appId,
@@ -57,11 +64,15 @@ watch(
     const videoComposable = useFetchVideoStreamReferences(appId);
     refreshVideoRefs.value = videoComposable.refresh;
 
-    // Reactively derive extraReferenceItems from the two composable states.
+    const fr1bComposable = useFetchSingletonFileReferences(appId);
+    refreshFr1bRefs.value = fr1bComposable.refresh;
+
+    // Reactively derive extraReferenceItems from the three composable states.
     watchEffect(() => {
       extraReferenceItems.value = [
         ...gitComposable.gitReferences.value.map(mapGitReferenceToDataTableElement),
         ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
+        ...fr1bComposable.references.value.map(mapSingletonFileReferenceToDataTableElement),
       ];
     });
   },
@@ -71,6 +82,7 @@ watch(
 function refreshExtraReferences() {
   refreshGitRefs.value?.();
   refreshVideoRefs.value?.();
+  refreshFr1bRefs.value?.();
 }
 
 /** Total count for the "Data References" panel badge: legacy + new kinds. */
@@ -128,12 +140,8 @@ const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
 } = useCounter();
-// UX Pattern D: counts surfaced on every reference-bearing panel/section so the
-// title alone tells the user whether the panel is worth expanding.
-const {
-  counter: numberOfNotebookEntries,
-  updateCount: onNotebookCountChanged,
-} = useCounter();
+// J1c retirement (2026-05-29): the dedicated notebooks panel + its counter
+// are gone. Notebooks now live as rows in the unified data-references table.
 const numberOfSemanticAnnotations = ref<number | undefined>(undefined);
 function onAnnotationsLoaded(annotations: { length: number }) {
   numberOfSemanticAnnotations.value = annotations.length;
@@ -672,16 +680,11 @@ async function saveEmbargoEdit() {
                     />
                   </template>
                 </ExpansionPanelItem>
-                <ExpansionPanelItem
-                  v-if="dataObject.appId"
-                  :count="numberOfNotebookEntries"
-                  title="Jupyter Notebooks"
-                >
-                  <DataObjectNotebooksPane
-                    :data-object-app-id="dataObject.appId"
-                    @number-of-entries-changed="onNotebookCountChanged"
-                  />
-                </ExpansionPanelItem>
+                <!-- J1c retirement (2026-05-29): the dedicated Jupyter Notebooks
+                     panel has been merged into the unified Data References
+                     table. Notebooks render as rows with a notebook icon and,
+                     when the admin-configurable JupyterConfig (J1e) is open,
+                     an "Open in JupyterHub" action button. -->
                 <!-- Provenance: two views — a structured time-based log
                      (default, easier to read) and the force-directed
                      graph (eye-candy, second tab). Both render the same
