@@ -27,7 +27,14 @@ c = get_config()  # noqa: F821  — jupyterhub injects `get_config` at runtime
 c.JupyterHub.authenticator_class = "generic-oauth"
 
 issuer_url = os.environ["SHEPARD_OIDC_ISSUER_URL"].rstrip("/")
-public_url = os.environ.get("JUPYTERHUB_PUBLIC_URL", "https://jupyterhub.nuclide.systems").rstrip("/")
+# Path-mount under /jupyterhub on shepard.nuclide.systems
+# (per CLAUDE.md "Always: mount plugin UI sidecars as paths" rule).
+# JupyterHub's c.JupyterHub.base_url is the canonical path-mount knob;
+# single-user notebook URLs become /jupyterhub/user/<name>/... automatically.
+c.JupyterHub.base_url = "/jupyterhub"
+public_url = os.environ.get(
+    "JUPYTERHUB_PUBLIC_URL", "https://shepard.nuclide.systems/jupyterhub"
+).rstrip("/")
 
 c.GenericOAuthenticator.client_id = os.environ["JUPYTERHUB_KEYCLOAK_CLIENT_ID"]
 c.GenericOAuthenticator.client_secret = os.environ["JUPYTERHUB_KEYCLOAK_CLIENT_SECRET"]

@@ -1,6 +1,7 @@
 ---
 stage: feature-defined
 last-stage-change: 2026-05-29
+last-content-change: 2026-05-29
 ---
 
 # shepard-plugin-jupyter — Operator install guide
@@ -33,15 +34,17 @@ Before bringing up the JupyterHub sidecar:
      use as `JUPYTERHUB_KEYCLOAK_CLIENT_ID`).
    - Client type: **Confidential** (`Standard flow` enabled, `Direct access
      grants` optional, `Service accounts` not required).
-   - **Valid redirect URIs:** `https://jupyterhub.<your-domain>/hub/oauth_callback`
-     (the public URL JupyterHub will be reachable at).
-   - **Web origins:** the same public URL without the path.
+   - **Valid redirect URIs:** `https://shepard.<your-domain>/jupyterhub/hub/oauth_callback`
+     (the path-mounted URL JupyterHub is reachable at — see §4).
+   - **Web origins:** `https://shepard.<your-domain>` (the Shepard
+     host root; path-mount shares the cookie domain).
    - Capture the **client secret** — you will paste it into the env file
      as `JUPYTERHUB_KEYCLOAK_CLIENT_SECRET`.
-3. **Reverse proxy slot available.** The compose stack here uses Caddy
-   for production deployments and Zoraxy for the `nuclide.systems` dev
-   box; pick a hostname (`jupyterhub.<your-domain>`) and have it ready
-   to map to the `jupyterhub` service on port `8000`. (See §4 below.)
+3. **Reverse proxy slot available.** The sidecar mounts as a path
+   (`/jupyterhub`) on the existing Shepard host. On `nuclide.systems`
+   the edge proxy is **Zoraxy**; Caddy is the documented preferred
+   future shape. Either way: no new DNS / TLS / host block needed —
+   see §4 for the one-rule path-mount.
 4. **Docker socket access acceptable.** JupyterHub's default
    `DockerSpawner` mounts `/var/run/docker.sock` to spawn per-user
    notebook containers. If your security posture forbids this, switch
@@ -91,7 +94,7 @@ already added):
 | `OIDC_AUTHORITY` | already present | — | Reused from Shepard backend; this is the Keycloak realm URL. |
 | `JUPYTERHUB_KEYCLOAK_CLIENT_ID` | yes | `jupyterhub` | Matches the Keycloak client ID from §1. |
 | `JUPYTERHUB_KEYCLOAK_CLIENT_SECRET` | yes | — | The confidential client secret. **Do not commit.** |
-| `JUPYTERHUB_PUBLIC_URL` | yes | `https://jupyterhub.nuclide.systems` | Public-facing URL the user is redirected back to after sign-in. Must match Keycloak's valid-redirect-URI. |
+| `JUPYTERHUB_PUBLIC_URL` | yes | `https://shepard.nuclide.systems/jupyterhub` | Path-mounted public URL the user is redirected back to after sign-in. Must match Keycloak's valid-redirect-URI. |
 | `JUPYTERHUB_SINGLEUSER_IMAGE` | no | `jupyter/scipy-notebook:python-3.11` | The image spawned per user. Override for domain-specific notebook environments. |
 | `SHEPARD_BACKEND_URL` | no | `http://backend:8080` | Used by the kernel to call back into Shepard. The `backend` hostname is the compose service name. |
 
@@ -99,28 +102,103 @@ The Shepard backend itself does **not** need any new env vars — the
 hub URL is stored at runtime in `:JupyterConfig.hubUrl` and configured
 via the v2 admin endpoint (see §6).
 
-## 4. Reverse-proxy route
+## 4. Reverse-proxy route (path-mount)
 
-The sidecar listens on port `8000` inside the `shepard` network. To
-expose it on the public hostname `jupyterhub.<your-domain>`:
+The sidecar listens on port `8000` inside the `shepard` network and is
+**path-mounted at `/jupyterhub` on the existing Shepard host** — i.e.
+the user reaches it at `https://shepard.<your-domain>/jupyterhub`,
+NOT at `https://jupyterhub.<your-domain>`.
 
-**Caddy** (production deployments — `infrastructure/proxy/Caddyfile`):
+**Why path-mount?** Per the [CLAUDE.md "Always: mount plugin UI
+sidecars as paths, not subdomains"](../../../CLAUDE.md#always-mount-plugin-ui-sidecars-as-paths-not-subdomains)
+rule:
+
+- No new DNS A record, no new TLS cert, no new reverse-proxy host
+  block.
+- The Keycloak session cookie is already valid on
+  `shepard.<your-domain>` — path-mount reuses it. A subdomain forces a
+  cross-domain redirect dance and CORS exemptions.
+- Adding more plugin UIs later is one extra `handle_path` block, not a
+  new infrastructure ticket.
+
+`jupyterhub_config.py` already sets `c.JupyterHub.base_url = "/jupyterhub"`
+(JupyterHub's official path-mount knob — single-user notebook URLs
+become `/jupyterhub/user/<name>/...` automatically), so the proxy only
+needs to forward the prefix unchanged.
+
+### 4.1 Zoraxy (current `nuclide.systems` infrastructure)
+
+The live `nuclide.systems` dev box runs **Zoraxy** as the edge reverse
+proxy. Zoraxy is admin-UI-managed; add a path-mount rule by hand:
+
+1. Open Zoraxy admin → **HTTP Proxy** → existing rule for
+   `shepard.nuclide.systems` → **Virtual Directory** (or "Sub-path
+   Forwarding").
+2. **Path:** `/jupyterhub/*`
+3. **Backend:** `http://jupyterhub:8000` (Zoraxy is on the `shepard`
+   docker network and resolves the service name).
+4. **Enable WebSocket forwarding** — JupyterHub needs it for kernel
+   comms; without this, notebooks load but cells never execute.
+5. Save and reload — no Zoraxy restart needed.
+
+After the rule is live, browse to `https://shepard.<your-domain>/jupyterhub`
+— you should land on the JH login page, which then redirects to Keycloak.
+
+### 4.2 Caddy (preferred future shape)
+
+If the deployment moves off Zoraxy to Caddy (tracked in
+`aidocs/16-dispatcher-backlog.md` under
+`J1e-PR-05-CADDY-PATH-MOUNT-02` / `INFRA-REVERSE-PROXY-CADDY-MIGRATION`),
+the path-mount block is a single `handle_path` in the existing
+`shepard.<your-domain>` site block:
 
 ```caddyfile
-jupyterhub.example.org {
+shepard.nuclide.systems {
+  handle_path /jupyterhub/* {
     reverse_proxy jupyterhub:8000
+  }
+  handle {
+    reverse_proxy frontend:3000
+  }
 }
 ```
 
-After editing the Caddyfile, reload: `docker compose exec caddy caddy reload`.
+Caddy's `reverse_proxy` directive **auto-upgrades** `Connection:
+Upgrade` headers for WebSockets — no extra config block is needed for
+kernel comms. After editing the Caddyfile, reload:
+`docker compose exec caddy caddy reload`.
 
-**Zoraxy** (the `nuclide.systems` dev box): the Zoraxy admin UI does
-not auto-discover plugin services. Add a virtual-host route by hand:
+(This Caddyfile is documented here as the preferred-future shape; the
+sidecar `compose-profile.yml` does NOT ship a Caddy container today —
+the broader Zoraxy → Caddy migration is a separate decision.)
 
-1. Open Zoraxy admin → HTTP Proxy → New Proxy Rule.
-2. Domain: `jupyterhub.nuclide.systems`.
-3. Backend: `http://jupyterhub:8000` (Zoraxy is on the `shepard` network).
-4. Enable WebSocket forwarding (JupyterHub needs it for kernel comms).
+### 4.3 Regenerate the Keycloak client secret
+
+The realm template (`infrastructure/keycloak/shepard-demo-realm.json`)
+ships a `jupyterhub` client with the placeholder secret
+`REPLACE_ME_AT_OPERATOR_BOOTSTRAP`. **Before bringing the sidecar up,
+generate a real secret:**
+
+1. Log into the Keycloak admin console → realm → **Clients** →
+   `jupyterhub`.
+2. **Credentials** tab → **Regenerate Secret**.
+3. Copy the new value and paste into `infrastructure/.env` as:
+   ```ini
+   JUPYTERHUB_KEYCLOAK_CLIENT_SECRET=<paste-here>
+   ```
+4. (Optional, recommended.) In the same Keycloak client → **Settings**,
+   trim the `redirectUris` to only the host you actually serve (e.g.
+   drop the `shepard.example.org` template default once
+   `shepard.nuclide.systems` is the live host).
+
+### 4.4 Caveat — shared cookie domain
+
+Path-mounting shares the cookie domain with Shepard. JupyterHub's
+session cookie defaults to `Path=/jupyterhub` so it doesn't collide
+with Shepard's own cookies; verify this in a browser dev-tools cookie
+panel on first deploy and check `aidocs/16` row
+`J1e-PR-05-CADDY-PATH-MOUNT` for the design note if anything looks
+off.
 
 ## 5. Verify the install
 
@@ -136,7 +214,7 @@ docker exec shepard-jupyterhub curl -fs http://localhost:8000/hub/health
 # Expected: {"version": "5.x.x", "ok": true}
 
 # 3. OIDC redirect probe
-curl -I https://jupyterhub.<your-domain>/hub/login
+curl -I https://shepard.<your-domain>/jupyterhub/hub/login
 # Expected: 302 Found, Location: <keycloak-realm-url>/protocol/openid-connect/auth?...
 ```
 
@@ -151,7 +229,7 @@ unified data-references table:
 curl -X PATCH https://<shepard-host>/shepard/api/v2/admin/plugins/jupyter/config \
   -H "Authorization: Bearer <instance-admin-token>" \
   -H "Content-Type: application/merge-patch+json" \
-  -d '{"enabled": true, "hubUrl": "https://jupyterhub.<your-domain>"}'
+  -d '{"enabled": true, "hubUrl": "https://shepard.<your-domain>/jupyterhub"}'
 ```
 
 (Path post-J1e rename. The pre-rename path was
@@ -205,7 +283,7 @@ survives backend restarts. See the [admin config principle in CLAUDE.md](../../.
   `resourcePath = /v2/admin/plugins/jupyter/config` to see who changed
   the hub URL when.
 - **Healthcheck:** `GET http://jupyterhub:8000/hub/health` from inside
-  the compose network; from outside, `GET https://jupyterhub.<your-domain>/hub/health`.
+  the compose network; from outside, `GET https://shepard.<your-domain>/jupyterhub/hub/health`.
 
 ## 9. Kubernetes notes
 
