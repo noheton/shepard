@@ -9,8 +9,12 @@ import {
   type ContainerFilterType,
 } from "./containerTypeFilter";
 import { useContainerListQueryParams } from "./useContainerListQueryParams";
+import type { ContainerCardinalitySummary } from "~/composables/containers/useContainerCardinalitySummary";
 
-defineProps<{
+// UI21-SIZEBAR-DATA: import the summary fetcher.
+import { useContainerCardinalitySummary } from "~/composables/containers/useContainerCardinalitySummary";
+
+const props = defineProps<{
   itemsPerPage: number;
   serverItems: BasicContainer[];
   loading: boolean;
@@ -20,11 +24,49 @@ defineProps<{
 const router = useRouter();
 const { queryParams } = useContainerListQueryParams();
 
+// UI21-SIZEBAR-DATA: reactive map from container id → fetched cardinality.
+// Populated lazily as each row's composable resolves.
+const cardinalityMap = ref<Map<number, number>>(new Map());
+
+/** Maximum cardinality in the current page — used to scale all sizebars. */
+const maxCardinality = computed(() => {
+  let max = 0;
+  for (const v of cardinalityMap.value.values()) {
+    if (v > max) max = v;
+  }
+  return max;
+});
+
+/**
+ * UI21-SIZEBAR-DATA: When the page of containers changes, reset the
+ * cardinality map and kick off a summary fetch for each row.
+ * Fire-and-forget: failures are swallowed inside the composable.
+ */
+function fetchSummariesForPage(items: BasicContainer[]) {
+  cardinalityMap.value = new Map();
+  for (const item of items) {
+    const { summary } = useContainerCardinalitySummary(item.id, item.type);
+    watch(
+      summary,
+      (val: ContainerCardinalitySummary | null) => {
+        if (val != null) {
+          const next = new Map(cardinalityMap.value);
+          next.set(item.id, val.cardinality);
+          cardinalityMap.value = next;
+        }
+      },
+      { immediate: true },
+    );
+  }
+}
+
+watch(() => props.serverItems, fetchSummariesForPage, { immediate: true });
+
 const headers = [
   {
     title: "ID",
     key: "id",
-    width: "10%",
+    width: "8%",
     cellProps: {
       class: "text-body-1",
     },
@@ -32,7 +74,7 @@ const headers = [
   {
     title: "Name",
     key: BasicContainerAttributes.Name,
-    width: "30%",
+    width: "28%",
     cellProps: {
       class: "text-subtitle-2 word-wrap-anywhere",
     },
@@ -40,15 +82,21 @@ const headers = [
   {
     title: "Container Type",
     key: BasicContainerAttributes.Type,
-    width: "20%",
+    width: "16%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
   },
   {
+    title: "Contents",
+    key: "cardinality",
+    sortable: false,
+    width: "18%",
+  },
+  {
     title: "Created by",
     key: BasicContainerAttributes.CreatedBy,
-    width: "20%",
+    width: "16%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -56,7 +104,7 @@ const headers = [
   {
     title: "Created at",
     key: BasicContainerAttributes.CreatedAt,
-    width: "20%",
+    width: "14%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -129,6 +177,14 @@ function onPageChange(page: number) {
         </template>
         <template #[`item.type`]>
           {{ ContainerTypeName[rowProps.item.type as ContainerFilterType] }}
+        </template>
+        <!-- UI21-SIZEBAR-DATA: per-kind cardinality sizebar -->
+        <template #[`item.cardinality`]>
+          <ContainerSizeBar
+            :container-id="rowProps.item.id"
+            :container-type="rowProps.item.type"
+            :max-cardinality="maxCardinality"
+          />
         </template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
         <template #[`item.createdAt`]>
