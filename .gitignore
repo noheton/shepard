@@ -144,3 +144,6 @@ backend/config/keys/
 test-results/
 playwright-report/
 e2e/screenshots/
+
+# microsections showcase raw archive — keep 7z + extracted images out of git
+examples/microsections-showcase/raw-data/
