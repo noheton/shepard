@@ -16,6 +16,7 @@ const {
   treeviewItems,
   openedTreeviewItems,
   loading,
+  isError: treeviewError,
   loadChildrenOfItem,
   refreshItems,
   collapseItem,
@@ -238,7 +239,7 @@ const { mobile } = useDisplay();
     </div>
 
     <!-- QW2: filter input — visible only when tree has items -->
-    <div v-if="!loading && treeviewItems && treeviewItems.length > 0" class="px-3 pb-2">
+    <div v-if="!loading && !treeviewError && treeviewItems && treeviewItems.length > 0" class="px-3 pb-2">
       <v-text-field
         v-model="filterText"
         placeholder="Filter…"
@@ -308,10 +309,24 @@ const { mobile } = useDisplay();
           </template>
         </v-treeview>
 
-        <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
+        <!-- Show spinner only while loading; on error show a compact inline
+             alert so the sidebar doesn't block the page with a perpetual
+             spinner when the treeview fetch fails. UX-WALK-2026-05-29-06 -->
+        <CenteredLoadingSpinner v-if="loading" />
+
+        <v-alert
+          v-else-if="treeviewError"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mx-3 my-2"
+          icon="mdi-alert-outline"
+        >
+          DataObjects couldn't be loaded.
+        </v-alert>
 
         <StartHereIntro
-          v-if="treeviewItems && treeviewItems.length === 0"
+          v-if="!loading && !treeviewError && treeviewItems && treeviewItems.length === 0"
           class="mb-8"
         />
 

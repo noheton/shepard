@@ -9,6 +9,7 @@ import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchCollection(collectionId: number) {
   const isLoading = ref<boolean>(false);
+  const isError = ref<boolean>(false);
   const lastUsedId = ref<number>(collectionId);
   const collection = ref<Collection | undefined>(undefined);
   const collectionRoles = ref<Roles | undefined>(undefined);
@@ -26,6 +27,7 @@ export function useFetchCollection(collectionId: number) {
   function fetchCollection(collectionId: number) {
     lastUsedId.value = collectionId;
     isLoading.value = true;
+    isError.value = false;
     const collectionApi = useShepardApi(CollectionApi);
     collectionApi.value
       .getCollection({ collectionId })
@@ -34,6 +36,7 @@ export function useFetchCollection(collectionId: number) {
       })
       .catch(e => {
         collection.value = undefined;
+        isError.value = true;
         handleError(e as ResponseError, "fetching collection");
       });
     collectionApi.value
@@ -59,6 +62,7 @@ export function useFetchCollection(collectionId: number) {
     isAllowedToEditPermissions,
     isOwner,
     isLoading,
+    isError,
     fetchCollection,
   };
 }

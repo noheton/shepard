@@ -7,6 +7,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
+  const isError = ref<boolean>(false);
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
@@ -18,9 +19,11 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
           .map(item => mapToTreeviewItem(item))
           .sort((itemA, itemB) => itemA.id - itemB.id);
         // instead of sorting by 'createdAt' we can sort the treeview items by ID
+        isError.value = false;
       })
       .catch(error => {
         treeviewItems.value = undefined;
+        isError.value = true;
         handleError(error, "getAllDataObjects");
       });
   }
@@ -191,6 +194,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     treeviewItems,
     openedTreeviewItems,
     loading,
+    isError,
     loadChildrenOfItem,
     refreshItems,
     collapseItem,

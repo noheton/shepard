@@ -17,14 +17,48 @@ const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId } =
   routeParams.value as CollectionRouteParams & { dataObjectId: number };
 
-const { collection, isAllowedToEditCollection } =
-  useFetchCollection(collectionId);
-const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
+const {
+  collection,
+  isAllowedToEditCollection,
+  isError: collectionFetchError,
+} = useFetchCollection(collectionId);
+const {
+  dataObject,
+  isLoading: dataObjectLoading,
+  isError: dataObjectFetchError,
+} = useFetchDataObject(collectionId, dataObjectId);
 const { dataReferences } = useDataReferencesByDataObject(
   collectionId,
   dataObjectId,
 );
 const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
+
+// Graceful degradation: show the page body when the core DataObject is loaded,
+// even if secondary fetches (collection metadata, references, relationships)
+// fail or are still in-flight. A dismissable alert surfaces partial failures
+// so the user knows something may be incomplete.
+const partialFetchError = ref(false);
+const dismissFetchError = () => {
+  partialFetchError.value = false;
+};
+
+// Treat collection or dataObject load failure as a partial page error.
+// We surface the alert and still render whatever loaded.
+watch([collectionFetchError, dataObjectFetchError], ([collErr, doErr]) => {
+  if (collErr || doErr) partialFetchError.value = true;
+});
+
+// Resolved references/relationships: use empty arrays as safe fallback when
+// the async fetch hasn't resolved yet (avoids blocking the whole page).
+const safeDataReferences = computed(() => dataReferences.value ?? []);
+const safeRelatedEntities = computed(() => relatedEntities.value ?? []);
+
+// The page renders its body once the DataObject itself has loaded (or errored
+// with data from a prior successful load). Secondary data (collection, refs,
+// relationships) degrades gracefully.
+const pageReady = computed(
+  () => !!dataObject.value || (!dataObjectLoading.value && dataObjectFetchError.value),
+);
 const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
@@ -122,10 +156,28 @@ const dataObjectAccessRights = computed<string | null>(() => {
 <template>
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
+      <!-- Graceful degradation: if any sub-fetch failed, show a dismissable
+           warning at the top. The page body still renders with whatever data
+           did load — secondary data (references, relationships) falls back to
+           empty arrays rather than blocking the whole page on one failed fetch.
+           UX-WALK-2026-05-29-06 -->
+      <v-alert
+        v-if="partialFetchError"
+        type="warning"
+        variant="tonal"
+        closable
+        class="mb-4"
+        @click:close="dismissFetchError"
+      >
+        Some information couldn't be loaded. The page may be incomplete.
+      </v-alert>
+
+      <!-- Core loading state: show spinner only while the DataObject itself is
+           still in-flight. Once it resolves (or errors), show the page body. -->
+      <CenteredLoadingSpinner v-if="!pageReady" />
+
       <v-row
-        v-if="
-          !!collection && !!dataObject && !!dataReferences && !!relatedEntities
-        "
+        v-else-if="pageReady && !!dataObject"
         no-gutters
       >
         <v-col cols="12">
@@ -136,8 +188,8 @@ const dataObjectAccessRights = computed<string | null>(() => {
                 to: collectionsPath,
               },
               {
-                title: `${collection.name}`,
-                to: collectionsPath + collection.id,
+                title: collection?.name ?? `Collection ${collectionId}`,
+                to: collectionsPath + collectionId,
               },
               {
                 title: dataObject.name,
@@ -268,7 +320,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
               </div>
               <SemanticAnnotationList
                 :annotated="
-                  new AnnotatedDataObject(collection.id, dataObject.id)
+                  new AnnotatedDataObject(collection?.id ?? collectionId, dataObject.id)
                 "
                 :can-delete="!!isAllowedToEditCollection"
                 @annotations="onAnnotationsLoaded"
@@ -309,7 +361,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  :count="dataReferences.length"
+                  :count="safeDataReferences.length"
                   title="Data References"
                 >
                   <template v-if="isAllowedToEditCollection" #append>
@@ -321,7 +373,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                     <CreateDataReferenceDialog
                       v-if="showCreateDataReferenceDialog"
                       v-model:show-dialog="showCreateDataReferenceDialog"
-                      :collection-id="collection.id"
+                      :collection-id="collection?.id ?? collectionId"
                       :data-object-id="dataObject.id"
                     />
                   </template>
@@ -333,7 +385,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                   <DataObjectDataReferencesTable
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
-                    :data-references="dataReferences"
+                    :data-references="safeDataReferences"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
@@ -349,7 +401,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  :count="relatedEntities.length"
+                  :count="safeRelatedEntities.length"
                   title="Relationships"
                 >
                   <DataObjectRelationshipsTable
@@ -358,7 +410,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
-                    :related-entities="relatedEntities"
+                    :related-entities="safeRelatedEntities"
                   />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
@@ -417,7 +469,21 @@ const dataObjectAccessRights = computed<string | null>(() => {
           </v-container>
         </v-col>
       </v-row>
-      <CenteredLoadingSpinner v-else />
+
+      <!-- Fallback: DataObject fetch failed entirely (not just partial failure) -->
+      <v-row
+        v-else-if="pageReady && !dataObject"
+        no-gutters
+        class="justify-center align-center fill-height"
+      >
+        <v-col cols="12" sm="8" md="6" class="text-center pa-8">
+          <v-icon size="64" color="error" class="mb-4">mdi-alert-circle-outline</v-icon>
+          <div class="text-h6 mb-2">DataObject could not be loaded</div>
+          <div class="text-body-2 text-medium-emphasis">
+            This DataObject may have been deleted, or you may not have permission to view it.
+          </div>
+        </v-col>
+      </v-row>
     </v-container>
   </div>
 </template>
