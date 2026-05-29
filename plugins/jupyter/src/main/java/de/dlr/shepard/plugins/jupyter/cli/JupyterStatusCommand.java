@@ -1,9 +1,9 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
 import de.dlr.shepard.cli.http.ShepardHttpClient;
-import de.dlr.shepard.cli.io.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.cli.JupyterConfig;
 import de.dlr.shepard.cli.output.TableFormatter;
 import picocli.CommandLine.Command;
 
@@ -22,7 +22,7 @@ import picocli.CommandLine.Command;
 )
 public final class JupyterStatusCommand extends AbstractCommand {
 
-  static final String CONFIG_PATH = "/v2/admin/jupyter/config";
+  static final String CONFIG_PATH = "/v2/admin/plugins/jupyter/config";
 
   @Override
   protected Integer run() {

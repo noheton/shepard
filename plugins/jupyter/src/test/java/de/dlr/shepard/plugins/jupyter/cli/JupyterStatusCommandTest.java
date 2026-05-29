@@ -1,4 +1,4 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

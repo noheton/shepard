@@ -1,40 +1,38 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
 import de.dlr.shepard.cli.http.ShepardHttpClient;
-import de.dlr.shepard.cli.io.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.cli.JupyterConfig;
 import de.dlr.shepard.cli.output.TableFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import picocli.CommandLine.Command;
 
 /**
- * J1e — {@code shepard-admin jupyter enable}. Flips the master switch
- * for the "Open in JupyterHub" affordance via
- * {@code PATCH /v2/admin/jupyter/config} with {@code {"enabled": true}}.
+ * J1e — {@code shepard-admin jupyter disable}. Suppresses the "Open in
+ * JupyterHub" affordance instance-wide via
+ * {@code PATCH /v2/admin/plugins/jupyter/config} with {@code {"enabled": false}}.
  *
- * <p>This call alone is not enough to make the affordance visible —
- * the user must also have set a hub URL (via
- * {@link JupyterSetHubUrlCommand}). The command prints a hint when
- * {@code hubUrl} is still null after enabling.
+ * <p>The configured {@code hubUrl} is left untouched so it can be
+ * re-enabled later without re-entering the URL.
  */
 @Command(
-  name = "enable",
+  name = "disable",
   mixinStandardHelpOptions = true,
-  description = "Enable the 'Open in JupyterHub' link-out affordance."
+  description = "Disable the 'Open in JupyterHub' link-out affordance (hubUrl untouched)."
 )
-public final class JupyterEnableCommand extends AbstractCommand {
+public final class JupyterDisableCommand extends AbstractCommand {
 
-  static final String CONFIG_PATH = "/v2/admin/jupyter/config";
+  static final String CONFIG_PATH = "/v2/admin/plugins/jupyter/config";
 
   @Override
   protected Integer run() {
     ShepardHttpClient client = buildClient();
 
     Map<String, Object> patch = new LinkedHashMap<>();
-    patch.put("enabled", true);
+    patch.put("enabled", false);
 
     JupyterConfig config;
     try {
@@ -54,17 +52,12 @@ public final class JupyterEnableCommand extends AbstractCommand {
       return 0;
     }
 
-    out().println("JUPYTER — affordance enabled");
+    out().println("JUPYTER — affordance disabled");
     out().println();
     TableFormatter table = new TableFormatter("FIELD", "VALUE");
     table.addRow("enabled", Boolean.toString(config.isEnabled()));
     table.addRow("hubUrl", config.getHubUrl() != null ? config.getHubUrl() : "(not set)");
     out().print(table.render());
-
-    if (config.getHubUrl() == null || config.getHubUrl().isBlank()) {
-      out().println();
-      out().println("note: affordance is still hidden until 'shepard-admin jupyter set-hub-url <url>' is run.");
-    }
 
     return 0;
   }

@@ -1,4 +1,4 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import picocli.CommandLine.Command;
 
@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
  * <ul>
  *   <li>{@code status} — read-only view of the current
  *       {@code :JupyterConfig} singleton via
- *       {@code GET /v2/admin/jupyter/config}.</li>
+ *       {@code GET /v2/admin/plugins/jupyter/config}.</li>
  *   <li>{@code enable} / {@code disable} — flip the master switch
  *       gating the "Open in JupyterHub" affordance.</li>
  *   <li>{@code set-hub-url} — point operators at the JupyterHub

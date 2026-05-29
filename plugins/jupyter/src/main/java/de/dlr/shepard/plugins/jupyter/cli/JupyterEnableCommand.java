@@ -1,53 +1,40 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
 import de.dlr.shepard.cli.http.ShepardHttpClient;
-import de.dlr.shepard.cli.io.JupyterConfig;
+import de.dlr.shepard.plugins.jupyter.cli.JupyterConfig;
 import de.dlr.shepard.cli.output.TableFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
 
 /**
- * J1e — {@code shepard-admin jupyter set-hub-url <url>}. Configures
- * the JupyterHub base URL the "Open in JupyterHub" affordance targets
- * via {@code PATCH /v2/admin/jupyter/config} with
- * {@code {"hubUrl": "<url>"}}.
+ * J1e — {@code shepard-admin jupyter enable}. Flips the master switch
+ * for the "Open in JupyterHub" affordance via
+ * {@code PATCH /v2/admin/plugins/jupyter/config} with {@code {"enabled": true}}.
  *
- * <p>Pass an empty string ({@code ""}) to clear the URL — this sends an
- * explicit JSON {@code null} in the PATCH body, reverting to the
- * deploy-time default ({@code shepard.jupyter.hub-url}).
- *
- * <p>The URL is server-validated as an absolute http(s) URL with a
- * non-empty host; an invalid URL returns HTTP 400 surfaced here as
- * an {@link AdminCliException}.
+ * <p>This call alone is not enough to make the affordance visible —
+ * the user must also have set a hub URL (via
+ * {@link JupyterSetHubUrlCommand}). The command prints a hint when
+ * {@code hubUrl} is still null after enabling.
  */
 @Command(
-  name = "set-hub-url",
+  name = "enable",
   mixinStandardHelpOptions = true,
-  description = "Set the JupyterHub base URL the link-out affordance targets."
+  description = "Enable the 'Open in JupyterHub' link-out affordance."
 )
-public final class JupyterSetHubUrlCommand extends AbstractCommand {
+public final class JupyterEnableCommand extends AbstractCommand {
 
-  static final String CONFIG_PATH = "/v2/admin/jupyter/config";
-
-  @Parameters(
-    index = "0",
-    paramLabel = "<url>",
-    description = "JupyterHub base URL, e.g. https://hub.example.org. Pass empty string to clear."
-  )
-  String hubUrl;
+  static final String CONFIG_PATH = "/v2/admin/plugins/jupyter/config";
 
   @Override
   protected Integer run() {
     ShepardHttpClient client = buildClient();
 
     Map<String, Object> patch = new LinkedHashMap<>();
-    // Empty string → explicit JSON null = clear the field on the server.
-    patch.put("hubUrl", (hubUrl == null || hubUrl.isEmpty()) ? null : hubUrl);
+    patch.put("enabled", true);
 
     JupyterConfig config;
     try {
@@ -67,12 +54,17 @@ public final class JupyterSetHubUrlCommand extends AbstractCommand {
       return 0;
     }
 
-    out().println("JUPYTER — hubUrl updated");
+    out().println("JUPYTER — affordance enabled");
     out().println();
     TableFormatter table = new TableFormatter("FIELD", "VALUE");
     table.addRow("enabled", Boolean.toString(config.isEnabled()));
     table.addRow("hubUrl", config.getHubUrl() != null ? config.getHubUrl() : "(not set)");
     out().print(table.render());
+
+    if (config.getHubUrl() == null || config.getHubUrl().isBlank()) {
+      out().println();
+      out().println("note: affordance is still hidden until 'shepard-admin jupyter set-hub-url <url>' is run.");
+    }
 
     return 0;
   }

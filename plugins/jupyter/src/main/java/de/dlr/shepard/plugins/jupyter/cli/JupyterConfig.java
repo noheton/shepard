@@ -1,11 +1,11 @@
-package de.dlr.shepard.cli.io;
+package de.dlr.shepard.plugins.jupyter.cli;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * J1e — CLI-side mirror of {@code JupyterConfigIO} from
- * {@code GET/PATCH /v2/admin/jupyter/config}.
+ * {@code GET/PATCH /v2/admin/plugins/jupyter/config}.
  *
  * <p>{@code enabled} is the master switch for the "Open in JupyterHub"
  * affordance; {@code hubUrl} is the base URL the affordance targets.

@@ -5,7 +5,6 @@ import de.dlr.shepard.cli.commands.FeaturesCommand;
 import de.dlr.shepard.cli.commands.FilesCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.InstanceCommand;
-import de.dlr.shepard.cli.commands.JupyterCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
@@ -29,8 +28,11 @@ import picocli.CommandLine.Command;
  * {@code de.dlr.shepard.cli.plugin.AdminCliCommandProvider}
  * implementations a plugin JAR ships, registering each one's
  * {@code @Command} class as a top-level subcommand. {@code unhide}
- * is the first plugin under the new shape — moved from in-tree to
- * {@code plugins/unhide/} alongside the backend bits.
+ * was the first plugin under the new shape — moved from in-tree to
+ * {@code plugins/unhide/} alongside the backend bits. The
+ * {@code jupyter} subcommand group followed on 2026-05-29
+ * (J1e-PLUGIN-REFACTOR) — discovery is automatic through the
+ * same SPI; no entry in the {@code subcommands} list is needed.
  *
  * <p>See {@code aidocs/22-admin-cli-draft.md} for the L1 design,
  * {@code aidocs/16}-PM1d row for the SPI extensibility shape, and
@@ -48,7 +50,6 @@ import picocli.CommandLine.Command;
     FilesCommand.class,
     HealthCommand.class,
     InstanceCommand.class,
-    JupyterCommand.class,
     MigrationsCommand.class,
     PluginsCommand.class,
     SemanticCommand.class,
