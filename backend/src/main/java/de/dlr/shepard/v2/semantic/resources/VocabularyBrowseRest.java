@@ -1,0 +1,157 @@
+package de.dlr.shepard.v2.semantic.resources;
+
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.context.semantic.daos.PredicateDAO;
+import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
+import de.dlr.shepard.context.semantic.entities.Predicate;
+import de.dlr.shepard.context.semantic.entities.Vocabulary;
+import de.dlr.shepard.v2.semantic.io.PredicateIO;
+import de.dlr.shepard.v2.semantic.io.VocabularyPredicatesIO;
+import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
+import io.quarkus.security.Authenticated;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * SEMA-V6-UI-FOLLOWUP — read-only browse surface for {@code :Vocabulary}
+ * + {@code :Predicate} nodes seeded by V72 and the SEMA-V6 ontology
+ * provider chain.
+ *
+ * <p>Two endpoints:
+ * <ul>
+ *   <li>{@code GET /v2/semantic/vocabularies} — list all vocabularies
+ *       (ordered by label ASC; includes both enabled and disabled rows so
+ *       the operator can see what's hidden from autocomplete).</li>
+ *   <li>{@code GET /v2/semantic/vocabularies/{vocabId}/predicates} — list
+ *       the predicates declared by a given vocabulary, scoped by
+ *       {@code :Predicate.vocabularyAppId = vocabId}.</li>
+ * </ul>
+ *
+ * <p>This is the non-admin counterpart to
+ * {@link de.dlr.shepard.v2.admin.semantic.SemanticAdminRest}: any
+ * authenticated shepard user may browse the vocabulary catalogue, matching
+ * the posture of {@link SemanticTermSearchRest} (no per-entity permission
+ * check beyond authentication — the ontology catalogue is read-only and
+ * visible to every logged-in user).
+ *
+ * <p>Design: {@code aidocs/semantics/100} §4 (Vocabularies + predicate model).
+ * <p>Backlog row: {@code SEMA-V6-UI-FOLLOWUP}.
+ */
+@Path("/v2/semantic/vocabularies")
+@Produces(MediaType.APPLICATION_JSON)
+@RequestScoped
+@Authenticated
+@Tag(name = "Semantic vocabularies (v2, SEMA-V6)")
+public class VocabularyBrowseRest {
+
+  static final String PROBLEM_TYPE_NOT_FOUND = "/problems/semantic.vocabulary.not-found";
+
+  @Inject
+  VocabularyDAO vocabularyDAO;
+
+  @Inject
+  PredicateDAO predicateDAO;
+
+  // ─── GET /v2/semantic/vocabularies ────────────────────────────────────────
+
+  /**
+   * {@code GET /v2/semantic/vocabularies}
+   *
+   * <p>Returns all {@code :Vocabulary} nodes, ordered by label ASC,
+   * including disabled ones so the operator can see what's hidden from
+   * autocomplete. Returns an empty list (200) when no vocabularies are
+   * seeded.
+   */
+  @GET
+  @Operation(
+    summary = "List all vocabularies.",
+    description =
+      "Returns every :Vocabulary node seeded into the internal semantic store, " +
+      "ordered by label ASC. Includes both enabled and disabled vocabularies — the " +
+      "`enabled` flag tells callers which appear in autocomplete. " +
+      "Auth: any authenticated user. " +
+      "Empty list (200) when no vocabularies are seeded."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "List of vocabularies (may be empty).",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response listVocabularies() {
+    List<Vocabulary> all = vocabularyDAO.listAll();
+    List<VocabularyIO> out = all.stream().map(VocabularyIO::from).toList();
+    return Response.ok(out).build();
+  }
+
+  // ─── GET /v2/semantic/vocabularies/{vocabId}/predicates ───────────────────
+
+  /**
+   * {@code GET /v2/semantic/vocabularies/{vocabId}/predicates}
+   *
+   * <p>Returns the predicates declared by the given vocabulary, scoped by
+   * {@code :Predicate.vocabularyAppId = vocabId}. Returns 404 when no
+   * vocabulary with that appId exists. Returns a 200 with an empty list
+   * when the vocabulary exists but has no predicates yet.
+   */
+  @GET
+  @Path("/{vocabId}/predicates")
+  @Operation(
+    summary = "List predicates declared by one vocabulary.",
+    description =
+      "Returns every :Predicate node whose `vocabularyAppId` equals the path " +
+      "parameter, ordered by label ASC. The response envelope echoes " +
+      "`vocabularyAppId` for caller convenience. " +
+      "Auth: any authenticated user. " +
+      "Returns 404 when the vocabulary does not exist; returns 200 with " +
+      "`predicates: []` when the vocabulary exists but has no predicates yet."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Predicates declared by this vocabulary (may be empty).",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyPredicatesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "No vocabulary with this appId.")
+  public Response listPredicatesForVocabulary(@PathParam("vocabId") String vocabId) {
+    if (vocabId == null || vocabId.isBlank()) {
+      return notFound(vocabId);
+    }
+    Vocabulary vocab = vocabularyDAO.findByAppId(vocabId);
+    if (vocab == null) {
+      return notFound(vocabId);
+    }
+    List<Predicate> rows = predicateDAO.listByVocabulary(vocabId);
+    List<PredicateIO> mapped = rows.stream().map(PredicateIO::from).toList();
+    return Response.ok(new VocabularyPredicatesIO(vocabId, mapped)).build();
+  }
+
+  // ─── helpers ──────────────────────────────────────────────────────────────
+
+  private static Response notFound(String vocabId) {
+    ProblemJson body = new ProblemJson(
+      PROBLEM_TYPE_NOT_FOUND,
+      "Vocabulary not found",
+      Status.NOT_FOUND.getStatusCode(),
+      "No :Vocabulary node with appId='" + (vocabId == null ? "" : vocabId) + "'.",
+      null
+    );
+    return Response.status(Status.NOT_FOUND)
+      .type(MediaType.APPLICATION_JSON)
+      .entity(body)
+      .build();
+  }
+}
