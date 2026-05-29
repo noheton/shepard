@@ -113,6 +113,10 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-jupyter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-unhide</artifactId>
         </exclusion>
         <exclusion>

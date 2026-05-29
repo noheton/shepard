@@ -322,6 +322,24 @@
             </exclusion>
           </exclusions>
         </dependency>
+        <!--
+          J1e-PLUGIN-REFACTOR — shepard-plugin-jupyter contributes
+          the `shepard-admin jupyter ...` subcommand group via the
+          `AdminCliCommandProvider` SPI. Same `provided`-with-self-
+          exclusion shape as unhide.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-jupyter</artifactId>
+          <version>${revision}</version>
+          <scope>provided</scope>
+          <exclusions>
+            <exclusion>
+              <groupId>de.dlr.shepard</groupId>
+              <artifactId>shepard-admin</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

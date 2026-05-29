@@ -137,6 +137,10 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-jupyter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-wiki-writer</artifactId>
         </exclusion>
         <exclusion>

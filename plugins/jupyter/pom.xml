@@ -1,34 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  AAS1-plugin — shepard-plugin-aas extracts the Asset Administration Shell
-  feature surface from the backend into a drop-in plugin JAR.
+  J1e-PLUGIN-REFACTOR — shepard-plugin-jupyter relocates the
+  JupyterHub link-out admin integration from in-tree
+  (`backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/`) into
+  a drop-in plugin JAR per the plugin-first principle (CLAUDE.md
+  §"plugin-first" + aidocs/47).
 
-  This module produces `shepard-plugin-aas-${revision}.jar` carrying:
+  This module produces a real
+  `shepard-plugin-jupyter-${revision}.jar` carrying:
 
-    * `de.dlr.shepard.plugins.aas.AasPluginManifest` —
-      implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's `PluginRegistry` tracks AAS1-plugin in
+    * `de.dlr.shepard.plugins.jupyter.JupyterPluginManifest` —
+      implements `de.dlr.shepard.plugin.PluginManifest`; backend's
+      `PluginRegistry` tracks the plugin in
       `GET /v2/admin/plugins`.
     * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
       pointing at the manifest class.
-    * The full AAS code tree (services, DAOs, IO records, REST endpoints)
-      in packages `de.dlr.shepard.plugins.aas.*`.
-    * `aas-idta-templates.yaml` (bundled IDTA Submodel Templates,
-      loaded by `AasIdtaTemplateImportService` via the context classloader).
+    * The `:JupyterConfig` entity + DAO + service + admin REST +
+      public REST + IO records in package
+      `de.dlr.shepard.plugins.jupyter.*`. Admin REST canonical path
+      is `/v2/admin/plugins/jupyter/config`; the legacy
+      `/v2/admin/jupyter/config` path stays callable via a
+      compat-shim resource that delegates and stamps a
+      `Deprecation` header. Same shape for the public read
+      endpoint.
+    * `de.dlr.shepard.plugins.jupyter.cli.JupyterAdminCliCommandProvider`
+      + `META-INF/services/de.dlr.shepard.cli.plugin.AdminCliCommandProvider`
+      registering the `shepard-admin jupyter ...` Picocli subcommand
+      group via `CliPluginBootstrap`.
 
-  What stays in backend (not in this plugin):
-    * V46 Neo4j migration — MigrationsRunner Docker path reads only
-      `/deployments/neo4j/migrations/` which is populated from backend
-      resources, not plugin JARs. See aidocs/69 §2 deviation note.
+  The Neo4j migration `V94__Add_appId_constraint_JupyterConfig.cypher`
+  + its rollback twin stay in `backend/src/main/resources/neo4j/migrations/`.
+  Reason: today's `MigrationsRunner` (backend/.../common/neo4j/MigrationsRunner.java:44)
+  scans a single hardcoded resource path; classpath-merged plugin
+  migration discovery is a separate piece of platform work
+  (PLUGIN-MIGRATION-DISCOVERY-DEBT in aidocs/16). Operators
+  consuming the published image get the constraint via the
+  backend's own migration set — no plugin coordination needed.
 
-  Build order (same two-pass dance as other plugins):
+  Neo4j-OGM entity-package registration for `:JupyterConfig` lives
+  on the v1-compat precedent: `NeoConnector.java:130` uses a string
+  literal (`"de.dlr.shepard.plugins.jupyter.entities"`) so the
+  backend compile classpath stays plugin-clean.
 
-    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
-    $ cd plugins/aas && mvn -DskipTests install
-    $ cd backend && mvn package           # plugin is on the classpath
+  Build order (the standard two-pass dance, per UH1a/ADR-0023):
 
-  See docs/install/aas-plugin.md for the operator runbook.
-  See aidocs/plugins/69-aas-plugin-extraction-design.md for the design rationale.
+    $ cd backend && mvn -DnoPlugins -DskipTests install
+    $ cd plugins/jupyter && mvn install
+    $ cd backend && mvn package
+
+  See `docs/reference/plugins.md` for the operator runbook and
+  `aidocs/47` + `aidocs/16` J1e-PLUGIN-REFACTOR for the design.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -36,18 +57,22 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-aas</artifactId>
+  <artifactId>shepard-plugin-jupyter</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — AAS (Asset Administration Shell)</name>
+  <name>shepard plugin — JupyterHub link-out</name>
   <description>
-    IDTA AAS v3 integration plugin. Exposes shepard Collections as AAS Shells
-    and DataObjects as Submodel references via /v2/aas/shells. Provides a
-    server self-description endpoint (/v2/aas/.well-known/aas-server), IDTA
-    Submodel Template import (/v2/admin/aas/import-idta-templates), and an
-    outbox-based AAS registry sync (/v2/admin/aas/registrations).
-    See aidocs/52 and aidocs/plugins/69.
+    JupyterHub link-out admin gate. Exposes
+    `/v2/admin/plugins/jupyter/config` for instance-admin runtime
+    configuration of the per-notebook 'Open in JupyterHub' action,
+    plus a public `/v2/plugins/jupyter/config` read endpoint that
+    the unified Data References table consults to show/hide the
+    affordance. CLI parity: `shepard-admin jupyter
+    {status,enable,disable,set-hub-url}`. Legacy paths
+    `/v2/admin/jupyter/config` and `/v2/jupyter/config` remain
+    callable through a thin compat-shim resource. See
+    aidocs/16 J1e-PLUGIN-REFACTOR.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -76,6 +101,8 @@
     <junit.version>5.10.5</junit.version>
     <mockito.version>5.22.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
+    <picocli.version>4.7.6</picocli.version>
+    <lombok.version>1.18.44</lombok.version>
   </properties>
 
   <dependencyManagement>
@@ -92,13 +119,13 @@
 
   <dependencies>
     <!--
-      backend as provided — the plugin needs the backend's core types
-      (Collection, DataObject, DataObjectDAO, CollectionDAO, HasAppId,
-      PermissionsService, AuthenticationContext, GenericDAO, Constants,
-      ShepardTemplateDAO, ShepardTemplate, TemplateBodyValidator,
+      backend as provided — the plugin needs the backend's core
+      types (User, Constants, ProblemJson, HasAppId, GenericDAO,
       the PluginManifest SPI) at compile time. `provided` means the
-      plugin JAR does NOT bundle backend.jar — at runtime the backend
-      image carries its own classes.
+      plugin JAR does NOT bundle backend.jar — at runtime the
+      backend image already carries its own classes, and the
+      plugin's URLClassLoader parent is the backend's loader (per
+      `PluginRegistry`). Same pattern as UH1a/UnhidePluginManifest.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -113,8 +140,7 @@
           back onto its dependency list. When this plugin module
           compiles against `backend`, Maven would otherwise resolve
           those transitive references and fail with "Could not find
-          artifact ... shepard-plugin-*". The exclusions keep the
-          plugin's compile classpath self-consistent.
+          artifact ...". One exclusion per shipped plugin.
         -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
@@ -150,11 +176,11 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-file-s3</artifactId>
+          <artifactId>shepard-plugin-aas</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-aas</artifactId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
@@ -175,7 +201,7 @@
       </exclusions>
     </dependency>
 
-    <!-- Quarkus runtime types used in plugin source. All provided. -->
+    <!-- Quarkus runtime types — provided by the backend image. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
@@ -193,18 +219,16 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!-- Jackson YAML — used by AasIdtaTemplateImportService to read aas-idta-templates.yaml. -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Neo4j-OGM — AasRegistration is a @NodeEntity; DAO uses OGM types. -->
+    <!-- Neo4j-OGM — :JupyterConfig is a @NodeEntity. -->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
@@ -212,26 +236,42 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Lombok — IO records and entity use @Data, @Getter, @Setter, etc. -->
+    <!-- Lombok — same as backend for the IO records / entity. -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.44</version>
+      <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
 
-    <!-- MicroProfile config — @ConfigProperty for shepard.aas.* keys. -->
+    <!--
+      PM1d — CLI side: the plugin contributes a Picocli subcommand
+      group (`shepard-admin jupyter ...`) via the
+      `AdminCliCommandProvider` SPI from `de.dlr.shepard.cli.plugin`.
+      The CLI is `provided` so its classes are not bundled into the
+      plugin JAR — the operator-side `shepard-admin.jar` carries
+      them. Same self-exclusion shape as UH1a.
+    -->
     <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-jupyter</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <!-- ====== test scope ====== -->
-    <!--
-      AbstractPluginManifestTest base class — cross-cutting manifest
-      contract assertions (id format, version, compat, sidecars).
-    -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
       <artifactId>backend</artifactId>
@@ -257,10 +297,32 @@
       <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
+    <!--
+      Pull the CLI's test fixtures (StubBackend, CliRunner) so the
+      relocated `JupyterStatusCommandTest` can hit a localhost stub
+      backend without re-implementing the harness. Same as
+      plugins/unhide. Wildcard exclusion (`*`) on transitives — the
+      CLI's flattened pom carries every shepard-plugin-* as `provided`
+      via the with-plugins profile; without the wildcard, those leak
+      into our test classpath at compile time.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-aas-${revision}</finalName>
+    <finalName>shepard-plugin-jupyter-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -273,7 +335,7 @@
             <path>
               <groupId>org.projectlombok</groupId>
               <artifactId>lombok</artifactId>
-              <version>1.18.44</version>
+              <version>${lombok.version}</version>
             </path>
           </annotationProcessorPaths>
         </configuration>

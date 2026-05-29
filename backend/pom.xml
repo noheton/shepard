@@ -1077,6 +1077,24 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          J1e-PLUGIN-REFACTOR — `shepard-plugin-jupyter`. Ships the
+          `:JupyterConfig` singleton, the
+          `/v2/admin/plugins/jupyter/config` admin surface (canonical),
+          and the public `/v2/plugins/jupyter/config` read endpoint
+          the unified Data References table consults to gate the
+          per-notebook 'Open in JupyterHub' action. Legacy
+          `/v2/admin/jupyter/config` + `/v2/jupyter/config` paths
+          remain callable through a compat-shim resource (PR-07
+          deprecation window). Relocated from in-tree
+          `de.dlr.shepard.v2.admin.jupyter.*` on 2026-05-29 per
+          plugin-first principle. See aidocs/16 J1e-PLUGIN-REFACTOR.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-jupyter</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           V1COMPAT.0 Phase 1 — `shepard-plugin-v1-compat` marker
           plugin. Ships the `:LegacyV1Config` singleton, the
           `/v2/admin/legacy/v1/{config,stats}` admin surface, and
