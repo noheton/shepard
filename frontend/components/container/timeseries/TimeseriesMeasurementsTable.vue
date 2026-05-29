@@ -112,6 +112,7 @@ const itemsPerPage = 10;
           <ChannelPreviewChart
             :channel="item"
             :container-id="containerId"
+            :channel-shepard-id="channelShepardId(item)"
           />
 
           <!-- annotations -->

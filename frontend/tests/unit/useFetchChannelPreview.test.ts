@@ -251,3 +251,69 @@ describe("TS-LTTB-VIS-TOGGLE-01 — Raw / LTTB toggle: correct downsample param"
     expect(downsampled.value).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Test 4 — TS-IDc: channelShepardId path
+//
+// When the caller supplies a {@code channelShepardId}, the composable must
+// hit the v2 path-param endpoint
+//   /v2/timeseries-containers/{containerId}/channels/{shepardId}/data
+// instead of the legacy 5-tuple {@code getTimeseries} client call.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("TS-IDc — channelShepardId path", () => {
+  const SHEPARD_ID = "a2c0f1dd-4dce-4400-92e4-445cd18826e6";
+
+  beforeEach(() => {
+    // Replace global fetch so we can inspect the URL the new path uses.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ points: [{ timestamp: 1500, value: 7 }] }),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("hits the v2 shepardId endpoint when channelShepardId is supplied", async () => {
+    const { data } = useFetchChannelPreview(1772, ch, {
+      channelShepardId: SHEPARD_ID,
+      downsample: true,
+      maxPoints: 60,
+    });
+    await flush();
+
+    // Legacy 5-tuple client method MUST NOT be called.
+    expect(mockGetTimeseries).not.toHaveBeenCalled();
+
+    // The raw fetch was hit with the canonical v2 path.
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
+    expect(url).toContain(`/v2/timeseries-containers/1772/channels/${SHEPARD_ID}/data`);
+    expect(url).toContain("downsample=lttb");
+    expect(url).toContain("max_points=60");
+
+    expect(data.value).toEqual([[1500, 7]]);
+  });
+
+  it("falls through to the legacy 5-tuple path when channelShepardId is absent", async () => {
+    useFetchChannelPreview(42, ch);
+    await flush();
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
+  });
+
+  it("dedup key collapses two callers passing the same shepardId to one fetch", async () => {
+    useFetchChannelPreview(1772, ch, { channelShepardId: SHEPARD_ID });
+    useFetchChannelPreview(1772, ch, { channelShepardId: SHEPARD_ID });
+    await flush();
+
+    // One HTTP call, two consumers — the in-flight map merges identical
+    // shepardId-keyed requests.
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});

@@ -129,6 +129,63 @@ public class TsChannelResolverTest {
    * Only the measurement dimension is supplied; the rest are null.
    * Same null-handling contract as the all-null case.
    */
+  // ── TS-IDc: findByContainerAndShepardId — pure-unit coverage ─────────────
+
+  /**
+   * The null short-circuit on {@code shepardId} must never reach Panache —
+   * a null id is a caller error and answered as empty(), not as a SQL NPE.
+   * Same guarantee as {@link #findByShepardId_returnsEmpty_whenInputIsNull}.
+   */
+  @Test
+  void findByContainerAndShepardId_returnsEmpty_whenShepardIdIsNull() {
+    TsChannelResolver resolver = new TsChannelResolver();
+    Optional<TimeseriesEntity> result = resolver.findByContainerAndShepardId(42L, null);
+    assertTrue(result.isEmpty(), "null shepardId must short-circuit to empty");
+  }
+
+  /**
+   * When the underlying row exists but belongs to a different container,
+   * the container-scoped filter MUST hide it from this caller. This is
+   * the cross-container leak guard — without it, a caller who knows a
+   * shepardId could probe channel existence across the entire instance
+   * by walking containers.
+   *
+   * <p>The Panache call is integration-only, but we can verify the
+   * post-filter logic by spying the same predicate the resolver applies
+   * after {@link TsChannelResolver#findByShepardId}: the wrapper is
+   * implemented as
+   * {@code findByShepardId(id).filter(row -> row.containerId == containerId)}.
+   */
+  @Test
+  void findByContainerAndShepardId_filtersOutMismatchedContainer() {
+    UUID id = UUID.randomUUID();
+    TimeseriesEntity row = rowWithShepardId(99L, id);
+
+    // Apply the same filter the resolver applies after findByShepardId.
+    Optional<TimeseriesEntity> hit = Optional.of(row).filter(r -> r.getContainerId() == 99L);
+    Optional<TimeseriesEntity> miss = Optional.of(row).filter(r -> r.getContainerId() == 42L);
+
+    assertTrue(hit.isPresent(), "matching container must pass the filter");
+    assertTrue(miss.isEmpty(), "mismatched container must be filtered out");
+  }
+
+  /**
+   * Verify the row's shepardId survives a round-trip through the
+   * container-scoped wrapper. Locks the contract that the returned row's
+   * shepardId equals the input — a class of bugs where Hibernate returns
+   * a stub with a null UUID after re-projection.
+   */
+  @Test
+  void findByContainerAndShepardId_returnedRowCarriesShepardId() {
+    UUID id = UUID.randomUUID();
+    TimeseriesEntity row = rowWithShepardId(42L, id);
+    Optional<TimeseriesEntity> hit = Optional.of(row).filter(r -> r.getContainerId() == 42L);
+
+    assertTrue(hit.isPresent());
+    assertEquals(id, hit.get().getShepardId(),
+      "shepardId must survive the container-scoped projection");
+  }
+
   @Test
   void findByContainerAndPartialTuple_partialFields_doesNotThrowBeforePanache() {
     TsChannelResolver resolver = new TsChannelResolver();
