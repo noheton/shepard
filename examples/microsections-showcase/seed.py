@@ -288,21 +288,25 @@ def seed(api: Api, raw_dir: Path, *, reset: bool) -> None:
         do = find_or_create_data_object(api, coll_id, sample_id, attributes=attrs)
 
         # Attach the TIF as a singleton FileReference directly on the DO.
+        # The name carries the .tif extension so the frontend classifier
+        # fires (otherwise the generic file icon shows instead of image).
         upload_singleton_if_absent(
             api,
             coll_id,
             do["appId"],
-            f"{sample_id} micrograph",
+            f"{sample_id}-micrograph.tif",
             tif_path,
             "image/tiff",
         )
 
         # Attach the matching notebook as a second singleton FileReference.
+        # The .ipynb extension makes the frontend's notebook-classifier fire
+        # (jupyter-unified-refs agent flagged this gap 2026-05-29).
         upload_singleton_if_absent(
             api,
             coll_id,
             do["appId"],
-            f"{sample_id} FVF analysis notebook",
+            f"{sample_id}-fvf-analysis.ipynb",
             nb_path,
             "application/x-ipynb+json",
         )
