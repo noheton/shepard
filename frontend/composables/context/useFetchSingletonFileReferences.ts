@@ -27,7 +27,7 @@
  *   }
  */
 
-import { type ShepardFile } from "@dlr-shepard/backend-client";
+import type { ShepardFile } from "@dlr-shepard/backend-client";
 
 export interface SingletonFileReferenceIO {
   appId: string;

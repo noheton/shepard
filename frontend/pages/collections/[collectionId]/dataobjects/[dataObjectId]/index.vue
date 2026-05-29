@@ -120,6 +120,7 @@ watch(
 );
 
 /** Look up the stored relationship type for a predecessor by its numeric id. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function predecessorRelationshipType(predecessorId: number): string | null {
   const match = typedPredecessors.value.find(tp => tp.predecessorId === predecessorId);
   return match?.relationshipType ?? null;
