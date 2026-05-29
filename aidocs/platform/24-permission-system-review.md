@@ -1,6 +1,6 @@
 ---
-stage: fragment
-last-stage-change: 2026-05-23
+stage: feature-defined
+last-stage-change: 2026-05-29
 ---
 
 # 24 — Permission-System Review
@@ -683,3 +683,116 @@ snapshot date and should reuse this ordering.
   that intentional, or should it have replaced the per-Service
   asserts long ago? (F1's answer: replace both with one
   declarative seam.)
+
+---
+
+## 9. Perm-inheritance walk algorithm (per entity kind)
+
+*Added 2026-05-29 as part of PERM-INHERIT-02. The per-entity-kind matrix lives
+in [`../data/PERM-INHERIT-MATRIX.md`](../data/PERM-INHERIT-MATRIX.md); this
+section codifies the lookup chain so contributors don't have to re-derive it
+from the service code.*
+
+### 9.1 Two entry points, one algorithm
+
+Two methods in the codebase walk for an arbitrary entity. Both implement the
+same conditional: **direct `:Permissions` node wins if present; otherwise walk
+to the parent `Collection`.**
+
+1. **`PermissionsService.isAccessTypeAllowedForUser(long entityId, AccessType, String username)`**
+   (lines 285-298). The 3-arg overload kept for upstream-compiled plugins
+   (e.g. `GitReferenceRest`).
+2. **`GraphPolicyDecisionPoint.isAllowed(String username, String action, String entityAppId)`**
+   (lines 44-74). The F6 `PolicyDecisionPoint` seam — appId-keyed, used by
+   future `@Authz` callers.
+
+The cached fast path
+`isAccessTypeAllowedForUser(long, AccessType, String, long jwtIat)` at line 269
+is the leaf both branches converge on once a direct `:Permissions` node is
+located.
+
+### 9.2 The walk in pseudocode
+
+```
+isAccessAllowed(entityHandle, accessType, username):
+  if Neo4j is down for longer than the readiness staleness window:
+    return false                                        # F5 fail-closed
+  let entityNeo4jId = resolve(entityHandle)             # appId → id if needed
+  let direct = permissionsDAO.findByEntityNeo4jId(entityNeo4jId)
+  if direct != null:
+    return rolesGrantAccess(getRoles(direct, username), accessType)
+  # No direct :Permissions edge — walk up to the parent Collection.
+  let appId = entityIdResolver.resolveAppId(entityNeo4jId)
+  return isAccessAllowedForDataObjectAppId(appId, accessType, username)
+
+isAccessAllowedForDataObjectAppId(appId, accessType, username):
+  if appId is null or blank: return false
+  if Neo4j is down: return false                        # F5
+  let collOgmId = ONE-HOP CYPHER:
+      MATCH (c:Collection)-[:HAS_DATAOBJECT]->(d:DataObject {appId: $appId})
+      RETURN id(c) LIMIT 1
+  if not found: return false                            # orphan / wrong appId — fail-closed
+  return isAccessTypeAllowedForUser(collOgmId, accessType, username, currentIat())
+```
+
+Source-of-truth: `PermissionsService.java:285-338`. The Cypher walk at
+`:328-330` is a deliberately single hop — v1 services walked via the
+OGM-loaded `dataObject.getCollection()` (e.g.
+`DataObjectService.getDataObject`); v2 chose the bare Cypher to avoid
+hydrating the full DataObject just for a perm check.
+
+### 9.3 Per-entity-kind expansion
+
+For each entity kind in the matrix (`../data/PERM-INHERIT-MATRIX.md §2`), the
+walk resolves as follows:
+
+| Entity (REST handle: `appId` or Neo4j `id`) | Walk |
+|---|---|
+| `Collection` | direct lookup hits — done. |
+| `FileContainer` / `TimeseriesContainer` / `StructuredDataContainer` / `HdfContainer` | direct lookup hits — done. (Containers are multi-attachable; they cannot inherit from a single parent.) |
+| `UserGroup` | direct lookup hits — done. (Owner field controls group-membership editing.) |
+| `DataObject` | direct lookup misses → `resolveAppId(id)` → one-hop Cypher to parent `Collection` → cached fast path. |
+| `FileReference` (`SingletonFileReference`) | same as `DataObject` — the reference's `appId` is what `resolveAppId` returns, then Cypher hops `(:Collection)-[:HAS_DATAOBJECT]->(:DataObject)-[:HAS_REFERENCE]->(:FileReference {appId})`. The implementation reuses the DataObject branch because the reference's *owner* DataObject is on the same Cypher path. |
+| `FileBundleReference` | as `FileReference`. |
+| `TimeseriesReference` | as `FileReference`. |
+| `StructuredDataReference` | as `FileReference`. |
+| `URIReference` | as `FileReference`. |
+| `DataObjectReference` / `CollectionReference` | as `FileReference`. |
+| `HdfReference` (plugin) | as `FileReference` — `GitReferenceRest`-style upstream-compiled callers hit the 3-arg overload at `:285` which routes correctly without recompiling the plugin. |
+| `GitReference` (plugin) | as `HdfReference` — `:281-284` of `PermissionsService` documents this exact backward-compat path was added specifically for the git plugin. |
+| `VideoStreamReference` (plugin) | as `FileReference`. |
+| `SpatialDataReference` (plugin) | as `FileReference`. |
+| `ShepardFile` / `PayloadVersion` | direct lookup misses → walk to parent `FileContainer` → containers own perms (terminates without reaching `Collection`). |
+| `StructuredData` | direct lookup misses → walk to parent `StructuredDataContainer` → terminates. |
+
+### 9.4 Short-circuit invariants
+
+The walk short-circuits in **five** places. Each is a fail-closed branch:
+
+1. **Direct hit** (`PermissionsService.java:287`). `permissionsDAO.findByEntityNeo4jId != null` → evaluate roles on that node, return. No walk.
+2. **Neo4j down** (`:323`). `DbHealthRegistry.isCurrentlyDown(NEO4J)` → return `false`. The F5 invariant: we cannot evaluate perms without the graph.
+3. **Unknown entity** (`:295-297`). `entityIdResolver.resolveAppId` throws `NotFoundException` → return `false`. The 3-arg overload's fail-closed path.
+4. **Orphan / wrong appId** (`:333`). The Cypher one-hop returns no rows → return `false`. The DataObject is orphaned (no parent Collection) or the appId doesn't resolve to a `:DataObject`.
+5. **C3 missing-Permissions fail-closed** (`:685-687`). When `getRoles` is invoked with `Optional.empty()` (the direct node was found but has no readable shape, or the Cypher walk produced an id but its `:Permissions` was deleted concurrently), `Roles(false, false, false, false)` is returned — i.e. no rights. (Documented at §3 of this doc; this is the post-2026-05-23 fail-closed default that replaced the silent fail-open.)
+
+### 9.5 The BUG-148 anti-regression
+
+The walk's correctness depends on `DataObject` and `*Reference` entities **not**
+acquiring their own `:Permissions` node. If they ever did, the direct-lookup
+fast path at line 287 would short-circuit before the inheritance walk fired,
+silently overriding the parent Collection's grant.
+
+This is locked in:
+
+- **Anti-regression JUnit:** `DataObjectServiceTest` asserts a freshly-created
+  DataObject has no direct `:Permissions` (shipped in `6e22b407e`).
+- **Migration guard:** `V90__Tighten_orphan_permissions_backfill.cypher`
+  actively removes any wrongly-attached `:Permissions` from `:DataObject` and
+  `:BasicReference` nodes (and tightens V14's label allowlist so it cannot
+  recur if an operator runs the orphan backfill again).
+- **Code-review rule:** future `:Permissions` writes must check the entity
+  label. The matrix doc (`../data/PERM-INHERIT-MATRIX.md §2`) is the source
+  of truth for which labels are eligible.
+
+See also: PERM-INHERIT-04 reconcile note in
+[`../data/PERM-INHERIT-MATRIX.md §4`](../data/PERM-INHERIT-MATRIX.md#4-bug-148-reconcile--xs-perm-inherit-04).
