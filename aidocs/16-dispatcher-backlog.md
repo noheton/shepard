@@ -323,6 +323,29 @@ The MVP "minimum-viable clunkiness fix" is **P5 + P6 + P7 + P10 + P12 + P16 + P1
 | X3 | Federation, HMC 2, project website | 8176–8400 | Program-level |
 | X4 | Node-RED file collector flow (incl. JWT tokens) | 100–660 | Reference material; security follow-up below |
 
+## Operator-approved decisions 2026-05-29
+
+Operator ack 2026-05-29 ("all recommendations fine") on the punch list
+surfaced during the JH path-mount session. Each line is the approved
+direction; implementation tracked under its own row elsewhere in this
+file.
+
+| Decision ID | Approved direction | Implementation row |
+|---|---|---|
+| P21-File-prereq + P21-References-prereq | **YES** — ship `PUT /v2/<container>/{id}` and `PUT /v2/<reference>/{id}` for metadata edits. Delete-and-recreate destroys provenance continuity. | Files this PR's follow-on; unblocks the P21 PATCH family. |
+| PROV-CAPTURE-READS-DECISION | **YES, for `/v2/` paths only** — flip `shepard.provenance.capture-reads=true`. AFTER PROV-RESOLVER-PATHWALK ships, so NULL-target Activity rows don't multiply. v1 stays off (upstream-compat cost). | Sequencing: PROV-RESOLVER-PATHWALK first (shipped #198), then the flip. |
+| #27 Archive state | **YES** — add `ARCHIVED` to Container + Collection status enum (frozen, prune-only). Simple additive; RBAC gate on transition. | `aidocs/16` row #27 (now operator-approved). |
+| CHOKE-08 (NFS extract) | **YES — pre-stage 107 GB to local disk** before importer starts. Single-threaded NFS extract throttles ingest. | Operator runbook step; CHOKE-08 row updated. |
+| BTKVS-A2 user-bundles-dir | **`/data/shepard/semantic-bundles`** under existing backend volume + bind-mount. | Row 2122 (BTKVS-A2) gets a follow-on infra fix. |
+| J1e Caddy path-mount | **Isolated change** — not the start of a Zoraxy→Caddy migration. Zoraxy still owns TLS/DNS. | J1e-PR-05-CADDY-PATH-MOUNT-04 row marked **decided: isolated**. |
+
+Lower-priority deferred-until-pulled (operator ack 2026-05-29):
+**#22** Collection bundling vocab — defer until cross-Collection grouping
+demand. **LANDING-MY-DATA-GRAPH** — defer; recommend temporal heatmap
+when picked up. **WIZARD-JSON-INTERPRETABLE** — defer; recommend
+FileReference shape. **R8 DLR CD theming** — defer until DLR adoption
+push (needs fresh design assets anyway).
+
 ## Open user decisions (blocking some items)
 
 1. **Leaked JWTs** at `aidocs/input/input_raw.md:222` and `:360` (issuers
