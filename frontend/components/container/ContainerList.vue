@@ -332,7 +332,7 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
       @update:sort-by="onSortBy"
     >
       <template #item="rowProps">
-        <v-data-table-row v-bind="rowProps">
+        <v-data-table-row v-bind="(rowProps as any)">
           <template #[`item.kind-icon`]>
             <v-icon
               :icon="describeContainerType(rowProps.item.type).icon"
