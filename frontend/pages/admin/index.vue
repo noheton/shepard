@@ -11,6 +11,7 @@ import PluginsAdminPane from "~/components/context/admin/PluginsAdminPane.vue";
 import PermissionAuditLogPane from "~/components/context/admin/PermissionAuditLogPane.vue";
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
 import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
+import AdminPublicationsPane from "~/components/context/admin/AdminPublicationsPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -156,6 +157,13 @@ const landingCards = [
     title: "Backup",
     description: "Nightly pg_dump + Wal-G policy (designed; ships PG-COLLAPSE-002).",
   },
+  {
+    fragment: AdminFragments.PUBLICATIONS,
+    icon: "mdi-tag-multiple-outline",
+    title: "Publications",
+    description:
+      "Read-only listing of all minted PIDs across the instance — retired-state badges, per-PID minter/mintedAt/publishedBy columns.",
+  },
 ];
 </script>
 
@@ -232,6 +240,9 @@ const landingCards = [
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"
+    />
+    <AdminPublicationsPane
+      v-if="routeFragment === AdminFragments.PUBLICATIONS"
     />
   </PaneLayout>
 </template>

@@ -1,9 +1,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AdminFeaturesApi';
-export * from './CollectionWatchesApi';
 export * from './AdminMetricsApi';
 export * from './AdminPermissionAuditApi';
+export * from './AdminPublicationsApi';
+export * from './CollectionWatchesApi';
 export * from './CollectionContainersApi';
 export * from './CollectionLabJournalEntriesApi';
 export * from './DataObjectV2Api';

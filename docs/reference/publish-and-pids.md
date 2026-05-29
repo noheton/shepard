@@ -188,6 +188,46 @@ Error responses (`application/problem+json`):
 | `publish.entity.wrong-kind` | 404 | Entity exists but is a different label than the URL segment claims. |
 | `publish.publication.not-found` | 404 | Entity has no Publication attached — publish first. |
 
+### List all publications (admin only)
+
+```
+GET /v2/admin/publications
+```
+
+- **Auth.** Bearer JWT or `X-API-KEY`. Caller must hold the
+  **instance-admin** role (`@RolesAllowed("instance-admin")`).
+- **Semantics.** Returns every `:Publication` row across the entire
+  instance, sorted `mintedAt DESC` (newest first). No pagination in
+  this slice — typical instances have O(hundreds) of PIDs.
+- **Purpose.** Replaces the "what got published?" curl loop for
+  operators. Surfaces retired-state badges (KIP1f tombstone),
+  per-PID minter/mintedAt/publishedBy columns, and entity-kind/
+  entityAppId — the DMP §5 data-security audit trail view.
+
+Response body (`application/json`):
+
+```json
+[
+  {
+    "appId": "01HF6N3R-pub-row",
+    "pid": "shepard:dlr.de/shepard-prod:data-objects:01HF...:v1",
+    "mintedAt": "2026-05-13T08:11:00Z",
+    "minterId": "local",
+    "resolverUrl": "https://<shepard-host>/v2/.well-known/kip/<pid>",
+    "publishedBy": "<username>",
+    "entityKind": "data-objects",
+    "entityAppId": "01HF...",
+    "versionNumber": 1,
+    "digitalObjectMutability": null
+  }
+]
+```
+
+`digitalObjectMutability` is `null` on active Publications and
+`"retired"` on tombstoned ones (KIP1f). The admin pane
+(`/admin#publications`) provides a read-only table view of the same
+data with status badges for operator convenience.
+
 ### Resolve a PID (public)
 
 ```

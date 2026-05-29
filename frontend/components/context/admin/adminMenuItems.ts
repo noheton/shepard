@@ -21,6 +21,7 @@ export enum AdminFragments {
   USERS_GIT = "users-git",
   AI_CONFIG = "ai-config",
   BACKUP = "backup",
+  PUBLICATIONS = "publications",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -119,5 +120,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Backup",
     fragment: AdminFragments.BACKUP,
     icon: "mdi-backup-restore",
+  },
+  {
+    name: "Publications",
+    fragment: AdminFragments.PUBLICATIONS,
+    icon: "mdi-tag-multiple-outline",
   },
 ];
