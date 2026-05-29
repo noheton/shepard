@@ -399,6 +399,59 @@ Stale plugin docs are treated the same as stale `aidocs/42` vision
 sections — a PR that changes a plugin's surface without updating the
 plugin's docs pages fails review.
 
+## Always: mount plugin UI sidecars as paths, not subdomains
+
+When a plugin ships a sidecar with a user-facing HTTP surface
+(JupyterHub, future TableContainer admin pane, future visualisation
+plugin UIs, etc.) the sidecar **mounts as a path on the existing
+Shepard host** — e.g. `https://shepard.nuclide.systems/<plugin>` —
+not as a separate subdomain like `<plugin>.shepard.nuclide.systems`.
+
+**Why path-mount is the default:**
+
+1. **Operator simplicity** — no new DNS A record, no new TLS cert,
+   no new reverse-proxy host block. One Caddy/Zoraxy config to
+   maintain across all plugins.
+2. **Cookie-domain sharing → cleaner SSO** — the user's Keycloak
+   session cookie is already valid on `shepard.nuclide.systems`;
+   path-mount reuses it. Subdomain forces a cross-domain
+   redirect dance and CORS exemptions.
+3. **Trivial deployment** — adding a new plugin UI is one
+   `handle_path /<plugin>/*` block in the existing Caddyfile;
+   no infrastructure ticket.
+
+**How to wire it correctly:**
+
+- The plugin's sidecar config (e.g. `jupyterhub_config.py`,
+  `streamlit_config.toml`, etc.) sets its `base_url` /
+  `--server.baseUrlPath` to `/<plugin>`.
+- The plugin's `compose-profile.yml` exposes the sidecar only on
+  the internal network — no host port.
+- The plugin's docs in `install.md §4` (reverse-proxy section)
+  describes the path-mount in a `Caddyfile` block.
+- All callback / redirect URLs (OIDC `oauth_callback_url`,
+  webhook receivers, etc.) use the path-mounted URL exactly so
+  Keycloak's registered redirect URI matches.
+
+**Caveat to document:** path-mounting shares the cookie domain with
+Shepard. The plugin's session-cookie scope MUST be set to
+`Path=/<plugin>` to prevent theoretical cookie collisions with
+Shepard's own cookies. JupyterHub, Streamlit, FastAPI all default to
+this correctly; verify and document in the plugin's `install.md`.
+
+**Exceptions** (subdomain is correct when):
+
+- The plugin's sidecar absolutely requires a different cookie domain
+  for security isolation (rare; document the specific reason).
+- The plugin is intended to be a multi-tenant service shared across
+  Shepard instances (e.g. a regional Helmholtz Unhide aggregator) —
+  then it's not "a plugin's sidecar" but a separate deployment.
+- A specific protocol limitation prevents path-mounting (e.g. some
+  legacy WebDAV implementations don't honour `base_url`).
+
+Default is path-mount. Going to a subdomain requires the design doc
+to say why and the operator runbook to call out the operational cost.
+
 ## Always: file Issues + cut releases per `aidocs/strategy/85`
 
 Project-management discipline lives in
