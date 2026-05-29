@@ -386,6 +386,62 @@ see the [manage-vocabularies runbook](/admin/runbooks/manage-vocabularies/) and
 
 ---
 
+## 9b. Per-vocabulary predicate browse (SEMA-V6-UI-FOLLOWUP)
+
+Two read-only endpoints surface the seeded `:Vocabulary` and `:Predicate`
+nodes without requiring SPARQL or the instance-admin role:
+
+```
+GET /v2/semantic/vocabularies
+GET /v2/semantic/vocabularies/{vocabId}/predicates
+```
+
+**Auth.** Any authenticated user (no instance-admin role required) — this
+is the casual browse surface; the admin surface for uploading and
+enabling/disabling vocabularies stays at `/v2/admin/semantic/ontologies`.
+
+**`GET /v2/semantic/vocabularies`** returns every `:Vocabulary` node
+ordered by label ASC, including disabled rows (so the operator can see
+what's hidden from autocomplete). Each row carries `appId`, `uri`,
+`label`, `prefix`, `description`, `enabled`, and `type` (`null` for
+seeded/operator vocabularies, `"PERSONAL"` for user-minted ones).
+
+**`GET /v2/semantic/vocabularies/{vocabId}/predicates`** returns the
+predicates declared by one vocabulary, ordered by label ASC. `vocabId`
+is the parent `:Vocabulary.appId`. Returns 404 when the vocabulary
+does not exist; returns 200 with `predicates: []` when it exists but
+has no predicates yet.
+
+Example:
+
+```bash
+curl -fsS -H "Authorization: Bearer $TOKEN" \
+  https://shepard.example.com/v2/semantic/vocabularies/aed22b28-2d66-48e3-9196-3a4184ffcef1/predicates
+```
+
+```json
+{
+  "vocabularyAppId": "aed22b28-2d66-48e3-9196-3a4184ffcef1",
+  "predicates": [
+    {
+      "appId": "...",
+      "uri": "http://w3id.org/nfdi4ing/metadata4ing/realizesMethod",
+      "label": "realizes method",
+      "vocabularyAppId": "aed22b28-2d66-48e3-9196-3a4184ffcef1",
+      "expectedObjectType": "URI",
+      "cardinality": "MANY",
+      "required": false
+    }
+  ]
+}
+```
+
+The browse page at `/semantic/vocabularies/<vocabId>` is the in-app
+front-end for this endpoint (search-as-you-type on URI + label, sortable
+columns, empty-state link to the admin Ontology Bundles pane).
+
+---
+
 ## 10. Autocomplete / term search
 
 The annotation dialog and `search_predicates` / `search_values` MCP tools

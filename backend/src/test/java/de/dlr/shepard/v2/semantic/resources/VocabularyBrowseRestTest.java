@@ -1,0 +1,173 @@
+package de.dlr.shepard.v2.semantic.resources;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import de.dlr.shepard.context.semantic.daos.PredicateDAO;
+import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
+import de.dlr.shepard.context.semantic.entities.Predicate;
+import de.dlr.shepard.context.semantic.entities.Vocabulary;
+import de.dlr.shepard.v2.semantic.io.PredicateIO;
+import de.dlr.shepard.v2.semantic.io.VocabularyPredicatesIO;
+import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
+import jakarta.ws.rs.core.Response;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * SEMA-V6-UI-FOLLOWUP — unit tests for {@link VocabularyBrowseRest}.
+ *
+ * <p>Covers the list-vocabularies happy path, the list-predicates happy path,
+ * a 404 on a missing vocabulary, and the empty-predicates fallback.
+ */
+class VocabularyBrowseRestTest {
+
+  private VocabularyDAO vocabularyDAO;
+  private PredicateDAO predicateDAO;
+  private VocabularyBrowseRest rest;
+
+  @BeforeEach
+  void setUp() {
+    vocabularyDAO = mock(VocabularyDAO.class);
+    predicateDAO  = mock(PredicateDAO.class);
+
+    rest = new VocabularyBrowseRest();
+    rest.vocabularyDAO = vocabularyDAO;
+    rest.predicateDAO  = predicateDAO;
+  }
+
+  // ─── helpers ─────────────────────────────────────────────────────────────
+
+  private static Vocabulary vocab(String appId, String uri, String label, boolean enabled) {
+    Vocabulary v = new Vocabulary();
+    v.setAppId(appId);
+    v.setUri(uri);
+    v.setLabel(label);
+    v.setEnabled(enabled);
+    return v;
+  }
+
+  private static Predicate predicate(String appId, String uri, String label, String vocabAppId, boolean required) {
+    Predicate p = new Predicate();
+    p.setAppId(appId);
+    p.setUri(uri);
+    p.setLabel(label);
+    p.setVocabularyAppId(vocabAppId);
+    p.setExpectedObjectType(Predicate.ExpectedObjectType.LITERAL.name());
+    p.setCardinality(Predicate.Cardinality.MANY.name());
+    p.setRequired(required);
+    return p;
+  }
+
+  // ─── listVocabularies ────────────────────────────────────────────────────
+
+  @Test
+  void listVocabulariesReturnsEmptyWhenNoneSeeded() {
+    when(vocabularyDAO.listAll()).thenReturn(List.of());
+
+    Response response = rest.listVocabularies();
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertNotNull(body);
+    assertTrue(body.isEmpty());
+  }
+
+  @Test
+  void listVocabulariesReturnsAllSeededRowsIncludingDisabled() {
+    when(vocabularyDAO.listAll()).thenReturn(List.of(
+      vocab("v-dcterms", "http://purl.org/dc/terms/", "Dublin Core Terms", true),
+      vocab("v-disabled", "http://example.com/disabled#", "Disabled vocab", false)
+    ));
+
+    Response response = rest.listVocabularies();
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertEquals(2, body.size());
+    assertTrue(body.stream().anyMatch(v -> "v-dcterms".equals(v.getAppId()) && v.isEnabled()));
+    assertTrue(body.stream().anyMatch(v -> "v-disabled".equals(v.getAppId()) && !v.isEnabled()));
+  }
+
+  // ─── listPredicatesForVocabulary ─────────────────────────────────────────
+
+  @Test
+  void listPredicatesReturns404WhenVocabularyMissing() {
+    when(vocabularyDAO.findByAppId("missing-vocab-id")).thenReturn(null);
+
+    Response response = rest.listPredicatesForVocabulary("missing-vocab-id");
+
+    assertEquals(404, response.getStatus());
+    verify(predicateDAO, never()).listByVocabulary("missing-vocab-id");
+  }
+
+  @Test
+  void listPredicatesReturns404WhenVocabIdIsBlank() {
+    Response response = rest.listPredicatesForVocabulary("   ");
+
+    assertEquals(404, response.getStatus());
+    verify(vocabularyDAO, never()).findByAppId("   ");
+    verify(predicateDAO, never()).listByVocabulary("   ");
+  }
+
+  @Test
+  void listPredicatesReturns404WhenVocabIdIsNull() {
+    Response response = rest.listPredicatesForVocabulary(null);
+
+    assertEquals(404, response.getStatus());
+    verify(predicateDAO, never()).listByVocabulary(null);
+  }
+
+  @Test
+  void listPredicatesReturns200WithEmptyListWhenVocabularyHasNoPredicates() {
+    String vid = "v-empty";
+    when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://example/", "Empty", true));
+    when(predicateDAO.listByVocabulary(vid)).thenReturn(List.of());
+
+    Response response = rest.listPredicatesForVocabulary(vid);
+
+    assertEquals(200, response.getStatus());
+    VocabularyPredicatesIO body = (VocabularyPredicatesIO) response.getEntity();
+    assertNotNull(body);
+    assertEquals(vid, body.vocabularyAppId());
+    assertTrue(body.predicates().isEmpty());
+  }
+
+  @Test
+  void listPredicatesReturns200WithPredicatesWhenPresent() {
+    String vid = "v-dcterms";
+    when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://purl.org/dc/terms/", "Dublin Core Terms", true));
+    when(predicateDAO.listByVocabulary(vid)).thenReturn(List.of(
+      predicate("p-creator", "http://purl.org/dc/terms/creator", "Creator", vid, true),
+      predicate("p-title",   "http://purl.org/dc/terms/title",   "Title",   vid, false)
+    ));
+
+    Response response = rest.listPredicatesForVocabulary(vid);
+
+    assertEquals(200, response.getStatus());
+    VocabularyPredicatesIO body = (VocabularyPredicatesIO) response.getEntity();
+    assertEquals(vid, body.vocabularyAppId());
+    assertEquals(2, body.predicates().size());
+
+    PredicateIO first = body.predicates().get(0);
+    assertEquals("p-creator", first.appId());
+    assertEquals("http://purl.org/dc/terms/creator", first.uri());
+    assertEquals("Creator", first.label());
+    assertEquals(vid, first.vocabularyAppId());
+    assertEquals("LITERAL", first.expectedObjectType());
+    assertEquals("MANY", first.cardinality());
+    assertTrue(first.required());
+
+    PredicateIO second = body.predicates().get(1);
+    assertEquals("p-title", second.appId());
+    assertEquals(false, second.required());
+  }
+}
