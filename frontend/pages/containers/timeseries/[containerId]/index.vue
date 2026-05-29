@@ -104,6 +104,14 @@ const uploadFile = async (file: File): Promise<void> => {
 
 fetchData();
 
+// UX-WALK-2026-05-29-07: "Visualize all in 3D" CTA — one click upstream of the
+// TimeseriesReference-level entry point. Shown when ≥3 channels are loaded so
+// the picker can fill the required x/y/z roles.
+const showVisualize3D = ref(false);
+const canVisualize3D = computed(
+  () => (containerAccessor.measurements.value.length ?? 0) >= 3,
+);
+
 // UX Pattern F (2026-05-24): reactive title — call useHead once with a getter.
 useHead({
   title: () =>
@@ -141,6 +149,15 @@ useHead({
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
+                  <v-btn
+                    v-if="canVisualize3D"
+                    size="small"
+                    variant="tonal"
+                    prepend-icon="mdi-cube-outline"
+                    @click="showVisualize3D = true"
+                  >
+                    Visualize all in 3D
+                  </v-btn>
                   <UploadFilesButton
                     v-if="containerAccessor.isAllowedToEditData.value"
                     accept=".csv"
@@ -321,6 +338,12 @@ useHead({
         </ExpansionPanelItem>
       </ExpansionPanels>
     </v-container>
+    <ViewRecipeBuilderDialog
+      v-if="containerAccessor.container.value"
+      v-model="showVisualize3D"
+      :container-id="containerId"
+      :channels="containerAccessor.measurements.value"
+    />
   </PageShell>
 </template>
 

@@ -8,8 +8,10 @@ const props = defineProps<{
   channels: Timeseries[];
   /** v2 channel list carrying shepardId for auto-populate and annotation save. */
   channelsV2?: ChannelV2[];
-  startNs: number;
-  endNs: number;
+  /** Time bounds in nanoseconds. When omitted (container-level CTA with no
+   *  reference window), the render page uses its default live-window query. */
+  startNs?: number;
+  endNs?: number;
 }>();
 
 const open = defineModel<boolean>({ default: false });
@@ -91,8 +93,8 @@ function openTrace3D() {
     path: "/shapes/render",
     query: {
       containerId: String(props.containerId),
-      startNs:    String(props.startNs),
-      endNs:      String(props.endNs),
+      ...(props.startNs != null && { startNs: String(props.startNs) }),
+      ...(props.endNs   != null && { endNs:   String(props.endNs) }),
       colormap:   sel.colormap,
       roles:      btoa(JSON.stringify(roles)),
     },
@@ -109,8 +111,8 @@ function openUrdf() {
       urdfUrl:     encodeURIComponent(urdfUrl.value.trim()),
       packagePath: encodeURIComponent(urdfPackagePath.value.trim()),
       containerId: String(props.containerId),
-      startNs:     String(props.startNs),
-      endNs:       String(props.endNs),
+      ...(props.startNs != null && { startNs: String(props.startNs) }),
+      ...(props.endNs   != null && { endNs:   String(props.endNs) }),
     },
   });
 }
@@ -128,8 +130,8 @@ function openThermography() {
     query: {
       renderer:    "thermography",
       containerId: String(props.containerId),
-      startNs:     String(props.startNs),
-      endNs:       String(props.endNs),
+      ...(props.startNs != null && { startNs: String(props.startNs) }),
+      ...(props.endNs   != null && { endNs:   String(props.endNs) }),
     },
   });
 }
