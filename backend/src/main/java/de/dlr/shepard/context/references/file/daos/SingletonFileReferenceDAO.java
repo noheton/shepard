@@ -58,10 +58,15 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
    *   {@code null}.
    */
   public java.util.List<FileReference> findByDataObjectAppId(String dataObjectAppId) {
+    // REF-UNIFIED-TABLE-FR1B (2026-05-29): also return the parent DataObject
+    // and the has_reference edge — the BasicReferenceIO ctor dereferences
+    // `getDataObject()` and NPEs without it on the
+    // `GET /v2/files/by-data-object/{appId}` path. Mirrors the
+    // findByAppId shape, which already returns `d` + `hr`.
     String query =
-      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:SingletonFileReference) " +
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:SingletonFileReference) " +
       "OPTIONAL MATCH (r)-[:has_payload]->(f:ShepardFile) " +
-      "RETURN r, f, [(r)-[r_p:has_payload]->(f) | [r_p, f]] AS rels " +
+      "RETURN r, f, d, hr, [(r)-[r_p:has_payload]->(f) | [r_p, f]] AS rels " +
       "ORDER BY r.createdAt ASC";
     var queryResult = findByQuery(query, Map.of("aid", dataObjectAppId));
     return StreamSupport.stream(queryResult.spliterator(), false).toList();
