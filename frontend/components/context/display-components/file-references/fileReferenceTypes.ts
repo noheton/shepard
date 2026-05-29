@@ -6,4 +6,7 @@ export type FileMeta = ShepardFile & {
 };
 
 export type FileReferenceWithContainerMeta = FileReference &
-  ReferencedContainerMeta;
+  ReferencedContainerMeta & {
+    /** UUID v7 of the referenced FileContainer. Present when availability is "available". */
+    containerAppId?: string;
+  };

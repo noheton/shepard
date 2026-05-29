@@ -11,6 +11,9 @@ import type {
 } from "~/components/context/display-components/file-references/fileReferenceTypes";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+/** Supplementary meta returned from the container fetch. */
+type ContainerMeta = ReferencedContainerMeta & { containerAppId?: string };
+
 export function useFetchFileReference(
   collectionId: number,
   dataObjectId: number,
@@ -29,13 +32,13 @@ export function useFetchFileReference(
         fileReferenceId,
       })
       .then(async response => {
-        const fileRefMeta = await fetchFileContainerMeta(
+        const containerMeta = await fetchFileContainerMeta(
           response.fileContainerId,
         );
         fileReference.value = {
           ...response,
-          ...fileRefMeta,
-        };
+          ...containerMeta,
+        } as FileReferenceWithContainerMeta;
       })
       .catch(error => {
         handleError(error, "getFileReference");
@@ -45,18 +48,19 @@ export function useFetchFileReference(
 
   async function fetchFileContainerMeta(
     containerId: number,
-  ): Promise<ReferencedContainerMeta> {
+  ): Promise<ContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
     return useShepardApi(FileContainerApi)
       .value.getFileContainer({ fileContainerId: containerId })
-      .then((response): ReferencedContainerMeta => {
+      .then((response): ContainerMeta => {
         return {
           referencedContainerName: response.name,
           referencedContainerAvailability: "available",
+          containerAppId: response.appId ?? undefined,
         };
       })
-      .catch((error: ResponseError) => {
+      .catch((error: ResponseError): ContainerMeta => {
         if (error.response.status === 403)
           return { referencedContainerAvailability: "forbidden" };
         handleError(error, "fetchFileContainerName");

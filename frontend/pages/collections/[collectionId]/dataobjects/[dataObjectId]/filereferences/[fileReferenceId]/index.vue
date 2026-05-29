@@ -264,6 +264,27 @@ watch(fileReference, () => {
                 </template>
               </DataTable>
             </v-row>
+            <!-- UI7: per-file payload version history panels -->
+            <v-row
+              v-for="file in files"
+              :key="file.oid"
+            >
+              <v-col
+                v-if="
+                  fileReference.containerAppId &&
+                  file.availability === 'available' &&
+                  file.filename
+                "
+                cols="12"
+                class="pt-2 pb-0 px-0"
+              >
+                <PayloadVersionHistoryPanel
+                  :container-app-id="fileReference.containerAppId"
+                  :container-id="fileReference.fileContainerId"
+                  :file-name="file.filename"
+                />
+              </v-col>
+            </v-row>
           </v-container>
         </v-col>
       </v-row>
