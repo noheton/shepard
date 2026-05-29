@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 44 |
+| `fragment` | 46 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 107 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 70 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **387** |
+| **total docs** | **390** |
 | **UNTAGGED** | **0** |
 
-## fragment (44)
+## fragment (46)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -51,6 +51,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-15.md`](agent-findings/dispatcher-runs/2026-05-29-15.md) | Dispatcher run — 2026-05-29 15:18 UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-16.md`](agent-findings/dispatcher-runs/2026-05-29-16.md) | Dispatcher run — 2026-05-29 16:xx UTC | 2026-05-29 | 2026-05-29 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-17.md`](agent-findings/dispatcher-runs/2026-05-29-17.md) | Dispatcher run — 2026-05-29 17:xx UTC | 2026-05-29 | 2026-05-29 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-18.md`](agent-findings/dispatcher-runs/2026-05-29-18.md) | Dispatcher run — 2026-05-29 18:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -207,7 +209,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-26 |
-| [`aidocs/ops/88-helm-deployment.md`](ops/88-helm-deployment.md) | 88 — Helm chart for Kubernetes deployment | 2026-05-29 | — |
+| [`aidocs/ops/88-helm-deployment.md`](ops/88-helm-deployment.md) | 88 — Helm chart for Kubernetes deployment | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-05-26 |
