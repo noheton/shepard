@@ -1112,6 +1112,31 @@
           <artifactId>shepard-plugin-vis-trace3d</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
+          is added at `<scope>provided</scope>` so Quarkus' Jandex
+          composite index can resolve the `AdminCliCommandProvider`
+          SPI interface + the `AbstractCommand` base class referenced
+          by plugin-side CLI command providers (UnhideCommand,
+          MintersCommand, VideoCommand, …). Without this, plugin
+          classes that `implements AdminCliCommandProvider` or
+          `extends AbstractCommand` cause Quarkus' AutoAddScope build
+          step to walk the class hierarchy via
+          `CompositeIndex.getClassByName`, the lookup misses on the
+          unindexed interface, AnnotationOverlayImpl re-enters via
+          AnnotationsTransformer.apply, and the
+          `ConcurrentHashMap.computeIfAbsent` ReservationNode spins
+          (jstack shows RUNNABLE with 18 628 s CPU consumed). Provided
+          scope keeps the CLI classes OUT of the runtime uberjar —
+          only the build-time index needs them. See
+          `aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard</groupId>
+          <artifactId>shepard-admin</artifactId>
+          <version>${revision}</version>
+          <scope>provided</scope>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
