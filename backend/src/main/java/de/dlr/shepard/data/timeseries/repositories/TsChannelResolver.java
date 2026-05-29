@@ -43,6 +43,39 @@ public class TsChannelResolver implements PanacheRepositoryBase<TimeseriesEntity
   }
 
   /**
+   * TS-IDc — container-scoped shepardId lookup. Resolves the channel by
+   * {@code shepardId} and then guards that the row belongs to the named
+   * container. This is the canonical single-key path on the
+   * {@code /v2/timeseries-containers/{containerId}/...} surface: the
+   * container scopes authorisation (Read permission is enforced by
+   * {@code TimeseriesContainerService.getContainer(containerId)} before
+   * this call) while {@code shepardId} pinpoints the channel.
+   *
+   * <p>The shepardId column carries a UNIQUE B-tree index
+   * ({@code idx_timeseries_shepard_id}, per V1.11.0) so the underlying
+   * lookup is an index-only scan; planning time still dominates execution
+   * (per {@code TS-AUDIT-2026-05-24-009}, ~4.4 ms plan vs. ~0.17 ms exec
+   * on the MFFD synthetic container — Hibernate first-call planning
+   * caches subsequent calls). The post-filter on {@code containerId} is
+   * a cheap in-memory predicate against the single returned row, not a
+   * second SQL pass.
+   *
+   * <p>Returns {@link Optional#empty()} when the shepardId is unknown OR
+   * when the matching row belongs to a different container — both
+   * surface to callers as 404, indistinguishable on purpose: an
+   * unauthorised peek across containers would leak the existence of a
+   * channel.
+   *
+   * @param containerId the owning container's numeric id
+   * @param shepardId   the channel's stable identity
+   * @return the channel row, or {@link Optional#empty()} if no row matches
+   *         or the row is in a different container
+   */
+  public Optional<TimeseriesEntity> findByContainerAndShepardId(long containerId, UUID shepardId) {
+    return findByShepardId(shepardId).filter(row -> row.getContainerId() == containerId);
+  }
+
+  /**
    * Look up a channel by its containing container and the 5-tuple. This
    * is the legacy lookup path — equivalent to
    * {@link TimeseriesRepository#findTimeseries(long, Timeseries)} but

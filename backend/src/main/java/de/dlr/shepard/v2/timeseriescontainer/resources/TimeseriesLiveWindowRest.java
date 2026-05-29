@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -68,10 +69,15 @@ public class TimeseriesLiveWindowRest {
     summary = "Fetch the most recent N seconds of a timeseries channel.",
     description =
       "Returns the last `windowSeconds` of data for a single channel in the specified " +
-      "TimeseriesContainer, keyed by the 5-tuple channel address " +
-      "(`measurement`, `device`, `location`, `symbolicName`, `field`). Only `measurement` " +
-      "is required; the remaining fields default to the literal string `\"\"` when omitted " +
-      "so that channels ingested without those dimensions can be addressed without noise.\n\n" +
+      "TimeseriesContainer.\n\n" +
+      "**Channel lookup** — two equivalent shapes accepted:\n" +
+      "- `shepardId` (preferred, TS-IDc): the channel's stable single-field UUID " +
+      "identity. Index-only scan; planning time dominates execution.\n" +
+      "- 5-tuple (legacy bridge): `measurement`, `device`, `location`, `symbolicName`, " +
+      "`field`. Only `measurement` is required; the remaining fields default to the " +
+      "literal string `\"\"` when omitted so channels ingested without those dimensions " +
+      "can be addressed without noise.\n\n" +
+      "If both forms are supplied, `shepardId` wins and the 5-tuple is ignored. " +
       "If multiple channels match the non-null filter fields the endpoint returns 400 " +
       "(ambiguous channel); add more filter fields to narrow to one. If no channel matches " +
       "the filters the endpoint returns 404.\n\n" +
@@ -101,6 +107,7 @@ public class TimeseriesLiveWindowRest {
     description = "No TimeseriesContainer with that appId, or no channel matches the supplied filter fields.")
   public Response getLiveWindow(
     @PathParam("containerAppId") String containerAppId,
+    @QueryParam("shepardId") UUID shepardId,
     @QueryParam("measurement") String measurement,
     @QueryParam("device") String device,
     @QueryParam("location") String location,
@@ -120,27 +127,42 @@ public class TimeseriesLiveWindowRest {
     long windowStartMs = startNs / NS_PER_MS;
     long windowEndMs = nowNs / NS_PER_MS;
 
-    // PERF10: push all supplied filter fields into a parameterised DB query.
-    // Null params are omitted from the WHERE clause (match any value).
-    // The channel_metadata UNIQUE index (container_id, measurement, field,
-    // symbolic_name, device, location) makes partial-tuple lookups O(matches)
-    // instead of O(all-channels-in-container).
-    List<TimeseriesEntity> matched = channelResolver.findByContainerAndPartialTuple(
-      containerId, measurement, device, location, symbolicName, field);
+    // TS-IDc — shepardId wins when both shapes are supplied. The single-field
+    // path uses the UNIQUE index on timeseries(shepard_id) — at most one row
+    // returned, container-scoped via the in-memory filter (cheap; no second SQL).
+    TimeseriesEntity entity;
+    if (shepardId != null) {
+      Optional<TimeseriesEntity> byShepardId =
+        channelResolver.findByContainerAndShepardId(containerId, shepardId);
+      if (byShepardId.isEmpty()) {
+        return Response.status(Response.Status.NOT_FOUND)
+          .entity("No channel with shepardId " + shepardId + " in container " + containerAppId)
+          .build();
+      }
+      entity = byShepardId.get();
+    } else {
+      // PERF10: push all supplied filter fields into a parameterised DB query.
+      // Null params are omitted from the WHERE clause (match any value).
+      // The channel_metadata UNIQUE index (container_id, measurement, field,
+      // symbolic_name, device, location) makes partial-tuple lookups O(matches)
+      // instead of O(all-channels-in-container).
+      List<TimeseriesEntity> matched = channelResolver.findByContainerAndPartialTuple(
+        containerId, measurement, device, location, symbolicName, field);
 
-    if (matched.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No channel matches the supplied filter fields in container " + containerAppId)
-        .build();
-    }
-    if (matched.size() > 1) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Channel address is ambiguous — " + matched.size() +
-          " channels match. Provide more specific filter fields.")
-        .build();
-    }
+      if (matched.isEmpty()) {
+        return Response.status(Response.Status.NOT_FOUND)
+          .entity("No channel matches the supplied filter fields in container " + containerAppId)
+          .build();
+      }
+      if (matched.size() > 1) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("Channel address is ambiguous — " + matched.size() +
+            " channels match. Provide more specific filter fields.")
+          .build();
+      }
 
-    TimeseriesEntity entity = matched.get(0);
+      entity = matched.get(0);
+    }
     int tsId = entity.getId();
     DataPointValueType valueType = entity.getValueType();
 

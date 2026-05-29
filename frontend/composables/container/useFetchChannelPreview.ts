@@ -6,6 +6,28 @@ import { useIntersectionObserver } from "@vueuse/core";
 import { useShepardApi } from "../common/api/useShepardApi";
 
 /**
+ * TS-IDc — v2 channel-data endpoint URL.
+ *
+ * When the caller knows the channel's {@code shepardId} (single-field UUID,
+ * minted by the V1.11.0 substrate migration), we prefer the
+ * {@code /v2/timeseries-containers/{cid}/channels/{shepardId}/data} path
+ * over the legacy 5-tuple {@code /timeseriesContainers/.../timeseries}
+ * lookup. This trades five string-equality SQL predicates for one
+ * index-only B-tree probe — the planning vs. execution ratio drops from
+ * the 17× tuple-walk to roughly 1:1 on the warm-cache path, per
+ * {@code TS-AUDIT-2026-05-24-009}.
+ *
+ * The legacy path stays as a fallback for callers that don't yet carry a
+ * shepardId on the channel object (transition window — TS-IDd will close
+ * this by component-by-component migration).
+ */
+function v2Base(publicConfig: Record<string, unknown>): string {
+  const explicit = publicConfig.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit;
+  return (publicConfig.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+}
+
+/**
  * Channel preview composable.
  *
  * Returns a chart-ready, LTTB-downsampled view of the channel's full history
@@ -25,13 +47,24 @@ import { useShepardApi } from "../common/api/useShepardApi";
  * settles so a subsequent fetch always gets fresh data.
  */
 
-/** Build a stable cache key for a given preview request. */
+/**
+ * Build a stable cache key for a given preview request.
+ *
+ * When {@code channelShepardId} is present the key uses that single
+ * field — two distinct 5-tuples that resolve to the same shepardId
+ * (after a channel rename, say) collapse to one cache entry. When
+ * shepardId is absent the key falls back to the legacy 5-tuple.
+ */
 function previewKey(
   containerId: number,
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
+  channelShepardId?: string | null,
 ): string {
+  if (channelShepardId) {
+    return [containerId, "sid", channelShepardId, String(downsample), String(maxPoints)].join("|");
+  }
   return [
     containerId,
     channel.measurement ?? "",
@@ -58,14 +91,44 @@ async function fetchPreviewData(
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
+  channelShepardId?: string | null,
 ): Promise<Array<[number, number]>> {
-  const key = previewKey(containerId, channel, downsample, maxPoints);
+  const key = previewKey(containerId, channel, downsample, maxPoints, channelShepardId);
 
   const existing = inFlight.get(key);
   if (existing) return existing;
 
   const promise = (async (): Promise<Array<[number, number]>> => {
     const endNs = Date.now() * 1e6; // ms → ns
+
+    // TS-IDc preferred path: single-field shepardId. The v2 path-param
+    // endpoint isn't in the generated client yet, so we hit it directly
+    // with the runtime-config-derived base URL + raw fetch — same shape
+    // PinnedChannelTile already uses successfully against prod.
+    if (channelShepardId) {
+      const { public: publicConfig } = useRuntimeConfig();
+      const { data: authData } = useAuth();
+      const token = authData.value?.accessToken;
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const qs = new URLSearchParams();
+      qs.set("start", "0");
+      qs.set("end", String(endNs));
+      if (downsample) {
+        qs.set("downsample", "lttb");
+        qs.set("max_points", String(maxPoints));
+      }
+      const url =
+        `${v2Base(publicConfig as Record<string, unknown>)}/v2/timeseries-containers/${containerId}` +
+        `/channels/${channelShepardId}/data?${qs.toString()}`;
+
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status} on TS-IDc preview fetch`);
+      const body: { points?: Array<{ timestamp: number; value: number }> } = await res.json();
+      return (body.points ?? []).map(p => [p.timestamp, p.value] as [number, number]);
+    }
+
+    // Legacy 5-tuple path (transition bridge until TS-IDd closes the loop).
     const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
       timeseriesContainerId: containerId,
       measurement: channel.measurement ?? "",
@@ -89,6 +152,13 @@ async function fetchPreviewData(
 export interface UseFetchChannelPreviewOptions {
   downsample?: boolean;
   maxPoints?: number;
+  /**
+   * TS-IDc — single-field channel identity. When supplied, the composable
+   * hits {@code /v2/timeseries-containers/{cid}/channels/{shepardId}/data}
+   * instead of the legacy 5-tuple endpoint. Source: the v2 channels
+   * listing populated by {@link useFetchV2Channels}.
+   */
+  channelShepardId?: string | null;
 }
 
 /**
@@ -104,6 +174,7 @@ export function useFetchChannelPreview(
 ) {
   const downsampleOpt = options?.downsample ?? true;
   const maxPoints = options?.maxPoints ?? 2000;
+  const channelShepardId = options?.channelShepardId ?? null;
 
   const data = ref<Array<[number, number]>>([]);
   const loading = ref(false);
@@ -112,7 +183,8 @@ export function useFetchChannelPreview(
   async function fetch(downsample: boolean = downsampleOpt) {
     loading.value = true;
     try {
-      data.value = await fetchPreviewData(containerId, channel, downsample, maxPoints);
+      data.value = await fetchPreviewData(
+        containerId, channel, downsample, maxPoints, channelShepardId);
       downsampled.value = downsample;
     } catch {
       data.value = [];
@@ -158,6 +230,7 @@ export function useChannelPreviewLazy(
 ) {
   const downsampleOpt = options?.downsample ?? true;
   const maxPoints = options?.maxPoints ?? 2000;
+  const channelShepardId = options?.channelShepardId ?? null;
 
   const data = ref<Array<[number, number]>>([]);
   const loading = ref(false);
@@ -168,7 +241,8 @@ export function useChannelPreviewLazy(
   async function doFetch(downsample: boolean = downsampleOpt) {
     loading.value = true;
     try {
-      data.value = await fetchPreviewData(containerId, channel, downsample, maxPoints);
+      data.value = await fetchPreviewData(
+        containerId, channel, downsample, maxPoints, channelShepardId);
       downsampled.value = downsample;
     } catch {
       data.value = [];
