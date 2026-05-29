@@ -1828,3 +1828,27 @@ blocked by overlapping edits. Items 1, 4, 5 in this list will overlap with
 component-touching work; better to defer until the surrounding tree
 stabilises. Item 2 needs per-instance type decisions and is not a mechanical
 fix. Item 3 is small and self-contained — pick up first when revisiting.
+
+## PERM-INHERIT-REVIEW — child-entity permission inheritance audit
+
+Triggered 2026-05-29 while granting flo READ access on the microsections
+showcase Collection (`019e7243-f995-7914-be80-53e367aa5172`). Observation:
+granting on the Collection only — and not on DataObjects or FileReferences —
+worked because those child entities **do not** carry their own `:Permissions`
+nodes in this codebase. They inherit via `PermissionsService` walking the
+parent graph. That's good for the showcase but worth a focused audit:
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| PERM-INHERIT-01 | **Map every entity kind to its perm source.** Walk the codebase: which entities have their own `:has_permissions -> :Permissions` edge (`Collection`, `FileContainer`, `TimeseriesContainer`, `StructuredDataContainer`, …), and which inherit from a parent (`DataObject`, `SingletonFileReference`, `TimeseriesReference`, `StructuredDataReference`, `GitReference`, `VideoStreamReference`, `HdfReference`, …). Build a single audit table. | S | **queued** | The "container" entities (top-level, multi-Collection-attachable) historically own their perms; the references and DataObjects historically inherit. Confirm + document. Output: `aidocs/data/PERM-INHERIT-MATRIX.md`. |
+| PERM-INHERIT-02 | **Document the inheritance walk algorithm.** What is the exact lookup chain `PermissionsService` uses for a `SingletonFileReference` → `DataObject` → `Collection`? For a `TimeseriesReference`? For a `VideoStreamReference`? Are there short-circuits when an intermediate has its own perms record? Codify in `aidocs/platform/24-permission-system-review.md`. | S | **queued** | Currently scattered across the service code; no single source of truth. |
+| PERM-INHERIT-03 | **Verify FileContainer perms grant flow.** When an operator wants to "give flo access to this Collection and all its data," what's the correct set of PUTs? Today: Collection (covers DOs + Refs via inheritance) PLUS each top-level FileContainer / TSContainer / SDContainer that's referenced. Surface this as a single admin endpoint `POST /v2/collections/{appId}/permissions/cascade` that walks all referenced containers + applies the same perms. | M | **queued** | Without this, "grant access to a Collection" requires N+1 client-side PUTs and is easy to get wrong. Showcase setups should not need to script this. |
+| PERM-INHERIT-04 | **Audit `BUG-148` scope.** The 2026-05-23 fix seeded `:Permissions` on newly-created DataObjects to fix a 403-after-create regression. That contradicts the "DOs inherit from Collection" model surfaced today. Confirm whether that fix shipped, whether it's still in effect, and whether it's a hidden divergence between DO and Reference inheritance. | XS | **queued** | If still active, the inheritance matrix is more complex than today's audit suggests. |
+
+**Why now:** the microsections seed (`f5775aa7e`) ran against a Collection
+that bob owned. Granting flo via a single Collection-level PUT propagated to
+all 8 DataObjects + 16 FileReferences as expected — which is the desired
+behaviour. But for any showcase that uses top-level `FileContainer` /
+`TimeseriesContainer` (e.g. LUMEN, MFFD), the same one-call grant would
+silently miss the container payloads. That's a real footgun for operators
+and worth fixing structurally rather than documenting around.
