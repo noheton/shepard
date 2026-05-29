@@ -1,0 +1,202 @@
+name: Nightly endpoint SLO check
+
+# PERF4d — nightly per-endpoint SLO check.
+#
+# Boots the full compose stack, seeds minimal perf fixtures, runs
+# k6-endpoints.js (steady + ramp scenarios), uploads last-run.json,
+# and files a GitHub issue on threshold breach.  Off the critical path:
+# PRs are NOT gated by this workflow.
+#
+# Design: aidocs/ops/77-k6-performance-metrics.md §9.2.
+#
+# Triggers:
+#   - daily at 02:37 UTC (staggered from the PERF3 weekly smoke at 02:17)
+#   - workflow_dispatch for ad-hoc runs
+#
+# Requirements:
+#   - Repository secret SHEPARD_PERF_API_KEY must be set to an
+#     instance-admin API key.  The compose stack seeds this at startup
+#     via SHEPARD_INITIAL_API_KEY.  Shared with perf-smoke.yml (PERF3).
+#   - k6 is pulled from the official grafana/k6 Docker image — no
+#     binary install required.
+#   - scripts/perf/k6-endpoints.js must exist (PERF4a).
+
+on:
+  schedule:
+    - cron: "37 2 * * *"           # 02:37 UTC daily
+  workflow_dispatch:
+    inputs:
+      post_issue:
+        description: "File issue on breach?"
+        required: false
+        default: "true"
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: perf-endpoints
+  cancel-in-progress: true
+
+jobs:
+  endpoints:
+    name: k6 per-endpoint SLOs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SHEPARD_BASE_URL: http://localhost:8080
+      SHEPARD_API_KEY: ${{ secrets.SHEPARD_PERF_API_KEY || 'ci-perf-key' }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 2. Start compose stack ───────────────────────────────────────────────
+      - name: Start compose stack
+        run: |
+          docker compose \
+            -f infrastructure/docker-compose.yml \
+            up -d --wait --wait-timeout 120
+        env:
+          SHEPARD_INITIAL_API_KEY: ${{ env.SHEPARD_API_KEY }}
+
+      # ── 3. Wait for /versionz ────────────────────────────────────────────────
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:8080/versionz || echo 000)
+            [ "$STATUS" = "200" ] && { echo "Ready"; exit 0; }
+            echo "Attempt $i: $STATUS — waiting 5s"; sleep 5
+          done
+          exit 1
+
+      # ── 4. Seed minimal perf fixtures ────────────────────────────────────────
+      # Creates one collection + timeseries container with data via API key.
+      # IDs are written to GITHUB_ENV for k6 consumption.
+      - name: Seed perf fixtures
+        run: |
+          # Create one collection + timeseries container with data via API key
+          COLL=$(curl -sf -X POST http://localhost:8080/shepard/api/collections \
+            -H "apikey: ${SHEPARD_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"perf-fixtures"}' | jq -r '.appId // .id')
+          echo "SHEPARD_COLL_APPID=${COLL}" >> "$GITHUB_ENV"
+
+          TC=$(curl -sf -X POST http://localhost:8080/shepard/api/timeseriescontainers \
+            -H "apikey: ${SHEPARD_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"perf-ts"}' | jq -r '.id')
+          TS=$(curl -sf -X POST \
+            "http://localhost:8080/shepard/api/timeseriescontainers/${TC}/timeseries" \
+            -H "apikey: ${SHEPARD_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"perf-channel"}' | jq -r '.id')
+          echo "SHEPARD_TS_COLL_ID=${TC}" >> "$GITHUB_ENV"
+          echo "SHEPARD_TS_ID=${TS}"       >> "$GITHUB_ENV"
+
+      # ── 5. Run k6 endpoint SLO check ─────────────────────────────────────────
+      - name: Run k6 endpoint SLO check
+        id: k6
+        continue-on-error: true
+        run: |
+          docker run --rm --network host \
+            -e SHEPARD_BASE_URL="${SHEPARD_BASE_URL}" \
+            -e SHEPARD_API_KEY="${SHEPARD_API_KEY}" \
+            -e SHEPARD_COLL_APPID="${SHEPARD_COLL_APPID}" \
+            -e SHEPARD_TS_COLL_ID="${SHEPARD_TS_COLL_ID}" \
+            -e SHEPARD_TS_ID="${SHEPARD_TS_ID}" \
+            -v "$PWD/scripts/perf":/scripts:ro \
+            grafana/k6 run /scripts/k6-endpoints.js \
+              2>&1 | tee k6-endpoints-output.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      # ── 6. Upload artifacts ──────────────────────────────────────────────────
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-endpoint-results
+          path: |
+            k6-endpoints-output.txt
+            scripts/perf/last-run.json
+          retention-days: 30
+
+      # ── 7. Dump compose logs on failure ──────────────────────────────────────
+      - name: Dump logs on failure
+        if: steps.k6.outcome == 'failure'
+        run: |
+          docker compose -f infrastructure/docker-compose.yml \
+            logs --tail=100 backend
+
+      # ── 8. File GitHub issue on SLO breach ───────────────────────────────────
+      - name: File issue on SLO breach
+        if: >-
+          steps.k6.outcome == 'failure' &&
+          (github.event_name == 'schedule' ||
+           inputs.post_issue == 'true')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = '_(check k6-endpoint-results artifact)_';
+            try {
+              const data = JSON.parse(
+                fs.readFileSync('scripts/perf/last-run.json', 'utf8')
+              );
+              const failing = Object.entries(data.metrics || {})
+                .filter(([, v]) =>
+                  v.thresholds &&
+                  Object.values(v.thresholds).some(t => !t.ok)
+                )
+                .map(([k, v]) => {
+                  const exprs = Object.entries(v.thresholds)
+                    .filter(([, t]) => !t.ok)
+                    .map(([e]) => e);
+                  return `- **${k}**: ${exprs.join(', ')}`;
+                });
+              if (failing.length) {
+                summary = '### Failing SLO thresholds\n\n' +
+                          failing.join('\n');
+              }
+            } catch (_) {}
+
+            const runUrl =
+              `https://github.com/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[perf] endpoint SLO breach — ${context.sha.slice(0,7)}`,
+              labels: ['performance', 'automated'],
+              body: [
+                '## Nightly endpoint SLO check — breach',
+                '',
+                `**Commit:** ${context.sha}`,
+                `**Run:** ${runUrl}`,
+                '',
+                summary,
+                '',
+                '### Next steps',
+                '1. Download `k6-endpoint-results` artifact.',
+                '2. Run `scripts/perf/recommend.py` for ranked suggestions.',
+                '3. Investigate endpoint-specific regression with `recommend.py`.',
+                '4. Close once all SLO thresholds are green.',
+                '',
+                '_Auto-filed by `.github/workflows/perf-endpoints.yml` (PERF4d)._',
+              ].join('\n'),
+            });
+
+      # ── 9. Propagate k6 exit code ────────────────────────────────────────────
+      - name: Propagate k6 exit code
+        if: steps.k6.outcome == 'failure'
+        run: exit 1
+
+      # ── 10. Teardown ──────────────────────────────────────────────────────────
+      - name: Stop compose stack
+        if: always()
+        run: docker compose -f infrastructure/docker-compose.yml down -v
