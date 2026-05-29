@@ -88,6 +88,16 @@ services:
       # containers (DockerSpawner).  Operators using Kubernetes swap this
       # for a service-account binding — see install.md §"Kubernetes notes".
       - /var/run/docker.sock:/var/run/docker.sock
+      # J1e-PR-06 autofetch: the pre-spawn hook resolves the user's
+      # `jupyterhub-user-<name>` volume via the docker SDK and writes the
+      # fetched file at the host-side Mountpoint path. Without this bind,
+      # the host path returned by docker SDK isn't visible from inside JH
+      # and the file lands stranded in JH's own ephemeral FS.
+      # Read-write on the volumes root only; JH still cannot see other
+      # docker resources. Single-tenant deploy acceptable; for multi-tenant
+      # use a per-plugin drop-box volume mounted into both JH and the
+      # single-user image.
+      - /var/lib/docker/volumes:/var/lib/docker/volumes:rw
     healthcheck:
       # JupyterHub exposes a /hub/health endpoint, but with base_url=/jupyterhub
       # it's served at /jupyterhub/hub/health. The mismatch was producing a 404
