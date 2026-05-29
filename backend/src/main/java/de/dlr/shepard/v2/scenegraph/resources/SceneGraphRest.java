@@ -1,0 +1,420 @@
+package de.dlr.shepard.v2.scenegraph.resources;
+
+import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
+import de.dlr.shepard.v2.scenegraph.entities.CoordinateFrame;
+import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
+import de.dlr.shepard.v2.scenegraph.entities.Joint;
+import de.dlr.shepard.v2.scenegraph.export.UrdfExporter;
+import de.dlr.shepard.v2.scenegraph.io.CreateFrameRequestIO;
+import de.dlr.shepard.v2.scenegraph.io.CreateJointRequestIO;
+import de.dlr.shepard.v2.scenegraph.io.CreateSceneRequestIO;
+import de.dlr.shepard.v2.scenegraph.io.FrameIO;
+import de.dlr.shepard.v2.scenegraph.io.JointIO;
+import de.dlr.shepard.v2.scenegraph.io.PatchFrameRequestIO;
+import de.dlr.shepard.v2.scenegraph.io.SceneGraphIO;
+import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
+import de.dlr.shepard.v2.scenegraph.services.SceneGraphService.ProvenanceContext;
+import io.quarkus.logging.Log;
+import io.quarkus.security.Authenticated;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * SCENEGRAPH-REST-1 — REST surface for {@code :DigitalTwinScene}.
+ *
+ * <h2>Endpoint set</h2>
+ * <pre>
+ *   GET    /v2/scene-graphs/{appId}                       — full scene tree
+ *                                                            (Accept: application/ld+json for JSON-LD)
+ *   GET    /v2/scene-graphs/{appId}/export.urdf           — URDF XML export
+ *   GET    /v2/scene-graphs/{appId}/export.usd            — 503 (USD stub, ISAAC-USD-EXPORT-1)
+ *   POST   /v2/scene-graphs                               — create empty scene
+ *   POST   /v2/scene-graphs/{appId}/frames                — add frame
+ *   PATCH  /v2/scene-graphs/{appId}/frames/{frameAppId}   — mutate frame transform + parent
+ *   DELETE /v2/scene-graphs/{appId}/frames/{frameAppId}   — remove frame subtree
+ *   POST   /v2/scene-graphs/{appId}/joints                — register joint
+ *   DELETE /v2/scene-graphs/{appId}/joints/{jointAppId}   — remove joint
+ * </pre>
+ *
+ * <h2>Auth</h2>
+ * <p>{@code @Authenticated} only — any logged-in user can read and mutate any
+ * scene. The DT1-PHASE-0 scaffold does not carry an owning-collection
+ * pointer, so there is no inherited-permission walk to anchor on yet.
+ * Backlog row {@code SCENEGRAPH-PERMS-1} captures the per-scene
+ * permission model (likely: scene inherits from
+ * {@code sourceFileAppId → FileReference → Collection}). Until then,
+ * authentication is the only gate — and that is the right shape for a
+ * first-day demonstrator: hand-built scenes have no collection anchor
+ * by definition.
+ *
+ * <h2>Provenance</h2>
+ * <p>Every mutation records a {@code :Activity} via the
+ * {@link SceneGraphService#recordActivity} path which wires the standard
+ * PROV-O edges plus a supplementary {@code :WAS_DERIVED_FROM} edge to
+ * the prior activity for the same scene. The handler reads
+ * {@code X-AI-Agent} to populate {@code sourceMode} / {@code agentId}
+ * on the activity (PROV1j) — closing the EU AI Act Art.50 disclosure at
+ * the audit-log layer when an AI drives the call. Per the
+ * "handlers that record their own Activity hand off skip-capture" rule,
+ * every mutation sets {@link ProvenanceCaptureFilter#PROP_SKIP_CAPTURE}
+ * after the service-layer record() call so the response filter does not
+ * emit a duplicate row.
+ */
+@Path("/v2/scene-graphs")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@RequestScoped
+@Authenticated
+@Tag(name = "Scene graphs (v2)")
+public class SceneGraphRest {
+
+  static final String MEDIA_TYPE_JSON_LD = "application/ld+json";
+  static final String MEDIA_TYPE_URDF = "application/xml";
+  static final String HEADER_AI_AGENT = "X-AI-Agent";
+
+  @Inject SceneGraphService sceneGraphService;
+  @Inject UrdfExporter urdfExporter;
+
+  @Context jakarta.ws.rs.container.ContainerRequestContext requestContext;
+
+  // ── GET scene ─────────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}")
+  @Produces({ MediaType.APPLICATION_JSON, MEDIA_TYPE_JSON_LD })
+  @Operation(
+    summary = "Get a scene graph by appId (full frame tree + joints).",
+    description =
+      "Returns the `:DigitalTwinScene` identified by `appId` (UUID v7) plus all " +
+      "its frames and joints. " +
+      "Set `Accept: application/ld+json` to receive a JSON-LD-framed response " +
+      "(adds `@context` + `@type`); otherwise the body is plain JSON.\n\n" +
+      "Auth: any authenticated user."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Scene found.",
+    content = @Content(schema = @Schema(implementation = SceneGraphIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "No scene with that appId.")
+  public Response get(
+    @PathParam("appId") @NotBlank String appId,
+    @HeaderParam(HttpHeaders.ACCEPT) String accept
+  ) {
+    DigitalTwinScene scene = sceneGraphService.findScene(appId);
+    if (scene == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    List<CoordinateFrame> frames = sceneGraphService.findFramesForScene(appId);
+    List<Joint> joints = sceneGraphService.findJointsForScene(appId);
+
+    SceneGraphIO body = new SceneGraphIO(scene, toFrameIOs(frames), toJointIOs(joints));
+    boolean wantsJsonLd = accept != null && accept.toLowerCase().contains(MEDIA_TYPE_JSON_LD);
+    if (wantsJsonLd) body = body.withJsonLd();
+
+    return Response.ok(body)
+      .type(wantsJsonLd ? MEDIA_TYPE_JSON_LD : MediaType.APPLICATION_JSON)
+      .build();
+  }
+
+  // ── URDF export ───────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/export.urdf")
+  @Produces(MEDIA_TYPE_URDF)
+  @Operation(
+    summary = "Export a scene as URDF XML.",
+    description =
+      "Walks the scene's frame tree and joints, emits URDF: one `<link>` per " +
+      "`CoordinateFrame`, one `<joint>` per `Joint` with parent + child link " +
+      "refs, `<origin>` from the child frame's local transform, `<axis>` from " +
+      "the joint's axis triple, `<limit>` for REVOLUTE / PRISMATIC types. " +
+      "Visual / collision / inertial blocks are NOT emitted — see " +
+      "`UrdfExporter` Javadoc for the catalogue of deferred details.\n\n" +
+      "Auth: any authenticated user."
+  )
+  @APIResponse(responseCode = "200", description = "URDF XML returned.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "No scene with that appId.")
+  public Response exportUrdf(@PathParam("appId") @NotBlank String appId) {
+    DigitalTwinScene scene = sceneGraphService.findScene(appId);
+    if (scene == null) return Response.status(Response.Status.NOT_FOUND).build();
+    String urdf = urdfExporter.export(
+      scene,
+      sceneGraphService.findFramesForScene(appId),
+      sceneGraphService.findJointsForScene(appId)
+    );
+    return Response.ok(urdf, MEDIA_TYPE_URDF).build();
+  }
+
+  // ── USD export (stub) ─────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/export.usd")
+  @Operation(
+    summary = "Export a scene as USD (placeholder).",
+    description =
+      "Returns 503 Service Unavailable with a Retry-After hint. The full USD " +
+      "export ships in ISAAC-USD-EXPORT-1 (Isaac Sim round-trip per " +
+      "`aidocs/data/85 §7`). This endpoint exists today so consumers can " +
+      "discover the planned URL and the feature stays a backlog row, not a " +
+      "missing route."
+  )
+  @APIResponse(responseCode = "503", description = "USD export not yet implemented (ISAAC-USD-EXPORT-1).")
+  public Response exportUsd(@PathParam("appId") @NotBlank String appId) {
+    return Response.status(503)
+      .header("Retry-After", "ISAAC-USD-EXPORT-1")
+      .entity("{\"detail\":\"USD export queued under ISAAC-USD-EXPORT-1; see aidocs/16 for status.\"}")
+      .type(MediaType.APPLICATION_JSON)
+      .build();
+  }
+
+  // ── POST create scene ─────────────────────────────────────────────────────
+
+  @POST
+  @Operation(
+    summary = "Create a new empty scene graph.",
+    description =
+      "Mints a new `:DigitalTwinScene` with a fresh UUID v7 appId. Optional " +
+      "body lets the caller set `name`, `description`, and `sourceFileAppId` " +
+      "at creation time. The scene starts with no frames or joints — add them " +
+      "via `POST /v2/scene-graphs/{appId}/frames` and `POST /v2/scene-graphs/" +
+      "{appId}/joints` respectively. The first frame added becomes the root.\n\n" +
+      "Records a CREATE `:Activity` with the standard PROV-O edges.\n\n" +
+      "Auth: any authenticated user."
+  )
+  @APIResponse(
+    responseCode = "201",
+    description = "Scene created.",
+    content = @Content(schema = @Schema(implementation = SceneGraphIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response create(
+    CreateSceneRequestIO body,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    DigitalTwinScene scene = sceneGraphService.createScene(body, prov);
+    handoffProvenance();
+    SceneGraphIO io = new SceneGraphIO(scene, List.of(), List.of());
+    return Response.status(Response.Status.CREATED).entity(io).build();
+  }
+
+  // ── POST add frame ────────────────────────────────────────────────────────
+
+  @POST
+  @Path("/{appId}/frames")
+  @Operation(summary = "Add a frame to a scene.",
+    description =
+      "Adds a `:CoordinateFrame` to the scene. `parentFrameAppId` is required " +
+      "unless the scene is currently empty (the first frame becomes the root). " +
+      "Records an UPDATE `:Activity` for the parent scene plus a " +
+      "`:WAS_DERIVED_FROM` edge to the prior activity on the same scene.")
+  @APIResponse(
+    responseCode = "201",
+    description = "Frame added.",
+    content = @Content(schema = @Schema(implementation = FrameIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Scene or parent frame not found.")
+  public Response addFrame(
+    @PathParam("appId") @NotBlank String appId,
+    CreateFrameRequestIO body,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) body = new CreateFrameRequestIO();
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    try {
+      CoordinateFrame frame = sceneGraphService.addFrame(appId, body, prov);
+      handoffProvenance();
+      return Response.status(Response.Status.CREATED).entity(new FrameIO(frame)).build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).entity(errorBody(nfe)).build();
+    }
+  }
+
+  // ── PATCH frame ───────────────────────────────────────────────────────────
+
+  @PATCH
+  @Path("/{appId}/frames/{frameAppId}")
+  @Operation(summary = "Patch a single frame's mutable fields.",
+    description =
+      "Mutates one of a frame's transform fields, parent pointer, kind, or " +
+      "name. Fields absent from the body are left unchanged. Pass an empty " +
+      "string for `parentFrameAppId` to make the frame a root (deletes the " +
+      "`:HAS_PARENT_FRAME` edge).")
+  @APIResponse(
+    responseCode = "200",
+    description = "Frame patched.",
+    content = @Content(schema = @Schema(implementation = FrameIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Scene or frame not found.")
+  public Response patchFrame(
+    @PathParam("appId") @NotBlank String appId,
+    @PathParam("frameAppId") @NotBlank String frameAppId,
+    PatchFrameRequestIO body,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) body = new PatchFrameRequestIO();
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    try {
+      CoordinateFrame frame = sceneGraphService.patchFrame(appId, frameAppId, body, prov);
+      handoffProvenance();
+      return Response.ok(new FrameIO(frame)).build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).entity(errorBody(nfe)).build();
+    }
+  }
+
+  // ── DELETE frame ──────────────────────────────────────────────────────────
+
+  @DELETE
+  @Path("/{appId}/frames/{frameAppId}")
+  @Operation(summary = "Delete a frame and its subtree.",
+    description =
+      "Hard-deletes the frame plus every descendant reachable via the " +
+      "`:HAS_PARENT_FRAME` chain (the scaffold has no soft-delete field; see " +
+      "`SceneGraphService` Javadoc). Joints touching any deleted frame are " +
+      "also removed.")
+  @APIResponse(responseCode = "204", description = "Frame subtree deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Scene or frame not found.")
+  public Response deleteFrame(
+    @PathParam("appId") @NotBlank String appId,
+    @PathParam("frameAppId") @NotBlank String frameAppId,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    try {
+      sceneGraphService.deleteFrameSubtree(appId, frameAppId, prov);
+      handoffProvenance();
+      return Response.noContent().build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).entity(errorBody(nfe)).build();
+    }
+  }
+
+  // ── POST joint ────────────────────────────────────────────────────────────
+
+  @POST
+  @Path("/{appId}/joints")
+  @Operation(summary = "Register a joint between two frames.")
+  @APIResponse(
+    responseCode = "201",
+    description = "Joint added.",
+    content = @Content(schema = @Schema(implementation = JointIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "parentFrameAppId or childFrameAppId missing.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Scene or endpoint frame not found.")
+  public Response addJoint(
+    @PathParam("appId") @NotBlank String appId,
+    CreateJointRequestIO body,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) body = new CreateJointRequestIO();
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    try {
+      Joint joint = sceneGraphService.addJoint(appId, body, prov);
+      handoffProvenance();
+      return Response.status(Response.Status.CREATED).entity(new JointIO(joint)).build();
+    } catch (IllegalArgumentException iae) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(errorBody(iae)).build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).entity(errorBody(nfe)).build();
+    }
+  }
+
+  // ── DELETE joint ──────────────────────────────────────────────────────────
+
+  @DELETE
+  @Path("/{appId}/joints/{jointAppId}")
+  @Operation(summary = "Delete a joint.")
+  @APIResponse(responseCode = "204", description = "Joint deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Scene or joint not found.")
+  public Response deleteJoint(
+    @PathParam("appId") @NotBlank String appId,
+    @PathParam("jointAppId") @NotBlank String jointAppId,
+    @HeaderParam(HEADER_AI_AGENT) String aiAgent,
+    @Context SecurityContext sc
+  ) {
+    ProvenanceContext prov = provFor(sc, aiAgent);
+    try {
+      sceneGraphService.deleteJoint(appId, jointAppId, prov);
+      handoffProvenance();
+      return Response.noContent().build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).entity(errorBody(nfe)).build();
+    }
+  }
+
+  // ── helpers ───────────────────────────────────────────────────────────────
+
+  private ProvenanceContext provFor(SecurityContext sc, String aiAgent) {
+    String caller = sc != null && sc.getUserPrincipal() != null
+      ? sc.getUserPrincipal().getName() : null;
+    return ProvenanceContext.from(caller, aiAgent);
+  }
+
+  /**
+   * Hand off skip-capture to the {@link ProvenanceCaptureFilter} so it does
+   * not emit a duplicate generic Activity. Per the rule:
+   * "handlers that record their own Activity hand off skip-capture".
+   */
+  private void handoffProvenance() {
+    try {
+      if (requestContext != null) {
+        requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+      }
+    } catch (RuntimeException e) {
+      Log.debug("SCENEGRAPH: skip-capture handoff failed (non-fatal)", e);
+    }
+  }
+
+  private static List<FrameIO> toFrameIOs(List<CoordinateFrame> frames) {
+    List<FrameIO> out = new ArrayList<>(frames.size());
+    for (CoordinateFrame f : frames) out.add(new FrameIO(f));
+    return out;
+  }
+
+  private static List<JointIO> toJointIOs(List<Joint> joints) {
+    List<JointIO> out = new ArrayList<>(joints.size());
+    for (Joint j : joints) out.add(new JointIO(j));
+    return out;
+  }
+
+  private static String errorBody(Throwable t) {
+    String msg = t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
+    return "{\"detail\":\"" + msg.replace("\"", "\\\"") + "\"}";
+  }
+}
