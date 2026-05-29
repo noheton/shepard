@@ -32,8 +32,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -169,6 +171,90 @@ public class FileReferenceV2Rest {
     } catch (IOException ioe) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ioe.getMessage()).build();
     }
+  }
+
+  // ─── list-by-DataObject ───────────────────────────────────────────────────
+
+  /**
+   * J1e + REF-UNIFIED-TABLE-FR1B — list the singleton FileReferences
+   * attached to a DataObject identified by its {@code appId} (UUID v7).
+   *
+   * <p>This is the additive read path the unified data-references
+   * frontend table consumes when displaying FR1b rows alongside FR1a
+   * bundles, timeseries refs, and structured-data refs. The upstream
+   * v1 list endpoint ({@code GET /shepard/api/collections/{collId}/
+   * dataObjects/{doId}/fileReferences}) returns only FR1a bundle shapes
+   * and is byte-frozen; this endpoint is its FR1b sibling.
+   *
+   * <p>Path: {@code GET /v2/data-objects/{dataObjectAppId}/files}.
+   * Matches the {@code /v2/data-objects/{appId}/<kind>} convention
+   * established by {@code video-stream-references} and friends.
+   *
+   * <p>Permission: Read on the parent DataObject (inherited from its
+   * Collection — same gate as {@link #getSingleton}). 404 when no
+   * DataObject with that appId exists.
+   *
+   * @param dataObjectAppId UUID v7 of the parent DataObject.
+   * @param securityContext caller identity.
+   * @return 200 with the (possibly empty) list of singletons.
+   */
+  @GET
+  @Path("/by-data-object/{dataObjectAppId}")
+  @Operation(
+    summary = "List singleton FileReferences (FR1b) attached to a DataObject.",
+    description =
+      "Returns every FR1b `:FileReference` (singleton shape) currently attached to the " +
+      "DataObject identified by `dataObjectAppId` (UUID v7). Soft-deleted singletons are " +
+      "filtered out at the service layer. Each list element carries the same shape as " +
+      "`GET /v2/files/{appId}` — `FileReferenceV2IO` with the embedded `ShepardFile` " +
+      "metadata.\n\n" +
+      "This is the additive sibling of the upstream v1 list endpoint " +
+      "(`GET /shepard/api/collections/{collectionId}/dataObjects/{dataObjectId}/fileReferences`), " +
+      "which returns only FR1a `FileBundleReference` shapes. The two endpoints together " +
+      "cover both file-reference shapes for a DataObject.\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
+      "Returns an empty array — not 404 — when the DataObject exists but has no singleton " +
+      "FileReferences."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "List of singleton FileReferences (may be empty).",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = @Schema(type = org.eclipse.microprofile.openapi.annotations.enums.SchemaType.ARRAY,
+                       implementation = FileReferenceV2IO.class)
+    )
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response listByDataObject(
+    @PathParam("dataObjectAppId") String dataObjectAppId,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = callerOrNull(securityContext);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("dataObjectAppId is required").build();
+    }
+
+    // Resolve parent DO existence — 404 when missing.
+    Long parentOgmId = singletonService.getDataObjectOgmId(dataObjectAppId);
+    if (parentOgmId == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    // Permission gate — inherit from Collection via the appId-aware helper.
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    List<FileReference> singletons = singletonService.listByDataObject(dataObjectAppId);
+    List<FileReferenceV2IO> result = new ArrayList<>(singletons.size());
+    for (FileReference ref : singletons) {
+      if (ref == null || ref.isDeleted()) continue;
+      result.add(new FileReferenceV2IO(ref));
+    }
+    return Response.ok(result).build();
   }
 
   // ─── metadata ─────────────────────────────────────────────────────────────
