@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 25 |
 | `idea` | 12 |
 | `feature-defined` | 104 |
-| `audited-by-personas` | 73 |
+| `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 70 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **381** |
+| **total docs** | **382** |
 | **UNTAGGED** | **0** |
 
 ## fragment (42)
@@ -246,7 +246,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (73)
+## audited-by-personas (74)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -308,6 +308,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ux-auditor.md`](agent-findings/ux-auditor.md) | UX Auditor — Discovery Report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-progress-indicators-sweep.md`](agent-findings/ux-progress-indicators-sweep.md) | UX progress indicators — Playwright-driven sweep (task #136) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md`](agent-findings/ux-survey-collections-containers-2026-05-24.md) | UX survey — collections + containers pages (barely-usable triage) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ux-walk-2026-05-29.md`](agent-findings/ux-walk-2026-05-29.md) | UX Walk 2026-05-29 — Live 4K regression sweep | 2026-05-29 | — |
 | [`aidocs/agent-findings/v15-import-implementation.md`](agent-findings/v15-import-implementation.md) | v15 MFFD-import — implementation report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15-review-data-ontologist.md`](agent-findings/v15-review-data-ontologist.md) | v15 review — Data & Process Ontologist lens | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15-review-ime-aqe.md`](agent-findings/v15-review-ime-aqe.md) | v15 review — IME + AQE lens | 2026-05-23 | 2026-05-23 |
