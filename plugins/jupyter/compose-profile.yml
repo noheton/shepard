@@ -44,6 +44,10 @@ services:
       # authenticator reads our derived names below; the
       # `jupyterhub_config.py` mounts the translation.
       SHEPARD_OIDC_ISSUER_URL: ${OIDC_AUTHORITY}
+      # Back-channel issuer URL — JH server-to-server token + userinfo POSTs.
+      # Must be a network path the JH container can route (not the public Zoraxy IP).
+      # Falls back to the front-channel issuer if unset.
+      SHEPARD_OIDC_INTERNAL_ISSUER_URL: ${SHEPARD_OIDC_INTERNAL_ISSUER_URL:-}
       JUPYTERHUB_KEYCLOAK_CLIENT_ID: ${JUPYTERHUB_KEYCLOAK_CLIENT_ID:-jupyterhub}
       JUPYTERHUB_KEYCLOAK_CLIENT_SECRET: ${JUPYTERHUB_KEYCLOAK_CLIENT_SECRET}
       # The public-facing URL JupyterHub redirects users back to after

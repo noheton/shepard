@@ -27,6 +27,17 @@ c = get_config()  # noqa: F821  — jupyterhub injects `get_config` at runtime
 c.JupyterHub.authenticator_class = "generic-oauth"
 
 issuer_url = os.environ["SHEPARD_OIDC_ISSUER_URL"].rstrip("/")
+# Split-horizon OIDC: the browser hits the public hostname for the
+# authorize redirect, but JH's server-to-server token + userinfo
+# exchange happens inside the compose network — the JH container
+# cannot route to the public Zoraxy IP for back-channel calls.
+# Operator sets SHEPARD_OIDC_INTERNAL_ISSUER_URL to the internal
+# compose hostname (e.g. http://keycloak:8082/realms/shepard-demo);
+# falls back to the public issuer if unset (works on deployments
+# where the front + back channel share a network path).
+internal_issuer_url = os.environ.get(
+    "SHEPARD_OIDC_INTERNAL_ISSUER_URL", issuer_url
+).rstrip("/")
 # Path-mount under /jupyterhub on shepard.nuclide.systems
 # (per CLAUDE.md "Always: mount plugin UI sidecars as paths" rule).
 # JupyterHub's c.JupyterHub.base_url is the canonical path-mount knob;
@@ -40,10 +51,11 @@ c.GenericOAuthenticator.client_id = os.environ["JUPYTERHUB_KEYCLOAK_CLIENT_ID"]
 c.GenericOAuthenticator.client_secret = os.environ["JUPYTERHUB_KEYCLOAK_CLIENT_SECRET"]
 c.GenericOAuthenticator.oauth_callback_url = f"{public_url}/hub/oauth_callback"
 
-# Keycloak OIDC endpoints — derived from the issuer URL.
+# Front-channel (browser-visible) endpoint — public URL.
 c.GenericOAuthenticator.authorize_url = f"{issuer_url}/protocol/openid-connect/auth"
-c.GenericOAuthenticator.token_url = f"{issuer_url}/protocol/openid-connect/token"
-c.GenericOAuthenticator.userdata_url = f"{issuer_url}/protocol/openid-connect/userinfo"
+# Back-channel (server-to-server) endpoints — internal compose URL when set.
+c.GenericOAuthenticator.token_url = f"{internal_issuer_url}/protocol/openid-connect/token"
+c.GenericOAuthenticator.userdata_url = f"{internal_issuer_url}/protocol/openid-connect/userinfo"
 
 # Standard OIDC scopes; `email` + `profile` give us the username.
 c.GenericOAuthenticator.scope = ["openid", "email", "profile"]
