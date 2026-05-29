@@ -2593,3 +2593,140 @@ Operator-acknowledged 2026-05-29 as deferred; surface when pulled.
   4. **FE-BUILD-03-REGEN** (S, retires the cast holdover; clean OpenAPI client).
   5. **UX-WALK-2026-05-29-05** (S, 4K Collections-list whitespace fix; visible polish on the operator's primary viewport).
 
+
+## KRL-INTERPRETER — KUKA Robot Language interpreter for the digital-twin plugin
+
+**End goal (operator verbatim 2026-05-29):** *click on a KRL program,
+associate it with a URDF / cell, and run / preview the program.*
+
+UX shape this drives: on a `.src` FileReference detail page, a "Run /
+preview" action opens a modal picker (URDF + cell scene, optional
+base / tool / seed pose), the modal triggers the sidecar, and on
+success the user lands in the URDF viewer with the resolved trajectory
+pre-loaded in the animator — ready to play back the program. Every
+sub-row below feeds this single end-state.
+
+Filed 2026-05-29 by operator request. KUKA cells (the MFFD AFP cell and
+most ZLP robotic cells) ship their motion programs as `.src` + `.dat`
+KRL files. To **replay or simulate** these programs against the
+URDF-WEBVIEW-1 viewer + DT1 digital twin, we need a KRL interpreter
+that:
+
+1. **Parses** `.src` + `.dat` KRL files into an AST (motion primitives
+   `PTP`, `LIN`, `CIRC`; flow control `IF/FOR/WHILE/LOOP`; variable
+   declarations + frame transforms; tool / base frames; advanced
+   features ignored or warned on tier-1).
+2. **Resolves** the program against a target `:DigitalTwinScene`
+   (URDF) — back-solves Cartesian targets through IK to joint angles.
+3. **Generates** a per-joint timeseries trajectory (the same shape
+   URDF-WEBVIEW-1 phase 1 already animates from). Output: 1
+   `TimeseriesReference` with 6 (or N) channels annotated with
+   `urn:shepard:urdf:joint:joint_<n>` per the preselection rule.
+4. **Captures provenance** — the input `.src` FileReference, the
+   target `:DigitalTwinScene`, the resolved `TimeseriesReference`,
+   and the interpreter version all become `:Activity` edges per
+   the audit-trail-as-graph rule.
+
+**Why a separate plugin (not folded into `vis-urdf`):** KRL parsing
+is a domain concern (KUKA language + KUKAvarproxy semantics), not a
+rendering concern. The URDF viewer should stay format-agnostic;
+the KRL interpreter is one of several program-language plugins
+(RAPID for ABB, Karel for FANUC, MotoPlus for Yaskawa) that all
+emit the same `TimeseriesReference` shape. Plugin name:
+`shepard-plugin-krl-interpreter`. Sibling plugins follow the same
+shape.
+
+**Sidecar vs in-tree:**
+
+- **Tier-1 (sidecar):** Python sidecar wraps an open-source KRL
+  parser. Candidates (license-clean):
+  - `pykrlparser` (MIT; ANTLR-based, has Cartesian-only support; needs
+    extension to FOR/WHILE/LOOP).
+  - `KUKA-KRL-Tools` (BSD; older, .src lexer only).
+  - Roll a fresh ANTLR4 grammar from the KRL reference manual if the
+    above can't cover the AFP cell's program. KRL 5.x BNF is public.
+- **IK back-solver:** `ikpy` (MIT; pure-Python, accepts URDF input)
+  or `rosurdf` + KDL bindings. `ikpy` is the cleaner default
+  (zero-config; KDL adds Eigen + Orocos deps).
+- **Tier-2 (deeper):** integrate `pyKuka` / `OpenShowVar` for live
+  cell connectivity — reads variables in flight from the KRC4
+  controller. Out of scope for tier-1.
+
+**Sidecar protocol:**
+
+- `POST /interpret` body: `{ srcFileAppId, datFileAppId?, urdfFileAppId, baseFrame?, toolFrame?, timeStep, options }`
+- Returns: `{ trajectoryAppId, warnings[], unsupportedConstructs[], ikSolverStats }`
+- Sidecar runs as `shepard-plugin-krl-interpreter` container, joined
+  to the compose `shepard` network. Plugin-declared per
+  `feedback_plugins_declare_sidecars.md`.
+
+**Cross-references:**
+
+- `URDF-WEBVIEW-1` — the consumer (viewer + animator).
+- `RDK-PARSE-2` — extracts the cell's `:DigitalTwinScene`; KRL
+  interpreter resolves against it.
+- `SCENEGRAPH-REST-1` — the REST surface the interpreter writes
+  results to.
+- `DT1` — Live Digital Twin design doc (`aidocs/data/84`); KRL
+  replay is one of the trajectory sources `DT1` consumes.
+- `feedback_annotation_preselection_principle.md` — the joint-channel
+  annotation pattern this plugin emits.
+- `aidocs/data/85-coordinate-frame-tree.md` — frame schema used as
+  IK input.
+
+**Acceptance criteria:**
+
+- MFFD AFP `Ply_5_layup.src` (typical KUKA layup program from the
+  MFFD cell) → resolved trajectory on R10 URDF → `TimeseriesReference`
+  with 6 joint channels → plays back in URDF-WEBVIEW-1 animator → the
+  TCP trace from the layup motion (via Trace3D, when wired) matches
+  the original Cartesian targets within IK tolerance.
+- Warnings emitted (not errors) for unsupported KRL constructs;
+  motion primitives still resolve.
+- `:Activity` chain queryable: input src → interpreter → output
+  trajectory.
+
+**Open questions for design pass:**
+
+- KRL macros / `#INCLUDE` resolution — single file at tier-1, or
+  walk `.dat` includes? Recommend: single-file tier-1, multi-file
+  tier-2 with explicit `srcFileAppIds[]` array.
+- Submit-mode vs SPS programs — interpret main, skip SPS at tier-1.
+- KUKA WorkVisual project bundles (`.kop`) — out of scope; user
+  unzips and uploads individual `.src` files.
+- Live cell connectivity (KUKAvarproxy / OpenShowVar) — tier-2,
+  pairs with DT1 live mode.
+
+**Plugin docs trio:**
+
+- `plugins/krl-interpreter/docs/reference.md` — KRL subset supported,
+  IK solver knobs, error codes, sidecar protocol.
+- `plugins/krl-interpreter/docs/quickstart.md` — "Upload a .src,
+  click Resolve, get a trajectory" 3-click flow.
+- `plugins/krl-interpreter/docs/install.md` — sidecar profile,
+  IK solver tuning, KRL grammar version notes.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| KRL-INTERPRETER-01-DESIGN | Write `aidocs/integrations/<NN>-krl-interpreter.md` design doc (sidecar shape, AST + motion primitives covered tier-1, IK back-solver choice with benchmark, plugin manifest, sidecar protocol). | S | queued (design) | Reviewer-test: design doc passes the persona board (Industrial Manufacturing Engineer + Aerospace Quality Engineer + Digital Native Researcher). |
+| KRL-INTERPRETER-02-PARSER | Pick + extend / fork the KRL parser. Coverage target: `PTP`, `LIN`, `CIRC`, `WAIT`, `IF/THEN/ENDIF`, `FOR/ENDFOR`, `WHILE/ENDWHILE`, `LOOP/ENDLOOP`, variable assignment, `$BASE` / `$TOOL` switching, `FRAME` literals. JUnit-style Python unit tests on a corpus of public KRL fixtures. | M | queued | Blocked on -01. Reuse-survey first per `feedback_reuse_before_reimplement.md`. |
+| KRL-INTERPRETER-03-IK | Wire IK back-solver (default `ikpy`). Accept URDF input from a `:DigitalTwinScene`'s `urdfFileAppId`. Configurable seed pose. Warnings for unreachable targets. | M | queued | Blocked on -02. |
+| KRL-INTERPRETER-04-SIDECAR | Containerise sidecar. `plugins/krl-interpreter/compose-profile.yml` declares the service per `feedback_plugins_declare_sidecars.md`. Path-mount UI surface (if any admin pane lands) per `feedback_plugin_ui_path_mount.md`. | S | queued | Blocked on -03. |
+| KRL-INTERPRETER-05-REST | `POST /v2/krl/interpret` resource on the backend dispatches to the sidecar; writes `:Activity` per audit-trail-as-graph; returns the produced `TimeseriesReference` appId. | M | queued | Blocked on -04 + SCENEGRAPH-REST-1 (so the IK target frames are resolvable via the REST surface). |
+| KRL-INTERPRETER-06-UI | Frontend "Resolve KRL" action on a `.src` FileReference detail page (uses the existing reference-edit affordance pattern). Modal: pick URDF scene + base frame + tool frame + IK seed; on success, deep-link to the resulting TS reference; on warnings, surface unsupported constructs as a list. | M | queued | Blocked on -05. Apply `## Always: ship a UI stub` rule. |
+| KRL-INTERPRETER-07-MFFD-SHOWCASE | Add `examples/mffd-rdk-urdf-showcase/` (in flight per `MFFD-RDK-URDF-SHOWCASE`) an integration step that resolves a real MFFD `.src` file (or synthetic if licence-blocked) against the URDF and plays back the resulting trajectory. End-to-end: RDK file → URDF + .src → interpreted trajectory → animated playback. | M | queued | Blocked on -05 + `MFFD-RDK-URDF-SHOWCASE` landing. |
+| KRL-INTERPRETER-08-DOCS | Three-pane plugin docs (reference + quickstart + install) per `## Always: plugins ship their own documentation`. Cross-ref RDK-PARSE-2 + URDF-WEBVIEW-1 + DT1. | S | queued | Lands with -05 or -06; CLAUDE.md rule forbids splitting feature + docs. |
+
+**Out of scope (tier-2+):**
+
+- Live cell connectivity via KUKAvarproxy / OpenShowVar. Pairs with
+  DT1 live mode; file as a sibling row when DT1 is the active arc.
+- WorkVisual project (`.kop`) auto-extract. Manual user step at tier-1.
+- KRL editor / autocomplete in-browser. Out of Shepard's core scope —
+  delegate to Foxglove Studio or a VS Code extension.
+- Path planning beyond what the KRL program describes. The interpreter
+  RESOLVES, not OPTIMISES.
+
+**Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
+for everything else. The hourly dispatcher will NOT pick this up
+autonomously — design first, then sub-row dispatch.
