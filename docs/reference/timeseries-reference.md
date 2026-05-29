@@ -274,6 +274,49 @@ follow you across devices and browsers) is planned as UX-PIN1b.
 
 ---
 
+## Single-field channel lookup (TS-IDc, /v2/)
+
+Every channel carries a stable single-field **`shepardId`** (UUID v4 by
+default; minted by the Postgres `gen_random_uuid()` column default on
+insert per the V1.11.0 migration). On the `/v2/` surface, `shepardId`
+is accepted on every channel-data endpoint as an alternative to the
+5-tuple `{measurement, device, location, symbolicName, field}` lookup.
+
+**When both forms are supplied on the same request, `shepardId` wins**
+and the 5-tuple is ignored.
+
+| Endpoint | shepardId acceptance |
+|---|---|
+| `GET /v2/timeseries-containers/{cid}/channels` | Returns `shepardId` on every row |
+| `GET /v2/timeseries-containers/{cid}/channels/{shepardId}/data` | Path param (canonical) |
+| `POST /v2/timeseries-containers/{cid}/channels/data/bulk` | List of shepardIds in body |
+| `POST /v2/timeseries-containers/{cid}/channels/{shepardId}/data/ingest` | Path param |
+| `GET /v2/timeseries-containers/{containerAppId}/channels/live-window` | `?shepardId=<uuid>` query param (TS-IDc, new) |
+
+Example — pull the last 60 s of one channel by shepardId on the
+live-window endpoint:
+
+```bash
+curl -H "X-API-Key: $KEY" \
+  "https://shepard-api.example/v2/timeseries-containers/${CONTAINER_APP_ID}/channels/live-window\
+?shepardId=01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f&windowSeconds=60"
+```
+
+The legacy 5-tuple lookup (`?measurement=...&device=...&...`) stays
+accepted on the same endpoint as a transitional bridge; new
+integrations should prefer shepardId.
+
+**v1 surface unaffected**: `/shepard/api/timeseriesContainers/*`
+remains byte-frozen — it does NOT expose `shepardId` and continues
+to require the 5-tuple. Wire-fidelity is locked by
+`V1WireFidelityTest`.
+
+See [aidocs/platform/87](../../aidocs/platform/87-timeseries-appid-migration.md)
+for the migration design (TS-IDa, TS-IDb, TS-IDc, TS-IDd, TS-IDe
+phases) and rationale.
+
+---
+
 ## Upstream ingestion endpoints
 
 Timeseries channels are created and written via the upstream

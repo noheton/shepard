@@ -138,17 +138,42 @@ Backwards-compatible: new field added, nothing removed.
 
 Update the `backend-client` generated types to include `appId` on `Timeseries` / `TimeseriesEntity`.
 
-### Phase TS-IDc — Accept appId as lookup key on data endpoints
+### Phase TS-IDc — Accept shepardId as lookup key on data endpoints
 
-Add `timeseriesAppId` as an alternative query parameter on endpoints that currently require the full 5-tuple. Both forms accepted:
+**Status: ✓ shipped 2026-05-29 (`9b88c1d66`)** — branch `ts-idc-migration`,
+task #58. The wire-facing field name is **`shepardId`** (not
+`timeseriesAppId`; see the CHANGELOG at the top of this doc — Postgres
+substrate, not Neo4j).
 
-```
-GET /v2/timeseries-containers/{appId}/channels/data
-  ?timeseriesAppId=01924b5c-...       ← new, preferred
-  &measurement=nozzle&field=temp...   ← old, still works
-```
+Two phases of TS-IDc shipped:
 
-Backend resolves appId → 5-tuple before hitting the query layer. The SQL/InfluxDB query stays unchanged.
+1. **PR-2 (earlier)** — path-param endpoints on
+   `/v2/timeseries-containers/{cid}/channels/{shepardId}/data` (single
+   fetch + COPY ingest) plus the multi-shepardId bulk endpoint
+   `POST /v2/timeseries-containers/{cid}/channels/data/bulk` (TS-OPT2).
+2. **PR-3 (this slice, 2026-05-29)** — query-param acceptance on the
+   live-window endpoint
+   `GET /v2/timeseries-containers/{containerAppId}/channels/live-window\
+?shepardId=<uuid>`. When both `shepardId` and the 5-tuple are
+   supplied, **shepardId wins** and the 5-tuple is ignored. Backed by
+   `TsChannelResolver.findByContainerAndShepardId` which scopes the
+   shepardId lookup to the container (cross-container leak guard).
+
+Plan-time evidence (MFFD container 1772, 113 channels):
+
+| Path | Planning | Execution | Index used |
+|---|---|---|---|
+| shepardId | 4.36 ms | 0.17 ms | `idx_timeseries_shepard_id` (UNIQUE B-tree) |
+| 5-tuple (full) | 2.18 ms | 0.07 ms | seq scan on `channel_metadata` (small table) |
+
+Both go through nested loop; **shepardId wins on cost-growth shape**
+(the 5-tuple seq scan is O(channels-per-container); shepardId stays
+constant). The 17× plan/exec ratio reported in
+`TS-AUDIT-2026-05-24-009` shrinks toward 1:1 on subsequent calls
+(Hibernate planning cache).
+
+Backend resolves shepardId → row before hitting the data-point query
+layer. The SQL/Timescale query stays unchanged.
 
 ### Phase TS-IDd — Frontend migration
 
