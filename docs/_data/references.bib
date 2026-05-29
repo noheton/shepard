@@ -2148,3 +2148,72 @@
   note         = {DLR eLib 218583. Most recent LUMEN test-bed publication; 14-author paper documenting recent improvements for oxygen-methane rocket-engine technologies. Cited from aidocs/strategy/95 \S 1 as the current-state LUMEN publication; the depth of the author list signals the scale of the active research team.},
   category     = {dlr_internal}
 }
+
+% ============================================================
+% AUTHORIZATION LITERATURE (added 2026-05-29 for aidocs/platform/110)
+% ============================================================
+
+@inproceedings{pang2019zanzibar,
+  author       = {Pang, Ruoming and Caceres, Ramon and Burrows, Mike and Chen, Zhifeng and Dave, Pratik and Germer, Nathan and Golynski, Alexander and Graney, Kevin and Kang, Nina and Kissner, Lea and Korn, Jeffrey L. and Parmar, Abhishek and Richards, Christopher D. and Wang, Mengzhi},
+  title        = {{Zanzibar: Google's Consistent, Global Authorization System}},
+  booktitle    = {2019 USENIX Annual Technical Conference (USENIX ATC 19)},
+  year         = {2019},
+  address      = {Renton, WA},
+  publisher    = {USENIX Association},
+  url          = {https://www.usenix.org/conference/atc19/presentation/pang},
+  note         = {Canonical relationship-based-access-control (ReBAC) paper; introduces the zedtoken consistency model that downstream OSS implementations (SpiceDB, OpenFGA, Permify) inherit. Cited from aidocs/platform/110 \S 3 (Option E framing) and \S 4 (migration-cost reasoning for Option C).},
+  category     = {papers}
+}
+
+@techreport{nist800162Abac2014,
+  author       = {Hu, Vincent C. and Ferraiolo, David and Kuhn, Rick and Schnitzer, Adam and Sandlin, Kenneth and Miller, Robert and Scarfone, Karen},
+  title        = {{Guide to Attribute Based Access Control (ABAC) Definition and Considerations}},
+  institution  = {National Institute of Standards and Technology},
+  year         = {2014},
+  month        = jan,
+  type         = {NIST Special Publication},
+  number       = {800-162},
+  url          = {https://csrc.nist.gov/publications/detail/sp/800-162/final},
+  note         = {The reference framing for attribute-based access control. Used in aidocs/platform/110 \S 3 to anchor the ABAC column of the options matrix; complements the in-tree RBAC implementation (Roles 4-bit struct, AccessType enum) with the framing under which a future ``same-institute readers only'' rule is just an attribute predicate over subject + resource.},
+  category     = {standards}
+}
+
+@misc{owaspAuthzCheatsheet2024,
+  author       = {{OWASP Foundation}},
+  title        = {{Authorization Cheat Sheet}},
+  year         = {2024},
+  howpublished = {Online resource},
+  url          = {https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html},
+  note         = {OWASP guidance: deny-by-default, centralize authorization logic, prefer ABAC/ReBAC over hardcoded checks, defense-in-depth at multiple layers. Cited from aidocs/platform/110 \S 1 + 24 \S 3 — the C3 fail-closed default + single PermissionsService seam already satisfy the two strongest invariants.},
+  category     = {standards}
+}
+
+@misc{authzedSpicedb2024,
+  author       = {{Authzed, Inc.}},
+  title        = {{SpiceDB: Open Source, Google Zanzibar-inspired permissions database}},
+  year         = {2024},
+  howpublished = {Software (Apache-2.0)},
+  url          = {https://github.com/authzed/spicedb},
+  note         = {Canonical OSS Zanzibar implementation. Maintains its own consistency model (zedtokens, schema, dual-write windows). Cited from aidocs/platform/110 \S 3 (Option C) and \S 4 (migration-cost reasoning: external engine introduces a second consistency boundary Shepard does not have today).},
+  category     = {software}
+}
+
+@misc{openfgaZanzibar2024,
+  author       = {{Cloud Native Computing Foundation} and {Okta, Inc.}},
+  title        = {{OpenFGA: Fine-grained authorization at scale, inspired by Google Zanzibar}},
+  year         = {2024},
+  howpublished = {Software (Apache-2.0), CNCF Sandbox project},
+  url          = {https://github.com/openfga/openfga},
+  note         = {Alternative OSS Zanzibar implementation; CNCF Sandbox. DSL is more approachable than SpiceDB's schema language. Cited from aidocs/platform/110 \S 3 (Option C) as the plugin-impl target if D's AuthzProvider SPI evolves toward C.},
+  category     = {software}
+}
+
+@article{casbinLuo2019,
+  author       = {Luo, Yang and Shen, Qingni and Wu, Zhonghai},
+  title        = {{An Authorization Model for Cross-Enterprise Collaborations}},
+  journal      = {Proceedings of ACM SIGSAC},
+  year         = {2019},
+  note         = {Casbin authors' framing of the RBAC/ABAC/ReBAC unification model that the Casbin policy engine implements. Cited from aidocs/platform/110 \S 3 as background for the Option C row's flexibility column; Casbin is the lighter-weight alternative to a Zanzibar-style engine when org-scale consistency is not a requirement.},
+  url          = {https://casbin.org/docs/overview},
+  category     = {papers}
+}

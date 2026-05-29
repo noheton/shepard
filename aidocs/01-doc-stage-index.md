@@ -32,7 +32,7 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 42 |
 | `concept` | 25 |
-| `idea` | 11 |
+| `idea` | 12 |
 | `feature-defined` | 104 |
 | `audited-by-personas` | 73 |
 | `feedback-implemented` | 2 |
@@ -120,7 +120,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-26 |
 
-## idea (11)
+## idea (12)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -129,6 +129,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/109-mffd-scan-line-join-key.md`](data/109-mffd-scan-line-join-key.md) | 109 — MFFD scan-line join key across TPS stores | 2026-05-27 | 2026-05-27 |
 | [`aidocs/integrations/112-mfg-plugin-design.md`](integrations/112-mfg-plugin-design.md) | 112 — `shepard-plugin-mfg` design sketch | 2026-05-27 | 2026-05-27 |
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/110-permissions-redesign-decision.md`](platform/110-permissions-redesign-decision.md) | 110 — Permissions: redesign or extend in place? | 2026-05-29 | — |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
