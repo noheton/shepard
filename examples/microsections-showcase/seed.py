@@ -140,13 +140,24 @@ class Api:
     def put(self, path, **kw):  return self._req("PUT", path, **kw)
     def delete(self, path):     return self._req("DELETE", path)
 
-    def upload_file(self, container_app_id: str, name: str, file_path: Path,
-                    content_type: str) -> dict:
-        """Upload a file payload to a FileContainer and return the
-        resulting `:ShepardFile` IO."""
+    def upload_singleton_file(
+        self,
+        parent_data_object_app_id: str,
+        name: str,
+        file_path: Path,
+        content_type: str,
+    ) -> dict:
+        """Upload a file as a FR1b singleton FileReference attached
+        directly to a DataObject. Returns the FileReferenceV2IO.
+
+        Uses POST /v2/files?parentDataObjectAppId=...&name=... — no
+        FileContainer middle-man required."""
         boundary = "----shepardseedmicrosections"
-        url = self._url(f"/v2/file-containers/{container_app_id}/files")
-        # Build the multipart body manually so we stay stdlib-only.
+        qs = urllib.parse.urlencode({
+            "parentDataObjectAppId": parent_data_object_app_id,
+            "name": name,
+        })
+        url = self._url(f"/v2/files?{qs}")
         header = (
             f"--{boundary}\r\n"
             f'Content-Disposition: form-data; name="file"; '
@@ -187,24 +198,6 @@ def find_or_create_collection(api: Api, *, reset: bool) -> dict:
     return created
 
 
-def find_or_create_file_container(api: Api, collection_app_id: str, name: str) -> dict:
-    listing = api.get(
-        f"/v2/collections/{collection_app_id}/file-containers",
-        params={"pageSize": 50},
-    )
-    rows = listing if isinstance(listing, list) else listing.get("content", [])
-    for fc in rows:
-        if fc.get("name") == name:
-            _log("SKIP", name, "FileContainer (exists)", fc["appId"])
-            return fc
-    created = api.post(
-        f"/v2/collections/{collection_app_id}/file-containers",
-        json_body={"name": name},
-    )
-    _log("OK", name, "FileContainer", created["appId"])
-    return created
-
-
 def find_or_create_data_object(
     api: Api,
     collection_app_id: str,
@@ -229,24 +222,36 @@ def find_or_create_data_object(
     return created
 
 
-def attach_file_reference(
+def upload_singleton_if_absent(
     api: Api,
+    collection_app_id: str,
     data_object_app_id: str,
-    file_container_app_id: str,
-    file_app_id: str,
     name: str,
+    file_path: Path,
+    content_type: str,
     *,
-    description: str = "",
-) -> dict:
-    body = {
-        "name": name,
-        "description": description,
-        "fileIds": [file_app_id],
-        "fileContainerId": file_container_app_id,
-    }
-    created = api.post(
-        f"/v2/data-objects/{data_object_app_id}/file-references",
-        json_body=body,
+    expected_ref_count: int = 2,
+) -> dict | None:
+    """Upload a singleton FileReference attached to the DataObject.
+
+    Idempotent: probes the DataObject for `referenceIds.length >=
+    expected_ref_count` and skips the upload when the DataObject is
+    already fully populated. The v2 DataObject view returns numeric
+    `referenceIds` only (no inline names), so we use the count as a
+    coarse but reliable signal.
+    """
+    do = api.get(
+        f"/v2/collections/{collection_app_id}/data-objects/{data_object_app_id}"
+    )
+    existing_count = len((do or {}).get("referenceIds", []) or [])
+    if existing_count >= expected_ref_count:
+        _log(
+            "SKIP", name,
+            f"FileReference (DataObject already has {existing_count} refs)",
+        )
+        return None
+    created = api.upload_singleton_file(
+        data_object_app_id, name, file_path, content_type
     )
     _log("OK", name, "FileReference", created.get("appId", ""))
     return created
@@ -259,9 +264,6 @@ def attach_file_reference(
 def seed(api: Api, raw_dir: Path, *, reset: bool) -> None:
     coll = find_or_create_collection(api, reset=reset)
     coll_id = coll["appId"]
-
-    tif_container = find_or_create_file_container(api, coll_id, "micrographs")
-    nb_container = find_or_create_file_container(api, coll_id, "notebooks")
 
     for sample_id, notebook_filename, fiber_type in SAMPLE_VARIANTS:
         # The TIF base name is the sample stem before the variant suffix.
@@ -285,36 +287,24 @@ def seed(api: Api, raw_dir: Path, *, reset: bool) -> None:
         }
         do = find_or_create_data_object(api, coll_id, sample_id, attributes=attrs)
 
-        # Upload the TIF (once per tif_stem — but each variant DO links to it
-        # via a fresh FileReference, sharing the same underlying ShepardFile
-        # via dedup at the storage layer).
-        tif_file = api.upload_file(
-            tif_container["appId"], tif_filename, tif_path, "image/tiff"
-        )
-        attach_file_reference(
+        # Attach the TIF as a singleton FileReference directly on the DO.
+        upload_singleton_if_absent(
             api,
+            coll_id,
             do["appId"],
-            tif_container["appId"],
-            tif_file["appId"],
             f"{sample_id} micrograph",
-            description=f"Polished metallographic cross-section, optical microscopy, {fiber_type} fiber.",
+            tif_path,
+            "image/tiff",
         )
 
-        # Upload the matching notebook.
-        nb_file = api.upload_file(
-            nb_container["appId"], notebook_filename, nb_path,
-            "application/x-ipynb+json",
-        )
-        attach_file_reference(
+        # Attach the matching notebook as a second singleton FileReference.
+        upload_singleton_if_absent(
             api,
+            coll_id,
             do["appId"],
-            nb_container["appId"],
-            nb_file["appId"],
             f"{sample_id} FVF analysis notebook",
-            description=(
-                f"Jupyter notebook computing Fiber Volume Fraction + Porosity for "
-                f"sample {tif_stem} ({fiber_type}) via 3-peak histogram segmentation."
-            ),
+            nb_path,
+            "application/x-ipynb+json",
         )
 
     print()
