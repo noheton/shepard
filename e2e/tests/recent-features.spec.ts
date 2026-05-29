@@ -17,7 +17,7 @@
  *  - UI-cache  — Frontend HTML sends `Cache-Control: no-store`.
  *
  * Demo credentials (shepard-demo realm):
- *   flo / flo-demo   (has the `orcid` user attribute pre-seeded)
+ *   flodemo / flo-demo   (has the `orcid` user attribute pre-seeded)
  */
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
@@ -94,7 +94,7 @@ test.describe("User profile — appId, avatar GET, ORCID auto-sync", () => {
   test("flo logs in; /shepard/api/users response includes appId + auto-synced orcid", async ({
     page,
   }) => {
-    await loginAs(page, "flo", "flo-demo");
+    await loginAs(page, "flodemo", "flo-demo");
     // Bearer flow: pull the access token from the Nuxt auth session
     // (sidebase/nuxt-auth exposes the token at /api/auth/session) and
     // call the API directly. Cross-origin `credentials: include` won't
@@ -125,7 +125,7 @@ test.describe("User profile — appId, avatar GET, ORCID auto-sync", () => {
   }) => {
     // Get an appId via the logged-in page, then probe the avatar GET
     // anonymously to confirm the public-endpoint path.
-    await loginAs(page, "flo", "flo-demo");
+    await loginAs(page, "flodemo", "flo-demo");
     const appId = await page.evaluate(async (backend) => {
       const sess = await fetch("/api/auth/session", {
         credentials: "include",
@@ -160,7 +160,7 @@ test.describe("User profile — appId, avatar GET, ORCID auto-sync", () => {
 
 test.describe("Profile page UI", () => {
   test("profile page renders with user details visible", async ({ page }) => {
-    await loginAs(page, "flo", "flo-demo");
+    await loginAs(page, "flodemo", "flo-demo");
     await page.goto("/me");
     await page.waitForLoadState("networkidle");
     // U1b's effective display name MUST render; it's the canonical "I am
@@ -182,7 +182,7 @@ test.describe("Profile page UI", () => {
     // class-coupled and flaky to drive. The behavior we care about is
     // "PATCH /v2/users/me/preferences with ui.advancedMode succeeds 200,
     // and a subsequent GET returns the new value." We hit that directly.
-    await loginAs(page, "flo", "flo-demo");
+    await loginAs(page, "flodemo", "flo-demo");
     const tokenJson = await page.evaluate(async () => {
       const r = await fetch("/api/auth/session", { credentials: "include" });
       return r.json();

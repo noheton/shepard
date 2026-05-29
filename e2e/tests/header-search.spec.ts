@@ -13,7 +13,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-const USER = process.env.DEMO_USER || "flo";
+const USER = process.env.DEMO_USER || "flodemo";
 const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
 
 test.describe("Header search dropdown (UI-002)", () => {

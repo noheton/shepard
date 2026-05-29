@@ -21,7 +21,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-const USERNAME = process.env.DEMO_USER || "flo";
+const USERNAME = process.env.DEMO_USER || "flodemo";
 const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
 
 const LUMEN_ID = 42;

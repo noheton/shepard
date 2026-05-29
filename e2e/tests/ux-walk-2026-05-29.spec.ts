@@ -15,7 +15,8 @@
  * regression evidence captured.
  *
  * Credentials: demo realm uses `{username}-demo` convention. The dispatch
- * said `flo/flo` but the real keys are `flo/flo-demo`.
+ * said `flo/flo` but the real keys are `flodemo/flo-demo` (realm user
+ * renamed 2026-05-29 per ROLE-GRANT-DEMO-FLO-DISAMBIGUATE).
  */
 import { test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
@@ -30,7 +31,7 @@ const VP_4K = { width: 3840, height: 2160 };
 const VP_NARROW = { width: 1440, height: 900 };
 
 const CREDS: ReadonlyArray<readonly [string, string]> = [
-  ["flo", "flo-demo"],
+  ["flodemo", "flo-demo"],
   ["bob", "bob-demo"],
   ["alice", "alice-demo"],
 ];
