@@ -1,4 +1,8 @@
-import { CollectionApi, DataObjectAttributes, type Collection } from "@dlr-shepard/backend-client";
+import {
+  SearchApi,
+  BasicCollectionAttributes,
+  type Collection,
+} from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 
 const CLOSED_STATUS = "CLOSED";
@@ -13,41 +17,44 @@ export function isCleanupCollection(c: Collection): boolean {
 }
 
 /**
- * Fetches up to 30 collections accessible to the current user, sorted by
+ * Fetches up to 6 collections accessible to the current user, sorted by
  * most recently updated. Exposes a showClosed toggle so the caller can
  * include or exclude CLOSED collections in the filtered view.
+ *
+ * PERF11: uses useAsyncData so the initial fetch is serialised into the
+ * SSR payload — avoids a 300–600 ms client-side re-fetch on every navigation.
+ * The key `recent-collections` is stable per session; `refresh()` is exposed
+ * as `refetch` so post-mutation callers can invalidate.
  */
 export function useFetchRecentCollections() {
-  const collectionApi = useShepardApi(CollectionApi);
-
-  const allCollections = ref<Collection[]>([]);
-  const loading = ref(true);
-  const error = ref<string | null>(null);
+  const searchApi = useShepardApi(SearchApi);
   const showClosed = ref(false);
+  const error = ref<string | null>(null);
 
-  async function fetch() {
-    // Skip SSR — backendApiUrl is empty on the server side; this is
-    // personalised data that requires auth and must load client-side.
-    if (!import.meta.client) return;
-    loading.value = true;
-    error.value = null;
-    try {
-      const results = await collectionApi.value.getAllCollections({
-        page: 0,
-        size: 30,
-        orderBy: DataObjectAttributes.UpdatedAt,
-        orderDesc: true,
-      });
-      allCollections.value = results;
-    } catch (e) {
-      handleError(e, "fetching recent collections");
-      error.value = "Could not load collections.";
-    } finally {
-      loading.value = false;
-    }
-  }
+  const { data, pending, refresh } = useAsyncData(
+    "recent-collections",
+    async () => {
+      error.value = null;
+      try {
+        const result = await searchApi.value.searchCollections({
+          collectionSearchBody: { searchParams: { query: "" } },
+          page: 0,
+          size: 6,
+          orderBy: BasicCollectionAttributes.UpdatedAt,
+          orderDesc: true,
+        });
+        return result.results ?? [];
+      } catch (e) {
+        handleError(e, "fetching recent collections");
+        error.value = "Could not load collections.";
+        return [];
+      }
+    },
+    { default: () => [] as Collection[] },
+  );
 
-  fetch();
+  const allCollections = computed(() => data.value ?? []);
+  const loading = computed(() => pending.value);
 
   const hasClosedCollections = computed(() =>
     allCollections.value.some(isClosedCollection),
@@ -66,6 +73,6 @@ export function useFetchRecentCollections() {
     showClosed,
     loading,
     error,
-    refetch: fetch,
+    refetch: refresh,
   };
 }
