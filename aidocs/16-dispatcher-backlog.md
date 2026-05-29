@@ -113,6 +113,7 @@ Status legend:
 | J1d | Edit history via append-only `LabJournalEntryRevision` sibling node. | — | M | **done** | `LabJournalEntryRevision` entity + `LabJournalEntryRevisionDAO.findByEntry()` + `LabJournalHistoryRest` (`GET /v2/lab-journal/{entryAppId}/history`) + `LabJournalRevisionIO`. Revision created in `LabJournalEntryService.updateLabJournalEntry` before content is overwritten (skips no-op edits). `V39__Add_appId_constraint_LabJournalEntryRevision.cypher`. 13 unit tests (8 REST + 5 DAO/entity). |
 | J1e | (deferred) Server-side `nbconvert` for very large notebooks. | — | M | parked | When notebook size becomes a real perf gap. |
 | J1f | (deferred) Live kernel via JupyterHub bridge. | — | XL | parked | Out of scope; mentioned only for completeness. |
+| J2 | JupyterHub integration plugin — umbrella (J2a–J2d). J2a = J1e (admin link-out + plugin sidecar, **shipped** 2026-05-29 in `shepard-plugin-jupyter`). J2b = live kernel spawn via JupyterHub bridge. J2c = result writeback from kernel to DataObject. J2d = Notebook-as-DataObject (kernel as versioned payload). | issues #60 | L | **J2a shipped** (J1e); J2b–J2d queued | J1e provided the admin link-out + plugin sidecar (J2a). Remaining J2b–J2d work is the full live-kernel integration. |
 | G1 | Git integration — umbrella | user request | M | **design done** | `aidocs/workflows/38-git-integration-design.md`. New `GitReference` payload-kind. Three modes: loose link / tracked / pinned. Per-host adapters (GitLab/GitHub/Gitea). All endpoints under `/v2/`. Sub-IDs G1a–G1f below. |
 | G1a | `GitReference` (mode a, loose link) + Neo4j model + `V19__Add_appId_constraint_GitReference.cypher` + `/v2/data-objects/{appId}/git-references` CRUD. UI renders as clickable link. | — | S | **done** | 20 new tests (`GitReferenceTest` 3 + `GitReferenceRestTest` 17 covering 401/403/404/cross-DataObject-leak-guard/missing-DataObject-defensive). Mode-(a) fields shipped: `repoUrl` (required), `ref`, `path`. Mode-(b)/(c) fields (`sha`, `resolvedSha`, `resolvedAtMillis`) scaffolded on the entity so G1b/c don't reshape the node label; surfaced as read-only-null on the wire. Migration number bumped from the design's `V14` to `V19` (V14 was already taken by C3 orphan-permissions backfill). |
 | G1b | Mode (b) tracked-artifact + `GitLabRestClient` adapter. Reads user's `git.pat` (`aidocs/36 §3.2`); inline preview for markdown / source files; `PT5M` cache per `(user, repoUrl, ref, path)`. | — | M | **done** | This PR. New `GitReferenceMode` enum + `GitLabRestClient` (Java 21 HttpClient) + `GitArtifactCache` (Quarkus Caffeine, per-user×repo×ref×path, PT5M) + new `GET .../preview` endpoint. `GitAdapter` interface + `GitAdapterRegistry` seam for G1d. `GitCredentialService` over G1-cred DAO. `V26` migration backfills `mode=LOOSE_LINK` (renumbered from V25 since A5a took V25). 51 new tests; coverage 92.3% on new code. ADR-0021 records the GitLab-first decision + adapter-seam shape. |
@@ -1701,3 +1702,19 @@ SSOT: [`aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md`](a
 | SEMA-V6-FUTURE-MULTI-SUBJECT | First-class multi-subject annotations via `:DefectGroup`-style intermediary | L | future (v2+) | §14 #8 |
 | SEMA-V6-FUTURE-SHACL-STRICT | SHACL strict-mode validation + qualifiers/references + temporal-validity UI | L | future (v2; gated on SHACL substrate per synthesis §3 T1) | §13 v2; couples to `aidocs/semantics/95` |
 | SEMA-V6-FUTURE-SPATIAL-ANNOT | Annotorious integration (spatial annotations on images/3D viewports) tied to SPATIAL-V6 brush views | L | future (v2; pairs with `aidocs/data/90`) | §2 row "Annotorious — defer"; couples to SPATIAL-V6 |
+
+## J1e-PLUGIN-REFACTOR — relocate admin JupyterHub link-out to `shepard-plugin-jupyter`
+
+J1e (admin-configurable JupyterHub link-out gate) shipped initially as in-tree code under
+`backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/`. This section tracks the PR series
+that refactored it to `plugins/jupyter/` (`shepard-plugin-jupyter`), moving backend + CLI
+out of core while keeping the same `/v2/admin/jupyter/config` endpoint path.
+
+| PR | Description | Size | Status | Notes |
+|---|---|---|---|---|
+| J1e-PR-01 | Move `JupyterConfig` Neo4j entity + DAO + V__migration to `plugins/jupyter/` | S | **✓ done** | Plugin backend skeleton established; migration file carried to plugin resources. |
+| J1e-PR-02 | Move `JupyterAdminRest` (`GET/PATCH /v2/admin/jupyter/config`) + `JupyterConfigIO` to `plugins/jupyter/`; wire `JupyterPluginManifest` + `META-INF/services` entry | S | **✓ done** | Endpoint path unchanged — byte-compatible with any caller on `/v2/admin/jupyter/config`. |
+| J1e-PR-03 | Move `JupyterAdminCommand` CLI verb (`shepard-admin jupyter {status,set-url}`) to `plugins/jupyter/cli/`; register via `AdminCliCommandProvider` SPI (PM1d pattern) | S | **✓ done** | CLI UX byte-identical; `shepard-admin jupyter` works via plugin ServiceLoader. |
+| J1e-PR-04 | Frontend: update `JupyterAdminPane.vue` admin UI + `DataObjectNotebooksPane.vue` fallback-to-instance-url logic to consume `GET /v2/admin/jupyter/config` | S | queued | Admin pane reads instance URL; DataObject notebooks panel falls back to instance URL when `editor.preferredJupyter` unset. |
+| J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | **✓ done (2026-05-29)** | Move J1e from "core" column to "plugin" column. |
+| J1e-PR-09 | `aidocs/16` J2 umbrella row + this status table | XS | **✓ done (2026-05-29)** | J2 row added after J1f; J1e-PLUGIN-REFACTOR section created. |

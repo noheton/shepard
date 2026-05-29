@@ -485,7 +485,14 @@ Mid-horizon:
   button that opens the researcher's preferred JupyterHub URL (stored in user
   preferences as `editor.preferredJupyter`). **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
-  versions of a note so researchers can recover earlier drafts.
+  versions of a note so researchers can recover earlier drafts. **J1e shipped
+  (now in `shepard-plugin-jupyter`)** — instance-wide JupyterHub link-out
+  gate: admins configure the canonical JupyterHub URL at runtime via
+  `GET/PATCH /v2/admin/jupyter/config` (`:JupyterConfig` singleton); the
+  per-user `editor.preferredJupyter` preference falls back to the instance
+  default when unset. Backend + CLI parity relocated to `plugins/jupyter/` via
+  J1e-PR-01 through J1e-PR-03; replaces the earlier per-user-only preference
+  model. Frontend deep link (J1e-PR-04) queued.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
