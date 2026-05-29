@@ -83,7 +83,34 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
       errorObject.message = errorString.replace(/^"|"$/g, "");
     }
   }
-  return errorObject;
+  return humanizeIdError(errorObject);
+}
+
+/**
+ * UX-WALK-2026-05-29-04: Transform backend `ID ERROR` exceptions into
+ * user-friendly messages before they reach the toast.
+ *
+ * The backend emits `{ exception: "ID ERROR", message: "Collection with id 19
+ * is null or deleted" }` when a Neo4j node is missing or the caller has no
+ * access. This leaks a substrate-internal integer ID that means nothing to an
+ * end user. Replace both fields with friendly copy; the backend continues
+ * logging the raw detail.
+ */
+export function humanizeIdError(e: ErrorType): ErrorType {
+  if (!/^ID ERROR$/i.test(e.exception ?? "")) return e;
+  const msg = e.message ?? "";
+  let friendly: string;
+  if (/collection/i.test(msg)) {
+    friendly =
+      "This collection isn't available — it may have been deleted or you may not have access.";
+  } else if (/dataobject/i.test(msg)) {
+    friendly =
+      "This data object isn't available — it may have been deleted or you may not have access.";
+  } else {
+    friendly =
+      "This item isn't available — it may have been deleted or you may not have access.";
+  }
+  return { ...e, exception: "", message: friendly };
 }
 
 /**

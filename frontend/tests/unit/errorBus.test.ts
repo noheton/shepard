@@ -11,10 +11,12 @@
  * stacking on pages with multiple simultaneous fetches.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { ErrorType } from "~/utils/errorBus";
 
 let handleError: typeof import("~/utils/errorBus").handleError;
 let onError: typeof import("~/utils/errorBus").onError;
 let _resetDedupStateForTests: typeof import("~/utils/errorBus")._resetDedupStateForTests;
+let humanizeIdError: typeof import("~/utils/errorBus").humanizeIdError;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -23,6 +25,7 @@ beforeEach(async () => {
   onError = mod.onError;
   _resetDedupStateForTests = mod._resetDedupStateForTests;
   _resetDedupStateForTests();
+  humanizeIdError = mod.humanizeIdError;
 });
 
 afterEach(() => {
@@ -51,6 +54,58 @@ function buildResponseError(status: number, bodyText = ""): Error {
   };
   return err;
 }
+
+// ---------------------------------------------------------------------------
+// humanizeIdError unit tests (UX-WALK-2026-05-29-04)
+// ---------------------------------------------------------------------------
+
+function makeError(exception: string, message: string, status = 404): ErrorType {
+  return { status, exception, message };
+}
+
+describe("humanizeIdError — ID ERROR transformation", () => {
+  it('maps "Collection with id N is null or deleted" to a friendly collection message', async () => {
+    const input = makeError("ID ERROR", "Collection with id 7 is null or deleted");
+    const result = humanizeIdError(input);
+    expect(result.exception).toBe("");
+    expect(result.message).toContain("collection");
+    expect(result.message).not.toMatch(/\bid \d+\b/);
+  });
+
+  it('maps "DataObject with id N is null or deleted" to a friendly data object message', async () => {
+    const input = makeError("ID ERROR", "DataObject with id 3 is null or deleted");
+    const result = humanizeIdError(input);
+    expect(result.exception).toBe("");
+    expect(result.message).toContain("data object");
+    expect(result.message).not.toMatch(/\bid \d+\b/);
+  });
+
+  it("maps an unknown entity ID ERROR to the generic friendly message", async () => {
+    const input = makeError("ID ERROR", "Foo with id 99 is null or deleted");
+    const result = humanizeIdError(input);
+    expect(result.exception).toBe("");
+    expect(result.message).toContain("isn't available");
+    expect(result.message).not.toMatch(/\bid \d+\b/);
+  });
+
+  it("passes through errors whose exception is not ID ERROR unchanged", async () => {
+    const input = makeError("Not Found", "Collection with id 7 is null or deleted");
+    const result = humanizeIdError(input);
+    expect(result).toEqual(input);
+  });
+
+  it("passes through ordinary errors unchanged", async () => {
+    const input = makeError("Internal Server Error", "Something went wrong", 500);
+    const result = humanizeIdError(input);
+    expect(result).toEqual(input);
+  });
+
+  it("preserves the original status code", async () => {
+    const input = makeError("ID ERROR", "Collection with id 1 is null or deleted", 404);
+    const result = humanizeIdError(input);
+    expect(result.status).toBe(404);
+  });
+});
 
 describe("handleError — suppression rules", () => {
   it("suppresses AbortError (DOMException)", async () => {
