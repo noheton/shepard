@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 46 |
+| `fragment` | 47 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 108 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 70 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **391** |
+| **total docs** | **392** |
 | **UNTAGGED** | **0** |
 
-## fragment (46)
+## fragment (47)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -53,6 +53,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-16.md`](agent-findings/dispatcher-runs/2026-05-29-16.md) | Dispatcher run — 2026-05-29 16:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-17.md`](agent-findings/dispatcher-runs/2026-05-29-17.md) | Dispatcher run — 2026-05-29 17:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-18.md`](agent-findings/dispatcher-runs/2026-05-29-18.md) | Dispatcher run — 2026-05-29 18:xx UTC | 2026-05-29 | 2026-05-29 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-19.md`](agent-findings/dispatcher-runs/2026-05-29-19.md) | Dispatcher run — 2026-05-29 19:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -195,7 +196,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
-| [`aidocs/integrations/117-krl-interpreter.md`](integrations/117-krl-interpreter.md) | 117 — KRL interpreter (KRL-INTERPRETER-01) | 2026-05-29 | — |
+| [`aidocs/integrations/117-krl-interpreter.md`](integrations/117-krl-interpreter.md) | 117 — KRL interpreter (KRL-INTERPRETER-01) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
