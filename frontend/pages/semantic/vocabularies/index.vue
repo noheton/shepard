@@ -18,6 +18,20 @@ interface VocabularyRow {
 
 useHead({ title: "Vocabularies | semantic | shepard" });
 
+// TOOLS-CONTEXT-{COLL,DO}-VOCAB — when arriving from an in-context Tools
+// menu the URL carries `?usedBy=<entityAppId>&scope=collection|data-object`.
+// The backend filter ("show only vocabularies whose terms are referenced
+// by this entity") is queued as TOOLS-CONTEXT-VOCAB-BACKEND-1; until it
+// ships we render a banner explaining that the filter is pending so the
+// user understands why the full list is shown.
+const route = useRoute();
+const usedByAppId = computed<string | null>(() =>
+  typeof route.query.usedBy === "string" ? route.query.usedBy : null,
+);
+const usedByScope = computed<string | null>(() =>
+  typeof route.query.scope === "string" ? route.query.scope : null,
+);
+
 const vocabularies = ref<VocabularyRow[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
@@ -67,6 +81,21 @@ onMounted(loadVocabularies);
         semantic-annotation picker.
       </p>
     </div>
+    <v-alert
+      v-if="usedByAppId"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+      prepend-icon="mdi-filter-outline"
+      data-testid="vocab-usedby-banner"
+    >
+      Filter pending: requested vocabularies used by
+      {{ usedByScope === "collection" ? "Collection" : "DataObject" }}
+      <code>{{ usedByAppId }}</code>. The backend filter (TOOLS-CONTEXT-VOCAB-BACKEND-1)
+      is queued — full inventory shown for now.
+    </v-alert>
+
     <v-progress-linear v-if="isLoading" indeterminate />
     <v-alert v-if="error" type="error" variant="tonal" class="mb-3">
       {{ error }}

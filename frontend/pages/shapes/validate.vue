@@ -8,6 +8,21 @@ import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderIm
 
 useHead({ title: "SHACL playground | shepard" });
 
+// TOOLS-CONTEXT-DO-SHACL — when navigated from a DataObject detail
+// page the URL carries `?focusAppId=<doAppId>&scope=data-object`. The
+// auto-load of the DataObject's RDF + its attached template's SHACL
+// shape graph is queued as SHAPES-V-PREFILL-1 (needs both the
+// :CREATED_FROM_TEMPLATE edge surfaced via REST and the SHACL-payload
+// endpoint). Until then the user pastes Turtle manually; this banner
+// signals the intent so they understand why both textareas are empty.
+const route = useRoute();
+const focusAppId = computed<string | null>(() =>
+  typeof route.query.focusAppId === "string" ? route.query.focusAppId : null,
+);
+const focusScope = computed<string | null>(() =>
+  typeof route.query.scope === "string" ? route.query.scope : null,
+);
+
 const dataGraph = ref<string>(
   `@prefix ex: <http://example.org/> .
 ex:alice ex:age 30 .`,
@@ -84,6 +99,21 @@ async function validate() {
         <code>POST /v2/shapes/validate</code>.
       </p>
     </div>
+    <v-alert
+      v-if="focusAppId"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+      prepend-icon="mdi-tools"
+      data-testid="shacl-focus-banner"
+    >
+      Validating against {{ focusScope === "collection" ? "Collection" : "DataObject" }}
+      <code>{{ focusAppId }}</code>. Auto-load of the entity's RDF +
+      attached template's SHACL is queued (SHAPES-V-PREFILL-1) — paste
+      both graphs below for now.
+    </v-alert>
+
     <v-row>
       <v-col cols="12" md="6">
         <v-textarea

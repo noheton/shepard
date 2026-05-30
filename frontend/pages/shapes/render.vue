@@ -527,6 +527,17 @@ const canRender = computed(() =>
 onMounted(() => {
   const q = useRoute().query;
 
+  // TOOLS-CONTEXT-DO-RENDER — when navigated from the in-context Tools
+  // menu on a DataObject detail page the URL carries
+  // `?focusShepardId=<doAppId>&scope=data-object`. Prefill the form's
+  // focusShepardId field so the user only has to enter the templateAppId
+  // and hit "Fetch bindings". Doesn't auto-fetch (the templateAppId is
+  // still missing — template-detection is queued as
+  // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1).
+  if (q.focusShepardId && !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography") {
+    focusShepardId.value = String(q.focusShepardId);
+  }
+
   // URDF renderer — different bootstrap shape: ?renderer=urdf&urdfUrl=…
   if (q.renderer === "urdf" || (q.urdfUrl && !q.roles)) {
     renderer.value     = "urdf";

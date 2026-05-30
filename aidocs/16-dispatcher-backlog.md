@@ -3026,15 +3026,20 @@ ship. Pure-global is `alpha`.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| **TOOLS-CONTEXT-COLL-SPARQL** | "Query this Collection's graph" button on Collection detail page → opens `/semantic/sparql?repoAppId=internal&prefill=<scoped-query>` with a query template that filters to this Collection's annotations. | S | queued | Pre-populates the SPARQL repo + scoped WHERE clause. |
-| **TOOLS-CONTEXT-DO-SPARQL** | "Query this DataObject's annotations" button on DataObject detail → same pattern, scoped to the DataObject's subgraph. | S | queued | Sibling of -COLL-SPARQL. |
-| **TOOLS-CONTEXT-COLL-VOCAB** | "Show terms used by this Collection" on Collection detail → opens the vocabulary browser filtered to terms referenced in this Collection's annotations. | S | queued | Needs vocab-browser to accept a `usedBy=<collAppId>` filter. |
-| **TOOLS-CONTEXT-DO-VOCAB** | Same for DataObject detail. | S | queued | |
-| **TOOLS-CONTEXT-SNAP-COMPARE** | "Compare with…" row action in `SnapshotsPane.vue` → opens `/snapshots/diff?a=<thisSnapId>&b=<picker>`. Replaces the standalone SNAPSHOTS-DIFF-NAV-01 row's UX. | S | queued | Folds in SNAPSHOTS-DIFF-NAV-01. |
-| **TOOLS-CONTEXT-DO-SHACL** | "Validate against shape" on DataObject detail (when a `:ShepardTemplate` is attached) → opens shape validator pre-filled with the DataObject's RDF + the template's SHACL. | M | queued | Needs the validator to accept entity-appId-driven inputs. |
-| **TOOLS-CONTEXT-DO-RENDER** | "Render this view" on DataObject detail (when a view-recipe template is attached) → opens `/shapes/render?templateAppId=…&focusShepardId=<doAppId>`. | M | queued | Reuses the existing `ViewRecipeBuilderDialog` plumbing. |
+| **TOOLS-CONTEXT-COLL-SPARQL** | "Query this Collection's graph" button on Collection detail page → opens `/semantic/sparql?repoAppId=internal&prefill=<scoped-query>` with a query template that filters to this Collection's annotations. | S | shipped | Shipped via `EntityToolsMenu.vue` on Collection detail; prefills `?query=` + `?focusAppId=` + `?scope=collection`. Source: `frontend/utils/toolsContext.ts` + page wiring. |
+| **TOOLS-CONTEXT-DO-SPARQL** | "Query this DataObject's annotations" button on DataObject detail → same pattern, scoped to the DataObject's subgraph. | S | shipped | Shipped via `EntityToolsMenu.vue` on DataObject detail. |
+| **TOOLS-CONTEXT-COLL-VOCAB** | "Show terms used by this Collection" on Collection detail → opens the vocabulary browser filtered to terms referenced in this Collection's annotations. | S | shipped | Frontend route + "filter pending" banner shipped; backend filter queued as TOOLS-CONTEXT-VOCAB-BACKEND-1 below. |
+| **TOOLS-CONTEXT-DO-VOCAB** | Same for DataObject detail. | S | shipped | Same shape as -COLL-VOCAB. |
+| **TOOLS-CONTEXT-SNAP-COMPARE** | "Compare with…" row action in `SnapshotsPane.vue` → opens `/snapshots/diff?a=<thisSnapId>&b=<picker>`. Replaces the standalone SNAPSHOTS-DIFF-NAV-01 row's UX. | S | shipped | Per-row Share-out shortcut sits beside the in-pane Diff dialog; both stay. |
+| **TOOLS-CONTEXT-DO-SHACL** | "Validate against shape" on DataObject detail (when a `:ShepardTemplate` is attached) → opens shape validator pre-filled with the DataObject's RDF + the template's SHACL. | M | partially-shipped | Button shipped; auto-load of RDF + SHACL queued as SHAPES-V-PREFILL-1 below. Button currently routes to the validator with a "paste graphs" banner. |
+| **TOOLS-CONTEXT-DO-RENDER** | "Render this view" on DataObject detail (when a view-recipe template is attached) → opens `/shapes/render?templateAppId=…&focusShepardId=<doAppId>`. | M | partially-shipped | Prefills `focusShepardId` on the render form; template-detection queued as TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 below. |
 | **TOOLS-CONTEXT-FILEREF-SCENE** | Already filed as SCENEGRAPH-NAV-02 — "Open in scene-graph editor" on URDF / RDK FileReference detail. | S | queued | Cross-reference only; lives under SCENEGRAPH-NAV-*. |
+| **TOOLS-CONTEXT-VOCAB-BACKEND-1** | Backend filter for `GET /v2/semantic/vocabularies?usedBy=<entityAppId>` — narrow to vocabularies whose terms are referenced by the entity's `:SemanticAnnotation` set. Needed before the vocab-browser "filter pending" banner can disappear. | M | queued | Surfaced by the in-context button shipment (2026-05-30). |
+| **TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1** | Surface the `:CREATED_FROM_TEMPLATE` edge (and the `_createdFromTemplateAppId` Neo4j property) via REST on DataObject responses so the frontend can render the DO-SHACL / DO-RENDER buttons CONDITIONALLY (currently always visible). Today the buttons route to the destination tool with the appId pre-filled; the user picks the template manually. | S | queued | Source: `ShepardTemplateDAO.recordUsageReportingCreation`. |
+| **SHAPES-V-PREFILL-1** | Auto-load a DataObject's RDF + its attached template's SHACL into `/shapes/validate` when arriving with `?focusAppId=<doAppId>`. Needs an entity-RDF endpoint AND template-detection (TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1). Banner already in place; this is the upgrade path. | M | queued | Surfaced by TOOLS-CONTEXT-DO-SHACL shipment. |
 
-These rows land **after** TOOLS-NAV-01 + SCENEGRAPH-NAV-01 + -02 ship so
-the global menu + scene-graphs list exist as targets. Dispatch in a
-second wave once the worktree from 2026-05-30 merges.
+These rows landed via worktree `feat/tools-context-buttons` (2026-05-30).
+Four-commit shape: per-entity-group button wiring + destination-page
+prefill consumers. The global Tools menu (TOOLS-NAV-01) remains the
+fallback path; the in-context Tools menu is the primary surface per
+the "tool entry points are in-context first" rule.
