@@ -23,6 +23,7 @@ import {
   mapVideoReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
+import { buildDataObjectSparqlUrl } from "~/utils/dataObjectSparqlLink";
 
 definePageMeta({ layout: "collection" });
 
@@ -538,6 +539,19 @@ async function saveEmbargoEdit() {
                   @click="showAnnotationDialog = true"
                 >
                   Annotate
+                </v-btn>
+                <!-- TOOLS-CONTEXT-DO-SPARQL: deep-link to SPARQL playground pre-scoped
+                     to this DataObject's subgraph. Gated on appId presence. -->
+                <v-btn
+                  v-if="dataObject.appId"
+                  :to="buildDataObjectSparqlUrl(dataObject.appId)"
+                  density="comfortable"
+                  prepend-icon="mdi-database-search"
+                  size="small"
+                  variant="text"
+                  data-testid="query-annotations-sparql-btn"
+                >
+                  Query in SPARQL
                 </v-btn>
                 <!-- SEMA-V6-017: legacy "Add raw attribute" — advanced mode only,
                      with deprecation tooltip pointing at the §11 Phase 2/3 migration. -->
