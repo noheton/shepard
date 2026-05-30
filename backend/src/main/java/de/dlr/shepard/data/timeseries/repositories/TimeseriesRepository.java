@@ -135,10 +135,60 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
     }
   }
 
+  /**
+   * Delete all {@code timeseries_data_points} rows for a container via a single
+   * native SQL statement, BEFORE JPA removes the parent {@code timeseries} rows.
+   *
+   * <p><b>Why native SQL before JPQL?</b> The {@code timeseries_data_points} table is a
+   * TimescaleDB hypertable with compression enabled (policy: compress after 7 days,
+   * configured in V1.8.0). When JPA issues the JPQL
+   * {@code DELETE FROM TimeseriesEntity WHERE containerId = ?} below, Postgres fires
+   * the {@code ON DELETE CASCADE} on {@code timeseries_data_points.timeseries_id}.
+   * For compressed chunks the cascade forces chunk decompression before row-level
+   * deletion — an operation that consumes memory proportional to the compressed row
+   * count and fails with HTTP 500 on containers with more than ~100 K data points
+   * (TSDB-DDL-2 in aidocs/16).
+   *
+   * <p><b>This call</b> issues one native DELETE scoped to the container's timeseries IDs.
+   * TimescaleDB processes it chunk-by-chunk without decompressing all rows at once.
+   * After this returns, the ON DELETE CASCADE triggered by the subsequent JPQL DELETE
+   * finds zero {@code timeseries_data_points} rows and completes instantly.
+   *
+   * <p>The DELETE is idempotent: if the container has no data points the query deletes
+   * 0 rows and returns normally.
+   *
+   * @param containerId the numeric container id (FK on the {@code timeseries} table)
+   */
+  @Timed(value = "shepard.timeseries-data-point.delete-by-container")
+  public void deleteDataPointsByContainerId(long containerId) {
+    // TSDB-DDL-2: chunk-aware native DELETE to pre-empt JPA cascade decompression.
+    // Scoped to all timeseries_id values belonging to the container so TimescaleDB
+    // can handle compressed chunks without decompression overhead.
+    int dpRows = entityManager
+      .createNativeQuery(
+        "DELETE FROM timeseries_data_points " +
+        "WHERE timeseries_id IN (SELECT id FROM timeseries WHERE container_id = :containerId)"
+      )
+      .setParameter("containerId", containerId)
+      .executeUpdate();
+
+    Log.infof(
+      "TSDB-DDL-2 deleteDataPointsByContainerId: deleted %d data-point rows for container %d",
+      dpRows, containerId
+    );
+  }
+
   @Timed(value = "shepard.timeseries.delete")
   public void deleteByContainerId(long containerId) {
+    // TSDB-DDL-2: pre-delete data points via native SQL BEFORE this JPQL fires the
+    // ON DELETE CASCADE. Without this step, compressed TimescaleDB chunks must be
+    // decompressed before row-level deletion — an OOM-class failure on large containers.
+    deleteDataPointsByContainerId(containerId);
+
     // Bulk JPQL DELETE on primary table; ON DELETE CASCADE on channel_metadata.timeseries_id
     // propagates the deletion to channel_metadata rows automatically at the DB level.
+    // The timeseries_data_points cascade is a no-op here because deleteDataPointsByContainerId
+    // above already removed all rows.
     var rowCount = entityManager
       .createQuery("delete from TimeseriesEntity where containerId = :containerId")
       .setParameter("containerId", containerId)
