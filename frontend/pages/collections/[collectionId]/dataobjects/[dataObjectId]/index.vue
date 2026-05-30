@@ -14,6 +14,7 @@ import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
+import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
@@ -441,11 +442,21 @@ async function saveEmbargoEdit() {
               </a>
             </v-row>
             <v-row
-              v-if="dataObject.appId && isAllowedToEditCollection"
+              v-if="dataObject.appId"
               no-gutters
-              class="justify-end pb-2"
+              class="justify-end pb-2 ga-2 align-center"
             >
+              <!-- TOOLS-CONTEXT-DO-* — in-context Tools menu grouping the
+                   SPARQL query + vocabulary browser + SHACL validate +
+                   view-recipe render entry points. Visible to readers
+                   too; only the actions themselves require permissions
+                   (handled by destination pages). -->
+              <EntityToolsMenu
+                :app-id="dataObject.appId"
+                scope="data-object"
+              />
               <PublishButton
+                v-if="isAllowedToEditCollection"
                 entity-kind="data-objects"
                 :entity-app-id="dataObject.appId"
                 :entity-name="dataObject.name"
