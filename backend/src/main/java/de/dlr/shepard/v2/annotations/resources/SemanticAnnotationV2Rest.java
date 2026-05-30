@@ -14,6 +14,7 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.annotations.util.TurtleAnnotationSerializer;
 import io.quarkus.logging.Log;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
@@ -279,7 +280,7 @@ public class SemanticAnnotationV2Rest {
     Response gate = checkReadAccessForSubject(annotation.getSubjectAppId(), annotation.getSubjectKind(), caller);
     if (gate != null) return gate;
 
-    String turtle = buildTurtle(annotation);
+    String turtle = TurtleAnnotationSerializer.toTurtle(annotation);
     return Response.ok(turtle, "text/turtle").build();
   }
 
@@ -711,63 +712,6 @@ public class SemanticAnnotationV2Rest {
         "Caller '" + caller + "' lacks " + accessType.name() + " permission on the subject entity.");
     }
     return null;
-  }
-
-  // ─── Turtle export helper ─────────────────────────────────────────────────
-
-  /**
-   * Builds an OA-framed Turtle document for one annotation (§3.3 shape).
-   * Uses string templates — Apache Jena is in the pom but pulling in the full
-   * model API for a two-triple export adds more weight than the hand-rolled template.
-   */
-  private static String buildTurtle(SemanticAnnotation a) {
-    String subjectIri = shepardIri(a.getSubjectKind(), a.getSubjectAppId());
-    String predicateIri = nvl(a.getPropertyIRI(), "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate");
-    String annotationIri = "shepard:Annotation/" + nvl(a.getAppId(), "unknown");
-    String activityIri = blank(a.getSourceActivityAppId())
-      ? null
-      : "shepard:Activity/" + a.getSourceActivityAppId();
-
-    // object value
-    String objectValue = a.getValueIRI() != null
-      ? "<" + a.getValueIRI() + ">"
-      : "\"" + escapeTurtleLiteral(nvl(a.getValueName(), "")) + "\"";
-
-    StringBuilder sb = new StringBuilder();
-    sb.append("@prefix oa: <http://www.w3.org/ns/oa#> .\n");
-    sb.append("@prefix prov: <http://www.w3.org/ns/prov#> .\n");
-    sb.append("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n");
-    sb.append("@prefix sh: <http://www.w3.org/ns/shacl#> .\n");
-    sb.append("@prefix shepard: <https://shepard.dlr.de/v2/> .\n");
-    sb.append("\n");
-
-    // Flat triple (line 1 of §3.3)
-    sb.append("<").append(subjectIri).append("> <").append(predicateIri).append("> ").append(objectValue).append(" .\n");
-    sb.append("\n");
-
-    // OA-shaped annotation (lines 2-5 of §3.3)
-    sb.append("<").append(annotationIri).append("> a oa:Annotation ;\n");
-    sb.append("    oa:hasTarget <").append(subjectIri).append("> ;\n");
-    sb.append("    oa:hasBody [ rdf:value ").append(objectValue)
-      .append(" ; sh:path <").append(predicateIri).append("> ]");
-
-    if (activityIri != null) {
-      sb.append(" ;\n    prov:wasGeneratedBy <").append(activityIri).append(">");
-    }
-    sb.append(" .\n");
-
-    return sb.toString();
-  }
-
-  private static String shepardIri(String kind, String appId) {
-    if (blank(kind) || blank(appId)) {
-      return "https://shepard.dlr.de/v2/entities/" + nvl(appId, "unknown");
-    }
-    return "https://shepard.dlr.de/v2/" + kind.toLowerCase() + "s/" + appId;
-  }
-
-  private static String escapeTurtleLiteral(String s) {
-    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
   }
 
   // ─── generic response helpers ─────────────────────────────────────────────
