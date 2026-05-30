@@ -2475,9 +2475,10 @@ still queued.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| #27-ARCHIVED-01 | Extend `Collection.status` + `*Container.status` enums with `ARCHIVED`. Additive; default-current is unchanged. | XS | queued | Mirrors COMP-NCR-STATUS shape; new enum value lands in `Status.java` + each Container subtype. |
+| #27-CONTAINER-STATUS-01 | Add nullable `status` String field to `BasicContainer` + `BasicContainerIO` (DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED). Add `ContainerStatusGuard` class mirroring `StatusTransitionGuard` pattern. Frontend display-only status chip on all container detail pages. Pre-work for #27-ARCHIVED-01 Container half + #27-ARCHIVED-02/03. | XS | **done** | Shipped: `BasicContainer.status` nullable field, `BasicContainerIO.status` with `@JsonInclude(NON_NULL)`, `ContainerStatusGuard` package-public class in `de.dlr.shepard.common.container.services`, 22 unit tests in `ContainerStatusGuardTest`. Frontend: `ContainerTitleAndMetadataDisplay` gains `status` prop + `StatusChip` display; all four container detail pages (files, timeseries, structureddata, spatialdata) pass the field. backend-client TypeScript models updated (BasicContainer, FileContainer, TimeseriesContainer, StructuredDataContainer, SpatialDataContainer). |
+| #27-ARCHIVED-01 | Extend `Collection.status` + `*Container.status` enums with `ARCHIVED`. Additive; default-current is unchanged. | XS | queued | Partially pre-worked by #27-CONTAINER-STATUS-01 (Container status field + guard now exists). Remaining: Collection status + `ARCHIVED` as accepted guard value (guard already accepts `ARCHIVED` in `VALID_STATUSES`). |
 | #27-ARCHIVED-02 | RBAC gate on `READY` → `ARCHIVED` transition (only Owner/instance-admin) + `ARCHIVED` → any (prune-only, no resurrection). | S | queued | Pairs with the PermissionsService isWritable check; PATCH endpoint adds an explicit 409 on resurrection attempt. |
-| #27-ARCHIVED-03 | Frontend status chip + "Archive collection / container" action under the kebab menu on detail pages. | XS | queued | Single-line addition to the status enum mapper; chip colour = grey (frozen). |
+| #27-ARCHIVED-03 | Frontend status chip + "Archive collection / container" action under the kebab menu on detail pages. | XS | queued | Display-only chip shipped by #27-CONTAINER-STATUS-01; this row adds the edit/transition action. |
 
 ## Open queue snapshot 2026-05-29
 

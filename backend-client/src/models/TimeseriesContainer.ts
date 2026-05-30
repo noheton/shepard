@@ -63,11 +63,19 @@ export interface TimeseriesContainer {
      */
     name: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof TimeseriesContainer
      */
     readonly type: ContainerType;
+    /**
+     * #27-CONTAINER-STATUS-01 — container lifecycle status.
+     * Nullable; absent when null (additive field, pre-feature containers have no status).
+     * Valid values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED.
+     * @type {string}
+     * @memberof TimeseriesContainer
+     */
+    readonly status?: string | null;
 }
 
 
@@ -103,10 +111,11 @@ export function TimeseriesContainerFromJSONTyped(json: any, ignoreDiscriminator:
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
-export function TimeseriesContainerToJSON(value?: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'> | null): any {
+export function TimeseriesContainerToJSON(value?: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'status'> | null): any {
     if (value == null) {
         return value;
     }

@@ -139,6 +139,7 @@ useHead({
                 :n-items="containerAccessor.measurements.value.length"
                 :name="containerAccessor.container.value.name"
                 :type-label="'Timeseries Container'"
+                :status="containerAccessor.container.value.status"
               >
                 <template #buttons>
                   <UploadFilesButton

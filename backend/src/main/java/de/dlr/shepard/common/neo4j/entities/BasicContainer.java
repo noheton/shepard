@@ -18,6 +18,19 @@ public class BasicContainer extends BasicEntity implements HasPermissions {
   private Permissions permissions;
 
   /**
+   * #27-CONTAINER-STATUS-01 — lifecycle status of this container.
+   *
+   * <p>Nullable (additive field — pre-feature containers have no status).
+   * Valid values: {@code DRAFT}, {@code IN_REVIEW}, {@code READY},
+   * {@code PUBLISHED}, {@code ARCHIVED}.
+   *
+   * <p>Transition rules enforced by
+   * {@link de.dlr.shepard.common.container.services.ContainerStatusGuard}.
+   * Write path wired in #27-ARCHIVED-02.
+   */
+  private String status;
+
+  /**
    * For testing purposes only
    *
    * @param id identifies the entity

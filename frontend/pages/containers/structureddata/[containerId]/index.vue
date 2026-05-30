@@ -134,6 +134,7 @@ useHead({
                 :n-items="containerAccessor.items.value.length"
                 :name="containerAccessor.container.value.name"
                 :type-label="'Structured Data Container'"
+                :status="containerAccessor.container.value.status"
               >
                 <template #buttons>
                   <UploadFilesButton

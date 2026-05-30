@@ -74,6 +74,14 @@ export interface StructuredDataContainer {
      * @memberof StructuredDataContainer
      */
     readonly oid: string;
+    /**
+     * #27-CONTAINER-STATUS-01 — container lifecycle status.
+     * Nullable; absent when null (additive field, pre-feature containers have no status).
+     * Valid values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED.
+     * @type {string}
+     * @memberof StructuredDataContainer
+     */
+    readonly status?: string | null;
 }
 
 
@@ -111,10 +119,11 @@ export function StructuredDataContainerFromJSONTyped(json: any, ignoreDiscrimina
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
-export function StructuredDataContainerToJSON(value?: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'> | null): any {
+export function StructuredDataContainerToJSON(value?: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'status'> | null): any {
     if (value == null) {
         return value;
     }
