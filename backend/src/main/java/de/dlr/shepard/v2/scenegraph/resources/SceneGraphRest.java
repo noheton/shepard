@@ -12,6 +12,7 @@ import de.dlr.shepard.v2.scenegraph.io.FrameIO;
 import de.dlr.shepard.v2.scenegraph.io.JointIO;
 import de.dlr.shepard.v2.scenegraph.io.PatchFrameRequestIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphIO;
+import de.dlr.shepard.v2.scenegraph.io.SceneGraphListIO;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService.ProvenanceContext;
 import io.quarkus.logging.Log;
@@ -19,8 +20,10 @@ import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
@@ -29,6 +32,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -47,6 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <h2>Endpoint set</h2>
  * <pre>
+ *   GET    /v2/scene-graphs                               — paginated list (SCENEGRAPH-LIST-1)
  *   GET    /v2/scene-graphs/{appId}                       — full scene tree
  *                                                            (Accept: application/ld+json for JSON-LD)
  *   GET    /v2/scene-graphs/{appId}/export.urdf           — URDF XML export
@@ -99,6 +104,38 @@ public class SceneGraphRest {
   @Inject UrdfExporter urdfExporter;
 
   @Context jakarta.ws.rs.container.ContainerRequestContext requestContext;
+
+  // ── GET list ──────────────────────────────────────────────────────────────
+
+  @GET
+  @Operation(
+    summary = "List scene graphs (paginated).",
+    description =
+      "Returns a page of `:DigitalTwinScene` rows with per-row frame and joint " +
+      "counts. The page is ordered by `updatedAt DESC, appId ASC` so the most " +
+      "recently-touched scenes appear first; ties break deterministically.\n\n" +
+      "Pagination: omit `page` / `size` to get the first 50; the server caps " +
+      "`size` at 200 to avoid unbounded result sets. The response envelope " +
+      "carries `items[]`, `total`, `page`, and `size`.\n\n" +
+      "Auth: any authenticated user. There is no per-scene permission gate " +
+      "yet (see `SCENEGRAPH-PERMS-1` in the class Javadoc); every authenticated " +
+      "caller sees the complete scene catalogue."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Page of scene graphs (may be empty).",
+    content = @Content(schema = @Schema(implementation = SceneGraphListIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response list(
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size
+  ) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 200);
+    SceneGraphService.SceneListPage src = sceneGraphService.listScenes(safePage, safeSize);
+    return Response.ok(new SceneGraphListIO(src, safePage, safeSize)).build();
+  }
 
   // ── GET scene ─────────────────────────────────────────────────────────────
 

@@ -99,6 +99,26 @@ public class DigitalTwinScene implements HasAppId {
   @Property("rootFrameAppId")
   private String rootFrameAppId;
 
+  /**
+   * SCENEGRAPH-LIST-1 — epoch-millis timestamp set on first save.
+   * Nullable per the additive-schema rule: pre-SCENEGRAPH-LIST-1 rows
+   * carry no value and the list endpoint returns {@code null} for them.
+   * Written by {@code SceneGraphService.saveScene} only when currently
+   * unset, so subsequent updates do not clobber the creation stamp.
+   */
+  @Property("createdAt")
+  private Long createdAt;
+
+  /**
+   * SCENEGRAPH-LIST-1 — epoch-millis timestamp set on every save.
+   * Nullable per the additive-schema rule. Refreshed by
+   * {@code SceneGraphService.saveScene} on each persist so the list
+   * endpoint can report "most recently touched" without an N+1 walk
+   * over the {@code :Activity} chain.
+   */
+  @Property("updatedAt")
+  private Long updatedAt;
+
   /** For testing purposes only. */
   public DigitalTwinScene(long id) {
     this.id = id;

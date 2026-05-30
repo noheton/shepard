@@ -236,6 +236,66 @@ class SemanticSparqlRestTest {
     assertEquals(200, r.getStatus());
   }
 
+  // ─── C3 / task #244 — reserved "internal" alias ───────────────────────────
+
+  @Test
+  void get_internalAlias_resolvesToBootstrappedRepo_returns200() {
+    // The frontend playground defaults the repoAppId path-param to the
+    // literal "internal" string. The endpoint must resolve that to the
+    // bootstrapped INTERNAL repository via findInternal() — NOT call
+    // findByAppId("internal") (which would 404).
+    SemanticRepository bootstrapped = new SemanticRepository(99L);
+    bootstrapped.setType(SemanticRepositoryType.INTERNAL);
+    bootstrapped.setName("Built-in Semantic Store (n10s)");
+    when(dao.findInternal()).thenReturn(bootstrapped);
+
+    Response r = rest.queryGet(SemanticSparqlRest.INTERNAL_ALIAS, VALID_SELECT, sc);
+
+    assertEquals(200, r.getStatus());
+    assertEquals(FAKE_RESULTS_JSON, r.getEntity());
+  }
+
+  @Test
+  void get_internalAlias_uppercase_alsoResolves() {
+    // Case-insensitive — the alias is a UX nicety, not a wire-protocol token.
+    SemanticRepository bootstrapped = new SemanticRepository(99L);
+    bootstrapped.setType(SemanticRepositoryType.INTERNAL);
+    when(dao.findInternal()).thenReturn(bootstrapped);
+
+    Response r = rest.queryGet("INTERNAL", VALID_SELECT, sc);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void get_internalAlias_whenBootstrapMissing_returns404() {
+    // Before V49 has run (fresh install at first boot), there is no
+    // INTERNAL row yet. The alias resolves to null and 404 is the right
+    // shape — exactly like an unknown explicit appId.
+    when(dao.findInternal()).thenReturn(null);
+
+    Response r = rest.queryGet(SemanticSparqlRest.INTERNAL_ALIAS, VALID_SELECT, sc);
+    assertEquals(404, r.getStatus());
+    assertProblemJson(r, SemanticSparqlRest.PROBLEM_TYPE_NOT_FOUND, 404);
+  }
+
+  @Test
+  void get_explicitAppId_stillResolvesViaFindByAppId() {
+    // Non-alias path-params still use the canonical findByAppId() lookup.
+    stubRepo(SemanticRepositoryType.SPARQL, "http://fuseki.example.org/sparql");
+    Response r = rest.queryGet(REPO_APP_ID, VALID_SELECT, sc);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void get_nonExistentExplicitAppId_returns404() {
+    // Regression-pinning the original behaviour: an unknown explicit appId
+    // still 404s — the alias resolver does NOT swallow that case.
+    when(dao.findByAppId(eq("nonexistent-uuid"))).thenReturn(null);
+    Response r = rest.queryGet("nonexistent-uuid", VALID_SELECT, sc);
+    assertEquals(404, r.getStatus());
+    assertProblemJson(r, SemanticSparqlRest.PROBLEM_TYPE_NOT_FOUND, 404);
+  }
+
   // ─── helpers ──────────────────────────────────────────────────────────────
 
   private void stubRepo(SemanticRepositoryType type, String endpoint) {

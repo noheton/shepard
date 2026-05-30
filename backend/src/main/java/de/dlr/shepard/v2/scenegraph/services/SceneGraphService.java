@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -76,6 +77,27 @@ public class SceneGraphService {
   @Inject JointDAO jointDAO;
   @Inject ProvenanceService provenanceService;
 
+  /**
+   * SCENEGRAPH-LIST-1 — paginated page-result for {@code GET /v2/scene-graphs}.
+   * Carries the row count (for envelope {@code total}) and per-row frame and
+   * joint counts (for the list-item shape). All values come from a single
+   * Cypher round-trip so this scales without an N+1.
+   */
+  public record SceneListRow(
+    String appId,
+    String name,
+    String description,
+    String sourceFileAppId,
+    String rootFrameAppId,
+    Long createdAt,
+    Long updatedAt,
+    long frameCount,
+    long jointCount
+  ) {}
+
+  /** SCENEGRAPH-LIST-1 — page envelope (rows + total). */
+  public record SceneListPage(List<SceneListRow> rows, long total) {}
+
   // ── Reads ─────────────────────────────────────────────────────────────────
 
   /** Load a scene by appId; {@code null} if not found. Fresh session per call. */
@@ -89,6 +111,101 @@ public class SceneGraphService {
       1
     );
     return matches == null || matches.isEmpty() ? null : matches.iterator().next();
+  }
+
+  /**
+   * SCENEGRAPH-LIST-1 — paginated list of {@code :DigitalTwinScene} rows with
+   * per-row frame + joint counts. Matches the existing scaffold posture (see
+   * the class Javadoc on {@code SceneGraphRest}): no per-scene permission
+   * gate is applied — the entire scene catalogue is visible to every
+   * authenticated caller until {@code SCENEGRAPH-PERMS-1} ships.
+   *
+   * <p>Two Cypher round-trips: a count query for the envelope {@code total}
+   * and a page query that aggregates frame + joint counts in the same
+   * traversal so this scales without an N+1 walk over the {@code :HAS_FRAME}
+   * / {@code :HAS_JOINT} edges. Ordered by {@code updatedAt DESC, appId
+   * ASC} so "most recently touched" appears first; ties break deterministically.
+   *
+   * @param page zero-based page index (clamped to {@code >= 0}).
+   * @param size page size (clamped into {@code [1, 200]}).
+   * @return a {@link SceneListPage} with the rows for this page and the
+   *         total number of scenes (across all pages).
+   */
+  public SceneListPage listScenes(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 200);
+    long offset = (long) safePage * (long) safeSize;
+
+    Session live = NeoConnector.getInstance().getNeo4jSession();
+    if (live == null) return new SceneListPage(List.of(), 0L);
+
+    // 1 — total
+    long total = 0L;
+    try {
+      Result totalResult = live.query(
+        "MATCH (s:DigitalTwinScene) RETURN count(s) AS total", Map.of()
+      );
+      if (totalResult != null) {
+        for (Map<String, Object> row : totalResult.queryResults()) {
+          Object t = row.get("total");
+          if (t instanceof Number n) {
+            total = n.longValue();
+            break;
+          }
+        }
+      }
+    } catch (RuntimeException e) {
+      Log.warnf(e, "SCENEGRAPH list: count query failed");
+    }
+
+    // 2 — page with frame + joint counts (aggregated in one round-trip)
+    String cypher =
+      "MATCH (s:DigitalTwinScene) " +
+      "WITH s ORDER BY coalesce(s.updatedAt, 0) DESC, s.appId ASC SKIP $offset LIMIT $size " +
+      "OPTIONAL MATCH (s)-[:HAS_FRAME]->(f:CoordinateFrame) " +
+      "WITH s, count(DISTINCT f) AS frameCount " +
+      "OPTIONAL MATCH (s)-[:HAS_JOINT]->(j:Joint) " +
+      "RETURN s.appId AS appId, s.name AS name, s.description AS description, " +
+      "       s.sourceFileAppId AS sourceFileAppId, s.rootFrameAppId AS rootFrameAppId, " +
+      "       s.createdAt AS createdAt, s.updatedAt AS updatedAt, " +
+      "       frameCount AS frameCount, count(DISTINCT j) AS jointCount";
+    List<SceneListRow> rows = new ArrayList<>();
+    try {
+      Result result = live.query(
+        cypher, Map.of("offset", offset, "size", (long) safeSize)
+      );
+      if (result != null) {
+        for (Map<String, Object> row : result.queryResults()) {
+          rows.add(new SceneListRow(
+            asString(row.get("appId")),
+            asString(row.get("name")),
+            asString(row.get("description")),
+            asString(row.get("sourceFileAppId")),
+            asString(row.get("rootFrameAppId")),
+            asNullableLong(row.get("createdAt")),
+            asNullableLong(row.get("updatedAt")),
+            asLong(row.get("frameCount")),
+            asLong(row.get("jointCount"))
+          ));
+        }
+      }
+    } catch (RuntimeException e) {
+      Log.warnf(e, "SCENEGRAPH list: page query failed");
+    }
+
+    return new SceneListPage(rows, total);
+  }
+
+  private static String asString(Object v) {
+    return v == null ? null : v.toString();
+  }
+
+  private static long asLong(Object v) {
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
+  private static Long asNullableLong(Object v) {
+    return v instanceof Number n ? n.longValue() : null;
   }
 
   /** Load all frames in a scene (walks the :HAS_FRAME edge). */
@@ -361,6 +478,9 @@ public class SceneGraphService {
     if (live == null) {
       throw new IllegalStateException("Neo4j session unavailable — cannot persist :DigitalTwinScene");
     }
+    long now = System.currentTimeMillis();
+    if (scene.getCreatedAt() == null) scene.setCreatedAt(now);
+    scene.setUpdatedAt(now);
     live.save(scene, 1);
   }
 

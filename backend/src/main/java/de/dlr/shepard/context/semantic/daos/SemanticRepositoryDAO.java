@@ -59,6 +59,36 @@ public class SemanticRepositoryDAO extends GenericDAO<SemanticRepository> {
     return iter.hasNext() ? iter.next() : null;
   }
 
+  /**
+   * C3 / task #244 — resolve the bootstrapped {@code INTERNAL} repository.
+   *
+   * <p>The frontend SPARQL playground (N1f) defaults the repository
+   * selector to the string {@code "internal"} — both because that's the
+   * common-sense URL fragment for "talk to the in-process n10s store"
+   * and because the bootstrapped {@code :SemanticRepository {type:
+   * INTERNAL}} row (V49 migration) carries a freshly-minted UUID v7
+   * appId that no user can be expected to memorise. Looking up by
+   * {@code type = INTERNAL} is the right shape because the bootstrap
+   * row is unique by type (V49 uses {@code MERGE ON
+   * SemanticRepository {type: 'INTERNAL'}}).
+   *
+   * <p>Returns the bootstrapped INTERNAL repository, or {@code null} if
+   * none exists (e.g. during a fresh install before the V49 migration
+   * has run). Soft-deleted rows are excluded the same way
+   * {@link #findByAppId(String)} excludes them.
+   *
+   * @return the singleton INTERNAL repository, or {@code null}
+   */
+  public SemanticRepository findInternal() {
+    String query =
+      "MATCH " +
+      CypherQueryHelper.getObjectPart("r", "SemanticRepository", false) +
+      " WHERE r.type = 'INTERNAL' " +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of()).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
   private boolean matchName(SemanticRepository rep, String name) {
     return name == null || rep.getName().equalsIgnoreCase(name);
   }

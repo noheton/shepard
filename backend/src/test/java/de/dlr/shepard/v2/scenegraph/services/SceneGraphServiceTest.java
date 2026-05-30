@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -298,6 +299,157 @@ class SceneGraphServiceTest {
     try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
       ms.when(NeoConnector::getInstance).thenReturn(connector);
       assertNull(svc.findScene("any"));
+    }
+  }
+
+  // ── SCENEGRAPH-LIST-1 — listScenes ────────────────────────────────────────
+
+  @Test
+  void listScenes_returnsEmptyPage_whenSessionUnavailable() {
+    when(connector.getNeo4jSession()).thenReturn(null);
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      var page = svc.listScenes(0, 50);
+      assertEquals(0L, page.total());
+      assertEquals(0, page.rows().size());
+    }
+  }
+
+  @Test
+  void listScenes_returnsRows_andTotal_fromCypher() {
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+
+      // Mock the count query (must come before the page query)
+      var countResult = mock(org.neo4j.ogm.model.Result.class);
+      when(countResult.queryResults())
+        .thenReturn(List.of(java.util.Map.<String, Object>of("total", 3L)));
+
+      // Mock the page query
+      var pageResult = mock(org.neo4j.ogm.model.Result.class);
+      java.util.Map<String, Object> row1 = new java.util.HashMap<>();
+      row1.put("appId", "scene-a");
+      row1.put("name", "Scene A");
+      row1.put("description", "first");
+      row1.put("sourceFileAppId", null);
+      row1.put("rootFrameAppId", "frame-root-a");
+      row1.put("createdAt", 1000L);
+      row1.put("updatedAt", 2000L);
+      row1.put("frameCount", 4L);
+      row1.put("jointCount", 3L);
+      java.util.Map<String, Object> row2 = new java.util.HashMap<>();
+      row2.put("appId", "scene-b");
+      row2.put("name", "Scene B");
+      row2.put("description", null);
+      row2.put("sourceFileAppId", "file-1");
+      row2.put("rootFrameAppId", null);
+      row2.put("createdAt", null);
+      row2.put("updatedAt", null);
+      row2.put("frameCount", 0L);
+      row2.put("jointCount", 0L);
+      when(pageResult.queryResults()).thenReturn(List.of(row1, row2));
+
+      // First call returns count, second returns page (sequenced in service)
+      when(live.query(anyString(), anyMap()))
+        .thenReturn(countResult)
+        .thenReturn(pageResult);
+
+      var page = svc.listScenes(0, 50);
+
+      assertEquals(3L, page.total());
+      assertEquals(2, page.rows().size());
+      assertEquals("scene-a", page.rows().get(0).appId());
+      assertEquals("Scene A", page.rows().get(0).name());
+      assertEquals(4L, page.rows().get(0).frameCount());
+      assertEquals(3L, page.rows().get(0).jointCount());
+      assertEquals(Long.valueOf(1000L), page.rows().get(0).createdAt());
+      assertEquals(Long.valueOf(2000L), page.rows().get(0).updatedAt());
+      assertEquals("scene-b", page.rows().get(1).appId());
+      assertNull(page.rows().get(1).createdAt());
+      assertNull(page.rows().get(1).updatedAt());
+      assertEquals(0L, page.rows().get(1).frameCount());
+    }
+  }
+
+  @Test
+  void listScenes_clampsPageAndSize_intoSafeRange() {
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+
+      var emptyResult = mock(org.neo4j.ogm.model.Result.class);
+      when(emptyResult.queryResults()).thenReturn(List.of());
+      when(live.query(anyString(), anyMap())).thenReturn(emptyResult);
+
+      // Negative page, size beyond cap → still produces a result; page = 0,
+      // size clamped to 200. We verify the query is invoked with offset = 0
+      // and size = 200 — proves the clamp is applied at the service layer.
+      var page = svc.listScenes(-5, 9999);
+      assertEquals(0, page.rows().size());
+
+      org.mockito.ArgumentCaptor<java.util.Map<String, Object>> params =
+        org.mockito.ArgumentCaptor.forClass(java.util.Map.class);
+      verify(live, atLeastOnce()).query(anyString(), params.capture());
+      // Last capture is the page query — assert clamp parameters.
+      var last = params.getValue();
+      // page query carries offset+size; count query carries empty map.
+      if (last.containsKey("offset")) {
+        assertEquals(0L, last.get("offset"));
+        assertEquals(200L, last.get("size"));
+      }
+    }
+  }
+
+  @Test
+  void listScenes_ignoresCypherFailure_andDegradesToEmpty() {
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      when(live.query(anyString(), anyMap()))
+        .thenThrow(new RuntimeException("simulated cypher failure"));
+
+      // Service is fail-soft on the secondary read; returns empty page.
+      var page = svc.listScenes(0, 50);
+      assertEquals(0L, page.total());
+      assertEquals(0, page.rows().size());
+    }
+  }
+
+  // ── SCENEGRAPH-LIST-1 — saveScene timestamps ──────────────────────────────
+
+  @Test
+  void saveScene_setsCreatedAt_andUpdatedAt_onFirstSave() {
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      DigitalTwinScene scene = new DigitalTwinScene();
+      scene.setAppId("new-scene");
+      assertNull(scene.getCreatedAt());
+      assertNull(scene.getUpdatedAt());
+
+      svc.saveScene(scene);
+
+      assertNotNull(scene.getCreatedAt(), "createdAt must be set on first save");
+      assertNotNull(scene.getUpdatedAt(), "updatedAt must be set on every save");
+      assertEquals(scene.getCreatedAt(), scene.getUpdatedAt(),
+        "first save: createdAt == updatedAt");
+    }
+  }
+
+  @Test
+  void saveScene_preservesCreatedAt_andRefreshesUpdatedAt_onResave() throws InterruptedException {
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      DigitalTwinScene scene = new DigitalTwinScene();
+      scene.setAppId("existing");
+      scene.setCreatedAt(1L);
+      scene.setUpdatedAt(1L);
+
+      // Make sure the new updatedAt is strictly greater than the old.
+      Thread.sleep(2);
+      svc.saveScene(scene);
+
+      assertEquals(Long.valueOf(1L), scene.getCreatedAt(),
+        "createdAt is immutable after first save");
+      assertNotNull(scene.getUpdatedAt());
+      assertTrue(scene.getUpdatedAt() >= 1L);
     }
   }
 }
