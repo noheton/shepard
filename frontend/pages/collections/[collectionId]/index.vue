@@ -409,6 +409,20 @@ useHead({
                  for the funder-reviewing-the-dataset persona. -->
             <CiteThisCard :collection="collection" />
 
+            <!-- DMP-DOWNLOAD-NAV-01 (FAIR7 UI): "Download DMP" button that
+                 fetches the Markdown DMP block from
+                 GET /v2/collections/{appId}/dmp-snippet. Sits next to the
+                 Cite-this card because the two cover the same funder-facing
+                 corner (citation for papers, DMP for funding forms).
+                 Rendered only when collectionAppId is resolvable — the v2
+                 endpoint is appId-keyed. -->
+            <div v-if="collectionAppId" class="dmp-download-row mb-6">
+              <DownloadDmpButton
+                :collection-app-id="collectionAppId"
+                :collection-name="collection.name"
+              />
+            </div>
+
             <!-- RDM-005: Metadata completeness score widget. 0–100 score
                  with red/amber/green chip + per-check breakdown driving
                  operators to fill the FAIR R1.1 / R1.3 gaps the prior
