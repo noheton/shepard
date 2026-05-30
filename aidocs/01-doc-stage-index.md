@@ -30,20 +30,20 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 49 |
+| `fragment` | 51 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 109 |
+| `feature-defined` | 110 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 82 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **407** |
+| **total docs** | **410** |
 | **UNTAGGED** | **0** |
 
-## fragment (49)
+## fragment (51)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -56,6 +56,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-19.md`](agent-findings/dispatcher-runs/2026-05-29-19.md) | Dispatcher run — 2026-05-29 19:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-20.md`](agent-findings/dispatcher-runs/2026-05-29-20.md) | Dispatcher run — 2026-05-29 20:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-01.md`](agent-findings/dispatcher-runs/2026-05-30-01.md) | Dispatcher run — 2026-05-30 01:xx UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-20.md`](agent-findings/dispatcher-runs/2026-05-30-20.md) | Dispatcher run — 2026-05-30 20:xx UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-21.md`](agent-findings/dispatcher-runs/2026-05-30-21.md) | Dispatcher run — 2026-05-30 21:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -145,7 +147,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (109)
+## feature-defined (110)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -176,6 +178,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | — |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md`](agent-findings/video-s3-chunked-encoding-2026-05-28.md) | Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch | 2026-05-28 | 2026-05-28 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |
