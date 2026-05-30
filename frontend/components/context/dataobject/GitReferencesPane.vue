@@ -135,7 +135,7 @@ const urlSuggestions = computed(() =>
       No git credentials configured — autocomplete won't work and private repos will be inaccessible.
       <template #append>
         <v-btn
-          :to="'/user#git-credentials'"
+          :to="'/me#git-credentials'"
           variant="text"
           size="small"
         >
