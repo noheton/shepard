@@ -565,10 +565,11 @@ Mid-horizon:
   edit produces a `:Activity` with a `:WAS_DERIVED_FROM` link back to
   the prior activity for the same scene, giving the audit chain a
   proper graph walk. URDF export pipes the scene into Foxglove / RViz
-  / Isaac via the canonical robot-description format. Real graph
-  browser UI (SCENEGRAPH-REST-1-UI) and per-scene permission anchor
-  (SCENEGRAPH-PERMS-1) queued; placeholder page at `/scene-graphs/<appId>`
-  ships meanwhile.
+  / Isaac via the canonical robot-description format. **Scene-graph
+  browser UI shipped (SCENEGRAPH-REST-1-UI)** — page at
+  `/scene-graphs/{appId}` with frame tree + sticky inspector + joints
+  table + Add/Edit/Delete dialogs + URDF download. Per-scene
+  permission anchor (SCENEGRAPH-PERMS-1) still queued.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
