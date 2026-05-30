@@ -78,6 +78,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       because these repository types do not speak the SPARQL protocol.</li>
  * </ul>
  *
+ * <p><b>Reserved repoAppId aliases.</b> The literal string {@code "internal"}
+ * is intercepted before the {@code findByAppId} lookup and resolved to the
+ * bootstrapped {@code :SemanticRepository {type: INTERNAL}} row (V49). The
+ * frontend playground defaults to this alias so users do not have to
+ * memorise the V49-minted UUID v7. See {@link #INTERNAL_ALIAS} (C3 / task #244).
+ *
  * <p><b>Response format.</b> The upstream response is passed through
  * verbatim with {@code Content-Type: application/sparql-results+json}.
  * When the upstream returns a non-200 status the endpoint maps it to a
@@ -98,6 +104,19 @@ public class SemanticSparqlRest {
 
   /** SPARQL 1.1 Protocol form content-type. */
   static final String FORM_URL_ENCODED = "application/x-www-form-urlencoded";
+
+  // ─── Reserved repository aliases ──────────────────────────────────────────
+
+  /**
+   * C3 / task #244 — reserved alias the frontend playground defaults to
+   * when no specific repository has been picked. Resolves to the
+   * bootstrapped {@code :SemanticRepository {type: INTERNAL}} row from the
+   * V49 migration via
+   * {@link SemanticRepositoryDAO#findInternal()}. A literal {@code "internal"}
+   * value in the {@code repoAppId} path parameter is intercepted by
+   * {@link #executeSparql} before the normal {@code findByAppId} lookup.
+   */
+  static final String INTERNAL_ALIAS = "internal";
 
   // ─── RFC 7807 problem type tokens ─────────────────────────────────────────
 
@@ -250,8 +269,14 @@ public class SemanticSparqlRest {
       return problem(Status.UNAUTHORIZED, PROBLEM_TYPE_AUTH, "Authentication required.", "SPARQL proxy requires an authenticated user.");
     }
 
-    // 2 — look up repository
-    SemanticRepository repo = semanticRepositoryDAO.findByAppId(repoAppId);
+    // 2 — look up repository (C3: resolve the reserved "internal" alias to
+    //                       the bootstrapped INTERNAL row first).
+    SemanticRepository repo;
+    if (INTERNAL_ALIAS.equalsIgnoreCase(repoAppId)) {
+      repo = semanticRepositoryDAO.findInternal();
+    } else {
+      repo = semanticRepositoryDAO.findByAppId(repoAppId);
+    }
     if (repo == null || repo.isDeleted()) {
       return problem(Status.NOT_FOUND, PROBLEM_TYPE_NOT_FOUND, "Semantic repository not found.", "No repository with appId: " + repoAppId);
     }

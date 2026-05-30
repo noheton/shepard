@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.semantic.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +50,37 @@ public class SemanticRepositoryDAOTest extends BaseTestCase {
     when(session.query(SemanticRepository.class, query, paramsMap)).thenReturn(List.of(repo, wrongRepo));
     var actual = dao.findAllSemanticRepositories(params);
     assertEquals(List.of(repo), actual);
+  }
+
+  /** C3 / task #244 — findInternal() returns the bootstrapped INTERNAL row. */
+  @Test
+  public void findInternalTest_returnsBootstrappedRepo() {
+    var bootstrap = new SemanticRepository(99L);
+    bootstrap.setName("Built-in Semantic Store (n10s)");
+    var query =
+      "MATCH (r:SemanticRepository { deleted: FALSE })"
+      + " WHERE r.type = 'INTERNAL' "
+      + "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL"
+      + " RETURN r, nodes(path), relationships(path)";
+    when(session.query(SemanticRepository.class, query, Collections.emptyMap()))
+      .thenReturn(List.of(bootstrap));
+
+    var actual = dao.findInternal();
+    assertEquals(bootstrap, actual);
+  }
+
+  /** C3 / task #244 — findInternal() returns null when no INTERNAL row exists yet. */
+  @Test
+  public void findInternalTest_returnsNullWhenAbsent() {
+    var query =
+      "MATCH (r:SemanticRepository { deleted: FALSE })"
+      + " WHERE r.type = 'INTERNAL' "
+      + "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL"
+      + " RETURN r, nodes(path), relationships(path)";
+    when(session.query(SemanticRepository.class, query, Collections.emptyMap()))
+      .thenReturn(Collections.emptyList());
+
+    assertNull(dao.findInternal());
   }
 
   @Test
