@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFetchNotebooks } from "~/composables/context/useFetchNotebooks";
-import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
+import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
 
 const props = defineProps<{ dataObjectAppId: string }>();
 const emit = defineEmits(["numberOfEntriesChanged"]);
@@ -14,46 +14,53 @@ watch(
   list => emit("numberOfEntriesChanged", list?.length ?? 0),
   { immediate: true },
 );
-const { preferredJupyterUrl, isSaving, save } = useJupyterPreference();
 
-const jupyterUrlInput = ref("");
-const showUrlField = ref(false);
-
-watch(
-  preferredJupyterUrl,
-  url => {
-    jupyterUrlInput.value = url;
-    if (!url) showUrlField.value = true;
-  },
-  { immediate: true },
+// task #240 (2026-05-30): the "Open in JupyterHub" affordance reads the
+// admin-configured `:JupyterConfig` singleton via the public sister endpoint
+// `/v2/jupyter/config`. The previous per-user `editor.preferredJupyter`
+// setting was removed — operators set one instance-wide hub URL in the
+// admin pane.
+const { config: jupyterConfig } = useJupyterConfig();
+const jupyterAffordanceVisible = computed(
+  () =>
+    !!jupyterConfig.value &&
+    jupyterConfig.value.enabled === true &&
+    !!jupyterConfig.value.hubUrl &&
+    jupyterConfig.value.hubUrl.length > 0,
 );
 
-function openInJupyter() {
-  if (!preferredJupyterUrl.value) {
-    showUrlField.value = true;
-    return;
-  }
-  const base = preferredJupyterUrl.value.replace(/\/$/, "");
-  window.open(base, "_blank", "noopener,noreferrer");
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+/**
+ * Build the JupyterHub launch URL for a singleton FileReference appId.
+ * Mirrors the convention in DataObjectDataReferencesTable.vue —
+ * `{hubUrl}/hub/spawn?file={downloadUrl}`.
+ *
+ * Returns null when the affordance gate is closed.
+ */
+function jupyterLaunchUrl(appId: string): string | null {
+  const cfg = jupyterConfig.value;
+  if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
+  const downloadUrl = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  const hubBase = cfg.hubUrl.replace(/\/$/, "");
+  return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
+}
+
+function openInJupyter(appId: string) {
+  const url = jupyterLaunchUrl(appId);
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function downloadUrl(appId: string): string {
-  const config = useRuntimeConfig().public;
-  const explicit = config.backendV2ApiUrl as string | undefined;
-  const base =
-    explicit && explicit.length > 0
-      ? explicit.replace(/\/$/, "")
-      : (config.backendApiUrl as string)
-          .replace(/\/shepard\/api\/?$/, "")
-          .replace(/\/$/, "");
-  return `${base}/v2/files/${encodeURIComponent(appId)}/content`;
-}
-
-async function saveJupyterUrl() {
-  await save(jupyterUrlInput.value.trim());
-  if (preferredJupyterUrl.value) {
-    showUrlField.value = false;
-  }
+  return `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
 }
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -68,47 +75,7 @@ function formatBytes(bytes: number | null | undefined): string {
   <div class="d-flex flex-column ga-4">
     <div class="d-flex align-center justify-space-between">
       <h5 class="text-h5">Jupyter Notebooks</h5>
-      <v-btn
-        v-if="!showUrlField"
-        variant="tonal"
-        prepend-icon="mdi-cog-outline"
-        density="comfortable"
-        @click="showUrlField = true"
-      >
-        JupyterHub URL
-      </v-btn>
     </div>
-
-    <!-- JupyterHub URL setting -->
-    <v-expand-transition>
-      <div v-if="showUrlField">
-        <v-text-field
-          v-model="jupyterUrlInput"
-          label="Your JupyterHub base URL"
-          placeholder="https://myhub.example.com"
-          hint="Set your JupyterHub URL to enable 'Open in JupyterHub' buttons. Stored in your user preferences."
-          persistent-hint
-          density="comfortable"
-          variant="outlined"
-          :loading="isSaving"
-          :disabled="isSaving"
-          clearable
-        >
-          <template #append>
-            <v-btn
-              color="primary"
-              variant="flat"
-              density="comfortable"
-              :loading="isSaving"
-              :disabled="isSaving"
-              @click="saveJupyterUrl"
-            >
-              Save
-            </v-btn>
-          </template>
-        </v-text-field>
-      </div>
-    </v-expand-transition>
 
     <centered-loading-spinner v-if="isLoading" />
 
@@ -152,40 +119,20 @@ function formatBytes(bytes: number | null | undefined): string {
               Download
             </v-btn>
 
-            <!-- Open in JupyterHub — SINGLETON only -->
-            <template v-if="nb.referenceKind === 'SINGLETON'">
-              <v-tooltip
-                v-if="!preferredJupyterUrl"
-                text="Set your JupyterHub URL above to enable this button"
-                location="top"
-              >
-                <template #activator="{ props: tooltipProps }">
-                  <span v-bind="tooltipProps">
-                    <v-btn
-                      variant="flat"
-                      color="warning"
-                      density="comfortable"
-                      prepend-icon="mdi-jupyter"
-                      size="small"
-                      disabled
-                    >
-                      Open in JupyterHub
-                    </v-btn>
-                  </span>
-                </template>
-              </v-tooltip>
-              <v-btn
-                v-else
-                variant="flat"
-                color="warning"
-                density="comfortable"
-                prepend-icon="mdi-jupyter"
-                size="small"
-                @click="openInJupyter()"
-              >
-                Open in JupyterHub
-              </v-btn>
-            </template>
+            <!-- Open in JupyterHub — SINGLETON only, visible only when admin
+                 has enabled JupyterHub and set a hub URL. -->
+            <v-btn
+              v-if="nb.referenceKind === 'SINGLETON' && jupyterAffordanceVisible"
+              variant="flat"
+              color="warning"
+              density="comfortable"
+              prepend-icon="mdi-jupyter"
+              size="small"
+              data-testid="notebook-open-in-jupyter"
+              @click="openInJupyter(nb.appId)"
+            >
+              Open in JupyterHub
+            </v-btn>
           </div>
         </template>
       </v-list-item>

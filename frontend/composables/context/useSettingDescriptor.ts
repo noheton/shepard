@@ -19,10 +19,15 @@ export interface SettingDescriptor<T = unknown> {
 /** Well-known setting keys — extend as new preferences are introduced. */
 export const SETTING_KEYS = {
   UI_ADVANCED_MODE: "ui.advancedMode",
-  EDITOR_PREFERRED_JUPYTER: "editor.preferredJupyter",
 } as const;
 
 // Descriptors for the above keys — typed and validated in the future U1c layer.
+//
+// Note (task #240, 2026-05-30): the per-user `editor.preferredJupyter` setting
+// was removed in favour of the admin-configurable `:JupyterConfig` singleton
+// (`/v2/admin/jupyter/config`, composable `useJupyterConfig`). The
+// "Open in JupyterHub" affordance now reads from the public sister endpoint
+// `/v2/jupyter/config` — a single instance-wide hub URL.
 export const SETTING_DESCRIPTORS: SettingDescriptor[] = [
   {
     key: SETTING_KEYS.UI_ADVANCED_MODE,
@@ -30,12 +35,6 @@ export const SETTING_DESCRIPTORS: SettingDescriptor[] = [
     description: "Shows advanced features like container management and low-level data views.",
     type: "boolean",
     defaultValue: false,
-  },
-  {
-    key: SETTING_KEYS.EDITOR_PREFERRED_JUPYTER,
-    label: "JupyterHub base URL",
-    description: "Set your JupyterHub base URL to enable 'Open in JupyterHub' buttons.",
-    type: "string",
   },
 ];
 
