@@ -2,9 +2,12 @@ package de.dlr.shepard.v2.collection.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,11 +24,14 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.snapshot.entities.Snapshot;
+import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +66,9 @@ class CollectionV2RestTest {
   Validator validator;
 
   @Mock
+  SnapshotService snapshotService;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -76,6 +85,7 @@ class CollectionV2RestTest {
     resource.entityIdResolver = entityIdResolver;
     resource.validator = validator;
     resource.objectMapper = new ObjectMapper();
+    resource.snapshotService = snapshotService;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(validator.validate(any())).thenReturn(Collections.emptySet());
@@ -172,7 +182,7 @@ class CollectionV2RestTest {
     created.setName("new collection");
     when(collectionService.createCollection(body)).thenReturn(created);
 
-    Response r = resource.create(body);
+    Response r = resource.create(body, false, securityContext);
 
     assertEquals(201, r.getStatus());
     CollectionIO io = (CollectionIO) r.getEntity();
@@ -257,7 +267,7 @@ class CollectionV2RestTest {
     created.setPromptLogMode("BODY_RAW");
     when(collectionService.createCollection(body)).thenReturn(created);
 
-    Response r = resource.create(body);
+    Response r = resource.create(body, false, securityContext);
 
     assertEquals(201, r.getStatus());
     CollectionIO io = (CollectionIO) r.getEntity();
@@ -340,7 +350,7 @@ class CollectionV2RestTest {
     created.setHeroImageUrl("https://example.com/banner.jpg");
     when(collectionService.createCollection(body)).thenReturn(created);
 
-    Response r = resource.create(body);
+    Response r = resource.create(body, false, securityContext);
 
     assertEquals(201, r.getStatus());
     CollectionIO io = (CollectionIO) r.getEntity();
@@ -447,5 +457,87 @@ class CollectionV2RestTest {
 
     assertEquals(204, r.getStatus());
     verify(collectionService).deleteCollection(COLL_OGM_ID);
+  }
+
+  // ── createBaselineSnapshot (IMPORT-NS2) ──────────────────────────────────
+
+  @Test
+  void createWithBaselineSnapshotFalseDoesNotCallSnapshotService() {
+    CollectionIO body = new CollectionIO();
+    body.setName("no-snap collection");
+
+    Collection created = new Collection();
+    created.setShepardId(55L);
+    created.setAppId("018f9c5a-5555-7000-a000-000000000055");
+    created.setName("no-snap collection");
+    when(collectionService.createCollection(body)).thenReturn(created);
+
+    Response r = resource.create(body, false, securityContext);
+
+    assertEquals(201, r.getStatus());
+    // SnapshotService must NOT be called when the flag is false.
+    verify(snapshotService, never()).createSnapshot(anyString(), anyString(), anyString(), anyString());
+    // No snapshot header.
+    assertNull(r.getHeaderString("X-Baseline-Snapshot-AppId"));
+  }
+
+  @Test
+  void createWithBaselineSnapshotTrueCallsSnapshotServiceAndAddsHeader() {
+    CollectionIO body = new CollectionIO();
+    body.setName("snap collection");
+
+    Collection created = new Collection();
+    created.setShepardId(66L);
+    created.setAppId("018f9c5a-6666-7000-a000-000000000066");
+    created.setName("snap collection");
+    when(collectionService.createCollection(body)).thenReturn(created);
+
+    Snapshot snapshot = new Snapshot();
+    snapshot.setAppId("018f9c5a-aaaa-7000-a000-0000000000aa");
+    snapshot.setName("baseline");
+    snapshot.setSnapshotCapturedAtMs(Instant.now().toEpochMilli());
+    snapshot.setSnapshotCreatedByUsername(CALLER);
+    snapshot.setEntryCount(0);
+    when(snapshotService.createSnapshot(
+      eq("018f9c5a-6666-7000-a000-000000000066"),
+      eq("baseline"),
+      contains("t=0"),
+      eq(CALLER)
+    )).thenReturn(snapshot);
+
+    Response r = resource.create(body, true, securityContext);
+
+    assertEquals(201, r.getStatus());
+    // SnapshotService must be called once with the collection's appId.
+    verify(snapshotService).createSnapshot(
+      eq("018f9c5a-6666-7000-a000-000000000066"),
+      eq("baseline"),
+      contains("t=0"),
+      eq(CALLER)
+    );
+    // The response must carry the snapshot appId in the header.
+    assertEquals("018f9c5a-aaaa-7000-a000-0000000000aa", r.getHeaderString("X-Baseline-Snapshot-AppId"));
+  }
+
+  @Test
+  void createWithBaselineSnapshotTrueContinuesWhenSnapshotServiceThrows() {
+    // IMPORT-NS2: snapshot creation failure must not block the Collection creation.
+    CollectionIO body = new CollectionIO();
+    body.setName("resilient collection");
+
+    Collection created = new Collection();
+    created.setShepardId(77L);
+    created.setAppId("018f9c5a-7700-7000-a000-000000000077");
+    created.setName("resilient collection");
+    when(collectionService.createCollection(body)).thenReturn(created);
+    when(snapshotService.createSnapshot(anyString(), anyString(), anyString(), anyString()))
+      .thenThrow(new RuntimeException("simulated snapshot failure"));
+
+    // Should NOT throw — secondary write failure must be swallowed.
+    Response r = resource.create(body, true, securityContext);
+
+    assertEquals(201, r.getStatus());
+    // No snapshot header when the snapshot failed.
+    assertNull(r.getHeaderString("X-Baseline-Snapshot-AppId"));
   }
 }

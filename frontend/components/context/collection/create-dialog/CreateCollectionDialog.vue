@@ -2,6 +2,7 @@
 import {
   CollectionApi,
   CollectionTemplateApi,
+  CollectionV2Api,
   PermissionType,
   ShepardTemplateApi,
   type ShepardTemplateIO,
@@ -60,23 +61,46 @@ const collectionToCreate = ref<CollectionToCreate>({
 });
 const permissionType = ref<PermissionType>(PermissionType.Private);
 
+// IMPORT-NS2: baseline snapshot checkbox.
+const createBaselineSnapshot = ref(false);
+
 const isValid = ref(true);
 const form = useTemplateRef("form");
 watch(collectionToCreate, () => form.value?.validate(), { deep: true });
 
 async function saveChanges() {
   if (isValid.value === false) return;
-  const collectionApi = useShepardApi(CollectionApi);
 
-  const created = await collectionApi.value
-    .createCollection({ collection: collectionToCreate.value })
-    .catch(error => {
-      handleError(error, "updateCollection");
-      return undefined;
-    });
-  if (!created) return;
+  // IMPORT-NS2: when the user checked "Create baseline snapshot", call the
+  // v2 endpoint with ?createBaselineSnapshot=true so the snapshot is minted
+  // atomically within the same Neo4j transaction as the Collection.
+  // Otherwise fall back to the legacy v1 endpoint (unchanged behaviour).
+  let created: { id: number; appId?: string | null } | undefined;
+  if (createBaselineSnapshot.value) {
+    const v2result = await useV2ShepardApi(CollectionV2Api)
+      .value.createCollectionV2({
+        collection: collectionToCreate.value,
+        createBaselineSnapshot: true,
+      })
+      .catch(error => {
+        handleError(error, "createCollection");
+        return undefined;
+      });
+    if (!v2result) return;
+    created = v2result.collection;
+  } else {
+    const collectionApi = useShepardApi(CollectionApi);
+    created = await collectionApi.value
+      .createCollection({ collection: collectionToCreate.value })
+      .catch(error => {
+        handleError(error, "updateCollection");
+        return undefined;
+      });
+    if (!created) return;
+  }
 
   const collectionId = created.id;
+  const collectionApi = useShepardApi(CollectionApi);
 
   const currentPermissions = await collectionApi.value
     .getCollectionPermissions({ collectionId })
@@ -190,6 +214,18 @@ async function saveChanges() {
           <v-col>
             <AttributesInput
               v-model:attributes="collectionToCreate.attributes"
+            />
+          </v-col>
+        </v-row>
+        <!-- IMPORT-NS2: t=0 baseline snapshot option. -->
+        <v-row class="mt-1">
+          <v-col>
+            <v-checkbox
+              v-model="createBaselineSnapshot"
+              label="Create baseline snapshot"
+              hint="Atomically mints a t=0 snapshot capturing the collection's initial state. Useful as a provenance anchor for import pipelines."
+              persistent-hint
+              density="compact"
             />
           </v-col>
         </v-row>

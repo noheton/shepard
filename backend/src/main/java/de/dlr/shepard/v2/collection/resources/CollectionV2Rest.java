@@ -12,6 +12,9 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.snapshot.io.SnapshotIO;
+import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import io.quarkus.logging.Log;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -120,6 +123,9 @@ public class CollectionV2Rest {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  SnapshotService snapshotService;
 
   @GET
   @Operation(
@@ -234,6 +240,12 @@ public class CollectionV2Rest {
       "Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", " +
       "\"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, " +
       "\"status\": \"DRAFT\"}`.\n\n" +
+      "Query param `createBaselineSnapshot=true` (IMPORT-NS2): when set, a t=0 " +
+      "baseline `:Snapshot` is created atomically right after the Collection is " +
+      "persisted. The snapshot is labelled `\"baseline\"` and captures the initial " +
+      "(empty) revision of the Collection subtree. This is a convenience flag — " +
+      "omitting it (or passing `false`) is a no-op; the same snapshot can always " +
+      "be created later via `POST /v2/collections/{collectionAppId}/snapshots`.\n\n" +
       "Auth: any authenticated user can create a Collection (the request is " +
       "authenticated via JWT or `X-API-KEY`). The created Collection's " +
       "permission-type defaults to `PRIVATE`; flip it to `PUBLIC` via " +
@@ -248,7 +260,7 @@ public class CollectionV2Rest {
   )
   @APIResponse(
     responseCode = "201",
-    description = "Collection created.",
+    description = "Collection created. When `createBaselineSnapshot=true`, the response header `X-Baseline-Snapshot-AppId` carries the appId of the minted snapshot.",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body validation failed.")
@@ -257,10 +269,31 @@ public class CollectionV2Rest {
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = CollectionIO.class))
-    ) @Valid CollectionIO body
+    ) @Valid CollectionIO body,
+    @QueryParam("createBaselineSnapshot") @DefaultValue("false") boolean createBaselineSnapshot,
+    @Context SecurityContext sc
   ) {
     Collection created = collectionService.createCollection(body);
-    return Response.status(Response.Status.CREATED).entity(new CollectionIO(created)).build();
+    Response.ResponseBuilder rb = Response.status(Response.Status.CREATED).entity(new CollectionIO(created));
+
+    if (createBaselineSnapshot) {
+      // IMPORT-NS2: atomically mint a t=0 baseline snapshot.
+      // The snapshot is best-effort — a failure logs a WARN but does not
+      // roll back the already-persisted Collection (per the "secondary writes
+      // are fire-and-forget" principle in CLAUDE.md).
+      String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : "unknown";
+      try {
+        SnapshotIO snap = new SnapshotIO(
+          snapshotService.createSnapshot(created.getAppId(), "baseline", "t=0 baseline — auto-created on collection creation", caller)
+        );
+        rb.header("X-Baseline-Snapshot-AppId", snap.appId());
+        Log.infof("IMPORT-NS2: created baseline snapshot %s for collection %s", snap.appId(), created.getAppId());
+      } catch (Exception e) {
+        Log.warnf(e, "IMPORT-NS2: failed to create baseline snapshot for collection %s — collection persisted; snapshot skipped", created.getAppId());
+      }
+    }
+
+    return rb.build();
   }
 
   @PATCH

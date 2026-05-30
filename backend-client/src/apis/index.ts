@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AdminFeaturesApi';
+export * from './CollectionV2Api';
 export * from './CollectionWatchesApi';
 export * from './AdminMetricsApi';
 export * from './AdminPermissionAuditApi';
