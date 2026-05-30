@@ -2743,6 +2743,31 @@ shape.
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
 
+## SINGLETON-FILE-MIGRATION — single-file FileBundleReference → singletons
+
+Operator-codified 2026-05-30 (verbatim): *"only use filebundles when
+bundling more than one file — allowing for smoother ui (without
+selection step)."* Codified in CLAUDE.md "Always: singleton
+FileReference for one-file uploads; FileBundleReference only when
+bundling >1".
+
+Canonical violator surfaced 2026-05-30: the showcase URDF
+`kr210-r2700-urdf` was uploaded as a single-file FileBundleReference;
+B agent's `POST /v2/krl/interpret` couldn't resolve it because
+`SingletonFileReferenceService.findByAppId(...)` only knows about
+FR1b singletons. Worked around by re-uploading via `POST /v2/files`.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| SINGLETON-FILE-01-AUDIT | Cypher: `MATCH (b:FileBundleReference) WHERE size(b.fileOids) = 1 RETURN count(b)`. Per-Collection breakdown. | XS | queued | Reviewer-test: greppable list. |
+| SINGLETON-FILE-02-SEED-MIGRATION | `examples/mffd-rdk-urdf-showcase/seed.py` switches every one-file `upload_file_reference()` to `POST /v2/files` (singleton). Idempotent. | S | queued | Visible offender; URDF + 7 meshes + .src. |
+| SINGLETON-FILE-03-BACKFILL-SCRIPT | Cypher + REST walks `:FileBundleReference` with `fileOids[].length == 1`, mints singleton via `POST /v2/files`, PROV-O Activity for the transform, soft-deletes the old bundle. | M | queued | One-time cleanup. |
+| SINGLETON-FILE-04-UI-DEFAULT | Frontend uploaders default to singleton creation. Bundle is opt-in via "I'm uploading multiple files". | M | queued | After -01. |
+| SINGLETON-FILE-05-SHACL-GUARD | SHACL warns on `FileBundleReference` with `fileOids[].length == 1`. Surface as RDM-005-style completeness hit. | S | queued | Pairs with RDM-005. |
+
+Cross-references: `feedback_filebundle_only_for_multi_file.md`,
+`feedback_ui_pulls_from_references.md`, CLAUDE.md, UI-PATHS-FROM-REFERENCES.
+
 ## UI-PATHS-FROM-REFERENCES — UI never asks for paths/URLs; pull from References
 
 Operator-codified 2026-05-30 (verbatim): *"UI should never ask for paths

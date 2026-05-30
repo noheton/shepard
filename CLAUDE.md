@@ -532,6 +532,51 @@ Cross-references: `feedback_done_criteria.md` (parent rule — "backend + fronte
 + tests; all three"); `feedback_ui_api_parity.md` (converse — every UI action
 callable via REST; this rule's converse — every REST action visible via UI).
 
+## Always: singleton FileReference for one-file uploads; FileBundleReference only when bundling >1
+
+Whenever a Reference will carry exactly one file, mint a **singleton
+FileReference (FR1b)** via `POST /v2/files` — not a
+`FileBundleReference`. Reserve `FileBundleReference` for genuinely
+multi-file bundles (image series, mesh sets, archive contents).
+
+Rules:
+
+1. **Default for one-file shapes is the singleton.** `POST /v2/files
+   ?parentDataObjectAppId=…&name=…` with multipart `file=…`. Returns
+   201 + the new appId. That appId resolves directly to the bytes via
+   `GET /v2/files/{appId}/content` and feeds every backend resolver
+   that takes an appId (UrdfResolver, KRL interpret's
+   `SingletonFileReferenceService.findByAppId(...)`, etc.).
+2. **The bundle endpoint is for >1 file.** Use it for mesh sets, image
+   series, archive-extraction outputs — surfaces where the operator
+   genuinely needs to pick which inner file to act on.
+3. **UI consequence.** Singletons render no selection step — the UI
+   moves straight to the action ("Run / preview" on a `.src`, "Open
+   in URDF view", "Open in Jupyter"). Bundles holding a single file
+   force a pointless "which file?" picker.
+4. **Backfill rule.** Existing `:FileBundleReference` nodes whose
+   `fileOids[]` length = 1 are technical debt. File migration rows;
+   a backfill script re-shapes them as singletons with a PROV-O
+   Activity for the transformation. The B agent surfaced the canonical
+   instance on 2026-05-30 — the showcase `kr210-r2700-urdf` was a
+   single-file bundle and couldn't be resolved by the KRL interpret
+   service. Track migration under `SINGLETON-FILE-MIGRATION` in
+   `aidocs/16`.
+
+**Why:** the singleton is the single addressing layer for the
+"reference IS the data" contract. Bundles holding one file are an
+abstraction tax: the UI has to render the selection step, the backend
+has to dereference twice, and any appId-keyed downstream service
+silently misses the file because the bundle appId isn't a singleton
+appId. Singletons let every UI surface and every resolver work the
+same way — `appId` in, content out.
+
+Exceptions: bundles whose CARDINALITY is genuinely uncertain
+(operator drops 1 image but might add a series later) — pick based on
+likely steady-state cardinality. When in doubt, ship singleton; merging
+N singletons into a bundle later is a backend mutation; splitting a
+bundle is loss-of-history.
+
 ## Always: UI never asks for paths/URLs — pulls from references
 
 UI surfaces never expose path or URL input fields to the user. Data is
