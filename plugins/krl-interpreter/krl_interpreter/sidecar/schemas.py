@@ -92,12 +92,25 @@ class InterpretRequest(BaseModel):
         import base64
 
         # Normalise srcText: prefer srcText, fall back to base64-decoding srcContent.
+        # Real DLR KUKA .src files are commonly ISO-8859-1 (Latin-1) — German
+        # comments (`für`, `Schließen`, `übermitteln`) — so we try UTF-8 first
+        # then fall back to Latin-1 → cp1252 → utf-8 with errors=replace as
+        # last resort. Filed as KRL-INTEGRATION-MFFD-REAL-01-ENCODING-LATIN1
+        # 2026-05-30 after 5/7 real MFFD .src files were rejected on first try.
         if not (self.srcText and self.srcText.strip()):
             if self.srcContent and self.srcContent.strip():
                 try:
-                    self.srcText = base64.b64decode(self.srcContent).decode("utf-8")
-                except (ValueError, UnicodeDecodeError) as exc:
-                    raise ValueError(f"srcContent must be valid base64 UTF-8: {exc}")
+                    raw = base64.b64decode(self.srcContent)
+                except ValueError as exc:
+                    raise ValueError(f"srcContent must be valid base64: {exc}")
+                for codec in ("utf-8", "iso-8859-1", "cp1252"):
+                    try:
+                        self.srcText = raw.decode(codec)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                else:
+                    self.srcText = raw.decode("utf-8", errors="replace")
             else:
                 raise ValueError("either srcText or srcContent must be provided")
         # urdfPath / urdfContent — defer the actual file write to app.py
