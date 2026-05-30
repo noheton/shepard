@@ -1,0 +1,13 @@
+# Python build / test artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+build/
+dist/
+.venv/
+venv/

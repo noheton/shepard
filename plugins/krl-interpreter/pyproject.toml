@@ -1,0 +1,46 @@
+[project]
+name = "shepard-plugin-krl-interpreter"
+version = "0.1.0"
+description = "Offline KUKA KRL program interpreter sidecar for Shepard. Parses .src/.dat, back-solves IK against a URDF, emits a joint trajectory."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "DLR Shepard contributors" },
+]
+keywords = ["kuka", "krl", "robotics", "ik", "ikpy", "shepard"]
+
+# Runtime dependencies. KRL-INTERPRETER-03 (IK back-solver) adds ikpy +
+# numpy + scipy. -02 (parser) adds antlr4-python3-runtime + pykrlparser.
+# Expect a merge conflict in this section when -02 lands; resolution is
+# the UNION of the two dep lists (alphabetised).
+dependencies = [
+  "ikpy>=3.4",
+  "numpy>=1.24",
+  "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["krl_interpreter*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "slow: benchmarks; skip with -m 'not slow' in tight CI loops",
+]
+filterwarnings = [
+  # ikpy emits a "fixed link is active in mask" UserWarning that's
+  # harmless for our movable-joint use case; quiet it.
+  "ignore:Link.*is of type 'fixed':UserWarning",
+]
