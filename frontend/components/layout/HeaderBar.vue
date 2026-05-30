@@ -26,9 +26,13 @@
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
-      <!-- Semantic discovery affordance moved to /me#semantic per
-           SEMA-NAV-PLACEMENT-DECISION option (b) on 2026-05-24.
-           Standalone /semantic/* routes remain valid for bookmarking + sharing. -->
+      <!-- TOOLS-NAV-01 (2026-05-30) — top-level Tools menu lifts six
+           research-tooling routes from 4-click depth (avatar → /me →
+           Semantic tile → page) to 1-click. Closes the SCENEGRAPH-REST-1-UI
+           top-nav-reachability finding (CLAUDE.md "every shipped feature
+           reachable from the top-nav before beta"). The SemanticPane.vue
+           hub-tile pattern in /me#semantic stays for one release cycle. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/tools">Tools</v-btn>
       <v-btn
         v-if="isInstanceAdmin"
         class="nav-item d-none d-md-inline-flex"
@@ -357,7 +361,8 @@
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
-      <!-- Semantic discovery moved to /me#semantic per SEMA-NAV-PLACEMENT-DECISION (b) 2026-05-24 -->
+      <!-- TOOLS-NAV-01 (2026-05-30) — mirror of the desktop Tools entry. -->
+      <v-list-item title="Tools" to="/tools" prepend-icon="mdi-tools" @click="mobileDrawerOpen = false" />
       <v-list-item
         v-if="isInstanceAdmin"
         title="Admin"
