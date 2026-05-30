@@ -568,8 +568,15 @@ Mid-horizon:
   / Isaac via the canonical robot-description format. **Scene-graph
   browser UI shipped (SCENEGRAPH-REST-1-UI)** — page at
   `/scene-graphs/{appId}` with frame tree + sticky inspector + joints
-  table + Add/Edit/Delete dialogs + URDF download. Per-scene
-  permission anchor (SCENEGRAPH-PERMS-1) still queued.
+  table + Add/Edit/Delete dialogs + URDF download. **First real-data
+  scene-graph shipped** — the MFFD AFP cell at ZLP Augsburg materialised
+  as a two-robot KR210 R2700/2 scene (`r10_` + `r20_` subtrees under a
+  shared `cell_base` root, 21 frames + 18 joints) by
+  `examples/mffd-rdk-urdf-showcase/scenegraph/build_mffd_scene.py` —
+  pure-stdlib URDF parser, idempotent re-runs, follow-on
+  `urn:shepard:scenegraph:scene-appId` annotation on the kr210 URDF
+  FileReference so the scene is discoverable from its source artefact.
+  Per-scene permission anchor (SCENEGRAPH-PERMS-1) still queued.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
