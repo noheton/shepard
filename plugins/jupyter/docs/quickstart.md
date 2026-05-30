@@ -47,8 +47,20 @@ If you click "Open in Jupyter" on a Shepard surface served from a host
 **not** in the allowlist (e.g. a staging instance the operator forgot
 to add), the kernel still boots — but `shepard-imports/` contains only
 a `README-*.md` with `Status: allowlist-miss` and the URL you can fetch
-manually instead. Ask the operator to add the host to the allowlist;
-see the install guide §4.
+manually instead.
+
+**Self-serve workaround (no operator action needed):**
+
+1. Go back to the Shepard file detail page.
+2. Click the download button (or right-click the filename and choose "Save as").
+3. In JupyterHub, open the file browser (folder icon, top-left).
+4. Drag and drop the downloaded file into your working directory.
+
+The file is now in your session and you can open it normally. Changes
+still do not write back to Shepard — re-upload when you're done.
+
+To get auto-fetch working for that host permanently, ask the operator
+to add it to the allowlist; see the install guide §4.
 
 ### Other status values
 
@@ -74,8 +86,9 @@ below.
 
 ### Manual fallback — kernel-side fetch
 
-Until **J1e-PR-06-AUTOFETCH-01** is deployed (or for files the
-allowlist rejects), use the forwarded OIDC token directly:
+For files the allowlist rejects, or when you prefer to fetch
+programmatically inside a running kernel, use the forwarded OIDC token
+directly:
 
 ```python
 import os, requests
