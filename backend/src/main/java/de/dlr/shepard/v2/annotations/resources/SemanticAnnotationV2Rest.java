@@ -12,6 +12,8 @@ import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO.RowResult;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import io.quarkus.logging.Log;
@@ -77,6 +79,7 @@ public class SemanticAnnotationV2Rest {
 
   static final int MAX_PAGE_SIZE = 200;
   static final int DEFAULT_PAGE_SIZE = 50;
+  static final int MAX_BULK_SIZE = 100;
 
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/annotations.bad-request";
   static final String PROBLEM_TYPE_NOT_FOUND = "/problems/annotations.not-found";
@@ -388,6 +391,150 @@ public class SemanticAnnotationV2Rest {
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
+  }
+
+  // ─── BULK CREATE ───────────────────────────────────────────────────────────
+
+  @POST
+  @Path("/bulk")
+  @Operation(
+    summary = "Bulk-create up to 100 semantic annotations (best-effort).",
+    description =
+      "Accepts a JSON array of up to " + MAX_BULK_SIZE + " annotation payloads and creates each one " +
+      "independently. A failure on one row (validation error, missing permission) does not " +
+      "abort subsequent rows — the batch always runs to completion.\n\n" +
+      "Required fields per row: `subjectAppId`, `subjectKind`, `predicateIri`, " +
+      "and exactly one of `objectLiteral` / `objectIri`.\n\n" +
+      "Auth: caller must be authenticated. Write permission on the subject entity is " +
+      "checked per row; rows whose subject the caller cannot Write produce a failed row " +
+      "result rather than aborting the whole batch.\n\n" +
+      "Returns `200 OK` (never `201` — partial success is possible) with a " +
+      "`{requested, succeeded, failed, results:[…]}` summary.\n\n" +
+      "Provenance: individual `:Activity` nodes are NOT created per row (too expensive " +
+      "for 100-row batches). The filter-level generic Activity is also suppressed via " +
+      "`PROP_SKIP_CAPTURE`. Operators who need per-row provenance should call " +
+      "`POST /v2/annotations` individually."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Batch completed (partial success possible). Body contains per-row results.",
+    content = @Content(schema = @Schema(implementation = BulkAnnotationResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Request body is null or exceeds the 100-row cap (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response bulkCreate(
+    List<CreateAnnotationIO> body,
+    @Context SecurityContext sc,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader
+  ) {
+    String caller = callerName(sc);
+    if (caller == null) return unauthorized();
+
+    if (body == null) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing request body", Response.Status.BAD_REQUEST,
+        "Request body must be a non-null JSON array of annotation payloads.");
+    }
+    if (body.size() > MAX_BULK_SIZE) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Batch too large", Response.Status.BAD_REQUEST,
+        "Batch size " + body.size() + " exceeds the maximum of " + MAX_BULK_SIZE + " rows.");
+    }
+
+    List<RowResult> results = new java.util.ArrayList<>(body.size());
+    int succeeded = 0;
+
+    for (int i = 0; i < body.size(); i++) {
+      try {
+        CreateAnnotationIO row = body.get(i);
+
+        // Per-row validation — mirrors create() field checks
+        if (row == null) {
+          results.add(RowResult.failure(i, "Row is null"));
+          continue;
+        }
+        if (blank(row.getSubjectAppId())) {
+          results.add(RowResult.failure(i, "subjectAppId is required"));
+          continue;
+        }
+        if (blank(row.getSubjectKind())) {
+          results.add(RowResult.failure(i, "subjectKind is required"));
+          continue;
+        }
+        if (blank(row.getPredicateIri())) {
+          results.add(RowResult.failure(i, "predicateIri is required"));
+          continue;
+        }
+        boolean hasLiteral = !blank(row.getObjectLiteral());
+        boolean hasIri = !blank(row.getObjectIri());
+        if (!hasLiteral && !hasIri) {
+          results.add(RowResult.failure(i, "Exactly one of objectLiteral or objectIri must be provided"));
+          continue;
+        }
+        if (hasLiteral && hasIri) {
+          results.add(RowResult.failure(i, "Provide exactly one of objectLiteral or objectIri, not both"));
+          continue;
+        }
+
+        // Per-row permission check — returns a non-null Response on denial
+        Response gate = checkWriteAccessForSubject(row.getSubjectAppId(), row.getSubjectKind(), caller);
+        if (gate != null) {
+          results.add(RowResult.failure(i, "Write access denied for subject " + row.getSubjectAppId()));
+          continue;
+        }
+
+        // Build and persist the annotation
+        SemanticAnnotation annotation = new SemanticAnnotation();
+        annotation.setAppId(AppIdGenerator.next());
+        annotation.setSubjectKind(row.getSubjectKind());
+        annotation.setSubjectAppId(row.getSubjectAppId());
+        annotation.setPropertyIRI(row.getPredicateIri());
+        annotation.setPropertyName(row.getPredicateLabel());
+        annotation.setVocabularyId(row.getVocabularyId());
+        annotation.setValueIRI(row.getObjectIri());
+        annotation.setValueName(hasLiteral ? row.getObjectLiteral() : null);
+        annotation.setNumericValue(row.getNumericValue());
+        annotation.setUnitIRI(row.getUnitIri());
+        String resolvedSourceMode = row.getSourceMode() != null
+          ? row.getSourceMode()
+          : (aiAgentHeader != null && !aiAgentHeader.isBlank() ? "ai" : "human");
+        annotation.setSourceMode(resolvedSourceMode);
+        annotation.setSourceActivityAppId(row.getSourceActivityAppId());
+        annotation.setAgentUsername(caller);
+        annotation.setValidFromMillis(row.getValidFromMillis());
+        annotation.setValidUntilMillis(row.getValidUntilMillis());
+        annotation.setConfidence(row.getConfidence() != null ? row.getConfidence() : 1.0);
+
+        annotationDAO.createOrUpdate(annotation);
+        results.add(RowResult.success(i, annotation.getAppId()));
+        succeeded++;
+
+        Log.debugf("SemanticAnnotationV2Rest bulk: created annotation %s on %s/%s by %s",
+          annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
+
+      } catch (RuntimeException e) {
+        // Best-effort: a runtime error on row i must not abort rows i+1..N
+        Log.warnf(e, "SemanticAnnotationV2Rest bulk: row %d failed with exception", i);
+        results.add(RowResult.failure(i, "Internal error: " + e.getMessage()));
+      }
+    }
+
+    Log.infof("SemanticAnnotationV2Rest: bulk create by %s — requested=%d succeeded=%d failed=%d",
+      caller, body.size(), succeeded, body.size() - succeeded);
+
+    // SEMA-V6-007 / CLAUDE.md skip-capture: suppress the generic ProvenanceCaptureFilter
+    // Activity for this request. Per-row activities are omitted for bulk (too expensive).
+    try {
+      if (requestContext != null) {
+        requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+      }
+    } catch (RuntimeException ignored) { /* best-effort secondary write */ }
+
+    BulkAnnotationResultIO result = new BulkAnnotationResultIO();
+    result.setRequested(body.size());
+    result.setSucceeded(succeeded);
+    result.setFailed(body.size() - succeeded);
+    result.setResults(results);
+
+    return Response.ok(result).build();
   }
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────
