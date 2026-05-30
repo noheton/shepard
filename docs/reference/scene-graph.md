@@ -94,6 +94,52 @@ tools route through the same `SceneGraphService`, so `:Activity` +
 | `scene_graph_delete_joint` | Delete a joint. |
 | `scene_graph_export_urdf` | Export scene as URDF XML string. |
 
+## Browser UI
+
+The page at `/scene-graphs/{appId}` is the browser-side companion to the
+REST surface (shipped under **SCENEGRAPH-REST-1-UI**, replacing the
+placeholder that landed with SCENEGRAPH-REST-1):
+
+- **Left column — frame tree.** Recursive `:HAS_PARENT_FRAME` walk
+  rooted at the scene's `rootFrameAppId` (and any extra
+  `parentFrameAppId === null` frames). Per-row chips show the
+  `FrameKind` (BASE / TCP / TOOL / JOINT / FRAME), attached joint
+  count, and descendant count. Frames whose `parentFrameAppId`
+  references a missing frame appear under a synthetic "Orphans"
+  group at the root level — never silently dropped.
+- **Right column — inspector pane.** Sticky during scroll. Opens
+  when a frame is clicked; carries six `type="number"` fields for
+  the transform `(x,y,z,rx,ry,rz)`, a parent picker (with
+  "(no parent — make root)" first option), a `FrameKind`
+  selector, and a name input. Save dispatches `PATCH
+  /v2/scene-graphs/{appId}/frames/{frameAppId}` with optimistic
+  local update + revert on failure. When no frame is selected, the
+  pane shows the scene's header metadata (name, description, source
+  file, frame + joint counts).
+- **Bottom — joints table.** Sibling table (joints span two frames
+  + type + axis + limits — tabular shape rather than inline chips).
+  Frame appIds are rendered as their `name` for scannability.
+- **Header actions.** `Export URDF` downloads the XML via a Blob URL
+  with filename `<scene-name>.urdf` (sanitised; falls back to
+  `scene_<short-appId>.urdf` for unnamed scenes). `Add frame`
+  opens a dialog whose parent picker is hidden when the scene is
+  empty (first frame becomes the root). `Add joint` is on the
+  joints-table card. Delete affordances live on the inspector
+  (frame subtree, with descendant-count surfacing in the confirm)
+  and the joints table row.
+- **States.** Loading → spinner. 404 → "Scene not found" card with
+  a link back to `/collections`. Empty (scene exists, zero
+  frames) → "Add root frame" CTA. Normal → tree + inspector +
+  joints table.
+- **JSON-LD power-tool.** Each frame's inspector pane has a "Copy
+  as JSON-LD" affordance that emits a single-frame document using
+  the same `@context = https://schema.shepard.dlr.de/v2/scene-graph`
+  the backend serves on `Accept: application/ld+json`.
+
+Write permission today follows the backend gate — any authenticated
+user can edit. The per-scene permission walk is queued as
+**SCENEGRAPH-PERMS-1**.
+
 ## Worked example
 
 Create an empty scene, add a base + tool frame, register a fixed
@@ -159,5 +205,5 @@ RETURN prior.appId, prior.actionKind, prior.summary, prior.startedAtMillis;
 - Renderer (URDF browser): URDF-WEBVIEW-1
 - Producer (RDK parser): RDK-PARSE-2
 - Permission anchor (queued): SCENEGRAPH-PERMS-1
-- Graph browser UI (queued): SCENEGRAPH-REST-1-UI
+- Graph browser UI: SCENEGRAPH-REST-1-UI (✓ shipped 2026-05-30)
 - Design notes: `aidocs/data/85-coordinate-frame-tree.md`
