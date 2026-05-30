@@ -103,6 +103,34 @@ function closeDiff() {
   diffResult.value = null;
 }
 
+// ── Compare deep-link ─────────────────────────────────────────────────────
+
+const showCompareDialog = ref(false);
+const compareBase = ref<SnapshotIO | null>(null);
+const compareHead = ref<SnapshotIO | null>(null);
+
+function openComparePicker(snapshot: SnapshotIO) {
+  compareBase.value = snapshot;
+  compareHead.value = null;
+  showCompareDialog.value = true;
+}
+
+const compareHeadOptions = computed(() =>
+  snapshots.value.filter(s => s.appId !== compareBase.value?.appId),
+);
+
+function navigateToDiff() {
+  if (!compareBase.value?.appId || !compareHead.value?.appId) return;
+  showCompareDialog.value = false;
+  navigateTo(`/snapshots/diff?a=${compareBase.value.appId}&b=${compareHead.value.appId}`);
+}
+
+function closeCompare() {
+  showCompareDialog.value = false;
+  compareBase.value = null;
+  compareHead.value = null;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(isoOrNull?: string | null): string {
@@ -228,6 +256,15 @@ const nameRules = [
           <v-btn
             variant="text"
             size="x-small"
+            icon="mdi-call-split"
+            color="primary"
+            :disabled="snapshots.length < 2"
+            :aria-label="`Compare snapshot ${snap.name} on diff page`"
+            @click="openComparePicker(snap)"
+          />
+          <v-btn
+            variant="text"
+            size="x-small"
             icon="mdi-delete-outline"
             color="error"
             :loading="isSaving"
@@ -266,6 +303,68 @@ const nameRules = [
           @click="confirmDelete"
         >
           Delete
+        </v-btn>
+      </template>
+    </v-card>
+  </v-dialog>
+
+  <!-- Compare deep-link dialog -->
+  <v-dialog
+    v-model="showCompareDialog"
+    max-width="480"
+    @keydown.esc="closeCompare"
+  >
+    <v-card color="canvas">
+      <template #title>
+        <div class="d-flex justify-space-between align-center">
+          <span>Compare with…</span>
+          <v-btn
+            variant="plain"
+            density="compact"
+            icon="mdi-close"
+            aria-label="Close compare dialog"
+            @click="closeCompare"
+          />
+        </div>
+      </template>
+
+      <template #text>
+        <div class="d-flex flex-column ga-4">
+          <v-text-field
+            :model-value="snapshotLabel(compareBase!)"
+            label="Base snapshot (A)"
+            readonly
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-alpha-a-circle-outline"
+          />
+          <v-select
+            v-model="compareHead"
+            :items="compareHeadOptions"
+            :item-title="snapshotLabel"
+            item-value="appId"
+            return-object
+            label="Compare with (B)"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-alpha-b-circle-outline"
+            no-data-text="No other snapshots available"
+          />
+        </div>
+      </template>
+
+      <template #actions>
+        <v-spacer />
+        <v-btn variant="flat" color="treeview" @click="closeCompare">Cancel</v-btn>
+        <v-btn
+          variant="flat"
+          color="primary"
+          :disabled="!compareHead"
+          prepend-icon="mdi-call-split"
+          class="ml-2"
+          @click="navigateToDiff"
+        >
+          Open diff page
         </v-btn>
       </template>
     </v-card>
