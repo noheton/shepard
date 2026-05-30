@@ -104,6 +104,47 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     // exact param name — not `focusAppId` — or the prefill won't fire.
     expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
   });
+
+  // ── TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — conditional rendering ─────────
+
+  it("do-shacl is hidden when no template is attached (enabledWhen=false)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
+    expect(t.enabledWhen).toBeDefined();
+    expect(t.enabledWhen!({ attachedTemplateAppId: null })).toBe(false);
+    expect(t.enabledWhen!({})).toBe(false);
+  });
+
+  it("do-shacl is visible when a template is attached (enabledWhen=true)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
+    expect(t.enabledWhen!({ attachedTemplateAppId: "tpl-001" })).toBe(true);
+  });
+
+  it("do-render is hidden when no template is attached", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
+    expect(t.enabledWhen).toBeDefined();
+    expect(t.enabledWhen!({ attachedTemplateAppId: null })).toBe(false);
+  });
+
+  it("do-shacl prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
+    const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-001" });
+    expect(q.templateAppId).toBe("tpl-001");
+    expect(q.focusAppId).toBe(SAMPLE_APP_ID);
+  });
+
+  it("do-render prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
+    const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-002" });
+    expect(q.templateAppId).toBe("tpl-002");
+    expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
+  });
+
+  it("do-sparql + do-vocab have no gate (enabledWhen undefined) and always render", () => {
+    const sparql = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-sparql")!;
+    const vocab  = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-vocab")!;
+    expect(sparql.enabledWhen).toBeUndefined();
+    expect(vocab.enabledWhen).toBeUndefined();
+  });
 });
 
 // ── buildScopedSparqlQuery ─────────────────────────────────────────────────

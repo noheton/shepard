@@ -454,6 +454,7 @@ async function saveEmbargoEdit() {
               <EntityToolsMenu
                 :app-id="dataObject.appId"
                 scope="data-object"
+                :attached-template-app-id="(dataObject as unknown as { attachedTemplateAppId?: string | null }).attachedTemplateAppId ?? null"
               />
               <PublishButton
                 v-if="isAllowedToEditCollection"
