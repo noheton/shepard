@@ -4,9 +4,10 @@
 KRL the parser handles, how the IR is shaped, and how warnings /
 unsupported constructs surface.
 
-**Status.** KRL-INTERPRETER-02 (parser layer only). Sidecar
-containerisation lands in `KRL-INTERPRETER-04`; the REST surface lands
-in `-05`. See [`aidocs/integrations/117-krl-interpreter.md`](../../../aidocs/integrations/117-krl-interpreter.md)
+**Status.** KRL-INTERPRETER-02 (parser), KRL-INTERPRETER-03 (IK), and
+KRL-INTERPRETER-04 (sidecar) are shipped; the backend REST wiring
+(`/v2/krl/interpret`) lands in `-05`. See
+[`aidocs/integrations/117-krl-interpreter.md`](../../../aidocs/integrations/117-krl-interpreter.md)
 for the full system design.
 
 ---
@@ -148,7 +149,121 @@ See [`krl_interpreter/parser/grammar/SOURCES.md`](../krl_interpreter/parser/gram
 The `.g4` files are original work under MIT; regeneration is one
 `java -jar antlr-4.13.2-complete.jar …` invocation.
 
-## 7. Cross-references
+## 7. Sidecar REST API (KRL-INTERPRETER-04)
+
+The sidecar is a stateless FastAPI service. The Shepard backend
+(KRL-INTERPRETER-05) is the upstream caller; the sidecar exposes no
+host-side port (operator-opt-in via the `krl-interpreter` compose
+profile; see [`docs/install.md`](install.md)).
+
+Every response carries the header `X-KRL-Interpreter-Version: <semver>`.
+
+### `POST /interpret`
+
+Parse + IK-solve + emit a joint trajectory in one round-trip.
+
+**Request body** (Pydantic v2 — full schema in
+`krl_interpreter/sidecar/schemas.py`):
+
+```json
+{
+  "srcText": "DEF p()\nPTP {X 1000, Y 0, Z 0, A 0, B 0, C 0}\nEND\n",
+  "datText": null,
+  "urdfPath": "/data/urdf/kr210.urdf",
+  "baseFrame": null,
+  "toolFrame": null,
+  "seedPose": null,
+  "timeStep": 0.01,
+  "options": {
+    "maxIterations": 100,
+    "ikTolerance": 0.001,
+    "motionDuration": 1.0,
+    "maxIrIterations": 100000,
+    "bcoAsWait": true
+  }
+}
+```
+
+**Required**: `srcText` (non-empty) + `urdfPath` (non-empty).
+**Frames on the wire are metres + radians**; the backend converts from
+KRL native millimetres before invoking the sidecar (the composer applies
+the same mm -> m conversion at the IR -> IK boundary internally).
+
+**Response — 200**:
+
+```json
+{
+  "trajectory": [
+    {"t": 0.01, "joints": [0.0, 0.0, 0.0, 0.0]},
+    {"t": 0.02, "joints": [0.001, 0.0, 0.0, 0.0]}
+  ],
+  "warnings": [
+    {"line": 12, "message": "unreachable: position residual 0.04 m exceeds tolerance 0.001 m", "severity": "warning"}
+  ],
+  "unsupportedConstructs": [
+    {"construct": "INTERRUPT", "line": 47, "reason": "tier-1 unsupported"}
+  ],
+  "ikSolverStats": {
+    "meanCycleMs": 12.4,
+    "maxResidual": 0.00041,
+    "failedPoses": 0,
+    "totalPoses": 1872
+  },
+  "interpreterVersion": "0.1.0"
+}
+```
+
+**Curl example** (from inside the Shepard compose network):
+
+```bash
+curl --fail --silent \
+  -X POST http://krl-interpreter-sidecar:8000/interpret \
+  -H "Content-Type: application/json" \
+  -d @body.json | jq .
+```
+
+**Error codes**:
+
+| Status | Meaning                                                                  |
+| ------ | ------------------------------------------------------------------------ |
+| 400    | KRL parse error (hard) or URDF load failure.                              |
+| 422    | Pydantic validation error (e.g. `timeStep <= 0`, `srcText` empty).        |
+| 501    | Async endpoints (`/interpret/async`, `/interpret/jobs/...`) — deferred.   |
+
+### `POST /interpret/async` — DEFERRED (tier-2)
+
+Returns 501 at tier-1. The async polling pattern (202 + jobId + GET
+`/interpret/jobs/{jobId}` poll) is documented in
+`aidocs/integrations/117 §6` but not implemented at tier-1; the sync
+endpoint handles all current traffic shapes.
+
+### `GET /health`
+
+Liveness probe consumed by the compose healthcheck.
+
+```json
+{"status": "ok", "version": "0.1.0"}
+```
+
+### Composer semantics summary
+
+| KRL IR node              | Composer behaviour (tier-1)                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `Motion(PTP/LIN/CIRC)`   | Resolve `world = $BASE @ pose`; IK-solve; linear-interpolate joints from prev to current.   |
+| `Wait(seconds)`          | Hold last joints for `seconds`; advance clock.                                              |
+| `Wait(condition)`        | Warning + no-op (no offline equivalent).                                                    |
+| `For(start, end, step)`  | Unroll at compile time. Non-integer bounds → warning + skip body.                          |
+| `If(condition)`          | Literal `TRUE` / `FALSE` only; otherwise warning + skip both branches.                     |
+| `While` / `Loop`         | Tier-1 cannot evaluate conditions; warning + skip body (or one-pass unroll for `LOOP`).    |
+| `BaseToolSwitch($BASE)`  | Mutates active base for subsequent motions.                                                |
+| `BaseToolSwitch($TOOL)`  | Stored but **not applied** to IK target at tier-1 (documented limitation).                 |
+| `UnsupportedConstruct`   | Passed through to `unsupportedConstructs` list (no additional warning).                    |
+| `Assign` / `VarDecl`     | Silently no-op (no expression evaluator at tier-1).                                        |
+
+**Failed IK** → warning + hold previous joints across the motion
+duration (clock still advances; failed-pose count incremented).
+
+## 8. Cross-references
 
 * `aidocs/integrations/117-krl-interpreter.md` — full system design.
 * `aidocs/integrations/113-urdf-viewer.md` — downstream consumer.

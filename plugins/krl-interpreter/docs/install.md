@@ -2,14 +2,15 @@
 
 **Audience.** Operators wiring the plugin into a Shepard deployment.
 
-> **Tier-1 (KRL-INTERPRETER-02) is a parser library only.** There is
-> no sidecar container, no REST surface, no admin endpoint, no
-> compose-profile yet. Those land in `KRL-INTERPRETER-04` (sidecar
-> containerisation) and `-05` (backend REST + Activity wiring).
+> **Status (KRL-INTERPRETER-04 shipped).** The sidecar containerisation
+> (`Dockerfile` + `compose-profile.yml` + FastAPI REST) is now in the
+> plugin module. The backend wiring (`/v2/krl/interpret` resource +
+> `:KrlInterpretActivity` audit trail) remains scoped to
+> `KRL-INTERPRETER-05`; the runtime-mutable `:KrlInterpreterConfig`
+> singleton is tracked as **KRL-CONFIG-1** (deferred to tier-2).
 >
-> See [`aidocs/integrations/117-krl-interpreter.md §10`](../../../aidocs/integrations/117-krl-interpreter.md)
-> for the eventual sidecar shape (`compose-profile.yml`, healthcheck,
-> `:KrlInterpreterConfig` admin singleton, CLI parity).
+> See [`aidocs/integrations/117-krl-interpreter.md §6` + `§10`](../../../aidocs/integrations/117-krl-interpreter.md)
+> for the protocol contract this implementation satisfies.
 
 ---
 
@@ -82,21 +83,90 @@ ANTLR tool version.
   inside a `.src` does not pull in additional files; tier-2 will
   accept `srcFileAppIds[]` arrays.
 
-## Future install (sidecar shape, deferred)
+## Sidecar bring-up (KRL-INTERPRETER-04)
 
-The eventual operator install shape — once `KRL-INTERPRETER-04`
-ships — is:
+The sidecar is an opt-in Docker service activated via the
+`krl-interpreter` compose profile. The plugin declares its service in
+`plugins/krl-interpreter/compose-profile.yml`; the operator overlays it
+on the main infrastructure compose file:
 
-```yaml
-# Eventual compose-profile.yml. NOT shipped in KRL-INTERPRETER-02.
-services:
-  krl-interpreter:
-    image: ghcr.io/dlr-shepard/krl-interpreter:0.1.0
-    environment:
-      KRL_LOG_LEVEL: INFO
-      KRL_IK_TOLERANCE: 1e-3
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()"]
+```bash
+docker compose \
+  -f infrastructure/docker-compose.yml \
+  -f plugins/krl-interpreter/compose-profile.yml \
+  --profile krl-interpreter \
+  up -d krl-interpreter-sidecar
 ```
 
-The full shape is documented in `aidocs/integrations/117 §10`.
+### Verifying the sidecar
+
+The sidecar exposes **no host port** by design (the backend reaches it
+via internal compose DNS at `http://krl-interpreter-sidecar:8000`).
+For operator introspection:
+
+```bash
+docker compose exec krl-interpreter-sidecar curl --silent http://localhost:8000/health
+# {"status":"ok","version":"0.1.0"}
+```
+
+### Env-var reference
+
+All knobs are deploy-time-only at tier-1. The runtime-mutable
+`:KrlInterpreterConfig` Neo4j singleton is **deferred** to tier-2
+(tracked as **KRL-CONFIG-1** in `aidocs/16-dispatcher-backlog.md`).
+
+| Variable                    | Default              | Meaning                                           |
+| --------------------------- | -------------------- | ------------------------------------------------- |
+| `PORT`                      | `8000`               | HTTP port the sidecar binds.                      |
+| `HOST`                      | `0.0.0.0`            | Bind host.                                        |
+| `MAX_BODY_SIZE`             | `5242880` (5 MiB)    | Informational; enforced upstream by reverse proxy. |
+| `KRL_IK_TOLERANCE`          | `1e-3`               | Default IK tolerance in metres.                   |
+| `KRL_MAX_ITERATIONS`        | `100`                | Default IK iteration cap (informational on ikpy). |
+| `KRL_TIME_STEP_DEFAULT`     | `0.01`               | Default trajectory sample interval (s).           |
+| `KRL_MOTION_DURATION`       | `1.0`                | Tier-1 fixed per-motion duration (s).             |
+| `KRL_MAX_IR_ITERATIONS`     | `100000`             | Safety cap on `WHILE` / `LOOP` unrolling.         |
+| `LOG_LEVEL`                 | `info`               | Uvicorn log level.                                |
+
+The compose-profile reads `KRL_SIDECAR_PORT`, `KRL_SIDECAR_HOST`,
+`KRL_LOG_LEVEL`, `KRL_MAX_BODY_SIZE`, and the `KRL_*` knobs above from
+the operator env file (with the defaults shown above). The compose-prefix
+caveat:
+
+| Variable                      | Default                 | Meaning                                |
+| ----------------------------- | ----------------------- | -------------------------------------- |
+| `KRL_SIDECAR_DOCKER_NETWORK`  | `infrastructure_shepard` | Compose-prefixed network the sidecar joins. Override if your compose project name is non-default. |
+
+### Reverse-proxy / path mount
+
+The sidecar exposes **no browser UI at tier-1** (REST-only). A future
+admin pane (filed in `aidocs/16` follow-on rows) will land at
+`/krl-interpreter/` per the
+[`## Always: mount plugin UI sidecars as paths, not subdomains`](../../../CLAUDE.md)
+rule. When that ships, the sidecar's `app.py` will need a `root_path`
+override + a corresponding Caddyfile block; the
+`docs/install.md §4` (this section) will be expanded then.
+
+### Healthcheck endpoint
+
+`GET /health` returns `{"status": "ok", "version": "<x.y.z>"}` on a
+healthy sidecar. Both the in-container `HEALTHCHECK` and the compose
+healthcheck read this; depend-on conditions in downstream services may
+gate on this signal once the -05 backend wiring lands.
+
+### Known pitfalls (sidecar)
+
+- **Tier-1 `:KrlInterpreterConfig` admin singleton is deferred.** Flipping
+  IK tolerance, time step, or motion duration requires a container
+  restart with new env. Tier-2 will land the runtime PATCH endpoint
+  (tracked as KRL-CONFIG-1).
+- **Async `/interpret/async` returns 501.** The sync `/interpret`
+  endpoint handles all tier-1 traffic; sidecar IK is fast enough on a
+  6-DOF arm (~12 ms / pose) that even a 5000-pose program completes in
+  ~60 s synchronously. The async polling shape is documented but not
+  implemented at tier-1.
+- **Frames on the wire are metres + radians.** The backend (-05) is
+  responsible for converting from the KRL `.src`'s native millimetres
+  before posting to the sidecar. The composer applies the mm -> m
+  conversion at the IR -> IK boundary internally; if you send a
+  pre-resolved override `baseFrame` / `toolFrame` in the request, it
+  must already be in metres.
