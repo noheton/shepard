@@ -6,6 +6,7 @@
 
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import { extractShapeGraphFromTemplateBody } from "~/utils/shaclTemplateBody";
+import { buildDataObjectRdfUrl, shouldFetchDataObjectRdf } from "~/utils/shaclPrefill";
 
 useHead({ title: "SHACL playground | shepard" });
 
@@ -14,19 +15,20 @@ useHead({ title: "SHACL playground | shepard" });
 // the DataObject has an attached template (TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1),
 // the in-context Tools menu also passes `?templateAppId=<...>`.
 //
-// SHAPES-V-PREFILL-1 (this commit): on arrival with a templateAppId,
-// fetch the template via GET /v2/templates/{appId} and show the
-// resolved template name + body preview in the banner so the user has
-// confirmation that the right template loaded. The actual SHACL graph
-// extraction from the template body's JSON DSL is left for a follow-up
-// (filed as SHAPES-V-PREFILL-3-EXTRACT-SHACL — the JSON DSL doesn't
-// currently embed a `shapeGraph` field; the body schema would need to
-// grow one or the design would need to attach a SHACL Turtle payload
-// via a Reference, and that lives in TPL2c).
+// SHAPES-V-PREFILL-1: on arrival with a templateAppId, fetch the
+// template via GET /v2/templates/{appId} and show the resolved template
+// name + body preview in the banner.
 //
-// Data-graph auto-load is filed as SHAPES-V-PREFILL-2-RDF-ENDPOINT
-// (needs a `GET /v2/data-objects/{appId}/rdf` endpoint that does not
-// yet exist on this fork).
+// SHAPES-V-PREFILL-2 (this commit): on arrival with a focusAppId and a
+// non-collection scope, fetch the DataObject's Turtle subgraph from
+// GET /v2/data-objects/{appId}/rdf and pre-fill the data-graph
+// textarea. Validation is NEVER auto-run — the user clicks Validate.
+//
+// SHAPES-V-PREFILL-3-EXTRACT-SHACL (this commit): when the loaded
+// template's body carries an optional `shapeGraph` Turtle string,
+// extractShapeGraphFromTemplateBody() pulls it out and seeds the
+// shape-graph textarea. The JSON DSL convention is documented on
+// ShepardTemplateIO.body.
 const route = useRoute();
 const focusAppId = computed<string | null>(() =>
   typeof route.query.focusAppId === "string" ? route.query.focusAppId : null,
@@ -68,6 +70,11 @@ const result = ref<unknown>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 
+// SHAPES-V-PREFILL-2 — DataObject RDF auto-load state.
+const rdfLoadError = ref<string | null>(null);
+const isRdfLoading = ref(false);
+const rdfPrefilled = ref(false);
+
 function getV2Base(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -106,8 +113,38 @@ async function fetchAttachedTemplate() {
   }
 }
 
+async function fetchDataObjectRdf() {
+  if (!shouldFetchDataObjectRdf(focusAppId.value, focusScope.value)) return;
+  const id = focusAppId.value;
+  if (!id) return;
+  isRdfLoading.value = true;
+  rdfLoadError.value = null;
+  try {
+    const { data: auth } = useAuth();
+    const headers: Record<string, string> = { Accept: "text/turtle" };
+    if (auth.value?.accessToken) headers["Authorization"] = `Bearer ${auth.value.accessToken}`;
+    const res = await fetch(buildDataObjectRdfUrl(getV2Base(), id), { headers });
+    if (!res.ok) {
+      rdfLoadError.value = `${res.status} ${res.statusText}`;
+      return;
+    }
+    const turtle = await res.text();
+    if (turtle && turtle.length > 0) {
+      dataGraph.value = turtle;
+      rdfPrefilled.value = true;
+    }
+    // Per the dispatch brief: do NOT auto-run validate() — the user
+    // clicks the button after inspecting the prefilled content.
+  } catch (e) {
+    rdfLoadError.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    isRdfLoading.value = false;
+  }
+}
+
 onMounted(() => {
   void fetchAttachedTemplate();
+  void fetchDataObjectRdf();
 });
 
 async function validate() {
@@ -188,14 +225,25 @@ async function validate() {
         <template v-else-if="loadedTemplate">
           Template attached: <strong>{{ loadedTemplate.name }}</strong>
           <span v-if="loadedTemplate.templateKind"> ({{ loadedTemplate.templateKind }})</span>.
-          The shape graph below is prefilled if the template body declares one;
-          otherwise paste your SHACL Turtle. Data-graph auto-load is queued
-          (SHAPES-V-PREFILL-2-RDF-ENDPOINT).
+          The shape graph below is prefilled if the template body declares one.
         </template>
       </div>
-      <div v-else class="text-caption mt-1">
-        Data-graph auto-load is queued (SHAPES-V-PREFILL-2-RDF-ENDPOINT) —
-        paste both graphs below for now.
+      <div
+        v-if="focusScope !== 'collection'"
+        class="text-caption mt-1"
+        data-testid="shacl-rdf-banner"
+      >
+        <template v-if="isRdfLoading">
+          Loading DataObject RDF…
+        </template>
+        <template v-else-if="rdfLoadError">
+          Failed to load DataObject RDF: {{ rdfLoadError }}
+        </template>
+        <template v-else-if="rdfPrefilled">
+          Data graph prefilled from
+          <code>GET /v2/data-objects/{{ focusAppId }}/rdf</code>. Review and
+          click Validate to run SHACL.
+        </template>
       </div>
     </v-alert>
 
