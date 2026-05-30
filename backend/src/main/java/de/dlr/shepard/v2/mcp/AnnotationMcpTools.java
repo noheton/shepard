@@ -515,6 +515,146 @@ public class AnnotationMcpTools {
     });
   }
 
+  // ─── semantic_annotate_bulk (MCP-COV-05) ─────────────────────────────────────
+
+  /** Hard cap on entries per bulk-annotate call (keeps response bounded). */
+  static final int SEMANTIC_ANNOTATE_BULK_MAX = 100;
+
+  @Tool(
+    name = "semantic_annotate_bulk",
+    description =
+      "Create up to " + SEMANTIC_ANNOTATE_BULK_MAX + " SemanticAnnotations in one " +
+      "round-trip. Same shape as `create_annotation` for each entry but folded into a " +
+      "single call so an agent labelling N DataObjects pays one JSON-RPC round-trip " +
+      "instead of N. The single endpoint stays unchanged.\n\n" +
+      "Each entry takes:\n" +
+      "  subjectAppId   — required, appId of the entity to annotate.\n" +
+      "  subjectKind    — required, kind label ('DataObject', 'Collection', …).\n" +
+      "  propertyIRI    — required, predicate IRI from `search_predicates → uri`.\n" +
+      "  propertyName   — optional, display label for the predicate.\n" +
+      "  valueName      — optional, plain-text value.\n" +
+      "  valueIRI       — optional, controlled-vocabulary value IRI.\n" +
+      "  numericValue   — optional, numeric quantity (set unitIRI when used).\n" +
+      "  unitIRI        — optional, QUDT unit IRI.\n" +
+      "  vocabularyId   — optional, appId of the controlling Vocabulary.\n" +
+      "  sourceMode     — optional, 'human' | 'ai' | 'collaborative'; auto from\n" +
+      "                   X-AI-Agent header when omitted.\n" +
+      "  confidence     — optional, AI confidence [0.0, 1.0].\n\n" +
+      "At least one of valueName, valueIRI, or numericValue must be present in each row.\n\n" +
+      "Returns an array, one element per input row, in the same order:\n" +
+      "  Success → {ok: true, appId: \"<uuid>\", subjectAppId: \"...\"}\n" +
+      "  Failure → {ok: false, subjectAppId: \"...\", error: \"<message>\"}\n\n" +
+      "Failed rows do NOT abort the batch — the loop is best-effort per row. " +
+      "Implementation note (MCP-COV-05): this v0 ships a sequential loop on the " +
+      "Quarkus event-loop thread; server-side concurrency is tracked as " +
+      "`MCP-COV-05-SEMANTIC-BULK-CONCURRENT` in `aidocs/16` for when batches " +
+      "grow past the size where serial fan-out matters. Issuing a single bulk " +
+      "REST endpoint is tracked separately as `SEMANTIC-ANNOTATE-BULK-REST-1`."
+  )
+  public String semanticAnnotateBulk(
+    @ToolArg(description = "Up to " + SEMANTIC_ANNOTATE_BULK_MAX + " annotation specs (same shape as `create_annotation`).") List<Map<String, Object>> annotations
+  ) {
+    return support.run("semantic_annotate_bulk", () -> {
+      contextBridge.bind();
+
+      if (annotations == null || annotations.isEmpty()) {
+        throw McpToolSupport.invalidParams("annotations is required and must contain at least one entry.");
+      }
+      if (annotations.size() > SEMANTIC_ANNOTATE_BULK_MAX) {
+        throw McpToolSupport.invalidParams(
+          "Too many entries (" + annotations.size() + "). Max " + SEMANTIC_ANNOTATE_BULK_MAX +
+          " per call — split into multiple semantic_annotate_bulk invocations."
+        );
+      }
+
+      boolean aiHeader = isAiAgentRequest();
+      List<Map<String, Object>> results = new ArrayList<>(annotations.size());
+
+      for (Map<String, Object> row : annotations) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        String subjectAppId = stringField(row, "subjectAppId");
+        out.put("subjectAppId", subjectAppId);
+        try {
+          String subjectKind = stringField(row, "subjectKind");
+          String propertyIRI = stringField(row, "propertyIRI");
+          if (subjectAppId == null || subjectAppId.isBlank()) {
+            throw new IllegalArgumentException("subjectAppId is required.");
+          }
+          if (subjectKind == null || subjectKind.isBlank()) {
+            throw new IllegalArgumentException("subjectKind is required.");
+          }
+          if (propertyIRI == null || propertyIRI.isBlank()) {
+            throw new IllegalArgumentException("propertyIRI is required.");
+          }
+          String valueName = stringField(row, "valueName");
+          String valueIRI  = stringField(row, "valueIRI");
+          Double numericValue = doubleField(row, "numericValue");
+          boolean hasValue = (valueName != null && !valueName.isBlank())
+            || (valueIRI != null && !valueIRI.isBlank())
+            || numericValue != null;
+          if (!hasValue) {
+            throw new IllegalArgumentException(
+              "At least one of valueName, valueIRI, or numericValue is required."
+            );
+          }
+
+          String sourceMode = stringField(row, "sourceMode");
+          if (sourceMode == null || sourceMode.isBlank()) {
+            sourceMode = aiHeader ? "ai" : "human";
+          }
+
+          SemanticAnnotation ann = new SemanticAnnotation();
+          ann.setSubjectAppId(subjectAppId);
+          ann.setSubjectKind(subjectKind);
+          ann.setPropertyIRI(propertyIRI);
+          ann.setPropertyName(stringField(row, "propertyName"));
+          ann.setValueName(valueName);
+          ann.setValueIRI(valueIRI);
+          ann.setNumericValue(numericValue);
+          ann.setUnitIRI(stringField(row, "unitIRI"));
+          ann.setVocabularyId(stringField(row, "vocabularyId"));
+          ann.setSourceMode(sourceMode);
+          ann.setConfidence(doubleField(row, "confidence"));
+
+          SemanticAnnotation saved = annotationDAO.createOrUpdate(ann);
+          out.put("ok", true);
+          out.put("appId", saved.getAppId());
+        } catch (RuntimeException e) {
+          out.put("ok", false);
+          out.put("error", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+        }
+        results.add(out);
+      }
+
+      Map<String, Object> body = new LinkedHashMap<>();
+      body.put("requested", annotations.size());
+      int successCount = 0;
+      for (Map<String, Object> r : results) {
+        if (Boolean.TRUE.equals(r.get("ok"))) successCount++;
+      }
+      body.put("succeeded", successCount);
+      body.put("failed", annotations.size() - successCount);
+      body.put("results", results);
+      return support.toJson(body);
+    });
+  }
+
+  private static String stringField(Map<String, Object> row, String key) {
+    Object v = row.get(key);
+    return v == null ? null : v.toString();
+  }
+
+  private static Double doubleField(Map<String, Object> row, String key) {
+    Object v = row.get(key);
+    if (v == null) return null;
+    if (v instanceof Number n) return n.doubleValue();
+    try {
+      return Double.parseDouble(v.toString());
+    } catch (NumberFormatException nfe) {
+      throw new IllegalArgumentException(key + " must be numeric (got '" + v + "').");
+    }
+  }
+
   // ─── find_similar_annotated (501 stub) ──────────────────────────────────────
 
   @Tool(
