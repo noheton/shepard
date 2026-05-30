@@ -12,6 +12,7 @@
  */
 
 import type { SnapshotDiffIO, SnapshotIO } from "@dlr-shepard/backend-client";
+import { useRouter } from "vue-router";
 import { useSnapshots } from "~/composables/context/useSnapshots";
 
 const props = defineProps<{
@@ -22,6 +23,26 @@ const collectionAppIdRef = computed(() => props.collectionAppId);
 
 const { snapshots, isLoading, isSaving, createSnapshot, deleteSnapshot, diffSnapshots } =
   useSnapshots(collectionAppIdRef);
+
+const router = useRouter();
+
+/**
+ * TOOLS-CONTEXT-SNAP-COMPARE — bookmarkable shortcut to /snapshots/diff
+ * pre-populated with this snapshot as the A side. The destination page
+ * already reads ?a=…&b=… from the route, so a bookmark of the resulting
+ * URL works without round-tripping back through this pane.
+ *
+ * The existing in-pane diff dialog (openDiffPicker) stays as the primary
+ * affordance for "I want to compare two snapshots from this collection";
+ * this Compare action is the per-row shortcut to the global tool.
+ */
+function compareInSnapshotDiff(snapshot: SnapshotIO) {
+  if (!snapshot.appId) return;
+  void router.push({
+    path: "/snapshots/diff",
+    query: { a: snapshot.appId },
+  });
+}
 
 // ── Create form ──────────────────────────────────────────────────────────────
 
@@ -225,6 +246,20 @@ const nameRules = [
           >
             Diff
           </v-btn>
+          <!-- TOOLS-CONTEXT-SNAP-COMPARE — bookmarkable "Compare in
+               Snapshot diff" route. Sibling of the in-pane Diff dialog;
+               this one navigates to /snapshots/diff?a=… so users can
+               share / bookmark the comparison URL. -->
+          <v-btn
+            variant="text"
+            size="x-small"
+            color="secondary"
+            icon="mdi-share-outline"
+            :aria-label="`Open snapshot ${snap.name} in Snapshot diff tool`"
+            :data-testid="`snap-compare-open-${snap.appId}`"
+            :title="'Open in Snapshot diff (bookmarkable URL)'"
+            @click="compareInSnapshotDiff(snap)"
+          />
           <v-btn
             variant="text"
             size="x-small"
