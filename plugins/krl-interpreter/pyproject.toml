@@ -25,16 +25,24 @@ dependencies = [
   "ikpy>=3.4",
   "numpy>=1.24",
   "scipy>=1.10",
+  # Sidecar (KRL-INTERPRETER-04). The sidecar is the default deployment
+  # surface for the plugin; the library API is still importable
+  # without uvicorn but the container ships these too.
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pydantic>=2.5,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
+  "httpx>=0.26",  # FastAPI TestClient transport
 ]
 test = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
+  "httpx>=0.26",
 ]
 
 [project.urls]
@@ -57,6 +65,13 @@ markers = [
 ]
 filterwarnings = [
   "ignore:Link.*is of type 'fixed':UserWarning",
+  # Pydantic v2 warns that `InterpretUnsupported.construct` shadows a
+  # BaseModel attribute; the field name is part of the §6 wire contract.
+  "ignore:Field name .construct.*:UserWarning",
+  # FastAPI's TestClient surfaces a starlette httpx -> httpx2 deprecation
+  # notice; not our code to fix. Match by message text so we don't depend
+  # on starlette's internal warning class path.
+  "ignore:Using .httpx. with .starlette.testclient. is deprecated.*",
 ]
 
 [tool.coverage.run]
