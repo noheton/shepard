@@ -172,7 +172,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md`](agent-findings/research-network-orcid-anchor-2026-05-23.md) | Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synthesis-architecture-report-2026-05-24.md`](agent-findings/synthesis-architecture-report-2026-05-24.md) | Synthesis architecture report — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md`](agent-findings/tib-hannover-outreach-2026-05-23.md) | TIB Hannover outreach — Step 1 ("Used by" entry) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/topnav-reachability-reconciler.md`](agent-findings/topnav-reachability-reconciler.md) | Top-Nav Reachability Reconciler — findings | 2026-05-30 | — |
+| [`aidocs/agent-findings/topnav-reachability-reconciler.md`](agent-findings/topnav-reachability-reconciler.md) | Top-Nav Reachability Reconciler — findings | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |

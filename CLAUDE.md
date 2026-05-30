@@ -549,6 +549,45 @@ release. The 2026-05-30 SCENEGRAPH-REST-1-UI surfaced this — the page
 worked, but flo had no way to find it. That's the failure mode the
 rule prevents.
 
+## Always: tool entry points are in-context first
+
+A tool that takes an entity `appId` as input — SPARQL playground,
+snapshot diff, shape validator, shapes render, scene-graph editor,
+vocabulary browser — **primary entry point is the entity's detail
+page**, pre-populated with that entity's appId. The top-level Tools
+menu is a fallback for entry-less starts (typed query, idle
+exploration). It is not the canonical entry shape.
+
+Asking the user to paste an appId is a leaky abstraction — the user
+already had the entity in hand five seconds ago. Pre-populating from
+context is the cheap path to the same affordance, and it composes
+with the "UI never asks for paths/URLs" rule (the appId is already
+known; never make the user type it).
+
+Reviewer test for a new tool surface: is there a Collection,
+DataObject, Container, or Reference detail page where the user would
+already be standing when they reach for this tool? If yes, that page
+MUST have a button — and the global Tools menu entry is `alpha` until
+the in-context affordance ships. If no such page exists (the tool is
+genuinely entry-less), the global menu is the canonical entry.
+
+Concrete map for the current Tools cluster (TOOLS-NAV-01 family):
+
+- **SPARQL playground** → "Query this collection's graph" on Collection
+  detail; "Query this entity's annotations" on DataObject detail.
+- **Snapshot diff** → "Compare with…" row action in `SnapshotsPane`.
+- **Shape validator** → "Validate against shape" on DataObject detail
+  when a template is attached.
+- **Shapes render** → "Render this view" on DataObject detail when a
+  view-recipe template is available.
+- **Scene-graph editor** → "Open in scene-graph editor" on a URDF /
+  RDK FileReference detail page (SCENEGRAPH-NAV-02).
+- **Vocabularies / ontology browser** → "Show terms used by this
+  Collection / DataObject" on its detail page.
+
+The Tools menu remains the global cross-reference; it doesn't carry
+the load of the primary user flow.
+
 ## Always: ship a UI stub for every backend feature
 
 Every PR that ships a non-trivial backend feature — new endpoint, new entity,

@@ -2994,3 +2994,32 @@ Triggered by the CLAUDE.md "Always: every shipped feature is reachable from the 
 | **MATRIX-N1F-RECONCILE-01** | Reconcile `aidocs/44` line 206 (SPARQL proxy N1f) — the row claims `UI pending` but the playground page exists at `frontend/pages/semantic/sparql/index.vue` and is hub-tile-reachable via `/me#semantic`. Promote to ✓ shipped. Runtime bug (404 on default "internal" repo) is task #244, tracked separately. | XS | done 2026-05-30 | Matrix row updated in the same commit as this backlog edit. |
 | **ONTOLOGY-BROWSE-NONADMIN-01** | Reconciler-surfaced feature gap: non-admin researchers cannot browse seeded vocabularies. Consider a read-only `/semantic/ontologies` view for all users with admin-write gating on the existing pane. | M | queued | Out of the strict topnav-rule scope but worth filing. |
 | **ROUTE-CLEANUP-LEGACY-01** | Reconciler-surfaced drift: `frontend/pages/configuration/*` and `frontend/pages/user/*` redirect to `/admin` and `/me` respectively. Not nav-reachable, not used — delete or document. | XS | queued | Hygiene. |
+
+## TOOLS-CONTEXT-* — in-context tool entry points (2026-05-30 refinement)
+
+Operator clarification on TOOLS-NAV-01 (2026-05-30): "core navigation
+to tools for a dataset should be pre-populated in DataObject or
+Collection." The global Tools menu is the fallback; **the canonical
+entry shape is an action button on the entity detail page,
+pre-populated with that entity's appId**. Codified in CLAUDE.md
+"Always: tool entry points are in-context first" + memory
+`feedback_tools_contextbound_first.md`.
+
+Under the topnav-rule pair, a tool reaches `beta` only when **both**
+the global menu entry (TOOLS-NAV-01) AND the in-context affordance
+ship. Pure-global is `alpha`.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| **TOOLS-CONTEXT-COLL-SPARQL** | "Query this Collection's graph" button on Collection detail page → opens `/semantic/sparql?repoAppId=internal&prefill=<scoped-query>` with a query template that filters to this Collection's annotations. | S | queued | Pre-populates the SPARQL repo + scoped WHERE clause. |
+| **TOOLS-CONTEXT-DO-SPARQL** | "Query this DataObject's annotations" button on DataObject detail → same pattern, scoped to the DataObject's subgraph. | S | queued | Sibling of -COLL-SPARQL. |
+| **TOOLS-CONTEXT-COLL-VOCAB** | "Show terms used by this Collection" on Collection detail → opens the vocabulary browser filtered to terms referenced in this Collection's annotations. | S | queued | Needs vocab-browser to accept a `usedBy=<collAppId>` filter. |
+| **TOOLS-CONTEXT-DO-VOCAB** | Same for DataObject detail. | S | queued | |
+| **TOOLS-CONTEXT-SNAP-COMPARE** | "Compare with…" row action in `SnapshotsPane.vue` → opens `/snapshots/diff?a=<thisSnapId>&b=<picker>`. Replaces the standalone SNAPSHOTS-DIFF-NAV-01 row's UX. | S | queued | Folds in SNAPSHOTS-DIFF-NAV-01. |
+| **TOOLS-CONTEXT-DO-SHACL** | "Validate against shape" on DataObject detail (when a `:ShepardTemplate` is attached) → opens shape validator pre-filled with the DataObject's RDF + the template's SHACL. | M | queued | Needs the validator to accept entity-appId-driven inputs. |
+| **TOOLS-CONTEXT-DO-RENDER** | "Render this view" on DataObject detail (when a view-recipe template is attached) → opens `/shapes/render?templateAppId=…&focusShepardId=<doAppId>`. | M | queued | Reuses the existing `ViewRecipeBuilderDialog` plumbing. |
+| **TOOLS-CONTEXT-FILEREF-SCENE** | Already filed as SCENEGRAPH-NAV-02 — "Open in scene-graph editor" on URDF / RDK FileReference detail. | S | queued | Cross-reference only; lives under SCENEGRAPH-NAV-*. |
+
+These rows land **after** TOOLS-NAV-01 + SCENEGRAPH-NAV-01 + -02 ship so
+the global menu + scene-graphs list exist as targets. Dispatch in a
+second wave once the worktree from 2026-05-30 merges.
