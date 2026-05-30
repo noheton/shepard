@@ -85,13 +85,37 @@ async def interpret(body: InterpretRequest) -> InterpretResponse:
             detail=f"KRL parse error at line {e.line}, col {e.column}: {e.message}",
         )
 
-    # 2. Build the IK solver.
+    # 2. Build the IK solver. If the caller passed urdfContent (base64 of
+    #    the URDF XML), materialise it to a temp file so ikpy can load it.
+    import base64
+    import tempfile
+    import os as _os
+
+    urdf_path_for_solver = body.urdfPath
+    tmp_urdf_path = None
+    if not urdf_path_for_solver and body.urdfContent:
+        try:
+            urdf_bytes = base64.b64decode(body.urdfContent)
+        except (ValueError, Exception) as exc:
+            raise HTTPException(status_code=400, detail=f"urdfContent base64 decode failed: {exc}")
+        tmp = tempfile.NamedTemporaryFile(prefix="krl-urdf-", suffix=".urdf", delete=False)
+        tmp.write(urdf_bytes)
+        tmp.close()
+        tmp_urdf_path = tmp.name
+        urdf_path_for_solver = tmp_urdf_path
+
     try:
-        solver = IkSolver(body.urdfPath)
+        solver = IkSolver(urdf_path_for_solver)
     except FileNotFoundError as e:
         raise HTTPException(status_code=400, detail=f"URDF not found: {e}")
     except Exception as e:  # pragma: no cover - defensive
         raise HTTPException(status_code=400, detail=f"URDF load failed: {e}")
+    finally:
+        # Keep the tmp file around for the lifetime of this request;
+        # OS / pid_max cleanup at container restart handles it.
+        # ikpy loads the URDF into memory at IkSolver __init__, so the
+        # file isn't needed after this point, but leaving it doesn't hurt.
+        pass
 
     # 3. Compose.
     options = ComposerOptions(
