@@ -8,6 +8,7 @@ import { useWatchedCollections } from "~/composables/context/useWatchedCollectio
 import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
+import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
 
 definePageMeta({ layout: "collection" });
 
@@ -313,6 +314,16 @@ useHead({
               no-gutters
               class="justify-end pb-2 ga-2 align-center"
             >
+              <!-- TOOLS-CONTEXT-COLL-* — single in-context Tools menu grouping the
+                   SPARQL query + vocabulary browser entry points so the
+                   header doesn't sprawl. Per the persona-board call
+                   (Reluctant Senior: one collapsed affordance, not four
+                   buttons). -->
+              <EntityToolsMenu
+                v-if="collectionAppId"
+                :app-id="collectionAppId"
+                scope="collection"
+              />
               <!-- CW1: Bell button — subscribe to notifications for new DataObjects. -->
               <CollectionWatchButton
                 v-if="collectionAppId"
