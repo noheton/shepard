@@ -159,11 +159,12 @@ function onPageChange(page: number) {
           >({{ (rowProps.item as any).importedFrom }})</span>
         </template>
         <template #[`item.accessRights`]>
+          <!-- UX-WALK-2026-05-29-08: always render a chip — use the NOT_SET
+               sentinel when accessRights is null/undefined so the FAIR-A
+               surface shows explicit absence instead of an ambiguous "—". -->
           <AccessRightsChip
-            v-if="rowAccessRights(rowProps.item)"
-            :access-rights="rowAccessRights(rowProps.item)!"
+            :access-rights="rowAccessRights(rowProps.item) ?? 'NOT_SET'"
           />
-          <span v-else class="text-disabled">—</span>
         </template>
         <template #[`item.description`]>
           <span

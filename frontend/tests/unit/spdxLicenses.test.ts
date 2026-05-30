@@ -82,10 +82,20 @@ describe("getSpdxLicense", () => {
 });
 
 describe("ACCESS_RIGHTS_OPTIONS", () => {
-  it("has exactly the four documented enum values", () => {
+  it("has exactly the five documented enum values (four settable + NOT_SET sentinel)", () => {
+    // UX-WALK-2026-05-29-08: NOT_SET was added as a display sentinel so the
+    // Access column shows "Not specified" instead of an ambiguous "—" for
+    // collections whose accessRights field has not been set by an operator.
     expect(ACCESS_RIGHTS_OPTIONS.map(o => o.value).sort()).toEqual(
-      ["CLOSED", "EMBARGOED", "OPEN", "RESTRICTED"],
+      ["CLOSED", "EMBARGOED", "NOT_SET", "OPEN", "RESTRICTED"],
     );
+  });
+
+  it("the four operator-settable values are all present", () => {
+    const values = ACCESS_RIGHTS_OPTIONS.map(o => o.value);
+    for (const v of ["OPEN", "RESTRICTED", "CLOSED", "EMBARGOED"]) {
+      expect(values).toContain(v);
+    }
   });
 
   it("OPEN is green, RESTRICTED is amber, CLOSED is red, EMBARGOED is blue", () => {

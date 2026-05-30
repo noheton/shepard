@@ -69,7 +69,7 @@ export const SPDX_LICENSES: SpdxLicense[] = [
 // Values are stored as-is on the wire (free-text String, server permissive); the
 // frontend enforces the controlled vocabulary via the v-select.
 
-export type AccessRights = "OPEN" | "RESTRICTED" | "CLOSED" | "EMBARGOED";
+export type AccessRights = "OPEN" | "RESTRICTED" | "CLOSED" | "EMBARGOED" | "NOT_SET";
 
 export interface AccessRightsOption {
   value: AccessRights;
@@ -106,11 +106,27 @@ export const ACCESS_RIGHTS_OPTIONS: AccessRightsOption[] = [
     label: "Embargoed",
     description: "Restricted now, to become open at a future date (set in metadata).",
   },
+  {
+    // UX-WALK-2026-05-29-08: sentinel value for collections whose accessRights
+    // field is null/undefined. Shown as a neutral chip instead of a bare "—"
+    // so the FAIR-A surface makes the absence of access information explicit
+    // rather than ambiguous. The collection owner or admin can set a real
+    // access level via the collection properties panel.
+    value: "NOT_SET",
+    color: "default",
+    label: "Not specified",
+    description:
+      "No access level has been set for this collection. The creator or admin can set one via the collection properties.",
+  },
 ];
 
 /**
  * Lookup helper: given an accessRights string (typed via API or v-select),
  * return its display option, or `undefined` when unset / unknown.
+ *
+ * Passing `null`, `undefined`, or `""` returns `undefined` — callers that
+ * want to render a "Not specified" chip should pass `"NOT_SET"` explicitly
+ * (see UX-WALK-2026-05-29-08).
  */
 export function getAccessRightsOption(
   value: string | null | undefined,
