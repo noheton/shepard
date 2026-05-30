@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { usePatchMe } from "~/composables/context/usePatchMe";
-import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { useShowOrcidBadge } from "~/composables/context/useShowOrcidBadge";
 import { useOrcidProfile } from "~/composables/context/useOrcidProfile";
 import { isValidOrcid } from "~/utils/orcidFormat";
 
+// task #240 (2026-05-30): the per-user "JupyterHub base URL" preference was
+// removed. The "Open in JupyterHub" affordance now reads from the
+// admin-configurable `:JupyterConfig` singleton (`useJupyterConfig`).
+
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
-const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
 const { showOrcidBadge, isSaving: isOrcidBadgeSaving, setShowOrcidBadge } = useShowOrcidBadge();
 
@@ -99,16 +101,6 @@ async function deleteAvatar() {
 const editOrcid = ref<string>("");
 const editDisplayName = ref<string>("");
 
-const jupyterUrlInput = ref<string>("");
-
-watch(
-  preferredJupyterUrl,
-  (url) => {
-    jupyterUrlInput.value = url;
-  },
-  { immediate: true },
-);
-
 // Hydrate inline editors from server state whenever the user payload
 // arrives or is replaced (e.g. after a successful patchMe round-trip).
 watch(
@@ -149,10 +141,6 @@ async function saveIdentity() {
   if (updated) {
     user.value = updated;
   }
-}
-
-async function saveJupyterUrl() {
-  await saveJupyter(jupyterUrlInput.value.trim());
 }
 </script>
 
@@ -371,36 +359,6 @@ async function saveJupyterUrl() {
           No public keywords or works found on this ORCID record.
         </p>
       </template>
-    </div>
-
-    <!-- JupyterHub URL section -->
-    <div v-if="user && !isLoading" class="d-flex flex-column ga-2">
-      <h5 class="text-h5">JupyterHub</h5>
-      <v-text-field
-        v-model="jupyterUrlInput"
-        label="JupyterHub base URL"
-        placeholder="https://myhub.example.com"
-        hint="Set your JupyterHub base URL to enable 'Open in JupyterHub' buttons. Stored in your user preferences."
-        persistent-hint
-        variant="outlined"
-        density="comfortable"
-        clearable
-        :loading="isJupyterSaving"
-        :disabled="isJupyterSaving"
-      >
-        <template #append>
-          <v-btn
-            color="primary"
-            variant="flat"
-            density="comfortable"
-            :loading="isJupyterSaving"
-            :disabled="isJupyterSaving"
-            @click="saveJupyterUrl"
-          >
-            Save
-          </v-btn>
-        </template>
-      </v-text-field>
     </div>
 
     <!-- Advanced mode toggle -->
