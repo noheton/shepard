@@ -8,6 +8,7 @@ import { useWatchedCollections } from "~/composables/context/useWatchedCollectio
 import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
+import { buildCollectionSparqlUrl } from "~/utils/collectionSparqlUrl";
 
 definePageMeta({ layout: "collection" });
 
@@ -349,6 +350,18 @@ useHead({
                 @click="downloadRepExport"
               >
                 Regulatory Evidence Pack
+              </v-btn>
+              <!-- TOOLS-CONTEXT-COLL-SPARQL: in-context entry to the SPARQL playground,
+                   pre-populated with a query scoped to this Collection's appId. -->
+              <v-btn
+                v-if="collectionAppId"
+                prepend-icon="mdi-database-search"
+                variant="tonal"
+                color="secondary"
+                :to="buildCollectionSparqlUrl(collectionAppId)"
+                title="Query this Collection's graph in the SPARQL playground"
+              >
+                Query graph
               </v-btn>
               <PublishButton
                 v-if="collectionAppId && isAllowedToEditCollection"
