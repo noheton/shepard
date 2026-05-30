@@ -27,34 +27,34 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * J1e-PR-07 — <b>DEPRECATED wire-compat shim</b> retained at
- * {@code /v2/admin/jupyter/config} during a deprecation window.
+ * J1e-PR-07 — canonical admin REST surface for the JupyterHub config singleton,
+ * now living under the plugin SPI convention path
+ * {@code /v2/admin/plugins/jupyter/config}.
  *
- * <p>The canonical path is now
- * {@code /v2/admin/plugins/jupyter/config} (per plugin SPI
- * conventions, introduced in J1e-PR-07). This class delegates to the
- * same {@link JupyterConfigService} and is wire-identical in every
- * respect. It will be removed once the deprecation window closes
- * (tracked as J1e-PR-07 in {@code aidocs/16-dispatcher-backlog.md}).
+ * <p>This class is the <em>canonical</em> location going forward. The
+ * legacy path {@code /v2/admin/jupyter/config} is retained as a
+ * deprecated wire-compat shim in {@link JupyterConfigRest} during a
+ * deprecation window; operators should migrate to this path.
  *
- * <p>Operators should migrate all callers from this path to
- * {@code /v2/admin/plugins/jupyter/config}. A WARN-level deprecation
- * log is emitted on every call to assist discovery.
+ * <p>Exclusively {@code @RolesAllowed("instance-admin")}. All response
+ * bodies are {@code application/json} except the
+ * {@code application/problem+json} envelope on error paths.
  *
- * @deprecated Use {@link JupyterConfigPluginRest} at
- *             {@code /v2/admin/plugins/jupyter/config} instead.
- * @see JupyterConfigPluginRest canonical resource at the new path
+ * <p>No upstream {@code /shepard/api/} surface is touched.
+ * PROV1a's {@code ProvenanceCaptureFilter} automatically captures the
+ * PATCH as an {@code :Activity} row.
+ *
  * @see JupyterConfigService
  * @see JupyterConfig
+ * @see JupyterConfigRest deprecated shim at {@code /v2/admin/jupyter/config}
  */
-@Deprecated(since = "J1e-PR-07", forRemoval = true)
-@Path("/v2/admin/jupyter/config")
+@Path("/v2/admin/plugins/jupyter/config")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")
-public class JupyterConfigRest {
+public class JupyterConfigPluginRest {
 
   /** RFC 7807 type URI for an invalid hub URL. */
   static final String PROBLEM_TYPE_INVALID_HUB_URL = "/problems/jupyter.config.invalid-hub-url";
@@ -69,7 +69,8 @@ public class JupyterConfigRest {
     "`hubUrl` (string, nullable). When the singleton has no `hubUrl`, the deploy-time " +
     "default (`shepard.jupyter.hub-url`) is returned in its place. The frontend reveals " +
     "the per-notebook 'Open in JupyterHub' action only when `enabled === true` AND " +
-    "`hubUrl !== null`. Gated on the instance-admin role."
+    "`hubUrl !== null`. Gated on the instance-admin role. " +
+    "Canonical path (J1e-PR-07); the legacy path `/v2/admin/jupyter/config` is deprecated."
   )
   @APIResponse(
     responseCode = "200",
@@ -78,7 +79,6 @@ public class JupyterConfigRest {
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response getConfig() {
-    Log.warn("J1e-PR-07: GET /v2/admin/jupyter/config is deprecated — migrate to /v2/admin/plugins/jupyter/config");
     JupyterConfig cfg = service.current();
     return Response.ok(toIO(cfg)).build();
   }
@@ -93,7 +93,8 @@ public class JupyterConfigRest {
     "as 'leave alone' since the entity field is a primitive boolean. " +
     "When `hubUrl` is non-null, it must parse as a syntactically valid absolute URL " +
     "(http or https). PROV1a's ProvenanceCaptureFilter captures this PATCH as an " +
-    ":Activity row (targetKind=JupyterConfig)."
+    ":Activity row (targetKind=JupyterConfig). " +
+    "Canonical path (J1e-PR-07); the legacy path `/v2/admin/jupyter/config` is deprecated."
   )
   @APIResponse(
     responseCode = "200",
@@ -107,7 +108,6 @@ public class JupyterConfigRest {
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patchConfig(JupyterConfigPatchIO body) {
-    Log.warn("J1e-PR-07: PATCH /v2/admin/jupyter/config is deprecated — migrate to /v2/admin/plugins/jupyter/config");
     JupyterConfigPatchIO patch = body == null ? new JupyterConfigPatchIO() : body;
 
     // Validate hubUrl when it was explicitly provided and is non-null.
@@ -157,8 +157,7 @@ public class JupyterConfigRest {
 
   /**
    * Lightweight URL validation — accepts only absolute {@code http} or
-   * {@code https} URLs with a non-empty host. Path/query/fragment are
-   * tolerated so installs can put the hub behind a virtual-host prefix.
+   * {@code https} URLs with a non-empty host.
    */
   static boolean isValidAbsoluteHttpUrl(String candidate) {
     if (candidate == null || candidate.isBlank()) return false;
