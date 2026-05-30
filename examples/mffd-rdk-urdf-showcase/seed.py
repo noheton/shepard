@@ -357,10 +357,85 @@ def _content_type_for(path: Path) -> str:
     return "application/octet-stream"
 
 
+def _get_data_object_app_id(host: str, api_key: str, coll_id: int, do_id: int) -> str | None:
+    """Fetch the UUID v7 appId of a DataObject via the v1 REST API.
+
+    The shepard_client pydantic DataObject model doesn't expose appId (the
+    upstream wire shape predates UUID v7 as a first-class field).  The v1
+    JSON response does include appId via BasicEntityIO, so we fetch raw JSON
+    and extract it here.  This is the same pattern used by _collection_app_id
+    in examples/mffd-showcase/seed.py.
+    """
+    resp = _http.get(
+        f"{host}/collections/{coll_id}/dataObjects/{do_id}",
+        headers={"X-API-KEY": api_key},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json().get("appId") or None
+
+
+def upload_singleton_file_reference(
+    v2_base: str, api_key: str, do_app_id: str,
+    file_path: Path, ref_name: str,
+) -> str | None:
+    """Upload a single file as a FR1b singleton FileReference.
+
+    Uses POST /v2/files?parentDataObjectAppId={do_app_id}&name={ref_name}
+    (multipart/form-data, form field ``file``).
+
+    Returns the singleton's appId on success, None if skipped (already
+    exists or local file is missing).
+
+    Idempotent: checks GET /v2/files/by-data-object/{do_app_id} before
+    creating; skips if a singleton with the same name already exists.
+    """
+    headers = {"X-API-KEY": api_key}
+
+    # Idempotency check — list existing FR1b singletons for this DataObject.
+    list_resp = _http.get(
+        f"{v2_base}/files/by-data-object/{do_app_id}",
+        headers=headers,
+        timeout=30,
+    )
+    if list_resp.status_code == 200:
+        for existing in list_resp.json() or []:
+            if existing.get("name") == ref_name:
+                existing_app_id = existing.get("appId", "")
+                _log("SKIP", ref_name, "FileReference (FR1b, already exists)", existing_app_id)
+                return existing_app_id
+    elif list_resp.status_code != 404:
+        # 404 means the DataObject has no singletons yet — that's fine.
+        _log("WARN", ref_name, "FileReference list-check", list_resp.status_code)
+
+    if not file_path.exists():
+        _log("SKIP", ref_name, f"FileReference (missing local file: {file_path})")
+        return None
+
+    ctype = _content_type_for(file_path)
+    data = file_path.read_bytes()
+    upload_resp = _http.post(
+        f"{v2_base}/files",
+        params={"parentDataObjectAppId": do_app_id, "name": ref_name},
+        files={"file": (file_path.name, data, ctype)},
+        headers=headers,
+        timeout=180,
+    )
+    upload_resp.raise_for_status()
+    new_app_id = upload_resp.json().get("appId", "")
+    _log("OK", ref_name, "FileReference (FR1b singleton)", new_app_id)
+    return new_app_id
+
+
 def upload_file_reference(apis: Apis, coll: Collection, do: DataObject,
                           fc: FileContainer, file_path: Path,
                           ref_name: str) -> FileReference | None:
-    """Upload a single file under one FileReference (FR1b: one FileRef per file)."""
+    """Legacy FR1a bundle upload — use upload_singleton_file_reference() for new single-file uploads.
+
+    Kept for reference and potential future multi-file bundle use.  All
+    single-file uploads in this seed script now use upload_singleton_file_reference()
+    instead (FR1b singleton shape, POST /v2/files).
+    """
     existing_refs = apis.file_reference.get_all_file_references(coll.id, do.id) or []
     for r in existing_refs:
         if r.name == ref_name:
@@ -687,6 +762,7 @@ def seed(apis: Apis) -> None:
 
     host    = apis.client.configuration.host.rstrip("/")
     api_key = apis.client.configuration.api_key.get("apikey", "")
+    v2      = _v2_base(host)
 
     # Containers
     fc  = ensure_file_container(apis, FC_RDK_NAME)
@@ -716,7 +792,11 @@ def seed(apis: Apis) -> None:
         print(f"WARN: MFZ.rdk not found at {MFZ_RDK_PATH}", file=sys.stderr)
         print("      The RDK upload step is skipped. Mount the MFFD raw-data tree "
               "under examples/mffd-showcase/raw-data/ to enable it.", file=sys.stderr)
-    upload_file_reference(apis, coll, do_rdk, fc, MFZ_RDK_PATH, "mfz-rdk-source")
+    do_rdk_app_id = _get_data_object_app_id(host, api_key, coll.id, do_rdk.id)
+    if do_rdk_app_id:
+        upload_singleton_file_reference(v2, api_key, do_rdk_app_id, MFZ_RDK_PATH, "mfz-rdk-source")
+    else:
+        _log("SKIP", "mfz-rdk-source", "FileReference (could not resolve DataObject appId)")
 
     # 2) URDF DataObject + URDF + meshes
     do_urdf = ensure_data_object(
@@ -736,11 +816,15 @@ def seed(apis: Apis) -> None:
         },
     )
     print("\n--- Uploading URDF + Collada meshes (provenance copies) ---", flush=True)
-    upload_file_reference(apis, coll, do_urdf, fc, URDF_DIR / "kr210l150.urdf", "kr210-urdf")
-    for mesh in MESH_NAMES:
-        upload_file_reference(
-            apis, coll, do_urdf, fc, FE_MESH_DIR / mesh, f"kr210-mesh-{mesh}",
-        )
+    do_urdf_app_id = _get_data_object_app_id(host, api_key, coll.id, do_urdf.id)
+    if do_urdf_app_id:
+        upload_singleton_file_reference(v2, api_key, do_urdf_app_id, URDF_DIR / "kr210l150.urdf", "kr210-urdf")
+        for mesh in MESH_NAMES:
+            upload_singleton_file_reference(
+                v2, api_key, do_urdf_app_id, FE_MESH_DIR / mesh, f"kr210-mesh-{mesh}",
+            )
+    else:
+        _log("SKIP", "kr210-urdf + meshes", "FileReference (could not resolve DataObject appId)")
 
     # 3) Trajectory DataObject + TS channels
     do_traj = ensure_data_object(
