@@ -28,13 +28,15 @@ watch(
   { immediate: true },
 );
 
-function openInJupyter() {
+function openInJupyter(notebookAppId: string) {
   if (!preferredJupyterUrl.value) {
     showUrlField.value = true;
     return;
   }
   const base = preferredJupyterUrl.value.replace(/\/$/, "");
-  window.open(base, "_blank", "noopener,noreferrer");
+  const fileUrl = downloadUrl(notebookAppId);
+  const target = `${base}/?file=${encodeURIComponent(fileUrl)}`;
+  window.open(target, "_blank", "noopener,noreferrer");
 }
 
 function downloadUrl(appId: string): string {
@@ -181,7 +183,7 @@ function formatBytes(bytes: number | null | undefined): string {
                 density="comfortable"
                 prepend-icon="mdi-jupyter"
                 size="small"
-                @click="openInJupyter()"
+                @click="openInJupyter(nb.appId)"
               >
                 Open in JupyterHub
               </v-btn>
