@@ -1,12 +1,13 @@
 # shepard-plugin-krl-interpreter — reference
 
 **Audience.** Plugin authors and power users who need to know what
-KRL the parser handles, how the IR is shaped, and how warnings /
-unsupported constructs surface.
+KRL the parser handles, how the IR is shaped, how warnings /
+unsupported constructs surface, and how to call the backend wrapper
+endpoint.
 
-**Status.** KRL-INTERPRETER-02 (parser), KRL-INTERPRETER-03 (IK), and
-KRL-INTERPRETER-04 (sidecar) are shipped; the backend REST wiring
-(`/v2/krl/interpret`) lands in `-05`. See
+**Status.** KRL-INTERPRETER-02 (parser), KRL-INTERPRETER-03 (IK),
+KRL-INTERPRETER-04 (sidecar), KRL-INTERPRETER-05 (backend REST), and
+KRL-INTERPRETER-06 (frontend UI) are all **shipped**. See
 [`aidocs/integrations/117-krl-interpreter.md`](../../../aidocs/integrations/117-krl-interpreter.md)
 for the full system design.
 
@@ -25,8 +26,11 @@ file, produce a Python intermediate representation (IR) that:
 * attaches `(line, column)` to every IR node for downstream audit
   trails.
 
-It does **not** evaluate expressions, unroll loops, resolve IK, or
-emit trajectories. Those are downstream layers.
+The sidecar (`KRL-INTERPRETER-04`) exposes this as a REST endpoint.
+The Shepard backend (`KRL-INTERPRETER-05`) wraps it behind
+`POST /v2/krl/interpret`, which resolves `appId` references,
+invokes the sidecar, and persists the resulting joint trajectory as a
+`TimeseriesReference`.
 
 ## 2. KRL subset covered
 
@@ -263,11 +267,178 @@ Liveness probe consumed by the compose healthcheck.
 **Failed IK** → warning + hold previous joints across the motion
 duration (clock still advances; failed-pose count incremented).
 
-## 8. Cross-references
+## 8. Backend wrapper endpoint — `POST /v2/krl/interpret` (KRL-INTERPRETER-05)
+
+The backend wrapper resolves `FileReference` `appId`s to byte payloads,
+calls the sidecar, persists the resulting joint-angle trajectory as a
+new `TimeseriesReference` (channels named `joint_0 … joint_N`), and
+records a `:KrlInterpretActivity` PROV-O activity.
+
+### Authentication
+
+`@Authenticated` — any logged-in user. Permission to write to the
+target DataObject's collection is enforced by
+`TimeseriesReferenceService.createReference()`. Returns `403` when the
+caller lacks write access.
+
+### Request body (`KrlInterpretRequestIO`)
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `srcFileAppId` | `string` | **yes** | `appId` of the `FileReference` holding the KRL `.src` program. |
+| `urdfFileAppId` | `string` | **yes** | `appId` of the `FileReference` holding the URDF XML. |
+| `targetDataObjectAppId` | `string` | **yes** | `appId` of the DataObject to which the resulting `TimeseriesReference` is attached. |
+| `timeseriesContainerAppId` | `string` | **yes** | `appId` of the `TimeseriesContainer` the trajectory data points are written to. (Tier-2 auto-mint deferred to `KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER`.) |
+| `sceneAppId` | `string` | no | `appId` of a `:DigitalTwinScene` — provides default base/tool frame when not overridden by explicit frame fields. |
+| `datFileAppIds` | `string[]` | no | `appId`s of companion `.dat` `FileReference`s. |
+| `baseFrame` | `{x,y,z,rx,ry,rz}` | no | Base-frame override in metres + radians. Replaces the `$BASE` frame from the `.src`. |
+| `toolFrame` | `{x,y,z,rx,ry,rz}` | no | Tool-frame override in metres + radians. |
+| `seedPose` | `number[]` | no | Seed joint angles (radians) for IK convergence. Leave null for URDF zero pose. |
+| `timeStep` | `number` | no | Trajectory sample step in seconds. Default: `0.01` (100 Hz). |
+| `options` | `object` | no | Pass-through options to the sidecar: `ikTolerance`, `maxIterations`, `motionDuration`, `maxIrIterations`, `bcoAsWait`. |
+
+### Response — 201 Created (`KrlInterpretResponseIO`)
+
+```json
+{
+  "trajectoryAppId": "01900000-0000-7000-0000-000000000001",
+  "activityAppId":   "01900000-0000-7000-0000-000000000002",
+  "warnings": [
+    {"line": 12, "severity": "WARN", "message": "WAIT FOR degraded — no offline equivalent"}
+  ],
+  "unsupportedConstructs": [
+    {"construct": "INTERRUPT", "line": 47, "reason": "tier-1 unsupported"}
+  ],
+  "ikSolverStats": {
+    "meanCycleMs": 12.4,
+    "p99CycleMs": 18.7,
+    "maxResidualMeters": 4.1e-4,
+    "maxResidualRadians": null,
+    "failedPoses": 0,
+    "totalPoses": 1872,
+    "solverName": "ikpy",
+    "solverVersion": "3.3.4"
+  },
+  "interpreterVersion": "0.1.0"
+}
+```
+
+### Worked curl example
+
+```bash
+curl --fail --silent \
+  -X POST https://shepard.example.org/v2/krl/interpret \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "srcFileAppId":              "01900000-0000-7000-0000-0000000000aa",
+    "urdfFileAppId":             "01900000-0000-7000-0000-0000000000bb",
+    "targetDataObjectAppId":     "01900000-0000-7000-0000-0000000000cc",
+    "timeseriesContainerAppId":  "01900000-0000-7000-0000-0000000000dd"
+  }' | jq '{trajectoryAppId, activityAppId}'
+```
+
+Pass `X-AI-Agent: my-agent-id` to record the call as `sourceMode=ai`
+in the `:KrlInterpretActivity` (EU AI Act Art. 50 disclosure shape).
+
+### Error codes
+
+| Status | Condition |
+| ------ | --------- |
+| 201 | Trajectory persisted; `trajectoryAppId` + `activityAppId` returned. |
+| 400 | Malformed input (missing required field, unknown `appId`). |
+| 401 | Authentication required. |
+| 403 | Caller lacks write on the target DataObject's collection. |
+| 422 | IK divergence above the configured tolerance. |
+| 501 | KRL program contains a hard-stop construct (SPS / INTERRUPT / ANIN / ANOUT). |
+| 502 | Sidecar unreachable or returned an unexpected error. (Operator: bring up the `krl-interpreter` compose profile.) |
+| 504 | Sidecar call timed out (see `shepard.krl.sidecar.timeout-seconds`). |
+
+### Provenance
+
+Every successful call records a `:KrlInterpretActivity` (an
+`:Activity` with the additional `KrlInterpretActivity` label) with:
+
+* `USED` edges → src `FileReference`, URDF `FileReference`, optional
+  `.dat` `FileReference`s, optional `:DigitalTwinScene`.
+* `GENERATED` edge → the new trajectory `TimeseriesReference`.
+* `WAS_ASSOCIATED_WITH` edge → `:User`.
+* `sourceMode` = `"ai"` when `X-AI-Agent` header is present.
+
+The filter-skip handoff (`PROP_SKIP_CAPTURE`) ensures exactly one
+`:Activity` row per call — no duplicate generic-capture row.
+
+### Output: trajectory timeseries
+
+The `TimeseriesReference` created by a successful call writes one
+channel per URDF joint: `joint_0`, `joint_1`, … `joint_N`. Each
+channel is annotated with `urn:shepard:urdf:joint:joint_<n>` so the
+URDF viewer (`URDF-WEBVIEW-1`) auto-binds joints to channels without
+manual mapping. The `interpreterVersion` field in the response is
+stored on the `:KrlInterpretActivity` for EN 9100 audit reproducibility.
+
+### `:DigitalTwinScene` integration
+
+When `sceneAppId` is supplied, the backend loads the scene's default
+base/tool frames before calling the sidecar. Explicit `baseFrame` /
+`toolFrame` fields override the scene's defaults. When both `sceneAppId`
+and explicit frame fields are absent, the sidecar uses the frames
+declared in the `.src` program itself.
+
+## 9. Frontend UI (KRL-INTERPRETER-06)
+
+The "Run / preview" button (`RunKrlPreviewButton.vue`) appears on the
+`FileReference` detail page for any `.src` file. It is:
+
+* Shown only when the file name ends in `.src` (case-insensitive).
+* Disabled when the caller lacks write access on the parent collection.
+
+Clicking it opens `RunKrlPreviewDialog.vue`, which collects:
+
+**Required fields:**
+- URDF `FileReference` picker (pre-selects the only candidate when
+  exactly one URDF is in the DataObject).
+- Target DataObject `appId` (defaults to the parent DataObject of the
+  `.src` file).
+- `TimeseriesContainer` `appId`.
+
+**Advanced section (collapsed by default):**
+- `.dat` companion file picker (pre-selects the same-stem `.dat` when
+  found).
+- `timeStep`, `ikTolerance`, `maxIterations`.
+- Base/tool frame override toggles with six-axis input fields.
+- Seed pose (comma-separated joint angles).
+
+After submission, `KrlInterpretResultPanel.vue` renders:
+
+* A status chip: "Interpreter resolved offline replay" (success) or
+  HTTP error code with operator hint on 502.
+* `trajectoryAppId` + `activityAppId` for audit drill-down.
+* "Run preview" button linking to the URDF viewer
+  (`/shapes/render?renderer=urdf&urdfUrl=…`).
+* "Back to DataObject" navigation link.
+* Warnings table (line, severity, message).
+* Unsupported constructs table (construct, line, reason).
+* IK convergence stats (mean cycle ms, p99 cycle ms, max residual,
+  failed/total poses, solver name/version).
+
+## 10. Deploy-time configuration (KRL-INTERPRETER-05)
+
+Three `application.properties` keys (deploy-time only at tier-1;
+runtime-mutable `:KrlInterpreterConfig` admin singleton deferred to
+**KRL-CONFIG-1**):
+
+| Key | Default | Description |
+| --- | ------- | ----------- |
+| `shepard.krl.sidecar.url` | `http://krl-interpreter-sidecar:8000` | Base URL of the KRL interpreter sidecar. Override when the sidecar runs on a non-default host or port. |
+| `shepard.krl.sidecar.timeout-seconds` | `120` | Per-call HTTP timeout in seconds. Increase for very large programs (> 3000 poses). |
+| `shepard.krl.sidecar.max-body-size-mb` | `16` | Guard against runaway payloads. The backend rejects requests whose summed file payloads exceed this value (MiB). |
+
+## 11. Cross-references
 
 * `aidocs/integrations/117-krl-interpreter.md` — full system design.
 * `aidocs/integrations/113-urdf-viewer.md` — downstream consumer.
 * `aidocs/integrations/110-file-format-parser-plugin.md §4.3` — RDK
   parse (sibling).
 * `aidocs/data/85-coordinate-frame-tree.md` — frame schema the IK
-  layer will resolve targets against.
+  layer resolves targets against.
