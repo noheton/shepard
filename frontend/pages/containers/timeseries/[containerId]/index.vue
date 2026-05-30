@@ -5,6 +5,7 @@ import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappin
 import { useTimeseriesContainerChartView } from "~/composables/containers/useTimeseriesContainerChartView";
 import { useTimeseriesContainerLinkedDataObjects } from "~/composables/containers/useTimeseriesContainerLinkedDataObjects";
 import { useFetchTimeseriesContainerStats } from "~/composables/containers/useFetchTimeseriesContainerStats";
+import { useContainerAxisAnnotations } from "~/composables/containers/useContainerAxisAnnotations";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
@@ -15,6 +16,14 @@ const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useTimeseriesContainerLinkedDataObjects(containerId);
 
 const { stats: containerStats } = useFetchTimeseriesContainerStats(containerId);
+
+// UX-WALK-2026-05-29-02 — channel-level spatial:axis annotation chips for
+// the Semantic Annotations panel. The TS-AXIS-VERIFY writes go to
+// :AnnotatableTimeseries bridge nodes (per-channel), not to the container
+// entity itself, so the container-level annotation endpoint returns nothing.
+// This composable fans out to the per-channel annotation endpoints and
+// collects only spatial:axis annotations.
+const { chips: axisChips, loading: axisChipsLoading } = useContainerAxisAnnotations(containerId);
 
 function fmtBytes(b: number): string {
   if (b === 0) return "0 B";
@@ -277,6 +286,44 @@ useHead({
             :annotated="new AnnotatedTimeseriesContainer(containerId)"
             :can-delete="!!containerAccessor.isAllowedToEditData.value"
           />
+          <!-- UX-WALK-2026-05-29-02: channel-level spatial:axis chips.
+               These are stored on :AnnotatableTimeseries bridge nodes (per-
+               channel), not on the container entity, so the container-level
+               annotation list above never returns them. Render them here as
+               read-only chips grouped under a "Channel axis roles" label. -->
+          <div v-if="axisChipsLoading" class="mt-2" role="status">
+            <v-progress-circular indeterminate size="16" aria-label="Loading channel axis roles" />
+          </div>
+          <div
+            v-else-if="axisChips.length > 0"
+            class="mt-3"
+            data-testid="axis-annotation-chips"
+          >
+            <div class="text-caption text-medium-emphasis mb-1">Channel axis roles</div>
+            <ul class="d-flex flex-wrap ga-2">
+              <li
+                v-for="chip in axisChips"
+                :key="`${chip.shepardId}-${chip.annotation.id}`"
+                class="d-flex align-center"
+                :title="chip.channelName"
+              >
+                <v-chip
+                  color="primary"
+                  variant="outlined"
+                  rounded="lg"
+                  size="small"
+                  class="semantic-key"
+                >spatial:axis</v-chip>
+                <v-chip
+                  color="primary"
+                  variant="flat"
+                  rounded="lg"
+                  size="small"
+                  class="semantic-value"
+                >{{ chip.annotation.valueName }}</v-chip>
+              </li>
+            </ul>
+          </div>
         </ExpansionPanelItem>
       </ExpansionPanels>
       <!-- UX-PIN1: containerPath is stored with each pin so the PersonalDigest
@@ -329,5 +376,17 @@ useHead({
   background: rgba(var(--v-border-color), 0.05);
   border-left: 3px solid rgb(var(--v-theme-primary));
   border-radius: 4px;
+}
+.semantic-key {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.semantic-value {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+ul {
+  list-style: none;
+  padding: 0;
 }
 </style>
