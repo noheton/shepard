@@ -103,6 +103,43 @@ export interface SceneGraphError {
   detail: string;
 }
 
+/**
+ * SCENEGRAPH-LIST-1 — list-item shape returned by `GET /v2/scene-graphs`.
+ *
+ * Mirrors backend {@code SceneGraphListItemIO}: trimmed scalar identity +
+ * frame/joint counts for index browsing. Frame and joint arrays are returned
+ * by {@link fetchScene} instead.
+ */
+export interface SceneListItem {
+  appId: string;
+  name?: string | null;
+  description?: string | null;
+  sourceFileAppId?: string | null;
+  rootFrameAppId?: string | null;
+  frameCount: number;
+  jointCount: number;
+  createdAt?: number | null;
+  updatedAt?: number | null;
+}
+
+/**
+ * SCENEGRAPH-LIST-1 — page envelope returned by `GET /v2/scene-graphs`.
+ *
+ * Mirrors backend {@code SceneGraphListIO}: items + total + page + size.
+ */
+export interface SceneListPage {
+  items: SceneListItem[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface ListOptions {
+  page?: number;
+  size?: number;
+  aiAgent?: string | null;
+}
+
 // ── Pure helpers (testable in isolation) ──────────────────────────────────────
 
 /**
@@ -270,6 +307,44 @@ export function useSceneGraph() {
         "Network error reaching the scene-graph endpoint — check that the backend is reachable.",
       detail,
     };
+  }
+
+  /**
+   * SCENEGRAPH-LIST-1 — fetch a page of scene graphs.
+   *
+   * Hits `GET /v2/scene-graphs?page=<n>&size=<m>`. Returns the parsed page
+   * envelope on 2xx; sets {@link error} and resolves to `null` on 4xx/5xx
+   * (mirrors {@link fetchScene}'s shape). The backend clamps `size` into
+   * `[1, 200]` and defaults to 50.
+   */
+  async function list(opts: ListOptions = {}): Promise<SceneListPage | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const headers = await authHeaders({ aiAgent: opts.aiAgent ?? null });
+      if (!headers) return null;
+      const params = new URLSearchParams();
+      if (typeof opts.page === "number") params.set("page", String(opts.page));
+      if (typeof opts.size === "number") params.set("size", String(opts.size));
+      const qs = params.toString();
+      const url = `${v2BaseUrl()}/v2/scene-graphs${qs ? `?${qs}` : ""}`;
+      const response = await fetch(url, { method: "GET", headers });
+      if (response.ok) {
+        return (await response.json()) as SceneListPage;
+      }
+      const detail = await readErrorBody(response);
+      error.value = {
+        status: response.status,
+        message: sceneGraphErrorMessageForStatus(response.status, detail),
+        detail: detail.slice(0, 500),
+      };
+      return null;
+    } catch (e) {
+      setNetworkError(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
   }
 
   async function fetchScene(
@@ -480,6 +555,7 @@ export function useSceneGraph() {
   return {
     loading,
     error,
+    list,
     fetchScene,
     addFrame,
     patchFrame,
