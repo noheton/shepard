@@ -7,13 +7,15 @@
  * via the Playwright 4K spec; this file exercises the parts that don't
  * need a Vuetify / fetch harness.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   countDescendants,
   indexFramesByParent,
   sceneGraphErrorMessageForStatus,
   urdfDownloadFilename,
+  useSceneGraph,
   type FrameIO,
+  type SceneListPage,
 } from "../../composables/useSceneGraph";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -121,6 +123,163 @@ describe("useSceneGraph — indexFramesByParent", () => {
   it("does not lose orphans (parent pointing at missing frame is still indexed)", () => {
     const map = indexFramesByParent([mkFrame("o", "ghost-parent")]);
     expect(map.get("ghost-parent")?.map((f) => f.appId)).toEqual(["o"]);
+  });
+});
+
+// ── list() — SCENEGRAPH-LIST-1 wire path ─────────────────────────────────────
+
+interface FakeAuthData {
+  accessToken: string;
+}
+
+function mockAuth(accessToken: string | null): void {
+  (globalThis as unknown as { useAuth: () => unknown }).useAuth = () => ({
+    refresh: vi.fn().mockResolvedValue(undefined),
+    data: ref<FakeAuthData | null>(
+      accessToken === null ? null : { accessToken },
+    ),
+    signIn: vi.fn().mockResolvedValue(undefined),
+  });
+}
+
+function mockRuntimeConfig(backendApiUrl: string): void {
+  (globalThis as unknown as { useRuntimeConfig: () => unknown }).useRuntimeConfig =
+    () => ({ public: { backendApiUrl } });
+}
+
+describe("useSceneGraph — list (SCENEGRAPH-LIST-1)", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockAuth("test-token");
+    mockRuntimeConfig("http://localhost:8080/shepard/api");
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it("calls GET /v2/scene-graphs with page + size query params and Bearer auth", async () => {
+    const samplePage: SceneListPage = {
+      items: [
+        {
+          appId: "0197b6a2-aaaa-7000-8000-000000000001",
+          name: "kr210",
+          frameCount: 12,
+          jointCount: 6,
+          createdAt: 1717000000000,
+          updatedAt: 1717100000000,
+        },
+      ],
+      total: 1,
+      page: 0,
+      size: 25,
+    };
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(samplePage), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    const { list } = useSceneGraph();
+    const result = await list({ page: 0, size: 25 });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(url).toBe("http://localhost:8080/v2/scene-graphs?page=0&size=25");
+    expect((init as RequestInit).method).toBe("GET");
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer test-token");
+    expect(headers.Accept).toBe("application/json");
+
+    expect(result?.items).toHaveLength(1);
+    expect(result?.items[0]!.appId).toBe(
+      "0197b6a2-aaaa-7000-8000-000000000001",
+    );
+    expect(result?.total).toBe(1);
+  });
+
+  it("omits the query string when no page/size provided", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ items: [], total: 0, page: 0, size: 50 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    const { list } = useSceneGraph();
+    await list();
+
+    const [url] = fetchSpy.mock.calls[0]!;
+    expect(url).toBe("http://localhost:8080/v2/scene-graphs");
+  });
+
+  it("returns null and sets error on a 401 (no auth token)", async () => {
+    mockAuth(null);
+    const { list, error } = useSceneGraph();
+    const result = await list({ page: 0, size: 25 });
+
+    expect(result).toBeNull();
+    expect(error.value?.status).toBe(401);
+    expect(error.value?.message).toMatch(/sign in expired/i);
+  });
+
+  it("returns null and surfaces a 500 error message", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "neo4j unreachable" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ) as unknown as typeof fetch;
+
+    const { list, error } = useSceneGraph();
+    const result = await list({ page: 0, size: 25 });
+
+    expect(result).toBeNull();
+    expect(error.value?.status).toBe(500);
+    expect(error.value?.detail).toContain("neo4j unreachable");
+  });
+
+  it("returns null and sets a network error when fetch rejects", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("ECONNREFUSED")) as unknown as typeof fetch;
+
+    const { list, error } = useSceneGraph();
+    const result = await list({ page: 0, size: 25 });
+
+    expect(result).toBeNull();
+    expect(error.value?.status).toBe(0);
+    expect(error.value?.message).toMatch(/network error/i);
+    expect(error.value?.detail).toBe("ECONNREFUSED");
+  });
+
+  it("toggles loading.value across the request lifecycle", async () => {
+    let resolveResponse!: (r: Response) => void;
+    const pending = new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    });
+    globalThis.fetch = vi
+      .fn()
+      .mockReturnValue(pending) as unknown as typeof fetch;
+
+    const { list, loading } = useSceneGraph();
+    const inFlight = list({ page: 0, size: 25 });
+
+    expect(loading.value).toBe(true);
+
+    resolveResponse(
+      new Response(JSON.stringify({ items: [], total: 0, page: 0, size: 25 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    await inFlight;
+    expect(loading.value).toBe(false);
   });
 });
 
