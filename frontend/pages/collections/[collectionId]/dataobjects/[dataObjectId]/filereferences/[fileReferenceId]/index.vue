@@ -183,7 +183,7 @@ watch(fileReference, () => {
               />
             </v-row>
             <v-row v-if="fileReference?.appId && dataObject?.appId">
-              <v-col cols="12">
+              <v-col cols="12" class="d-flex flex-wrap ga-2">
                 <RunKrlPreviewButton
                   :file-reference="fileReference"
                   :collection-id="collectionId"
@@ -191,6 +191,12 @@ watch(fileReference, () => {
                   :data-object-app-id="dataObject.appId"
                   :data-object-path="collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId"
                   :can-edit="!!isAllowedToEditCollection"
+                />
+                <OpenInSceneGraphButton
+                  :file-reference-name="fileReference.name"
+                  :collection-id="collectionId"
+                  :data-object-id="dataObjectId"
+                  :file-reference-id="fileReferenceId"
                 />
               </v-col>
             </v-row>
