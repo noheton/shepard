@@ -182,6 +182,18 @@ watch(fileReference, () => {
                 id-label="ID"
               />
             </v-row>
+            <v-row v-if="fileReference?.appId && dataObject?.appId">
+              <v-col cols="12">
+                <RunKrlPreviewButton
+                  :file-reference="fileReference"
+                  :collection-id="collectionId"
+                  :data-object-id="dataObjectId"
+                  :data-object-app-id="dataObject.appId"
+                  :data-object-path="collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId"
+                  :can-edit="!!isAllowedToEditCollection"
+                />
+              </v-col>
+            </v-row>
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList

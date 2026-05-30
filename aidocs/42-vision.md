@@ -385,14 +385,15 @@ These work the same way across every primitive:
   Phase 2 — `RdkToUrdfExporter` sidecar, Foxglove iframe fallback,
   in-browser trajectory record button, Trace3D+URDF scene
   composition — queued under URDF-WEBVIEW-1.
-- **Click a KRL program, see it animate** *(KRL-INTERPRETER-01..05
-  shipped; -06 UI in flight)*. The MFFD AFP cell, the bridge
-  welding cell, and every other ZLP robotic cell at DLR Augsburg
-  ship motion programs as KUKA KRL (`.src` + `.dat`). Today, to see
-  what one of those programs will do, a researcher fires up a
-  Windows VM with RoboDK. Shepard cuts that out: click a `.src`
-  FileReference, pick a URDF scene the cell already has uploaded
-  (from RDK-PARSE-1), and the backend resolves it offline via the
+- **Click a KRL program, see it animate** *(KRL-INTERPRETER-01..06
+  shipped; -07 MFFD end-to-end showcase next)*. The MFFD AFP cell,
+  the bridge welding cell, and every other ZLP robotic cell at DLR
+  Augsburg ship motion programs as KUKA KRL (`.src` + `.dat`). Today,
+  to see what one of those programs will do, a researcher fires up a
+  Windows VM with RoboDK. Shepard cuts that out: open the `.src`
+  FileReference, click the primary "**Run / preview**" button at the
+  top of the page, pick a URDF FileReference (preselected when only
+  one is present), and the backend resolves it offline via the
   `shepard-plugin-krl-interpreter` sidecar (pykrlparser + ikpy,
   pure-Python, MIT/Apache-2.0). The resulting 6-channel joint
   trajectory lands as a `TimeseriesReference` annotated with
@@ -400,9 +401,13 @@ These work the same way across every primitive:
   and plays it back without a manual channel-pick step. Every
   interpret call records a `:KrlInterpretActivity` carrying the
   interpreter version + IK convergence stats so the EN 9100 audit
-  trail can reproduce the trajectory months later. The "Run /
-  preview" UI button (-06) and the MFFD end-to-end showcase (-07)
-  are the next bullets in this family.
+  trail can reproduce the trajectory months later. The result panel
+  marks every trajectory as **interpreter-resolved offline replay**
+  (per the §13.1 IME/AQE audit-label guidance) — and when the sidecar
+  isn't running, the panel surfaces the operator hint
+  `COMPOSE_PROFILES=krl-interpreter docker compose up -d` verbatim so
+  no support ticket is required. The MFFD end-to-end showcase (-07)
+  is the next bullet in this family.
 
 ## How you actually use it
 
