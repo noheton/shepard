@@ -197,6 +197,7 @@ watch(fileReference, () => {
                   :collection-id="collectionId"
                   :data-object-id="dataObjectId"
                   :file-reference-id="fileReferenceId"
+                  :file-reference-app-id="fileReference.appId"
                 />
               </v-col>
             </v-row>
