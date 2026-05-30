@@ -2735,3 +2735,63 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+---
+
+### KRL nominal vs actual trajectory comparison (KRL-COMPARE)
+
+**Context.** Companion feature to KRL-INTERPRETER. After the AFP robot
+executes a layup program, two trajectories exist: the offline-resolved
+**nominal** (from `POST /v2/krl/interpret`) and the **actual**
+joint-angle recording from the robot's sensor stream. This feature
+aligns the two, computes divergence metrics (per-joint angular delta +
+TCP Euclidean deviation), writes a divergence `TimeseriesReference`,
+and records the result as a `:KrlReplayComparison` Activity overlay.
+
+Design doc: `aidocs/integrations/118-krl-comparison.md`
+
+**Alignment strategies (AlignmentStrategy SPI):**
+
+1. **xcorr default** — cross-correlation time-shift alignment
+2. **manual scrubber** — operator-specified fixed offset
+3. **event-marker** — `urn:shepard:krl:sync-point` semantic annotation
+   lookup on both trajectories; aligns on the sync-point timestamp pair
+
+**Divergence TS:** per-joint angular delta + TCP Euclidean deviation
+written as a new `TimeseriesReference` in the same container as the
+actual TS. Annotated with `urn:shepard:krl:comparison-source`.
+
+**Activity overlay:** `:KrlReplayComparison` (inherits `:Activity`).
+Fields: `alignmentStrategyKind`, `nominalTrajectoryAppId`,
+`actualTrajectoryAppId`, `ikResidualNominalMax`, `ikResidualActualMax`,
+`tcpMaxDeviationMm`, `jointRmsDeviationDeg[]`,
+`syncPointAnnotationAppId` (when event-marker strategy).
+
+**REST shape:** `POST /v2/krl/compare` accepting
+`KrlCompareRequestIO` (nominalTrajectoryAppId, actualTrajectoryAppId,
+urdfFileAppId, alignmentStrategy + params, outputContainerAppId?).
+
+**Sidecar:** extends the existing `shepard-plugin-krl-interpreter`
+container (adds `POST /compare`); shares URDF chain loading and FK
+module with `POST /interpret`.
+
+**Out of scope (tier-2):** DTW alignment (SPI hook: add a 4th
+`AlignmentStrategy` impl), multi-robot comparison, live-stream
+comparison, batch campaign scoring.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| KRL-COMPARE-01-DESIGN | Write `aidocs/integrations/118-krl-comparison.md` design doc (alignment strategies, FK module, REST shape, Activity overlay, sidecar extension, UI, MCP tools). | S | in-flight (branch `krl-compare-01-design`) | Reviewer-test: design doc passes persona board (IME + AQE + Digital Native). Flip to `done` on PR merge. Sub-row spawned: **KRL-COMPARE-ALIGNMENT-LABEL** (surface alignment quality warning when quality < 0.7 in UI result panel). |
+| KRL-COMPARE-02-FK | Implement `krl_interpreter/fk/fk_chain.py` + `pose_types.py` inside the existing sidecar. Unit tests on KR210 URDF: FK(IK(pose)) ≈ pose within 0.1 mm for 1 000 random poses. | S | queued | Blocked on KRL-INTERPRETER-03-IK (URDF chain must exist). Can be co-developed. |
+| KRL-COMPARE-03-ALIGN | Implement `XcorrAlignmentStrategy`, `ManualAlignmentStrategy`, `EventMarkerAlignmentStrategy` in Python. Unit tests with synthetic offset-shifted trajectories; xcorr recovers offset within 1 sample. Java `AlignmentStrategy` SPI interface in backend. | M | queued | Blocked on KRL-COMPARE-02-FK. |
+| KRL-COMPARE-04-SIDECAR | Add `POST /compare` to existing sidecar FastAPI app with Pydantic request/response models. Integration test with synthetic joint arrays. | S | queued | Blocked on KRL-COMPARE-03-ALIGN. Extends existing service — no new compose container. |
+| KRL-COMPARE-05-REST | `POST /v2/krl/compare` backend resource: fetches TS data, calls sidecar `/compare`, writes divergence TS + `:KrlReplayComparison` Activity. `:KrlCompareConfig` singleton + `GET/PATCH /v2/admin/krl-compare/config` (threshold knobs). | M | queued | Blocked on KRL-COMPARE-04-SIDECAR + KRL-INTERPRETER-05-REST. Handler records own Activity + PROP_SKIP_CAPTURE. |
+| KRL-COMPARE-06-UI | "Compare with actual" button + compare dialog (actual TS picker, URDF picker, strategy selector, scrubber for MANUAL) + result panel (IK badge, max TCP deviation, per-joint RMS table, deep-link buttons) on nominal TimeseriesReference detail page. | M | queued | Blocked on KRL-COMPARE-05-REST. UI stub acceptable per CLAUDE.md rule. |
+| KRL-COMPARE-07-TRACE3D | Dual-trail Trace3D extension in URDF viewer: `?nominalTsAppId&actualTsAppId` → blue nominal + divergence-heat-mapped actual trail. Per-joint ECharts sparkline panel. | M | queued | Blocked on KRL-COMPARE-06-UI + URDF-WEBVIEW-1 Trace3D phase. |
+| KRL-COMPARE-08-MCP | `krl_compare`, `krl_list_comparisons`, `krl_get_comparison_stats` MCP tools wrapping REST endpoints. | S | queued | Can land with KRL-COMPARE-05-REST. |
+| KRL-COMPARE-09-DOCS | Add comparison section to `plugins/krl-interpreter/docs/reference.md`; add "compare a run" task to quickstart; add `:KrlCompareConfig` fields to install.md. | S | queued | Lands with KRL-COMPARE-05 or KRL-COMPARE-06; CLAUDE.md rule forbids splitting feature + docs. |
+
+**Effort sizing:** L across the 9 sub-rows; -01 (design) is the gate.
+-02 (FK) can be co-developed with KRL-INTERPRETER-03; -08 (MCP) can
+land with -05 (REST). The hourly dispatcher will NOT pick this up
+autonomously — design first, then sub-row dispatch.
