@@ -1,11 +1,19 @@
-"""Test fixtures shared across the IK suite."""
+"""Test fixtures shared across the krl_interpreter suite.
+
+Also adds the plugin root to ``sys.path`` so ``import krl_interpreter``
+works without ``pip install -e .``.
+"""
 
 from __future__ import annotations
 
-import os
+import sys
 from pathlib import Path
 
 import pytest
+
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 
 FIXTURES_DIR = Path(__file__).parent / "ik_fixtures"
