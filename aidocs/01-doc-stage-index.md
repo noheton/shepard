@@ -33,23 +33,15 @@ section and the `upgrade-overlay` section.
 | `fragment` | 49 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 108 |
+| `feature-defined` | 109 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 79 |
+| `deployed` | 80 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **404** |
-| **UNTAGGED** | **1** |
-
-## UNTAGGED (needs `stage:` front-matter)
-
-These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-stages.md`.
-
-| doc | title | last-touched |
-|---|---|---|
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-16.md`](agent-findings/dispatcher-runs/2026-05-30-16.md) | Dispatcher run — 2026-05-30-16 | 2026-05-30 |
+| **total docs** | **405** |
+| **UNTAGGED** | **0** |
 
 ## fragment (49)
 
@@ -153,7 +145,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (108)
+## feature-defined (109)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -180,6 +172,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md`](agent-findings/research-network-orcid-anchor-2026-05-23.md) | Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synthesis-architecture-report-2026-05-24.md`](agent-findings/synthesis-architecture-report-2026-05-24.md) | Synthesis architecture report — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md`](agent-findings/tib-hannover-outreach-2026-05-23.md) | TIB Hannover outreach — Step 1 ("Used by" entry) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/topnav-reachability-reconciler.md`](agent-findings/topnav-reachability-reconciler.md) | Top-Nav Reachability Reconciler — findings | 2026-05-30 | — |
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
@@ -361,7 +354,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (79)
+## deployed (80)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -389,6 +382,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-04.md`](agent-findings/dispatcher-runs/2026-05-30-04.md) | Dispatcher run — 2026-05-30-04 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-14.md`](agent-findings/dispatcher-runs/2026-05-30-14.md) | Dispatcher run: 2026-05-30 14:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-15.md`](agent-findings/dispatcher-runs/2026-05-30-15.md) | Dispatcher run: 2026-05-30 15:xx UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-16.md`](agent-findings/dispatcher-runs/2026-05-30-16.md) | Dispatcher run — 2026-05-30-16 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |

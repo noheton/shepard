@@ -504,6 +504,51 @@ AI-substrate enabler. Per-kind shapes cause EAV bloat and bridge-node
 sprawl. The 2026-05-24 SEMA-V6 design (`aidocs/semantics/100`) is the
 canonical reference.
 
+## Always: every shipped feature is reachable from the top-nav before beta
+
+A feature is **not `beta`** in `aidocs/44` until a regular user can reach
+it from the top navigation (Home / Collections / Containers / a new
+top-level entry / a clearly labelled subnav / a hub-tile grid that
+itself is top-nav-reachable). Deep-URL-only surfaces stay `alpha`
+regardless of how complete the backend is.
+
+**Reviewer test for `alpha` → `beta` promotion:** open the deployed UI,
+sign in as a non-admin user, and click — without prior knowledge of the
+URL — until you reach the feature. If you can't, the row stays `alpha`
+and a `*-NAV` sub-row gets filed in `aidocs/16`.
+
+What counts as a nav surface:
+
+- Top navbar entries (Home / Collections / Containers / new top-level)
+- Persistent sidebar entries
+- Hub-tile grids reachable from the above (`/admin` landing,
+  `/me` profile, future "Tools" hub)
+- DataObject / Collection / Container detail pages showing the
+  feature as a panel, action button, or "Open in …" affordance
+
+What does **not** count: typed URL bar, bookmarked deep links, links
+the operator mails you, scene-graph appIds pasted into Slack. If the
+only way to find the feature is to already know its URL, it's `alpha`.
+
+Admin-only features count when reachable from the `/admin` hub tile
+grid AND the admin role-grant is documented in the plugin's
+`install.md` so an operator can hand it out.
+
+Plugins follow the same rule: a plugin's payload kind needs an entry
+in the DataObject "Add reference" menu, and any plugin admin surface
+needs an `/admin` tile.
+
+This rule pairs with the existing five (ship a UI stub; complete
+create+edit+delete+list per reference type; user-facing docs in step;
+vision currency; feature-matrix currency). The stub gets you to
+`alpha`; nav-reachable + functional + tested gets you to `beta`;
+vision/matrix/docs land in the same PR.
+
+A feature shipped to deploy without a nav entry is a bug, not a
+release. The 2026-05-30 SCENEGRAPH-REST-1-UI surfaced this — the page
+worked, but flo had no way to find it. That's the failure mode the
+rule prevents.
+
 ## Always: ship a UI stub for every backend feature
 
 Every PR that ships a non-trivial backend feature — new endpoint, new entity,

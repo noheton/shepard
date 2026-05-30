@@ -2936,3 +2936,61 @@ The divergence `TimeseriesReference` carries its own channels annotated
 **Effort sizing:** XL across the family; -01 design gates everything. The
 hourly dispatcher will NOT pick this up autonomously — design first, then
 sub-row dispatch (mirror the KRL-INTERPRETER pattern that just shipped).
+
+## MCP-COVERAGE — expose all core features through MCP efficiently
+
+Operator observation (2026-05-30): the MCP tool surface lags the v2 REST
+surface. Several core flows are either unreachable from MCP or require
+inefficient multi-call dances (e.g. reach timeseries data from a
+DataObject → list refs → resolve TimeseriesReference → query channel →
+N+1 per channel; or singleton FileReference content fetch via repeated
+file lookups). The goal is **every core feature usable from an MCP
+client in the same shape an efficient REST caller would use**, not a
+thin wrapper that re-invents N+1 over the wire.
+
+**Reviewer test:** a Claude/agent session can drive a complete MFFD
+demonstrator walkthrough — pick a Collection, inspect a DataObject,
+read all its references, plot a multi-channel timeseries window,
+write a semantic annotation, snapshot, export a REP — using **only**
+MCP tools, in a number of tool calls within ~2× the optimal REST
+sequence. Anything worse → file a sub-row.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| MCP-COV-01-AUDIT | Inventory table: every v2 REST endpoint × MCP tool. Columns: REST path, MCP tool name (or `—`), shape parity (bulk/single/missing), efficiency note. Output: `aidocs/agent-findings/mcp-coverage-audit.md`. | S | queued | Drives every sub-row below. |
+| MCP-COV-02-CORE-CRUD | Coverage for Collection / DataObject / each Reference type (TimeseriesReference, FileReference singleton FR1b, FileBundleReference, StructuredDataReference, URIReference, CollectionReference) CRUD: create, get, list, edit, delete. Returns `appId` consistently. | M | queued | Blocked on -01. |
+| MCP-COV-03-TS-EFFICIENT | TS access without N+1: `ts_query_window(refAppId, channels[], from, to, points)` returning multi-channel data in one call (TS-OPT2 wire shape). `ts_describe(refAppId)` for available channels + units. No 5-tuple exposure to the MCP caller. | M | queued | Blocked on -01. Mirrors the bulk endpoint TS-OPT2 already shipped. |
+| MCP-COV-04-FILES | `file_upload(parentDataObjectAppId, name, bytes)` → singleton FR1b appId (per CLAUDE.md singleton rule). `file_content(appId)` streams bytes. No FileBundle path for single-file shapes. | S | queued | Blocked on -01. |
+| MCP-COV-05-ANNOTATIONS | All 10 annotation tools present + a bulk write variant (`semantic_annotate_bulk`) for multi-DataObject labelling sweeps. | M | queued | Blocked on -01. Largest efficiency win for AI labelling. |
+| MCP-COV-06-LJ-SNAP-VER-WATCH | Lab journal, snapshots, versions, watches: read + write coverage. | M | queued | Blocked on -01. |
+| MCP-COV-07-SEMANTIC-SPARQL | `semantic_browse(prefix)`, `semantic_search(predicate, value)`, `sparql_query(q)` (read-only). | S | queued | Blocked on -01. |
+| MCP-COV-08-SCENEGRAPH | `scene_create`, `scene_get`, `scene_add_frame`, `scene_add_joint`, `scene_export_urdf`. | S | queued | Blocked on -01. SCENEGRAPH-REST-1 surface mirrored. |
+| MCP-COV-09-KRL | `krl_interpret(srcFileRefAppId)` → joint trajectory + TS write-back ref. | S | queued | Blocked on -01 + KRL-INTERPRETER. |
+| MCP-COV-10-SHAPES-REP | `shape_render(recipeId, params)`, `rep_export(collectionAppId, profile)` returning a poll-handle (REP is async). | S | queued | Blocked on -01 + TPL14. |
+| MCP-COV-11-PROV | `prov_query(entityAppId, depth)`, `activity_list(filter)`. | S | queued | Blocked on -01. |
+| MCP-COV-12-AI | `ai_invoke(capability, inputs)` thin wrapper over the AI plugin SPI — local default returns no-op per the local-default rule. | S | queued | Blocked on -01. |
+| MCP-COV-13-SEARCH | `search(q, filters)` unified search surface (mirrors the merged frontend search from task #111). | S | queued | Blocked on -01. |
+| MCP-COV-14-DOCS-TESTS | Three-pane docs update (`docs/reference/mcp.md`, `docs/help/use-mcp.md`, plugin install entry) + integration tests against a live MCP client. | M | queued | Lands with the family-completion PR. |
+
+**Why this matters:** the MCP surface is the developer-experience
+front door for AI agents. Today an LLM driving Shepard hits the
+walls listed above and either makes up endpoints or gives up.
+Closing this gap turns Shepard into "the data substrate that an
+AI agent can drive end-to-end" — the f(ai)²r promise made
+concrete.
+
+## TOOLS-NAV-* / SCENEGRAPH-NAV-* — top-nav reachability reconciliation (2026-05-30)
+
+Triggered by the CLAUDE.md "Always: every shipped feature is reachable from the top-nav before beta" rule (codified 2026-05-30). The reconciler walk at `aidocs/agent-findings/topnav-reachability-reconciler.md` found exactly one strict rule violation (SCENEGRAPH-REST-1-UI) and one matrix mismatch (N1f SPARQL UI is hub-tile-reachable but `aidocs/44` says "UI pending"). High-leverage fix: promote the `SemanticPane` research-tools grouping to a top-level **Tools** menu in `HeaderBar.vue`, lifting six surfaces from 4-click depth to 1-click.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| **TOOLS-NAV-01** | Promote `SemanticPane` pattern to a top-level **Tools** menu in `HeaderBar.vue`. Add `frontend/pages/tools/index.vue` `SectionIndexLanding` with tiles: Vocabularies, SPARQL, Shape validator, Snapshot diff, Scene graphs, Shapes render playground. Mirror in mobile drawer. Closes the SCENEGRAPH-REST-1-UI rule violation at the structural level. | M | queued (priority) | Drives all NAV-01 rows below. |
+| **SCENEGRAPH-NAV-01** | Ship `frontend/pages/scene-graphs/index.vue` — list page calling `GET /v2/scene-graphs` (composable `useSceneGraph.list()` to be added if absent). Each row links to `/scene-graphs/{appId}`. Pre-requisite for TOOLS-NAV-01 row's "Scene graphs" tile to land cleanly. | S | queued | Blocks the Scene-graphs tile in TOOLS-NAV-01. |
+| **SCENEGRAPH-NAV-02** | Surface "Open in scene-graph editor" affordance on FileReference detail when the reference is annotated with an RDK / URDF / scene-source role. Closes the in-context discoverability gap. | S | queued | Independent of TOOLS-NAV-01; lands in same wave. |
+| **SHAPES-RENDER-NAV-01** | Confirm `/shapes/render` and `/shapes/validate` tile entries on the new Tools menu (TOOLS-NAV-01). Keep the programmatic-only `ViewRecipeBuilderDialog` entry as the primary flow. | S | queued | Sub-row of TOOLS-NAV-01. |
+| **SNAPSHOTS-DIFF-NAV-01** | Add a "Compare" row action in `SnapshotsPane.vue` that deep-links `/snapshots/diff?a=…&b=…` with two snapshot appIds pre-selected. | S | queued | Independent of TOOLS-NAV-01. |
+| **DMP-DOWNLOAD-NAV-01** | Add a "Download DMP" button beside `CiteThisCard.vue` on Collection detail; calls `GET /v2/collections/{id}/dmp-snippet`. Promotes FAIR7 from ⚙ to ✓. | XS | queued | Independent. |
+| **MATRIX-N1F-RECONCILE-01** | Reconcile `aidocs/44` line 206 (SPARQL proxy N1f) — the row claims `UI pending` but the playground page exists at `frontend/pages/semantic/sparql/index.vue` and is hub-tile-reachable via `/me#semantic`. Promote to ✓ shipped. Runtime bug (404 on default "internal" repo) is task #244, tracked separately. | XS | done 2026-05-30 | Matrix row updated in the same commit as this backlog edit. |
+| **ONTOLOGY-BROWSE-NONADMIN-01** | Reconciler-surfaced feature gap: non-admin researchers cannot browse seeded vocabularies. Consider a read-only `/semantic/ontologies` view for all users with admin-write gating on the existing pane. | M | queued | Out of the strict topnav-rule scope but worth filing. |
+| **ROUTE-CLEANUP-LEGACY-01** | Reconciler-surfaced drift: `frontend/pages/configuration/*` and `frontend/pages/user/*` redirect to `/admin` and `/me` respectively. Not nav-reachable, not used — delete or document. | XS | queued | Hygiene. |
