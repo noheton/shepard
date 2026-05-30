@@ -241,6 +241,16 @@ const dataObjectCreatedByOrcid = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1: appId of the :ShepardTemplate this
+// DataObject was created from (server-stamped at create time). Drives the
+// in-context Tools menu's DO-SHACL / DO-RENDER gate.
+const dataObjectAttachedTemplateAppId = computed<string | null>(() => {
+  if (!dataObject.value) return null;
+  const raw = (dataObject.value as unknown as { attachedTemplateAppId?: string | null })
+    .attachedTemplateAppId;
+  return raw ?? null;
+});
+
 // FAIR3: embargoEndDate — user-provided ISO-8601 end date for embargoed datasets.
 // Editable when the user has Write permission on the collection.
 const dataObjectEmbargoEndDate = computed<string | null>(() => {
@@ -454,6 +464,7 @@ async function saveEmbargoEdit() {
               <EntityToolsMenu
                 :app-id="dataObject.appId"
                 scope="data-object"
+                :attached-template-app-id="dataObjectAttachedTemplateAppId"
               />
               <PublishButton
                 v-if="isAllowedToEditCollection"

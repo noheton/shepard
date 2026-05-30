@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 49 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 110 |
+| `feature-defined` | 109 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 80 |
+| `deployed` | 82 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **406** |
+| **total docs** | **407** |
 | **UNTAGGED** | **0** |
 
 ## fragment (49)
@@ -145,7 +145,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (110)
+## feature-defined (109)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -160,7 +160,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
-| [`aidocs/agent-findings/mcp-coverage-audit.md`](agent-findings/mcp-coverage-audit.md) | MCP coverage audit (task #243 / MCP-COV-01-AUDIT) | 2026-05-30 | — |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -355,7 +354,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (80)
+## deployed (82)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -384,6 +383,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-14.md`](agent-findings/dispatcher-runs/2026-05-30-14.md) | Dispatcher run: 2026-05-30 14:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-15.md`](agent-findings/dispatcher-runs/2026-05-30-15.md) | Dispatcher run: 2026-05-30 15:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-16.md`](agent-findings/dispatcher-runs/2026-05-30-16.md) | Dispatcher run — 2026-05-30-16 | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-18.md`](agent-findings/dispatcher-runs/2026-05-30-18.md) | Dispatcher run — 2026-05-30-18 | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-19.md`](agent-findings/dispatcher-runs/2026-05-30-19.md) | Dispatcher fire 2026-05-30-19 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |

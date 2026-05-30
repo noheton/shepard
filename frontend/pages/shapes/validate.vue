@@ -5,16 +5,28 @@
 // the validation report JSON below.
 
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
+import { extractShapeGraphFromTemplateBody } from "~/utils/shaclTemplateBody";
 
 useHead({ title: "SHACL playground | shepard" });
 
 // TOOLS-CONTEXT-DO-SHACL — when navigated from a DataObject detail
-// page the URL carries `?focusAppId=<doAppId>&scope=data-object`. The
-// auto-load of the DataObject's RDF + its attached template's SHACL
-// shape graph is queued as SHAPES-V-PREFILL-1 (needs both the
-// :CREATED_FROM_TEMPLATE edge surfaced via REST and the SHACL-payload
-// endpoint). Until then the user pastes Turtle manually; this banner
-// signals the intent so they understand why both textareas are empty.
+// page the URL carries `?focusAppId=<doAppId>&scope=data-object`. When
+// the DataObject has an attached template (TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1),
+// the in-context Tools menu also passes `?templateAppId=<...>`.
+//
+// SHAPES-V-PREFILL-1 (this commit): on arrival with a templateAppId,
+// fetch the template via GET /v2/templates/{appId} and show the
+// resolved template name + body preview in the banner so the user has
+// confirmation that the right template loaded. The actual SHACL graph
+// extraction from the template body's JSON DSL is left for a follow-up
+// (filed as SHAPES-V-PREFILL-3-EXTRACT-SHACL — the JSON DSL doesn't
+// currently embed a `shapeGraph` field; the body schema would need to
+// grow one or the design would need to attach a SHACL Turtle payload
+// via a Reference, and that lives in TPL2c).
+//
+// Data-graph auto-load is filed as SHAPES-V-PREFILL-2-RDF-ENDPOINT
+// (needs a `GET /v2/data-objects/{appId}/rdf` endpoint that does not
+// yet exist on this fork).
 const route = useRoute();
 const focusAppId = computed<string | null>(() =>
   typeof route.query.focusAppId === "string" ? route.query.focusAppId : null,
@@ -22,6 +34,20 @@ const focusAppId = computed<string | null>(() =>
 const focusScope = computed<string | null>(() =>
   typeof route.query.scope === "string" ? route.query.scope : null,
 );
+const templateAppId = computed<string | null>(() =>
+  typeof route.query.templateAppId === "string" ? route.query.templateAppId : null,
+);
+
+interface TemplateBriefIO {
+  appId?: string;
+  name?: string;
+  templateKind?: string;
+  body?: string;
+  description?: string | null;
+}
+const loadedTemplate = ref<TemplateBriefIO | null>(null);
+const templateLoadError = ref<string | null>(null);
+const isTemplateLoading = ref(false);
 
 const dataGraph = ref<string>(
   `@prefix ex: <http://example.org/> .
@@ -42,18 +68,54 @@ const result = ref<unknown>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 
+function getV2Base(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  return explicit && explicit.length > 0
+    ? explicit
+    : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+}
+
+async function fetchAttachedTemplate() {
+  const id = templateAppId.value;
+  if (!id) return;
+  isTemplateLoading.value = true;
+  templateLoadError.value = null;
+  try {
+    const { data: auth } = useAuth();
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (auth.value?.accessToken) headers["Authorization"] = `Bearer ${auth.value.accessToken}`;
+    const res = await fetch(getV2Base() + `/v2/templates/${encodeURIComponent(id)}`, { headers });
+    if (!res.ok) {
+      templateLoadError.value = `${res.status} ${res.statusText}`;
+      return;
+    }
+    loadedTemplate.value = await res.json();
+    // SHAPES-V-PREFILL-1 — when the template body carries a
+    // `shapeGraph` field (forward-compat — currently only added by
+    // future SHACL-bearing templates), seed the shape graph textarea
+    // with it. Otherwise leave the user's paste workflow intact.
+    const extracted = extractShapeGraphFromTemplateBody(loadedTemplate.value?.body);
+    if (extracted) {
+      shapeGraph.value = extracted;
+    }
+  } catch (e) {
+    templateLoadError.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    isTemplateLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  void fetchAttachedTemplate();
+});
+
 async function validate() {
   isLoading.value = true;
   error.value = null;
   result.value = null;
   try {
     const { data: auth } = useAuth();
-    const config = useRuntimeConfig().public;
-    const explicit = config.backendV2ApiUrl as string | undefined;
-    const v2Base =
-      explicit && explicit.length > 0
-        ? explicit
-        : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -61,7 +123,7 @@ async function validate() {
     if (auth.value?.accessToken) {
       headers["Authorization"] = `Bearer ${auth.value.accessToken}`;
     }
-    const res = await fetch(v2Base + "/v2/shapes/validate", {
+    const res = await fetch(getV2Base() + "/v2/shapes/validate", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -108,10 +170,33 @@ async function validate() {
       prepend-icon="mdi-tools"
       data-testid="shacl-focus-banner"
     >
-      Validating against {{ focusScope === "collection" ? "Collection" : "DataObject" }}
-      <code>{{ focusAppId }}</code>. Auto-load of the entity's RDF +
-      attached template's SHACL is queued (SHAPES-V-PREFILL-1) — paste
-      both graphs below for now.
+      <div class="text-body-2">
+        Validating against {{ focusScope === "collection" ? "Collection" : "DataObject" }}
+        <code>{{ focusAppId }}</code>.
+      </div>
+      <div
+        v-if="templateAppId"
+        class="text-caption mt-1"
+        data-testid="shacl-template-banner"
+      >
+        <template v-if="isTemplateLoading">
+          Loading template <code>{{ templateAppId }}</code>…
+        </template>
+        <template v-else-if="templateLoadError">
+          Failed to load template <code>{{ templateAppId }}</code>: {{ templateLoadError }}
+        </template>
+        <template v-else-if="loadedTemplate">
+          Template attached: <strong>{{ loadedTemplate.name }}</strong>
+          <span v-if="loadedTemplate.templateKind"> ({{ loadedTemplate.templateKind }})</span>.
+          The shape graph below is prefilled if the template body declares one;
+          otherwise paste your SHACL Turtle. Data-graph auto-load is queued
+          (SHAPES-V-PREFILL-2-RDF-ENDPOINT).
+        </template>
+      </div>
+      <div v-else class="text-caption mt-1">
+        Data-graph auto-load is queued (SHAPES-V-PREFILL-2-RDF-ENDPOINT) —
+        paste both graphs below for now.
+      </div>
     </v-alert>
 
     <v-row>

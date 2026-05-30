@@ -529,13 +529,21 @@ onMounted(() => {
 
   // TOOLS-CONTEXT-DO-RENDER — when navigated from the in-context Tools
   // menu on a DataObject detail page the URL carries
-  // `?focusShepardId=<doAppId>&scope=data-object`. Prefill the form's
-  // focusShepardId field so the user only has to enter the templateAppId
-  // and hit "Fetch bindings". Doesn't auto-fetch (the templateAppId is
-  // still missing — template-detection is queued as
-  // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1).
+  // `?focusShepardId=<doAppId>&scope=data-object`. When the DataObject
+  // has an attached template (TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1) the
+  // menu also passes `?templateAppId=<...>`. SHAPES-V-PREFILL-1: when
+  // both are present, prefill BOTH form fields and auto-fetch the
+  // bindings so the user lands on the rendered view in one step.
   if (q.focusShepardId && !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography") {
     focusShepardId.value = String(q.focusShepardId);
+    if (typeof q.templateAppId === "string" && q.templateAppId.length > 0) {
+      templateAppId.value = q.templateAppId;
+      // Both fields known → auto-fetch the bindings declaration. The
+      // user still needs to enter the TS container ID to actually
+      // render data (TPL2c will resolve the container automatically
+      // post-TS-ID migration).
+      void fetchBindings();
+    }
   }
 
   // URDF renderer — different bootstrap shape: ?renderer=urdf&urdfUrl=…

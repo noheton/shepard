@@ -20,6 +20,7 @@
 import { useRouter } from "vue-router";
 import {
   getContextTools,
+  type ContextToolBuildContext,
   type ContextToolItem,
   type ToolsContextScope,
 } from "~/utils/toolsContext";
@@ -33,11 +34,26 @@ const props = defineProps<{
   label?: string;
   /** Optional override density. Default: "comfortable". */
   density?: "default" | "comfortable" | "compact";
+  /**
+   * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — appId of a `:ShepardTemplate`
+   * attached to the entity (from `DataObjectIO.attachedTemplateAppId`).
+   * Drives both the gate predicates on per-item `enabledWhen` (hides
+   * DO-SHACL / DO-RENDER when null) and the destination prefill.
+   */
+  attachedTemplateAppId?: string | null;
 }>();
 
 const router = useRouter();
 
-const items = computed<ContextToolItem[]>(() => getContextTools(props.scope));
+const buildCtx = computed<ContextToolBuildContext>(() => ({
+  attachedTemplateAppId: props.attachedTemplateAppId,
+}));
+
+const items = computed<ContextToolItem[]>(() =>
+  getContextTools(props.scope).filter(
+    (item) => !item.enabledWhen || item.enabledWhen(buildCtx.value),
+  ),
+);
 
 const isDisabled = computed(() => !props.appId);
 
@@ -47,7 +63,7 @@ function onItemClick(item: ContextToolItem) {
   // reads `route.query.focusAppId` (etc) and pre-fills its forms.
   void router.push({
     path: item.path,
-    query: item.buildQuery(props.appId),
+    query: item.buildQuery(props.appId, buildCtx.value),
   });
 }
 </script>

@@ -30,11 +30,32 @@ export interface ContextToolItem {
   /** Destination path (router push target). */
   path: string;
   /**
-   * Query-param builder. Receives the entity's appId and returns the
+   * Query-param builder. Receives the entity's appId AND any optional
+   * extra context (e.g. the attached template's appId) and returns the
    * query object for `router.push({ path, query })`. Kept as a function
    * so callers can extend with extra params (e.g. snapshot pre-pick).
    */
-  buildQuery: (appId: string) => Record<string, string>;
+  buildQuery: (appId: string, ctx?: ContextToolBuildContext) => Record<string, string>;
+  /**
+   * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — gate predicate.
+   *
+   * When set, the menu only renders this item when the predicate returns
+   * true for the current entity context. Used to hide DO-SHACL / DO-RENDER
+   * when no `:ShepardTemplate` is attached (per the brief — the buttons
+   * should be conditional, not always-visible).
+   *
+   * When omitted, the item always renders.
+   */
+  enabledWhen?: (ctx: ContextToolBuildContext) => boolean;
+}
+
+/**
+ * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — extra entity context passed to
+ * the build/gate functions. The `attachedTemplateAppId` is sourced from
+ * `DataObjectIO.attachedTemplateAppId` (server-stamped at create time).
+ */
+export interface ContextToolBuildContext {
+  attachedTemplateAppId?: string | null;
 }
 
 /**
@@ -141,10 +162,16 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
     subtitle: "Open SHACL playground pre-filled with this DataObject.",
     icon: "mdi-check-decagram-outline",
     path: "/shapes/validate",
-    buildQuery: (appId) => ({
-      focusAppId: appId,
-      scope: "data-object",
-    }),
+    buildQuery: (appId, ctx) => {
+      const out: Record<string, string> = {
+        focusAppId: appId,
+        scope: "data-object",
+      };
+      if (ctx?.attachedTemplateAppId) out.templateAppId = ctx.attachedTemplateAppId;
+      return out;
+    },
+    // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
+    enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
   },
   {
     id: "do-render",
@@ -152,10 +179,16 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
     subtitle: "Project a VIEW_RECIPE template onto this DataObject.",
     icon: "mdi-cube-scan",
     path: "/shapes/render",
-    buildQuery: (appId) => ({
-      focusShepardId: appId,
-      scope: "data-object",
-    }),
+    buildQuery: (appId, ctx) => {
+      const out: Record<string, string> = {
+        focusShepardId: appId,
+        scope: "data-object",
+      };
+      if (ctx?.attachedTemplateAppId) out.templateAppId = ctx.attachedTemplateAppId;
+      return out;
+    },
+    // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
+    enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
   },
 ];
 
