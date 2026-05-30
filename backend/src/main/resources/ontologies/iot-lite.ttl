@@ -1,0 +1,142 @@
+# Canonical source: http://purl.org/iot/ontology/iot-lite (W3C Community Group Report)
+# Ontology IRI:    http://purl.org/iot/ontology/iot-lite
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the W3C iot-lite ontology — a lightweight profile of
+# the W3C SSN/SOSA ontologies tailored to the description of IoT devices,
+# services, and attributes. Published by the W3C Semantic Sensor Network
+# Community Group.
+#
+# In the Shepard context iot-lite bridges SOSA/SSN (already preseeded as
+# 'ssn-sosa') with lightweight IoT-device modelling:
+#
+#   iotlite:Device       — a sosa:Platform subclass for physical IoT hardware
+#                          (MQTT broker clients, OPC UA nodes, Modbus RTU devices,
+#                          home-showcase sensors)
+#   iotlite:Service      — a sosa:ObservableProperty subclass exposing data from
+#                          a Device (REST endpoint, MQTT topic, OPC UA node ID)
+#   iotlite:Attribute    — a sosa:ObservableProperty subclass for a physical
+#                          property measured by a Device (temperature, vibration,
+#                          pressure, flow rate)
+#   iotlite:TagPoint     — a sosa:Sensor subclass for a fixed-position measurement
+#                          point on a structure or machine (e.g. a thermocouple at
+#                          a known location on the MFFD test frame)
+#   iotlite:Platform     — thin alias of sosa:Platform, kept for iot-lite consumers
+#                          that reference the iotlite: namespace directly
+#   iotlite:IoTLiteAPI   — administrative class for the ontology IRI itself
+#   iotlite:Coverage     — spatial or temporal scope of a Device or Service
+#   iotlite:Metadata     — key-value metadata descriptor associated with a Device
+#
+# Key properties included:
+#   iotlite:hasAttribute       — links a Device to its Attribute descriptors
+#   iotlite:isAssociatedWith   — links a Service to the Device it exposes
+#   iotlite:hasMetadata        — attaches a Metadata node to any iot-lite entity
+#   iotlite:hasCoverage        — attaches a Coverage region to a Device or Service
+#
+# This vocabulary is used by:
+#   - the Shepard IoT-bridge plugin (IOT3) for MQTT/OPC-UA channel-to-ontology
+#     mapping: each incoming MQTT topic or OPC UA node maps to one iotlite:Service
+#     on a iotlite:Device, and the channel (appId) is annotated with the
+#     iotlite:Attribute IRI that describes what physical property it measures.
+#   - the home-showcase MQTT topology (examples/home-showcase/collector.py): every
+#     sensor in the home-showcase corresponds to an iotlite:Device; the room it
+#     occupies is its iotlite:Coverage; the temperature / humidity / CO2 channels
+#     are its iotlite:Attribute instances.
+#
+# Minimum-viable Shepard stub — IOT1 (2026-05-30).
+
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix sosa:     <http://www.w3.org/ns/sosa/> .
+@prefix iotlite:  <http://purl.org/iot/ontology/iot-lite#> .
+
+<http://purl.org/iot/ontology/iot-lite>
+    a owl:Ontology ;
+    dcterms:title   "iot-lite — IoT Device Ontology (shepard-bundled stub)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:source  <http://purl.org/iot/ontology/iot-lite> ;
+    owl:versionInfo "W3C Community Group Report" ;
+    rdfs:label      "iot-lite"@en ;
+    rdfs:comment    "W3C Community Group lightweight IoT ontology. A profile of SOSA/SSN for describing IoT devices, services, and attributes. In Shepard: used by the IOT-bridge plugin (IOT3) and the home-showcase MQTT collector to annotate timeseries channels with their device and physical-property context."@en .
+
+# ---- Core classes -------------------------------------------------------
+
+iotlite:Device
+    a owl:Class ;
+    rdfs:subClassOf sosa:Platform ;
+    rdfs:label   "Device"@en ;
+    rdfs:comment "A physical IoT device — a sosa:Platform subclass. In Shepard: corresponds to one physical hardware unit (MQTT client, OPC UA node, home sensor, Modbus RTU slave, LUMEN DAQ crate) that hosts one or more sosa:Sensor channels."@en .
+
+iotlite:Service
+    a owl:Class ;
+    rdfs:subClassOf sosa:ObservableProperty ;
+    rdfs:label   "Service"@en ;
+    rdfs:comment "A service exposed by a Device that makes data available — a sosa:ObservableProperty subclass. In Shepard: models the access endpoint for a timeseries channel (MQTT topic, OPC UA node ID, REST polling URL)."@en .
+
+iotlite:Attribute
+    a owl:Class ;
+    rdfs:subClassOf sosa:ObservableProperty ;
+    rdfs:label   "Attribute"@en ;
+    rdfs:comment "A physical property measured by a Device — a sosa:ObservableProperty subclass. In Shepard: the semantic type of a timeseries channel (e.g. iotlite:Attribute for temperature, vibration, pressure). Channels are annotated with the Attribute IRI via SemanticAnnotation."@en .
+
+iotlite:TagPoint
+    a owl:Class ;
+    rdfs:subClassOf sosa:Sensor ;
+    rdfs:label   "Tag Point"@en ;
+    rdfs:comment "A fixed-position measurement point on a structure or machine — a sosa:Sensor subclass. In Shepard: a thermocouple, accelerometer, or pressure tap at a known physical location (e.g. a sensor pad at ply 5 of the MFFD AFP layup, or a vibration accelerometer on the LUMEN turbopump housing)."@en .
+
+iotlite:Platform
+    a owl:Class ;
+    rdfs:subClassOf sosa:Platform ;
+    owl:equivalentClass iotlite:Device ;
+    rdfs:label   "Platform"@en ;
+    rdfs:comment "Alias of iotlite:Device and sosa:Platform kept for iot-lite consumers that reference the iotlite: namespace directly."@en .
+
+iotlite:IoTLiteAPI
+    a owl:Class ;
+    rdfs:label   "IoT Lite API"@en ;
+    rdfs:comment "Administrative class representing the iot-lite ontology API itself. Used as the rdf:type of the ontology header individual."@en .
+
+iotlite:Coverage
+    a owl:Class ;
+    rdfs:label   "Coverage"@en ;
+    rdfs:comment "Spatial or temporal scope of a Device or Service. In Shepard: the physical zone (room, structural zone, engine section) or temporal window within which an iotlite:Device or iotlite:Service is active."@en .
+
+iotlite:Metadata
+    a owl:Class ;
+    rdfs:label   "Metadata"@en ;
+    rdfs:comment "A key-value metadata descriptor associated with an iot-lite entity (Device, Service, or Attribute). Carries supplementary properties (manufacturer, firmware version, calibration date) that do not fit the core iotlite model."@en .
+
+# ---- Core properties ----------------------------------------------------
+
+iotlite:hasAttribute
+    a owl:ObjectProperty ;
+    rdfs:label   "has attribute"@en ;
+    rdfs:domain  iotlite:Device ;
+    rdfs:range   iotlite:Attribute ;
+    rdfs:comment "Links an iotlite:Device to the physical properties (Attributes) it is capable of measuring. In Shepard: used to express that a home sensor Device measures temperature AND humidity (two separate Attribute IRIs)."@en .
+
+iotlite:isAssociatedWith
+    a owl:ObjectProperty ;
+    rdfs:label   "is associated with"@en ;
+    rdfs:domain  iotlite:Service ;
+    rdfs:range   iotlite:Device ;
+    rdfs:comment "Links an iotlite:Service to the iotlite:Device that exposes it. In Shepard: each MQTT topic (Service) is associated with exactly one physical device (Device), providing the provenance chain from timeseries channel to hardware origin."@en .
+
+iotlite:hasMetadata
+    a owl:ObjectProperty ;
+    rdfs:label   "has metadata"@en ;
+    rdfs:range   iotlite:Metadata ;
+    rdfs:comment "Attaches an iotlite:Metadata node to any iot-lite entity. In Shepard: used to carry calibration certificates, firmware version strings, or manufacturer data alongside the sosa:Sensor/iotlite:Device node."@en .
+
+iotlite:hasCoverage
+    a owl:ObjectProperty ;
+    rdfs:label   "has coverage"@en ;
+    rdfs:range   iotlite:Coverage ;
+    rdfs:comment "Attaches an iotlite:Coverage region to an iotlite:Device or iotlite:Service. In Shepard: links a home-showcase sensor to its room (spatial coverage) or a LUMEN DAQ channel to its test-run temporal window."@en .
+
+# End of Shepard minimum-viable stub — replace with canonical iot-lite Turtle for full vocabulary.
