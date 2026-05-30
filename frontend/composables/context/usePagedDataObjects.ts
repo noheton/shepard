@@ -85,9 +85,6 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     try {
       let batch: DataObjectListItemV2[];
       if (appId) {
-        // DB-OPT5: cast bypasses stale generated client that lacks the `fields`
-        // param — see FE-BUILD-03 in aidocs/16. Real fix is client regen.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
           collectionAppId: appId,
           name: nameFilter,
@@ -96,7 +93,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
           size: pageSize,
           include: includeTimeBounds ? 'time-bounds' : undefined,
           fields: DO_LIST_FIELDS,
-        } as unknown as Parameters<typeof v2Api.value.listDataObjectsWithCount>[0]);
+        });
         batch = fetched;
         totalItems.value = fetchedTotal;
       } else {
