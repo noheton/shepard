@@ -6,6 +6,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
 import java.util.Objects;
 import lombok.Data;
@@ -94,6 +95,31 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private int structuredDataReferenceCount;
 
   /**
+   * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — {@code appId} of the
+   * {@code :ShepardTemplate} this DataObject was created from, or
+   * {@code null} when the DataObject was created without a template
+   * (or predates the template wiring). Read-only — minted server-side
+   * by {@code ShepardTemplateDAO.recordCreatedFrom} at create time.
+   *
+   * <p>Surfaced so the frontend can render the in-context tools menu's
+   * <strong>Validate against shape</strong> / <strong>Render view</strong>
+   * actions only when a template is attached (the destination tools
+   * accept the {@code templateAppId} as a query param for prefill).
+   *
+   * <p>Absent from the wire when {@code null} thanks to {@link JsonInclude#NON_NULL},
+   * so upstream v5.2.0 clients see no change in the wire shape on
+   * DataObjects that lack an attached template.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    readOnly = true,
+    description = "TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1: appId of the :ShepardTemplate this DataObject was created from. " +
+      "Stamped server-side at create time; read-only. Absent from the wire when null."
+  )
+  private String attachedTemplateAppId;
+
+  /**
    * No v2 {@code long} counterpart exists yet for video-stream references.
    * This field remains active (not deprecated) until {@code DataObjectListItemV2IO} grows a
    * {@code videoCount} field. Tracked in the backlog as API2-video. The {@code int} type will
@@ -120,6 +146,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
         .filter(r -> r instanceof StructuredDataReference).count();
     this.videoStreamReferenceCount = (int) dataObject.getReferences().stream()
         .filter(r -> r instanceof VideoPayload).count();
+    this.attachedTemplateAppId = dataObject.getAttachedTemplateAppId();
   }
 
   @Override
@@ -135,7 +162,8 @@ public class DataObjectIO extends AbstractDataObjectIO {
       HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
       HasId.areEqualSets(childrenIds, other.childrenIds) &&
       Objects.equals(parentId, other.parentId) &&
-      HasId.areEqualSets(incomingIds, other.incomingIds)
+      HasId.areEqualSets(incomingIds, other.incomingIds) &&
+      Objects.equals(attachedTemplateAppId, other.attachedTemplateAppId)
     );
   }
 
@@ -150,6 +178,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + HasId.hashcodeHelper(predecessorIds);
     result = prime * result + Objects.hashCode(parentId);
+    result = prime * result + Objects.hashCode(attachedTemplateAppId);
 
     return result;
   }
