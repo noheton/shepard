@@ -16,6 +16,7 @@ export function useCollectionRouteParams() {
   const route = useRoute();
   const routeParams = ref<CollectionRouteParams>({
     collectionId: initialParams.collectionId ?? NaN,
+    collectionAppId: initialParams.collectionAppId,
     dataObjectId: initialParams.dataObjectId,
     timeseriesReferenceId: initialParams.timeseriesReferenceId,
     fileReferenceId: initialParams.fileReferenceId,

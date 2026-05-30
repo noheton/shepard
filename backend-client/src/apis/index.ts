@@ -15,6 +15,7 @@ export * from './ApikeyApi';
 export * from './GitCredentialsApi';
 export * from './GitReferenceApi';
 export * from './CollectionApi';
+export * from './CollectionV2Api';
 export * from './CollectionReferenceApi';
 export * from './DataObjectApi';
 export * from './DataObjectReferenceApi';

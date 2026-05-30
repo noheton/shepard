@@ -19,8 +19,10 @@ const {
 } = useCounter();
 
 const collectionId = routeParams.value.collectionId;
+// UX-WALK-2026-05-29-03: when the route param is a UUID (appId), `collectionId`
+// is NaN. Pass `collectionAppId` so useFetchCollection can resolve via v2 first.
 const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
-  useFetchCollection(collectionId);
+  useFetchCollection(collectionId, routeParams.value.collectionAppId);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
