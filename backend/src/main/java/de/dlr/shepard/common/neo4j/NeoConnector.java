@@ -128,6 +128,13 @@ public class NeoConnector implements IConnector {
           SqlTimeseriesConfig.class.getPackageName(),
           // J1e — JupyterHub link-out admin config singleton (parallel to ROR1 / P10c).
           de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig.class.getPackageName(),
+          // DT1-PHASE-0 — :DigitalTwinScene + :CoordinateFrame + :Joint entity
+          // scaffold (SCENEGRAPH-REST-1 consumes these via raw Cypher for
+          // edges, but the entities themselves must be registered or
+          // GenericDAO.createOrUpdate throws "not a valid entity class" on
+          // POST /v2/scene-graphs (B agent surfaced 2026-05-30 on first live
+          // write attempt; JUnit didn't catch it because tests mock Session).
+          de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene.class.getPackageName(),
           // /v2/timeseries-references annotation entity.
           TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),
