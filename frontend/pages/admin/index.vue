@@ -224,9 +224,10 @@ const landingCards = [
 <template>
   <UnauthorizedView
     v-if="showUnauthorized"
-    title="Administration is restricted"
-    message="This section is only available to instance administrators. If you need access, ask an instance admin to grant you the instance-admin role."
+    title="Admin tools"
+    message="These pages are for instance admins. If you need access, ask the operator of this Shepard instance."
     required-role="instance-admin"
+    :feature-labels="landingCards.map((c) => c.title)"
   />
   <PaneLayout v-else header="Admin" :menu-entries="AdminMenuEntries">
     <SectionIndexLanding
