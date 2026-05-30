@@ -2735,3 +2735,18 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+---
+
+### UI-PATHS — Free-form path/URL input remediation
+
+Audit findings from `aidocs/agent-findings/ui-paths-audit.md` (2026-05-30).
+Rule: CLAUDE.md `## Always: UI never asks for paths/URLs — pulls from references`.
+
+| ID | Slice | Size | Status | Severity | Notes |
+|---|---|---|---|---|---|
+| UI-PATHS-01-AUDIT | **Audit all UI surfaces for free-form path/URL inputs. Produce punch list.** Read-only audit across `frontend/` (Vue + TS) and `backend/src/main/java/de/dlr/shepard/v2/` (REST resources). | S | **done 2026-05-30** | MAJOR | Findings: `aidocs/agent-findings/ui-paths-audit.md`. 5 VIOLATION / 6 BORDERLINE. Top violator: `ViewRecipeBuilderDialog.vue` URDF URL inputs → follow-on UI-PATHS-02. Backend v2 surface clean (no `@QueryParam` URL/path violations). |
+| UI-PATHS-02-SHAPES-RENDER | **Fix URDF URL + packagePath inputs in ViewRecipeBuilderDialog + shapes/render.vue.** Replace "URDF source URL" + "Mesh package path" free-form text fields with a FileReference picker (appId). Backend resolves the signed URL server-side via the `UrdfResolver` from URDF-WEBVIEW-1. Change client-side nav params from `?urdfUrl=<encoded>&packagePath=<encoded>` to `?urdfFileAppId=<appId>`. | S | queued | CRITICAL | `frontend/components/container/timeseries/ViewRecipeBuilderDialog.vue:191-206` + `frontend/pages/shapes/render.vue:498-534`. Blocks on URDF-WEBVIEW-1 phase 2 (`UrdfResolver` shipping a stable `GET /v2/files/{appId}/resolve` endpoint). |
+| UI-PATHS-03-GIT-REFERENCES | **Evaluate Repository URL field in GitReferencesPane.** The combobox pre-fills from registered `GitCredential` hosts but still allows free-form URL entry. Design option: decompose into host picker + `owner/repo` text field so user never types a full URL. The `path` (repo subdirectory) field is intrinsic to the git reference — acceptable but should have a browse affordance when the git integration can list repo contents. | M | queued | MAJOR | `frontend/components/context/dataobject/GitReferencesPane.vue:195-233` + `legacy/LegacyGitReferencesPane.vue:195-233`. Pairs with G1 (git integration). |
+| UI-PATHS-04-HDF-DATASET-PATH | **Replace HDF5 dataset path free-form input with a dataset tree browser.** The create form asks the user to type `/sensor_data/channel_A`. Replace with a tree picker that calls the HDF5 browse endpoint. Keep free-form path as an advanced override with a visible deprecation warning. | S | queued | MAJOR | `frontend/components/context/dataobject/HdfReferencesPane.vue:276-283` + `legacy/LegacyHdfReferencesPane.vue:276-283`. |
+| UI-PATHS-05-HERO-IMAGE-URL | **Replace Collection hero image URL free-form input with FileReference picker.** The "Hero image URL" field in `EditCollectionDialog` asks for a public image URL. Replace with a FileReference picker (file upload → FileContainer → FileReference → signed URL at render time). External URL remains as advanced override for one deprecation window. | S | queued | MINOR | `frontend/components/context/collection/edit-dialog/EditCollectionDialog.vue:73-81`. |
