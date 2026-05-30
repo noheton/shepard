@@ -218,6 +218,13 @@ const landingCards = [
     title: "JupyterHub link-out",
     description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
   },
+  // KRL-CONFIG-1
+  {
+    fragment: AdminFragments.KRL_CONFIG,
+    icon: "mdi-robot-industrial-outline",
+    title: "KRL interpreter",
+    description: "Runtime config for the KRL interpreter sidecar: URL, timeout, and max body size. Flip without a restart.",
+  },
 ];
 </script>
 
@@ -319,6 +326,11 @@ const landingCards = [
     <!-- J1e: JupyterHub link-out config -->
     <AdminJupyterPane
       v-if="routeFragment === AdminFragments.JUPYTER"
+    />
+    <!-- KRL-CONFIG-1: KRL interpreter runtime config -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.KRL_CONFIG"
+      slug="krl-config"
     />
   </PaneLayout>
 </template>

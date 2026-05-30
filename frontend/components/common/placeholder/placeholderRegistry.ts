@@ -236,9 +236,21 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
+  // KRL-CONFIG-1
+  {
+    slug: "krl-config",
+    surface: "admin",
+    title: "KRL interpreter config",
+    subtitle:
+      "Runtime knobs for the KRL interpreter sidecar: sidecar URL, per-call timeout, and max request body size. Flip without a restart via PATCH /v2/admin/plugins/krl/config. Deployed with KRL-CONFIG-1.",
+    endpoint: "/v2/admin/plugins/krl/config",
+    backlogRow: "KRL-CONFIG-1",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
 ];
 
-// TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
+// KRL-CONFIG-1: +1 for krl-config (2026-05-30)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.krl.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.v2.krl.config.KrlInterpreterConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,11 +45,18 @@ import java.util.Map;
  *
  * <p>The service layer maps these to HTTP status codes per design
  * doc §7.3 (200→201, 5xx→502, timeout→504).
+ *
+ * <p><b>KRL-CONFIG-1:</b> sidecar URL and timeout are resolved via
+ * {@link KrlInterpreterConfigService#effectiveSidecarUrl()} and
+ * {@link KrlInterpreterConfigService#effectiveTimeoutSeconds()}.
+ * Runtime values from the {@code :KrlInterpreterConfigEntity} singleton
+ * win over the deploy-time bean ({@code shepard.krl.sidecar.*} keys),
+ * per the "Always: surface operator knobs in the admin config" rule.
  */
 @ApplicationScoped
 public class KrlSidecarClient {
 
-  @Inject KrlInterpreterConfig config;
+  @Inject KrlInterpreterConfigService configService;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -84,11 +90,12 @@ public class KrlSidecarClient {
    * @return the discriminated outcome
    */
   public SidecarOutcome interpret(Map<String, Object> body) {
+    String sidecarUrl = configService.effectiveSidecarUrl();
     URI uri;
     try {
-      uri = URI.create(config.getSidecarUrl() + "/interpret");
+      uri = URI.create(sidecarUrl + "/interpret");
     } catch (IllegalArgumentException ex) {
-      Log.errorf("KRL: malformed sidecar URL %s", config.getSidecarUrl());
+      Log.errorf("KRL: malformed sidecar URL %s", sidecarUrl);
       return SidecarOutcome.unreachable("Malformed sidecar URL: " + ex.getMessage());
     }
     return sendJson(uri, "POST", body);
@@ -99,9 +106,10 @@ public class KrlSidecarClient {
    * otherwise the same discriminated outcomes as {@link #interpret}.
    */
   public SidecarOutcome health() {
+    String sidecarUrl = configService.effectiveSidecarUrl();
     URI uri;
     try {
-      uri = URI.create(config.getSidecarUrl() + "/health");
+      uri = URI.create(sidecarUrl + "/health");
     } catch (IllegalArgumentException ex) {
       return SidecarOutcome.unreachable("Malformed sidecar URL: " + ex.getMessage());
     }
@@ -119,8 +127,9 @@ public class KrlSidecarClient {
   // ── internals ─────────────────────────────────────────────────────────────
 
   SidecarOutcome sendJson(URI uri, String method, Map<String, Object> body) {
+    int timeoutSeconds = configService.effectiveTimeoutSeconds();
     HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
-      .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
+      .timeout(Duration.ofSeconds(timeoutSeconds))
       .header("Accept", "application/json")
       .header("User-Agent", "shepard-krl-interpreter-client/1.0");
 
@@ -142,8 +151,8 @@ public class KrlSidecarClient {
     try {
       response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
     } catch (HttpTimeoutException ex) {
-      Log.warnf("KRL: sidecar call timed out after %ds (url=%s)", config.getTimeoutSeconds(), uri);
-      return SidecarOutcome.timeout("Sidecar call timed out after " + config.getTimeoutSeconds() + "s");
+      Log.warnf("KRL: sidecar call timed out after %ds (url=%s)", timeoutSeconds, uri);
+      return SidecarOutcome.timeout("Sidecar call timed out after " + timeoutSeconds + "s");
     } catch (IOException ex) {
       Log.warnf("KRL: sidecar unreachable (%s): %s", uri, ex.getMessage());
       return SidecarOutcome.unreachable(ex.getMessage());

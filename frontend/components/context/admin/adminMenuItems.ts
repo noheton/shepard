@@ -31,6 +31,8 @@ export enum AdminFragments {
   INSTANCE_REGISTRY = "instance-registry",
   // J1e
   JUPYTER = "jupyter",
+  // KRL-CONFIG-1
+  KRL_CONFIG = "krl-config",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -167,5 +169,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "JupyterHub link-out",
     fragment: AdminFragments.JUPYTER,
     icon: "mdi-jupyter",
+  },
+  // KRL-CONFIG-1
+  {
+    name: "KRL interpreter",
+    fragment: AdminFragments.KRL_CONFIG,
+    icon: "mdi-robot-industrial-outline",
   },
 ];
