@@ -2475,8 +2475,9 @@ still queued.
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| #27-ARCHIVED-01 | Extend `Collection.status` + `*Container.status` enums with `ARCHIVED`. Additive; default-current is unchanged. | XS | queued | Mirrors COMP-NCR-STATUS shape; new enum value lands in `Status.java` + each Container subtype. |
-| #27-ARCHIVED-02 | RBAC gate on `READY` → `ARCHIVED` transition (only Owner/instance-admin) + `ARCHIVED` → any (prune-only, no resurrection). | S | queued | Pairs with the PermissionsService isWritable check; PATCH endpoint adds an explicit 409 on resurrection attempt. |
+| #27-ARCHIVED-01 | Extend `Collection.status` + `*Container.status` enums with `ARCHIVED`. Additive; default-current is unchanged. | XS | partially-done / blocked | **Collection (done):** `AbstractDataObjectIO` already enumerates `ARCHIVED` in its `@Schema(enumeration=...)` at line 25; `Collection` inherits a free-form `String status` from `AbstractDataObject` — no closed-enum guard exists, so ARCHIVED is already accepted by the server. No code change needed for Collection. **Container (blocked — needs pre-work):** `BasicContainer` (parent of FileContainer / TimeseriesContainer / StructuredDataContainer) has no `status` field at all. Adding ARCHIVED to Container requires a prerequisite row: add `status` String field to `BasicContainer` + `BasicContainerIO`, add a `ContainerStatusGuard` (mirroring `StatusTransitionGuard` pattern), add schema annotation. File new row `#27-CONTAINER-STATUS-01` for that pre-work. Until that pre-work lands, `*Container.status` = ARCHIVED is not implementable. Investigation branch: `27-archived-01-collection-container-archived-status`. |
+| #27-CONTAINER-STATUS-01 | Add `status` String field to `BasicContainer` entity + `BasicContainerIO` schema (enumeration: DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED) + `ContainerStatusGuard` class mirroring `StatusTransitionGuard` pattern. Neo4j field is additive/nullable — no migration needed. Pre-work for #27-ARCHIVED-01 Container half + #27-ARCHIVED-02/03. | S | queued | `BasicContainer` has no `status` field today (confirmed 2026-05-30). Must land before any Container archival endpoint or UI. |
+| #27-ARCHIVED-02 | RBAC gate on `READY` → `ARCHIVED` transition (only Owner/instance-admin) + `ARCHIVED` → any (prune-only, no resurrection). | S | queued | Pairs with the PermissionsService isWritable check; PATCH endpoint adds an explicit 409 on resurrection attempt. Blocked on #27-CONTAINER-STATUS-01 for Container side. |
 | #27-ARCHIVED-03 | Frontend status chip + "Archive collection / container" action under the kebab menu on detail pages. | XS | queued | Single-line addition to the status enum mapper; chip colour = grey (frozen). |
 
 ## Open queue snapshot 2026-05-29
@@ -2509,7 +2510,7 @@ them up immediately.
 | J1e-PR-06-AUTOFETCH-03 | Plugin docs: `quickstart.md` section on "Open in Jupyter" behaviour. | XS | Required by `## Always: plugins ship their own documentation`. |
 | J1e-PR-05-VERIFY-SSO | End-to-end SSO verify (Playwright + Python kernel-side `/v2/users/me` check). | XS | Cannot run until J1e plugin admin endpoint is reachable on demo deploy. |
 | J1e-PR-05-KEYCLOAK-CLIENT-SEED | Bootstrap Keycloak client `jupyterhub-prod` via realm-export entry. | XS | Operator-comfort; not blocking. |
-| #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | Mirrors COMP-NCR-STATUS shape. |
+| #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | **-01 partially done:** Collection already accepts ARCHIVED; Container blocked on missing `BasicContainer.status` field (needs new row `#27-CONTAINER-STATUS-01`). |
 | PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | PROV-RESOLVER-PATHWALK prerequisite shipped. |
 | J1e-PR-07/08/09 | aidocs/34 path-migration row + aidocs/42/44 corrections + reconcile with J2 plan. | XS each | Docs follow-on for the in-flight J1e plugin refactor. |
 
@@ -2540,7 +2541,7 @@ Specific known prerequisite must land first.
 | TS-INGEST-222GB-NEO4J / PGBOUNCER / COMPRESSION / DOSPRAWL / PROVENANCE / GARAGE | 222 GB ingest risk monitoring. | Source export of 222 GB raw still in progress; live verification waits on import day. |
 | PERM-INHERIT-03 | `POST /v2/collections/{appId}/permissions/cascade` cascade endpoint. | Blocked on PERM-REDESIGN-DECISION resolution. |
 | HELM-K8S-DEPLOY-02..07 | K8s chart phases. | Blocked on HELM-K8S-DEPLOY-01 (design doc). |
-| #27-ARCHIVED-02/03 | RBAC gate + frontend status chip. | Blocked on #27-ARCHIVED-01 enum addition. |
+| #27-ARCHIVED-02/03 | RBAC gate + frontend status chip. | -02 (RBAC): blocked on `#27-CONTAINER-STATUS-01` (add `BasicContainer.status`). -03 (frontend chip): Collection side can proceed now; Container chip blocked same. |
 | J1e-PR-04 | Move frontend J1e UI to plugin + RowActionProvider SPI. | Blocked on J1e-PR-02 (backend move) + RowActionProvider SPI design. |
 | J1e-PR-05-CADDY-PATH-MOUNT-02 | Add `plugins/jupyter/Caddyfile`. | Operator decision on broader Zoraxy → Caddy migration (-04 already decided isolated). |
 
@@ -2594,7 +2595,7 @@ Operator-acknowledged 2026-05-29 as deferred; surface when pulled.
 - **Top 5 by value (operator may dispatch directly):**
   1. **BTKVS-A2-OPS** (XS, unblocks BT-KVS Phase A live upload — third showcase).
   2. **PROV-CAPTURE-READS-FLIP** (XS, one-line config; closes EU AI Act Art-50 read-side disclosure gap on `/v2/`).
-  3. **#27-ARCHIVED-01** (XS, additive enum; unblocks Container/Collection archival workflow).
+  3. **#27-ARCHIVED-01** (partially done — Collection ARCHIVED already present; Container needs new `#27-CONTAINER-STATUS-01` pre-work to add `BasicContainer.status` field).
   4. **FE-BUILD-03-REGEN** (S, retires the cast holdover; clean OpenAPI client).
   5. **UX-WALK-2026-05-29-05** (S, 4K Collections-list whitespace fix; visible polish on the operator's primary viewport).
 
