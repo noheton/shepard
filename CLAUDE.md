@@ -532,6 +532,57 @@ Cross-references: `feedback_done_criteria.md` (parent rule — "backend + fronte
 + tests; all three"); `feedback_ui_api_parity.md` (converse — every UI action
 callable via REST; this rule's converse — every REST action visible via UI).
 
+## Always: UI never asks for paths/URLs — pulls from references
+
+UI surfaces never expose path or URL input fields to the user. Data is
+always addressed by `appId` through a Reference (FileReference,
+TimeseriesReference, etc.) and the backend resolves to the actual
+URL — signed S3 URL, internal compose DNS, presigned, storage-backend
+override — when needed. The Reference layer is the architectural seam
+that owns URL resolution; the UI never sees URLs and never asks the
+user to type one.
+
+Rules:
+
+1. **Input shape.** UI takes an `appId` (or a Reference picker), never
+   a free-form text field that wants a path or URL. The picker scopes
+   itself to compatible references in the current context (e.g. URDF
+   picker → FileReferences whose name ends `.urdf` or whose semantic
+   annotation is `urn:shepard:urdf:role = urdf`).
+2. **Resolution at the backend.** Endpoints accepting a Reference
+   appId resolve the URL internally — via the FileReference content
+   endpoint, a per-kind resolver like `UrdfResolver`, or a future
+   generic `/v2/references/{appId}/resolve`. The frontend never
+   constructs the URL itself.
+3. **Companion data travels with the Reference.** `packagePath` (URDF
+   mesh-resolution root), `signedUrlTTL` (S3 lifetime), `mimeType`
+   override, etc. live as semantic annotations on the FileReference —
+   e.g. `urn:shepard:urdf:package-path` on the URDF FileReference —
+   not as separate UI form fields.
+4. **Existing path/URL inputs are technical debt.** Audit + migrate
+   per the `UI-PATHS-FROM-REFERENCES` row in `aidocs/16`. A free-form
+   override may stay for one deprecation window as an "advanced
+   override" with a visible warning, but disappears by the next
+   minor release.
+5. **The canonical violator** (operator-surfaced 2026-05-30) is
+   `GET /v2/shapes/render?renderer=urdf&urdfUrl=…&packagePath=…`.
+   The right shape is `?renderer=urdf&urdfFileAppId=…` — the
+   backend resolves URDF + meshes from the FileReference + its
+   annotations.
+
+**Why:** asking the user to type a path is a leaky abstraction that
+breaks the moment storage backends change, breaks for operators on
+a different host, breaks for K8s deploys without the same volume
+layout, breaks the permission gate (paths bypass `:Permissions`),
+and forces the user to know shape details they shouldn't. References
+are the single addressing layer; everything else compose-traverses
+them.
+
+Exceptions: external documentation links (cross-references to
+GitHub, w3.org, vendor docs) are fine — those are external
+resources, not Shepard data. The rule is specifically about
+Shepard-owned data.
+
 ## Always: the audit trail is a graph, not a log
 
 Every action in Shepard — data mutation, annotation write, AI invocation, admin

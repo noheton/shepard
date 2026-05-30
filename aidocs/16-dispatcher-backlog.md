@@ -2739,6 +2739,37 @@ shape.
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
 
+## UI-PATHS-FROM-REFERENCES — UI never asks for paths/URLs; pull from References
+
+Operator-codified 2026-05-30 (verbatim): *"UI should never ask for paths
+urls or the like — data is always pulled from references."* Standing
+rule landed in CLAUDE.md "Always: UI never asks for paths/URLs — pulls
+from references".
+
+The canonical violator surfaced at the same time:
+
+```
+GET /v2/shapes/render?renderer=urdf
+  &urdfUrl=/urdf-samples/kr210_r2700_2/kuka_quantec_support/urdf/kr210_r2700_2.urdf
+  &packagePath=/urdf-samples/kr210_r2700_2
+```
+
+The right shape: `?renderer=urdf&urdfFileAppId=…` with the backend's
+`UrdfResolver(appId)` returning the signed content URL + the
+mesh-resolution package path (from a semantic annotation
+`urn:shepard:urdf:package-path` on the URDF FileReference).
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| UI-PATHS-01-AUDIT | Audit every UI surface for free-form path/URL inputs. Produce a punch list. | S | queued | Greppable list of UI files + line numbers. |
+| UI-PATHS-02-SHAPES-RENDER | Migrate `/shapes/render` URDF renderer to `?urdfFileAppId=`. Backend `UrdfResolver(appId)` returns content URL + mesh package path (from annotation `urn:shepard:urdf:package-path`). One deprecation window for `?urdfUrl=`. | M | queued | The CANONICAL VIOLATOR. |
+| UI-PATHS-03-SEED-MIGRATION | Static URDF samples under `frontend/public/urdf-samples/` migrate to in-database FileReferences seeded on first start. End-state: no URL paths shipped in any UI. | M | queued | Bundles with the MFFD-real-data integration push. |
+| UI-PATHS-04-IMAGE-VIEWERS | Image / video viewer audit + migration. | M | queued | After -01. |
+| UI-PATHS-05-EMBEDS | Lab journal markdown embed audit + migration (Confluence-imported paths). | M | queued | After -01. |
+
+**Cross-references:** `feedback_ui_pulls_from_references.md`,
+`feedback_annotation_preselection_principle.md`, CLAUDE.md.
+
 ## KRL-COMPARE — Nominal-vs-actual KRL trajectory divergence
 
 Operator request 2026-05-30 (verbatim): *"would be great if krl nominal could
