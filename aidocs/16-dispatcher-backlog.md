@@ -2512,6 +2512,7 @@ them up immediately.
 | #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | Mirrors COMP-NCR-STATUS shape. |
 | PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | PROV-RESOLVER-PATHWALK prerequisite shipped. |
 | J1e-PR-07/08/09 | aidocs/34 path-migration row + aidocs/42/44 corrections + reconcile with J2 plan. | XS each | Docs follow-on for the in-flight J1e plugin refactor. |
+| **ROUTE-CLEANUP-LEGACY-01** | Reconciler-surfaced drift: `frontend/pages/configuration/*` and `frontend/pages/user/*` redirect to `/admin` and `/me` respectively. Not nav-reachable, not used — delete or document. | XS | done 2026-05-30. Documented (not deleted) — intentional backward-compat redirects for old bookmarks; one-line comment added to each file. |
 
 ### Blocked on design
 
