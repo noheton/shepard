@@ -121,6 +121,7 @@ TSC_NAME    = "mffd-rdk-urdf-trajectory"
 DO_RDK    = "MFFD AFP Cell — MFZ.rdk source"
 DO_URDF   = "R10 (KR210 L150) — kinematic model"
 DO_TRAJ   = "AFP Ply 5 layup — joint trajectory"
+DO_KRL    = "AFP Ply 5 layup — KRL program"
 
 # URDF served from frontend public dir (relative to backend host)
 URDF_PUBLIC_URL  = "/urdf-samples/kr210/kuka_kr210_support/urdf/kr210l150.urdf"
@@ -141,6 +142,8 @@ TEMPLATE_KIND = "VIEW_RECIPE"
 SEED_DIR        = Path(__file__).parent
 URDF_DIR        = SEED_DIR / "urdf"
 TRAJECTORY_DIR  = SEED_DIR / "trajectory"
+KRL_DIR         = SEED_DIR / "krl"
+KRL_SRC_PATH    = KRL_DIR / "ply5_layup.src"
 MFZ_RDK_PATH    = SEED_DIR.parent / "mffd-showcase" / "raw-data" / "mffd-data" / "cell" / "MFZ.rdk"
 MESH_NAMES      = ["base_link.dae", "link_1.dae", "link_2.dae", "link_3.dae",
                    "link_4.dae", "link_5.dae", "link_6.dae"]
@@ -742,7 +745,35 @@ def seed(apis: Apis) -> None:
             apis, coll, do_urdf, fc, FE_MESH_DIR / mesh, f"kr210-mesh-{mesh}",
         )
 
-    # 3) Trajectory DataObject + TS channels
+    # 3) KRL program DataObject + .src FileReference
+    #    This is the anchor for the "Run / preview" UI (KRL-INTERPRETER-06):
+    #    operator opens the .src FileReference → button → modal picks the
+    #    URDF (from do_urdf) + target DataObject (defaults to this one) +
+    #    timeseries container → POST /v2/krl/interpret → trajectory + URDF
+    #    animator playback. Sidecar must be up:
+    #      COMPOSE_PROFILES=krl-interpreter docker compose ... up -d
+    do_krl = ensure_data_object(
+        apis, coll, DO_KRL,
+        "Synthetic MFFD AFP Ply 5 layup KUKA Robot Language (.src) program. "
+        "Exercises the KRL-INTERPRETER tier-1 parser surface: PTP + LIN "
+        "motions, FOR loop unrolling, $BASE / $TOOL frame switching, frame "
+        "literals, named E6POS targets. Click 'Run / preview' on the "
+        "FileReference detail page to resolve against the KR210 URDF "
+        "(do_urdf) and land a joint trajectory in this DataObject's "
+        "TimeseriesContainer for URDF animator playback.",
+        {
+            "kind": "KUKA KRL program (.src)",
+            "process": "AFP Ply 5 layup, 5-pass raster",
+            "robot-family": "KUKA KR210 R3100 (substituted as KR210 L150)",
+            "parser-tier1": "PTP, LIN, FOR, $BASE, $TOOL, frame literals",
+            "synthetic": "true — believable but not the real MFFD Ply 5 program",
+            "requires-sidecar": "shepard-krl-interpreter:local (opt-in compose profile)",
+        },
+    )
+    print("\n--- Uploading KRL .src program ---", flush=True)
+    upload_file_reference(apis, coll, do_krl, fc, KRL_SRC_PATH, "ply5-layup-krl")
+
+    # 4) Trajectory DataObject + TS channels
     do_traj = ensure_data_object(
         apis, coll, DO_TRAJ,
         "Synthetic 30-second AFP ply-layup joint trajectory at 100 Hz "
@@ -782,6 +813,8 @@ def seed(apis: Apis) -> None:
     print(f"  RDK DataObj:   {front_host}/collections/{coll.id}/dataobjects/{do_rdk.id}", flush=True)
     print(f"  URDF DataObj:  {front_host}/collections/{coll.id}/dataobjects/{do_urdf.id}", flush=True)
     print(f"  Trajectory:    {front_host}/collections/{coll.id}/dataobjects/{do_traj.id}", flush=True)
+    print(f"  KRL program:   {front_host}/collections/{coll.id}/dataobjects/{do_krl.id}", flush=True)
+    print(f"                 → open the .src FileReference → 'Run / preview' button", flush=True)
     print(f"  Static URDF:   {front_host}/shapes/render?renderer=urdf"
           f"&urdfUrl={URDF_PUBLIC_URL.replace('/', '%2F')}"
           f"&packagePath={URDF_PACKAGE_DIR.replace('/', '%2F')}", flush=True)
