@@ -2737,3 +2737,141 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+## KRL-COMPARE — Nominal-vs-actual KRL trajectory divergence
+
+Operator request 2026-05-30 (verbatim): *"would be great if krl nominal could
+be compared to tcp actual... with some kind of start synchronisation."*
+
+End goal: from a KRL-interpreter-resolved trajectory (nominal — the
+KRL-INTERPRETER-05 output, a `TimeseriesReference` with joint channels
+annotated `urn:shepard:urdf:joint`), the operator clicks **"Compare with
+actual"**, picks an actual telemetry `TimeseriesReference` from the same
+cell, configures a start-synchronisation strategy (default: cross-correlation
+auto-align), and lands on a divergence visualisation: dual-trail TCP plot
+in 3D, per-joint divergence chart, statistical summary, anomaly markers
+where divergence exceeds threshold. The result is itself a new
+`TimeseriesReference` (the divergence series) carrying full PROV-O
+`:KrlReplayComparison` `:Activity` tying nominal + actual + URDF + alignment
+strategy + summary stats.
+
+**Why this is high-value:** divergence between commanded and executed motion
+is where AFP layup defects, calibration drift, joint backlash, payload
+effects all show up. EN 9100 audit chain wants the comparison alongside the
+nominal program. The ZLP cells are already instrumented with KRC4 + RSI
+streaming joints in real time; the actual-side telemetry data already lands
+in shepard as TimeseriesReferences. The arc closes the "simulate → execute →
+analyse divergence → fix" loop entirely within shepard.
+
+**Substrate prerequisites (all on main):**
+- KRL-INTERPRETER-05 — nominal-source trajectory ✅
+- URDF-WEBVIEW-1 — viewer / animator ✅
+- Trace3D — TCP trail substrate (needs extension to dual-trail) ✅
+- DT1-PHASE-0 — `:DigitalTwinScene` for URDF resolution ✅
+- SCENEGRAPH-REST-1 — REST surface for scene + URDF resolution ✅
+- TimeseriesReference annotation pattern (`urn:shepard:urdf:joint`) ✅
+
+**Alignment strategies (tier-1 ships all three):**
+
+1. **Manual scrubber** — user picks the start point on both timelines
+   via a Vuetify range slider; immediate visual feedback. Fastest for
+   the case where the operator already knows the alignment from
+   external timestamps (synchronised PTP, common GPS clock).
+2. **Cross-correlation auto-align** — default. Compute cross-correlation
+   on the joint-velocity-magnitude signal between nominal and actual,
+   find the lag that maximises correlation, apply as start-offset.
+   Robust to small time offsets; doesn't require event markers.
+3. **Event-marker align** — both trajectories carry a known event
+   annotation (e.g. `urn:shepard:event:program-start` on nominal,
+   `urn:shepard:event:rsi-trigger` on actual); align the two markers.
+   Cleanest when the cell provides hard triggers.
+
+Tier-2:
+4. **DTW (Dynamic Time Warping)** — handles non-uniform time-scaling.
+   Operator may set intentional speed changes mid-layup; DTW absorbs
+   them. Heavier compute; ship behind a `useDtw=true` advanced toggle.
+
+**Divergence metrics:**
+
+- **Per-joint angle divergence (radians)** — naive subtract after
+  alignment + interpolation onto a common time grid.
+- **TCP Cartesian divergence (mm)** — forward-kinematics both
+  trajectories using the URDF; Euclidean distance between TCP positions
+  per timestep.
+- **TCP orientation divergence (radians)** — quaternion-angle between
+  TCP orientations per timestep.
+- **Velocity-lag** — when the actual trajectory lags the nominal by a
+  consistent offset (servo response time signature) the
+  cross-correlation peak isn't at zero; expose the lag as a stat.
+- **Statistical summary** — mean / p50 / p95 / max divergence per
+  metric; time-windows of high divergence (above threshold).
+
+**Visualisation:**
+
+- **Trace3D dual-trail** — green nominal TCP trail, red actual TCP trail,
+  magnitude-coloured "divergence ribbon" between them at each sample
+  (Three.js mesh + colour-map). The URDF animator plays both robots
+  side-by-side; the trailing 3D paths show the spatial divergence at
+  scale.
+- **Per-joint divergence chart** — `EChart` lines per joint over time;
+  vertical bands mark threshold violations. Click a band to jump the
+  animator to that timestamp.
+- **Stats card** — mean / p95 / max table + alignment-strategy summary
+  (which mode used, what lag).
+
+**New entity: `:KrlReplayComparison`**
+
+`:Activity` overlay (the same Neo4j multi-label pattern KRL-INTERPRETER-05
+used for `:KrlInterpretActivity` — no migration needed):
+- `USED → nominal TimeseriesReference, actual TimeseriesReference, urdfFileReference, sceneAppId`
+- `WAS_ASSOCIATED_WITH → user` (PROV1a; `X-AI-Agent` honoured for AI-driven calls)
+- `GENERATED → divergence TimeseriesReference + summary stats`
+- Properties: `alignmentStrategy`, `appliedLag`, `meanDivergence`,
+  `p95Divergence`, `maxDivergence`, `interpreterVersion`
+
+The divergence `TimeseriesReference` carries its own channels annotated
+`urn:shepard:divergence:joint:joint_<n>`, `urn:shepard:divergence:tcp:x|y|z`,
+`urn:shepard:divergence:tcp:orientation` — fully queryable via SPARQL.
+
+**MCP tools:** `krl_compare(nominalAppId, actualAppId, urdfAppId, alignmentMode)` →
+`{ divergenceAppId, stats, activityAppId, warnings }`.
+
+**Cross-references:**
+
+- KRL-INTERPRETER family (`aidocs/16` + `aidocs/integrations/117`) — the
+  nominal-source row.
+- `aidocs/data/85-coordinate-frame-tree.md` — TCP frame resolution.
+- `aidocs/data/84-live-digital-twin.md` — dual-robot composite scene in the
+  URDF animator.
+- `feedback_annotation_preselection_principle.md` — channel-to-joint mapping
+  via annotation, no manual hookup.
+- KRL-INTERPRETER-AUDIT-LABEL (filed 2026-05-29 by the persona board) — every
+  KRL-resolved trajectory carries the "interpreter-resolved offline replay"
+  label. Comparison output extends: "comparison vs actual-execution telemetry"
+  label.
+
+**Out of scope (tier-2+):**
+
+- Live nominal-vs-actual streaming (compare-as-they-execute) — heavy lift
+  involving DT1 live mode + sTC sidecar; file as `KRL-COMPARE-LIVE-1` when
+  the active arc pulls on it.
+- Multi-instance comparison (run 1 vs run 2 vs nominal triple-compare) —
+  natural extension of the dual-compare; queue as `KRL-COMPARE-MULTI-1`.
+- Automated anomaly classification (the divergence pattern matches a known
+  AFP defect signature) — pairs with the AI-V6 capability surface.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| KRL-COMPARE-01-DESIGN | `aidocs/integrations/<NN>-krl-comparison.md` — alignment strategies + divergence metrics + Activity shape + UI flow + persona-board review (IME/AQE, Reluctant Senior, Digital Native, opposing-lens: data-scientist who'd push DTW first). | S | queued (design) | Reviewer-test: design doc passes the persona board. |
+| KRL-COMPARE-02-BACKEND | `POST /v2/krl/compare` Java REST + service + `:KrlReplayComparison` Activity overlay + divergence TS write + 3 alignment strategies + tier-1 metrics. JUnit ≥ 70%. | M | queued | Blocked on -01. |
+| KRL-COMPARE-03-FK | Forward-kinematics module (Java): given URDF + joint trajectory → TCP trajectory. Reused by -02 (both sides) + URDF viewer (animator pose extraction). | S | queued | Lands inside -02 or as its own sibling module. |
+| KRL-COMPARE-04-ALIGNMENT | The three alignment strategies as discrete services with a common `AlignmentStrategy` SPI. xcorr default; manual scrubber data path; event-marker via annotation lookup. | M | queued | Blocked on -01. SPI seam keeps DTW (tier-2) trivial to add. |
+| KRL-COMPARE-05-VIS | Trace3D dual-trail extension + per-joint divergence ECharts panel + stats card. Reuses URDF animator (dual-robot composite). | M | queued | Blocked on -02 + -04. Frontend-only. |
+| KRL-COMPARE-06-UI | "Compare with actual" button on nominal TimeseriesReference detail page + picker for actual TS + alignment configurator + result panel deep-linking to -05. | M | queued | Blocked on -02 + -05. Apply CLAUDE.md "ship a UI stub" rule (real UI here). |
+| KRL-COMPARE-07-MFFD-SHOWCASE | Extend `examples/mffd-rdk-urdf-showcase/` with a synthetic actual-side trajectory (KRL nominal + intentional 2% joint-noise + 50ms lag) and show the divergence visualisation end-to-end. | M | queued | Blocked on -06. Demonstrates the full arc on the demo data. |
+| KRL-COMPARE-08-MCP | `krl_compare` MCP tool wrapping -02; AI agents can drive the comparison from a notebook or Claude conversation. | S | queued | Blocked on -02. |
+| KRL-COMPARE-09-DOCS | Three-pane plugin docs update (no new plugin — this lives inside the same backend + frontend surface as KRL-INTERPRETER): `docs/help/run-krl-compare.md` casual-task + `docs/reference/krl-compare.md` reference + cross-ref the KRL-INTERPRETER docs trio. | S | queued | Lands with -06 per the CLAUDE.md docs-with-feature rule. |
+
+**Effort sizing:** XL across the family; -01 design gates everything. The
+hourly dispatcher will NOT pick this up autonomously — design first, then
+sub-row dispatch (mirror the KRL-INTERPRETER pattern that just shipped).
