@@ -76,3 +76,56 @@ def test_sidecar_settings_from_env(monkeypatch) -> None:
     s = SidecarSettings.from_env()
     assert s.port == 8000
     assert s.default_ik_tolerance == 1e-3
+
+
+# --------------------------------------------------------------------- #
+# Encoding fallback (KRL-INTEGRATION-MFFD-REAL-01-ENCODING-LATIN1)      #
+# --------------------------------------------------------------------- #
+
+
+def test_encoding_utf8_base64_roundtrip() -> None:
+    import base64
+
+    src = "DEF p() PTP {X 0, Y 0, Z 0, A 0, B 0, C 0} END"
+    body = InterpretRequest(
+        srcContent=base64.b64encode(src.encode("utf-8")).decode("ascii"),
+        urdfPath="/tmp/robot.urdf",
+    )
+    assert body.srcText == src
+
+
+def test_encoding_latin1_ue_byte_accepted() -> None:
+    """0xFC is `ü` in Latin-1; rejected by strict UTF-8 decoder."""
+    import base64
+
+    src_bytes = "Karenzzeit f\xfcr FSD Start abwarten".encode("iso-8859-1")
+    body = InterpretRequest(
+        srcContent=base64.b64encode(src_bytes).decode("ascii"),
+        urdfPath="/tmp/robot.urdf",
+    )
+    assert "für" in body.srcText
+
+
+def test_encoding_cp1252_smart_quote_accepted() -> None:
+    """0x93 is a Windows left-double-quote in cp1252; invalid in Latin-1."""
+    import base64
+
+    src_bytes = b"DEF p()\r\n\x93comment\x94\r\nEND\r\n"
+    body = InterpretRequest(
+        srcContent=base64.b64encode(src_bytes).decode("ascii"),
+        urdfPath="/tmp/robot.urdf",
+    )
+    assert isinstance(body.srcText, str)
+
+
+def test_encoding_truly_invalid_bytes_returns_string_not_exception() -> None:
+    """Bytes that fail utf-8, latin-1, and cp1252 fall back to replace mode."""
+    import base64
+
+    # 0x81 is undefined in cp1252 and Latin-1; triggers replace fallback.
+    src_bytes = b"DEF p()\n\x81\x82\x83\nEND\n"
+    body = InterpretRequest(
+        srcContent=base64.b64encode(src_bytes).decode("ascii"),
+        urdfPath="/tmp/robot.urdf",
+    )
+    assert isinstance(body.srcText, str)

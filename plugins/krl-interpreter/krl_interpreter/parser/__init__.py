@@ -5,6 +5,7 @@ Exposes :func:`parse` for the 5-line quickstart in ``docs/quickstart.md``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import List
 
@@ -16,6 +17,8 @@ from krl_interpreter.parser.grammar.generated.KrlLexer import KrlLexer
 from krl_interpreter.parser.grammar.generated.KrlParser import KrlParser
 from krl_interpreter.parser.ir import Program, UnsupportedConstruct
 from krl_interpreter.parser.walker import KrlIrBuilder
+
+_EKRL_RE = re.compile(r"^\s*;EKRL:\s*(.+)", re.IGNORECASE)
 
 
 @dataclass
@@ -54,6 +57,28 @@ class _CollectingErrorListener(ErrorListener):
         )
 
 
+def _scan_ekrl(source: str) -> List[UnsupportedConstruct]:
+    """Pre-scan *source* for `;EKRL:` lines before ANTLR tokenisation.
+
+    ANTLR's lexer skips `;` lines as LINE_COMMENT tokens, so EKRL channel
+    calls never reach the parser. We surface them here as structured
+    UnsupportedConstruct entries so the result panel and audit trail can
+    show the cross-subsystem coupling.
+    """
+    entries: List[UnsupportedConstruct] = []
+    for lineno, text in enumerate(source.splitlines(), start=1):
+        m = _EKRL_RE.match(text)
+        if m:
+            entries.append(
+                UnsupportedConstruct(
+                    construct="EKRL_CHANNEL_CALL",
+                    reason=m.group(1).strip(),
+                    line=lineno,
+                )
+            )
+    return entries
+
+
 def parse(source: str, *, filename: str = "<src>") -> ParseResult:
     """Parse a KRL `.src` or `.dat` source string into an IR.
 
@@ -64,6 +89,8 @@ def parse(source: str, *, filename: str = "<src>") -> ParseResult:
     :param source: the file contents.
     :param filename: optional name used in error messages.
     """
+    ekrl_entries = _scan_ekrl(source)
+
     input_stream = InputStream(source)
     lexer = KrlLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
@@ -91,5 +118,5 @@ def parse(source: str, *, filename: str = "<src>") -> ParseResult:
     return ParseResult(
         program=program,
         warnings=all_warnings,
-        unsupported=builder.unsupported,
+        unsupported=builder.unsupported + ekrl_entries,
     )

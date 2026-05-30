@@ -238,3 +238,50 @@ def test_interrupt_recorded_as_unsupported():
     assert any(
         isinstance(s, UnsupportedConstruct) for s in result.program.statements
     )
+
+
+# --------------------------------------------------------------------- #
+# EKRL channel calls surface as structured unsupportedConstructs.        #
+# (KRL-INTEGRATION-MFFD-REAL-03-EKRL-CHANNEL)                           #
+# --------------------------------------------------------------------- #
+
+
+def test_ekrl_single_line_detected():
+    src = (
+        "DEF p()\n"
+        ";EKRL: Variablen übermitteln\n"
+        "END\n"
+    )
+    result = parse(src)
+    ekrl = [u for u in result.unsupported if u.construct == "EKRL_CHANNEL_CALL"]
+    assert len(ekrl) == 1
+    assert "Variablen" in ekrl[0].reason
+    assert ekrl[0].line == 2
+
+
+def test_ekrl_two_lines_both_detected():
+    src = (
+        "DEF p()\n"
+        ";EKRL: Variablen übermitteln\n"
+        "WAIT SEC 1\n"
+        ";EKRL: Schließen\n"
+        "END\n"
+    )
+    result = parse(src)
+    ekrl = [u for u in result.unsupported if u.construct == "EKRL_CHANNEL_CALL"]
+    assert len(ekrl) == 2
+    reasons = {e.reason for e in ekrl}
+    assert any("übermitteln" in r for r in reasons)
+    assert any("Schließen" in r for r in reasons)
+
+
+def test_ekrl_absent_produces_no_false_positive():
+    src = (
+        "DEF p()\n"
+        "; ordinary comment\n"
+        "PTP {X 100, Y 0, Z 0, A 0, B 0, C 0}\n"
+        "END\n"
+    )
+    result = parse(src)
+    ekrl = [u for u in result.unsupported if u.construct == "EKRL_CHANNEL_CALL"]
+    assert ekrl == []
