@@ -58,7 +58,12 @@ public class KrlSidecarClient {
 
   @PostConstruct
   void init() {
+    // Force HTTP/1.1 — the sidecar is FastAPI + uvicorn, which doesn't
+    // negotiate HTTP/2 cleanly with Java's default upgrade attempt
+    // ("Unsupported upgrade request" / "Invalid HTTP request received"
+    // observed on first MFFD-rdk-urdf showcase smoke run 2026-05-30).
     this.httpClient = HttpClient.newBuilder()
+      .version(HttpClient.Version.HTTP_1_1)
       .connectTimeout(Duration.ofSeconds(10))
       .build();
   }
