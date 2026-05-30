@@ -11,6 +11,7 @@ defineProps<{
   serverItems: Collection[];
   loading: boolean;
   pageCount: number;
+  dense?: boolean;
 }>();
 
 const router = useRouter();
@@ -134,6 +135,7 @@ function onPageChange(page: number) {
     :cell-props="{
       class: 'text-textbody1',
     }"
+    :density="dense ? 'compact' : 'default'"
     :headers="headers"
     :items="serverItems"
     :items-per-page="itemsPerPage"
