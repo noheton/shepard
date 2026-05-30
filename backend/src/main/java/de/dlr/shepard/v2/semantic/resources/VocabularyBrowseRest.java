@@ -11,10 +11,12 @@ import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -137,6 +139,51 @@ public class VocabularyBrowseRest {
     List<Predicate> rows = predicateDAO.listByVocabulary(vocabId);
     List<PredicateIO> mapped = rows.stream().map(PredicateIO::from).toList();
     return Response.ok(new VocabularyPredicatesIO(vocabId, mapped)).build();
+  }
+
+  // ─── GET /v2/semantic/vocabularies/used-by/{entityAppId} ──────────────────
+
+  /**
+   * TOOLS-CONTEXT-VOCAB-BACKEND-1 — list the vocabularies whose terms are
+   * referenced by at least one {@code :SemanticAnnotation} attached to the
+   * given entity.
+   *
+   * <p>The {@code scope} query parameter selects the walk:
+   * <ul>
+   *   <li>{@code data-object} (default) — only the entity's own annotations.</li>
+   *   <li>{@code collection} — also walks {@code [:HAS_DATAOBJECT*0..]}
+   *       descendants so a Collection page shows every vocabulary used
+   *       anywhere inside it.</li>
+   * </ul>
+   *
+   * <p>Source: TOOLS-CONTEXT-VOCAB-BACKEND-1 (aidocs/16).
+   */
+  @GET
+  @Path("/used-by/{entityAppId}")
+  @Operation(
+    summary = "List vocabularies referenced by an entity's annotations.",
+    description =
+      "Returns the subset of :Vocabulary nodes whose terms are referenced by at " +
+      "least one :SemanticAnnotation on the given entity. When `scope=collection` " +
+      "the walk includes descendants reachable via [:HAS_DATAOBJECT*0..]. " +
+      "Auth: any authenticated user. Empty list (200) when no annotations match."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Vocabularies referenced by the entity (may be empty).",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response listVocabulariesUsedBy(
+    @PathParam("entityAppId") String entityAppId,
+    @QueryParam("scope") @DefaultValue("data-object") String scope
+  ) {
+    if (entityAppId == null || entityAppId.isBlank()) {
+      return Response.ok(List.of()).build();
+    }
+    List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
+    List<VocabularyIO> out = used.stream().map(VocabularyIO::from).toList();
+    return Response.ok(out).build();
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────

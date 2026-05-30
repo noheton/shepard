@@ -170,4 +170,55 @@ class VocabularyBrowseRestTest {
     assertEquals("p-title", second.appId());
     assertEquals(false, second.required());
   }
+
+  // ─── listVocabulariesUsedBy (TOOLS-CONTEXT-VOCAB-BACKEND-1) ──────────────
+
+  @Test
+  void listVocabulariesUsedByReturnsEmptyWhenAppIdBlank() {
+    Response response = rest.listVocabulariesUsedBy("  ", "collection");
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertTrue(body.isEmpty());
+    verify(vocabularyDAO, never()).findVocabulariesUsedByEntity("  ", "collection");
+  }
+
+  @Test
+  void listVocabulariesUsedByReturnsEmptyWhenAppIdNull() {
+    Response response = rest.listVocabulariesUsedBy(null, "data-object");
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertTrue(body.isEmpty());
+  }
+
+  @Test
+  void listVocabulariesUsedByForwardsScopeToDao() {
+    String appId = "c-123";
+    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "collection")).thenReturn(List.of(
+      vocab("v-dcterms", "http://purl.org/dc/terms/", "Dublin Core Terms", true)
+    ));
+
+    Response response = rest.listVocabulariesUsedBy(appId, "collection");
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("v-dcterms", body.get(0).getAppId());
+    verify(vocabularyDAO).findVocabulariesUsedByEntity(appId, "collection");
+  }
+
+  @Test
+  void listVocabulariesUsedByReturnsEmptyWhenDaoReturnsEmpty() {
+    String appId = "d-no-annotations";
+    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "data-object")).thenReturn(List.of());
+
+    Response response = rest.listVocabulariesUsedBy(appId, "data-object");
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    assertTrue(body.isEmpty());
+  }
 }
