@@ -8,14 +8,13 @@
  * `./openInSceneGraphButtonHelpers.ts` for the predicate set + rationale).
  *
  * Two button states, switched by the presence of the back-annotation
- * `urn:shepard:scenegraph:scene-appId` (written by
- * `examples/mffd-rdk-urdf-showcase/scenegraph/build_mffd_scene.py`):
+ * `urn:shepard:scenegraph:scene-appId`:
  *  - scene exists → button reads "Open in scene-graph editor" and
  *    routes to `/scene-graphs/{sceneAppId}`.
  *  - scene does NOT exist → button reads "Create scene from this URDF"
- *    and opens a modal explaining today's bootstrap is script-driven.
- *    Backend "click to mint" flow is filed as
- *    `SCENEGRAPH-CREATE-FROM-URDF-1` in `aidocs/16`.
+ *    and opens a confirm dialog that calls
+ *    `POST /v2/scene-graphs/from-urdf/{fileReferenceAppId}`.
+ *    201 → navigate to new scene; 409 → navigate to existing scene.
  *
  * Annotation source: this component does its own fetch via
  * `AnnotatedReference.fetchAnnotations()` rather than wiring up an event
@@ -30,6 +29,7 @@
  * Vuetify wrapper around them.
  */
 import type { SemanticAnnotation } from "@dlr-shepard/backend-client";
+import { useSceneGraph } from "~/composables/useSceneGraph";
 import {
   hasSceneGraphRole,
   findSceneAppId,
@@ -43,12 +43,18 @@ interface Props {
   collectionId: number;
   dataObjectId: number;
   fileReferenceId: number;
+  /** appId of the FileReference — passed to POST /v2/scene-graphs/from-urdf/{appId}. */
+  fileReferenceAppId?: string;
 }
 const props = defineProps<Props>();
 
 const annotations = ref<SemanticAnnotation[]>([]);
 const isLoading = ref(true);
 const showCreateModal = ref(false);
+const creating = ref(false);
+const createError = ref<string | null>(null);
+
+const { createFromUrdf, error: sgError } = useSceneGraph();
 
 const annotated = computed(
   () =>
@@ -85,7 +91,22 @@ function onClick() {
     navigateTo(sceneGraphRouteFor(id));
     return;
   }
+  createError.value = null;
   showCreateModal.value = true;
+}
+
+async function onConfirmCreate() {
+  if (!props.fileReferenceAppId) return;
+  creating.value = true;
+  createError.value = null;
+  const result = await createFromUrdf(props.fileReferenceAppId);
+  creating.value = false;
+  if (!result) {
+    createError.value = sgError.value?.message ?? "Scene creation failed.";
+    return;
+  }
+  showCreateModal.value = false;
+  navigateTo(sceneGraphRouteFor(result.appId));
 }
 </script>
 
@@ -101,34 +122,47 @@ function onClick() {
       {{ sceneAppId ? "Open in scene-graph editor" : "Create scene from this URDF" }}
     </v-btn>
 
-    <v-dialog v-model="showCreateModal" max-width="540">
+    <v-dialog v-model="showCreateModal" max-width="480">
       <v-card>
         <v-card-title class="d-flex align-center ga-2">
-          <v-icon size="small" color="primary">mdi-information-outline</v-icon>
-          Scene bootstrap is currently script-driven
+          <v-icon size="small" color="primary">mdi-graph-outline</v-icon>
+          Create scene from this URDF
         </v-card-title>
         <v-card-text>
-          <p class="mb-3">
-            No <code>:DigitalTwinScene</code> exists yet for this FileReference.
-            For now, minting a scene from a URDF runs from the command line:
+          <p class="mb-0">
+            Parse <strong>{{ fileReferenceName }}</strong> and mint a new
+            scene graph. The scene will appear under Scene Graphs and this
+            button will switch to "Open in scene-graph editor".
           </p>
-          <pre class="bootstrap-snippet">python3 examples/mffd-rdk-urdf-showcase/scenegraph/build_mffd_scene.py \
-    --host https://&lt;your-shepard-host&gt; \
-    --apikey "$SHEPARD_API_KEY"</pre>
-          <p class="mt-3 mb-0 text-medium-emphasis text-body-2">
-            The script parses the URDF, POSTs the scene to
-            <code>/v2/scene-graphs</code>, and writes the
-            <code>urn:shepard:scenegraph:scene-appId</code> back-annotation on
-            this FileReference. On the next page load the button switches to
-            "Open in scene-graph editor".<br>
-            The "click-to-mint" backend flow is tracked as
-            <strong>SCENEGRAPH-CREATE-FROM-URDF-1</strong> in
-            <code>aidocs/16</code>.
-          </p>
+          <v-alert
+            v-if="createError"
+            type="error"
+            variant="tonal"
+            class="mt-3 mb-0"
+            density="compact"
+          >
+            {{ createError }}
+          </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="showCreateModal = false">Close</v-btn>
+          <v-btn
+            variant="text"
+            :disabled="creating"
+            @click="showCreateModal = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="creating"
+            :disabled="!fileReferenceAppId || creating"
+            data-test="confirm-create-scene-button"
+            @click="onConfirmCreate"
+          >
+            Create
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -138,14 +172,5 @@ function onClick() {
 <style lang="scss" scoped>
 .open-in-scene-graph-wrap {
   display: inline-block;
-}
-.bootstrap-snippet {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.825rem;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  padding: 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-  white-space: pre-wrap;
 }
 </style>

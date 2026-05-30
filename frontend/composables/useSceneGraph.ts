@@ -521,6 +521,53 @@ export function useSceneGraph() {
   }
 
   /**
+   * SCENEGRAPH-CREATE-FROM-URDF-1 — mint a scene from a URDF FileReference.
+   *
+   * POSTs to `/v2/scene-graphs/from-urdf/{fileReferenceAppId}`.
+   * - 201: scene was created → `{ appId, existed: false }`
+   * - 409: scene already existed → `{ appId: existingSceneAppId, existed: true }`
+   * - 4xx/5xx: sets `error.value` and returns `null`
+   */
+  async function createFromUrdf(
+    fileReferenceAppId: string,
+    opts: RequestOptions = {},
+  ): Promise<{ appId: string; existed: boolean } | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const headers = await authHeaders(opts);
+      if (!headers) return null;
+      const url = `${v2BaseUrl()}/v2/scene-graphs/from-urdf/${encodeURIComponent(fileReferenceAppId)}`;
+      const response = await fetch(url, { method: "POST", headers });
+      if (response.status === 201) {
+        const data = (await response.json()) as SceneGraphIO;
+        return { appId: data.appId, existed: false };
+      }
+      if (response.status === 409) {
+        const body = (await response.json()) as {
+          existingSceneAppId?: string;
+          detail?: string;
+        };
+        if (body.existingSceneAppId) {
+          return { appId: body.existingSceneAppId, existed: true };
+        }
+      }
+      const detail = await readErrorBody(response);
+      error.value = {
+        status: response.status,
+        message: sceneGraphErrorMessageForStatus(response.status, detail),
+        detail: detail.slice(0, 500),
+      };
+      return null;
+    } catch (e) {
+      setNetworkError(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
    * Download URDF XML. Returns the raw XML string on 2xx; sets `error` on
    * failure. Caller wraps in a Blob + anchor click to trigger the download.
    */
@@ -557,6 +604,7 @@ export function useSceneGraph() {
     error,
     list,
     fetchScene,
+    createFromUrdf,
     addFrame,
     patchFrame,
     deleteFrame,
