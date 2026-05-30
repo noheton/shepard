@@ -113,6 +113,98 @@ This script is the basis for the nightly CI job `perf-endpoints.yml`
 (PERF4d — not yet created). The full workflow design is in
 `aidocs/ops/77-k6-performance-metrics.md §9.2`.
 
+## Grafana integration (PERF4c)
+
+`k6-endpoints.js` can stream metrics to Prometheus or Grafana Cloud via
+`--out` flags. No changes to the script itself are required.
+
+### Option A: Local Prometheus remote-write
+
+When the `monitoring` compose profile is active, Prometheus is already
+running at `http://localhost:9090`. Pipe k6 metrics there directly:
+
+```bash
+K6_PROMETHEUS_RW_SERVER_URL=http://localhost:9090/api/v1/write \
+  k6 run --out experimental-prometheus-rw scripts/perf/k6-endpoints.js
+```
+
+Or with Docker (compose-internal Prometheus name):
+
+```bash
+docker run --rm -i --network host \
+    -e SHEPARD_BASE_URL=http://localhost:8080 \
+    -e SHEPARD_API_KEY="${SHEPARD_API_KEY}" \
+    -e K6_PROMETHEUS_RW_SERVER_URL=http://localhost:9090/api/v1/write \
+    -v "$PWD/scripts/perf":/scripts:ro \
+    grafana/k6 run \
+      --out experimental-prometheus-rw \
+      --tag testid="perf4c-$(date +%Y%m%d)" \
+      /scripts/k6-endpoints.js
+```
+
+**Requirements:**
+- k6 >= 0.43 (the `experimental-prometheus-rw` output ships in that release)
+- Prometheus >= 2.39 with remote-write receiver enabled:
+  `--enable-feature=remote-write-receiver`
+
+**Env var:** `K6_PROMETHEUS_RW_SERVER_URL` — set to your Prometheus
+remote-write endpoint (default Prometheus listens at `:9090`, so the
+path is `http://localhost:9090/api/v1/write`). When running k6 inside
+the compose network, use the service name instead:
+`http://prometheus:9090/api/v1/write`.
+
+### Option B: Grafana Cloud k6
+
+Operators with a Grafana Cloud account can pipe results to the hosted k6
+Cloud for multi-run trend charts and team sharing. Zero code changes
+required — only the invocation flag changes:
+
+```bash
+K6_CLOUD_TOKEN=<token> k6 cloud scripts/perf/k6-endpoints.js
+```
+
+Or with Docker:
+
+```bash
+docker run --rm -i --network host \
+    -e K6_CLOUD_TOKEN="${K6_CLOUD_TOKEN}" \
+    -e SHEPARD_BASE_URL="${SHEPARD_BASE_URL}" \
+    -e SHEPARD_API_KEY="${SHEPARD_API_KEY}" \
+    grafana/k6 cloud /scripts/k6-endpoints.js
+```
+
+**Obtain token:** Grafana Cloud → Testing → k6 → Settings → API Token.
+Results appear in the Grafana Cloud k6 UI automatically (no local
+Prometheus needed). The `k6 cloud` subcommand streams results to
+`app.k6.io` and provides regression comparison, alert rules, and CI
+badge output. This is entirely optional and requires no changes to this
+fork's CI or compose stack.
+
+**Licence note.** k6 (the binary) is Apache-2.0. Grafana Cloud k6 is a
+hosted service with a paid tier. There is no licence incompatibility for
+operators who choose to use it; the binary itself remains Apache-2.0.
+
+### Viewing dashboards locally
+
+Import `infrastructure/grafana/dashboards/shepard-perf4-endpoints.json`
+into your local Grafana instance:
+
+1. Dashboards → Import → Upload JSON file
+2. Select `infrastructure/grafana/dashboards/shepard-perf4-endpoints.json`
+3. Set the Prometheus datasource when prompted
+
+The dashboard contains four panels in a 2×2 grid:
+
+| Panel | Metric | Unit |
+|---|---|---|
+| TimescaleDB range-scan p95 (k6) | `k6_http_req_duration_bucket` filtered on `.*timeseries.*` | ms |
+| Neo4j provenance walk p95 (k6) | `k6_http_req_duration_bucket` filtered on `.*provenance.*\|.*lineage.*` | ms |
+| /v2/ data-objects p95 (k6) | `k6_http_req_duration_bucket` filtered on `.*/v2/.*data.?objects.*` | ms |
+| Endpoint error rate (k6) | `k6_http_reqs_total` 4xx+5xx / total | percent (0–100%) |
+
+The error-rate panel has a red threshold line at 1% (0.01) matching the
+`"http_req_failed": ["rate<0.01"]` CI gate in the k6 script.
+
 ## Cross-references
 
 - `aidocs/ops/77` — per-endpoint SLO matrix design + PERF4 task breakdown.
