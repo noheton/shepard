@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * SEMA-V6-006 — 10 new MCP tools for the semantic annotation surface.
@@ -534,6 +535,195 @@ public class AnnotationMcpTools {
         "message", "find_similar_annotated is not yet implemented — gated on SEMA-V6-008."
       ));
     });
+  }
+
+  // ─── semantic_annotate_bulk ─────────────────────────────────────────────────
+
+  @Tool(
+    name = "semantic_annotate_bulk",
+    description =
+      "Write multiple SemanticAnnotations in a single call — up to 100 rows per request.\n\n" +
+      "Each row in the `annotations` list follows the same schema as `create_annotation`:\n" +
+      "  subjectAppId  — (required) appId of the entity to annotate.\n" +
+      "  subjectKind   — (required) kind label (e.g. 'DataObject', 'Collection').\n" +
+      "  propertyIRI   — (required) canonical IRI of the predicate.\n" +
+      "  propertyName  — human-readable property label (optional).\n" +
+      "  valueName     — plain-text value (supply valueName, valueIRI, or numericValue).\n" +
+      "  valueIRI      — controlled-vocabulary value IRI.\n" +
+      "  numericValue  — numeric quantity (provide unitIRI when used).\n" +
+      "  unitIRI       — QUDT unit IRI for numericValue.\n" +
+      "  vocabularyId  — appId of the controlling Vocabulary.\n" +
+      "  sourceMode    — 'human' | 'ai' | 'collaborative' (auto-detected from X-AI-Agent header).\n" +
+      "  confidence    — AI confidence in [0.0, 1.0].\n\n" +
+      "Returns an array of per-row result objects (same order as input — index-stable):\n" +
+      "  ok           — true on success, false on per-row validation or write failure.\n" +
+      "  appId        — the new annotation's appId (present when ok=true).\n" +
+      "  subjectAppId — echoed from the input row.\n" +
+      "  error        — error message (present when ok=false).\n\n" +
+      "Best-effort semantics: a failure on row N does NOT abort rows N+1..M.\n" +
+      "All rows are attempted; the response aggregates per-row results.\n\n" +
+      "Concurrency: rows are written sequentially on the invoking request thread.\n" +
+      "TODO(MCP-COV-05-SEMANTIC-BULK-CONCURRENT): upgrade to Semaphore(10) + virtual-thread\n" +
+      "fan-out once SemanticAnnotationDAO is promoted from @RequestScoped to @ApplicationScoped\n" +
+      "(OGM session-per-request scope does not propagate to spawned virtual threads).\n\n" +
+      "Note: collection-level WRITE permission check is deferred (TODO SEMA-V6-007)."
+  )
+  public String semanticAnnotateBulk(
+    @ToolArg(
+      description =
+        "JSON array of annotation rows. Each row must have subjectAppId, subjectKind, and " +
+        "propertyIRI, plus at least one of valueName / valueIRI / numericValue. " +
+        "Maximum 100 rows per call."
+    ) List<Map<String, Object>> annotations
+  ) {
+    return support.run("semantic_annotate_bulk", () -> {
+      contextBridge.bind();
+
+      if (annotations == null || annotations.isEmpty()) {
+        throw McpToolSupport.invalidParams("annotations list is required and must not be empty.");
+      }
+      if (annotations.size() > 100) {
+        throw McpToolSupport.invalidParams(
+          "annotations list exceeds the 100-row-per-call cap (got " + annotations.size() + ")."
+        );
+      }
+
+      boolean aiHeader = isAiAgentRequest();
+      int n = annotations.size();
+
+      // Sequential fan-out with index-stable result array.
+      //
+      // TODO(MCP-COV-05-SEMANTIC-BULK-CONCURRENT): replace this loop with a
+      // Semaphore(10) + Executors.newVirtualThreadPerTaskExecutor() fan-out to
+      // run up to 10 Neo4j writes concurrently (Neo4j writes are I/O-bound).
+      // Blocked by: SemanticAnnotationDAO is @RequestScoped — the CDI request
+      // context does not propagate to spawned virtual threads in Quarkus, so
+      // annotationDAO.createOrUpdate() would NPE or see a stale session inside
+      // a virtual thread that is not the original request thread.
+      // Migration path: promote SemanticAnnotationDAO to @ApplicationScoped and
+      // change GenericDAO to use a per-call session (openSession() per method
+      // rather than once at construction time), then re-enable the concurrent path.
+      @SuppressWarnings("unchecked")
+      Map<String, Object>[] resultArray = new Map[n];
+
+      for (int i = 0; i < n; i++) {
+        resultArray[i] = processAnnotationRow(annotations.get(i), aiHeader);
+      }
+
+      return support.toJson(List.of(resultArray));
+    });
+  }
+
+  /**
+   * Process a single bulk-annotation row and return a per-row result map.
+   *
+   * <p>Validates required fields, resolves {@code sourceMode}, constructs a
+   * {@link SemanticAnnotation}, persists it via {@link SemanticAnnotationDAO#createOrUpdate},
+   * and returns a result map with shape {@code {ok, appId, subjectAppId, error}}.
+   *
+   * <p>Never throws — all exceptions are caught and reflected in the {@code ok=false} row.
+   * This preserves the best-effort-per-row contract of {@code semantic_annotate_bulk}.
+   *
+   * @param row       the raw row map from the MCP call (field names mirror {@code create_annotation})
+   * @param aiHeader  {@code true} when the request carries an {@code X-AI-Agent} header
+   * @return result map for this row; always non-null
+   */
+  private Map<String, Object> processAnnotationRow(Map<String, Object> row, boolean aiHeader) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    String rowSubjectAppId = Objects.toString(row.get("subjectAppId"), "").strip();
+    result.put("subjectAppId", rowSubjectAppId.isEmpty() ? null : rowSubjectAppId);
+
+    try {
+      // ── required-field validation ──────────────────────────────────────────
+      if (rowSubjectAppId.isEmpty()) {
+        throw McpToolSupport.invalidParams("Row is missing required field: subjectAppId.");
+      }
+      String subjectKind = Objects.toString(row.get("subjectKind"), "").strip();
+      if (subjectKind.isEmpty()) {
+        throw McpToolSupport.invalidParams("Row is missing required field: subjectKind.");
+      }
+      String propertyIRI = Objects.toString(row.get("propertyIRI"), "").strip();
+      if (propertyIRI.isEmpty()) {
+        throw McpToolSupport.invalidParams("Row is missing required field: propertyIRI.");
+      }
+
+      String valueName   = nullIfBlank(row.get("valueName"));
+      String valueIRI    = nullIfBlank(row.get("valueIRI"));
+      Double numericValue = toDouble(row.get("numericValue"));
+
+      boolean hasValue = valueName != null || valueIRI != null || numericValue != null;
+      if (!hasValue) {
+        throw McpToolSupport.invalidParams(
+          "Row is missing a value: supply at least one of valueName, valueIRI, or numericValue."
+        );
+      }
+
+      // ── optional fields ────────────────────────────────────────────────────
+      String propertyName  = nullIfBlank(row.get("propertyName"));
+      String unitIRI       = nullIfBlank(row.get("unitIRI"));
+      String vocabularyId  = nullIfBlank(row.get("vocabularyId"));
+      String sourceModeRaw = nullIfBlank(row.get("sourceMode"));
+      Double confidence    = toDouble(row.get("confidence"));
+
+      // Resolve sourceMode: caller override → X-AI-Agent header → 'human'
+      String effectiveSourceMode = (sourceModeRaw != null)
+        ? sourceModeRaw
+        : (aiHeader ? "ai" : "human");
+
+      // ── persist ───────────────────────────────────────────────────────────
+      SemanticAnnotation ann = new SemanticAnnotation();
+      ann.setSubjectAppId(rowSubjectAppId);
+      ann.setSubjectKind(subjectKind);
+      ann.setPropertyIRI(propertyIRI);
+      ann.setPropertyName(propertyName);
+      ann.setValueName(valueName);
+      ann.setValueIRI(valueIRI);
+      ann.setNumericValue(numericValue);
+      ann.setUnitIRI(unitIRI);
+      ann.setVocabularyId(vocabularyId);
+      ann.setSourceMode(effectiveSourceMode);
+      ann.setConfidence(confidence);
+      // TODO(SEMA-V6-007): set sourceActivityAppId once Activity capture is wired.
+
+      SemanticAnnotation saved = annotationDAO.createOrUpdate(ann);
+
+      result.put("ok", true);
+      result.put("appId", saved.getAppId());
+      result.put("error", null);
+
+    } catch (McpException me) {
+      result.put("ok", false);
+      result.put("appId", null);
+      result.put("error", me.getMessage());
+      Log.debugf("semantic_annotate_bulk: row validation failure for subject=%s: %s",
+        rowSubjectAppId, me.getMessage());
+    } catch (RuntimeException re) {
+      result.put("ok", false);
+      result.put("appId", null);
+      result.put("error", "Write failed: " + re.getMessage());
+      Log.warnf("semantic_annotate_bulk: write error for subject=%s: %s",
+        rowSubjectAppId, re.getMessage());
+    }
+
+    return result;
+  }
+
+  /** Return null when {@code v} is null or blank; otherwise trim and return. */
+  private static String nullIfBlank(Object v) {
+    if (v == null) return null;
+    String s = v.toString().strip();
+    return s.isEmpty() ? null : s;
+  }
+
+  /** Parse {@code v} to {@code Double}, returning null on failure. */
+  private static Double toDouble(Object v) {
+    if (v == null) return null;
+    if (v instanceof Number n) return n.doubleValue();
+    try {
+      return Double.parseDouble(v.toString().strip());
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   // ─── helpers ────────────────────────────────────────────────────────────────
