@@ -6,16 +6,19 @@
  */
 import type { KrlInterpretRequest } from "~/composables/useKrlInterpret";
 
+// KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: timeseriesContainerAppId is now
+// optional — when absent the backend auto-mints "KRL Trajectories" for the
+// target DataObject.
 export function isKrlFormValid(state: {
   urdfFileAppId: string | null;
   targetDataObjectAppId: string;
-  timeseriesContainerAppId: string;
+  timeseriesContainerAppId?: string | null;
 }): boolean {
   return (
     !!state.urdfFileAppId &&
     state.urdfFileAppId.trim().length > 0 &&
-    state.targetDataObjectAppId.trim().length > 0 &&
-    state.timeseriesContainerAppId.trim().length > 0
+    state.targetDataObjectAppId.trim().length > 0
+    // timeseriesContainerAppId is optional; no gate here
   );
 }
 
@@ -35,7 +38,8 @@ export interface BuildBodyInput {
   srcFileAppId: string;
   urdfFileAppId: string;
   targetDataObjectAppId: string;
-  timeseriesContainerAppId: string;
+  /** Optional — when blank/null the backend auto-mints "KRL Trajectories". */
+  timeseriesContainerAppId?: string | null;
   datFileAppIds: string[];
   timeStep: number;
   ikTolerance: number;
@@ -52,13 +56,17 @@ export function buildKrlRequestBody(input: BuildBodyInput): KrlInterpretRequest 
     srcFileAppId: input.srcFileAppId,
     urdfFileAppId: input.urdfFileAppId,
     targetDataObjectAppId: input.targetDataObjectAppId,
-    timeseriesContainerAppId: input.timeseriesContainerAppId,
     timeStep: input.timeStep,
     options: {
       ikTolerance: input.ikTolerance,
       maxIterations: input.maxIterations,
     },
   };
+  // Only include timeseriesContainerAppId when the caller supplied a non-blank
+  // value — absent means "auto-mint KRL Trajectories" on the backend.
+  if (input.timeseriesContainerAppId && input.timeseriesContainerAppId.trim().length > 0) {
+    body.timeseriesContainerAppId = input.timeseriesContainerAppId;
+  }
   if (input.datFileAppIds.length > 0) {
     body.datFileAppIds = [...input.datFileAppIds];
   }

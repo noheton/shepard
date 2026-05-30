@@ -52,7 +52,9 @@ const collectionFileReferences = ref<FileReference[]>([]);
 const isLoadingRefs = ref(false);
 const urdfFileAppId = ref<string | null>(null);
 const targetDataObjectAppId = ref<string>(props.dataObjectAppId);
-const timeseriesContainerAppId = ref<string>("");
+// KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: optional — empty means "auto-mint
+// KRL Trajectories" on the backend.
+const timeseriesContainerAppId = ref<string | null>(null);
 const datFileAppIds = ref<string[]>([]);
 
 const advanced = ref([0]); // collapsed by default; user expands to see frames
@@ -83,7 +85,7 @@ const formValid = computed(() =>
   isKrlFormValid({
     urdfFileAppId: urdfFileAppId.value,
     targetDataObjectAppId: targetDataObjectAppId.value,
-    timeseriesContainerAppId: timeseriesContainerAppId.value,
+    // timeseriesContainerAppId is optional — not part of validity gate
   }),
 );
 
@@ -261,18 +263,6 @@ const urdfPayloadUrl = computed<string | null>(() => {
           data-test="krl-target-dataobject"
         />
 
-        <v-text-field
-          v-model="timeseriesContainerAppId"
-          label="TimeseriesContainer appId"
-          variant="outlined"
-          density="comfortable"
-          class="mb-2"
-          required
-          hint="The container the trajectory is written to. Tier-2 (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER) will auto-mint this."
-          persistent-hint
-          data-test="krl-ts-container"
-        />
-
         <!-- ── Advanced (collapsed) ──────────────────────────────────── -->
         <v-expansion-panels v-model="advanced" class="mt-4">
           <v-expansion-panel>
@@ -283,6 +273,18 @@ const urdfPayloadUrl = computed<string | null>(() => {
               </template>
             </v-expansion-panel-title>
             <v-expansion-panel-text>
+              <v-text-field
+                v-model="timeseriesContainerAppId"
+                label="TimeseriesContainer appId (optional)"
+                variant="outlined"
+                density="comfortable"
+                class="mb-3"
+                clearable
+                hint="Leave blank to auto-use 'KRL Trajectories' (auto-created per DataObject, reused on subsequent runs)."
+                persistent-hint
+                data-test="krl-ts-container"
+              />
+
               <v-autocomplete
                 v-model="datFileAppIds"
                 :items="datCandidates"

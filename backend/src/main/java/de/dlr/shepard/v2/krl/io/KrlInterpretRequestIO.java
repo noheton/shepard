@@ -14,8 +14,11 @@ import lombok.NoArgsConstructor;
  * {@code appId}s on the file fields — the backend resolves them to
  * payload bytes before calling the sidecar.
  *
- * <p>Every field is optional except {@code srcFileAppId} +
- * {@code urdfFileAppId} (validated at the resource layer).
+ * <p>Every field is optional except {@code srcFileAppId},
+ * {@code urdfFileAppId}, and {@code targetDataObjectAppId}
+ * (validated at the resource layer). {@code timeseriesContainerAppId}
+ * is optional — when absent the backend auto-mints a default container
+ * named {@code "KRL Trajectories"} under {@code targetDataObjectAppId}.
  */
 @Data
 @NoArgsConstructor
@@ -57,16 +60,14 @@ public class KrlInterpretRequestIO {
   private String targetDataObjectAppId;
 
   /**
-   * Required — the {@code TimeseriesContainer} the trajectory data
-   * points are written to. Each interpret run is one "trajectory
-   * envelope" against this container (the container is the storage
-   * substrate; the {@code TimeseriesReference} is the addressable
-   * handle the user navigates to).
+   * Optional — when absent ({@code null}), the backend auto-mints a
+   * {@code :TimeseriesContainer} named {@code "KRL Trajectories"} under
+   * {@code targetDataObjectAppId} and uses it. Subsequent interpret runs
+   * against the same DataObject reuse the same container (idempotent
+   * lookup-or-create by name per DataObject).
    *
-   * <p>Tier-1: the caller picks the container explicitly. Tier-2
-   * (deferred to {@code KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER})
-   * will auto-mint a per-DataObject default container so the UI's
-   * "Run / preview" affordance does not need to ask the user.
+   * <p>When present, the caller-supplied container is used as-is
+   * (original tier-1 behaviour — explicit container takes precedence).
    */
   private String timeseriesContainerAppId;
 

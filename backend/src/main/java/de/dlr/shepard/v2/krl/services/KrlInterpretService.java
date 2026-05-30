@@ -3,12 +3,14 @@ package de.dlr.shepard.v2.krl.services;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -72,6 +74,15 @@ public class KrlInterpretService {
   /** Predicate constant used to annotate joint channels per the preselection principle. */
   public static final String JOINT_PREDICATE = "urn:shepard:urdf:joint";
 
+  /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — convention name for the
+   * auto-minted per-DataObject default container. When
+   * {@code timeseriesContainerAppId} is absent from the request, a container
+   * with this name is created (or reused if it already exists) under the
+   * target DataObject.
+   */
+  static final String KRL_TRAJECTORIES_CONTAINER_NAME = "KRL Trajectories";
+
   @Inject KrlSidecarClient sidecar;
   @Inject SingletonFileReferenceService fileReferenceService;
   @Inject TimeseriesContainerService timeseriesContainerService;
@@ -80,6 +91,7 @@ public class KrlInterpretService {
   @Inject DataObjectService dataObjectService;
   @Inject EntityIdResolver entityIdResolver;
   @Inject ProvenanceService provenanceService;
+  @Inject DateHelper dateHelper;
 
   /**
    * Top-level orchestration. Throws a {@link BadRequestException} on
@@ -112,14 +124,9 @@ public class KrlInterpretService {
     long targetDataObjectShepardId = target.getShepardId();
     long collectionShepardId = target.getCollection().getShepardId();
 
-    // 3. Resolve the TimeseriesContainer the trajectory writes to.
-    TimeseriesContainer container = timeseriesContainerService
-      .getContainerByAppId(request.getTimeseriesContainerAppId());
-    if (container == null) {
-      throw new NotFoundException(
-        "No TimeseriesContainer with appId " + request.getTimeseriesContainerAppId()
-      );
-    }
+    // 3. Resolve (or auto-mint) the TimeseriesContainer for the trajectory.
+    TimeseriesContainer container = resolveOrCreateKrlContainer(
+      request.getTimeseriesContainerAppId(), request.getTargetDataObjectAppId());
     long containerShepardId = container.getId();
 
     // 4. Call the sidecar.
@@ -169,7 +176,8 @@ public class KrlInterpretService {
     requireBlank("srcFileAppId", request.getSrcFileAppId());
     requireBlank("urdfFileAppId", request.getUrdfFileAppId());
     requireBlank("targetDataObjectAppId", request.getTargetDataObjectAppId());
-    requireBlank("timeseriesContainerAppId", request.getTimeseriesContainerAppId());
+    // timeseriesContainerAppId is optional — when absent the backend auto-mints
+    // a "KRL Trajectories" container per the KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER spec.
   }
 
   private static void requireBlank(String name, String value) {
@@ -214,6 +222,66 @@ public class KrlInterpretService {
         "targetDataObjectAppId " + appId + " has no owning Collection");
     }
     return lookup;
+  }
+
+  /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — resolve the target
+   * {@code TimeseriesContainer} for the KRL trajectory, creating it if
+   * necessary.
+   *
+   * <p>Resolution order:
+   * <ol>
+   *   <li>If {@code containerAppId} is non-null, look it up and return
+   *       it (existing tier-1 explicit-container behaviour).
+   *   <li>Otherwise, query for a non-deleted container named
+   *       {@value KRL_TRAJECTORIES_CONTAINER_NAME} that is already reachable
+   *       via the target DataObject's TimeseriesReferences (idempotent reuse).
+   *   <li>If none is found, create a new container with that name via
+   *       {@link TimeseriesContainerService#createContainer} (lazy-mint).
+   * </ol>
+   *
+   * @param containerAppId     explicit container appId from the request, or
+   *                           {@code null} to trigger auto-mint
+   * @param dataObjectAppId    the target DataObject's appId; used for the
+   *                           lookup-by-name path
+   * @return the resolved or newly created {@link TimeseriesContainer}
+   * @throws BadRequestException if {@code containerAppId} is non-null but
+   *                             no matching container is found
+   */
+  TimeseriesContainer resolveOrCreateKrlContainer(String containerAppId, String dataObjectAppId) {
+    if (containerAppId != null && !containerAppId.isBlank()) {
+      // Explicit container supplied — use as-is (tier-1 behaviour).
+      // getContainerByAppId throws InvalidPathException when not found; map to BadRequest.
+      try {
+        TimeseriesContainer explicit = timeseriesContainerService.getContainerByAppId(containerAppId);
+        if (explicit == null) {
+          throw new BadRequestException(
+            "timeseriesContainerAppId: no TimeseriesContainer with appId " + containerAppId);
+        }
+        return explicit;
+      } catch (de.dlr.shepard.common.exceptions.InvalidPathException ipe) {
+        throw new BadRequestException(
+          "timeseriesContainerAppId: " + ipe.getMessage());
+      }
+    }
+
+    // No container supplied — auto-mint "KRL Trajectories" (tier-2).
+    // First, look for an existing container with that name under this DataObject.
+    var existing = timeseriesContainerService.findKrlTrajectoriesContainerForDataObject(
+      dataObjectAppId, KRL_TRAJECTORIES_CONTAINER_NAME);
+    if (existing.isPresent()) {
+      Log.debugf("KRL: reusing existing '%s' container %s for DataObject %s",
+        KRL_TRAJECTORIES_CONTAINER_NAME, existing.get().getAppId(), dataObjectAppId);
+      return existing.get();
+    }
+
+    // None found — create a new one.
+    TimeseriesContainerIO io = new TimeseriesContainerIO();
+    io.setName(KRL_TRAJECTORIES_CONTAINER_NAME);
+    TimeseriesContainer created = timeseriesContainerService.createContainer(io);
+    Log.infof("KRL: auto-minted '%s' container %s for DataObject %s",
+      KRL_TRAJECTORIES_CONTAINER_NAME, created.getAppId(), dataObjectAppId);
+    return created;
   }
 
   Map<String, Object> buildSidecarBody(

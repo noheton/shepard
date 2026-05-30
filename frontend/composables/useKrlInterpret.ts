@@ -51,7 +51,12 @@ export interface KrlInterpretRequest {
   srcFileAppId: string;
   urdfFileAppId: string;
   targetDataObjectAppId: string;
-  timeseriesContainerAppId: string;
+  /**
+   * Optional — when absent (undefined/null), the backend auto-mints a
+   * ":TimeseriesContainer" named "KRL Trajectories" under the target
+   * DataObject and uses it (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER).
+   */
+  timeseriesContainerAppId?: string | null;
   datFileAppIds?: string[];
   sceneAppId?: string | null;
   baseFrame?: Record<string, number>;

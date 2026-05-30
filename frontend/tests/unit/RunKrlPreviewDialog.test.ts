@@ -15,15 +15,28 @@ import {
   sameStemDatAppId,
 } from "../../components/dialog/runKrlPreviewHelpers";
 
+// KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: timeseriesContainerAppId is now
+// optional — the backend auto-mints "KRL Trajectories" when absent.
 describe("RunKrlPreviewDialog — isKrlFormValid", () => {
   const base = {
     urdfFileAppId: "u-1",
     targetDataObjectAppId: "d-1",
-    timeseriesContainerAppId: "c-1",
   };
 
-  it("is valid when all three required fields are set", () => {
+  it("is valid when URDF and target DataObject are set (no container needed)", () => {
     expect(isKrlFormValid(base)).toBe(true);
+  });
+
+  it("is valid even when timeseriesContainerAppId is not supplied", () => {
+    expect(isKrlFormValid({ ...base, timeseriesContainerAppId: undefined })).toBe(true);
+  });
+
+  it("is valid when timeseriesContainerAppId is blank (auto-mint)", () => {
+    expect(isKrlFormValid({ ...base, timeseriesContainerAppId: "" })).toBe(true);
+  });
+
+  it("is valid when timeseriesContainerAppId is a real appId (explicit container)", () => {
+    expect(isKrlFormValid({ ...base, timeseriesContainerAppId: "c-1" })).toBe(true);
   });
 
   it("is invalid when URDF appId is null", () => {
@@ -33,10 +46,6 @@ describe("RunKrlPreviewDialog — isKrlFormValid", () => {
   it("is invalid when target DataObject appId is blank", () => {
     expect(isKrlFormValid({ ...base, targetDataObjectAppId: "" })).toBe(false);
     expect(isKrlFormValid({ ...base, targetDataObjectAppId: "   " })).toBe(false);
-  });
-
-  it("is invalid when TimeseriesContainer appId is blank", () => {
-    expect(isKrlFormValid({ ...base, timeseriesContainerAppId: "" })).toBe(false);
   });
 });
 
@@ -84,10 +93,27 @@ describe("RunKrlPreviewDialog — buildKrlRequestBody", () => {
     expect(body.urdfFileAppId).toBe("urdf-1");
     expect(body.timeStep).toBe(0.01);
     expect(body.options).toEqual({ ikTolerance: 0.001, maxIterations: 300 });
+    // timeseriesContainerAppId is present in baseInput as "tsc-1" — included.
+    expect(body.timeseriesContainerAppId).toBe("tsc-1");
     expect(body.datFileAppIds).toBeUndefined();
     expect(body.baseFrame).toBeUndefined();
     expect(body.toolFrame).toBeUndefined();
     expect(body.seedPose).toBeUndefined();
+  });
+
+  it("omits timeseriesContainerAppId when null (auto-mint)", () => {
+    const body = buildKrlRequestBody({ ...baseInput, timeseriesContainerAppId: null });
+    expect(body.timeseriesContainerAppId).toBeUndefined();
+  });
+
+  it("omits timeseriesContainerAppId when blank (auto-mint)", () => {
+    const body = buildKrlRequestBody({ ...baseInput, timeseriesContainerAppId: "" });
+    expect(body.timeseriesContainerAppId).toBeUndefined();
+  });
+
+  it("includes timeseriesContainerAppId when a real appId is given", () => {
+    const body = buildKrlRequestBody({ ...baseInput, timeseriesContainerAppId: "tsc-explicit" });
+    expect(body.timeseriesContainerAppId).toBe("tsc-explicit");
   });
 
   it("includes datFileAppIds when set", () => {

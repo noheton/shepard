@@ -57,6 +57,38 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
   }
 
   /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — find a non-deleted
+   * {@code :TimeseriesContainer} by name that is already referenced by the
+   * supplied DataObject (via the
+   * {@code DataObject -[:has_reference]-> TimeseriesReference -[:is_in_container]-> TimeseriesContainer}
+   * path).
+   *
+   * <p>Used for the idempotent "KRL Trajectories" lookup-or-create: if a
+   * previous KRL interpret run already wrote into a container named
+   * "KRL Trajectories" for this DataObject, we return that container so
+   * subsequent runs append to the same container rather than minting a new one.
+   *
+   * @param dataObjectAppId the {@code appId} of the DataObject
+   * @param containerName   the exact container name to match (case-insensitive)
+   * @return the first matching non-deleted container, or {@code Optional.empty()}
+   */
+  public Optional<TimeseriesContainer> findByDataObjectAndName(
+    String dataObjectAppId,
+    String containerName
+  ) {
+    String query =
+      "MATCH (do:DataObject {appId: $dataObjectAppId})" +
+      "-[:has_reference]->()" +
+      "-[:is_in_container]->(c:TimeseriesContainer) " +
+      "WHERE toLower(c.name) = toLower($name) " +
+      "  AND (c.deleted IS NULL OR c.deleted = false) " +
+      "RETURN c LIMIT 1";
+    var iter = findByQuery(query, Map.of("dataObjectAppId", dataObjectAppId, "name", containerName));
+    var it = iter.iterator();
+    return it.hasNext() ? Optional.of(it.next()) : Optional.empty();
+  }
+
+  /**
    * CC1b — find all DataObjects that reference this TimeseriesContainer via a
    * TimeseriesReference.
    *

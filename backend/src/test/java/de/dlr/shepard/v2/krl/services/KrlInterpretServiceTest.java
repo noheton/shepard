@@ -18,9 +18,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.DataObjectService;
@@ -28,6 +30,7 @@ import de.dlr.shepard.context.references.file.services.SingletonFileReferenceSer
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
@@ -40,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -73,6 +77,7 @@ class KrlInterpretServiceTest {
   private DataObjectService dataObjectService;
   private EntityIdResolver entityIdResolver;
   private ProvenanceService provenanceService;
+  private DateHelper dateHelper;
   private DataObject targetDataObject;
   private TimeseriesContainer container;
 
@@ -87,6 +92,7 @@ class KrlInterpretServiceTest {
     dataObjectService = mock(DataObjectService.class);
     entityIdResolver = mock(EntityIdResolver.class);
     provenanceService = mock(ProvenanceService.class);
+    dateHelper = mock(DateHelper.class);
 
     service.sidecar = sidecar;
     service.fileReferenceService = fileReferenceService;
@@ -96,6 +102,7 @@ class KrlInterpretServiceTest {
     service.dataObjectService = dataObjectService;
     service.entityIdResolver = entityIdResolver;
     service.provenanceService = provenanceService;
+    service.dateHelper = dateHelper;
 
     Collection coll = new Collection();
     coll.setShepardId(COLL_OGM_ID);
@@ -157,10 +164,36 @@ class KrlInterpretServiceTest {
   }
 
   @Test
-  void validate_missingTsContainer_throwsBadRequest() {
+  void validate_missingTsContainer_noLongerThrows_autoMints() {
+    // KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: null container triggers auto-mint,
+    // not a BadRequestException.  The auto-mint path uses findKrlTrajectoriesContainerForDataObject
+    // (returns empty) then createContainer.
+    when(timeseriesContainerService.findKrlTrajectoriesContainerForDataObject(DO_APP_ID,
+      KrlInterpretService.KRL_TRAJECTORIES_CONTAINER_NAME)).thenReturn(Optional.empty());
+    when(timeseriesContainerService.createContainer(any(TimeseriesContainerIO.class))).thenReturn(container);
+    when(sidecar.interpret(any())).thenReturn(KrlSidecarClient.SidecarOutcome.ok(sidecarOk()));
+
     KrlInterpretRequestIO req = makeRequest();
     req.setTimeseriesContainerAppId(null);
-    assertThrows(BadRequestException.class, () -> service.interpret(req, "alice", null));
+    // Must NOT throw — auto-mint path takes over.
+    KrlInterpretResponseIO response = runWithStaticNeo(req, "alice", null);
+    assertNotNull(response);
+    verify(timeseriesContainerService, times(1)).createContainer(any(TimeseriesContainerIO.class));
+  }
+
+  @Test
+  void resolveOrCreate_existingContainer_reusedNotCreated() {
+    // When an existing "KRL Trajectories" container is found under the DO,
+    // createContainer must NOT be called.
+    when(timeseriesContainerService.findKrlTrajectoriesContainerForDataObject(DO_APP_ID,
+      KrlInterpretService.KRL_TRAJECTORIES_CONTAINER_NAME)).thenReturn(Optional.of(container));
+    when(sidecar.interpret(any())).thenReturn(KrlSidecarClient.SidecarOutcome.ok(sidecarOk()));
+
+    KrlInterpretRequestIO req = makeRequest();
+    req.setTimeseriesContainerAppId(null);
+    KrlInterpretResponseIO response = runWithStaticNeo(req, "alice", null);
+    assertNotNull(response);
+    verify(timeseriesContainerService, never()).createContainer(any());
   }
 
   // ── sidecar error mapping ──────────────────────────────────────────────────
@@ -277,10 +310,14 @@ class KrlInterpretServiceTest {
   }
 
   @Test
-  void unknownContainerAppId_throwsNotFound() {
-    when(timeseriesContainerService.getContainerByAppId(TSC_APP_ID)).thenReturn(null);
+  void unknownContainerAppId_throwsBadRequest() {
+    // When an explicit containerAppId is supplied but getContainerByAppId throws
+    // InvalidPathException (not found), resolveOrCreateKrlContainer wraps it as
+    // BadRequestException.
+    when(timeseriesContainerService.getContainerByAppId(TSC_APP_ID))
+      .thenThrow(new InvalidPathException("TimeseriesContainer with appId '" + TSC_APP_ID + "' not found"));
     when(sidecar.interpret(any())).thenReturn(KrlSidecarClient.SidecarOutcome.ok(sidecarOk()));
-    assertThrows(jakarta.ws.rs.NotFoundException.class,
+    assertThrows(BadRequestException.class,
       () -> service.interpret(makeRequest(), "alice", null));
   }
 

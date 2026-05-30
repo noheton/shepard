@@ -104,6 +104,29 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
   }
 
   /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — look up a non-deleted
+   * {@code :TimeseriesContainer} by name that is already reachable via the
+   * given DataObject's TimeseriesReferences.
+   *
+   * <p>Used by the KRL interpret service for the idempotent "KRL Trajectories"
+   * lookup-or-create: if a previous run already created a container of that
+   * name under this DataObject, reuse it rather than minting a duplicate.
+   *
+   * <p>No permission check is applied — the KRL service already verified the
+   * user has write access to the DataObject's collection before calling this.
+   *
+   * @param dataObjectAppId the appId of the target DataObject
+   * @param containerName   the exact container name to match (case-insensitive)
+   * @return the existing container, or {@code Optional.empty()} if none found
+   */
+  public Optional<TimeseriesContainer> findKrlTrajectoriesContainerForDataObject(
+    String dataObjectAppId,
+    String containerName
+  ) {
+    return timeseriesContainerDAO.findByDataObjectAndName(dataObjectAppId, containerName);
+  }
+
+  /**
    * CC1b — look up a TimeseriesContainer by its appId with a read-permission
    * check. Used by the linked-data-objects REST endpoint.
    *
