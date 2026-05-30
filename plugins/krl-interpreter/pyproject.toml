@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shepard-plugin-krl-interpreter"
+version = "0.1.0"
+description = "KUKA Robot Language (KRL) parser + IR for the shepard digital-twin plugin family."
+readme = "docs/reference.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "DLR Shepard (this fork)", email = "shepard@dlr.de" },
+]
+keywords = ["shepard", "kuka", "krl", "robotics", "antlr4", "parser", "digital-twin"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  # Pinned to match the ANTLR4 tool version used to generate the
+  # lexer / parser sources in `parser/grammar/generated/`. Bumping
+  # this requires regenerating those files with the matching tool.
+  "antlr4-python3-runtime==4.13.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+]
+
+[project.urls]
+Source = "https://github.com/nuclide/shepard/tree/main/plugins/krl-interpreter"
+Design = "https://github.com/nuclide/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md"
+
+[tool.setuptools.packages.find]
+include = ["krl_interpreter*"]
+
+[tool.setuptools.package-data]
+"krl_interpreter.parser.grammar" = ["*.g4"]
+"krl_interpreter.parser.grammar.generated" = ["*.tokens", "*.interp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+branch = true
+source = ["krl_interpreter"]
+omit = [
+  # Generated lexer / parser are not the testable surface — the spec
+  # gates coverage on walker.py + ir.py only.
+  "krl_interpreter/parser/grammar/generated/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+]

@@ -30,20 +30,20 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 47 |
+| `fragment` | 48 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 108 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 70 |
+| `deployed` | 71 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **392** |
+| **total docs** | **394** |
 | **UNTAGGED** | **0** |
 
-## fragment (47)
+## fragment (48)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -54,6 +54,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-17.md`](agent-findings/dispatcher-runs/2026-05-29-17.md) | Dispatcher run — 2026-05-29 17:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-18.md`](agent-findings/dispatcher-runs/2026-05-29-18.md) | Dispatcher run — 2026-05-29 18:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-29-19.md`](agent-findings/dispatcher-runs/2026-05-29-19.md) | Dispatcher run — 2026-05-29 19:xx UTC | 2026-05-29 | 2026-05-29 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-20.md`](agent-findings/dispatcher-runs/2026-05-29-20.md) | Dispatcher run — 2026-05-29 20:xx UTC | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -351,7 +352,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (70)
+## deployed (71)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -370,6 +371,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt3-timescaledb-tuning.md`](agent-findings/db-opt3-timescaledb-tuning.md) | DB-OPT3 — TimescaleDB Chunk + Compression Analysis | 2026-05-26 | 2026-05-26 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-21.md`](agent-findings/dispatcher-runs/2026-05-29-21.md) | Dispatcher run 2026-05-29-21 | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |

@@ -1,0 +1,7 @@
+DEFDAT cell_data PUBLIC
+  DECL INT max_ply
+  DECL REAL feed_rate
+  DECL BOOL diagnostics_enabled
+  DECL FRAME home_frame
+  DECL POS pickup_pose
+ENDDAT

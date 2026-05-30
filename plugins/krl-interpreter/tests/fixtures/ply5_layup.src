@@ -1,0 +1,49 @@
+&ACCESS RVP
+&REL 5
+DEF Ply_5_layup()
+  ; -------------------------------------------------------------------
+  ; SYNTHETIC FIXTURE — not real MFFD data.
+  ;
+  ; Approximates an AFP ply-5 layup pass on the MFFD upper fuselage.
+  ; Used as the realistic-shape KRL acceptance fixture for the parser
+  ; layer (KRL-INTERPRETER-02). Cited from the
+  ; aidocs/integrations/117 §14 acceptance test.
+  ;
+  ; Coverage: $BASE + $TOOL switching, nested FOR over ply passes,
+  ; IF/ELSE branching, motion primitives PTP/LIN/CIRC, WAIT, plus a
+  ; deliberately unsupported INTERRUPT block to exercise the
+  ; UnsupportedConstruct path.
+  ; -------------------------------------------------------------------
+  DECL INT pass
+  DECL INT ply
+  DECL BOOL is_first_pass
+
+  ply = 5
+  $BASE = {X 2000, Y 0, Z 0, A 0, B 0, C 0}
+  $TOOL = {X 0, Y 0, Z 250, A 0, B 0, C 90}
+
+  ; Move to safe approach pose.
+  PTP {X 0, Y 0, Z 800, A 0, B 0, C 0}
+
+  FOR pass = 1 TO 4
+    is_first_pass = pass == 1
+    IF is_first_pass THEN
+      PTP {X 100, Y 0, Z 600, A 0, B 0, C 0}
+    ELSE
+      LIN {X 100, Y 0, Z 600, A 0, B 0, C 0}
+    ENDIF
+
+    ; Laying pass: straight line then arc-back.
+    LIN {X 1000, Y 0, Z 600, A 0, B 0, C 0}
+    CIRC {X 1100, Y 100, Z 600, A 0, B 0, C 0}, {X 1000, Y 200, Z 600, A 0, B 0, C 0}
+    LIN {X 100, Y 200, Z 600, A 0, B 0, C 0}
+
+    WAIT SEC 0.25
+  ENDFOR
+
+  ; Park.
+  PTP {X 0, Y 0, Z 800, A 0, B 0, C 0}
+
+  ; Tier-1 unsupported construct — must surface as UnsupportedConstruct.
+  INTERRUPT ON 17
+END
