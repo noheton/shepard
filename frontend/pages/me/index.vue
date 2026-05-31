@@ -8,6 +8,7 @@ import GitCredentialsPane from "~/components/context/user/GitCredentialsPane.vue
 import McpPane from "~/components/context/user/McpPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SemanticPane from "~/components/context/user/SemanticPane.vue";
+import MyTemplatesPane from "~/components/context/user/MyTemplatesPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 
 useHead({
@@ -62,6 +63,13 @@ const landingCards = [
     title: "Semantic",
     description: "Browse vocabularies, run SPARQL queries, validate shapes, compare snapshots.",
   },
+  // ----- TPL-ME-BROWSE-1 (2026-05-31) -----
+  {
+    fragment: UserFragments.TEMPLATES,
+    icon: "mdi-shape-outline",
+    title: "Templates",
+    description: "Browse every ShepardTemplate available on this instance — recipe bodies, kinds, tags.",
+  },
 ];
 </script>
 
@@ -85,5 +93,7 @@ const landingCards = [
     />
     <!-- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 — moved from top-level header -->
     <SemanticPane v-if="routeFragment === UserFragments.SEMANTIC" />
+    <!-- TPL-ME-BROWSE-1 (2026-05-31) — non-admin browse-mine surface -->
+    <MyTemplatesPane v-if="routeFragment === UserFragments.TEMPLATES" />
   </PaneLayout>
 </template>
