@@ -1,0 +1,1480 @@
+{
+  "navs": [
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "status": 200,
+      "ts": 130
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 134
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 135
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 305
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 309
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 414
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 420
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 423
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 455
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 459
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 460
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 534
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 548
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 551
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 689
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 726
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 729
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 740
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 749
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 780
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 783
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 784
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 862
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 885
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 893
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1110
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 1166
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 1179
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 1182
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 1211
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1215
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1216
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1293
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1308
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 1311
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1465
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 1531
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 1534
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 1556
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1559
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1559
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1626
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1648
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 1656
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1812
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 1850
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 1853
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 1880
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 1883
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1884
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1947
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 1964
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 1966
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2108
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 2156
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 2161
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 2187
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2190
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2191
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2254
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2269
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 2275
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2416
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 2460
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 2464
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 2484
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2486
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2486
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2545
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2560
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 2563
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2703
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 2747
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 2759
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 2764
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 2794
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 2797
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2798
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2870
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 2895
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 2898
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3072
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 3133
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 3136
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 3167
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3169
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3170
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3239
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3252
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 3255
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3419
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 3455
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 3469
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 3472
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 3492
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3496
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3496
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3559
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3574
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 3577
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3737
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 3764
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 3773
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 3776
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 3806
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 3810
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3810
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3869
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 3888
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 3892
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4039
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 4086
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 4088
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 4118
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4121
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4122
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4187
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4205
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 4208
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4366
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 4405
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 4414
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 4418
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 4454
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4457
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4457
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4527
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4541
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 4545
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4724
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 4772
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 4775
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 4802
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 4805
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4806
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4877
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 4892
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 4894
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5055
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 5096
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 5100
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 5130
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5134
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5134
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5209
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5224
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 5228
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5382
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 5434
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 5437
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 5457
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5461
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5461
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5545
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5565
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 5572
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5751
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 5802
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 5806
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 5842
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 5845
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5846
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5930
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 5939
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 5944
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6109
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 6166
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 6170
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 6197
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6200
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6202
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6265
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6284
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 6288
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6437
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 6486
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 6489
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 6520
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6524
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6524
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6589
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6603
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 6607
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6753
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 6807
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 6810
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 6840
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 6843
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6844
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6914
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 6928
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 6935
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7082
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 7125
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 7129
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 7170
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7173
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7174
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7236
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7251
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 7253
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7422
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 7475
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 7478
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 7503
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7506
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7507
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7573
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7591
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 7594
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7748
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 7783
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 7797
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 7800
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 7830
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 7833
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7833
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7898
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 7919
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 7919
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8068
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 8119
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 8122
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 8157
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8160
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8160
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8222
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8241
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 8243
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8395
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 8444
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 8448
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 8468
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8471
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8471
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8537
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8551
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 8555
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8705
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 8756
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 8758
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 8799
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 8804
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8805
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8869
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 8886
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 8889
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9060
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 9104
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 9108
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 9145
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9149
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9149
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9209
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9225
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 9235
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9389
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 9443
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 9446
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 9473
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9477
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9477
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9540
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9557
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 9564
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9712
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 9760
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 9765
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 9795
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 9799
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9799
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9872
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 9887
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 9892
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10035
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 10092
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 10096
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 10129
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10133
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10133
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10200
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10213
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 10215
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10361
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 10406
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 10408
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 10430
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10434
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10434
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10499
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10515
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 10519
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10674
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 10728
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 10732
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 10760
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10763
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10764
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10836
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 10841
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 10845
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 10997
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 11049
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 11054
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 11083
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11088
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11089
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11152
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11168
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 11169
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11318
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 11369
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 11373
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 11400
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11404
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11405
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11468
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11483
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 11487
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11643
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 11683
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 11687
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 11714
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11717
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11717
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11782
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 11798
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 11803
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 11950
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 11991
+    },
+    {
+      "url": "http://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 301,
+      "ts": 12005
+    },
+    {
+      "url": "https://shepard.nuclide.systems/api/auth/signin/oidc",
+      "status": 302,
+      "ts": 12008
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "status": 200,
+      "ts": 12038
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 12042
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 12043
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 12109
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https%3A%2F%2Fshepard.nuclide.systems%2F",
+      "ts": 12136
+    },
+    {
+      "url": "https://shepard.nuclide.systems/auth/signIn?callbackUrl=https://shepard.nuclide.systems/",
+      "ts": 12146
+    },
+    {
+      "url": "https://shepard.nuclide.systems/",
+      "ts": 12225
+    }
+  ],
+  "finalUrl": "https://shepard.nuclide.systems/"
+}
