@@ -45,6 +45,46 @@ public class PublicationDAO extends GenericDAO<Publication> {
   }
 
   /**
+   * RDM-003 — return all {@code :Publication} rows across the instance,
+   * ordered by {@code mintedAt DESC} (most-recent first), with pagination.
+   *
+   * <p>This is the backing query for
+   * {@code GET /v2/admin/publications} — the instance-wide PID audit
+   * list. Only instance-admins call this path; no per-entity
+   * permission check is needed beyond the role gate on the REST layer.
+   *
+   * @param page 0-based page index
+   * @param size page size (caller-supplied, typically 25)
+   * @return at most {@code size} rows starting at offset {@code page * size}
+   */
+  public List<Publication> findAll(int page, int size) {
+    if (session == null) return List.of();
+    int offset = Math.max(0, page) * Math.max(1, size);
+    String query =
+      "MATCH (p:Publication) RETURN p ORDER BY p.mintedAt DESC " +
+      "SKIP $offset LIMIT $size";
+    Iterable<Publication> result = findByQuery(query, Map.of("offset", offset, "size", size));
+    List<Publication> out = new ArrayList<>();
+    result.forEach(out::add);
+    return out;
+  }
+
+  /**
+   * RDM-003 — count all {@code :Publication} rows across the instance.
+   * Used to build the {@code totalCount} field in the admin list response.
+   */
+  public long countAll() {
+    if (session == null) return 0L;
+    String query = "MATCH (p:Publication) RETURN count(p) AS n";
+    var result = session.query(query, Map.of());
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object raw = iter.next().get("n");
+    if (raw instanceof Number n) return n.longValue();
+    return 0L;
+  }
+
+  /**
    * Find a Publication by its PID. Cheap path (O(1) via the
    * {@code @Index} on {@code pid}); used by
    * {@code /v2/.well-known/kip/{pid-suffix}}.

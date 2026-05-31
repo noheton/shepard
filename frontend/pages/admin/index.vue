@@ -24,6 +24,7 @@ import AdminNotificationsPane from "~/components/context/admin/AdminNotification
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
+import AdminPublicationsPane from "~/components/context/admin/AdminPublicationsPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -224,6 +225,13 @@ const landingCards = [
     title: "JupyterHub link-out",
     description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
   },
+  // RDM-003
+  {
+    fragment: AdminFragments.PUBLICATIONS,
+    icon: "mdi-identifier",
+    title: "Publications",
+    description: "Instance-wide PID audit list — every minted persistent identifier, with retired-state badges and DMP §5 audit trail.",
+  },
 ];
 </script>
 
@@ -325,6 +333,10 @@ const landingCards = [
     <!-- J1e: JupyterHub link-out config -->
     <AdminJupyterPane
       v-if="routeFragment === AdminFragments.JUPYTER"
+    />
+    <!-- RDM-003: instance-wide PID audit list -->
+    <AdminPublicationsPane
+      v-if="routeFragment === AdminFragments.PUBLICATIONS"
     />
   </PaneLayout>
 </template>

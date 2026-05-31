@@ -31,6 +31,8 @@ export enum AdminFragments {
   INSTANCE_REGISTRY = "instance-registry",
   // J1e
   JUPYTER = "jupyter",
+  // RDM-003 — admin-wide PID audit list
+  PUBLICATIONS = "publications",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -167,5 +169,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "JupyterHub link-out",
     fragment: AdminFragments.JUPYTER,
     icon: "mdi-jupyter",
+  },
+  // RDM-003
+  {
+    name: "Publications",
+    fragment: AdminFragments.PUBLICATIONS,
+    icon: "mdi-identifier",
   },
 ];

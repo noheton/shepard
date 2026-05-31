@@ -480,6 +480,66 @@ The score is conservative while data is loading — checks dependent on in-fligh
 fetches (semantic annotations, lab journal count, creator ORCID) default to
 `false` until resolved, so the displayed score is never inflated.
 
+## Admin-wide PID audit list (RDM-003)
+
+Instance admins can view every minted PID across the instance from the
+`/admin#publications` pane (shipped in RDM-003):
+
+- **Retired-state badges** — active rows show a green chip; retired rows
+  show a grey "Retired" chip. Both appear in the list so the full lifecycle
+  is auditable.
+- **Filters** — narrow by entity kind (`data-objects` / `collections`) and
+  by minter adapter (`local`, `datacite`, `epic`, `mock`). A "Show retired"
+  toggle hides retired rows for a cleaner view.
+- **Per-row fields** — PID (clickable if it resolves as a URL), entity kind
+  and appId, version, minted-at timestamp, publisher username, minter adapter.
+- **Pagination** — 25 rows per page; Next / Previous buttons.
+- **DMP §5 (data security audit trail)** — the list answers "what got
+  published on this instance and when?" without requiring a per-entity
+  curl loop.
+
+### REST surface (admin)
+
+```
+GET /v2/admin/publications[?page=0&size=25]
+```
+
+- **Auth.** Bearer JWT or `X-API-KEY`. Caller must hold the
+  `instance-admin` role (same gate as other `/v2/admin/...` endpoints).
+- **Pagination.** `page` = 0-based index (default `0`); `size` = rows per
+  page, clamped to 1–200 (default `25`).
+- **Ordering.** `mintedAt DESC` — most-recently minted first.
+- **Scope.** All `:Publication` rows on the instance regardless of entity
+  kind, permission set, or retired state. Per-entity listings remain at
+  `GET /v2/{kind}/{appId}/publications` (KIP1k).
+
+Response envelope (`application/json`):
+
+```json
+{
+  "items": [
+    {
+      "appId": "01HF6N3R-pub-row",
+      "pid": "shepard:dlr.de/shepard-prod:data-objects:01HF...:v1",
+      "entityKind": "data-objects",
+      "entityAppId": "01HF...",
+      "mintedAt": "2026-05-13T08:11:00Z",
+      "minterId": "local",
+      "publishedBy": "alice",
+      "versionNumber": 1,
+      "digitalObjectMutability": null
+    }
+  ],
+  "page": 0,
+  "size": 25,
+  "totalCount": 1
+}
+```
+
+`digitalObjectMutability` is `null` (omitted from JSON) on active
+Publications and `"retired"` on retired rows (KIP1f). The `totalCount`
+field counts all rows across the instance, not just the current page.
+
 ## What's next
 
 - **KIP1c (ePIC plugin)** — real Handles, queued.

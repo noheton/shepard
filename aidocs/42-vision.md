@@ -343,6 +343,11 @@ These work the same way across every primitive:
   preserved (PIDs are permanent) but the mutability marker signals
   that the object is no longer the operator's active intent.
   Idempotent — a second DELETE returns 204.
+  **Instance admins** can audit the full PID ledger via the
+  `/admin#publications` pane (RDM-003): a paginated, read-only table
+  of every minted `:Publication` row across the instance, sortable by
+  mintedAt, filterable by entity kind and minter, with retired-state
+  badges. Backed by `GET /v2/admin/publications`.
 - **Publish to the Helmholtz Knowledge Graph (Unhide)** (`aidocs/67`,
   UH1a + UH1b + UH1c shipped). A first-class shepard plugin
   (`shepard-plugin-unhide`) exposes
