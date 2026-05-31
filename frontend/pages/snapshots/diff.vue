@@ -1,9 +1,21 @@
 <script setup lang="ts">
-// /snapshots/diff — minimal snapshot-diff viewer.
-// Backed by GET /v2/snapshots/{aAppId}/diff/{bAppId}.
-// Two appId inputs + a Compare button + JSON dump of the diff.
+// /snapshots/diff — global snapshot picker + diff viewer.
+//
+// SNAPSHOT-LIST-1-FE (2026-05-31): replaces the previous helper banner +
+// raw-appId inputs with two `v-autocomplete` pickers backed by the global
+// list endpoint shipped 2026-05-31 (backend 1935128eb). Each option
+// renders `name · collectionName · createdAt · appId-prefix`. An
+// "Advanced: raw appIds" toggle keeps the previous text-field shape
+// available for power users with appIds in hand from MCP / scripts.
+//
+// Backed by GET /v2/snapshots[?collectionAppId=…] for the picker and
+// GET /v2/snapshots/{a}/diff/{b} for the comparison.
 
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
+import {
+  useSnapshotList,
+  type SnapshotListItem,
+} from "~/composables/useSnapshotList";
 
 useHead({ title: "Snapshot diff | shepard" });
 
@@ -13,6 +25,39 @@ const bAppId = ref<string>((route.query.b as string) ?? "");
 const result = ref<unknown>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
+const showAdvanced = ref<boolean>(false);
+
+const {
+  items: snapshots,
+  isLoading: loadingSnapshots,
+  error: snapshotsError,
+  fetchPage,
+} = useSnapshotList();
+
+onMounted(() => {
+  void fetchPage({ size: 200 });
+});
+
+const snapshotOptions = computed(() =>
+  snapshots.value.map((s: SnapshotListItem) => ({
+    value: s.appId,
+    title: optionTitle(s),
+    raw: s,
+  })),
+);
+
+function optionTitle(s: SnapshotListItem): string {
+  const when = formatCreated(s.createdAt);
+  const coll = s.collectionName ?? "—";
+  const head = `${s.appId.slice(0, 8)}…`;
+  return `${s.name} · ${coll} · ${when} · ${head}`;
+}
+
+function formatCreated(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toISOString().slice(0, 16).replace("T", " ");
+}
 
 async function runDiff() {
   if (!aAppId.value || !bAppId.value) {
@@ -57,8 +102,6 @@ async function runDiff() {
 </script>
 
 <template>
-  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L5: data-heavy tool page; fluid +
-       2400px cap so the snapshot inputs and diff JSON use the 4K canvas. -->
   <v-container fluid style="max-width: 2400px; margin: 0 auto">
     <div class="d-flex flex-column ga-2 mb-4">
       <h4 class="text-h4">Snapshot diff</h4>
@@ -68,52 +111,93 @@ async function runDiff() {
         <code>GET /v2/snapshots/{a}/diff/{b}</code>.
       </p>
     </div>
-    <!-- UI-SNAP-DIFF-PICKERS-001 (Q) — no global snapshot list endpoint
-         exists (only `GET /v2/collections/{appId}/snapshots` per-collection),
-         so a unified Snapshot autocomplete on this page would require a
-         Collection picker first. The canonical entry point is the
-         **Snapshots panel's "Compare" row action** (SNAPSHOTS-DIFF-NAV-01
-         + TOOLS-CONTEXT-SNAP-COMPARE — shipped 2026-05-30) which deep-
-         links here with both appIds pre-filled in the URL. Users hitting
-         this page directly still get raw inputs as a fallback; see
-         backlog row `SNAPSHOT-LIST-1-REST` for the global list endpoint
-         work that would let us add a real picker here. -->
+
     <v-alert
-      type="info"
+      v-if="snapshotsError"
+      type="error"
       variant="tonal"
       density="compact"
       class="mb-3"
-      prepend-icon="mdi-lightbulb-on-outline"
     >
-      Tip: open a Collection's Snapshots panel and use the "Compare" row
-      action — both appIds will be pre-filled. Direct entry below is the
-      fallback for power users with appIds in hand from MCP or scripts.
+      Snapshot list error: {{ snapshotsError }}
     </v-alert>
+
     <v-row>
       <v-col cols="12" md="6">
-        <v-text-field
+        <v-autocomplete
           v-model="aAppId"
-          label="Snapshot A (older) appId"
-          density="compact"
+          :items="snapshotOptions"
+          item-title="title"
+          item-value="value"
+          label="Snapshot A (older)"
           variant="outlined"
-          hint="UUID v7 of the older snapshot"
+          density="comfortable"
+          :loading="loadingSnapshots"
+          clearable
+          data-testid="picker-a"
+          hint="Searchable: name, collection, appId prefix"
           persistent-hint
         />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field
+        <v-autocomplete
           v-model="bAppId"
-          label="Snapshot B (newer) appId"
-          density="compact"
+          :items="snapshotOptions"
+          item-title="title"
+          item-value="value"
+          label="Snapshot B (newer)"
           variant="outlined"
-          hint="UUID v7 of the newer snapshot"
+          density="comfortable"
+          :loading="loadingSnapshots"
+          clearable
+          data-testid="picker-b"
+          hint="Searchable: name, collection, appId prefix"
           persistent-hint
         />
       </v-col>
     </v-row>
-    <v-btn color="primary" :loading="isLoading" @click="runDiff">
-      <v-icon start>mdi-vector-difference</v-icon> Compare
-    </v-btn>
+
+    <div class="d-flex align-center ga-2 mt-2 mb-2">
+      <v-btn color="primary" :loading="isLoading" @click="runDiff">
+        <v-icon start>mdi-vector-difference</v-icon> Compare
+      </v-btn>
+      <v-switch
+        v-model="showAdvanced"
+        label="Advanced: raw appIds"
+        color="primary"
+        hide-details
+        density="compact"
+        data-testid="show-advanced"
+      />
+    </div>
+
+    <v-expand-transition>
+      <v-row v-if="showAdvanced" dense class="mb-2">
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="aAppId"
+            label="Snapshot A appId (raw)"
+            density="compact"
+            variant="outlined"
+            hint="Power-user override — bypasses the picker"
+            persistent-hint
+            data-testid="raw-a"
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="bAppId"
+            label="Snapshot B appId (raw)"
+            density="compact"
+            variant="outlined"
+            hint="Power-user override — bypasses the picker"
+            persistent-hint
+            data-testid="raw-b"
+          />
+        </v-col>
+      </v-row>
+    </v-expand-transition>
+
     <v-alert v-if="error" type="error" class="mt-3" variant="tonal">
       <pre class="text-caption">{{ error }}</pre>
     </v-alert>
@@ -128,7 +212,7 @@ async function runDiff() {
       backlog-row="SNAP-DIFF"
       design-doc="aidocs/platform/25-neo4j-id-migration-design.md"
       endpoint="/v2/snapshots/{a}/diff/{b}"
-      notes="Raw diff JSON shown. Structured visualisation queued under SNAP-DIFF-UI-FOLLOWUP."
+      notes="Picker backed by GET /v2/snapshots (SNAPSHOT-LIST-1-FE shipped 2026-05-31). Structured visualisation queued under SNAP-DIFF-UI-FOLLOWUP."
     />
   </v-container>
 </template>

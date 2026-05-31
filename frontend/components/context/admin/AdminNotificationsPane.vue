@@ -34,8 +34,43 @@ import {
   targetUsernameError as targetUsernameErrorFn,
   useNotificationsAdmin,
 } from "~/composables/context/admin/useNotificationsAdmin";
+import type { TransportFormState } from "~/composables/context/admin/useNotificationTransports";
+import { useNotificationTransports } from "~/composables/context/admin/useNotificationTransports";
+import NotificationTransportSection from "./NotificationTransportSection.vue";
 
 const { isSending, lastResult, error, sendTest } = useNotificationsAdmin();
+
+// NTF1-UI-TRANSPORT-CRUD-FOLLOWUP — transport CRUD wired against the
+// `:NotificationTransport` REST shipped 2026-05-31 (backend 3ca66827b).
+const {
+  items: transports,
+  isLoading: transportsLoading,
+  isSaving: transportsSaving,
+  isTesting: transportTesting,
+  error: transportsError,
+  list: listTransports,
+  create: createTransport,
+  patch: patchTransport,
+  remove: removeTransport,
+  testTransport,
+} = useNotificationTransports();
+
+onMounted(() => {
+  void listTransports();
+});
+
+async function onCreate(form: TransportFormState) {
+  await createTransport(form);
+}
+async function onPatch(appId: string, form: TransportFormState) {
+  await patchTransport(appId, form);
+}
+async function onRemove(appId: string) {
+  await removeTransport(appId);
+}
+async function onTest(appId: string) {
+  await testTransport(appId);
+}
 
 // ─── In-app smoke-test form state ─────────────────────────────────────────────
 const audience = ref<NotificationAudience>("INSTANCE_ADMIN");
@@ -91,12 +126,22 @@ async function onSend() {
 
     <p class="text-body-2 text-medium-emphasis">
       Configure how Shepard delivers notifications and send smoke-tests per
-      transport. Today only the <strong>in-app</strong> transport ships; SMTP
-      and Matrix transports are designed
-      (<code>aidocs/integrations/40-notification-system.md</code>) but their
-      backend CRUD is still in the queue — those cards will gain forms once
-      <code>NTF1-BACKEND-*</code> lands.
+      transport. SMTP + Matrix transport CRUD is backed by the
+      <code>/v2/admin/notifications/transports</code> endpoints
+      (shipped 2026-05-31). Credentials are write-only — passwords and
+      access tokens are never returned by the API; leave them blank when
+      editing to preserve the stored value.
     </p>
+
+    <v-alert
+      v-if="transportsError"
+      type="error"
+      variant="tonal"
+      closable
+      @click:close="transportsError = null"
+    >
+      {{ transportsError }}
+    </v-alert>
 
     <!-- ───────────────── In-app transport (working) ────────────────────── -->
     <v-card variant="outlined" data-testid="transport-card-in-app">
@@ -215,53 +260,32 @@ async function onSend() {
       </v-card-actions>
     </v-card>
 
-    <!-- ───────────────── SMTP transport (backend pending) ──────────────── -->
-    <v-card variant="outlined" data-testid="transport-card-smtp">
-      <v-card-title class="d-flex align-center ga-2 pt-4 pb-2">
-        <v-icon color="medium-emphasis">mdi-email-outline</v-icon>
-        SMTP
-        <v-chip size="x-small" variant="tonal" class="ml-2">
-          backend pending
-        </v-chip>
-      </v-card-title>
-      <v-card-text>
-        <v-alert type="info" variant="tonal">
-          Email delivery via SMTP is designed but the transport-CRUD backend
-          has not landed yet. The add/edit form (host, port, username,
-          write-only password, sender address, TLS toggle) ships with
-          <code>NTF1-BACKEND-SMTP</code>. Credentials will be write-only on
-          GET responses — the UI will not display SMTP passwords once stored.
-          See <code>aidocs/integrations/40-notification-system.md</code>.
-        </v-alert>
-      </v-card-text>
-    </v-card>
+    <!-- ───── SMTP transport (NTF1-UI-TRANSPORT-CRUD-FOLLOWUP) ───── -->
+    <NotificationTransportSection
+      kind="SMTP"
+      :items="transports"
+      :is-saving="transportsSaving"
+      :is-testing="transportTesting"
+      @create="onCreate"
+      @patch="onPatch"
+      @remove="onRemove"
+      @test="onTest"
+    />
 
-    <!-- ───────────────── Matrix transport (backend pending) ────────────── -->
-    <v-card variant="outlined" data-testid="transport-card-matrix">
-      <v-card-title class="d-flex align-center ga-2 pt-4 pb-2">
-        <v-icon color="medium-emphasis">mdi-matrix</v-icon>
-        Matrix
-        <v-chip size="x-small" variant="tonal" class="ml-2">
-          backend pending
-        </v-chip>
-      </v-card-title>
-      <v-card-text>
-        <v-alert type="info" variant="tonal">
-          Matrix delivery is designed (MTX1a, <code>shepard-plugin-matrix-notify</code>)
-          but the transport-CRUD backend has not landed yet. The add/edit
-          form (homeserver URL, write-only access token, default room ID)
-          ships with <code>NTF1-BACKEND-MATRIX</code>. Access tokens will be
-          write-only on GET responses — the UI will not display them once
-          stored. See <code>aidocs/integrations/40-notification-system.md</code>.
-        </v-alert>
-      </v-card-text>
-    </v-card>
+    <!-- ───── Matrix transport (NTF1-UI-TRANSPORT-CRUD-FOLLOWUP) ───── -->
+    <NotificationTransportSection
+      kind="MATRIX"
+      :items="transports"
+      :is-saving="transportsSaving"
+      :is-testing="transportTesting"
+      @create="onCreate"
+      @patch="onPatch"
+      @remove="onRemove"
+      @test="onTest"
+    />
 
-    <div class="text-caption text-medium-emphasis">
-      Future shape: per-transport edit / delete / smoke-test rows in a table.
-      Tracked under <code>PLACEHOLDER-REPLACE-NTF1</code>
-      (this pane) plus <code>NTF1-BACKEND-*</code> rows in
-      <code>aidocs/16-dispatcher-backlog.md</code>.
+    <div v-if="transportsLoading" class="text-caption text-medium-emphasis">
+      Loading transports…
     </div>
   </div>
 </template>

@@ -33,6 +33,20 @@ export interface AdminGitCredentialResult {
   username: string;
 }
 
+/**
+ * ADM-USR-GIT-BACKEND-1 — list-row shape from
+ * `GET /v2/admin/users/{username}/git-credentials`. PAT is never on the
+ * wire (record component literally absent).
+ */
+export interface AdminGitCredentialListItem {
+  appId: string;
+  host: string;
+  username: string;
+  displayName: string | null;
+  /** ISO-8601 instant; null for pre-feature credentials never rotated. */
+  lastRotatedAt: string | null;
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -107,5 +121,89 @@ export function useAdminUserGitCredential() {
     }
   }
 
-  return { isSaving, error, lastResult, setCredential };
+  // ── ADM-USR-GIT-BACKEND-1-FE — list + rotate ─────────────────────────────
+  const items = ref<AdminGitCredentialListItem[]>([]);
+  const isLoading = ref(false);
+
+  async function listCredentials(
+    targetUsername: string,
+  ): Promise<AdminGitCredentialListItem[]> {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(
+        `${v2BaseUrl()}/v2/admin/users/${encodeURIComponent(targetUsername)}/git-credentials`,
+        { headers: { ...authHeader(), Accept: "application/json" } },
+      );
+      if (!response.ok) {
+        error.value = await parseProblemDetail(response);
+        items.value = [];
+        return [];
+      }
+      const json = (await response.json()) as {
+        items: AdminGitCredentialListItem[];
+      };
+      items.value = json.items ?? [];
+      return items.value;
+    } catch (e) {
+      error.value =
+        e instanceof Error ? e.message : "Failed to list git credentials";
+      handleError(e, "listAdminUserGitCredentials");
+      items.value = [];
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * Explicit rotate — backend stamps `lastRotatedAt = now`. Returns true
+   * on 204, false otherwise.
+   */
+  async function rotateCredential(
+    targetUsername: string,
+    credAppId: string,
+    newPat: string,
+  ): Promise<boolean> {
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const response = await fetch(
+        `${v2BaseUrl()}/v2/admin/users/${encodeURIComponent(targetUsername)}/git-credentials/${encodeURIComponent(credAppId)}/rotate`,
+        {
+          method: "POST",
+          headers: {
+            ...authHeader(),
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ newPat }),
+        },
+      );
+      if (!response.ok && response.status !== 204) {
+        error.value = await parseProblemDetail(response);
+        return false;
+      }
+      await listCredentials(targetUsername);
+      return true;
+    } catch (e) {
+      error.value =
+        e instanceof Error ? e.message : "Failed to rotate git credential";
+      handleError(e, "rotateAdminUserGitCredential");
+      return false;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  return {
+    isSaving,
+    isLoading,
+    error,
+    lastResult,
+    items,
+    setCredential,
+    listCredentials,
+    rotateCredential,
+  };
 }
