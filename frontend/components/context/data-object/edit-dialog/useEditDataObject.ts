@@ -10,7 +10,14 @@ export function useEditDataObject(
 ) {
   const updatedDataObject = ref<UpdatedDataObject | undefined>(undefined);
 
-  const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
+  // BUG-COLL-APPID-ROUTE-002: useFetchDataObject now takes string ids and
+  // hits v2. The numeric id stringifies cleanly for both UUID v7 (already
+  // string-shaped) and legacy long form callers; the v2 EntityIdResolver
+  // accepts either shape.
+  const { dataObject } = useFetchDataObject(
+    String(collectionId),
+    String(dataObjectId),
+  );
   const loading = computed(() => !dataObject && !updatedDataObject);
   watch(dataObject, newDo => {
     if (newDo) {
