@@ -20,22 +20,12 @@
  * display names (or follows a contributors edge) plugs in without
  * touching this component.
  */
-import { useClipboard } from "@vueuse/core";
 import type { Collection } from "@dlr-shepard/backend-client";
-import {
-  formatCitation,
-  CITATION_FORMATS_ORDER,
-  CITATION_FORMAT_LABELS,
-  type CitationFormat,
-} from "~/utils/citation";
+import type { CitationInput } from "~/utils/citation";
 
 const { collection } = defineProps<{
   collection: Collection;
 }>();
-
-const { copy } = useClipboard();
-
-const activeFormat = ref<CitationFormat>("plain");
 
 /**
  * Today's date in ISO YYYY-MM-DD form. Re-computed on each render so a
@@ -89,30 +79,6 @@ const authors = computed<string[]>(() => {
 });
 
 /**
- * Per-format rendered text. Recomputed on every format flip; cheap (all
- * four formatters are pure string templating).
- */
-const citationText = computed(() =>
-  formatCitation(
-    {
-      authors: authors.value,
-      year: year.value,
-      title: collection.name,
-      // Hard-coded today; INST1 will surface a configurable instance
-      // identity string ("DLR Shepard Augsburg", etc.) — drop that in
-      // here when it ships. Until then "Shepard Research Data Platform"
-      // is the canonical repository name (matches the citation seen in
-      // the RDM scrutinizer's example expected output).
-      repository: "Shepard Research Data Platform",
-      url: canonicalUrl.value,
-      license: collectionLicense.value,
-      accessedDate: accessedDate.value,
-    },
-    activeFormat.value,
-  ),
-);
-
-/**
  * Defensive read of the LIC1 `license` field — same pattern as the
  * parent page uses. Older backend builds may not surface the field;
  * `formatCitation` already handles null by omitting the license line.
@@ -123,80 +89,29 @@ const collectionLicense = computed<string | null>(() => {
   return raw ?? null;
 });
 
-function copyCitation() {
-  copy(citationText.value);
-  emitSuccess(`Copied ${CITATION_FORMAT_LABELS[activeFormat.value]} citation`);
-}
+/**
+ * II2 (ui-scrutinizer-2026-05-30): resolved citation shape passed down
+ * to the shared `CiteThisCardCommon`. Same data; rendered by the
+ * factored-out component. Original `data-testid` values preserved by
+ * the default `testidPrefix = "cite-this"` so existing Playwright
+ * selectors keep working.
+ */
+const citationInput = computed<CitationInput>(() => ({
+  authors: authors.value,
+  year: year.value,
+  title: collection.name,
+  // Hard-coded today; INST1 will surface a configurable instance
+  // identity string ("DLR Shepard Augsburg", etc.) — drop that in
+  // here when it ships. Until then "Shepard Research Data Platform"
+  // is the canonical repository name (matches the citation seen in
+  // the RDM scrutinizer's example expected output).
+  repository: "Shepard Research Data Platform",
+  url: canonicalUrl.value,
+  license: collectionLicense.value,
+  accessedDate: accessedDate.value,
+}));
 </script>
 
 <template>
-  <v-card
-    class="cite-this-card"
-    variant="outlined"
-    data-testid="cite-this-card"
-  >
-    <v-card-title class="d-flex align-center ga-2">
-      <v-icon size="small" color="primary">mdi-format-quote-close</v-icon>
-      <span>Cite this dataset</span>
-      <v-spacer />
-      <v-btn
-        prepend-icon="mdi-content-copy"
-        variant="tonal"
-        size="small"
-        color="primary"
-        data-testid="cite-this-copy"
-        @click="copyCitation"
-      >
-        Copy
-      </v-btn>
-    </v-card-title>
-    <v-card-text>
-      <v-tabs
-        v-model="activeFormat"
-        density="compact"
-        color="primary"
-        class="mb-3"
-        data-testid="cite-this-tabs"
-      >
-        <v-tab
-          v-for="f in CITATION_FORMATS_ORDER"
-          :key="f"
-          :value="f"
-          :data-testid="`cite-this-tab-${f}`"
-        >
-          {{ CITATION_FORMAT_LABELS[f] }}
-        </v-tab>
-      </v-tabs>
-      <!--
-        Render the citation in a <pre> so multi-line formats (BibTeX, RIS,
-        CSL JSON) keep their structure, and the plain-text form wraps
-        nicely without losing intentional line breaks. `white-space:
-        pre-wrap` keeps the natural wrap for plain text while preserving
-        the line-by-line shape of the structured formats.
-       -->
-      <pre
-        class="citation-body"
-        data-testid="cite-this-body"
-      >{{ citationText }}</pre>
-    </v-card-text>
-  </v-card>
+  <CiteThisCardCommon :input="citationInput" label="Cite this dataset" />
 </template>
-
-<style lang="scss" scoped>
-.cite-this-card {
-  margin-bottom: 24px;
-}
-.citation-body {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  padding: 12px;
-  border-radius: 4px;
-  margin: 0;
-  max-height: 400px;
-  overflow: auto;
-}
-</style>

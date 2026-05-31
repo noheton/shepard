@@ -15,11 +15,29 @@
 //
 // Design: aidocs/semantics/100 §5. Backlog: SEMA-V6-PRED-UI.
 import { usePredicateStats } from "~/composables/semantic/usePredicateStats";
+import { predicateLocalName, hasUsableLocalName } from "~/utils/predicateLocalName";
 
 const route = useRoute();
 const predicateIri = computed(() => decodeURIComponent(String(route.params.predicateIri ?? "")));
 
-useHead({ title: () => `${predicateIri.value} | predicates | shepard` });
+// II1 (ui-scrutinizer-2026-05-30): page title resolution.
+// No `GET /v2/semantic/terms/{iri}` endpoint yet (tracked as
+// SEMANTIC-TERM-GET-1 in aidocs/16) — derive a human-readable label
+// from the IRI's local name and render `<label> (<iri>)` when the
+// extraction yields something shorter than the raw IRI.
+const predicateLabel = computed(() => predicateLocalName(predicateIri.value));
+const showLocalLabel = computed(() => hasUsableLocalName(predicateIri.value));
+
+useHead({
+  title: () => {
+    const label = predicateLabel.value;
+    const iri = predicateIri.value;
+    if (showLocalLabel.value && label !== iri) {
+      return `${label} | predicates | shepard`;
+    }
+    return `${iri} | predicates | shepard`;
+  },
+});
 
 const { stats, loading, error } = usePredicateStats(predicateIri, {
   topValuesLimit: 20,
@@ -53,8 +71,16 @@ function topValueDisplay(v: { objectIri?: string | null; objectLabel?: string | 
       <NuxtLink to="/semantic/vocabularies" class="text-caption">
         <v-icon size="small">mdi-arrow-left</v-icon> Vocabularies
       </NuxtLink>
-      <h4 class="text-h4">Predicate</h4>
-      <code class="text-body-2 text-break">{{ predicateIri }}</code>
+      <!-- II1 (ui-scrutinizer-2026-05-30): show `<label> (<iri>)` when
+           the IRI carries a meaningful local name; bare IRI when not. -->
+      <h4 v-if="showLocalLabel" class="text-h4" data-testid="predicate-heading-label">
+        Predicate: {{ predicateLabel }}
+        <small class="text-body-2 text-medium-emphasis ms-2">({{ predicateIri }})</small>
+      </h4>
+      <h4 v-else class="text-h4" data-testid="predicate-heading-iri">
+        Predicate
+        <code class="text-body-2 text-break ms-2">{{ predicateIri }}</code>
+      </h4>
     </div>
 
     <!-- Loading / error / empty states -->
@@ -142,7 +168,14 @@ function topValueDisplay(v: { objectIri?: string | null; objectLabel?: string | 
                   <v-chip v-if="s.type" size="x-small" variant="outlined">{{ s.type }}</v-chip>
                   <span v-else class="text-medium-emphasis text-caption">unknown</span>
                 </td>
-                <td><code class="text-caption">{{ s.appId }}</code></td>
+                <!-- II3 (ui-scrutinizer-2026-05-30): click-to-copy chip
+                     instead of the bare `<code>` block. -->
+                <td>
+                  <CopyableAppIdChip
+                    :app-id="s.appId"
+                    testid="predicate-sample-row-appid"
+                  />
+                </td>
               </tr>
             </tbody>
           </v-table>

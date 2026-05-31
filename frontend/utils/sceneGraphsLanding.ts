@@ -21,16 +21,11 @@ export function formatEpochMillis(epoch: number | null | undefined): string {
   });
 }
 
-/**
- * Truncate a UUID v7 appId to `<head>…<tail>` form for tabular display.
- * Keeps the first 8 chars (the time-ordered prefix that's diagnostic) +
- * the last 4 chars (uniqueness tail). Strings short enough already pass
- * through unchanged.
- */
-export function truncateAppId(appId: string): string {
-  if (!appId) return "";
-  return appId.length > 13 ? `${appId.slice(0, 8)}…${appId.slice(-4)}` : appId;
-}
+// The `truncateAppId` helper that previously lived here has moved to
+// `~/utils/appId.ts` (II3, ui-scrutinizer-2026-05-30) so every table
+// surface uses the same shape. Importers should reach for the canonical
+// path; this file no longer re-exports it (the re-export collided with
+// Nuxt auto-imports — both modules would have exported the same name).
 
 /**
  * Three-branch display resolver for the landing page:
