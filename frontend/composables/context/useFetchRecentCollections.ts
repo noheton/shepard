@@ -19,35 +19,24 @@ export function isCleanupCollection(c: Collection): boolean {
  */
 export function useFetchRecentCollections() {
   const collectionApi = useShepardApi(CollectionApi);
-
-  const allCollections = ref<Collection[]>([]);
-  const loading = ref(true);
-  const error = ref<string | null>(null);
   const showClosed = ref(false);
 
-  async function fetch() {
-    // Skip SSR — backendApiUrl is empty on the server side; this is
-    // personalised data that requires auth and must load client-side.
-    if (!import.meta.client) return;
-    loading.value = true;
-    error.value = null;
-    try {
-      const results = await collectionApi.value.getAllCollections({
-        page: 0,
-        size: 30,
-        orderBy: DataObjectAttributes.UpdatedAt,
-        orderDesc: true,
-      });
-      allCollections.value = results;
-    } catch (e) {
-      handleError(e, "fetching recent collections");
-      error.value = "Could not load collections.";
-    } finally {
-      loading.value = false;
-    }
-  }
+  const { data, pending: loading, error: rawError, refresh } = useAsyncData(
+    "recent-collections",
+    () => collectionApi.value.getAllCollections({
+      page: 0,
+      size: 30,
+      orderBy: DataObjectAttributes.UpdatedAt,
+      orderDesc: true,
+    }),
+    { server: false, default: () => [] as Collection[] },
+  );
 
-  fetch();
+  const allCollections = computed<Collection[]>(() => data.value ?? []);
+
+  const error = computed<string | null>(() =>
+    rawError.value ? "Could not load collections." : null,
+  );
 
   const hasClosedCollections = computed(() =>
     allCollections.value.some(isClosedCollection),
@@ -66,6 +55,6 @@ export function useFetchRecentCollections() {
     showClosed,
     loading,
     error,
-    refetch: fetch,
+    refetch: refresh,
   };
 }

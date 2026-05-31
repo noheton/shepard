@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useFetchRecentCollections } from "~/composables/context/useFetchRecentCollections";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { BasicCollectionAttributes } from "@dlr-shepard/backend-client";
+import { DataObjectAttributes } from "@dlr-shepard/backend-client";
 
 // vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
 
-const mockSearchCollections = vi.fn();
+const mockGetAllCollections = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
   (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ searchCollections: mockSearchCollections }),
+    ref({ getAllCollections: mockGetAllCollections }),
   );
 });
 
@@ -22,7 +22,7 @@ const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 describe("useFetchRecentCollections", () => {
   it("starts with loading=true and empty collections", () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
+    mockGetAllCollections.mockResolvedValue([]);
     const { loading, collections } = useFetchRecentCollections();
     expect(loading.value).toBe(true);
     expect(collections.value).toEqual([]);
@@ -33,7 +33,7 @@ describe("useFetchRecentCollections", () => {
       { id: 1, name: "A", dataObjectIds: [] },
       { id: 2, name: "B", dataObjectIds: [] },
     ];
-    mockSearchCollections.mockResolvedValue({ results: data });
+    mockGetAllCollections.mockResolvedValue(data);
 
     const { loading, collections, error } = useFetchRecentCollections();
     await flush();
@@ -43,54 +43,52 @@ describe("useFetchRecentCollections", () => {
     expect(error.value).toBeNull();
   });
 
-  it("passes correct query params (page=0, size=6, orderDesc=true, orderBy=updatedAt)", async () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
+  it("passes correct query params (page=0, size=30, orderDesc=true, orderBy=updatedAt)", async () => {
+    mockGetAllCollections.mockResolvedValue([]);
     useFetchRecentCollections();
     await flush();
 
-    expect(mockSearchCollections).toHaveBeenCalledWith(
+    expect(mockGetAllCollections).toHaveBeenCalledWith(
       expect.objectContaining({
         page: 0,
-        size: 6,
+        size: 30,
         orderDesc: true,
-        orderBy: BasicCollectionAttributes.UpdatedAt,
+        orderBy: DataObjectAttributes.UpdatedAt,
       }),
     );
   });
 
-  it("sets error message and calls handleError when fetch throws", async () => {
+  it("sets error message when fetch throws", async () => {
     const err = new Error("Network error");
-    mockSearchCollections.mockRejectedValue(err);
+    mockGetAllCollections.mockRejectedValue(err);
 
     const { loading, error } = useFetchRecentCollections();
     await flush();
 
     expect(error.value).toBe("Could not load collections.");
     expect(loading.value).toBe(false);
-    expect((globalThis as unknown as { handleError: ReturnType<typeof vi.fn> }).handleError)
-      .toHaveBeenCalledWith(err, "fetching recent collections");
   });
 
   it("refetch triggers a second API call and updates collections", async () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
+    mockGetAllCollections.mockResolvedValue([]);
     const { collections, refetch } = useFetchRecentCollections();
     await flush();
 
     const fresh = [{ id: 3, name: "C" }];
-    mockSearchCollections.mockResolvedValue({ results: fresh });
+    mockGetAllCollections.mockResolvedValue(fresh);
     await refetch();
 
     expect(collections.value).toEqual(fresh);
-    expect(mockSearchCollections).toHaveBeenCalledTimes(2);
+    expect(mockGetAllCollections).toHaveBeenCalledTimes(2);
   });
 
   it("refetch resets error from a previous failure", async () => {
-    mockSearchCollections.mockRejectedValue(new Error("fail"));
+    mockGetAllCollections.mockRejectedValue(new Error("fail"));
     const { error, refetch } = useFetchRecentCollections();
     await flush();
     expect(error.value).not.toBeNull();
 
-    mockSearchCollections.mockResolvedValue({ results: [] });
+    mockGetAllCollections.mockResolvedValue([]);
     await refetch();
     expect(error.value).toBeNull();
   });

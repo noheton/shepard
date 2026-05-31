@@ -1,5 +1,4 @@
 import type {
-  Collection,
   ResponseError,
   Roles,
 } from "@dlr-shepard/backend-client";
@@ -8,11 +7,25 @@ import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchCollection(collectionId: number) {
-  const isLoading = ref<boolean>(false);
-  const isError = ref<boolean>(false);
-  const lastUsedId = ref<number>(collectionId);
-  const collection = ref<Collection | undefined>(undefined);
+  const collectionApi = useShepardApi(CollectionApi);
   const collectionRoles = ref<Roles | undefined>(undefined);
+
+  const { data: collection, pending: isLoading, error: rawError, refresh } = useAsyncData(
+    `collection-${collectionId}`,
+    () => collectionApi.value.getCollection({ collectionId }),
+    { server: false },
+  );
+
+  const isError = computed(() => !!rawError.value);
+
+  collectionApi.value
+    .getCollectionRoles({ collectionId })
+    .then(response => {
+      collectionRoles.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching collection roles");
+    });
 
   const isAllowedToEditCollection = computed(() => {
     return collectionRoles.value?.owner || collectionRoles.value?.writer;
@@ -24,36 +37,8 @@ export function useFetchCollection(collectionId: number) {
     return collectionRoles.value?.owner;
   });
 
-  function fetchCollection(collectionId: number) {
-    lastUsedId.value = collectionId;
-    isLoading.value = true;
-    isError.value = false;
-    const collectionApi = useShepardApi(CollectionApi);
-    collectionApi.value
-      .getCollection({ collectionId })
-      .then(response => {
-        collection.value = response;
-      })
-      .catch(e => {
-        collection.value = undefined;
-        isError.value = true;
-        handleError(e as ResponseError, "fetching collection");
-      });
-    collectionApi.value
-      .getCollectionRoles({ collectionId })
-      .then(response => {
-        collectionRoles.value = response;
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "fetching collection roles");
-      })
-      .finally(() => (isLoading.value = false));
-  }
-
-  fetchCollection(collectionId);
-
   onCollectionUpdated(() => {
-    fetchCollection(lastUsedId.value);
+    refresh();
   });
 
   return {
@@ -63,7 +48,7 @@ export function useFetchCollection(collectionId: number) {
     isOwner,
     isLoading,
     isError,
-    fetchCollection,
+    fetchCollection: (_id: number) => refresh(),
   };
 }
 
