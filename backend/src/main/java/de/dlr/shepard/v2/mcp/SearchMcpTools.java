@@ -454,6 +454,14 @@ public class SearchMcpTools {
         // container; multiple Collections may share a Container only on
         // legacy rows — LIMIT 1 picks one for the gate (acceptable: if any
         // Collection allows Read, surfacing the row is correct).
+        //
+        // Note: a Container with zero Reference rows pointing in
+        // (freshly minted, no payload yet) fails-closed via this walk
+        // because the chain can't complete. That's intentional for v1
+        // — an empty container has no payload value for an agent search.
+        // If a future use-case needs to surface freshly-minted
+        // containers via search, add a direct {@code :DataObject}
+        // ownership edge and re-anchor on it.
         "MATCH (c:Collection)-[:has_dataobject]->(:DataObject)-[:has_reference]->" +
         "()-[:is_in_container]->(n:`" + label + "` {appId: $appId}) " +
         "RETURN c.appId AS collectionAppId LIMIT 1";
