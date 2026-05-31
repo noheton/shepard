@@ -529,11 +529,44 @@ const isInstanceAdmin = computed(() =>
   hasInstanceAdminRole(data.value?.accessToken),
 );
 
-const handleAuth = () => {
+const handleAuth = async () => {
   if (isSignedIn) {
     const signInCookie = useCookie(signInRedirectCookie);
     signInCookie.value = undefined;
-    signOut({ callbackUrl: "/" });
+    // BUG-SIGNOUT-KC-SSO-LINGERS — sign-out must redirect the *browser* to
+    // Keycloak's end_session_endpoint (not just fetch it server-side) so the
+    // SSO cookie on the user's browser gets cleared. Without this, the next
+    // sign-in silently re-auths via the warm SSO session and no password
+    // prompt appears. The realm's `post.logout.redirect.uris: "+"` config
+    // accepts any redirect URI, so we send the user back to the app root.
+    const idToken = (data.value as unknown as { idToken?: string } | null)
+      ?.idToken;
+    let endSessionUrl: string | null = null;
+    try {
+      const res = await $fetch<{ url: string }>("/api/auth-logout-url");
+      endSessionUrl = res.url;
+    } catch {
+      // Resolver failed — fall through to plain signOut (server-side fetch
+      // path still works for the Keycloak-side session; only the browser
+      // SSO cookie won't get cleared). Better than leaving the user signed
+      // in indefinitely.
+    }
+    // Clear nuxt-auth's own session cookie first so the SPA reflects the
+    // signed-out state immediately. `redirect: false` keeps control here
+    // so we can drive the browser to Keycloak ourselves.
+    await signOut({ redirect: false });
+    if (endSessionUrl && idToken) {
+      const target = new URL(endSessionUrl);
+      target.searchParams.set("id_token_hint", idToken);
+      target.searchParams.set(
+        "post_logout_redirect_uri",
+        window.location.origin + "/",
+      );
+      window.location.href = target.toString();
+      return;
+    }
+    // Fallback: land on the app root via a normal navigation.
+    window.location.href = "/";
     return;
   }
   signIn(undefined);
