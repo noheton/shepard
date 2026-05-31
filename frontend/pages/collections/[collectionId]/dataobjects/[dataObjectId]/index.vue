@@ -480,6 +480,13 @@ async function saveEmbargoEdit() {
                 :entity-name="dataObject.name"
               />
             </v-row>
+            <!-- II2 (ui-scrutinizer-2026-05-30): "Cite this DataObject"
+                 card — sister to the Collection-level RDM-001 card. Same
+                 shape: APA / BibTeX / RIS / CSL JSON. Sits above the
+                 description block so a funder / reviewer sees the
+                 citation affordance before the prose. -->
+            <CiteThisDataObjectCard :data-object="dataObject" />
+
             <!-- Always-visible: Description with inline edit. UI-017: when
                  edit is engaged, the surrounding section gets an outline + a
                  small "Editing description" label so the user can see at a
