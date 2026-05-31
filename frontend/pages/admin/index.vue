@@ -15,6 +15,10 @@ import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue"
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import AdminJupyterPane from "~/components/context/admin/AdminJupyterPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
+import AdminNotificationsPane from "~/components/context/admin/AdminNotificationsPane.vue";
+import AdminInstanceAdminsPane from "~/components/context/admin/AdminInstanceAdminsPane.vue";
+import AdminUserOrcidPane from "~/components/context/admin/AdminUserOrcidPane.vue";
+import AdminUserGitPane from "~/components/context/admin/AdminUserGitPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
@@ -283,23 +287,23 @@ const landingCards = [
     <AdminFileMigrationPane
       v-if="routeFragment === AdminFragments.FILE_MIGRATION"
     />
-    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
+    <!-- NTF1: notification transports admin pane (PLACEHOLDER-REPLACE-NTF1) -->
+    <AdminNotificationsPane
       v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
-      slug="notifications-admin"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-MANAGE: instance-admin grant/revoke (PLACEHOLDER-REPLACE-ADM-MANAGE) -->
+    <AdminInstanceAdminsPane
       v-if="routeFragment === AdminFragments.INSTANCE_ADMINS"
-      slug="instance-admins"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-USR-ORCID: admin sets other users' ORCIDs (PLACEHOLDER-REPLACE-ADM-USR-ORCID) -->
+    <AdminUserOrcidPane
       v-if="routeFragment === AdminFragments.USERS_ORCID"
-      slug="users-orcid"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-USR-GIT: admin issues/rotates other users' git creds (PLACEHOLDER-REPLACE-ADM-USR-GIT) -->
+    <AdminUserGitPane
       v-if="routeFragment === AdminFragments.USERS_GIT"
-      slug="users-git"
     />
+    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.AI_CONFIG"
       slug="ai-config"
