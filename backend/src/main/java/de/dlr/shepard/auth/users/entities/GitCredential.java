@@ -43,6 +43,17 @@ public class GitCredential implements HasId, HasAppId {
   @DateLong
   private Date createdAt;
 
+  /**
+   * ADM-USR-GIT-BACKEND-1 — Epoch-stamped on every create and on every
+   * explicit rotate via {@code POST /v2/admin/users/{username}/git-credentials/
+   * {appId}/rotate}. Nullable per the additive-schema rule: rows persisted
+   * before this field existed return {@code null} until the credential is
+   * next rotated. Exposed (read-only) via the admin list endpoint so an
+   * operator can spot stale credentials at a glance.
+   */
+  @DateLong
+  private Date lastRotatedAt;
+
   @Override
   public String getUniqueId() {
     return appId;
@@ -50,7 +61,7 @@ public class GitCredential implements HasId, HasAppId {
 
   @Override
   public int hashCode() {
-    return Objects.hash(appId, host, displayName, username, createdAt);
+    return Objects.hash(appId, host, displayName, username, createdAt, lastRotatedAt);
   }
 
   @Override
@@ -62,7 +73,8 @@ public class GitCredential implements HasId, HasAppId {
       Objects.equals(host, other.host) &&
       Objects.equals(displayName, other.displayName) &&
       Objects.equals(username, other.username) &&
-      Objects.equals(createdAt, other.createdAt)
+      Objects.equals(createdAt, other.createdAt) &&
+      Objects.equals(lastRotatedAt, other.lastRotatedAt)
     );
   }
 }

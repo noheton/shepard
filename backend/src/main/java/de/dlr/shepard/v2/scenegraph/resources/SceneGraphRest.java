@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.scenegraph.resources;
 
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.v2.scenegraph.entities.CoordinateFrame;
 import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
@@ -13,6 +14,7 @@ import de.dlr.shepard.v2.scenegraph.io.JointIO;
 import de.dlr.shepard.v2.scenegraph.io.PatchFrameRequestIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphListIO;
+import de.dlr.shepard.v2.scenegraph.services.SceneGraphPermissionService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService.ProvenanceContext;
 import io.quarkus.logging.Log;
@@ -64,16 +66,19 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   DELETE /v2/scene-graphs/{appId}/joints/{jointAppId}   — remove joint
  * </pre>
  *
- * <h2>Auth</h2>
- * <p>{@code @Authenticated} only — any logged-in user can read and mutate any
- * scene. The DT1-PHASE-0 scaffold does not carry an owning-collection
- * pointer, so there is no inherited-permission walk to anchor on yet.
- * Backlog row {@code SCENEGRAPH-PERMS-1} captures the per-scene
- * permission model (likely: scene inherits from
- * {@code sourceFileAppId → FileReference → Collection}). Until then,
- * authentication is the only gate — and that is the right shape for a
- * first-day demonstrator: hand-built scenes have no collection anchor
- * by definition.
+ * <h2>Auth (SCENEGRAPH-PERMS-1, shipped 2026-05-31)</h2>
+ * <p>Per-scene permission walk via {@link SceneGraphPermissionService}: scene
+ * inherits from {@code sourceFileAppId → FileReference → DataObject →
+ * Collection}; read endpoints require {@link AccessType#Read} on the parent
+ * Collection, write endpoints require {@link AccessType#Write}. The list
+ * endpoint post-filters the page to the subset the caller can read (page
+ * may return fewer rows than {@code size}; the {@code total} envelope field
+ * still reports the unfiltered total — operators looking at the count vs.
+ * row-count discrepancy can infer "you can't see N of these"). Hand-built
+ * scenes (no {@code sourceFileAppId}) fail closed unless the caller carries
+ * the {@code instance-admin} role; the eventual {@code ownerCollectionAppId}
+ * field captured in the SCENEGRAPH-PERMS-1 backlog row is the planned shape
+ * for first-class hand-built-scene anchoring.
  *
  * <h2>Provenance</h2>
  * <p>Every mutation records a {@code :Activity} via the
@@ -102,6 +107,7 @@ public class SceneGraphRest {
 
   @Inject SceneGraphService sceneGraphService;
   @Inject UrdfExporter urdfExporter;
+  @Inject SceneGraphPermissionService scenePermissions;
 
   @Context jakarta.ws.rs.container.ContainerRequestContext requestContext;
 
@@ -129,12 +135,28 @@ public class SceneGraphRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size
+    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @Context SecurityContext sc
   ) {
+    String caller = callerOf(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    boolean isAdmin = sc != null && sc.isUserInRole(SceneGraphPermissionService.INSTANCE_ADMIN_ROLE);
+
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 200);
     SceneGraphService.SceneListPage src = sceneGraphService.listScenes(safePage, safeSize);
-    return Response.ok(new SceneGraphListIO(src, safePage, safeSize)).build();
+
+    // SCENEGRAPH-PERMS-1 — post-filter the page to the subset the caller can
+    // read. Page may return fewer rows than `size`; `total` envelope still
+    // reports the unfiltered total per the class Javadoc.
+    java.util.List<SceneGraphService.SceneListRow> filtered = new java.util.ArrayList<>(src.rows().size());
+    for (SceneGraphService.SceneListRow row : src.rows()) {
+      if (scenePermissions.isAllowed(row.appId(), AccessType.Read, caller, isAdmin)) {
+        filtered.add(row);
+      }
+    }
+    SceneGraphService.SceneListPage scoped = new SceneGraphService.SceneListPage(filtered, src.total());
+    return Response.ok(new SceneGraphListIO(scoped, safePage, safeSize)).build();
   }
 
   // ── GET scene ─────────────────────────────────────────────────────────────
@@ -160,10 +182,13 @@ public class SceneGraphRest {
   @APIResponse(responseCode = "404", description = "No scene with that appId.")
   public Response get(
     @PathParam("appId") @NotBlank String appId,
-    @HeaderParam(HttpHeaders.ACCEPT) String accept
+    @HeaderParam(HttpHeaders.ACCEPT) String accept,
+    @Context SecurityContext sc
   ) {
     DigitalTwinScene scene = sceneGraphService.findScene(appId);
     if (scene == null) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = checkScenePermission(appId, AccessType.Read, sc);
+    if (gate != null) return gate;
 
     List<CoordinateFrame> frames = sceneGraphService.findFramesForScene(appId);
     List<Joint> joints = sceneGraphService.findJointsForScene(appId);
@@ -196,9 +221,11 @@ public class SceneGraphRest {
   @APIResponse(responseCode = "200", description = "URDF XML returned.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No scene with that appId.")
-  public Response exportUrdf(@PathParam("appId") @NotBlank String appId) {
+  public Response exportUrdf(@PathParam("appId") @NotBlank String appId, @Context SecurityContext sc) {
     DigitalTwinScene scene = sceneGraphService.findScene(appId);
     if (scene == null) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = checkScenePermission(appId, AccessType.Read, sc);
+    if (gate != null) return gate;
     String urdf = urdfExporter.export(
       scene,
       sceneGraphService.findFramesForScene(appId),
@@ -254,6 +281,28 @@ public class SceneGraphRest {
     @HeaderParam(HEADER_AI_AGENT) String aiAgent,
     @Context SecurityContext sc
   ) {
+    // SCENEGRAPH-PERMS-1 — create gate: if the caller supplied a
+    // sourceFileAppId, they must hold Write on its parent Collection (same
+    // shape as the scene → file → collection walk used for read/edit). When
+    // no sourceFileAppId is supplied (hand-built scene), only instance-admin
+    // can create — matches the post-create read/edit posture per the
+    // hand-built-scene fail-closed rule.
+    String caller = callerOf(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    boolean isAdmin = sc != null && sc.isUserInRole(SceneGraphPermissionService.INSTANCE_ADMIN_ROLE);
+    String srcFileAppId = body == null ? null : body.getSourceFileAppId();
+    if (srcFileAppId == null || srcFileAppId.isBlank()) {
+      if (!isAdmin) {
+        return Response.status(Response.Status.FORBIDDEN)
+          .entity("{\"detail\":\"hand-built scenes (no sourceFileAppId) require instance-admin\"}")
+          .build();
+      }
+    } else if (!scenePermissions.canCreateFromSourceFile(srcFileAppId, caller)) {
+      return Response.status(Response.Status.FORBIDDEN)
+        .entity("{\"detail\":\"caller lacks Write on the parent Collection of sourceFileAppId\"}")
+        .build();
+    }
+
     ProvenanceContext prov = provFor(sc, aiAgent);
     DigitalTwinScene scene = sceneGraphService.createScene(body, prov);
     handoffProvenance();
@@ -285,6 +334,8 @@ public class SceneGraphRest {
     @Context SecurityContext sc
   ) {
     if (body == null) body = new CreateFrameRequestIO();
+    Response gate = checkScenePermission(appId, AccessType.Write, sc);
+    if (gate != null) return gate;
     ProvenanceContext prov = provFor(sc, aiAgent);
     try {
       CoordinateFrame frame = sceneGraphService.addFrame(appId, body, prov);
@@ -320,6 +371,8 @@ public class SceneGraphRest {
     @Context SecurityContext sc
   ) {
     if (body == null) body = new PatchFrameRequestIO();
+    Response gate = checkScenePermission(appId, AccessType.Write, sc);
+    if (gate != null) return gate;
     ProvenanceContext prov = provFor(sc, aiAgent);
     try {
       CoordinateFrame frame = sceneGraphService.patchFrame(appId, frameAppId, body, prov);
@@ -349,6 +402,8 @@ public class SceneGraphRest {
     @HeaderParam(HEADER_AI_AGENT) String aiAgent,
     @Context SecurityContext sc
   ) {
+    Response gate = checkScenePermission(appId, AccessType.Write, sc);
+    if (gate != null) return gate;
     ProvenanceContext prov = provFor(sc, aiAgent);
     try {
       sceneGraphService.deleteFrameSubtree(appId, frameAppId, prov);
@@ -379,6 +434,8 @@ public class SceneGraphRest {
     @Context SecurityContext sc
   ) {
     if (body == null) body = new CreateJointRequestIO();
+    Response gate = checkScenePermission(appId, AccessType.Write, sc);
+    if (gate != null) return gate;
     ProvenanceContext prov = provFor(sc, aiAgent);
     try {
       Joint joint = sceneGraphService.addJoint(appId, body, prov);
@@ -405,6 +462,8 @@ public class SceneGraphRest {
     @HeaderParam(HEADER_AI_AGENT) String aiAgent,
     @Context SecurityContext sc
   ) {
+    Response gate = checkScenePermission(appId, AccessType.Write, sc);
+    if (gate != null) return gate;
     ProvenanceContext prov = provFor(sc, aiAgent);
     try {
       sceneGraphService.deleteJoint(appId, jointAppId, prov);
@@ -418,9 +477,33 @@ public class SceneGraphRest {
   // ── helpers ───────────────────────────────────────────────────────────────
 
   private ProvenanceContext provFor(SecurityContext sc, String aiAgent) {
-    String caller = sc != null && sc.getUserPrincipal() != null
-      ? sc.getUserPrincipal().getName() : null;
-    return ProvenanceContext.from(caller, aiAgent);
+    return ProvenanceContext.from(callerOf(sc), aiAgent);
+  }
+
+  /** SCENEGRAPH-PERMS-1 — null-safe extraction of the authenticated username. */
+  private static String callerOf(SecurityContext sc) {
+    return sc != null && sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+  }
+
+  /**
+   * SCENEGRAPH-PERMS-1 — gate a per-scene operation. Returns {@code null}
+   * when access is allowed (caller proceeds), or a short-circuit
+   * {@link Response} ({@code 401} unauthenticated, {@code 403} forbidden)
+   * to return immediately. Callers MUST have already verified the scene
+   * exists before invoking this helper (it does not 404 — that's the
+   * resource layer's job, before this gate, so missing-scene returns 404
+   * not 403).
+   */
+  Response checkScenePermission(String sceneAppId, AccessType accessType, SecurityContext sc) {
+    String caller = callerOf(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    boolean isAdmin = sc != null && sc.isUserInRole(SceneGraphPermissionService.INSTANCE_ADMIN_ROLE);
+    if (!scenePermissions.isAllowed(sceneAppId, accessType, caller, isAdmin)) {
+      return Response.status(Response.Status.FORBIDDEN)
+        .entity("{\"detail\":\"caller lacks " + accessType + " on the parent Collection of this scene\"}")
+        .build();
+    }
+    return null;
   }
 
   /**
