@@ -115,24 +115,6 @@ function setGroupView(v: "flat" | "collection") {
   });
 }
 
-// ── Owner filter (h) — client-side ─────────────────────────────────────────
-// `owner=…` is intentionally client-side: there's no backend filter for
-// `createdBy` on the v2 SearchApi today, and the task spec forbids
-// backend extension during the Jandex hang. Filed in aidocs/16 as
-// UI21-BACKEND-Q for the server-side enrichment.
-
-const ownerFilter = computed(() => {
-  const raw = route.query.owner;
-  return typeof raw === "string" && raw.trim() ? raw.trim().toLowerCase() : "";
-});
-
-const visibleServerItems = computed<BasicContainer[]>(() => {
-  if (!ownerFilter.value) return serverItems.value;
-  return serverItems.value.filter(c =>
-    c.createdBy.toLowerCase().includes(ownerFilter.value),
-  );
-});
-
 // ── Advanced-mode grouping (g) ──────────────────────────────────────────────
 // The orphan/reference map is populated by ContainerList's `refs-resolved`
 // listener. Mirror the events here so the grouped view can read them.
@@ -144,7 +126,7 @@ function onRefsResolved(payload: { id: number; refs: number[] | null }) {
 }
 
 const groupedView = computed<Map<string, BasicContainer[]>>(() => {
-  const rows: ContainerWithRefs<BasicContainer>[] = visibleServerItems.value.map(c => ({
+  const rows: ContainerWithRefs<BasicContainer>[] = serverItems.value.map(c => ({
     container: c,
     referencingCollectionIds: refsById.get(c.id) ?? null,
   }));
@@ -233,10 +215,10 @@ async function confirmBulkDelete() {
 // ── Empty / search-empty / populated state ─────────────────────────────────
 
 const isEmpty = computed(
-  () => !loading.value && visibleServerItems.value.length === 0 && !searchResultHint.value,
+  () => !loading.value && serverItems.value.length === 0 && !searchResultHint.value,
 );
 const isSearchEmpty = computed(
-  () => !loading.value && visibleServerItems.value.length === 0 && !!searchResultHint.value,
+  () => !loading.value && serverItems.value.length === 0 && !!searchResultHint.value,
 );
 </script>
 
@@ -362,7 +344,7 @@ const isSearchEmpty = computed(
               :items-per-page="itemsPerPage"
               :loading="loading"
               :page-count="pageCount"
-              :server-items="visibleServerItems"
+              :server-items="serverItems"
               @request-bulk-delete="onRequestBulkDelete"
               @refs-resolved="onRefsResolved"
             />
@@ -424,7 +406,7 @@ const isSearchEmpty = computed(
                 :items-per-page="itemsPerPage"
                 :loading="loading"
                 :page-count="1"
-                :server-items="visibleServerItems"
+                :server-items="serverItems"
                 @request-bulk-delete="onRequestBulkDelete"
                 @refs-resolved="onRefsResolved"
               />

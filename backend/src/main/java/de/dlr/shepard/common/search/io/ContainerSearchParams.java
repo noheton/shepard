@@ -16,8 +16,16 @@ public class ContainerSearchParams extends ASearchParams {
   @NotNull
   private ContainerType queryType;
 
+  private String createdBy;
+
   public ContainerSearchParams(String query, ContainerType queryType) {
     super(query);
     this.queryType = queryType;
+  }
+
+  public ContainerSearchParams(String query, ContainerType queryType, String createdBy) {
+    super(query);
+    this.queryType = queryType;
+    this.createdBy = createdBy;
   }
 }

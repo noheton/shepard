@@ -11,12 +11,14 @@ import {
 export type ContainerListQueryParams =
   ListQueryParams<BasicContainerAttributes> & {
     selectedFilter?: ContainerFilterType;
+    owner?: string;
   };
 
 export function parseContainerListQueryParams(
   queryParams: LocationQueryRaw,
 ): ContainerListQueryParams {
   const basicParams = parseListQueryParams(queryParams);
+  const owner = parseOwner(queryParams);
 
   if (
     !basicParams.sortBy ||
@@ -26,6 +28,7 @@ export function parseContainerListQueryParams(
       page: basicParams.page,
       searchText: basicParams.searchText,
       selectedFilter: parseSelectedFilter(queryParams),
+      owner,
     };
   }
 
@@ -37,7 +40,14 @@ export function parseContainerListQueryParams(
       order: basicParams.sortBy.order,
     },
     selectedFilter: parseSelectedFilter(queryParams),
+    owner,
   };
+}
+
+function parseOwner(queryParams: LocationQueryRaw): string | undefined {
+  const raw = queryParams.owner;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  return undefined;
 }
 
 function parseSelectedFilter(

@@ -21,6 +21,7 @@ export function useSearchContainers(itemsPerPage: number) {
     sortByAttributes: SortBy<BasicContainerAttributes> | undefined,
     searchQuery: string,
     selectedFilter: ContainerFilterType | null | undefined,
+    owner?: string,
   ) {
     loading.value = true;
 
@@ -36,6 +37,7 @@ export function useSearchContainers(itemsPerPage: number) {
           searchParams: {
             query: searchQuery,
             queryType: selectedFilter ?? ContainerType.Basic,
+            ...(owner ? { createdBy: owner } : {}),
           },
         },
         page: page - 1,
@@ -64,6 +66,7 @@ export function useSearchContainers(itemsPerPage: number) {
         newParams.sortBy,
         buildQueryString(newParams.searchText ?? null),
         newParams.selectedFilter,
+        newParams.owner,
       );
     },
     { immediate: true },

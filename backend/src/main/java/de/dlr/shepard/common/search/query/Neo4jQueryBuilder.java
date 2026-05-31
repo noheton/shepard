@@ -716,6 +716,16 @@ public class Neo4jQueryBuilder {
     SortingHelper sortOrder,
     String userName
   ) {
+    return containerSelectionQueryWithNeo4jId(JSONQuery, containerType, sortOrder, userName, null);
+  }
+
+  public static Neo4jQuery containerSelectionQueryWithNeo4jId(
+    String JSONQuery,
+    ContainerType containerType,
+    SortingHelper sortOrder,
+    String userName,
+    String createdBy
+  ) {
     ParamBinder binder = new ParamBinder();
     String ret = "MATCH (" + containerType.getTypeAlias() + ":" + containerType.getTypeName() + ")";
     ret = ret + " WHERE ";
@@ -724,6 +734,16 @@ public class Neo4jQueryBuilder {
     ret = ret + notDeletedPart(containerType.getTypeAlias());
     ret = ret + " AND ";
     ret = ret + CypherQueryHelper.getReadableByQuery(containerType.getTypeAlias(), userName);
+    if (createdBy != null && !createdBy.isBlank()) {
+      String createdByRef = binder.bind(createdBy.toLowerCase());
+      ret =
+        ret +
+        " AND (EXISTS {MATCH (" +
+        containerType.getTypeAlias() +
+        ") - [:created_by] -> (u) WHERE toLower(u.username) contains " +
+        createdByRef +
+        "})";
+    }
     if (sortOrder.hasOrderByAttribute()) {
       ret +=
         " " +

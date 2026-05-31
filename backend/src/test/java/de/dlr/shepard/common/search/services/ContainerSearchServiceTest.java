@@ -146,4 +146,54 @@ public class ContainerSearchServiceTest {
     var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null));
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(sdRes1), new BasicContainerIO(sdRes2));
   }
+
+  @Test
+  public void searchContainerWithCreatedByFilterTest() {
+    String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
+    String createdBy = "alice";
+    ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.FILE, createdBy);
+    ContainerSearchBody searchBody = new ContainerSearchBody(params);
+    Neo4jQuery neo4jQueryWithCreatedBy = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.FILE,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      createdBy
+    );
+    assertThat(neo4jQueryWithCreatedBy.cypher()).contains("created_by");
+    FileContainer fileRes = new FileContainer(7L);
+    List<BasicContainer> fileResList = List.of(fileRes);
+    when(searchDAO.findContainers(neo4jQueryWithCreatedBy, null, Constants.FILECONTAINER_IN_QUERY)).thenReturn(
+      fileResList
+    );
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null));
+    assertThat(actual.getResults()).containsExactly(new BasicContainerIO(fileRes));
+    assertThat(actual.getSearchParams().getCreatedBy()).isEqualTo(createdBy);
+  }
+
+  @Test
+  public void searchContainerWithNullCreatedByIgnoresFilterTest() {
+    String JSONquery = "{\"property\": \"name\", \"value\": \"AnotherName\", \"operator\": \"eq\"}";
+    ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.TIMESERIES);
+    ContainerSearchBody searchBody = new ContainerSearchBody(params);
+    Neo4jQuery neo4jQueryNoCreatedBy = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.TIMESERIES,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      null
+    );
+    assertThat(neo4jQueryNoCreatedBy.cypher()).doesNotContain("created_by");
+    TimeseriesContainer timeRes = new TimeseriesContainer(9L);
+    List<BasicContainer> timeResList = List.of(timeRes);
+    when(searchDAO.findContainers(neo4jQueryNoCreatedBy, null, Constants.TIMESERIESCONTAINER_IN_QUERY)).thenReturn(
+      timeResList
+    );
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null));
+    assertThat(actual.getResults()).containsExactly(new BasicContainerIO(timeRes));
+  }
 }

@@ -21,23 +21,29 @@ import {
 } from './ContainerType';
 
 /**
- * 
+ *
  * @export
  * @interface ContainerSearchParams
  */
 export interface ContainerSearchParams {
     /**
-     * 
+     *
      * @type {string}
      * @memberof ContainerSearchParams
      */
     query: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof ContainerSearchParams
      */
     queryType: ContainerType;
+    /**
+     * Optional username filter; when set the server returns only containers created by this user.
+     * @type {string}
+     * @memberof ContainerSearchParams
+     */
+    createdBy?: string;
 }
 
 
@@ -60,9 +66,10 @@ export function ContainerSearchParamsFromJSONTyped(json: any, ignoreDiscriminato
         return json;
     }
     return {
-        
+
         'query': json['query'],
         'queryType': ContainerTypeFromJSON(json['queryType']),
+        'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
     };
 }
 
@@ -71,9 +78,10 @@ export function ContainerSearchParamsToJSON(value?: ContainerSearchParams | null
         return value;
     }
     return {
-        
+
         'query': value['query'],
         'queryType': ContainerTypeToJSON(value['queryType']),
+        'createdBy': value['createdBy'] == null ? undefined : value['createdBy'],
     };
 }
 
