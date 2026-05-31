@@ -11,6 +11,7 @@
  */
 import AdminInstanceRegistryPane from "~/components/context/admin/AdminInstanceRegistryPane.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
+import { useStaleRoleSession } from "~/composables/context/useStaleRoleSession";
 
 useHead({ title: "Instance Registry | Admin | shepard" });
 
@@ -26,6 +27,9 @@ const showUnauthorized = computed(
     data.value !== undefined &&
     !isInstanceAdmin.value,
 );
+
+// ROLE-GRANT-STALE-SESSION-02 — upgrade hint copy when middleware saw `role_changed`.
+const { reason: staleRoleReason } = useStaleRoleSession();
 </script>
 
 <template>
@@ -34,6 +38,7 @@ const showUnauthorized = computed(
     title="Instance Registry is restricted"
     message="This page is only available to instance administrators."
     required-role="instance-admin"
+    :stale-session-reason="staleRoleReason ?? undefined"
   />
   <div v-else class="pa-6">
     <AdminInstanceRegistryPane />

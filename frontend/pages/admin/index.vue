@@ -27,6 +27,7 @@ import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPan
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
+import { useStaleRoleSession } from "~/composables/context/useStaleRoleSession";
 
 useHead({
   title: "Admin | shepard",
@@ -37,6 +38,11 @@ const { data, status } = useAuth();
 const isInstanceAdmin = computed(() =>
   hasInstanceAdminRole(data.value?.accessToken),
 );
+
+// ROLE-GRANT-STALE-SESSION-02 — when the auth-refresh middleware saw a
+// 401 with `error: "role_changed"`, upgrade the `UnauthorizedView` hint
+// from the speculative -03 default to the definitive -02 wording.
+const { reason: staleRoleReason } = useStaleRoleSession();
 
 // UI-2026-05-24-004 — replaces the silent navigateTo("/me") with an
 // explicit Unauthorized view that keeps the URL stable. Only render the
@@ -233,6 +239,7 @@ const landingCards = [
     title="Admin tools"
     message="These pages are for instance admins. If you need access, ask the operator of this Shepard instance."
     required-role="instance-admin"
+    :stale-session-reason="staleRoleReason ?? undefined"
     :feature-labels="landingCards.map((c) => c.title)"
   />
   <PaneLayout v-else header="Admin" :menu-entries="AdminMenuEntries">
