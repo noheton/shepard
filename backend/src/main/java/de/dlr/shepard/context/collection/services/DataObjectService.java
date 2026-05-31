@@ -80,6 +80,9 @@ public class DataObjectService {
   @Inject
   FeatureToggleRegistry featureToggleRegistry;
 
+  @Inject
+  ArchiveStateGuard archiveStateGuard;
+
   /**
    * Creates a DataObject
    *
@@ -95,6 +98,9 @@ public class DataObjectService {
   public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) throws InvalidBodyException {
     Collection collection = collectionService.getCollection(collectionShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    // #27-ARCHIVED-02: 409 when the parent Collection is frozen.
+    archiveStateGuard.assertCollectionNotArchived(collectionShepardId);
 
     User user = userService.getCurrentUser();
 
@@ -378,6 +384,9 @@ public class DataObjectService {
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    // #27-ARCHIVED-02: 409 when the parent Collection is frozen (prune-only).
+    archiveStateGuard.assertCollectionNotArchived(collectionShepardId);
 
     // MFG5: enforce closed-enum status and forbid downgrade transitions on update.
     StatusTransitionGuard.validateOnUpdate(old.getStatus(), dataObject.getStatus());
