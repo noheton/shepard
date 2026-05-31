@@ -36,4 +36,24 @@ public class TestNotificationIO {
 
   @Schema(description = "Optional deep-link URL for the Go button.", nullable = true)
   private String actionUrl;
+
+  // NTF1-BACKEND-TEST-PER-TRANSPORT — when set, dispatch via the named
+  // :NotificationTransport instead of the in-app default. When null,
+  // existing behaviour is preserved (in-app publish via
+  // NotificationService).
+  @Schema(
+    description = "Optional :NotificationTransport.appId — when set, the test is " +
+      "dispatched via that specific transport (SMTP / MATRIX / etc) instead of " +
+      "the in-app default. Returns 404 if the appId does not resolve.",
+    nullable = true
+  )
+  private String transportId;
+
+  @Schema(
+    description = "Per-transport routing override — for SMTP, an email address; " +
+      "for MATRIX, a room id (overrides the transport's matrixDefaultRoom). " +
+      "Ignored for in-app.",
+    nullable = true
+  )
+  private String recipientAddress;
 }
