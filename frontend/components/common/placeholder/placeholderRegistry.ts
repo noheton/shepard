@@ -57,48 +57,61 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-NTF1 (2026-05-31): real pane shipped as
+    // AdminNotificationsPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds and so partial-backend
+    // tracking stays surfaced (SMTP + Matrix transport CRUD pending).
     slug: "notifications-admin",
     surface: "admin",
     title: "Notification transports",
     subtitle:
-      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. Full pane coming with NTF1-UI.",
-    endpoint: null,
+      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. In-app pane shipped 2026-05-31; SMTP/Matrix transport CRUD pending (NTF1-BACKEND-*).",
+    endpoint: "/v2/admin/notifications/test",
     backlogRow: "NTF1",
     designDoc: "aidocs/integrations/40-notification-system.md",
     backend: "partial",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-MANAGE (2026-05-31): real pane shipped as
+    // AdminInstanceAdminsPane.vue. Registry entry retained for
+    // EXPECTED_PLACEHOLDER_COUNT stability and surface tracking.
     slug: "instance-admins",
     surface: "admin",
     title: "Instance administrators",
     subtitle:
-      "Grant or revoke the instance-admin role for other users. Today the API is callable; the UI lands with ADM-MANAGE.",
+      "Grant or revoke the instance-admin role for other users. Real pane shipped 2026-05-31 — calls GET/POST/DELETE /v2/admin/instance-admins.",
     endpoint: "/v2/admin/instance-admins",
     backlogRow: "ADM-MANAGE",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-USR-ORCID (2026-05-31): real pane shipped
+    // as AdminUserOrcidPane.vue.
     slug: "users-orcid",
     surface: "admin",
     title: "User ORCID overrides",
     subtitle:
-      "Set or clear a user's ORCID iD when they cannot themselves (deactivated account, audit hand-off). Admin override of /v2/users/me/orcid.",
-    endpoint: null,
+      "Set or clear a user's ORCID iD when they cannot themselves (deactivated account, audit hand-off). Real pane shipped 2026-05-31 — PATCH /v2/admin/users/{username}/orcid.",
+    endpoint: "/v2/admin/users/{username}/orcid",
     backlogRow: "ADM-USR-ORCID",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-USR-GIT (2026-05-31): partial pane shipped
+    // as AdminUserGitPane.vue (set/replace credential per host). Backend
+    // gap (GET-for-other-users, /rotate, lastRotatedAt) tracked in
+    // ADM-USR-GIT-BACKEND-1.
     slug: "users-git",
     surface: "admin",
     title: "User git credentials",
     subtitle:
-      "Issue or rotate git-host credentials for other users on their behalf (importer / wiki-writer plugin support).",
-    endpoint: null,
+      "Issue or rotate git-host credentials for other users on their behalf (importer / wiki-writer plugin support). Partial pane shipped 2026-05-31; list/rotate endpoints pending (ADM-USR-GIT-BACKEND-1).",
+    endpoint: "/v2/admin/users/{username}/git-credentials",
     backlogRow: "ADM-USR-GIT",
     designDoc: "aidocs/integrations/47-dev-experience-and-plugin-system.md",
-    backend: "shipped",
+    backend: "partial",
   },
   {
     slug: "ai-config",

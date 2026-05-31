@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 53 |
+| `fragment` | 54 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 110 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 87 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **417** |
+| **total docs** | **418** |
 | **UNTAGGED** | **0** |
 
-## fragment (53)
+## fragment (54)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -63,6 +63,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
+| [`aidocs/agent-findings/screenshots/layout-4k-2026-05-31/README.md`](agent-findings/screenshots/layout-4k-2026-05-31/README.md) | LAYOUT-4K-CENTERED-EMPTY-001 — 4K screenshot evidence | 2026-05-31 | — |
 | [`aidocs/agent-findings/synergy-2026-05-23-ai-accountability.md`](agent-findings/synergy-2026-05-23-ai-accountability.md) | S-08 — AI accountability dashboard: MCP × Permission audit log × F(AI)²R | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/synergy-2026-05-23-channel-as-individual.md`](agent-findings/synergy-2026-05-23-channel-as-individual.md) | S-01 — Channel-as-individual: HSDS HDF5 × AAS TimeSeriesData × sTC | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-openlineage-fair2r.md`](agent-findings/synergy-2026-05-23-openlineage-fair2r.md) | S-02 — OpenLineage RunEvent × F(AI)²R × PROV-O: EASA evidence for free | 2026-05-23 | 2026-05-27 |
