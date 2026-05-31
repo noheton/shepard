@@ -19,6 +19,19 @@ const mockCurrentRoute = ref({ fullPath: "/test" });
   currentRoute: mockCurrentRoute,
 });
 
+// ROLE-GRANT-STALE-SESSION-02 — the middleware now consumes
+// `useStaleRoleSession()` which calls Nuxt's auto-imported `useState`. For
+// unit tests we give it a per-key ref shim so the composable's Nuxt-side
+// state machinery doesn't need to be live.
+const stateStore = new Map<string, ReturnType<typeof ref>>();
+(globalThis as unknown as Record<string, unknown>).useState = <T>(
+  key: string,
+  init: () => T,
+) => {
+  if (!stateStore.has(key)) stateStore.set(key, ref(init()));
+  return stateStore.get(key)!;
+};
+
 function makeContext(
   status: number,
   fetchFn: ReturnType<typeof vi.fn> = vi.fn(),
@@ -123,5 +136,79 @@ describe("useAuthRefreshMiddleware", () => {
 
     // Only one refresh call, not two
     expect(mockRefresh).toHaveBeenCalledOnce();
+  });
+
+  // ROLE-GRANT-STALE-SESSION-02 — body-shape inspection sets the shared flag.
+  describe("role_changed body inspection (ROLE-GRANT-STALE-SESSION-02)", () => {
+    function makeRetryFetch() {
+      // After body inspection the middleware always proceeds to refresh +
+      // retry; mock the retry fetch to return a 200 so the post-retry path
+      // (`retryResponse.status === 401`) doesn't NPE on undefined.
+      return vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    }
+
+    function makeContextWithBody(body: unknown): ResponseContext {
+      const response = new Response(JSON.stringify(body), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
+      return {
+        response,
+        fetch: makeRetryFetch(),
+        url: "https://api.example.com/v2/admin/features",
+        init: { headers: { Authorization: "Bearer stale-token" } },
+      } as unknown as ResponseContext;
+    }
+
+    it("flips the staleRoleSession flag when 401 body carries role_changed", async () => {
+      // Pre-condition: fresh test; flag starts null.
+      stateStore.delete("stale-role-session-reason");
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(
+        makeContextWithBody({
+          status: 401,
+          exception: "role_changed",
+          message: "Your session was issued before a role change.",
+        }),
+      );
+
+      const flag = stateStore.get("stale-role-session-reason");
+      expect(flag?.value).toBe("role-changed");
+    });
+
+    it("does NOT flip the flag for a generic 401 body", async () => {
+      stateStore.delete("stale-role-session-reason");
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(
+        makeContextWithBody({
+          status: 401,
+          exception: "AuthenticationException",
+          message: "Invalid token",
+        }),
+      );
+
+      const flag = stateStore.get("stale-role-session-reason");
+      // Flag was created (lazy init by useStaleRoleSession) but not set.
+      expect(flag?.value).toBeNull();
+    });
+
+    it("does not throw when the 401 body is not JSON", async () => {
+      stateStore.delete("stale-role-session-reason");
+      const response = new Response("plain text body", {
+        status: 401,
+        headers: { "content-type": "text/plain" },
+      });
+      const ctx = {
+        response,
+        fetch: makeRetryFetch(),
+        url: "https://api.example.com/x",
+        init: { headers: { Authorization: "Bearer token" } },
+      } as unknown as ResponseContext;
+
+      const m = useAuthRefreshMiddleware();
+      await expect(m.post!(ctx)).resolves.not.toThrow();
+    });
   });
 });
