@@ -2,6 +2,8 @@ package de.dlr.shepard.v2.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.security.JWTPrincipal;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.scenegraph.entities.CoordinateFrame;
 import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
 import de.dlr.shepard.v2.scenegraph.entities.FrameKind;
@@ -16,6 +18,7 @@ import de.dlr.shepard.v2.scenegraph.io.JointIO;
 import de.dlr.shepard.v2.scenegraph.io.PatchFrameRequestIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphListItemIO;
+import de.dlr.shepard.v2.scenegraph.services.SceneGraphPermissionService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService.ProvenanceContext;
 import de.dlr.shepard.v2.scenegraph.services.ScenegraphFromUrdfService;
@@ -60,6 +63,17 @@ public class SceneGraphMcpTools {
   @Inject ObjectMapper objectMapper;
 
   /**
+   * SCENEGRAPH-PERMS-1-MCP — per-scene permission walk. The REST surface
+   * gates every endpoint through this service via
+   * {@code checkScenePermission}; the MCP surface must match that posture
+   * so an AI agent driving the tools sees / mutates only scenes the
+   * caller's Collection permissions allow. Without this, the MCP layer
+   * silently bypasses the gate that {@code SCENEGRAPH-PERMS-1} put on
+   * the REST layer.
+   */
+  @Inject SceneGraphPermissionService scenePermissions;
+
+  /**
    * MCP-COV-08 — wired for the {@code scene_create_from_urdf} tool so the
    * service-layer permission walk + URDF parse + scene+frames+joints mint
    * all live in one place and the MCP tool is a thin wrapper.
@@ -99,6 +113,7 @@ public class SceneGraphMcpTools {
       if (scene == null) {
         throw McpToolSupport.invalidParams("No scene found for appId=" + appId);
       }
+      requireScenePermission(appId, AccessType.Read);
       SceneGraphIO io = new SceneGraphIO(
         scene,
         toFrameIOs(sceneGraphService.findFramesForScene(appId)),
@@ -133,6 +148,7 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_add_frame", () -> {
       contextBridge.bind();
+      requireScenePermission(sceneAppId, AccessType.Write);
       CreateFrameRequestIO body = new CreateFrameRequestIO();
       body.setName(name);
       body.setParentFrameAppId(parentFrameAppId);
@@ -171,6 +187,7 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_patch_frame", () -> {
       contextBridge.bind();
+      requireScenePermission(sceneAppId, AccessType.Write);
       PatchFrameRequestIO body = new PatchFrameRequestIO();
       body.setName(name);
       body.setParentFrameAppId(parentFrameAppId);
@@ -200,6 +217,7 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_delete_frame", () -> {
       contextBridge.bind();
+      requireScenePermission(sceneAppId, AccessType.Write);
       sceneGraphService.deleteFrameSubtree(sceneAppId, frameAppId, ProvenanceContext.from(null, null));
       return "{\"deleted\":true,\"frameAppId\":\"" + frameAppId + "\"}";
     });
@@ -229,6 +247,7 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_register_joint", () -> {
       contextBridge.bind();
+      requireScenePermission(sceneAppId, AccessType.Write);
       CreateJointRequestIO body = new CreateJointRequestIO();
       body.setParentFrameAppId(parentFrameAppId);
       body.setChildFrameAppId(childFrameAppId);
@@ -257,6 +276,7 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_delete_joint", () -> {
       contextBridge.bind();
+      requireScenePermission(sceneAppId, AccessType.Write);
       sceneGraphService.deleteJoint(sceneAppId, jointAppId, ProvenanceContext.from(null, null));
       return "{\"deleted\":true,\"jointAppId\":\"" + jointAppId + "\"}";
     });
@@ -282,6 +302,7 @@ public class SceneGraphMcpTools {
       if (scene == null) {
         throw McpToolSupport.invalidParams("No scene found for appId=" + sceneAppId);
       }
+      requireScenePermission(sceneAppId, AccessType.Read);
       return urdfExporter.export(
         scene,
         sceneGraphService.findFramesForScene(sceneAppId),
@@ -312,6 +333,23 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_graph_create", () -> {
       contextBridge.bind();
+
+      // SCENEGRAPH-PERMS-1-MCP — match the REST `create` gate:
+      //   • hand-built (no sourceFileAppId) → instance-admin only
+      //   • with sourceFileAppId             → Write on parent Collection
+      String caller = requireCaller();
+      if (sourceFileAppId == null || sourceFileAppId.isBlank()) {
+        if (!isInstanceAdmin()) {
+          throw new ForbiddenException(
+            "hand-built scenes (no sourceFileAppId) require instance-admin"
+          );
+        }
+      } else if (!scenePermissions.canCreateFromSourceFile(sourceFileAppId, caller)) {
+        throw new ForbiddenException(
+          "caller lacks Write on the parent Collection of sourceFileAppId " + sourceFileAppId
+        );
+      }
+
       CreateSceneRequestIO body = new CreateSceneRequestIO();
       body.setName(name);
       body.setDescription(description);
@@ -339,8 +377,10 @@ public class SceneGraphMcpTools {
       "`jointCount`.\n\n" +
       "Pagination: omit `page` / `size` to get the first 50; the server caps `size` at " +
       SCENE_LIST_MAX_SIZE + " to avoid unbounded result sets.\n\n" +
-      "Auth: any authenticated user (per the SCENEGRAPH-REST-1 posture; no per-scene " +
-      "permission gate yet — see `SCENEGRAPH-PERMS-1`)."
+      "Auth: any authenticated user; page is post-filtered to scenes the caller can " +
+      "Read via the `:DigitalTwinScene → :FileReference → :DataObject → :Collection` " +
+      "walk (SCENEGRAPH-PERMS-1 / SCENEGRAPH-PERMS-1-MCP). Hand-built scenes (no " +
+      "`sourceFileAppId`) are visible only to `instance-admin`."
   )
   public String sceneList(
     @ToolArg(required = false, description = "Zero-based page index. Default 0.") Integer page,
@@ -348,6 +388,14 @@ public class SceneGraphMcpTools {
   ) {
     return support.run("scene_list", () -> {
       contextBridge.bind();
+
+      // SCENEGRAPH-PERMS-1-MCP — require an authenticated caller and
+      // post-filter the page to scenes the caller can Read. Matches the
+      // REST list-endpoint shape: short page acceptable; `total` envelope
+      // still reports the unfiltered total.
+      String caller = requireCaller();
+      boolean isAdmin = isInstanceAdmin();
+
       int safePage = page == null ? 0 : Math.max(page, 0);
       int safeSize = size == null
         ? SCENE_LIST_DEFAULT_SIZE
@@ -357,6 +405,9 @@ public class SceneGraphMcpTools {
 
       List<Map<String, Object>> items = new ArrayList<>(src.rows().size());
       for (SceneGraphService.SceneListRow r : src.rows()) {
+        if (!scenePermissions.isAllowed(r.appId(), AccessType.Read, caller, isAdmin)) {
+          continue;
+        }
         // Reuse the existing IO shape so the wire fields stay in lock-step
         // with the REST envelope — any future field added to the list-item
         // row flows here for free.
@@ -447,6 +498,47 @@ public class SceneGraphMcpTools {
         );
       }
     });
+  }
+
+  // ── permission helpers (SCENEGRAPH-PERMS-1-MCP) ──────────────────────────
+
+  /**
+   * Resolve the authenticated caller; throw {@link NotAuthorizedException}
+   * (mapped by {@link McpToolSupport#run} to {@code -32001}) if absent.
+   */
+  private String requireCaller() {
+    String caller = authenticationContext == null ? null : authenticationContext.getCurrentUserName();
+    if (caller == null || caller.isBlank()) {
+      throw new jakarta.ws.rs.NotAuthorizedException(
+        "Authentication required for scene-graph MCP tools."
+      );
+    }
+    return caller;
+  }
+
+  /**
+   * Whether the current principal carries the {@code instance-admin} role.
+   * Mirrors {@code SceneGraphRest#callerOf} + {@code SecurityContext.isUserInRole}.
+   */
+  private boolean isInstanceAdmin() {
+    if (authenticationContext == null) return false;
+    JWTPrincipal p = authenticationContext.getPrincipal();
+    return p != null && p.hasRole(SceneGraphPermissionService.INSTANCE_ADMIN_ROLE);
+  }
+
+  /**
+   * Gate a per-scene MCP operation through {@link SceneGraphPermissionService}.
+   * Throws {@link ForbiddenException} (mapped to {@code -32002}) when the
+   * caller lacks the requested {@link AccessType} on the parent Collection.
+   */
+  private void requireScenePermission(String sceneAppId, AccessType accessType) {
+    String caller = requireCaller();
+    boolean isAdmin = isInstanceAdmin();
+    if (!scenePermissions.isAllowed(sceneAppId, accessType, caller, isAdmin)) {
+      throw new ForbiddenException(
+        "caller lacks " + accessType + " on the parent Collection of scene " + sceneAppId
+      );
+    }
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
