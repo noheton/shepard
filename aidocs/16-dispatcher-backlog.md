@@ -2735,3 +2735,23 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+## PLACEHOLDER-REPLACE-* — replace placeholder stubs with real UI (2026-05-31)
+
+Source: `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`. The UI Scrutinizer pass
+surfaced features whose frontend surface was a `PlaceholderFragmentPane` /
+`PlaceholderPageHeader` / `PlaceholderRestDump` rather than a real implementation. Each
+row below tracks the "promote placeholder → real UI" work. Five rows are already done
+(confirmed by direct codebase inspection 2026-05-31); the rest remain queued pending
+backend prerequisites or scope planning.
+
+The `🅰️` alpha symbol in `aidocs/44` corresponds 1:1 to `queued` rows here; flipping
+a row to `done` should be paired with a `✓` flip in the matching `aidocs/44` cell.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| **PLACEHOLDER-REPLACE-P10c** | Real admin pane for SQL-over-HTTP runtime caps (`max-rows`, `max-duration`) replacing the `PlaceholderFragmentPane` (slug `sql-timeseries`) at `/admin#sql-timeseries`. Two number inputs + Save; `PATCH /v2/admin/sql-timeseries/config` per RFC 7396 merge-patch. CLI parity already done via `shepard-admin sql-timeseries`. | XS | **done (backlog-stale-fixes-2026-05-31)** | `AdminSqlTimeseriesPane.vue` at `frontend/components/context/admin/AdminSqlTimeseriesPane.vue`; mounted in `frontend/pages/admin/index.vue` line 292. Cross-refs: `aidocs/44` P10c row; `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md §Placeholder catalogue row 7`; backend at `aidocs/platform/29-p10-implementation-design.md`. |
+| **PLACEHOLDER-REPLACE-TPL3a-lite** | Real Ontology Alignment pane (12 alignments, readable) replacing the `PlaceholderFragmentPane` + `PlaceholderRestDump` at `/admin#ontology-alignment`. Table rendering with linked-Shepard-concept ↔ upper-ontology-IRI columns; SPARQL-deep-link per row. | S | **done (backlog-stale-fixes-2026-05-31)** | `AdminOntologyAlignmentPane.vue` committed as `6fe7343 feat(frontend): PLACEHOLDER-REPLACE-TPL3a-lite — real Ontology Alignment pane`; mounted in `frontend/pages/admin/index.vue` line 325. Cross-refs: `aidocs/44` TPL3a-lite row; `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md §Placeholder catalogue row 10`; `aidocs/semantics/97`. |
+| **PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY** | Real Instance Registry pane (add / edit / delete peer Shepard instances) replacing the full-shape placeholder at `/admin/instance-registry`. Add form (instanceId, displayName, baseUrl, dlrInstitute) + table to list + delete; backend `GET/PATCH /v2/admin/instances` shipped 2026-05-27. | M | **done (backlog-stale-fixes-2026-05-31)** | `AdminInstanceRegistryPane.vue` committed as `db419e8 feat(frontend): PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY — real Instance Registry pane`; mounted in `frontend/pages/admin/index.vue` line 329. Cross-refs: `aidocs/44` FE-PROV-INSTANCE-REGISTRY row; `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md §Placeholder catalogue row 11`; `aidocs/16` FE-PROV-INSTANCE-REGISTRY. |
+| **PLACEHOLDER-REPLACE-FS1e1** | Real admin pane for file-storage migration trigger + progress watch replacing the `PlaceholderFragmentPane` (slug `file-migration`) at `/admin#file-migration`. Source/target storage adapter pickers + Start button + live progress polling on `GET /v2/admin/files/migrate/status` (IDLE / RUNNING / DONE / FAILED). | M | **done (backlog-stale-fixes-2026-05-31)** | `AdminFileMigrationPane.vue` at `frontend/components/context/admin/AdminFileMigrationPane.vue`; uses `useFileMigration` composable; mounted in `frontend/pages/admin/index.vue` line 296. Cross-refs: `aidocs/44` FS1e1 row; `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md §Placeholder catalogue row 8`; pairs with FS1e2/FS1e3. |
+| **PLACEHOLDER-REPLACE-TS-SEMANTIC-REST** | Real channel-annotations pane (list / add / delete per timeseries channel) replacing the `PlaceholderFragmentPane` (slug `ts-channel-annotations`) inside the "Channel Annotations" expandable on `/containers/timeseries/{containerId}`. | M | **done (backlog-stale-fixes-2026-05-31)** | `ChannelAnnotationsPane.vue` at `frontend/components/container/timeseries/ChannelAnnotationsPane.vue`; committed as `17f562a feat(frontend): TS-SEMANTIC-REST — channel-level annotations pane`, explicitly replaces the old placeholder stub. Cross-refs: `aidocs/44` TS-SEMANTIC-REST row; `aidocs/agent-findings/ui-scrutinizer-2026-05-30.md §Placeholder catalogue row 17`; `aidocs/16` TS-SEMANTIC-REST. |
