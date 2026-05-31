@@ -16,6 +16,7 @@ import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
 import de.dlr.shepard.auth.security.JwtTokenAuthService;
 import de.dlr.shepard.auth.security.RolesList;
+import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
@@ -76,6 +77,9 @@ public class JWTFilterTest extends BaseTestCase {
   RoleDAO roleDAO;
 
   @InjectMock
+  UserDAO userDAO;
+
+  @InjectMock
   AuthenticationContext authenticationContext;
 
   @Inject
@@ -112,6 +116,14 @@ public class JWTFilterTest extends BaseTestCase {
   @BeforeEach
   public void setUpRoleDAO() {
     when(roleDAO.rolesForUser(org.mockito.ArgumentMatchers.anyString())).thenReturn(java.util.Collections.emptyList());
+  }
+
+  @BeforeEach
+  public void setUpUserDAO() {
+    // Default: every existing test runs with the ROLE-GRANT-STALE-SESSION-02
+    // gate as a pass-through (no recorded role change). Tests that exercise
+    // the gate override this stub locally.
+    when(userDAO.find(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
   }
 
   @BeforeEach
@@ -827,5 +839,84 @@ public class JWTFilterTest extends BaseTestCase {
       new String[] { "groups" },
       de.dlr.shepard.auth.security.JwtTokenAuthService.parseClaimPath(" groups ")
     );
+  }
+
+  // ---- ROLE-GRANT-STALE-SESSION-02: filter-level gate tests ----
+
+  @Test
+  public void testFilterRejectsStaleRoleJwtWithStructuredBody() {
+    // JWT issued 10 minutes ago; user's role set changed 1 minute ago.
+    Date issuedAt = DateUtils.addMinutes(new Date(), -10);
+    long roleChangedAtMillis = System.currentTimeMillis() - 60_000L;
+
+    User u = new User("Bob");
+    u.setRoleChangedAt(new Date(roleChangedAtMillis));
+    when(userDAO.find("Bob")).thenReturn(u);
+
+    String jws = Jwts.builder()
+      .setSubject("Bob")
+      .setAudience("account")
+      .setExpiration(DateUtils.addMinutes(new Date(), 5))
+      .setNotBefore(issuedAt)
+      .setIssuedAt(issuedAt)
+      .setId(UUID.randomUUID().toString())
+      .claim("azp", "testcase")
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+
+    verify(context).abortWith(responseCaptor.capture());
+    Response response = responseCaptor.getValue();
+    assertEquals(401, response.getStatus());
+    String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
+    org.junit.jupiter.api.Assertions.assertNotNull(wwwAuthenticate);
+    org.junit.jupiter.api.Assertions.assertTrue(
+      wwwAuthenticate.contains("role_changed"),
+      "WWW-Authenticate should carry role_changed error: " + wwwAuthenticate
+    );
+    var entity = (de.dlr.shepard.common.exceptions.ApiError) response.getEntity();
+    assertEquals("role_changed", entity.getException());
+    org.junit.jupiter.api.Assertions.assertTrue(
+      entity.getMessage().toLowerCase().contains("sign out"),
+      "ApiError message should guide the user to sign out + back in: " + entity.getMessage()
+    );
+  }
+
+  @Test
+  public void testFilterApiKeyBypassesRoleChangedGate() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // Even when the affected user's :User node carries a `roleChangedAt`
+    // in the future of the API key's `iat`, the X-API-Key path must NOT
+    // be blocked — API keys are long-lived service tokens with their own
+    // revocation surface (DELETE /v2/apikeys/{appId}).
+    Date now = new Date();
+    UUID uid = UUID.randomUUID();
+    String jws = Jwts.builder()
+      .setSubject("MyUserName")
+      .setNotBefore(now)
+      .setIssuedAt(now)
+      .setId(uid.toString())
+      .signWith(privateKey)
+      .compact();
+
+    User user = new User("MyUserName");
+    // roleChangedAt would reject an OIDC Bearer with same iat — but API-key
+    // path doesn't even invoke the gate.
+    user.setRoleChangedAt(new Date(now.getTime() + 60_000L));
+    when(userDAO.find("MyUserName")).thenReturn(user);
+
+    ApiKey apiKey = new ApiKey(uid);
+    apiKey.setName("MyApiKey");
+    apiKey.setJws(jws);
+    apiKey.setBelongsTo(user);
+
+    when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
   }
 }
