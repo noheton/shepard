@@ -30,20 +30,20 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 51 |
+| `fragment` | 53 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 110 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 82 |
+| `deployed` | 87 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **410** |
+| **total docs** | **417** |
 | **UNTAGGED** | **0** |
 
-## fragment (51)
+## fragment (53)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -58,6 +58,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-01.md`](agent-findings/dispatcher-runs/2026-05-30-01.md) | Dispatcher run — 2026-05-30 01:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-20.md`](agent-findings/dispatcher-runs/2026-05-30-20.md) | Dispatcher run — 2026-05-30 20:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-21.md`](agent-findings/dispatcher-runs/2026-05-30-21.md) | Dispatcher run — 2026-05-30 21:xx UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-22.md`](agent-findings/dispatcher-runs/2026-05-30-22.md) | Dispatcher run — 2026-05-30 22:xx UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-23.md`](agent-findings/dispatcher-runs/2026-05-30-23.md) | Dispatcher run — 2026-05-30 23:17 UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -178,7 +180,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-05-31 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md`](agent-findings/video-s3-chunked-encoding-2026-05-28.md) | Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch | 2026-05-28 | 2026-05-28 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |
@@ -357,7 +359,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (82)
+## deployed (87)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -369,7 +371,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-30 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-30 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-31 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |
@@ -388,6 +390,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-16.md`](agent-findings/dispatcher-runs/2026-05-30-16.md) | Dispatcher run — 2026-05-30-16 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-18.md`](agent-findings/dispatcher-runs/2026-05-30-18.md) | Dispatcher run — 2026-05-30-18 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-19.md`](agent-findings/dispatcher-runs/2026-05-30-19.md) | Dispatcher fire 2026-05-30-19 | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-00.md`](agent-findings/dispatcher-runs/2026-05-31-00.md) | Dispatcher run 2026-05-31-00 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-01.md`](agent-findings/dispatcher-runs/2026-05-31-01.md) | Dispatcher run 2026-05-31-01 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-02.md`](agent-findings/dispatcher-runs/2026-05-31-02.md) | Dispatcher run 2026-05-31-02 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-03.md`](agent-findings/dispatcher-runs/2026-05-31-03.md) | Dispatcher run 2026-05-31-03 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-04.md`](agent-findings/dispatcher-runs/2026-05-31-04.md) | Dispatcher fire 2026-05-31-04 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |

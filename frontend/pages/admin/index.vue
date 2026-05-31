@@ -15,6 +15,7 @@ import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue"
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import AdminJupyterPane from "~/components/context/admin/AdminJupyterPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
+import AdminNotificationsPane from "~/components/context/admin/AdminNotificationsPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
@@ -283,11 +284,11 @@ const landingCards = [
     <AdminFileMigrationPane
       v-if="routeFragment === AdminFragments.FILE_MIGRATION"
     />
-    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
+    <!-- NTF1: notification transports admin pane (PLACEHOLDER-REPLACE-NTF1) -->
+    <AdminNotificationsPane
       v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
-      slug="notifications-admin"
     />
+    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.INSTANCE_ADMINS"
       slug="instance-admins"

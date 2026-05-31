@@ -57,12 +57,16 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-NTF1 (2026-05-31): real pane shipped as
+    // AdminNotificationsPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds and so partial-backend
+    // tracking stays surfaced (SMTP + Matrix transport CRUD pending).
     slug: "notifications-admin",
     surface: "admin",
     title: "Notification transports",
     subtitle:
-      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. Full pane coming with NTF1-UI.",
-    endpoint: null,
+      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. In-app pane shipped 2026-05-31; SMTP/Matrix transport CRUD pending (NTF1-BACKEND-*).",
+    endpoint: "/v2/admin/notifications/test",
     backlogRow: "NTF1",
     designDoc: "aidocs/integrations/40-notification-system.md",
     backend: "partial",
