@@ -30,6 +30,7 @@ services:
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
       - /opt/shepard/backend/config:/home/default/.shepard
+      - /opt/shepard/semantic-bundles:/var/lib/shepard/ontologies
     depends_on:
       - neo4j
       - mongodb
