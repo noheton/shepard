@@ -17,6 +17,7 @@ const {
   treeviewItems,
   openedTreeviewItems,
   loading,
+  treeviewError,
   loadChildrenOfItem,
   refreshItems,
   collapseItem,
@@ -336,7 +337,30 @@ const { mobile } = useDisplay();
           No loaded items match "{{ filterText.trim() }}". Expand more tree branches and search again.
         </div>
 
-        <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
+        <CenteredLoadingSpinner v-if="loading" />
+        <!-- UX-WALK-2026-05-29-06: show a dismissable inline error when the
+             root tree fetch failed instead of a perpetual spinner. The user
+             can click "Retry" to try again without a full page reload. -->
+        <div
+          v-else-if="treeviewError"
+          class="px-4 py-3"
+        >
+          <v-alert
+            type="warning"
+            density="compact"
+            variant="tonal"
+            class="mb-2"
+          >
+            Navigation tree couldn't load.
+            <template #append>
+              <v-btn
+                size="x-small"
+                variant="text"
+                @click="refreshItems"
+              >Retry</v-btn>
+            </template>
+          </v-alert>
+        </div>
 
         <StartHereIntro
           v-if="treeviewItems && treeviewItems.length === 0"

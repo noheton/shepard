@@ -41,6 +41,25 @@ const { dataReferences } = useDataReferencesByDataObject(
 );
 const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
 
+// UX-WALK-2026-05-29-06: soft-error banner for secondary data failures.
+// The page renders its main content as soon as the primary dataObject resolves;
+// secondary data (dataReferences, relatedEntities) feeds individual panels that
+// degrade gracefully on their own. We surface a dismissable banner only when
+// secondary data appears stuck: primary arrived, we waited a tick, and
+// secondary is still undefined. This prevents the banner from flashing during
+// normal load where all three settle within milliseconds of each other.
+const showSecondaryLoadError = ref(false);
+// Watch dataObject: once it arrives, check after a tick whether secondary data
+// settled. Secondary composables resolve nearly instantly in the happy path —
+// if they're still undefined after a tick, something went wrong.
+watch(dataObject, async (doVal) => {
+  if (!doVal) return;
+  await nextTick();
+  if (dataReferences.value === undefined || relatedEntities.value === undefined) {
+    showSecondaryLoadError.value = true;
+  }
+});
+
 // REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.
 // These composables are set up once dataObject.appId is available, since
 // the new-kind endpoints use appId (string) rather than numeric id.
@@ -297,10 +316,12 @@ async function saveEmbargoEdit() {
 <template>
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
+      <!-- UX-WALK-2026-05-29-06: page renders as soon as primary data
+           (collection + dataObject) resolves; secondary data (dataReferences,
+           relatedEntities) feeds individual panels that degrade gracefully.
+           The full-page spinner only shows while primary data is in-flight. -->
       <v-row
-        v-if="
-          !!collection && !!dataObject && !!dataReferences && !!relatedEntities
-        "
+        v-if="!!collection && !!dataObject"
         no-gutters
       >
         <v-col cols="12">
@@ -325,6 +346,23 @@ async function saveEmbargoEdit() {
             ]"
           />
         </v-col>
+        <!-- UX-WALK-2026-05-29-06: dismissable soft-error banner. Only shown
+             when secondary data (dataReferences or relatedEntities) didn't
+             resolve after primary data arrived. The panels below still render
+             with loading skeletons / empty states. -->
+        <v-col v-if="showSecondaryLoadError" cols="12" class="pb-2">
+          <v-alert
+            v-model="showSecondaryLoadError"
+            type="warning"
+            closable
+            density="compact"
+            variant="tonal"
+            data-testid="secondary-load-error-banner"
+          >
+            Some data couldn't load. The page content above is still available — try refreshing if sections appear incomplete.
+          </v-alert>
+        </v-col>
+
         <v-col cols="12">
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
@@ -645,7 +683,7 @@ async function saveEmbargoEdit() {
                   <DataObjectDataReferencesTable
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
-                    :data-references="dataReferences"
+                    :data-references="dataReferences ?? []"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
@@ -655,7 +693,7 @@ async function saveEmbargoEdit() {
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  :count="relatedEntities.length"
+                  :count="relatedEntities?.length"
                   title="Relationships"
                 >
                   <DataObjectRelationshipsTable
@@ -664,7 +702,7 @@ async function saveEmbargoEdit() {
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
-                    :related-entities="relatedEntities"
+                    :related-entities="relatedEntities ?? []"
                     :predecessor-relationship-types="predecessorRelationshipTypesMap"
                   />
                   <template v-if="isAllowedToEditCollection" #append>

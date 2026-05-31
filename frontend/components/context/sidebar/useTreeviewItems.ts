@@ -7,6 +7,9 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
+  // UX-WALK-2026-05-29-06: track whether the root fetch failed so the sidebar
+  // can show an error state instead of a perpetual spinner.
+  const treeviewError = ref<boolean>(false);
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
@@ -17,10 +20,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
         treeviewItems.value = response
           .map(item => mapToTreeviewItem(item))
           .sort((itemA, itemB) => itemA.id - itemB.id);
+        treeviewError.value = false;
         // instead of sorting by 'createdAt' we can sort the treeview items by ID
       })
       .catch(error => {
         treeviewItems.value = undefined;
+        treeviewError.value = true;
         handleError(error, "getAllDataObjects");
       });
   }
@@ -191,6 +196,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     treeviewItems,
     openedTreeviewItems,
     loading,
+    treeviewError,
     loadChildrenOfItem,
     refreshItems,
     collapseItem,
