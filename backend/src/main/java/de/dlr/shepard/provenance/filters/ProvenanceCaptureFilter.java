@@ -23,9 +23,14 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * request that returns a 2xx response. Designed in {@code aidocs/55 §4}.
  *
  * <p>Mutating methods are POST / PUT / PATCH / DELETE.
- * Reads (GET / HEAD / OPTIONS) are captured only when
- * {@code shepard.provenance.capture-reads=true}; default off so
- * activity-log volume stays bounded.
+ * Reads (GET / HEAD / OPTIONS) are captured when either flag is set:
+ * <ul>
+ *   <li>{@code shepard.provenance.capture-reads=true} — global, all paths
+ *   (default off; high row-volume cost on read-heavy installs)</li>
+ *   <li>{@code shepard.provenance.capture-reads-v2=true} — {@code /v2/…} paths
+ *   only (default on per PROV-CAPTURE-READS-FLIP); upstream
+ *   {@code /shepard/api/…} paths are unaffected for upstream-compat</li>
+ * </ul>
  *
  * <p>The filter implements both
  * {@link ContainerRequestFilter} (to stamp the start-time millis
@@ -106,6 +111,16 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   @ConfigProperty(name = "shepard.provenance.capture-reads", defaultValue = "false")
   boolean captureReads;
 
+  /**
+   * PROV-CAPTURE-READS-FLIP — when {@code true}, GET/HEAD requests to
+   * {@code /v2/…} paths create an {@code :Activity} row (when provenance is
+   * enabled). Upstream {@code /shepard/api/…} paths are unaffected so
+   * operator row-volume on the v1 surface is unchanged. Default {@code true}
+   * per the PROV-CAPTURE-READS-DECISION operator approval (2026-05-29).
+   */
+  @ConfigProperty(name = "shepard.provenance.capture-reads-v2", defaultValue = "true")
+  boolean captureReadsV2;
+
   @Override
   public void filter(ContainerRequestContext request) throws IOException {
     request.setProperty(PROP_STARTED_AT_MILLIS, System.currentTimeMillis());
@@ -125,7 +140,12 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);
-    if (!isMutation && !captureReads) return;
+    // PROV-CAPTURE-READS-FLIP: capture reads when either the global flag is
+    // set OR when captureReadsV2 is set and the path is under /v2/.
+    String path = request.getUriInfo().getPath();
+    boolean captureThisRead = captureReads
+        || (captureReadsV2 && path != null && path.startsWith("v2/"));
+    if (!isMutation && !captureThisRead) return;
 
     int status = response.getStatus();
     // Only capture successful writes; failures aren't activities in
@@ -140,7 +160,6 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     Object startedObj = request.getProperty(PROP_STARTED_AT_MILLIS);
     long startedAtMillis = startedObj instanceof Long s ? s : endedAtMillis;
 
-    String path = request.getUriInfo().getPath();
     String summary = method + " /" + (path == null ? "" : path);
     String actionKind = actionKindFor(method);
 

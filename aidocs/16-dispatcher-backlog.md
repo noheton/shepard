@@ -333,7 +333,7 @@ file.
 | Decision ID | Approved direction | Implementation row + status |
 |---|---|---|
 | P21-File-prereq + P21-References-prereq | **YES** — ship `PUT /v2/<container>/{id}` and `PUT /v2/<reference>/{id}` for metadata edits. Delete-and-recreate destroys provenance continuity. | Unblocks the P21 PATCH family. Implementation row queued — see P21-File row. |
-| PROV-CAPTURE-READS-DECISION | **YES, for `/v2/` paths only** — flip `shepard.provenance.capture-reads=true`. AFTER PROV-RESOLVER-PATHWALK ships, so NULL-target Activity rows don't multiply. v1 stays off (upstream-compat cost). | PROV-RESOLVER-PATHWALK ✓ shipped (`80af4e28e`, merged `ffcf45b7d`); the config flip itself still queued (one-line `application.properties` change). |
+| PROV-CAPTURE-READS-DECISION | **YES, for `/v2/` paths only** — flip `shepard.provenance.capture-reads=true`. AFTER PROV-RESOLVER-PATHWALK ships, so NULL-target Activity rows don't multiply. v1 stays off (upstream-compat cost). | PROV-RESOLVER-PATHWALK ✓ shipped (`80af4e28e`, merged `ffcf45b7d`); **PROV-CAPTURE-READS-FLIP ✓ shipped (2026-05-31)** — `shepard.provenance.capture-reads-v2=true` default-on. |
 | #27 Archive state | **YES** — add `ARCHIVED` to Container + Collection status enum (frozen, prune-only). Simple additive; RBAC gate on transition. | Partially shipped: COMP-NCR-STATUS (done 2026-05-26, `5565e2beb`) added ARCHIVED to DataObject status; Container + Collection ARCHIVED still queued as `#27-ARCHIVED-CONTAINER-COLLECTION` (filed below). |
 | CHOKE-08 (NFS extract) | **YES — pre-stage 107 GB to local disk** before importer starts. Single-threaded NFS extract throttles ingest. | Operator runbook step; CHOKE-08 row marked operator-approved below. |
 | BTKVS-A2 user-bundles-dir | **`/data/shepard/semantic-bundles`** under existing backend volume + bind-mount. | BTKVS-A2-OPS row marked operator-approved; queued for infra deploy. |
@@ -2510,7 +2510,7 @@ them up immediately.
 | J1e-PR-05-VERIFY-SSO | End-to-end SSO verify (Playwright + Python kernel-side `/v2/users/me` check). | XS | Cannot run until J1e plugin admin endpoint is reachable on demo deploy. |
 | J1e-PR-05-KEYCLOAK-CLIENT-SEED | Bootstrap Keycloak client `jupyterhub-prod` via realm-export entry. | XS | Operator-comfort; not blocking. |
 | #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | Mirrors COMP-NCR-STATUS shape. |
-| PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | PROV-RESOLVER-PATHWALK prerequisite shipped. |
+| PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | **done (2026-05-31)** — `shepard.provenance.capture-reads-v2=true` added to filter + `application.properties`; 3 new unit tests; `aidocs/34` + `aidocs/44` updated. |
 | J1e-PR-07/08/09 | aidocs/34 path-migration row + aidocs/42/44 corrections + reconcile with J2 plan. | XS each | Docs follow-on for the in-flight J1e plugin refactor. |
 
 ### Blocked on design

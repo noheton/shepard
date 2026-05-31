@@ -69,6 +69,7 @@ class ProvenanceCaptureFilterTest {
     filter = new ProvenanceCaptureFilter();
     filter.provenance = provenance;
     filter.captureReads = false;
+    filter.captureReadsV2 = false;
     filter.mirroredUserDAO = mirroredUserDAO;
     filter.userDAO = userDAO;
     filter.enrichmentCache = enrichmentCache;
@@ -464,5 +465,72 @@ class ProvenanceCaptureFilterTest {
     String result = filter.resolveAgentUsername("alice");
 
     assertNull(result);
+  }
+
+  // ── PROV-CAPTURE-READS-FLIP ───────────────────────────────────────────────
+
+  /**
+   * PROV-CAPTURE-READS-FLIP test 1: when {@code captureReadsV2=true}, a GET
+   * request to a {@code /v2/…} path creates an {@code :Activity} row.
+   */
+  @Test
+  void captureReadsV2_capturesV2GetRequest() throws IOException {
+    filter.captureReadsV2 = true;
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("v2/collections");
+
+    filter.filter(request, response);
+
+    verify(provenance).record(
+      eq("READ"),
+      eq(null),
+      eq(null),
+      eq("alice"),
+      eq("GET /v2/collections"),
+      eq("GET"),
+      eq("v2/collections"),
+      eq(200),
+      anyLong(),
+      anyLong(),
+      isNull(),
+      eq("human"),
+      isNull()
+    );
+  }
+
+  /**
+   * PROV-CAPTURE-READS-FLIP test 2: when {@code captureReadsV2=true}, a GET
+   * request to a {@code /shepard/api/…} path does NOT create an
+   * {@code :Activity} row (upstream-compat preserved).
+   */
+  @Test
+  void captureReadsV2_doesNotCaptureV1GetRequest() throws IOException {
+    filter.captureReadsV2 = true;
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("shepard/api/collections/42");
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
+  }
+
+  /**
+   * PROV-CAPTURE-READS-FLIP test 3: when both {@code captureReads=false} and
+   * {@code captureReadsV2=false}, a GET request to a {@code /v2/…} path does
+   * NOT create an {@code :Activity} row.
+   */
+  @Test
+  void captureReadsV2_doesNotCaptureWhenFlagFalse() throws IOException {
+    filter.captureReads = false;
+    filter.captureReadsV2 = false;
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("v2/collections");
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 }
