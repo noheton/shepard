@@ -2078,6 +2078,8 @@ operators must be explicit about which sub they're working with.
 
 **Architectural correction filed 2026-05-29 by operator.**
 
+**J1e ↔ J2 cross-reference:** J1e maps to J2a in the J2 family (J2 — JupyterHub integration plugin, task #60). J1e shipped the admin link-out gate + sidecar that J2a described. J2b/c/d (real notebook spawn, kernel lifecycle, result writeback) remain as future phases. See J1e-PR-09.
+
 J1e (the JupyterHub link-out admin gate) and `REF-UNIFIED-TABLE-FR1B`'s
 notebook-row classifier shipped TODAY as in-tree code under
 `backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/` + frontend
@@ -2106,7 +2108,7 @@ the plugin's compose profile brings up when the plugin is enabled
 | J1e-PR-06 | Plugin docs per the three-audience rule: `plugins/jupyter/docs/reference.md`, `quickstart.md`, `install.md`. Cross-link from `docs/reference/plugins.md`. | S |
 | J1e-PR-07 | `aidocs/34-upstream-upgrade-path.md` row: J1e shipped in-tree on 2026-05-29 then relocated to plugin in this PR; admin REST paths move from `/v2/admin/jupyter/config` → `/v2/admin/plugins/jupyter/config` (per plugin SPI conventions). v2 wire-compat shim retains the old path during a deprecation window. | XS |
 | J1e-PR-08 | `aidocs/44-fork-vs-upstream-feature-matrix.md` + `aidocs/42-vision.md`: mark J1e in the plugins column instead of core. | XS |
-| J1e-PR-09 | Reconcile with existing `J2 — JupyterHub integration plugin (J2a–J2d)` row (task #60). The J2 row already describes the plugin shape; J1e was a prefix-of-J2 implementation that landed in the wrong place. Merge J1e's shipped functionality into J2's plan as `J2a` (admin link-out + sidecar) and renumber J2b/c/d accordingly. | XS (doc) |
+| J1e-PR-09 | Reconcile with existing `J2 — JupyterHub integration plugin (J2a–J2d)` row (task #60). The J2 row already describes the plugin shape; J1e was a prefix-of-J2 implementation that landed in the wrong place. Merge J1e's shipped functionality into J2's plan as `J2a` (admin link-out + sidecar) and renumber J2b/c/d accordingly. **Done (2026-05-31):** cross-reference note added in both J1e and J2 sections — J2a = J1e (already shipped as `plugins/jupyter/`); J2b/c/d retain their original future-phase meanings. | XS (doc) |
 
 **Why this matters even though it works today:**
 - The plugin-first principle is the structural argument for shepard's
@@ -2138,7 +2140,7 @@ from day one rather than perpetuating the in-tree mistake.
 | J1e-PR-06 | Plugin docs (3-audience rule) | S | **partially done** | reference.md + install.md shipped with PR-05; quickstart.md `Open in Jupyter` section + allowlist-miss self-serve workaround shipped with J1e-PR-06-AUTOFETCH-01 + J1e-PR-06-AUTOFETCH-03. Index cross-link in `docs/reference/plugins.md` still queued. |
 | J1e-PR-07 | `aidocs/34` row + REST path migration shim | XS | **✓ done (`f92be3a`)** | `docs+feat(J1e-PR-07)`: `JupyterConfigPluginRest` at canonical `/v2/admin/plugins/jupyter/config`; `JupyterConfigRest` deprecated shim at old path with WARN log; `aidocs/34` ledger row added. |
 | J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | queued | Move J1e from "core" column to "plugin" column. |
-| J1e-PR-09 | Reconcile with existing J2 row (#60) | XS | queued | J1e is J2a; J2b/c/d retain their original meaning. |
+| J1e-PR-09 | Reconcile with existing J2 row (#60) | XS | **✓ done (2026-05-31)** | J1e maps to J2a in the J2 family (admin link-out gate + sidecar, shipped as `plugins/jupyter/`). J2b/c/d retain their original future-phase meanings. Cross-reference note added in J2 section. |
 
 **Sequencing:** PR-01 first (module scaffold). PR-02 + PR-03 + PR-04
 can land as one larger commit since the rename is atomic across
