@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * TPL-SEED-DEMO-1 smoke test — guards the bodies seeded by
- * {@code V99__Demo_templates_seed.cypher} against JSON-DSL drift.
+ * {@code V101__Demo_templates_seed.cypher} against JSON-DSL drift.
  *
  * <p>This test does NOT require Neo4j — it reads the Cypher migration
  * as a classpath resource, extracts each MERGE's {@code body} +
@@ -26,9 +26,9 @@ import org.junit.jupiter.api.Test;
  * "someone changed the templateKind without updating the body" before
  * it lands on a live Neo4j and gets MERGE'd.
  */
-class V99DemoTemplatesSeedTest {
+class V101DemoTemplatesSeedTest {
 
-  private static final String MIGRATION_PATH = "neo4j/migrations/V99__Demo_templates_seed.cypher";
+  private static final String MIGRATION_PATH = "neo4j/migrations/V101__Demo_templates_seed.cypher";
 
   /** Captures every {@code t.templateKind = '...'} value in source order. */
   private static final Pattern KIND_PATTERN = Pattern.compile("t\\d+\\.templateKind\\s*=\\s*'([^']+)'");
