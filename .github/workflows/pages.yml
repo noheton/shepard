@@ -17,6 +17,7 @@ on:
     paths:
       - "docs/**"
       - "scripts/bib2yml.py"
+      - "scripts/build-traceability-index.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -51,6 +52,15 @@ jobs:
         # build so a maintainer who edits the .bib without running the script
         # locally still gets a consistent site. Stdlib-only — no extra setup.
         run: python3 scripts/bib2yml.py
+
+      - name: Generate requirements traceability index
+        # docs/reference/traceability.md and docs/reference/traceability.json are
+        # auto-generated from git log + aidocs/ front-matter by this script.
+        # Stdlib-only — no extra setup. The full git history is available because
+        # actions/checkout@v4 is called with default depth (shallow for push events)
+        # but the script uses only the working-tree files + a shallow log walk which
+        # is sufficient to correlate aidocs IDs to commits on main.
+        run: python3 scripts/build-traceability-index.py
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
