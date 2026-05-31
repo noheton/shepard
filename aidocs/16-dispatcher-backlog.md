@@ -2137,7 +2137,7 @@ from day one rather than perpetuating the in-tree mistake.
 | J1e-PR-05 | JupyterHub sidecar in plugin compose profile | M | **✓ done (2026-05-29, `6fb84ac7c` + `7b904b534`)** | `feat(J1e-PR-05): JupyterHub sidecar compose profile + install docs` + live bring-up `feat(J1e): JupyterHub plugin live bring-up — Caddy path-mount + Dockerfile + runtime fixes`. Path-mount config follow-on tracked under J1e-PR-05-CADDY-PATH-MOUNT-* below. |
 | J1e-PR-06 | Plugin docs (3-audience rule) | S | **partially done** | reference.md + install.md shipped with PR-05; quickstart.md `Open in Jupyter` section + allowlist-miss self-serve workaround shipped with J1e-PR-06-AUTOFETCH-01 + J1e-PR-06-AUTOFETCH-03. Index cross-link in `docs/reference/plugins.md` still queued. |
 | J1e-PR-07 | `aidocs/34` row + REST path migration shim | XS | **✓ done (`f92be3a`)** | `docs+feat(J1e-PR-07)`: `JupyterConfigPluginRest` at canonical `/v2/admin/plugins/jupyter/config`; `JupyterConfigRest` deprecated shim at old path with WARN log; `aidocs/34` ledger row added. |
-| J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | queued | Move J1e from "core" column to "plugin" column. |
+| J1e-PR-08 | `aidocs/42` + `aidocs/44` corrections | XS | **✓ done (2026-05-31)** | J1e status in aidocs/44 updated to `**✓ ↑** (J1e — plugin: plugins/jupyter/)` with canonical plugin admin path; aidocs/42 J1e mentions updated to note plugin placement and `/v2/admin/plugins/jupyter/config` path. |
 | J1e-PR-09 | Reconcile with existing J2 row (#60) | XS | queued | J1e is J2a; J2b/c/d retain their original meaning. |
 
 **Sequencing:** PR-01 first (module scaffold). PR-02 + PR-03 + PR-04

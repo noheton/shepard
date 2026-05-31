@@ -424,7 +424,7 @@ Five typical entry points:
    **Templates admin page** (browse, create, edit, retire ShepardTemplates),
    **RO-Crate download button** on collection pages, **admin health
    dashboard** (heap, uptime, HTTP metrics), and **admin-configurable
-   instance-wide JupyterHub link-out** (J1e — replaces the earlier
+   instance-wide JupyterHub link-out** (J1e — plugin: `plugins/jupyter/`; replaces the earlier
    per-user JupyterHub URL preference; the affordance is now a per-row
    action in the unified Data References table). New in 2026-05-19: **inline timeseries charting**
    (Apache ECharts line chart on every timeseries container page, with
@@ -549,9 +549,10 @@ Mid-horizon:
   lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
   versions of a note so researchers can recover earlier drafts. **J1e shipped
-  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
-  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
-  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
+  (replaces J1c; now in `plugins/jupyter/`)** — instance-wide admin-configurable
+  JupyterHub link-out (`:JupyterConfig` singleton + `/v2/admin/plugins/jupyter/config`
+  + `shepard-admin jupyter` CLI; shipped as a plugin, not in-tree core). Notebooks
+  are no longer in a dedicated DataObject panel;
   they show up as **Notebook**-kind rows in the unified Data References table
   with a one-click "Open in JupyterHub" launch button gated on the admin
   config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
