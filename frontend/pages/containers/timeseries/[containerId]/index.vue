@@ -10,6 +10,11 @@ const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 
+const router = useRouter();
+function openTrace3D() {
+  router.push({ path: "/shapes/render", query: { renderer: "trace-3d", containerId: String(containerId) } });
+}
+
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useTimeseriesContainerLinkedDataObjects(containerId);
@@ -141,6 +146,14 @@ useHead({
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
+                  <v-btn
+                    data-testid="ts-container-visualize-3d-btn"
+                    variant="tonal"
+                    prepend-icon="mdi-cube-outline"
+                    @click="openTrace3D"
+                  >
+                    Visualize in 3D
+                  </v-btn>
                   <UploadFilesButton
                     v-if="containerAccessor.isAllowedToEditData.value"
                     accept=".csv"
