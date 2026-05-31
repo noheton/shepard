@@ -109,6 +109,7 @@ jobs:
             -e SHEPARD_COLL_APPID="${SHEPARD_COLL_APPID}" \
             -e SHEPARD_TS_COLL_ID="${SHEPARD_TS_COLL_ID}" \
             -e SHEPARD_TS_ID="${SHEPARD_TS_ID}" \
+            -e K6_SCENARIO="steady,ramp" \
             -v "$PWD/scripts/perf":/scripts:ro \
             grafana/k6 run /scripts/k6-endpoints.js \
               2>&1 | tee k6-endpoints-output.txt
