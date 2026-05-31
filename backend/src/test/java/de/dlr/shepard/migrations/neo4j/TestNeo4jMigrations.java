@@ -626,4 +626,133 @@ public class TestNeo4jMigrations {
         "V95 re-run must remain idempotent for " + constraintName);
     }
   }
+
+  /**
+   * TPL-SEED-MFFD-1 — V100 seeds eight MFFD process-step ShepardTemplates
+   * (DATAOBJECT_RECIPE), one per process in the MFFD AFP→assembly chain.
+   *
+   * <p>This test asserts:
+   * <ul>
+   *   <li>All 8 expected templates exist after V100, by name + version 1.</li>
+   *   <li>Each carries the {@code source = 'V100-mffd'} rollback handle,
+   *       {@code templateKind = 'DATAOBJECT_RECIPE'}, {@code retired = false},
+   *       a non-null {@code appId} (V18 unique-constraint surface), and a
+   *       non-blank JSON body that contains the {@code dataObject} top-level
+   *       key (the validator's well-formedness gate).</li>
+   *   <li>The {@code MFFD AFP Layup} template's body carries the
+   *       step-specific {@code tcp-temperature-c} attribute and the
+   *       {@code urn:shepard:mffd:process-type} annotation — one spot-check
+   *       per the advisor's "don't over-assert" guidance.</li>
+   *   <li>Re-running V100 is a no-op (count stays 8).</li>
+   * </ul>
+   */
+  @Test
+  public void testV100_MffdProcessTemplatesSeed() {
+    runMigrations("V100");
+
+    String[] expectedNames = {
+      "MFFD AFP Layup",
+      "MFFD Ultrasonic Welding",
+      "MFFD Resistance Welding",
+      "MFFD Stud Welding",
+      "MFFD NDT Inspection",
+      "MFFD Frame Welding",
+      "MFFD Stringer Connection",
+      "MFFD LBR Cleats Assembly",
+    };
+
+    // Assertion 1: every template exists by {name, version: 1} with correct shape.
+    for (String name : expectedNames) {
+      var count = (Number) session
+        .query(
+          "MATCH (t:ShepardTemplate {name: $name, version: 1, source: 'V100-mffd'}) " +
+          "WHERE t.templateKind = 'DATAOBJECT_RECIPE' " +
+          "  AND t.retired = false " +
+          "  AND t.appId IS NOT NULL " +
+          "  AND t.body IS NOT NULL " +
+          "  AND t.body CONTAINS '\"dataObject\"' " +
+          "RETURN count(t) AS c",
+          Map.of("name", name)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V100 must seed template " + name + " with the expected canonical shape");
+    }
+
+    // Assertion 2: total count across the V100-tagged set is exactly 8.
+    var total = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, total.intValue(),
+      "V100 must seed exactly 8 MFFD process-step templates");
+
+    // Assertion 3: every appId is unique (the V18 constraint already enforces
+    // this; a positive assertion documents the contract).
+    var distinctAppIds = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) " +
+        "RETURN count(DISTINCT t.appId) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, distinctAppIds.intValue(),
+      "every seeded MFFD template must carry a unique appId");
+
+    // Assertion 4: spot-check — AFP Layup carries the step-specific
+    // tcp-temperature-c attribute and the canonical process-type annotation.
+    var afpSpot = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {name: 'MFFD AFP Layup', source: 'V100-mffd'}) " +
+        "WHERE t.body CONTAINS 'tcp-temperature-c' " +
+        "  AND t.body CONTAINS 'urn:shepard:mffd:process-type' " +
+        "  AND t.body CONTAINS 'CF/LMPAEK' " +
+        "RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(1, afpSpot.intValue(),
+      "MFFD AFP Layup body must embed tcp-temperature-c + process-type + material annotations");
+
+    // Assertion 5: NDT Inspection enumerates inspection-method values
+    // — the EN 9100 audit-trail anchor for the rework loop.
+    var ndtSpot = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {name: 'MFFD NDT Inspection', source: 'V100-mffd'}) " +
+        "WHERE t.body CONTAINS 'ULTRASONIC' " +
+        "  AND t.body CONTAINS 'THERMOGRAPHY' " +
+        "  AND t.body CONTAINS 'inspection-method' " +
+        "  AND t.body CONTAINS 'result' " +
+        "RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(1, ndtSpot.intValue(),
+      "MFFD NDT Inspection body must enumerate inspection-method values and carry a result field");
+
+    // Assertion 6: idempotency — re-run V100, count stays 8.
+    runMigrations("V100");
+    var totalAfterRerun = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, totalAfterRerun.intValue(),
+      "V100 re-run must remain idempotent — no duplicate templates");
+  }
 }

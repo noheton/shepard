@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 91 |
+| `deployed` | 92 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **427** |
+| **total docs** | **428** |
 | **UNTAGGED** | **0** |
 
 ## fragment (53)
@@ -165,8 +165,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md`](agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md) | MFFD ingest readiness audit — 346 GB scale (2026-05-31) | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/mffd-ingest-prep-capacity-2026-05-31.md`](agent-findings/mffd-ingest-prep-capacity-2026-05-31.md) | MFFD ingest prep — capacity snapshot (2026-05-31) | 2026-05-31 | — |
-| [`aidocs/agent-findings/mffd-ingest-prep-summary-2026-05-31.md`](agent-findings/mffd-ingest-prep-summary-2026-05-31.md) | MFFD ingest prep — one-page status (2026-05-31) | 2026-05-31 | — |
+| [`aidocs/agent-findings/mffd-ingest-prep-capacity-2026-05-31.md`](agent-findings/mffd-ingest-prep-capacity-2026-05-31.md) | MFFD ingest prep — capacity snapshot (2026-05-31) | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/mffd-ingest-prep-summary-2026-05-31.md`](agent-findings/mffd-ingest-prep-summary-2026-05-31.md) | MFFD ingest prep — one-page status (2026-05-31) | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -365,7 +365,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (91)
+## deployed (92)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -404,6 +404,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-14.md`](agent-findings/dispatcher-runs/2026-05-31-14.md) | Dispatcher fire 2026-05-31-14 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-15.md`](agent-findings/dispatcher-runs/2026-05-31-15.md) | Dispatcher fire 2026-05-31-15 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-16.md`](agent-findings/dispatcher-runs/2026-05-31-16.md) | Dispatcher fire 2026-05-31-16 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-17.md`](agent-findings/dispatcher-runs/2026-05-31-17.md) | Dispatcher run — 2026-05-31-17 UTC | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
