@@ -20,8 +20,11 @@ export function useFetchFileReference(
     undefined,
   );
   const files = ref<FileMeta[]>([]);
+  // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
+  const notFound = ref<boolean>(false);
 
   async function fetchFileReference() {
+    notFound.value = false;
     useShepardApi(FileReferenceApi)
       .value.getFileReference({
         collectionId,
@@ -38,8 +41,12 @@ export function useFetchFileReference(
         };
       })
       .catch(error => {
-        handleError(error, "getFileReference");
         fileReference.value = undefined;
+        if ((error as ResponseError)?.response?.status === 404) {
+          notFound.value = true;
+          return;
+        }
+        handleError(error, "getFileReference");
       });
   }
 
@@ -114,5 +121,5 @@ export function useFetchFileReference(
 
   fetchFileReference();
 
-  return { fileReference, files };
+  return { fileReference, files, notFound };
 }

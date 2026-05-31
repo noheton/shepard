@@ -29,8 +29,12 @@ const {
 // `as number` cast the v1 generated client still wants.
 const collectionIdStr = routeParams.value.collectionId;
 const collectionId = routeParams.value.collectionId as unknown as number;
-const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
-  useFetchCollection(collectionIdStr);
+const {
+  collection,
+  isAllowedToEditCollection,
+  isError: isCollectionError,
+  notFound: isCollectionNotFound,
+} = useFetchCollection(collectionIdStr);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
@@ -623,6 +627,12 @@ useHead({
           </v-container>
         </v-col>
       </v-row>
+      <EntityNotFound
+        v-else-if="isCollectionNotFound"
+        entity-kind="Collection"
+        :requested-id="collectionIdStr"
+        parent-route="/collections"
+      />
       <NotFoundPanel v-else-if="isCollectionError" />
       <CenteredLoadingSpinner v-else />
     </v-container>

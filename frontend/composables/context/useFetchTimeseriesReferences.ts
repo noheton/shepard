@@ -20,12 +20,15 @@ export function useFetchTimeseriesReference(
   const timeseriesReference = ref<
     TimeseriesReferenceWithContainerMeta | undefined
   >(undefined);
+  // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
+  const notFound = ref<boolean>(false);
 
   async function fetchTimeseriesReference(
     collectionId: number,
     dataObjectId: number,
     timeseriesReferenceId: number,
   ) {
+    notFound.value = false;
     useShepardApi(TimeseriesReferenceApi)
       .value.getTimeseriesReference({
         collectionId,
@@ -46,6 +49,10 @@ export function useFetchTimeseriesReference(
       })
       .catch(e => {
         timeseriesReference.value = undefined;
+        if ((e as ResponseError)?.response?.status === 404) {
+          notFound.value = true;
+          return;
+        }
         handleError(e as ResponseError, "fetching timeseriesReference");
       });
   }
@@ -76,5 +83,6 @@ export function useFetchTimeseriesReference(
   return {
     timeseriesReference,
     fetchTimeseriesReference,
+    notFound,
   };
 }

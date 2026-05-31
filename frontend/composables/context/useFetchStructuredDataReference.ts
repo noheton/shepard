@@ -21,8 +21,11 @@ export function useFetchStructuredDataReference(
     StructuredDataReferenceWithContainerMeta | undefined
   >(undefined);
   const structuredData = ref<StructuredDataMeta[]>([]);
+  // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
+  const notFound = ref<boolean>(false);
 
   async function fetchStructuredDataReference() {
+    notFound.value = false;
     useShepardApi(StructuredDataReferenceApi)
       .value.getStructuredDataReference({
         collectionId,
@@ -40,8 +43,12 @@ export function useFetchStructuredDataReference(
         };
       })
       .catch(error => {
-        handleError(error, "getStructuredDataReference");
         structuredDataReference.value = undefined;
+        if ((error as ResponseError)?.response?.status === 404) {
+          notFound.value = true;
+          return;
+        }
+        handleError(error, "getStructuredDataReference");
       });
   }
 
@@ -130,5 +137,10 @@ export function useFetchStructuredDataReference(
 
   fetchStructuredDataReference();
 
-  return { structuredDataReference, structuredData, refreshStructuredData: fetchStructuredDataReference };
+  return {
+    structuredDataReference,
+    structuredData,
+    notFound,
+    refreshStructuredData: fetchStructuredDataReference,
+  };
 }

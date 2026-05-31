@@ -42,9 +42,15 @@ const { collectionId, dataObjectId } = routeParams.value as unknown as {
   dataObjectId: number;
 };
 
-const { collection, isAllowedToEditCollection } =
-  useFetchCollection(collectionIdStr);
-const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
+const {
+  collection,
+  isAllowedToEditCollection,
+  notFound: isCollectionNotFound,
+} = useFetchCollection(collectionIdStr);
+const { dataObject, notFound: isDataObjectNotFound } = useFetchDataObject(
+  collectionIdStr,
+  dataObjectIdStr,
+);
 const { dataReferences } = useDataReferencesByDataObject(
   collectionId,
   dataObjectId,
@@ -772,6 +778,18 @@ async function saveEmbargoEdit() {
           </v-container>
         </v-col>
       </v-row>
+      <EntityNotFound
+        v-else-if="isDataObjectNotFound"
+        entity-kind="DataObject"
+        :requested-id="dataObjectIdStr"
+        :parent-route="`/collections/${collectionIdStr}`"
+      />
+      <EntityNotFound
+        v-else-if="isCollectionNotFound"
+        entity-kind="Collection"
+        :requested-id="collectionIdStr"
+        parent-route="/collections"
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
   </div>
