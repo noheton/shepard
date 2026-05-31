@@ -15,7 +15,7 @@
  * stable identity handle, not a path or URL).
  */
 
-import { isPlausibleAppId } from "~/utils/toolsLanding";
+import { isPlausibleAppId } from "~/utils/idShape";
 import {
   formatEpochMillis,
   resolveLandingBranch,

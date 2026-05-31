@@ -8,7 +8,10 @@
  */
 import { describe, it, expect } from "vitest";
 
-import { TOOLS_TILES, isPlausibleAppId } from "../../utils/toolsLanding";
+import { TOOLS_TILES } from "../../utils/toolsLanding";
+// UU2 (2026-05-31): `isPlausibleAppId` moved to `utils/idShape.ts` to live
+// next to its sibling `isNumericLegacyId`. Import directly from there now.
+import { isPlausibleAppId } from "../../utils/idShape";
 
 // ── TOOLS_TILES — tile inventory ───────────────────────────────────────────
 

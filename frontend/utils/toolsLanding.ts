@@ -62,18 +62,7 @@ export const TOOLS_TILES: ToolTile[] = [
   },
 ];
 
-/**
- * Loose appId shape check — UUID v7 is 36 chars, lowercase hex + hyphens.
- * Used by the scene-graphs "Open by appId" form to short-circuit obvious
- * typos before round-tripping to the backend.
- *
- * Intentionally loose (doesn't enforce v7-specific bits) — we just want
- * "is this plausibly an appId" not "is this a cryptographically valid v7".
- */
-export function isPlausibleAppId(input: string | null | undefined): boolean {
-  if (!input) return false;
-  const trimmed = input.trim().toLowerCase();
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
-    trimmed,
-  );
-}
+// UU2 (2026-05-31): `isPlausibleAppId` lives in `utils/idShape.ts` (which
+// also exports `isNumericLegacyId` for the stale-URL hint). Explicit
+// importers used to take this from here — they now import from `./idShape`
+// directly. Nuxt auto-import sees only one source, no duplicate warning.
