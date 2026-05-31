@@ -161,7 +161,12 @@ function onPageChange(page: number) {
             v-if="rowAccessRights(rowProps.item)"
             :access-rights="rowAccessRights(rowProps.item)!"
           />
-          <span v-else class="text-disabled">—</span>
+          <v-chip
+            v-else
+            size="small"
+            variant="tonal"
+            data-testid="collection-row-access-not-specified"
+          >Not specified</v-chip>
         </template>
         <template #[`item.description`]>
           <span
