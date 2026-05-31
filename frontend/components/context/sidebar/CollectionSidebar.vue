@@ -179,7 +179,9 @@ function onActivated(activeItems: unknown) {
 function onDeleted(deletedItemId: number) {
   collapseItem(deletedItemId);
   refreshItems();
-  if (routeParams.value.dataObjectId === deletedItemId) {
+  // BUG-COLL-APPID-ROUTE-001: routeParams.dataObjectId is now string; compare
+  // stringified for safe match across legacy-numeric + UUID-v7 shapes.
+  if (routeParams.value.dataObjectId === String(deletedItemId)) {
     router.push(collectionsPath + routeParams.value.collectionId);
   }
 }
@@ -299,7 +301,7 @@ const { mobile } = useDisplay();
           <template #title="{ item }">
             <CollectionSidebarEntry
               :title="item.title"
-              :is-focused="routeParams.dataObjectId === item.id"
+              :is-focused="routeParams.dataObjectId === String(item.id)"
               :to="
                 collectionsPath +
                 `${routeParams.collectionId}` +
@@ -312,7 +314,7 @@ const { mobile } = useDisplay();
           <template #append="{ item }">
             <CollectionSidebarItemContextMenu
               v-if="isAllowedToEditCollection"
-              :collection-id="routeParams.collectionId"
+              :collection-id="(routeParams.collectionId as unknown as number)"
               :collection-app-id="collectionAppId"
               :data-object-id="item.id"
               :parent-id="item.parentId"
@@ -369,7 +371,7 @@ const { mobile } = useDisplay();
   <CreateDataObjectDialog
     v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
-    :collection-id="routeParams.collectionId"
+    :collection-id="(routeParams.collectionId as unknown as number)"
     :collection-app-id="collectionAppId"
     @data-object-created="refreshItems"
   />

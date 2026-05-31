@@ -178,7 +178,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | — |
+| [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md`](agent-findings/video-s3-chunked-encoding-2026-05-28.md) | Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch | 2026-05-28 | 2026-05-28 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |

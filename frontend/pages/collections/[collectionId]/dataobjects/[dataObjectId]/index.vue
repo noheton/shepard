@@ -29,9 +29,16 @@ definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
 
-// We cast this because this page will only be invoked with a data object id.
-const { collectionId, dataObjectId } =
-  routeParams.value as CollectionRouteParams & { dataObjectId: number };
+// BUG-COLL-APPID-ROUTE-001 (2026-05-31): route ids are strings (UUID v7
+// or numeric). The generated v1 client types path params as `number`;
+// runtime is `String(x) + encodeURIComponent`, so strings flow through
+// untouched. Cast at the boundary keeps composable signatures stable;
+// v1 endpoints 404 cleanly for UUID v7 ids (pending L2d v2-client
+// cutover) instead of truncating to a wrong-collection lookup as before.
+const { collectionId, dataObjectId } = routeParams.value as unknown as {
+  collectionId: number;
+  dataObjectId: number;
+};
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);

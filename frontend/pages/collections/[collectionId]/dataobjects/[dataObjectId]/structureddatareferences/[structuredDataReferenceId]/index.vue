@@ -9,8 +9,13 @@ import { useFetchStructuredDataReference } from "~/composables/context/useFetchS
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
+// BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary so
+// downstream composables (typed `number` from the generated v1 client)
+// still compile. Runtime is String(x) — strings flow through; UUID v7
+// flows to the server intact and 404s cleanly on v1 paths pending L2d.
 const { collectionId, dataObjectId, structuredDataReferenceId } =
-  routeParams.value as CollectionRouteParams & {
+  routeParams.value as unknown as {
+    collectionId: number;
     dataObjectId: number;
     structuredDataReferenceId: number;
   };
