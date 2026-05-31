@@ -10,13 +10,17 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -67,6 +71,36 @@ public class AdminUserGitCredentialRest {
   ) {}
 
   public record AdminGitCredentialResultIO(String appId, String host, String username) {}
+
+  /**
+   * ADM-USR-GIT-BACKEND-1 — list-row view of a stored credential. The PAT
+   * is intentionally absent (write-only credential rule); operators see
+   * only the discovery metadata they need to decide whether to rotate.
+   */
+  public record AdminGitCredentialListItemIO(
+    String appId,
+    String host,
+    String username,
+    String displayName,
+    Instant lastRotatedAt
+  ) {
+    public static AdminGitCredentialListItemIO from(GitCredential c) {
+      Date rotated = c.getLastRotatedAt();
+      return new AdminGitCredentialListItemIO(
+        c.getAppId(),
+        c.getHost(),
+        c.getUsername(),
+        c.getDisplayName(),
+        rotated == null ? null : rotated.toInstant()
+      );
+    }
+  }
+
+  /** ADM-USR-GIT-BACKEND-1 — list envelope. */
+  public record AdminGitCredentialListIO(List<AdminGitCredentialListItemIO> items) {}
+
+  /** ADM-USR-GIT-BACKEND-1 — rotate body: caller supplies a fresh PAT. */
+  public record AdminGitCredentialRotateIO(String newPat) {}
 
   @POST
   @Operation(
@@ -120,14 +154,22 @@ public class AdminUserGitCredentialRest {
     String host = body.host().toLowerCase(java.util.Locale.ROOT).replaceAll("^https?://", "").replaceAll("/.*", "");
     String displayName = body.displayName() != null ? body.displayName() : host;
 
-    // Idempotent: replace existing credential for the same host.
+    // Idempotent: replace existing credential for the same host. Use the
+    // rotate path so lastRotatedAt is stamped (ADM-USR-GIT-BACKEND-1).
     List<GitCredential> existing = gitCredentialDAO.findAllByUser(targetUsername);
     for (GitCredential c : existing) {
       if (host.equals(c.getHost())) {
-        GitCredential update = new GitCredential();
-        update.setUsername(body.username());
-        update.setEncryptedPat(encryptedPat);
-        GitCredential updated = gitCredentialDAO.updateByUserAndAppId(targetUsername, c.getAppId(), update);
+        // Username also needs to be updatable on the replace path; do that
+        // via updateByUserAndAppId first (no rotation timestamp), then call
+        // the rotate path to stamp the new ciphertext + lastRotatedAt.
+        if (!body.username().equals(c.getUsername())) {
+          GitCredential userOnly = new GitCredential();
+          userOnly.setUsername(body.username());
+          gitCredentialDAO.updateByUserAndAppId(targetUsername, c.getAppId(), userOnly);
+        }
+        GitCredential updated = gitCredentialDAO.rotateByUserAndAppId(
+          targetUsername, c.getAppId(), encryptedPat
+        );
         String appId = updated != null ? updated.getAppId() : c.getAppId();
         return Response.status(Response.Status.CREATED)
           .entity(new AdminGitCredentialResultIO(appId, host, body.username()))
@@ -145,6 +187,92 @@ public class AdminUserGitCredentialRest {
     return Response.status(Response.Status.CREATED)
       .entity(new AdminGitCredentialResultIO(created.getAppId(), host, body.username()))
       .build();
+  }
+
+  // ── ADM-USR-GIT-BACKEND-1 — read + rotate endpoints ──────────────────────
+
+  @GET
+  @Operation(
+    summary = "List a user's git credentials (admin-only).",
+    description =
+      "Returns the discovery metadata for every credential the named user " +
+      "owns: appId, host, username, displayName, and lastRotatedAt. " +
+      "The PAT itself is **never** returned on the wire (write-only " +
+      "credential rule). Use `POST /v2/admin/users/{username}/git-credentials/" +
+      "{appId}/rotate` to refresh a credential's PAT.\n\n" +
+      "Pre-ADM-USR-GIT-BACKEND-1 credentials (rows persisted before the " +
+      "`lastRotatedAt` field existed) return `null` for that field until " +
+      "they are next rotated."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "List of credentials (may be empty).",
+    content = @Content(schema = @Schema(implementation = AdminGitCredentialListIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
+  @APIResponse(responseCode = "404", description = "No user with that username.")
+  public Response list(@PathParam(Constants.USERNAME) String targetUsername) {
+    if (userService.getUserOptional(targetUsername).isEmpty()) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    List<GitCredential> stored = gitCredentialDAO.findAllByUser(targetUsername);
+    List<AdminGitCredentialListItemIO> items = new ArrayList<>(stored == null ? 0 : stored.size());
+    if (stored != null) {
+      for (GitCredential c : stored) {
+        items.add(AdminGitCredentialListItemIO.from(c));
+      }
+    }
+    return Response.ok(new AdminGitCredentialListIO(items)).build();
+  }
+
+  @POST
+  @Path("/{appId}/rotate")
+  @Operation(
+    summary = "Rotate a git credential's PAT (admin-only).",
+    description =
+      "Replaces the encrypted PAT on the named credential and stamps " +
+      "`lastRotatedAt = now`. Other fields (host, username, displayName) " +
+      "are untouched. The new PAT is encrypted with AES-256-GCM using the " +
+      "instance encryption key and never returned on the wire.\n\n" +
+      "This is the explicit rotation path; the existing `POST /v2/admin/" +
+      "users/{username}/git-credentials` keeps its idempotent " +
+      "create-or-replace semantics for the same host."
+  )
+  @APIResponse(responseCode = "204", description = "Credential rotated.")
+  @APIResponse(responseCode = "400", description = "newPat missing or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
+  @APIResponse(responseCode = "404", description = "No user with that username or no credential with that appId under the user.")
+  @APIResponse(responseCode = "503", description = "Encryption key not configured.")
+  public Response rotate(
+    @PathParam(Constants.USERNAME) String targetUsername,
+    @PathParam("appId") String credAppId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = AdminGitCredentialRotateIO.class))
+    ) AdminGitCredentialRotateIO body
+  ) {
+    if (body == null || body.newPat() == null || body.newPat().isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("{\"error\":\"newPat is required\"}").build();
+    }
+    if (userService.getUserOptional(targetUsername).isEmpty()) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    GitCredential existing = gitCredentialDAO.findByUserAndAppId(targetUsername, credAppId);
+    if (existing == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    byte[] key = resolveKey();
+    if (key == null) {
+      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+        .entity("{\"error\":\"shepard.secrets.encryption-key is not configured — git credentials cannot be stored\"}")
+        .build();
+    }
+    String encrypted = AesGcmCipher.encrypt(body.newPat(), key);
+    gitCredentialDAO.rotateByUserAndAppId(targetUsername, credAppId, encrypted);
+    return Response.noContent().build();
   }
 
   private byte[] resolveKey() {
