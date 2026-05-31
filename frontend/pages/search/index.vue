@@ -122,6 +122,7 @@ function reset() {
   selectedTraversalRules.value = [];
   selectedQueryType.value = QueryType.Collection;
   searchResults.value = [];
+  simpleQ.value = "";
   removeAllQueryParams();
 }
 
