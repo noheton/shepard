@@ -8,16 +8,30 @@ import { useAuthRefreshMiddleware } from "~/composables/common/api/useAuthRefres
 const mockRefresh = vi.fn();
 const mockSignIn = vi.fn();
 const mockDataRef = ref<{ accessToken: string } | null>(null);
-const mockCurrentRoute = ref({ fullPath: "/test" });
+const mockStatusRef = ref<"authenticated" | "unauthenticated" | "loading">(
+  "authenticated",
+);
+const mockCurrentRoute = ref({ fullPath: "/test", path: "/test" });
 
 (globalThis as unknown as Record<string, unknown>).useAuth = () => ({
   refresh: mockRefresh,
   data: mockDataRef,
+  status: mockStatusRef,
   signIn: mockSignIn,
 });
 (globalThis as unknown as Record<string, unknown>).useRouter = () => ({
   currentRoute: mockCurrentRoute,
 });
+// useState is Nuxt's SSR-aware shared ref factory; the role-stale-session
+// composable consumes it. For unit tests we just give it a one-shot ref shim.
+const stateStore = new Map<string, ReturnType<typeof ref>>();
+(globalThis as unknown as Record<string, unknown>).useState = <T>(
+  key: string,
+  init: () => T,
+) => {
+  if (!stateStore.has(key)) stateStore.set(key, ref(init()));
+  return stateStore.get(key)!;
+};
 
 function makeContext(
   status: number,
@@ -37,7 +51,8 @@ beforeEach(() => {
   mockRefresh.mockResolvedValue(undefined);
   mockSignIn.mockResolvedValue(undefined);
   mockDataRef.value = { accessToken: "refreshed-token" };
-  mockCurrentRoute.value = { fullPath: "/test" };
+  mockStatusRef.value = "authenticated";
+  mockCurrentRoute.value = { fullPath: "/test", path: "/test" };
 });
 
 describe("useAuthRefreshMiddleware", () => {
@@ -95,13 +110,77 @@ describe("useAuthRefreshMiddleware", () => {
     expect(mockSignIn).toHaveBeenCalledWith("oidc", expect.objectContaining({ redirect: true }));
   });
 
-  it("redirects to signIn when accessToken is null after refresh", async () => {
-    mockDataRef.value = null; // no token available after refresh
+  // BUG-SIGNOUT-LOOP-1 regression coverage (operator report 2026-05-31).
+  describe("post-signout suppression (BUG-SIGNOUT-LOOP-1)", () => {
+    it("does NOT call signIn when accessToken is absent (post-signout)", async () => {
+      // After sign-out the next-auth session is cleared. Lingering API calls
+      // from components that fire unconditionally (HeaderBar profile fetch,
+      // notifications poller) used to re-trigger signIn() here and ping-pong
+      // the browser between `/` and `/auth/signIn`.
+      mockDataRef.value = null;
+      mockStatusRef.value = "unauthenticated";
+      mockCurrentRoute.value = { fullPath: "/", path: "/" };
 
-    const m = useAuthRefreshMiddleware();
-    await m.post!(makeContext(401));
+      const m = useAuthRefreshMiddleware();
+      const result = await m.post!(makeContext(401));
 
-    expect(mockSignIn).toHaveBeenCalledWith("oidc", expect.objectContaining({ redirect: true }));
+      expect(mockSignIn).not.toHaveBeenCalled();
+      expect(mockRefresh).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
+    });
+
+    it("does NOT call signIn when status is 'unauthenticated' even if a stale token lingers", async () => {
+      // Race: token cookie cleared but JWT shape still in memory briefly.
+      mockDataRef.value = { accessToken: "stale-cached-token" };
+      mockStatusRef.value = "unauthenticated";
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(makeContext(401));
+
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("does NOT call signIn when sitting on the landing page '/'", async () => {
+      // Belt-and-braces: the public landing page never re-launches OIDC; the
+      // user landed there deliberately and should not be bounced away.
+      mockDataRef.value = null;
+      mockCurrentRoute.value = { fullPath: "/", path: "/" };
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(makeContext(401));
+
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("does NOT call signIn when sitting on '/auth/signIn'", async () => {
+      mockDataRef.value = null;
+      mockCurrentRoute.value = { fullPath: "/auth/signIn", path: "/auth/signIn" };
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(makeContext(401));
+
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("still calls signIn when the session has a token but a protected call 401s twice", async () => {
+      // The positive case: real expired-token scenario on a protected route
+      // must still bounce to signIn.
+      mockDataRef.value = { accessToken: "refreshed-but-server-rejects" };
+      mockStatusRef.value = "authenticated";
+      mockCurrentRoute.value = {
+        fullPath: "/collections/123",
+        path: "/collections/123",
+      };
+      const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+
+      const m = useAuthRefreshMiddleware();
+      await m.post!(makeContext(401, fetchFn));
+
+      expect(mockSignIn).toHaveBeenCalledWith(
+        "oidc",
+        expect.objectContaining({ redirect: true }),
+      );
+    });
   });
 
   it("shares one in-flight refresh for concurrent 401 responses", async () => {

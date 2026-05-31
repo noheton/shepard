@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 87 |
+| `deployed` | 89 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **419** |
+| **total docs** | **421** |
 | **UNTAGGED** | **0** |
 
 ## fragment (53)
@@ -181,7 +181,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-05-31 |
-| [`aidocs/agent-findings/ui-scrutinizer-2026-05-31.md`](agent-findings/ui-scrutinizer-2026-05-31.md) | UI Scrutinizer — 2nd pass 2026-05-31 | 2026-05-31 | — |
+| [`aidocs/agent-findings/ui-scrutinizer-2026-05-31.md`](agent-findings/ui-scrutinizer-2026-05-31.md) | UI Scrutinizer — 2nd pass 2026-05-31 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md`](agent-findings/video-s3-chunked-encoding-2026-05-28.md) | Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch | 2026-05-28 | 2026-05-28 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |
@@ -361,7 +361,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (87)
+## deployed (89)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -397,6 +397,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-02.md`](agent-findings/dispatcher-runs/2026-05-31-02.md) | Dispatcher run 2026-05-31-02 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-03.md`](agent-findings/dispatcher-runs/2026-05-31-03.md) | Dispatcher run 2026-05-31-03 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-04.md`](agent-findings/dispatcher-runs/2026-05-31-04.md) | Dispatcher fire 2026-05-31-04 | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-14.md`](agent-findings/dispatcher-runs/2026-05-31-14.md) | Dispatcher fire 2026-05-31-14 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
@@ -414,6 +415,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/principle-candidates.md`](agent-findings/principle-candidates.md) | Implicit Design Principles — Candidate Discovery | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md`](agent-findings/rdm-001-cite-this-dataset-2026-05-24.md) | RDM-001 — "Cite this dataset" card on Collection landing (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/screenshots/signout-loop-fix/README.md`](agent-findings/screenshots/signout-loop-fix/README.md) | BUG-SIGNOUT-LOOP-1 — sign-out infinite loop fix | 2026-05-31 | — |
 | [`aidocs/agent-findings/sema-v6-preseed-status.md`](agent-findings/sema-v6-preseed-status.md) | SEMA-V6 Preseed Status (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/ts-axis-verify-2026-05-29.md`](agent-findings/ts-axis-verify-2026-05-29.md) | TS-AXIS-VERIFY — MFFD spatial-roles annotations verified live (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |

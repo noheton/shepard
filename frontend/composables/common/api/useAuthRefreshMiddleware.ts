@@ -14,8 +14,16 @@ import type { Middleware, ResponseContext } from "@dlr-shepard/backend-client";
  * Call this inside a composable/component setup so `useAuth()` and
  * `useRouter()` resolve from the active Nuxt app context.
  */
+// Public routes where the middleware must NEVER re-trigger signIn. After a
+// successful sign-out the browser lands on `/` and lingering API calls from
+// components that ungatedly fetch (HeaderBar's user-profile probe, notifications
+// poller) all 401; without this guard each one re-launches OIDC sign-in and
+// the browser ping-pongs `/ ↔ /auth/signIn` forever — BUG-SIGNOUT-LOOP-1
+// (operator report 2026-05-31).
+const NEVER_REAUTH_PATHS = new Set(["/", "/auth/signIn", "/auth/signOut"]);
+
 export function useAuthRefreshMiddleware(): Middleware {
-  const { refresh, data, signIn } = useAuth();
+  const { refresh, data, status, signIn } = useAuth();
   const router = useRouter();
 
   // Deduplicates concurrent 401 responses within a single middleware instance.
@@ -26,8 +34,37 @@ export function useAuthRefreshMiddleware(): Middleware {
   // needed for v1.
   let inFlightRefresh: Promise<unknown> | null = null;
 
-  async function handleUnauthorized(context: ResponseContext): Promise<Response | void> {
+  /**
+   * Returns true when the middleware must NOT call `signIn()` and should let
+   * the 401 propagate as-is. Two real cases:
+   *
+   *   1. The user has just signed out and there is no access token on the
+   *      session — re-triggering OIDC would silently re-auth via the still-warm
+   *      Keycloak SSO cookie and undo the sign-out (BUG-SIGNOUT-LOOP-1).
+   *   2. The browser is sitting on a public route where the unauthenticated
+   *      shape is valid (e.g. the landing page). Re-launching OIDC here would
+   *      bounce the user away from a page they're allowed to view.
+   *
+   * Components that genuinely need authenticated data should gate their fetch
+   * on `status === "authenticated"` (tracked as AUTH-API-CALLS-UNGATED in
+   * `aidocs/16-dispatcher-backlog.md`); this guard is the safety net.
+   */
+  function shouldSuppressReauth(): boolean {
+    if (!data.value?.accessToken) return true;
+    if (status.value === "unauthenticated") return true;
+    const path = router.currentRoute.value.path;
+    if (NEVER_REAUTH_PATHS.has(path)) return true;
+    return false;
+  }
+
+  async function handleUnauthorized(context: ResponseContext): Promise<Response | undefined> {
     if (context.response.status !== 401) return;
+
+    if (shouldSuppressReauth()) {
+      // Let the caller's `.catch(handleError)` show a soft toast and move on.
+      // Do NOT call signIn() — see shouldSuppressReauth() for the rationale.
+      return;
+    }
 
     try {
       if (!inFlightRefresh) {
@@ -37,7 +74,9 @@ export function useAuthRefreshMiddleware(): Middleware {
       }
       await inFlightRefresh;
     } catch {
-      // Refresh failed — send to sign-in with callback.
+      // Refresh failed — send to sign-in with callback, unless the user has
+      // since transitioned to unauthenticated (e.g. clicked sign-out mid-flight).
+      if (shouldSuppressReauth()) return;
       const callbackUrl = encodeURIComponent(router.currentRoute.value.fullPath);
       await signIn("oidc", { callbackUrl, redirect: true });
       return;
@@ -45,6 +84,7 @@ export function useAuthRefreshMiddleware(): Middleware {
 
     const newToken = data.value?.accessToken;
     if (!newToken) {
+      if (shouldSuppressReauth()) return;
       const callbackUrl = encodeURIComponent(router.currentRoute.value.fullPath);
       await signIn("oidc", { callbackUrl, redirect: true });
       return;
@@ -60,7 +100,9 @@ export function useAuthRefreshMiddleware(): Middleware {
     };
     const retryResponse = await context.fetch(context.url, newInit);
     if (retryResponse.status === 401) {
-      // Refresh token also expired or revoked — sign in fresh.
+      // Refresh token also expired or revoked — sign in fresh, unless we are
+      // (or have just become) unauthenticated.
+      if (shouldSuppressReauth()) return retryResponse;
       const callbackUrl = encodeURIComponent(router.currentRoute.value.fullPath);
       await signIn("oidc", { callbackUrl, redirect: true });
       return;
