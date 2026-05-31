@@ -1,12 +1,17 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.util.AccessType;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,12 +62,37 @@ import org.neo4j.ogm.session.Session;
  * disambiguate (e.g. distinguish a {@code FileReference} from a
  * {@code SingletonFileReference}).
  *
- * <p><b>Permission posture (v0).</b> The tool returns rows the caller
- * can see by label — there is no per-row permission walk in this v0;
- * the substrate is read-only and the underlying entities already obey
- * the instance-wide read posture. A {@code SEARCH-MCP-PERMS-1}
- * follow-up will add a Collection-anchored Read gate so a non-admin
- * doesn't surface DataObjects in Collections they can't read.
+ * <p><b>Permission posture (SEARCH-MCP-PERMS-1).</b> Every result row is
+ * resolved to its parent {@code :Collection} anchor and filtered through
+ * {@link PermissionsService#isAccessTypeAllowedForUser(long, AccessType,
+ * String)} with {@link AccessType#Read}; rows the caller cannot read are
+ * excluded.
+ *
+ * <p>Anchor walks per row kind:
+ * <ul>
+ *   <li><b>Collection</b> → itself.</li>
+ *   <li><b>DataObject</b> → parent Collection (via {@code :HAS_DATAOBJECT}).</li>
+ *   <li><b>Container</b> ({@code TimeseriesContainer}, {@code FileContainer},
+ *       {@code StructuredDataContainer}) → parent Collection (via
+ *       {@code :HAS_CONTAINER} from the owning DataObject).</li>
+ *   <li><b>Reference</b> (any of the seven Reference labels) → owning
+ *       DataObject's parent Collection.</li>
+ * </ul>
+ *
+ * <p><b>{@code total} semantics.</b> The envelope reports the
+ * post-filter total (matches the caller can read), <em>not</em> the
+ * unfiltered Cypher hit count. This intentionally diverges from the
+ * {@code SCENEGRAPH-PERMS-1-MCP} {@code scene_list} pattern (which
+ * page-then-filters and surfaces the unfiltered total): {@code search}
+ * filters BEFORE paginating so {@code total} and {@code items.length}
+ * stay consistent across paged calls and the caller never sees "200
+ * results but only 3 visible". Rows that resolve to an unknown
+ * Collection (orphaned legacy nodes) are dropped fail-closed.
+ *
+ * <p>Per-call cache keyed by parent-Collection appId avoids repeating
+ * the walk for many rows in the same Collection — {@link PermissionsService}
+ * also caches at the entity-id level, but the per-row appId→ogmId
+ * resolution is the part we want to spare.
  */
 @ApplicationScoped
 public class SearchMcpTools {
@@ -100,6 +130,18 @@ public class SearchMcpTools {
   @Inject McpContextBridge contextBridge;
   @Inject McpToolSupport support;
 
+  /**
+   * SEARCH-MCP-PERMS-1 — per-row Read gate. The service walks the row's
+   * Collection anchor; rows the caller cannot read are excluded.
+   */
+  @Inject PermissionsService permissionsService;
+
+  /**
+   * SEARCH-MCP-PERMS-1 — caller identity for the per-row Read gate.
+   * Bound by {@link McpAuthFilter} before any tool method runs.
+   */
+  @Inject AuthenticationContext authenticationContext;
+
   @Tool(
     name = "search",
     description =
@@ -124,12 +166,12 @@ public class SearchMcpTools {
       "            when description is empty. Useful for showing match context.\n\n" +
       "Result ordering: kinds are processed in the canonical render order — Collection, " +
       "DataObject, Container, Reference — then alphabetically by name within each kind " +
-      "for deterministic responses. `total` is the count across ALL matched rows " +
-      "BEFORE pagination is applied, so `total > items.length` means there are more " +
-      "rows behind the limit.\n\n" +
-      "Auth: any authenticated user. There is no per-row permission gate in this v0 — " +
-      "see `SEARCH-MCP-PERMS-1` in `aidocs/16` for the planned Collection-anchored " +
-      "Read filter.\n\n" +
+      "for deterministic responses. `total` is the count of rows the caller can Read " +
+      "AFTER per-row permission filtering, BEFORE pagination. `total > items.length` " +
+      "means there are more permitted rows behind the limit.\n\n" +
+      "Auth: SEARCH-MCP-PERMS-1 — every row is resolved to its parent Collection anchor " +
+      "and filtered through `PermissionsService.isAccessTypeAllowedForUser(..., Read)`. " +
+      "Rows the caller cannot Read are excluded silently (the agent never sees them).\n\n" +
       "Example: `search(query='TR-004')` returns the LUMEN anomaly DataObject plus any " +
       "Container or Reference whose name mentions the test run; `search(query='LOX', " +
       "kind='DataObject')` scopes to DataObjects only."
@@ -175,13 +217,27 @@ public class SearchMcpTools {
         if (seen.add(dedupeKey)) deduped.add(row);
       }
 
-      long total = deduped.size();
+      // SEARCH-MCP-PERMS-1 — filter BEFORE paginating so `total` and
+      // `items.length` stay consistent across pages. Rows the caller
+      // cannot Read are excluded silently. Per-Collection caching keeps
+      // the cost down for queries that hit many rows in the same
+      // Collection.
+      String caller = requireCaller();
+      Map<String, Boolean> readableCollectionCache = new HashMap<>();
+      List<Map<String, Object>> permitted = new ArrayList<>(deduped.size());
+      for (Map<String, Object> row : deduped) {
+        if (callerCanReadRow(row, caller, readableCollectionCache)) {
+          permitted.add(row);
+        }
+      }
+
+      long total = permitted.size();
       List<Map<String, Object>> paged;
-      if (effectiveOffset >= deduped.size()) {
+      if (effectiveOffset >= permitted.size()) {
         paged = List.of();
       } else {
-        int end = Math.min(effectiveOffset + effectiveLimit, deduped.size());
-        paged = deduped.subList(effectiveOffset, end);
+        int end = Math.min(effectiveOffset + effectiveLimit, permitted.size());
+        paged = permitted.subList(effectiveOffset, end);
       }
 
       Map<String, Object> envelope = new LinkedHashMap<>();
@@ -272,5 +328,174 @@ public class SearchMcpTools {
 
   private static String asString(Object v) {
     return v == null ? null : v.toString();
+  }
+
+  // ── SEARCH-MCP-PERMS-1 — per-row Read gate ────────────────────────────────
+
+  /**
+   * Resolve the authenticated caller; throw {@link NotAuthorizedException}
+   * (mapped by {@link McpToolSupport#run} to {@code -32001}) if absent.
+   */
+  String requireCaller() {
+    String caller = authenticationContext == null ? null : authenticationContext.getCurrentUserName();
+    if (caller == null || caller.isBlank()) {
+      throw new NotAuthorizedException("Authentication required for the `search` MCP tool.");
+    }
+    return caller;
+  }
+
+  /**
+   * Per-row Read gate. Resolves the row's parent Collection appId via the
+   * per-kind walks, then delegates to
+   * {@link PermissionsService#isAccessTypeAllowedForUser(long, AccessType, String)}.
+   * Returns {@code false} fail-closed when:
+   * <ul>
+   *   <li>the row's appId is null/blank (legacy un-id'd row),</li>
+   *   <li>the row's parent Collection can't be resolved (orphan / cascade race),</li>
+   *   <li>the caller lacks Read on the parent Collection.</li>
+   * </ul>
+   *
+   * <p>{@code collectionReadCache} maps Collection appId → granted, so a search
+   * that hits N rows in the same Collection pays one permission walk, not N.
+   */
+  boolean callerCanReadRow(
+    Map<String, Object> row,
+    String caller,
+    Map<String, Boolean> collectionReadCache
+  ) {
+    String label = (String) row.get("kind");
+    String appId = (String) row.get("appId");
+    if (label == null || appId == null || appId.isBlank()) return false;
+
+    String collectionAppId = resolveCollectionAnchor(label, appId);
+    if (collectionAppId == null) return false;
+
+    Boolean cached = collectionReadCache.get(collectionAppId);
+    if (cached != null) return cached;
+
+    boolean allowed;
+    try {
+      // Reuse the DataObject-appId walk: it accepts a Collection appId too
+      // when invoked against the Collection chain. To keep semantics narrow,
+      // resolve the Collection's OGM id and call the canonical per-entity
+      // gate so the per-iat cache key matches the rest of the v2 stack.
+      Long ogmId = lookupCollectionOgmId(collectionAppId);
+      if (ogmId == null) {
+        allowed = false;
+      } else {
+        allowed = permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller);
+      }
+    } catch (RuntimeException e) {
+      // Fail-soft on the per-row gate: log + deny, don't poison the whole
+      // search response.
+      Log.debugf(e, "SEARCH-MCP-PERMS-1: permission walk failed for collection=%s", collectionAppId);
+      allowed = false;
+    }
+    collectionReadCache.put(collectionAppId, allowed);
+    return allowed;
+  }
+
+  /**
+   * Resolve the parent Collection appId for a row, per the per-kind walk.
+   * Returns {@code null} when the row is orphaned or the lookup fails.
+   *
+   * <p>One Cypher round-trip per row that isn't a Collection itself.
+   * Backed by {@code collectionReadCache} so multiple rows in the same
+   * Collection share the permission decision (but each still pays one
+   * anchor-resolve hop — acceptable for typical search result sizes).
+   */
+  String resolveCollectionAnchor(String label, String appId) {
+    if ("Collection".equals(label)) return appId;
+    Session live = NeoConnector.getInstance().getNeo4jSession();
+    if (live == null) return null;
+
+    String cypher = anchorCypherFor(label);
+    if (cypher == null) return null;
+
+    try {
+      Result result = live.query(cypher, Map.of("appId", appId));
+      if (result == null) return null;
+      Iterable<Map<String, Object>> rows = result.queryResults();
+      if (rows == null) return null;
+      for (Map<String, Object> r : rows) {
+        Object v = r.get("collectionAppId");
+        if (v != null) return v.toString();
+      }
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEARCH-MCP-PERMS-1: anchor resolve failed for %s appId=%s", label, appId);
+    }
+    return null;
+  }
+
+  /**
+   * Cypher for the per-label walk to the parent Collection's appId.
+   * Returns {@code null} for unknown labels (defensive — every label in
+   * {@link #LABELS_BY_KIND} is covered).
+   *
+   * <p>The DataObject walk uses {@code :HAS_DATAOBJECT}; the container walk
+   * uses {@code :HAS_DATAOBJECT} + {@code :HAS_CONTAINER}; the reference
+   * walks add a third hop from the reference label up to the DataObject.
+   * Constants are not used here because labels and relationship types are
+   * baked into the curated {@link #LABELS_BY_KIND} surface and the
+   * relationship constants live elsewhere; the strings are local to this
+   * class and reviewed alongside the label list.
+   */
+  static String anchorCypherFor(String label) {
+    return switch (label) {
+      case "DataObject" ->
+        "MATCH (c:Collection)-[:has_dataobject]->(d:DataObject {appId: $appId}) " +
+        "RETURN c.appId AS collectionAppId LIMIT 1";
+      case "TimeseriesContainer", "FileContainer", "StructuredDataContainer" ->
+        // Containers are reached via the Reference that lives in them:
+        //   :Collection -[:has_dataobject]-> :DataObject
+        //     -[:has_reference]-> :*Reference
+        //     -[:is_in_container]-> :*Container
+        // We anchor to any Collection whose DataObject chain ends in this
+        // container; multiple Collections may share a Container only on
+        // legacy rows — LIMIT 1 picks one for the gate (acceptable: if any
+        // Collection allows Read, surfacing the row is correct).
+        "MATCH (c:Collection)-[:has_dataobject]->(:DataObject)-[:has_reference]->" +
+        "()-[:is_in_container]->(n:`" + label + "` {appId: $appId}) " +
+        "RETURN c.appId AS collectionAppId LIMIT 1";
+      case "TimeseriesReference",
+        "FileReference",
+        "SingletonFileReference",
+        "URIReference",
+        "StructuredDataReference",
+        "DataObjectReference",
+        "CollectionReference" ->
+        "MATCH (c:Collection)-[:has_dataobject]->(:DataObject)-[:has_reference]->" +
+        "(n:`" + label + "` {appId: $appId}) " +
+        "RETURN c.appId AS collectionAppId LIMIT 1";
+      default -> null;
+    };
+  }
+
+  /**
+   * Look up the OGM Long id for a Collection by appId. Returns
+   * {@code null} when the Collection is gone (delete-cascade race) or
+   * the Neo4j session is unavailable.
+   */
+  Long lookupCollectionOgmId(String collectionAppId) {
+    Session live = NeoConnector.getInstance().getNeo4jSession();
+    if (live == null) return null;
+    String cypher = "MATCH (c:Collection {appId: $appId}) RETURN id(c) AS ogmId LIMIT 1";
+    try {
+      Result result = live.query(cypher, Map.of("appId", collectionAppId));
+      if (result == null) return null;
+      Iterable<Map<String, Object>> rows = result.queryResults();
+      if (rows == null) return null;
+      for (Map<String, Object> r : rows) {
+        Object v = r.get("ogmId");
+        if (v instanceof Number n) return n.longValue();
+        if (v != null) {
+          try { return Long.parseLong(v.toString()); }
+          catch (NumberFormatException ignored) { /* fall through */ }
+        }
+      }
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEARCH-MCP-PERMS-1: ogmId lookup failed for collection appId=%s", collectionAppId);
+    }
+    return null;
   }
 }
