@@ -9,10 +9,12 @@ import { useFetchStructuredDataReference } from "~/composables/context/useFetchS
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary so
-// downstream composables (typed `number` from the generated v1 client)
-// still compile. Runtime is String(x) — strings flow through; UUID v7
-// flows to the server intact and 404s cleanly on v1 paths pending L2d.
+// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
+// string ids and hit v2 directly. The remaining numeric-typed composables
+// (useFetchStructuredDataReference, etc.) keep the existing as-number cast
+// pending BUG-COLL-APPID-ROUTE-003.
+const collectionIdStr = routeParams.value.collectionId ?? "";
+const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
 const { collectionId, dataObjectId, structuredDataReferenceId } =
   routeParams.value as unknown as {
     collectionId: number;
@@ -29,8 +31,8 @@ const selectedItemName = ref<string>("");
 const isEditMode = ref<boolean>(false);
 
 const { collection, isAllowedToEditCollection } =
-  useFetchCollection(collectionId);
-const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
+  useFetchCollection(collectionIdStr);
+const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 const { structuredDataReference, structuredData, refreshStructuredData } =
   useFetchStructuredDataReference(
     collectionId,

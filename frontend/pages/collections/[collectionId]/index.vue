@@ -20,15 +20,17 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-// BUG-COLL-APPID-ROUTE-001: collectionId is now string (UUID v7 or numeric).
-// The generated v1 client types path params as number; runtime is
-// `String(x)` + `encodeURIComponent`, so strings work on the wire — cast
-// here to satisfy the type. v1 endpoints will 404 cleanly for UUID v7
-// (right behaviour pending L2d frontend cutover) instead of silently
-// truncating to a wrong-collection lookup as before.
+// BUG-COLL-APPID-ROUTE-002: useFetchCollection now hits the v2 appId-keyed
+// endpoint directly, taking a string. Legacy numeric-id consumers below
+// (dataObjectsMap v1, MFFD probe, child panels expecting `number`) keep the
+// pre-existing string-cast-to-number until BUG-COLL-APPID-ROUTE-003 migrates
+// each composable family. The two ids reference the same entity on the wire
+// — `collectionIdStr` is the appId-shaped route param, `collectionId` is the
+// `as number` cast the v1 generated client still wants.
+const collectionIdStr = routeParams.value.collectionId;
 const collectionId = routeParams.value.collectionId as unknown as number;
 const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
-  useFetchCollection(collectionId);
+  useFetchCollection(collectionIdStr);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
