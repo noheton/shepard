@@ -22,21 +22,10 @@ const mockCurrentRoute = ref({ fullPath: "/test", path: "/test" });
 (globalThis as unknown as Record<string, unknown>).useRouter = () => ({
   currentRoute: mockCurrentRoute,
 });
-// useState is Nuxt's SSR-aware shared ref factory; the role-stale-session
-// composable consumes it. For unit tests we just give it a one-shot ref shim.
-const stateStore = new Map<string, ReturnType<typeof ref>>();
-(globalThis as unknown as Record<string, unknown>).useState = <T>(
-  key: string,
-  init: () => T,
-) => {
-  if (!stateStore.has(key)) stateStore.set(key, ref(init()));
-  return stateStore.get(key)!;
-};
-
-// ROLE-GRANT-STALE-SESSION-02 — the middleware now consumes
-// `useStaleRoleSession()` which calls Nuxt's auto-imported `useState`. For
-// unit tests we give it a per-key ref shim so the composable's Nuxt-side
-// state machinery doesn't need to be live.
+// ROLE-GRANT-STALE-SESSION-02 — the middleware consumes `useStaleRoleSession()`
+// which calls Nuxt's auto-imported `useState`. For unit tests we give it a
+// per-key ref shim so the composable's Nuxt-side state machinery doesn't need
+// to be live.
 const stateStore = new Map<string, ReturnType<typeof ref>>();
 (globalThis as unknown as Record<string, unknown>).useState = <T>(
   key: string,

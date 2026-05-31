@@ -35,7 +35,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * returning 404 until a persistence layer is wired (TPL14b). Placed here so
  * the path is reserved and clients can adopt it.
  *
- * <p>Requires Read permission on the collection.
+ * <p>Permission gating (MCP-PERMS-AUDIT-2, REST flip 2026-05-31):
+ * <ul>
+ *   <li>POST {@code .../regulatory-evidence} — requires <b>Write</b> on the
+ *       Collection. Builds a REP bag and records a Collection-scoped PROV-O
+ *       Activity ("REP exported by user X"). The MCP {@code rep_export} tool
+ *       already gates Write; this REST flip aligns the two surfaces.</li>
+ *   <li>GET {@code .../regulatory-evidence/latest} — Read suffices (no
+ *       Activity recorded, no state mutated).</li>
+ * </ul>
  */
 @Authenticated
 @Produces(MediaType.APPLICATION_JSON)
@@ -64,7 +72,8 @@ public class RepExportV2Rest {
       "  - bagit.txt, bag-info.txt, manifest-sha256.txt, tagmanifest-sha256.txt\n\n" +
       "Bags ≤ 1 MB are returned inline (Base64 in the 'bagBase64' field). " +
       "Larger bags will return a 'downloadUrl' (not yet implemented — 500 until TPL14b ships). " +
-      "Requires Read permission on the Collection."
+      "Requires Write permission on the Collection (REP build records a Collection-scoped " +
+      "PROV-O Activity; gate matches the MCP rep_export tool per MCP-PERMS-AUDIT-2)."
   )
   @APIResponse(
     responseCode = "200",
@@ -72,7 +81,7 @@ public class RepExportV2Rest {
     content = @Content(schema = @Schema(implementation = RepExportIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the collection.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the collection.")
   @APIResponse(responseCode = "404", description = "No collection with that appId.")
   @APIResponse(responseCode = "500", description = "REP build failed (serialisation or packing error).")
   public Response buildRepExport(
@@ -89,7 +98,7 @@ public class RepExportV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -130,6 +139,9 @@ public class RepExportV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    // GET stays on Read — fetching a previously-built REP is a read operation
+    // (no Activity recorded, no state mutated). Only the POST build flipped
+    // to Write per MCP-PERMS-AUDIT-2.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
