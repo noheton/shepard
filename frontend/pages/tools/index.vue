@@ -20,7 +20,10 @@ useHead({ title: "Tools | shepard" });
 </script>
 
 <template>
-  <v-container class="pa-6" style="max-width: 1400px">
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L2: widened from 1400px and made
+       fluid so the tile grid fills the 4K canvas; cap at 2400px keeps
+       row length readable. -->
+  <v-container class="pa-6" fluid style="max-width: 2400px; margin: 0 auto">
     <h1 class="text-h4 mb-2">Tools</h1>
     <p class="text-body-1 text-medium-emphasis mb-6">
       Research-tooling surfaces — browse vocabularies, query the semantic

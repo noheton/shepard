@@ -119,7 +119,9 @@ function relativeTime(date: Date | null | undefined): string {
 </script>
 
 <template>
-  <v-container style="max-width: 1200px; margin: auto" fluid>
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L1: bumped from 1200px so the hub
+       grid uses the 4K canvas without going full-bleed-unreadable. -->
+  <v-container style="max-width: 2400px; margin: auto" fluid>
     <!-- Greeting card -->
     <v-card
       class="mb-6 pa-4"

@@ -28,7 +28,9 @@ const cards = [
 </script>
 
 <template>
-  <v-container>
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L4: hub/tile landing; fluid +
+       2400px cap so the tile grid fills the 4K canvas. -->
+  <v-container fluid style="max-width: 2400px; margin: 0 auto">
     <div class="d-flex flex-column ga-2 mb-4">
       <h4 class="text-h4">Semantic substrate</h4>
       <p class="text-body-1 text-medium-emphasis">

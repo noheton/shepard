@@ -68,7 +68,12 @@ async function signOutToRefreshRoles() {
 </script>
 
 <template>
-  <div class="unauthorized-view pa-6">
+  <!-- LAYOUT-4K-GATE-EMPTY-001 / L7: at 4K the previous tight pa-6
+       wrapper rendered the (intentionally narrow) gate card as a tiny
+       dot in a vast grey canvas. Wrap in a full-bleed soft-background
+       container with min-height so the gutter feels deliberate; card
+       width stays at 640px for readable line-length. -->
+  <div class="unauthorized-view pa-6 d-flex align-center justify-center">
     <v-card variant="outlined" class="mx-auto" max-width="640">
       <v-card-item>
         <template #prepend>
@@ -154,3 +159,19 @@ async function signOutToRefreshRoles() {
     </v-card>
   </div>
 </template>
+
+<style lang="scss" scoped>
+/* LAYOUT-4K-GATE-EMPTY-001 — full-bleed wrapper so the gate doesn't
+   render as a tiny card in a vast grey canvas at 4K. Soft tonal
+   background + min-height fills the viewport deliberately while the
+   inner card stays at 640px for readable line-length. */
+.unauthorized-view {
+  min-height: calc(100vh - 64px); /* viewport minus header bar */
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(var(--v-theme-primary), 0.04) 0%,
+      transparent 60%
+    );
+}
+</style>
