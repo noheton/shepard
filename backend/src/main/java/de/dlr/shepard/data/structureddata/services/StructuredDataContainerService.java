@@ -135,6 +135,7 @@ public class StructuredDataContainerService
    */
   public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
     StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(structuredDataContainerID);
 
     StructuredData result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
@@ -260,6 +261,7 @@ public class StructuredDataContainerService
    */
   public void deleteStructuredData(long structuredDataContainerID, String oid) {
     StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(structuredDataContainerID);
 
     structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);

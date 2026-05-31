@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 54 |
+| `fragment` | 53 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 111 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 87 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **419** |
+| **total docs** | **418** |
 | **UNTAGGED** | **0** |
 
-## fragment (54)
+## fragment (53)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -63,7 +63,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
-| [`aidocs/agent-findings/screenshots/layout-4k-2026-05-31/README.md`](agent-findings/screenshots/layout-4k-2026-05-31/README.md) | LAYOUT-4K-CENTERED-EMPTY-001 — 4K screenshot evidence | 2026-05-31 | — |
 | [`aidocs/agent-findings/synergy-2026-05-23-ai-accountability.md`](agent-findings/synergy-2026-05-23-ai-accountability.md) | S-08 — AI accountability dashboard: MCP × Permission audit log × F(AI)²R | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/synergy-2026-05-23-channel-as-individual.md`](agent-findings/synergy-2026-05-23-channel-as-individual.md) | S-01 — Channel-as-individual: HSDS HDF5 × AAS TimeSeriesData × sTC | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-openlineage-fair2r.md`](agent-findings/synergy-2026-05-23-openlineage-fair2r.md) | S-02 — OpenLineage RunEvent × F(AI)²R × PROV-O: EASA evidence for free | 2026-05-23 | 2026-05-27 |
@@ -224,7 +223,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-05-26 |
-| [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | — |
+| [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | 2026-05-31 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |

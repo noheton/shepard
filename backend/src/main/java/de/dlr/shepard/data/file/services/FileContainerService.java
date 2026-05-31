@@ -259,6 +259,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
 
   private ShepardFile createFileImpl(long fileContainerId, String fileName, InputStream inputStream, long declaredSize) {
     FileContainer fileContainer = getContainer(fileContainerId);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(fileContainerId);
 
     if (fileName == null || fileName.isBlank()) {
@@ -409,6 +410,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    */
   public void deleteFile(long fileContainerId, String oid) {
     FileContainer container = getContainer(fileContainerId);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(fileContainerId);
 
     // FS1a: route through the registry so per-row providerId is

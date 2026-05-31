@@ -55,6 +55,9 @@ public class CollectionService {
   @Inject
   CollectionEventProducer collectionEventProducer;
 
+  @Inject
+  ArchiveStateGuard archiveStateGuard;
+
   /**
    * Creates a Collection and stores it in Neo4J
    *
@@ -353,6 +356,18 @@ public class CollectionService {
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
     }
+  }
+
+  /**
+   * #27-ARCHIVED-02 — Write permission AND non-archived status. Used by
+   * DataObject writes (create/update/delete) to honour the archive freeze
+   * on the parent Collection. The standalone publication-state PATCH
+   * endpoint deliberately does NOT call this — that is the one mutation
+   * that bypasses the freeze (Owner/instance-admin only, enforced there).
+   */
+  public void assertIsAllowedToEditCollectionAndNotArchived(long collectionId) {
+    assertIsAllowedToEditCollection(collectionId);
+    archiveStateGuard.assertCollectionNotArchived(collectionId);
   }
 
   /**
