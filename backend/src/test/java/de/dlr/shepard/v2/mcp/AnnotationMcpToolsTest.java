@@ -11,6 +11,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.security.AuthenticationContext;
@@ -345,6 +350,128 @@ class AnnotationMcpToolsTest {
     McpException ex = assertThrows(McpException.class,
       () -> tools.findAnnotated(null, null, null, null, null, null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  // ── semantic_annotate_bulk (MCP-COV-05) ────────────────────────────────────
+
+  /** Builds a minimal valid bulk-annotation row. */
+  private Map<String, Object> bulkEntry(String subjectAppId, String propertyIRI, String valueName) {
+    Map<String, Object> r = new LinkedHashMap<>();
+    r.put("subjectAppId", subjectAppId);
+    r.put("subjectKind", "DataObject");
+    r.put("propertyIRI", propertyIRI);
+    if (valueName != null) r.put("valueName", valueName);
+    return r;
+  }
+
+  @Test
+  void semanticAnnotateBulkSucceedsForValidRows() throws Exception {
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("created-" + in.getSubjectAppId());
+      return in;
+    });
+
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(bulkEntry("do-1", "http://purl.org/dc/terms/creator", "Flo"));
+    rows.add(bulkEntry("do-2", "http://purl.org/dc/terms/creator", "Sev"));
+
+    String json = tools.semanticAnnotateBulk(rows);
+    JsonNode root = new ObjectMapper().readTree(json);
+
+    assertTrue(root.isArray(), "Response must be a JSON array");
+    assertEquals(2, root.size());
+    assertTrue(root.get(0).get("ok").asBoolean(), "row 0 must be ok=true");
+    assertEquals("do-1", root.get(0).get("subjectAppId").asText());
+    assertEquals("created-do-1", root.get(0).get("appId").asText());
+    assertEquals("created-do-2", root.get(1).get("appId").asText());
+  }
+
+  @Test
+  void semanticAnnotateBulkContinuesAfterPerRowError() throws Exception {
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("ok-" + in.getSubjectAppId());
+      return in;
+    });
+
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(bulkEntry("do-1", "http://example/pred", "v1"));
+    // Missing subjectAppId — should fail this row, NOT abort the batch.
+    Map<String, Object> bad = new HashMap<>();
+    bad.put("subjectKind", "DataObject");
+    bad.put("propertyIRI", "http://example/pred");
+    bad.put("valueName", "v2");
+    rows.add(bad);
+    rows.add(bulkEntry("do-3", "http://example/pred", "v3"));
+
+    String json = tools.semanticAnnotateBulk(rows);
+    JsonNode root = new ObjectMapper().readTree(json);
+
+    assertTrue(root.isArray());
+    assertEquals(3, root.size());
+    assertTrue(root.get(0).get("ok").asBoolean());
+    assertNotNull(root.get(1).get("error"));
+    // ok field on the bad row may be false (or boolean false)
+    assertTrue(!root.get(1).get("ok").asBoolean());
+    assertTrue(root.get(2).get("ok").asBoolean());
+  }
+
+  @Test
+  void semanticAnnotateBulkRejectsEmptyInput() {
+    McpException ex = assertThrows(McpException.class, () -> tools.semanticAnnotateBulk(List.of()));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  @Test
+  void semanticAnnotateBulkRejectsOversizedBatch() {
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (int i = 0; i < 101; i++) {
+      rows.add(bulkEntry("do-" + i, "http://example/pred", "v" + i));
+    }
+    McpException ex = assertThrows(McpException.class, () -> tools.semanticAnnotateBulk(rows));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  /**
+   * MCP-COV-05-SEMANTIC-BULK-CONCURRENT — concurrent path test.
+   *
+   * <p>Submits 25 annotations (deliberately > SEMANTIC_ANNOTATE_BULK_CONCURRENCY=10).
+   * Verifies:
+   * <ul>
+   *   <li>All 25 are processed (array length == 25).</li>
+   *   <li>Result order matches input order (results[i].subjectAppId == "subject-i").</li>
+   *   <li>Each result carries the correct appId stamped by the mock DAO.</li>
+   * </ul>
+   */
+  @Test
+  void semanticAnnotateBulkConcurrentPathAllProcessedInOrder() throws Exception {
+    int batchSize = 25; // Deliberately > SEMANTIC_ANNOTATE_BULK_CONCURRENCY (10)
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("ann-" + in.getSubjectAppId());
+      return in;
+    });
+
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (int i = 0; i < batchSize; i++) {
+      rows.add(bulkEntry("subject-" + i, "http://example/pred", "value-" + i));
+    }
+
+    String json = tools.semanticAnnotateBulk(rows);
+    JsonNode root = new ObjectMapper().readTree(json);
+
+    assertTrue(root.isArray(), "Response must be a JSON array");
+    assertEquals(batchSize, root.size(), "results array length must match batchSize");
+
+    for (int i = 0; i < batchSize; i++) {
+      assertTrue(root.get(i).get("ok").asBoolean(),
+        "row " + i + " must be ok=true");
+      assertEquals("subject-" + i, root.get(i).get("subjectAppId").asText(),
+        "subjectAppId at index " + i + " must match input order");
+      assertEquals("ann-subject-" + i, root.get(i).get("appId").asText(),
+        "appId at index " + i + " must match stamped value");
+    }
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 
 /**
  * SEMA-V6-006 — 10 new MCP tools for the semantic annotation surface.
@@ -539,6 +541,9 @@ public class AnnotationMcpTools {
 
   // ─── semantic_annotate_bulk ─────────────────────────────────────────────────
 
+  /** Max simultaneous in-flight annotation writes per bulk call (MCP-COV-05-SEMANTIC-BULK-CONCURRENT). */
+  static final int SEMANTIC_ANNOTATE_BULK_CONCURRENCY = 10;
+
   @Tool(
     name = "semantic_annotate_bulk",
     description =
@@ -562,10 +567,8 @@ public class AnnotationMcpTools {
       "  error        — error message (present when ok=false).\n\n" +
       "Best-effort semantics: a failure on row N does NOT abort rows N+1..M.\n" +
       "All rows are attempted; the response aggregates per-row results.\n\n" +
-      "Concurrency: rows are written sequentially on the invoking request thread.\n" +
-      "TODO(MCP-COV-05-SEMANTIC-BULK-CONCURRENT): upgrade to Semaphore(10) + virtual-thread\n" +
-      "fan-out once SemanticAnnotationDAO is promoted from @RequestScoped to @ApplicationScoped\n" +
-      "(OGM session-per-request scope does not propagate to spawned virtual threads).\n\n" +
+      "Concurrency: up to 10 writes run in parallel on virtual threads (Semaphore-gated).\n" +
+      "Result order matches input order regardless of write-completion order.\n\n" +
       "Note: collection-level WRITE permission check is deferred (TODO SEMA-V6-007)."
   )
   public String semanticAnnotateBulk(
@@ -591,23 +594,31 @@ public class AnnotationMcpTools {
       boolean aiHeader = isAiAgentRequest();
       int n = annotations.size();
 
-      // Sequential fan-out with index-stable result array.
-      //
-      // TODO(MCP-COV-05-SEMANTIC-BULK-CONCURRENT): replace this loop with a
-      // Semaphore(10) + Executors.newVirtualThreadPerTaskExecutor() fan-out to
-      // run up to 10 Neo4j writes concurrently (Neo4j writes are I/O-bound).
-      // Blocked by: SemanticAnnotationDAO is @RequestScoped — the CDI request
-      // context does not propagate to spawned virtual threads in Quarkus, so
-      // annotationDAO.createOrUpdate() would NPE or see a stale session inside
-      // a virtual thread that is not the original request thread.
-      // Migration path: promote SemanticAnnotationDAO to @ApplicationScoped and
-      // change GenericDAO to use a per-call session (openSession() per method
-      // rather than once at construction time), then re-enable the concurrent path.
+      // Concurrent fan-out: up to SEMANTIC_ANNOTATE_BULK_CONCURRENCY simultaneous
+      // DAO writes, each on its own virtual thread. A Semaphore gates admission so
+      // the DB connection pool is not overwhelmed. Results are collected in input
+      // order by joining futures[i] in sequence, preserving the index-stable
+      // ordering guarantee stated in the tool description.
+      Semaphore semaphore = new Semaphore(SEMANTIC_ANNOTATE_BULK_CONCURRENCY);
       @SuppressWarnings("unchecked")
-      Map<String, Object>[] resultArray = new Map[n];
+      CompletableFuture<Map<String, Object>>[] futures = new CompletableFuture[n];
 
       for (int i = 0; i < n; i++) {
-        resultArray[i] = processAnnotationRow(annotations.get(i), aiHeader);
+        final Map<String, Object> row = annotations.get(i);
+        futures[i] = CompletableFuture.supplyAsync(() -> {
+          semaphore.acquireUninterruptibly();
+          try {
+            return processAnnotationRow(row, aiHeader);
+          } finally {
+            semaphore.release();
+          }
+        }, runnable -> Thread.ofVirtual().start(runnable));
+      }
+
+      // Collect in input order — join() blocks until each future completes.
+      Map<String, Object>[] resultArray = new Map[n];
+      for (int i = 0; i < n; i++) {
+        resultArray[i] = futures[i].join();
       }
 
       return support.toJson(List.of(resultArray));
