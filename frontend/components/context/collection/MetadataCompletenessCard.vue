@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 /**
- * RDM-005 — Metadata Completeness Score widget.
+ * RDM-005 / FAIR4 — Metadata Completeness Score widget.
  *
  * Renders a 0–100 score chip + per-check list on the Collection
  * landing, between the "Cite this dataset" card and the Data Objects
@@ -16,6 +16,13 @@
  * tested with 36 Vitest cases). This component is the
  * composable-wiring + rendering layer.
  *
+ * FAIR4 addition: a server-side score chip is shown alongside the
+ * client-side score. The server score is fetched via
+ * `useMetadataCompleteness(collectionAppId)` and calls
+ * `GET /v2/collections/{appId}/metadata-completeness`. Both scores
+ * should match; divergence is diagnostic (stale frontend bundle vs
+ * newer backend, or count-based checks not yet settled on the client).
+ *
  * Data sources:
  *   - Collection wire shape (passed in via prop) — name, description,
  *     license, accessRights, dataObjectIds
@@ -24,12 +31,14 @@
  *   - Creator ORCID — `UserApi.getUser({username: createdBy})`
  *   - Keyword count — conservatively 0 until a keyword-annotation
  *     endpoint ships (FAIR8 follow-up in aidocs/16-dispatcher-backlog.md)
+ *   - Server score — `useMetadataCompleteness(collectionAppId)` (FAIR4)
  *
- * All three fetches are best-effort; failures resolve to `0` /
- * `null` and the score is conservatively biased toward "incomplete"
- * during loading. The widget never blocks the page render.
+ * All fetches are best-effort; failures resolve to `0` / `null` and
+ * the score is conservatively biased toward "incomplete" during
+ * loading. The widget never blocks the page render.
  */
 import { UserApi, type Collection } from "@dlr-shepard/backend-client";
+import { useMetadataCompleteness } from "~/composables/context/useMetadataCompleteness";
 import { AnnotatedCollection } from "~/composables/annotated";
 import { useFetchCollectionLabJournalEntries } from "~/composables/context/useFetchCollectionLabJournalEntries";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
@@ -54,6 +63,18 @@ const collectionAppId = computed<string | null>(() => {
   const raw = (props.collection as unknown as { appId?: string | null }).appId;
   return raw ?? null;
 });
+
+// ── FAIR4: server-side score ─────────────────────────────────────────────
+//
+// Fetches the authoritative score from
+// `GET /v2/collections/{appId}/metadata-completeness`.
+// Displayed as a secondary chip next to the client-side score;
+// divergence between the two is diagnostic.
+const {
+  score: serverScore,
+  isLoading: serverScoreLoading,
+  isError: serverScoreError,
+} = useMetadataCompleteness(collectionAppId);
 
 // ── Fetch: semantic annotation count ─────────────────────────────────────
 //
@@ -221,6 +242,42 @@ function jumpToCheck(check: MetadataCheck) {
         <v-icon start :icon="bandIcon" />
         {{ scoreLabel }}
       </v-chip>
+      <!-- FAIR4 — server-side score chip -->
+      <v-chip
+        v-if="serverScore !== null"
+        :color="serverScore.score >= 80 ? 'success' : serverScore.score >= 50 ? 'warning' : 'error'"
+        variant="tonal"
+        size="default"
+        data-testid="metadata-completeness-server-score"
+        title="Server-authoritative score — computed by GET /v2/collections/{appId}/metadata-completeness"
+      >
+        <v-icon start icon="mdi-server" />
+        {{ serverScore.score }} / {{ serverScore.maxScore }}
+      </v-chip>
+      <v-progress-circular
+        v-else-if="serverScoreLoading"
+        indeterminate
+        size="18"
+        width="2"
+        color="primary"
+        data-testid="metadata-completeness-server-loading"
+        class="ml-1"
+      />
+      <v-tooltip
+        v-else-if="serverScoreError"
+        location="bottom"
+        text="Server score unavailable — check authentication or network."
+      >
+        <template #activator="{ props: actProps }">
+          <v-icon
+            v-bind="actProps"
+            icon="mdi-server-off"
+            size="small"
+            color="error"
+            data-testid="metadata-completeness-server-error"
+          />
+        </template>
+      </v-tooltip>
       <v-btn
         variant="text"
         size="small"

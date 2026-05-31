@@ -113,6 +113,61 @@ the title (when set). The collection list table has a dedicated
 "Access" column showing the access-rights chip per row, so an
 auditor can scan a page of collections at a glance.
 
+## Metadata completeness score (FAIR4)
+
+`GET /v2/collections/{appId}/metadata-completeness` returns a server-authoritative
+0–100 completeness score with a 9-check breakdown.  External harvesters
+(OpenAIRE, Helmholtz Databus) can query this endpoint to filter
+DMP-grade Collections without requiring a browser session.
+
+**Score bands:**
+
+| Range | Meaning |
+|---|---|
+| `< 50` | Not publication-ready |
+| `50–79` | Missing key FAIR fields |
+| `≥ 80` | DMP-grade |
+
+**Checks included:**
+
+| checkId | Points | Condition |
+|---|---|---|
+| `name` | 10 | Collection `name` is non-blank |
+| `description` | 15 | `description` ≥ 50 characters |
+| `license` | 20 | SPDX `license` string set |
+| `accessRights` | 10 | `accessRights` set |
+| `creatorOrcid` | 10 | Creator has ORCID set in their profile |
+| `semanticAnnotation` | 10 | ≥ 1 semantic annotation on any DataObject |
+| `labJournal` | 5 | ≥ 1 lab-journal entry on any DataObject |
+| `keywords` | 5 | ≥ 1 keyword-predicate annotation |
+| `dataObjects` | 15 | ≥ 1 DataObject in the Collection |
+
+**Example response:**
+
+```json
+GET /v2/collections/018f9c5a-7e26-7000-a000-000000000099/metadata-completeness
+Authorization: Bearer <token>
+
+{
+  "collectionAppId": "018f9c5a-7e26-7000-a000-000000000099",
+  "score": 80,
+  "maxScore": 100,
+  "percentage": 80.0,
+  "checks": [
+    { "checkId": "name",    "label": "Collection has a name",  "passed": true,  "weight": 10, "hint": "..." },
+    { "checkId": "license", "label": "License (SPDX) set",     "passed": true,  "weight": 20, "hint": "..." },
+    { "checkId": "keywords","label": "At least one keyword annotation", "passed": false, "weight": 5, "hint": "..." }
+  ]
+}
+```
+
+**Auth:** Read permission on the Collection.
+Returns `401` when unauthenticated, `403` when no Read access, `404` for unknown `appId`.
+
+The Collection sidebar also displays this score as a secondary chip next to the
+client-side completeness gauge.  Divergence between the two chips is diagnostic
+(e.g. stale frontend bundle vs. newer backend).
+
 ## See also
 
 - `data-objects.md` — same `license` + `accessRights` fields, same shape.
