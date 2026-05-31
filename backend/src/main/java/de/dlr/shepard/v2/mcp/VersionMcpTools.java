@@ -1,18 +1,27 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
+import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.neo4j.ogm.model.Result;
+import org.neo4j.ogm.session.Session;
 
 /**
  * MCP-COV-06 — Version MCP tools.
@@ -27,6 +36,15 @@ import java.util.UUID;
  * on the wire as {@code versionUid}. There is also an additive
  * {@code appId} field on the entity (L2a) which is surfaced on every
  * row for forward-compatibility.
+ *
+ * <p><b>Permission posture (MCP-PERMS-AUDIT-2).</b> {@link VersionService}
+ * does not perform a {@link PermissionsService} walk of its own, so this
+ * tool surface gates explicitly: {@code version_list} requires Read on
+ * the supplied Collection; {@code version_get} walks the Version's parent
+ * Collection (via the {@code (:Collection)-[:has_version]->(:Version)}
+ * edge) and requires Read on it. Callers without Read on the parent
+ * Collection get -32002 (forbidden), not an empty list — so the agent
+ * can self-correct rather than silently miss data.
  */
 @ApplicationScoped
 public class VersionMcpTools {
@@ -42,6 +60,14 @@ public class VersionMcpTools {
 
   @Inject
   McpToolSupport support;
+
+  /** MCP-PERMS-AUDIT-2 — per-row Collection-Read gate. */
+  @Inject
+  PermissionsService permissionsService;
+
+  /** MCP-PERMS-AUDIT-2 — caller identity for the Read gate. */
+  @Inject
+  AuthenticationContext authenticationContext;
 
   // ─── version_list ───────────────────────────────────────────────────────────
 
@@ -70,6 +96,11 @@ public class VersionMcpTools {
         throw McpToolSupport.invalidParams("entityAppId is required.");
       }
       long ogmId = support.resolveOfType(entityAppId, "Collection", "entityAppId");
+      // MCP-PERMS-AUDIT-2 — VersionService does not gate; gate explicitly.
+      String caller = requireCaller();
+      if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
+        throw new ForbiddenException("Caller lacks Read on collection " + entityAppId);
+      }
       List<Version> versions = versionService.getAllVersions(ogmId);
       List<Map<String, Object>> result = new ArrayList<>(versions.size());
       for (Version v : versions) {
@@ -116,6 +147,16 @@ public class VersionMcpTools {
       if (v == null) {
         throw McpToolSupport.invalidParams("No Version with uid " + versionUid);
       }
+      // MCP-PERMS-AUDIT-2 — walk Version -> parent Collection and gate Read.
+      String caller = requireCaller();
+      Long parentCollectionOgmId = findParentCollectionOgmId(uid);
+      if (parentCollectionOgmId == null) {
+        // Orphan (no Collection edge) — fail-closed: treat as not visible.
+        throw McpToolSupport.invalidParams("No Version with uid " + versionUid);
+      }
+      if (!permissionsService.isAccessTypeAllowedForUser(parentCollectionOgmId, AccessType.Read, caller)) {
+        throw new ForbiddenException("Caller lacks Read on the Version's parent Collection.");
+      }
       Map<String, Object> row = toRow(v);
       row.put(
         "predecessorUid",
@@ -123,6 +164,50 @@ public class VersionMcpTools {
       );
       return support.toJson(row);
     });
+  }
+
+  // ─── helpers — MCP-PERMS-AUDIT-2 ────────────────────────────────────────────
+
+  /**
+   * Resolve the authenticated caller; throw {@link NotAuthorizedException}
+   * (mapped by {@link McpToolSupport#run} to {@code -32001}) if absent.
+   */
+  private String requireCaller() {
+    String caller = authenticationContext == null ? null : authenticationContext.getCurrentUserName();
+    if (caller == null || caller.isBlank()) {
+      throw new NotAuthorizedException("Authentication required for version MCP tools.");
+    }
+    return caller;
+  }
+
+  /**
+   * Cypher walk Version({uid}) -> parent Collection ogmId. Returns
+   * {@code null} when the Version is gone, orphaned, or the Neo4j session
+   * is unavailable (fail-closed by caller).
+   */
+  Long findParentCollectionOgmId(UUID versionUid) {
+    Session live = NeoConnector.getInstance().getNeo4jSession();
+    if (live == null) return null;
+    String cypher =
+      "MATCH (c:Collection)-[:has_version]->(v:Version {uid: $uid}) " +
+      "RETURN id(c) AS ogmId LIMIT 1";
+    try {
+      Result result = live.query(cypher, Map.of("uid", versionUid.toString()));
+      if (result == null) return null;
+      Iterable<Map<String, Object>> rows = result.queryResults();
+      if (rows == null) return null;
+      for (Map<String, Object> row : rows) {
+        Object v = row.get("ogmId");
+        if (v instanceof Number n) return n.longValue();
+        if (v != null) {
+          try { return Long.parseLong(v.toString()); }
+          catch (NumberFormatException ignored) { /* fall through */ }
+        }
+      }
+    } catch (RuntimeException e) {
+      Log.debugf(e, "MCP-PERMS-AUDIT-2: ogmId lookup failed for Version uid=%s", versionUid);
+    }
+    return null;
   }
 
   // ─── helpers ────────────────────────────────────────────────────────────────
