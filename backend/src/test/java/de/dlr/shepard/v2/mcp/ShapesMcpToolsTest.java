@@ -178,7 +178,8 @@ class ShapesMcpToolsTest {
   void repExportReturnsBagInfo() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID))
       .thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, 0L))
+    // MCP-PERMS-AUDIT-2: gates on Write, not Read (tighter than REST).
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Write, CALLER, 0L))
       .thenReturn(true);
     RepExportIO io = new RepExportIO();
     io.setExportId("exp-1");
@@ -212,7 +213,23 @@ class ShapesMcpToolsTest {
   void repExportPropagatesForbidden() {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID))
       .thenReturn(Optional.of(COLL_OGM_ID));
+    // MCP-PERMS-AUDIT-2: denial on Write (the new gate).
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Write, CALLER, 0L))
+      .thenReturn(false);
+    McpException ex = assertThrows(McpException.class,
+      () -> tools.repExport(COLL_APP_ID, null));
+    assertEquals(-32002, ex.getJsonRpcErrorCode());
+  }
+
+  @Test
+  void repExportRejectsCallerWithOnlyReadOnCollection() {
+    // MCP-PERMS-AUDIT-2 regression guard: Read alone is NOT sufficient —
+    // the MCP surface tightens to Write per the audit row.
+    when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID))
+      .thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, 0L))
+      .thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Write, CALLER, 0L))
       .thenReturn(false);
     McpException ex = assertThrows(McpException.class,
       () -> tools.repExport(COLL_APP_ID, null));

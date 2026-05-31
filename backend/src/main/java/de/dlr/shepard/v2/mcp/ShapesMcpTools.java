@@ -208,7 +208,11 @@ public class ShapesMcpTools {
       "  downloadUrl     — TPL14b out-of-band delivery (currently null).\n" +
       "  fileName        — suggested filename.\n" +
       "  exportedAt, dataObjectCount, bagSizeBytes — metadata.\n\n" +
-      "Auth: Read on the Collection. Forbidden → -32002.\n\n" +
+      "Auth: Write on the Collection. Forbidden → -32002. (Note: the REST " +
+      "endpoint currently gates on Read; the MCP surface intentionally tightens to " +
+      "Write per MCP-PERMS-AUDIT-2 because the export records a Collection-scoped " +
+      "PROV-O Activity and is a write-class side effect. The REST flip to Write is " +
+      "tracked in MCP-PERMS-AUDIT-2.)\n\n" +
       "Note: TPL14 is synchronous — there is no separate `rep_poll` tool because " +
       "the build completes inline. An async variant + poll handle ships at TPL14b."
   )
@@ -233,8 +237,13 @@ public class ShapesMcpTools {
       if (ogmId.isEmpty()) {
         throw McpToolSupport.invalidParams("No Collection with appId " + collectionAppId);
       }
-      if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-        throw new ForbiddenException("Caller lacks Read on collection " + collectionAppId);
+      // MCP-PERMS-AUDIT-2 — gate Write (REP build records a PROV-O Activity
+      // on the Collection — a write-class side effect even though the REST
+      // surface still gates Read). The REST flip is tracked in
+      // MCP-PERMS-AUDIT-2; until it lands, the MCP surface is the stricter
+      // one.
+      if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
+        throw new ForbiddenException("Caller lacks Write on collection " + collectionAppId);
       }
 
       RepExportIO io = repExportService.buildExport(collectionAppId, caller);
