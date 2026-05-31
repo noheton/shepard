@@ -37,6 +37,12 @@ export function useWatchedCollections() {
 
   async function load() {
     if (_loaded || !import.meta.client) return;
+    // AUTH-API-CALLS-UNGATED — skip when no session. The unconditional
+    // load() call at module bottom previously fired on the landing page
+    // and produced a 401 absorbed by useAuthRefreshMiddleware. Re-runs
+    // on a later sign-in via the `status` watcher below.
+    const { status } = useAuth();
+    if (status.value !== "authenticated") return;
     _loaded = true;
     _loading.value = true;
     try {
@@ -111,7 +117,9 @@ export function useWatchedCollections() {
     }
   }
 
-  load();
+  // Initial attempt + re-attempt when auth status becomes authenticated.
+  const { status } = useAuth();
+  watch(status, () => { void load(); }, { immediate: true });
 
   return {
     watched: _watched,
