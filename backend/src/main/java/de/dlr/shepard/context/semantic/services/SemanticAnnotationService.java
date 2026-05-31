@@ -34,6 +34,46 @@ public class SemanticAnnotationService {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(entityId);
   }
 
+  // ── SEMA-V6-PRED-UI: bundled per-predicate usage statistics ─────────────
+
+  /**
+   * SEMA-V6-PRED-UI — bundle the three sub-projections needed by the
+   * predicate-detail UI page in one round-trip:
+   * {@code annotationCount} (exact match on {@code propertyIRI}),
+   * {@code topValues} (object-value frequency, descending), and
+   * {@code sampleEntities} (a slice of annotated entities).
+   *
+   * <p>The {@code sampleLimit} parameter governs the cap on
+   * {@code sampleEntities}; the {@code topValuesLimit} caps the value
+   * frequency list. Both are clamped to a minimum of 1 by the DAO.
+   *
+   * <p>Returns a holder record so the caller can shape the wire format
+   * (see {@code SemanticPredicateStatsRest}).
+   *
+   * @param predicateIri    the property IRI to scope every query
+   * @param topValuesLimit  cap on {@code topValues} rows
+   * @param sampleLimit     cap on {@code sampleEntities} rows
+   * @return bundled stats; counts are 0 / lists are empty when the predicate is unused
+   */
+  public PredicateStats getPredicateStats(String predicateIri, int topValuesLimit, int sampleLimit) {
+    long total = semanticAnnotationDAO.countByPredicate(predicateIri);
+    List<java.util.Map<String, Object>> topValues =
+      semanticAnnotationDAO.topValuesForPredicate(predicateIri, topValuesLimit);
+    List<java.util.Map<String, Object>> samples =
+      semanticAnnotationDAO.sampleEntitiesForPredicate(predicateIri, sampleLimit);
+    return new PredicateStats(total, topValues, samples);
+  }
+
+  /**
+   * Read-only carrier for {@link #getPredicateStats(String, int, int)} —
+   * keeps the service free of HTTP/IO concerns.
+   */
+  public record PredicateStats(
+    long annotationCount,
+    List<java.util.Map<String, Object>> topValues,
+    List<java.util.Map<String, Object>> sampleEntities
+  ) {}
+
   public List<SemanticAnnotation> getAllAnnotationsByShepardId(long shepardId) {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(shepardId);
   }
