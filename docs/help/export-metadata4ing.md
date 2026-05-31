@@ -2,6 +2,7 @@
 layout: default
 title: Export a DataObject as metadata4ing JSON-LD
 permalink: /help/export-metadata4ing/
+audience: user
 ---
 
 # Export a DataObject as metadata4ing (m4i) JSON-LD

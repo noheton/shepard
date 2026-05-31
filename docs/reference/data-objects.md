@@ -2,6 +2,7 @@
 layout: default
 title: Data Objects (reference)
 permalink: /reference/data-objects/
+audience: user
 ---
 
 # Data Objects

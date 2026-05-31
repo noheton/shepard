@@ -2,6 +2,7 @@
 title: API access — calling Shepard programmatically
 stage: deployed
 last-stage-change: 2026-05-24
+audience: user
 ---
 
 # API access — calling Shepard programmatically

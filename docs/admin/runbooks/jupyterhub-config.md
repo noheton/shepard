@@ -1,6 +1,7 @@
 ---
 title: JupyterHub link-out config (J1e)
 nav_order: 95
+audience: admin
 ---
 
 # JupyterHub link-out — admin runbook

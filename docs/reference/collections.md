@@ -2,6 +2,7 @@
 layout: default
 title: Collections (reference)
 permalink: /reference/collections/
+audience: user
 ---
 
 # Collections

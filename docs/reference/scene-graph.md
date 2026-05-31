@@ -2,6 +2,7 @@
 layout: default
 title: Scene graph (reference)
 permalink: /reference/scene-graph/
+audience: user
 ---
 
 # Scene graph
