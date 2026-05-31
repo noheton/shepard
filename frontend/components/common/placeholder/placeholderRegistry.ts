@@ -201,29 +201,8 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
     backend: "shipped",
   },
-  {
-    slug: "ontology-alignment",
-    surface: "admin",
-    title: "Ontology Alignment Registry",
-    subtitle:
-      "Read-only registry of how core Shepard concepts map onto upper-ontology classes (BFO 2020, IAO, PROV-O, IOF Core). Seeded by V67 migration; operator runbook: aidocs/semantics/97.",
-    endpoint: "/v2/semantic/ontology/alignment",
-    backlogRow: "TPL3",
-    designDoc: "aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md",
-    backend: "shipped",
-  },
-  // FE-PROV-INSTANCE-REGISTRY
-  {
-    slug: "instance-registry",
-    surface: "admin",
-    title: "Instance Registry",
-    subtitle:
-      "Register peer Shepard instances (instanceId → displayName → baseUrl → dlrInstitute). Drives badge hover-text in the provenance UI — 'DLR BT, Augsburg' instead of 'dlr-augsburg'. Default: empty (operator opt-in).",
-    endpoint: "/v2/admin/instances",
-    backlogRow: "FE-PROV-INSTANCE-REGISTRY",
-    designDoc: "aidocs/16-dispatcher-backlog.md",
-    backend: "shipped",
-  },
+  // PLACEHOLDER-REPLACE-TPL3a-lite shipped 2026-05-31 → AdminOntologyAlignmentPane
+  // PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY shipped 2026-05-31 → AdminInstanceRegistryPane
   // TS-SEMANTIC-REST
   {
     slug: "ts-channel-annotations",

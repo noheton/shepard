@@ -15,6 +15,8 @@ import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue"
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import AdminJupyterPane from "~/components/context/admin/AdminJupyterPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
+import AdminOntologyAlignmentPane from "~/components/context/admin/AdminOntologyAlignmentPane.vue";
+import AdminInstanceRegistryPane from "~/components/context/admin/AdminInstanceRegistryPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
@@ -308,14 +310,13 @@ const landingCards = [
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"
     />
-    <PlaceholderFragmentPane
+    <!-- PLACEHOLDER-REPLACE-TPL3a-lite -->
+    <AdminOntologyAlignmentPane
       v-if="routeFragment === AdminFragments.ONTOLOGY_ALIGNMENT"
-      slug="ontology-alignment"
     />
-    <!-- FE-PROV-INSTANCE-REGISTRY -->
-    <PlaceholderFragmentPane
+    <!-- PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY -->
+    <AdminInstanceRegistryPane
       v-if="routeFragment === AdminFragments.INSTANCE_REGISTRY"
-      slug="instance-registry"
     />
     <!-- J1e: JupyterHub link-out config -->
     <AdminJupyterPane
