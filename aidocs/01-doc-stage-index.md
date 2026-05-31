@@ -415,7 +415,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/principle-candidates.md`](agent-findings/principle-candidates.md) | Implicit Design Principles — Candidate Discovery | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md`](agent-findings/rdm-001-cite-this-dataset-2026-05-24.md) | RDM-001 — "Cite this dataset" card on Collection landing (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/screenshots/signout-loop-fix/README.md`](agent-findings/screenshots/signout-loop-fix/README.md) | BUG-SIGNOUT-LOOP-1 — sign-out infinite loop fix | 2026-05-31 | — |
+| [`aidocs/agent-findings/screenshots/signout-loop-fix/README.md`](agent-findings/screenshots/signout-loop-fix/README.md) | BUG-SIGNOUT-LOOP-1 — sign-out infinite loop fix | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/sema-v6-preseed-status.md`](agent-findings/sema-v6-preseed-status.md) | SEMA-V6 Preseed Status (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/ts-axis-verify-2026-05-29.md`](agent-findings/ts-axis-verify-2026-05-29.md) | TS-AXIS-VERIFY — MFFD spatial-roles annotations verified live (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |
