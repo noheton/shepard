@@ -202,6 +202,63 @@ export class AnnotatedStructuredDataContainer extends ContainerAnnotated {
   readonly basePath = "structured-data-containers";
 }
 
+// ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────
+//
+// Wraps `/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations`
+// (TimeseriesChannelAnnotationRest). Distinct from {@link AnnotatedTimeseries}
+// which still hits the upstream numeric-id-keyed `/shepard/api/...` route.
+// Channels created before TS-SEMANTIC-01 dual-write shipped will GET an empty
+// list and POST will 404 — surface that to the user as "no annotations yet".
+
+export class AnnotatedChannel implements Annotated {
+  readonly containerId: number;
+  readonly channelShepardId: string;
+
+  constructor(containerId: number, channelShepardId: string) {
+    this.containerId = containerId;
+    this.channelShepardId = channelShepardId;
+  }
+
+  private endpoint(annotationId?: number): string {
+    const base =
+      `${v2BaseUrl()}/v2/timeseries-containers/${this.containerId}` +
+      `/channels/${encodeURIComponent(this.channelShepardId)}/annotations`;
+    return annotationId === undefined ? base : `${base}/${annotationId}`;
+  }
+
+  async fetchAnnotations(): Promise<SemanticAnnotation[]> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(), { headers });
+    if (!response.ok) {
+      // 404 = channel has no AnnotatableTimeseries node yet (pre-TS-SEMANTIC-01
+      // channel) — treat as "no annotations" rather than an error.
+      if (response.status === 404) return [];
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return (await response.json()) as SemanticAnnotation[];
+  }
+
+  async deleteAnnotation(annotationId: number): Promise<void> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(annotationId), {
+      method: "DELETE",
+      headers,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(), {
+      method: "POST",
+      headers,
+      body: JSON.stringify(annotation),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.json()) as SemanticAnnotation;
+  }
+}
+
 // ─── Per-Timeseries-channel annotations (covered by upstream API) ───────────
 
 export class AnnotatedTimeseries implements Annotated {
