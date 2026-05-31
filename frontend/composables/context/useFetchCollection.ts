@@ -70,25 +70,30 @@ export function useFetchCollection(collectionId: number) {
 export const useFetchCollectionOfRouteParams = (
   routeParams: Ref<CollectionRouteParams>,
 ) => {
+  // BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary.
+  // `collection.value?.id` is a numeric long from the v1 wire shape; the
+  // comparison stringifies via `!==` coercion semantics — for numeric
+  // route ids the compare resolves correctly; UUID v7 ids will always
+  // mismatch, forcing a refetch (which 404s cleanly on v1 paths).
+  const cid = () => routeParams.value.collectionId as unknown as number;
   const {
     collection,
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
     isOwner,
     fetchCollection,
-  } = useFetchCollection(routeParams.value.collectionId);
+  } = useFetchCollection(cid());
 
   watch(routeParams, () => {
     if (
       routeParams.value.collectionId &&
-      collection.value?.id !== routeParams.value.collectionId
+      String(collection.value?.id ?? "") !== routeParams.value.collectionId
     ) {
-      fetchCollection(routeParams.value.collectionId);
+      fetchCollection(cid());
     }
   });
 
-  const refreshCollection = () =>
-    fetchCollection(routeParams.value.collectionId);
+  const refreshCollection = () => fetchCollection(cid());
 
   return {
     collection,

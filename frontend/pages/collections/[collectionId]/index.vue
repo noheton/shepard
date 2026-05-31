@@ -19,7 +19,13 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-const collectionId = routeParams.value.collectionId;
+// BUG-COLL-APPID-ROUTE-001: collectionId is now string (UUID v7 or numeric).
+// The generated v1 client types path params as number; runtime is
+// `String(x)` + `encodeURIComponent`, so strings work on the wire — cast
+// here to satisfy the type. v1 endpoints will 404 cleanly for UUID v7
+// (right behaviour pending L2d frontend cutover) instead of silently
+// truncating to a wrong-collection lookup as before.
+const collectionId = routeParams.value.collectionId as unknown as number;
 const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
   useFetchCollection(collectionId);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
@@ -191,7 +197,7 @@ const collectionAccessRights = computed<string | null>(() => {
 // `urn:shepard:mffd:section` predicate. The widget renders only when the
 // probe flips `hasData` to true, so collections without OTvis data
 // pay only the probe cost (1 list + 5 small annotation fetches).
-const mffdNdtCollectionIdRef = computed<number | null>(() => collectionId);
+const mffdNdtCollectionIdRef = computed<number | null>(() => collectionId as unknown as number);
 const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
@@ -534,7 +540,7 @@ useHead({
                 >
                   <div id="metadata-labjournal-section" class="pt-4">
                     <CollectionLabJournalEntryList
-                      :collection-id="routeParams.collectionId"
+                      :collection-id="(routeParams.collectionId as unknown as number)"
                       :collection-app-id="collectionAppId"
                       :data-object-map="dataObjectsMap"
                       :fetch-data-object-map="fetchDataObjectMap"

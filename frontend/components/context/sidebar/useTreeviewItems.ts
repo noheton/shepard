@@ -4,6 +4,11 @@ import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
+  // BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary so
+  // the typed-number v1 client signatures still compile. UUID v7 flows
+  // through to the wire intact and 404s cleanly on v1 paths.
+  const cid = () => routeParams.value.collectionId as unknown as number;
+  const did = () => routeParams.value.dataObjectId as unknown as number | undefined;
   const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
@@ -37,10 +42,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       if (openLoadedItems) addOpen(itemWithPath.pathFromRoot);
       return;
     }
-    const parentIds = await getPathToItem(
-      routeParams.value.collectionId,
-      itemId,
-    );
+    const parentIds = await getPathToItem(cid(), itemId);
     for (const id of parentIds) {
       await loadChildrenOfItem(id);
     }
@@ -49,9 +51,10 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
 
   async function initialLoad() {
     loading.value = true;
-    await fetchTreeviewItems(routeParams.value.collectionId);
-    if (routeParams.value.dataObjectId) {
-      await loadAndExpandUpToItem(routeParams.value.dataObjectId);
+    await fetchTreeviewItems(cid());
+    const d = did();
+    if (d !== undefined) {
+      await loadAndExpandUpToItem(d);
     }
     loading.value = false;
   }
@@ -64,17 +67,18 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       routeParams.value.collectionId &&
       oldParams.collectionId !== routeParams.value.collectionId
     ) {
-      await fetchTreeviewItems(routeParams.value.collectionId);
+      await fetchTreeviewItems(cid());
     }
-    if (routeParams.value.dataObjectId) {
-      await loadAndExpandUpToItem(routeParams.value.dataObjectId);
+    const d = did();
+    if (d !== undefined) {
+      await loadAndExpandUpToItem(d);
     }
     loading.value = false;
   });
 
   async function refreshItems() {
     loading.value = true;
-    await fetchTreeviewItems(routeParams.value.collectionId);
+    await fetchTreeviewItems(cid());
     for (const openedItem of openedTreeviewItems.value) {
       await loadAndExpandUpToItem(openedItem, false);
       await loadChildrenOfItem(openedItem);
@@ -131,11 +135,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     }
     if (item.children?.length) return;
 
-    const children = await fetchChildrenOfItem(
-      routeParams.value.collectionId,
-      item.id,
-      item,
-    );
+    const children = await fetchChildrenOfItem(cid(), item.id, item);
 
     if (!children) return;
 

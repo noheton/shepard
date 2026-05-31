@@ -448,4 +448,34 @@ class CollectionV2RestTest {
     assertEquals(204, r.getStatus());
     verify(collectionService).deleteCollection(COLL_OGM_ID);
   }
+
+  // ── route-pinning ─────────────────────────────────────────────────────────
+  //
+  // BUG-V2-COLL-LIST-404 (2026-05-30 UI scrutinizer): audit reported
+  // `/v2/collections` returning 404. Investigation showed the audit
+  // curl'd `https://shepard.nuclide.systems/shepard/api/v2/collections`
+  // — the `/shepard/api/` prefix is the upstream-frozen v1 base path
+  // and does NOT apply to `/v2/...` resources (quarkus.http.root-path=/
+  // per application.properties). Direct `curl /v2/collections` returns
+  // 401 (auth required, endpoint present). False positive — but pin
+  // the path literally here so any future class-level @Path rename
+  // surfaces as a test failure rather than a silent 404.
+
+  @Test
+  void classLevelPathIsExactlyV2Collections() {
+    jakarta.ws.rs.Path classPath = CollectionV2Rest.class.getAnnotation(jakarta.ws.rs.Path.class);
+    assertNotNull(classPath, "CollectionV2Rest must carry a @Path annotation");
+    assertEquals("/v2/collections", classPath.value(),
+      "Class-level @Path is the wire contract; any change breaks every /v2/collections caller");
+  }
+
+  @Test
+  void getMethodPathIsRelativeAppIdParam() throws NoSuchMethodException {
+    jakarta.ws.rs.Path methodPath = CollectionV2Rest.class
+      .getMethod("get", String.class, SecurityContext.class)
+      .getAnnotation(jakarta.ws.rs.Path.class);
+    assertNotNull(methodPath, "get(...) must carry an @Path annotation");
+    assertEquals("/{collectionAppId}", methodPath.value(),
+      "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
+  }
 }
