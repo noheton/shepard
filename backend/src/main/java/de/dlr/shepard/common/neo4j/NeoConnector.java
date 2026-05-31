@@ -128,6 +128,11 @@ public class NeoConnector implements IConnector {
           SqlTimeseriesConfig.class.getPackageName(),
           // J1e — JupyterHub link-out admin config singleton (parallel to ROR1 / P10c).
           de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig.class.getPackageName(),
+          // NTF1-BACKEND-TRANSPORT-MODEL — :NotificationTransport list-shaped entity
+          // backing the admin transport-CRUD endpoints. Without this OGM package
+          // registration, session.loadAll(NotificationTransport.class) returns empty
+          // and createOrUpdate throws "not a valid entity class".
+          de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport.class.getPackageName(),
           // DT1-PHASE-0 — :DigitalTwinScene + :CoordinateFrame + :Joint entity
           // scaffold (SCENEGRAPH-REST-1 consumes these via raw Cypher for
           // edges, but the entities themselves must be registered or

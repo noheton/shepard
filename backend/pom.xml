@@ -120,6 +120,15 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-rest-client-jackson</artifactId>
     </dependency>
+    <!-- NTF1-BACKEND-SMTP — Jakarta Mail RI (Eclipse Angus). Used by
+         SmtpNotificationSender to dispatch operator-configured SMTP
+         transports (per-:NotificationTransport host/port/auth, not the
+         deploy-time fixed SMTP relay that quarkus-mailer assumes). -->
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.3</version>
+    </dependency>
     <!-- T1f — YAML import/export for ShepardTemplate portability (aidocs/16 T1f).
          Version managed by the Quarkus BOM. -->
     <dependency>
