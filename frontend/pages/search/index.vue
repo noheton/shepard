@@ -274,7 +274,10 @@ useHead({
 </script>
 
 <template>
-  <div style="max-width: 1200px; margin: auto">
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L6: data-heavy results page;
+       widen from 1200px to 2400px so the Query column + Results column
+       use the 4K canvas. -->
+  <div style="max-width: 2400px; margin: auto">
     <v-container fluid width="100%">
       <v-col>
         <v-row>
