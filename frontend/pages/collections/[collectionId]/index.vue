@@ -2,6 +2,7 @@
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
+import CollectionArchiveControl from "~/components/context/collection/CollectionArchiveControl.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
@@ -372,6 +373,15 @@ useHead({
                 entity-kind="collections"
                 :entity-app-id="collectionAppId"
                 :entity-name="collection.name"
+              />
+              <!-- #27-ARCHIVED — owner-only Archive/Unarchive control plus
+                   "Archived" chip when status is ARCHIVED. -->
+              <CollectionArchiveControl
+                v-if="collectionAppId"
+                :app-id="collectionAppId"
+                :status="collection.status ?? null"
+                :is-manager="isAllowedToEditCollection ?? false"
+                @changed="handleCollectionUpdate"
               />
             </v-row>
             <!-- Always-visible: Description with inline edit. Lives outside the
