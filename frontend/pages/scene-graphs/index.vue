@@ -19,8 +19,9 @@ import { isPlausibleAppId } from "~/utils/toolsLanding";
 import {
   formatEpochMillis,
   resolveLandingBranch,
-  truncateAppId,
 } from "~/utils/sceneGraphsLanding";
+// II3 (ui-scrutinizer-2026-05-30): row appId rendering moved to
+// `<CopyableAppIdChip>` — bare `truncateAppId` no longer imported here.
 import { useSceneGraph, type SceneListItem } from "~/composables/useSceneGraph";
 
 const router = useRouter();
@@ -66,13 +67,8 @@ const landingBranch = computed(() =>
   resolveLandingBranch(totalRows.value, listLoading.value, listError.value),
 );
 
-async function copyAppId(appId: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(appId);
-  } catch {
-    // Clipboard may be unavailable (e.g. http test contexts); silently no-op.
-  }
-}
+// II3 (ui-scrutinizer-2026-05-30): copy-to-clipboard moved into the
+// shared `<CopyableAppIdChip>` component — no inline copy fn required.
 
 // ── Open-by-appId fallback (power user shortcut) ───────────────────────────
 
@@ -159,14 +155,13 @@ useHead({ title: "Scene graphs | shepard" });
           {{ formatEpochMillis(item.updatedAt ?? item.createdAt) }}
         </template>
         <template #[`item.appId`]="{ item }">
-          <span
-            class="appid-mono"
-            :title="item.appId"
-            data-testid="scene-graphs-row-appid"
-            @click.stop="copyAppId(item.appId)"
-          >
-            {{ truncateAppId(item.appId) }}
-          </span>
+          <!-- II3 (ui-scrutinizer-2026-05-30): unified click-to-copy chip
+               replacing the bare span. Same affordance now appears in
+               GitCredentialsPane + the predicate-detail sample table. -->
+          <CopyableAppIdChip
+            :app-id="item.appId"
+            testid="scene-graphs-row-appid"
+          />
         </template>
       </v-data-table-server>
     </v-card>

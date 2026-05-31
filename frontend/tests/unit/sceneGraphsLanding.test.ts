@@ -10,8 +10,10 @@ import { describe, it, expect } from "vitest";
 import {
   formatEpochMillis,
   resolveLandingBranch,
-  truncateAppId,
 } from "../../utils/sceneGraphsLanding";
+// II3 (ui-scrutinizer-2026-05-30): `truncateAppId` moved to the canonical
+// `~/utils/appId.ts` so the chip + helpers share one shape.
+import { truncateAppId } from "../../utils/appId";
 
 describe("sceneGraphsLanding — resolveLandingBranch", () => {
   it("returns 'help' when the catalogue is empty (no scenes seeded yet)", () => {

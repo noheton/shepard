@@ -98,9 +98,10 @@ async function confirmDelete() {
   }
 }
 
-function truncateAppId(appId: string): string {
-  return appId.length > 12 ? appId.slice(0, 12) + "…" : appId;
-}
+// II3 (ui-scrutinizer-2026-05-30): truncation + click-to-copy moved into
+// the shared `<CopyableAppIdChip>` (utils/appId.ts). Settling on the 8…4
+// shape across every surface (was 12…+ here) so the user sees the same
+// affordance on every appId-bearing table.
 </script>
 
 <template>
@@ -141,8 +142,11 @@ function truncateAppId(appId: string): string {
             <td>{{ cred.host }}</td>
             <td>{{ cred.displayName ?? "—" }}</td>
             <td>{{ cred.username }}</td>
-            <td class="app-id-column" :title="cred.appId">
-              {{ truncateAppId(cred.appId) }}
+            <td class="app-id-column">
+              <CopyableAppIdChip
+                :app-id="cred.appId"
+                testid="git-credentials-row-appid"
+              />
             </td>
             <td class="action-column">
               <ActionButton
