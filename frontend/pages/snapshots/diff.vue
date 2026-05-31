@@ -57,7 +57,9 @@ async function runDiff() {
 </script>
 
 <template>
-  <v-container>
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L5: data-heavy tool page; fluid +
+       2400px cap so the snapshot inputs and diff JSON use the 4K canvas. -->
+  <v-container fluid style="max-width: 2400px; margin: 0 auto">
     <div class="d-flex flex-column ga-2 mb-4">
       <h4 class="text-h4">Snapshot diff</h4>
       <p class="text-body-1 text-medium-emphasis">

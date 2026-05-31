@@ -603,7 +603,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container>
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L5: data-heavy tool page; fluid +
+       2400px cap so the binding declarations / 3D viewport / playback
+       controls breathe at 4K without becoming unreadably wide. -->
+  <v-container fluid style="max-width: 2400px; margin: 0 auto">
     <!-- ── header ─────────────────────────────────────────────────────────── -->
     <div class="d-flex flex-column ga-2 mb-4">
       <h4 class="text-h4">Shape render playground</h4>
