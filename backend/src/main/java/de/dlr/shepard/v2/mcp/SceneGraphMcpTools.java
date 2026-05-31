@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.v2.scenegraph.entities.CoordinateFrame;
 import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
 import de.dlr.shepard.v2.scenegraph.entities.FrameKind;
@@ -14,14 +15,25 @@ import de.dlr.shepard.v2.scenegraph.io.FrameIO;
 import de.dlr.shepard.v2.scenegraph.io.JointIO;
 import de.dlr.shepard.v2.scenegraph.io.PatchFrameRequestIO;
 import de.dlr.shepard.v2.scenegraph.io.SceneGraphIO;
+import de.dlr.shepard.v2.scenegraph.io.SceneGraphListItemIO;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
 import de.dlr.shepard.v2.scenegraph.services.SceneGraphService.ProvenanceContext;
+import de.dlr.shepard.v2.scenegraph.services.ScenegraphFromUrdfService;
+import de.dlr.shepard.v2.scenegraph.services.ScenegraphFromUrdfService.ExistingSceneException;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * SCENEGRAPH-REST-1 — MCP tool surface for scene-graph CRUD.
@@ -46,6 +58,27 @@ public class SceneGraphMcpTools {
   @Inject McpContextBridge contextBridge;
   @Inject McpToolSupport support;
   @Inject ObjectMapper objectMapper;
+
+  /**
+   * MCP-COV-08 — wired for the {@code scene_create_from_urdf} tool so the
+   * service-layer permission walk + URDF parse + scene+frames+joints mint
+   * all live in one place and the MCP tool is a thin wrapper.
+   */
+  @Inject ScenegraphFromUrdfService scenegraphFromUrdfService;
+
+  /**
+   * MCP-COV-08 — current authenticated principal for the URDF mint
+   * permission walk. Populated by {@link McpAuthFilter} before any tool
+   * method runs.
+   */
+  @Inject AuthenticationContext authenticationContext;
+
+  /**
+   * MCP-COV-08 — used to read the {@code X-AI-Agent} header on the
+   * {@code scene_create_from_urdf} tool so the mint Activity records
+   * AI provenance per the f(ai)²r split.
+   */
+  @Inject Instance<CurrentVertxRequest> currentVertxRequest;
 
   @Tool(
     name = "scene_graph_get",
@@ -288,7 +321,174 @@ public class SceneGraphMcpTools {
     });
   }
 
+  // ── MCP-COV-08 — scene_list ──────────────────────────────────────────────
+
+  /** Cap mirrors {@link de.dlr.shepard.v2.scenegraph.resources.SceneGraphRest#list}. */
+  static final int SCENE_LIST_MAX_SIZE = 200;
+  /** Default page size — matches the REST endpoint default. */
+  static final int SCENE_LIST_DEFAULT_SIZE = 50;
+
+  @Tool(
+    name = "scene_list",
+    description =
+      "List `:DigitalTwinScene` rows in the instance, ordered by `updatedAt DESC` so " +
+      "the most recently-touched scenes appear first (ties broken by `appId ASC`).\n\n" +
+      "Mirrors `GET /v2/scene-graphs`. Returns an envelope with `items[]`, `total`, " +
+      "`page`, `size`. Each item carries: `appId`, `name`, `description`, " +
+      "`sourceFileAppId`, `rootFrameAppId`, `createdAt`, `updatedAt`, `frameCount`, " +
+      "`jointCount`.\n\n" +
+      "Pagination: omit `page` / `size` to get the first 50; the server caps `size` at " +
+      SCENE_LIST_MAX_SIZE + " to avoid unbounded result sets.\n\n" +
+      "Auth: any authenticated user (per the SCENEGRAPH-REST-1 posture; no per-scene " +
+      "permission gate yet — see `SCENEGRAPH-PERMS-1`)."
+  )
+  public String sceneList(
+    @ToolArg(required = false, description = "Zero-based page index. Default 0.") Integer page,
+    @ToolArg(required = false, description = "Page size, clamped to [1, " + SCENE_LIST_MAX_SIZE + "]. Default " + SCENE_LIST_DEFAULT_SIZE + ".") Integer size
+  ) {
+    return support.run("scene_list", () -> {
+      contextBridge.bind();
+      int safePage = page == null ? 0 : Math.max(page, 0);
+      int safeSize = size == null
+        ? SCENE_LIST_DEFAULT_SIZE
+        : Math.min(Math.max(size, 1), SCENE_LIST_MAX_SIZE);
+
+      SceneGraphService.SceneListPage src = sceneGraphService.listScenes(safePage, safeSize);
+
+      List<Map<String, Object>> items = new ArrayList<>(src.rows().size());
+      for (SceneGraphService.SceneListRow r : src.rows()) {
+        // Reuse the existing IO shape so the wire fields stay in lock-step
+        // with the REST envelope — any future field added to the list-item
+        // row flows here for free.
+        items.add(toListItemMap(new SceneGraphListItemIO(r)));
+      }
+
+      Map<String, Object> envelope = new LinkedHashMap<>();
+      envelope.put("items", items);
+      envelope.put("total", src.total());
+      envelope.put("page", safePage);
+      envelope.put("size", safeSize);
+      return support.toJson(envelope);
+    });
+  }
+
+  // ── MCP-COV-08 — scene_create_from_urdf ──────────────────────────────────
+
+  @Tool(
+    name = "scene_create_from_urdf",
+    description =
+      "Mint a `:DigitalTwinScene` by parsing a URDF singleton FileReference in one " +
+      "call. Mirrors `POST /v2/scene-graphs/from-urdf/{fileReferenceAppId}`.\n\n" +
+      "Resolves the FileReference (FR1b singleton), streams its URDF XML content, " +
+      "parses it, and materialises one `:CoordinateFrame` per `<link>` and one " +
+      "`:Joint` per `<joint>` — all via the service layer so every mutation is " +
+      "captured as a `:Activity`. A `urn:shepard:scenegraph:scene-appId` annotation " +
+      "is stamped on the FileReference so subsequent calls can route to the existing " +
+      "scene.\n\n" +
+      "Idempotency: if the FileReference already carries a scene-appId back-" +
+      "annotation, the tool returns the existing scene appId in `{existingSceneAppId}` " +
+      "rather than erroring — so re-invocation is safe.\n\n" +
+      "Auth: caller must have Write on the parent Collection of the FileReference " +
+      "(inherited via the DataObject → Collection chain).\n\n" +
+      "Errors: -32602 when the FileReference is missing / is a multi-file bundle / " +
+      "the URDF body is invalid; -32002 when the caller lacks Write permission."
+  )
+  public String sceneCreateFromUrdf(
+    @ToolArg(description = "UUID v7 of the singleton `:FileReference` carrying the URDF bytes.") String fileReferenceAppId,
+    @ToolArg(required = false, description = "Optional scene name; defaults to the URDF `<robot name=...>` attribute or the FileReference name.") String name,
+    @ToolArg(required = false, description = "Optional scene description.") String description
+  ) {
+    return support.run("scene_create_from_urdf", () -> {
+      contextBridge.bind();
+
+      String caller = authenticationContext == null ? null : authenticationContext.getCurrentUserName();
+      if (caller == null || caller.isBlank()) {
+        throw new jakarta.ws.rs.NotAuthorizedException(
+          "Authentication required to mint a scene from a URDF FileReference."
+        );
+      }
+
+      String aiAgent = readAiAgentHeader();
+      ProvenanceContext prov = ProvenanceContext.from(caller, aiAgent);
+
+      try {
+        DigitalTwinScene scene = scenegraphFromUrdfService.createFromUrdf(
+          fileReferenceAppId, name, description, prov, caller
+        );
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("status", "created");
+        out.put("sceneAppId", scene.getAppId());
+        out.put("scene", new SceneGraphIO(scene, List.of(), List.of()));
+        return support.toJson(out);
+      } catch (ExistingSceneException ese) {
+        // Idempotent 409 — return the existing scene appId so the caller
+        // routes to it instead of erroring.
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("status", "exists");
+        out.put("existingSceneAppId", ese.getExistingSceneAppId());
+        out.put("fileReferenceAppId", fileReferenceAppId);
+        return support.toJson(out);
+      } catch (ForbiddenException fe) {
+        // Map to permission-denied at the MCP layer so the agent gets a
+        // clean -32002 (Permission denied) instead of the wrapped 403.
+        throw fe;
+      } catch (NotFoundException nfe) {
+        // McpToolSupport.run turns NotFoundException → -32602 invalid params
+        // (with the original message) — exactly the shape an agent can
+        // self-correct from.
+        throw nfe;
+      } catch (BadRequestException bre) {
+        // BadRequestException extends WebApplicationException (a runtime
+        // exception); McpToolSupport.run would otherwise wrap it as
+        // INTERNAL_ERROR. Re-raise as INVALID_PARAMS with the original
+        // message so the agent sees the caller-fixable shape.
+        throw McpToolSupport.invalidParams(
+          bre.getMessage() == null ? "Bad request" : bre.getMessage()
+        );
+      }
+    });
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Read the {@code X-AI-Agent} header from the current Vert.x routing
+   * context (used by {@link #sceneCreateFromUrdf} to mark the mint
+   * Activity's source mode as {@code ai}). Returns {@code null} when
+   * unset or when no routing context is available — matches the
+   * fall-back used by {@link AnnotationMcpTools#isAiAgentRequest()}.
+   */
+  private String readAiAgentHeader() {
+    try {
+      if (currentVertxRequest == null) return null;
+      CurrentVertxRequest cvr = currentVertxRequest.get();
+      RoutingContext rc = cvr == null ? null : cvr.getCurrent();
+      if (rc == null) return null;
+      String h = rc.request().getHeader(McpToolSupport.HEADER_AI_AGENT);
+      return (h == null || h.isBlank()) ? null : h;
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Convert a {@link SceneGraphListItemIO} to a plain map so the
+   * {@code scene_list} envelope serialises through the {@link McpToolSupport#toJson}
+   * path without needing the IO class on the wire.
+   */
+  private static Map<String, Object> toListItemMap(SceneGraphListItemIO item) {
+    Map<String, Object> row = new LinkedHashMap<>();
+    row.put("appId", item.getAppId());
+    row.put("name", item.getName());
+    row.put("description", item.getDescription());
+    row.put("sourceFileAppId", item.getSourceFileAppId());
+    row.put("rootFrameAppId", item.getRootFrameAppId());
+    row.put("createdAt", item.getCreatedAt());
+    row.put("updatedAt", item.getUpdatedAt());
+    row.put("frameCount", item.getFrameCount());
+    row.put("jointCount", item.getJointCount());
+    return row;
+  }
 
   private static List<FrameIO> toFrameIOs(List<CoordinateFrame> frames) {
     List<FrameIO> out = new ArrayList<>(frames.size());
