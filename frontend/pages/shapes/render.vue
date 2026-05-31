@@ -24,12 +24,43 @@ import type { AnnotationMap } from "~/utils/thermographyChannelPicker";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import Trace3DEditChannelsDialog from "~/components/container/timeseries/Trace3DEditChannelsDialog.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/components/container/timeseries/Trace3DChannelPicker.vue";
+// UI-SHAPES-RENDER-PICKERS-001 — replace bare appId text inputs with pickers.
+import TemplateAutocomplete from "~/components/context/templates/TemplateAutocomplete.vue";
+import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
+import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
+import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 useHead({ title: "Shape render playground | shepard" });
 
 // ── inputs ────────────────────────────────────────────────────────────────────
 const templateAppId   = ref("");
 const focusShepardId  = ref("");
+
+// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput +
+// DataObjectPrefillableInput round-trip to a numeric DO id; we resolve to
+// the appId via getDataObject() to populate `focusShepardId`. Power users
+// who already have an appId (from MCP / scripts) flip showRawAppIds = true
+// and type it in directly.
+const pickerCollectionId = ref<number | undefined>(undefined);
+const pickerDataObjectId = ref<number | undefined>(undefined);
+const showRawAppIds      = ref(false);
+
+watch(pickerDataObjectId, async newId => {
+  if (!newId || !pickerCollectionId.value) {
+    focusShepardId.value = "";
+    return;
+  }
+  try {
+    const doFetched = await useShepardApi(DataObjectApi).value.getDataObject({
+      collectionId: pickerCollectionId.value,
+      dataObjectId: newId,
+    });
+    focusShepardId.value = (doFetched as { appId?: string }).appId ?? "";
+  } catch (e) {
+    handleError(e as Error, "resolving DataObject appId for shapes render");
+  }
+});
 
 // When navigated from a TimeseriesReference via ViewRecipeBuilderDialog, these
 // are set from query params and the template form is hidden.
@@ -630,21 +661,48 @@ onMounted(() => {
       </span>
     </v-alert>
 
-    <!-- ── input form ─────────────────────────────────────────────────────── -->
+    <!-- ── input form ───────────────────────────────────────────────────────
+         UI-SHAPES-RENDER-PICKERS-001: replace the two bare appId text
+         fields with a Template autocomplete + Collection→DataObject
+         pickers. Raw appId text fields stay behind a toggle for power
+         users (MCP scripts, deep links, debugging). -->
     <v-row v-if="!fromReference" class="mb-2">
       <v-col cols="12" md="5">
+        <TemplateAutocomplete
+          v-if="!showRawAppIds"
+          v-model:app-id="templateAppId"
+          kind="VIEW_RECIPE"
+          label="Template (VIEW_RECIPE)"
+        />
         <v-text-field
+          v-else
           v-model="templateAppId"
           label="Template appId (VIEW_RECIPE)"
           variant="outlined"
           density="compact"
           clearable
-          hint="UUID v7 of the ShepardTemplate with templateKind=VIEW_RECIPE"
+          hint="UUID v7 of the ShepardTemplate"
           persistent-hint
         />
       </v-col>
       <v-col cols="12" md="5">
+        <template v-if="!showRawAppIds">
+          <CollectionPrefillableInput v-model:collection-id="pickerCollectionId" />
+          <DataObjectPrefillableInput
+            v-if="pickerCollectionId"
+            v-model:data-object-id="pickerDataObjectId"
+            :collection-id="pickerCollectionId"
+            class="mt-2"
+          />
+          <p
+            v-if="focusShepardId"
+            class="text-caption text-medium-emphasis mt-1"
+          >
+            Focus appId: <code>{{ focusShepardId.slice(0, 12) }}…</code>
+          </p>
+        </template>
         <v-text-field
+          v-else
           v-model="focusShepardId"
           label="Focus DataObject appId"
           variant="outlined"
@@ -654,7 +712,7 @@ onMounted(() => {
           persistent-hint
         />
       </v-col>
-      <v-col cols="12" md="2" class="d-flex align-center">
+      <v-col cols="12" md="2" class="d-flex flex-column align-stretch ga-1">
         <v-btn
           color="primary"
           :loading="isFetching"
@@ -664,6 +722,14 @@ onMounted(() => {
         >
           <v-icon start>mdi-shape</v-icon> Fetch bindings
         </v-btn>
+        <v-switch
+          v-model="showRawAppIds"
+          density="compact"
+          hide-details
+          color="primary"
+          label="Raw appIds (power-user)"
+          class="ml-1"
+        />
       </v-col>
     </v-row>
 
