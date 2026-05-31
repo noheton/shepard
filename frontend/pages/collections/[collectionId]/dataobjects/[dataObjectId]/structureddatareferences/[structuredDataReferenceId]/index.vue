@@ -100,6 +100,31 @@ async function onStructuredDataSaved() {
   await refreshStructuredData();
 }
 
+/**
+ * UI-SDREF-NO-CONTENT-001 — download the structured-data payload as a
+ * JSON file. The payload is already on the page (fetched alongside the
+ * reference); no extra REST round-trip needed.
+ */
+function onDownloadStructuredData(params: {
+  filename: string;
+  payload: string;
+}) {
+  try {
+    // Pretty-print when the payload parses as JSON; otherwise download
+    // the raw bytes the backend returned.
+    let body = params.payload;
+    try {
+      body = JSON.stringify(JSON.parse(params.payload), null, 2);
+    } catch {
+      /* not JSON — keep raw */
+    }
+    const blob = new Blob([body], { type: "application/json" });
+    downloadFile(blob, sanitizeFilename(params.filename));
+  } catch (e) {
+    handleError(e as Error, "downloading structured data");
+  }
+}
+
 const itemsPerPage = 10;
 
 watch(structuredDataReference, () => {
@@ -197,11 +222,27 @@ watch(structuredDataReference, () => {
                 <template
                   #[`item.name`]="{
                     value,
+                    item,
                   }: {
                     value: StructuredDataDataTableItem['name'];
+                    item: StructuredDataDataTableItem;
                   }"
                 >
-                  {{ value.structuredDataName }}
+                  <!-- UI-SDREF-NO-CONTENT-001 — name is a link to the View
+                       dialog (was plain text → user thought it was a
+                       dead end). Mirrors the FileReference page. -->
+                  <a
+                    v-if="item.actions.showPayload.enabled"
+                    href="#"
+                    class="sd-name-link"
+                    @click.prevent="
+                      () =>
+                        onShowStructuredDataContentDialog(
+                          item.actions.showPayload.payload,
+                        )
+                    "
+                  >{{ value.structuredDataName }}</a>
+                  <span v-else>{{ value.structuredDataName }}</span>
                   <span
                     v-if="value.availability !== 'available'"
                     class="text-error"
@@ -222,6 +263,12 @@ watch(structuredDataReference, () => {
                   }"
                 >
                   <ActionContainer>
+                    <ActionButton
+                      v-if="value.download.enabled"
+                      icon="mdi-tray-arrow-down"
+                      aria-label="Download structured data as JSON"
+                      @click="() => onDownloadStructuredData(value.download)"
+                    />
                     <ActionButton
                       v-if="value.showPayload.enabled"
                       icon="mdi-eye-outline"
@@ -290,6 +337,16 @@ watch(structuredDataReference, () => {
 
   :deep(tbody) > tr > td {
     padding: 20px 24px !important;
+  }
+}
+
+.sd-name-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 </style>

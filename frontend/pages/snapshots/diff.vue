@@ -66,6 +66,27 @@ async function runDiff() {
         <code>GET /v2/snapshots/{a}/diff/{b}</code>.
       </p>
     </div>
+    <!-- UI-SNAP-DIFF-PICKERS-001 (Q) — no global snapshot list endpoint
+         exists (only `GET /v2/collections/{appId}/snapshots` per-collection),
+         so a unified Snapshot autocomplete on this page would require a
+         Collection picker first. The canonical entry point is the
+         **Snapshots panel's "Compare" row action** (SNAPSHOTS-DIFF-NAV-01
+         + TOOLS-CONTEXT-SNAP-COMPARE — shipped 2026-05-30) which deep-
+         links here with both appIds pre-filled in the URL. Users hitting
+         this page directly still get raw inputs as a fallback; see
+         backlog row `SNAPSHOT-LIST-1-REST` for the global list endpoint
+         work that would let us add a real picker here. -->
+    <v-alert
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+      prepend-icon="mdi-lightbulb-on-outline"
+    >
+      Tip: open a Collection's Snapshots panel and use the "Compare" row
+      action — both appIds will be pre-filled. Direct entry below is the
+      fallback for power users with appIds in hand from MCP or scripts.
+    </v-alert>
     <v-row>
       <v-col cols="12" md="6">
         <v-text-field
@@ -73,6 +94,8 @@ async function runDiff() {
           label="Snapshot A (older) appId"
           density="compact"
           variant="outlined"
+          hint="UUID v7 of the older snapshot"
+          persistent-hint
         />
       </v-col>
       <v-col cols="12" md="6">
@@ -81,6 +104,8 @@ async function runDiff() {
           label="Snapshot B (newer) appId"
           density="compact"
           variant="outlined"
+          hint="UUID v7 of the newer snapshot"
+          persistent-hint
         />
       </v-col>
     </v-row>
