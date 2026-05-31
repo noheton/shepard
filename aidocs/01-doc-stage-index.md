@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 53 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 113 |
+| `feature-defined` | 114 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
 | `deployed` | 88 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **421** |
+| **total docs** | **422** |
 | **UNTAGGED** | **0** |
 
 ## fragment (53)
@@ -149,7 +149,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (113)
+## feature-defined (114)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -164,6 +164,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md`](agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md) | MFFD ingest readiness audit — 346 GB scale (2026-05-31) | 2026-05-31 | — |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -225,7 +226,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | 2026-05-31 |
-| [`aidocs/platform/112-v1-sunset-gains-design.md`](platform/112-v1-sunset-gains-design.md) | 112 — What we'd gain by giving up v1 compatibility | 2026-05-31 | — |
+| [`aidocs/platform/112-v1-sunset-gains-design.md`](platform/112-v1-sunset-gains-design.md) | 112 — What we'd gain by giving up v1 compatibility | 2026-05-31 | 2026-05-31 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |
