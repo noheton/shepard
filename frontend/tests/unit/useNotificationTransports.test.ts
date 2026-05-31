@@ -167,7 +167,7 @@ describe("useNotificationTransports — list / CRUD round-trips", () => {
     const { list, items } = useNotificationTransports();
     await list();
     expect(items.value.length).toBe(2);
-    expect(items.value[0].appId).toBe("a1");
+    expect(items.value[0]!.appId).toBe("a1");
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
       -1,
     ) as [string, RequestInit];

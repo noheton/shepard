@@ -162,7 +162,7 @@ describe("useAdminUserGitCredential — listCredentials()", () => {
     const list = await listCredentials("flodemo");
     expect(list.length).toBe(2);
     expect(items.value.length).toBe(2);
-    expect(items.value[1].lastRotatedAt).toBeNull();
+    expect(items.value[1]!.lastRotatedAt).toBeNull();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
       -1,
     ) as [string, RequestInit];
@@ -213,7 +213,7 @@ describe("useAdminUserGitCredential — rotateCredential()", () => {
     const ok = await rotateCredential("flo", "cred-1", "newpat");
     expect(ok).toBe(true);
     const fetchSpy = globalThis.fetch as ReturnType<typeof vi.fn>;
-    const rotateCall = fetchSpy.mock.calls[0];
+    const rotateCall = fetchSpy.mock.calls[0]!;
     expect(rotateCall[0]).toContain(
       "/v2/admin/users/flo/git-credentials/cred-1/rotate",
     );
