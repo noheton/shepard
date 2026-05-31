@@ -286,6 +286,79 @@ public class ActivityDAO extends GenericDAO<Activity> {
   }
 
   /**
+   * Walk the PROV-O graph to find all activities that directly touched
+   * {@code entityAppId} via a {@code GENERATED} or {@code USED} edge.
+   *
+   * <p>The depth parameter limits the result set size, not a graph traversal
+   * depth — activities are direct neighbours of the target entity node.
+   * We multiply by 50 to get a practical row cap without requiring a
+   * second count query: depth=3 → cap=150 rows, depth=10 → cap=500 rows.
+   * Results are ordered newest-first.
+   *
+   * @param entityAppId appId of the entity whose provenance to fetch
+   * @param depth       clamped to [1, 10]; scales the result-set cap
+   */
+  public List<ActivityEdgeRow> findByEntityAppId(String entityAppId, int depth) {
+    int capped = Math.max(1, Math.min(depth, 10));
+    String cypher =
+      "MATCH (a:Activity)-[r:GENERATED|USED]->(e {appId: $appId})" +
+      " RETURN a, type(r) AS relation" +
+      " ORDER BY a.startedAtMillis DESC" +
+      " LIMIT " + (capped * 50);
+    Map<String, Object> params = Map.of("appId", entityAppId);
+
+    List<ActivityEdgeRow> out = new ArrayList<>();
+    var result = session.query(cypher, params);
+    for (Map<String, Object> row : result.queryResults()) {
+      if (!(row.get("a") instanceof Activity act)) continue;
+      String rel = Objects.toString(row.get("relation"), "USED");
+      out.add(new ActivityEdgeRow(act, rel));
+    }
+    return out;
+  }
+
+  /** Activity node plus the PROV-O edge label that linked it to the queried entity. */
+  public record ActivityEdgeRow(Activity activity, String relation) {}
+
+  /**
+   * List recent activities with MCP-friendly filter parameter names.
+   * All filters are optional; null or blank means "no filter on this field".
+   *
+   * <p>Field mapping from MCP names to Neo4j properties:
+   * {@code userId} → {@code agentUsername},
+   * {@code resourcePath} → {@code path} (prefix match),
+   * {@code httpMethod} → {@code method} (upper-cased before match).
+   *
+   * @param userId       optional agentUsername filter
+   * @param resourcePath optional path prefix filter
+   * @param httpMethod   optional HTTP method filter
+   * @param limit        max rows; capped to [1, 100]
+   */
+  public List<Activity> listForMcp(String userId, String resourcePath, String httpMethod, int limit) {
+    int capped = Math.max(1, Math.min(limit, 100));
+    StringBuilder cypher = new StringBuilder("MATCH (a:Activity) WHERE 1=1");
+    Map<String, Object> params = new HashMap<>();
+    if (userId != null && !userId.isBlank()) {
+      cypher.append(" AND a.agentUsername = $userId");
+      params.put("userId", userId);
+    }
+    if (resourcePath != null && !resourcePath.isBlank()) {
+      cypher.append(" AND a.path STARTS WITH $path");
+      params.put("path", resourcePath);
+    }
+    if (httpMethod != null && !httpMethod.isBlank()) {
+      cypher.append(" AND a.method = $method");
+      params.put("method", httpMethod.toUpperCase());
+    }
+    cypher.append(" RETURN a ORDER BY a.startedAtMillis DESC LIMIT $limit");
+    params.put("limit", capped);
+
+    List<Activity> out = new ArrayList<>();
+    findByQuery(cypher.toString(), params).forEach(out::add);
+    return out;
+  }
+
+  /**
    * Wire the three PROV-O edges for a freshly saved {@link Activity}.
    *
    * <ul>
