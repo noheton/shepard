@@ -460,6 +460,20 @@
               <version>${lombok.version}</version>
             </path>
           </annotationProcessorPaths>
+          <!-- Exclude test sources that reference optional plugin JARs
+               (spatiotemporal + git) which are only available when the
+               full plugin build chain has run. These tests are also
+               excluded from surefire execution via the *QuarkusTest and
+               integrationtests/** patterns; excluding them from test-compile
+               lets the unit-test profile build without the full plugin tree.
+               See: GeometryBuilderTest (spatiotemporal), GitArtifactCacheQuarkusTest (git),
+               SpatialDataIT / SpatialDataReferenceIT (integrationtests + spatiotemporal). -->
+          <testExcludes>
+            <testExclude>de/dlr/shepard/data/model/GeometryBuilderTest.java</testExclude>
+            <testExclude>de/dlr/shepard/context/references/git/services/GitArtifactCacheQuarkusTest.java</testExclude>
+            <testExclude>de/dlr/shepard/integrationtests/SpatialDataIT.java</testExclude>
+            <testExclude>de/dlr/shepard/integrationtests/SpatialDataReferenceIT.java</testExclude>
+          </testExcludes>
         </configuration>
       </plugin>
       <plugin>

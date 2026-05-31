@@ -1,0 +1,62 @@
+package de.dlr.shepard.v2.filecontainer.resources;
+
+import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.file.services.FileContainerService;
+import de.dlr.shepard.v2.containers.io.ContainerCardinalityIO;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * UI21-SIZEBAR-DATA — cheap cardinality summary for a FileContainer.
+ *
+ * <p>Route: {@code GET /v2/file-containers/{containerId}/summary}
+ *
+ * <p>Returns the number of files stored in the container. The count is read from the
+ * in-memory Neo4j relationship ({@code files} list) loaded by {@link
+ * FileContainerService#getContainer(long)}, so it is O(1) with respect to the JVM heap
+ * once the container entity is loaded.
+ */
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Path("/v2/file-containers")
+@RequestScoped
+@Tag(name = "File containers — cardinality summary (UI21-SIZEBAR-DATA)")
+public class FileContainerSummaryRest {
+
+  @Inject
+  FileContainerService fileContainerService;
+
+  @GET
+  @Path("/{containerId}/summary")
+  @Operation(
+    summary = "Cardinality summary for a FileContainer.",
+    description =
+      "Returns the number of files stored in this container. " +
+      "Requires Read permission on the container."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Cardinality for the container.",
+    content = @Content(schema = @Schema(implementation = ContainerCardinalityIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
+  @APIResponse(responseCode = "404", description = "No FileContainer with that id.")
+  public Response getSummary(@PathParam("containerId") long containerId) {
+    FileContainer container = fileContainerService.getContainer(containerId);
+    int fileCount = container.getFiles() != null ? container.getFiles().size() : 0;
+    return Response.ok(new ContainerCardinalityIO(fileCount)).build();
+  }
+}

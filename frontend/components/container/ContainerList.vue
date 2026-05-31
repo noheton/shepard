@@ -22,6 +22,7 @@ import {
   supportsReferenceCheck,
 } from "~/utils/containerTypeRegistry";
 import { partitionOrphans, sizeBarFraction } from "~/utils/containerListPage";
+import { useContainerCardinality } from "~/composables/containers/useContainerCardinality";
 
 const props = defineProps<{
   itemsPerPage: number;
@@ -101,25 +102,72 @@ function onRefsResolved(payload: { id: number; refs: number[] | null }) {
   emit("refs-resolved", payload);
 }
 
-// ── Sizebar column (d) ──────────────────────────────────────────────────────
-// Relative-scale indicator. Baseline is the max reference count across
-// the current page; rows whose count we don't know yet render a
-// neutral bar. (Real channel/file counts would need a per-row CC1b-
-// style lazy lookup — same pattern, different endpoint — and are
-// queued as a follow-up under UI21-SIZEBAR-DATA.)
-const maxRefCount = computed(() => {
+// ── Sizebar column (d) — UI21-SIZEBAR-DATA ──────────────────────────────────
+// Per-kind cardinality: each row fires a lazy /summary fetch and stores the
+// result here. null = not yet known / unsupported type.
+const cardinalityById = reactive(new Map<number, number | null>());
+
+/**
+ * Mount a per-row cardinality composable for each item when the page items
+ * change.  We use a plain object to track which ids already have an active
+ * watcher so we don't re-mount on every reactive access.
+ */
+const _cardinalityWatched = new Set<number>();
+
+watchEffect(() => {
+  // Prune stale entries when the page changes.
+  const currentIds = new Set(props.serverItems.map(c => c.id));
+  for (const id of cardinalityById.keys()) {
+    if (!currentIds.has(id)) cardinalityById.delete(id);
+  }
+  for (const id of _cardinalityWatched) {
+    if (!currentIds.has(id)) _cardinalityWatched.delete(id);
+  }
+
+  // Seed new rows.
+  for (const c of props.serverItems) {
+    if (_cardinalityWatched.has(c.id)) continue;
+    _cardinalityWatched.add(c.id);
+
+    const { cardinality } = useContainerCardinality(c.id, c.type);
+    // Populate the map whenever the fetch resolves.
+    watch(
+      cardinality,
+      v => { cardinalityById.set(c.id, v); },
+      { immediate: true },
+    );
+  }
+});
+
+const maxCardinality = computed(() => {
   let max = 0;
   for (const c of props.serverItems) {
-    const refs = refsById.get(c.id);
-    if (refs && refs.length > max) max = refs.length;
+    const n = cardinalityById.get(c.id);
+    if (n != null && n > max) max = n;
   }
   return Math.max(max, 1);
 });
 
 function sizeBarFor(item: BasicContainer): number {
-  const refs = refsById.get(item.id);
-  if (!refs) return 0;
-  return sizeBarFraction(refs.length, maxRefCount.value);
+  const n = cardinalityById.get(item.id);
+  if (n == null) return 0;
+  return sizeBarFraction(n, maxCardinality.value);
+}
+
+/** Human-readable sizebar tooltip: "3 channels", "3 files", "3 records". */
+function sizeBarLabel(item: BasicContainer): string {
+  const n = cardinalityById.get(item.id);
+  if (n == null) return "Loading…";
+  switch (item.type) {
+    case "TIMESERIES":
+      return `${n} channel${n === 1 ? "" : "s"}`;
+    case "FILE":
+      return `${n} file${n === 1 ? "" : "s"}`;
+    case "STRUCTUREDDATA":
+      return `${n} record${n === 1 ? "" : "s"}`;
+    default:
+      return `${n} item${n === 1 ? "" : "s"}`;
+  }
 }
 
 // ── Table headers ───────────────────────────────────────────────────────────
@@ -374,8 +422,8 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
           <template #[`item.sizebar`]>
             <div
               class="size-bar"
-              :title="`Relative reference count (max on this page = ${maxRefCount})`"
-              :aria-label="`Reference scale ${Math.round(sizeBarFor(rowProps.item) * 100)} percent`"
+              :title="sizeBarLabel(rowProps.item)"
+              :aria-label="`Scale: ${sizeBarLabel(rowProps.item)}`"
             >
               <div
                 class="size-bar-fill"
