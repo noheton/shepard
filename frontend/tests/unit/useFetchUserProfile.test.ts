@@ -29,6 +29,25 @@ vi.mock("~/composables/common/api/useShepardApi", () => ({
   signIn: vi.fn(),
 });
 
+// FE-ROLE-DUAL-SOURCE-1 — useFetchUserProfile now hydrates the
+// `useEffectiveRoles()` cache (backed by Nuxt `useState`). Stub `useState`
+// to a per-key map so the cache reads/writes work under plain Vitest.
+const _useStateMap = new Map<string, unknown>();
+(globalThis as unknown as Record<string, unknown>).useState = <T,>(
+  key: string,
+  init: () => T,
+): { value: T } => {
+  if (!_useStateMap.has(key)) _useStateMap.set(key, init());
+  return {
+    get value() {
+      return _useStateMap.get(key) as T;
+    },
+    set value(v: T) {
+      _useStateMap.set(key, v);
+    },
+  };
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockStatusRef.value = "unauthenticated";
