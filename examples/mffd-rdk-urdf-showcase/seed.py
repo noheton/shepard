@@ -72,7 +72,6 @@ from shepard_client import (  # type: ignore
     DataObjectApi,
     FileContainer,
     FileContainerApi,
-    FileReference,
     FileReferenceApi,
     Permissions,
     PermissionType,
@@ -313,38 +312,23 @@ def ensure_data_object(apis: Apis, coll: Collection, name: str, description: str
 
 
 # ---------------------------------------------------------------------------
-# File upload (v2 presigned)
+# File upload (v2 singleton — POST /v2/files)
 
-def _get_fc_app_id(host: str, api_key: str, fc_id: int) -> str:
-    resp = _http.get(f"{host}/fileContainers/{fc_id}", headers={"X-API-KEY": api_key}, timeout=30)
+def _get_do_app_id(host: str, api_key: str, coll_id: int, do_id: int) -> str:
+    """Fetch the DataObject's UUID appId from the v1 endpoint.
+
+    The shepard_client SDK's DataObject model carries only the numeric ``id``
+    (v1 OGM node id).  The v2 singleton upload endpoint requires the UUID
+    ``appId``.  This one-shot GET bridges the two identity spaces without
+    altering the rest of the seed's SDK-based control flow.
+    """
+    resp = _http.get(
+        f"{host}/collections/{coll_id}/dataObjects/{do_id}",
+        headers={"X-API-KEY": api_key},
+        timeout=30,
+    )
     resp.raise_for_status()
     return resp.json()["appId"]
-
-
-def _upload_file_presigned(v2_base: str, api_key: str, container_app_id: str,
-                           path: Path, content_type: str) -> str:
-    fname = path.name
-    r1 = _http.post(
-        f"{v2_base}/file-containers/{container_app_id}/upload-url",
-        json={"fileName": fname},
-        headers={"X-API-KEY": api_key},
-        timeout=30,
-    )
-    r1.raise_for_status()
-    d = r1.json()
-    upload_url, oid = d["uploadUrl"], d["oid"]
-    data = path.read_bytes()
-    r2 = _http.put(upload_url, data=data, timeout=180,
-                   headers={"Content-Disposition": f'attachment; filename="{fname}"'})
-    r2.raise_for_status()
-    r3 = _http.post(
-        f"{v2_base}/file-containers/{container_app_id}/upload-url/commit",
-        json={"oid": oid, "fileName": fname, "contentType": content_type, "fileSize": len(data)},
-        headers={"X-API-KEY": api_key},
-        timeout=30,
-    )
-    r3.raise_for_status()
-    return oid
 
 
 def _content_type_for(path: Path) -> str:
@@ -363,35 +347,56 @@ def _content_type_for(path: Path) -> str:
 
 def upload_file_reference(apis: Apis, coll: Collection, do: DataObject,
                           fc: FileContainer, file_path: Path,
-                          ref_name: str) -> FileReference | None:
-    """Upload a single file under one FileReference (FR1b: one FileRef per file)."""
-    existing_refs = apis.file_reference.get_all_file_references(coll.id, do.id) or []
-    for r in existing_refs:
-        if r.name == ref_name:
-            _log("SKIP", ref_name, "FileReference", r.id)
-            return r
+                          ref_name: str) -> dict | None:
+    """Upload a single file as a singleton FileReference (FR1b) via POST /v2/files.
+
+    Uses the singleton endpoint so the returned appId directly addresses the
+    file bytes via GET /v2/files/{appId}/content — no FileContainer
+    middle-man, no bundle deref, no "which file?" picker.  The ``fc``
+    parameter is kept for signature compatibility but is not used; the v2
+    endpoint attaches the file directly to the DataObject.
+
+    Idempotency: lists existing singleton FileReferences on the DataObject
+    via GET /v2/files/by-data-object/{doAppId} and skips the upload when
+    one with the same name already exists.
+
+    Raises on upload failure (seeding script — fail-fast is correct here).
+    """
+    host    = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    v2      = _v2_base(host)
+
+    do_app_id = _get_do_app_id(host, api_key, coll.id, do.id)
+
+    # Idempotency check: list existing singleton FileReferences on the DataObject.
+    existing_resp = _http.get(
+        f"{v2}/files/by-data-object/{do_app_id}",
+        headers={"X-API-KEY": api_key, "Accept": "application/json"},
+        timeout=30,
+    )
+    if existing_resp.status_code == 200:
+        for existing in existing_resp.json() or []:
+            if existing.get("name") == ref_name:
+                _log("SKIP", ref_name, "FileReference (singleton)", existing.get("appId", ""))
+                return existing
 
     if not file_path.exists():
         _log("SKIP", ref_name, f"FileReference (missing local file: {file_path})")
         return None
 
-    host    = apis.client.configuration.host.rstrip("/")
-    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
-    v2      = _v2_base(host)
-    fc_app  = _get_fc_app_id(host, api_key, fc.id)
-
     ctype = _content_type_for(file_path)
-    oid = _upload_file_presigned(v2, api_key, fc_app, file_path, ctype)
-
-    fr = FileReference(
-        name=ref_name,
-        dataObjectId=do.id,
-        fileContainerId=fc.id,
-        fileOids=[oid],
-    )
-    fr = apis.file_reference.create_file_reference(coll.id, do.id, fr)
-    _log("OK", ref_name, "FileReference", fr.id)
-    return fr
+    with file_path.open("rb") as fh:
+        resp = _http.post(
+            f"{v2}/files",
+            params={"parentDataObjectAppId": do_app_id, "name": ref_name},
+            headers={"X-API-KEY": api_key, "Accept": "application/json"},
+            files={"file": (file_path.name, fh, ctype)},
+            timeout=300,
+        )
+    resp.raise_for_status()
+    created = resp.json()
+    _log("OK", ref_name, "FileReference (singleton)", created.get("appId", ""))
+    return created
 
 
 # ---------------------------------------------------------------------------
