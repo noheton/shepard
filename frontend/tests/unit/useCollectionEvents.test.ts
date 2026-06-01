@@ -193,7 +193,7 @@ describe("parseBuffer — malformed JSON", () => {
 
     // @ts-expect-error result is assigned in the callback above
     expect(result.events).toHaveLength(0);
-    // @ts-expect-error
+    // @ts-expect-error result is assigned in the expect() callback above; TS can't see it
     expect(result.remaining).toBe("");
   });
 
