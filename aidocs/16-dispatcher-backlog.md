@@ -1730,8 +1730,8 @@ SSOT: [`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`](agent-findings/no
 | AI1a-UI | Per-user AI settings frontend — admin REST endpoint not yet shipped; placeholder mounted at `/me#ai-settings` advertises the surface | S | gated-on-AI1a-backend | Survey §1; gate on AI1a admin REST |
 | PG-COLLAPSE-002-UI | Backup configuration UI — placeholder at `/admin#backup` advertises `:BackupConfig` surface from `aidocs/strategy/105`; promotes when the endpoint ships | S | gated-on-PG-COLLAPSE-002 | Survey §2 |
 | AI1b-UI | "Detect anomalies" button on TimeseriesReference page wiring `POST /v2/timeseries-references/{}/detect-anomalies` | XS | **✓ shipped (2026-05-27)** | Survey §3; button + `DetectAnomaliesDialog.vue` (parametrized window/threshold/createAnnotations, inline results table) were already implemented by a prior agent session; row marked shipped on audit confirmation. |
-| AI1c-UI | `qualityScore` badge on TimeseriesReference cards + detail page | XS | queued (backend shipped) | Survey §4; sibling of task #62 |
-| J1d-UI | Revision-history drawer on lab-journal entry detail page (J1d backend shipped) | S | queued | Survey §6 |
+| AI1c-UI | `qualityScore` badge on TimeseriesReference cards + detail page | XS | **shipped (2026-06-01, verified by dispatcher)** | Survey §4; sibling of task #62 |
+| J1d-UI | Revision-history drawer on lab-journal entry detail page (J1d backend shipped) | S | **shipped (2026-06-01, verified by dispatcher)** | Survey §6 |
 | A5-UI-PHASE-1 | Full HDF container browsing UI — placeholder at `/containers/hdf/[containerId]` advertises but doesn't walk the H5 tree | M | queued | Survey §7; sibling of task #65 |
 | NTF1-UI | Full notifications admin pane — configure SMTP / Matrix transports + per-transport test; placeholder at `/admin#notifications-admin` is partial | M | gated-on-NTF1-backend-completion | Survey §8 |
 | SHAPES-V-UI | Full SHACL validation UI — placeholder at `/shapes/validate` advertises; real UI shows shape definitions + validation results inline | M | queued | Survey §9 |
