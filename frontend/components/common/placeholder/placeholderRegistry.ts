@@ -46,17 +46,6 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     backend: "shipped",
   },
   {
-    slug: "sql-timeseries",
-    surface: "admin",
-    title: "SQL-over-HTTP for timeseries",
-    subtitle:
-      "Runtime caps for the bulk-read SQL endpoint (POST /v2/sql/timeseries). Flip max-rows and max-duration without a restart.",
-    endpoint: "/v2/admin/sql-timeseries/config",
-    backlogRow: "P10c",
-    designDoc: "aidocs/platform/29-p10-implementation-design.md",
-    backend: "shipped",
-  },
-  {
     slug: "notifications-admin",
     surface: "admin",
     title: "Notification transports",
@@ -238,7 +227,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
   },
 ];
 
-// TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
+// PLACEHOLDER-REPLACE-P10c: -1 sql-timeseries replaced by real AdminSqlTimeseriesPane (2026-06-01)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {
