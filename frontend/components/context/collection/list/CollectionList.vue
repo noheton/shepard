@@ -157,11 +157,7 @@ function onPageChange(page: number) {
           >({{ (rowProps.item as any).importedFrom }})</span>
         </template>
         <template #[`item.accessRights`]>
-          <AccessRightsChip
-            v-if="rowAccessRights(rowProps.item)"
-            :access-rights="rowAccessRights(rowProps.item)!"
-          />
-          <span v-else class="text-disabled">—</span>
+          <AccessRightsChip :access-rights="rowAccessRights(rowProps.item)" />
         </template>
         <template #[`item.description`]>
           <span
