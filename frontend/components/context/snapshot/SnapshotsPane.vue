@@ -263,6 +263,14 @@ const nameRules = [
           <v-btn
             variant="text"
             size="x-small"
+            icon="mdi-vector-difference"
+            :aria-label="`Compare snapshots starting from ${snap.name}`"
+            :disabled="!snap.appId"
+            @click="navigateTo({ path: '/snapshots/diff', query: { a: snap.appId } })"
+          />
+          <v-btn
+            variant="text"
+            size="x-small"
             icon="mdi-delete-outline"
             color="error"
             :loading="isSaving"
