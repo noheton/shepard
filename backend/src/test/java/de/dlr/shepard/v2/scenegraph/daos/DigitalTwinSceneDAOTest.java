@@ -4,87 +4,167 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.neo4j.ogm.session.Session;
 
 /**
- * DT1-PHASE-0 — unit tests for {@link DigitalTwinSceneDAO}.
+ * DT1-DAO-FRESH-SESSION — unit tests for {@link DigitalTwinSceneDAO}.
  *
- * <p>Mocks the inherited {@code session} field on {@link
- * de.dlr.shepard.common.neo4j.daos.GenericDAO} to exercise the four
- * core flows: create-with-mint, create-preserves-appId, findAll,
- * findByNeo4jId.
+ * <p>Verifies that {@link DigitalTwinSceneDAO#createOrUpdate} and
+ * {@link DigitalTwinSceneDAO#findAll} no longer rely on the cached
+ * {@code this.session} field inherited from {@code GenericDAO}. That
+ * field is set at bean construction (which can happen before
+ * {@code SessionFactory} is ready) and would stay {@code null} forever,
+ * producing NPEs. The fix — fetch a live session per call via
+ * {@code NeoConnector.getInstance().getNeo4jSession()} — mirrors the
+ * {@code JupyterConfigDAO} / {@code SqlTimeseriesConfigDAO} pattern
+ * (CHOKE-03).
  */
-public class DigitalTwinSceneDAOTest extends BaseTestCase {
+public class DigitalTwinSceneDAOTest {
 
-  @Mock
-  private Session session;
-
-  @InjectMocks
-  private DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
-
-  @Test
-  public void getEntityType_returnsDigitalTwinScene() {
-    assertSame(DigitalTwinScene.class, dao.getEntityType());
+  /**
+   * Reflectively clear the cached {@code session} field that
+   * {@code GenericDAO}'s constructor would have eagerly assigned.
+   * Simulates the startup race where the bean is constructed before
+   * the OGM {@code SessionFactory} is ready.
+   */
+  private static void nullOutCachedSession(DigitalTwinSceneDAO dao) {
+    try {
+      java.lang.reflect.Field f =
+        de.dlr.shepard.common.neo4j.daos.GenericDAO.class.getDeclaredField("session");
+      f.setAccessible(true);
+      f.set(dao, null);
+    } catch (ReflectiveOperationException e) {
+      throw new AssertionError(e);
+    }
   }
 
   @Test
-  public void createOrUpdate_mintsAppId_whenNull() {
+  public void getEntityType_returnsDigitalTwinScene() {
+    assertSame(DigitalTwinScene.class, new DigitalTwinSceneDAO().getEntityType());
+  }
+
+  // --- createOrUpdate — fresh-session path ---
+
+  @Test
+  public void createOrUpdate_mintsAppId_andPersistsViaLiveSession() {
+    DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
+    nullOutCachedSession(dao);
+
+    Session live = mock(Session.class);
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(live);
+
     var scene = new DigitalTwinScene();
     scene.setName("test-scene");
     assertNull(scene.getAppId(), "precondition: appId starts null");
 
-    var saved = dao.createOrUpdate(scene);
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
 
-    assertNotNull(saved.getAppId(), "appId should be populated after save");
-    assertEquals(36, saved.getAppId().length(), "appId should be canonical 36-char UUID");
-    var parsed = UUID.fromString(saved.getAppId());
-    assertEquals(7, parsed.version(), "L2a requires UUID v7");
-    verify(session).save(scene, 1);
+      var saved = dao.createOrUpdate(scene);
+
+      assertNotNull(saved.getAppId(), "appId should be minted");
+      assertEquals(36, saved.getAppId().length(), "appId should be 36-char UUID");
+      var parsed = UUID.fromString(saved.getAppId());
+      assertEquals(7, parsed.version(), "L2a requires UUID v7");
+    }
+    verify(live, times(1)).save(eq(scene), anyInt());
   }
 
   @Test
   public void createOrUpdate_preservesAppId_whenAlreadySet() {
+    DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
+    nullOutCachedSession(dao);
+
+    Session live = mock(Session.class);
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(live);
+
     var scene = new DigitalTwinScene();
     var existing = "0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506";
     scene.setAppId(existing);
 
-    var saved = dao.createOrUpdate(scene);
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
 
-    assertEquals(existing, saved.getAppId(), "existing appId must be preserved");
-    verify(session).save(scene, 1);
+      var saved = dao.createOrUpdate(scene);
+
+      assertEquals(existing, saved.getAppId(), "existing appId must be preserved");
+    }
+    verify(live, times(1)).save(eq(scene), anyInt());
   }
 
   @Test
-  public void findAll_delegatesToSession() {
+  public void createOrUpdate_withNullSessionFactory_throwsIllegalStateNotNpe() {
+    DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
+    nullOutCachedSession(dao);
+
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(null);
+
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      assertThrows(IllegalStateException.class, () -> dao.createOrUpdate(new DigitalTwinScene()));
+    }
+  }
+
+  // --- findAll — fresh-session path ---
+
+  @Test
+  public void findAll_withNullCachedSession_fallsThroughToLiveSession() {
+    DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
+    nullOutCachedSession(dao);
+
+    Session live = mock(Session.class);
     var a = new DigitalTwinScene(1L);
     var b = new DigitalTwinScene(2L);
-    when(session.loadAll(DigitalTwinScene.class, 1)).thenReturn(List.of(a, b));
+    when(live.loadAll(eq(DigitalTwinScene.class), anyInt())).thenReturn(List.of(a, b));
 
-    var actual = dao.findAll();
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(live);
 
-    assertTrue(actual.containsAll(List.of(a, b)));
-    assertEquals(2, actual.size());
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+
+      var actual = dao.findAll();
+
+      assertTrue(actual.containsAll(List.of(a, b)));
+      assertEquals(2, actual.size());
+    }
+    verify(live, times(1)).loadAll(eq(DigitalTwinScene.class), anyInt());
   }
 
   @Test
-  public void findByNeo4jId_delegatesToSession() {
-    var scene = new DigitalTwinScene(42L);
-    when(session.load(eq(DigitalTwinScene.class), eq(42L), eq(1))).thenReturn(scene);
+  public void findAll_withNullSessionFactory_returnsEmptyNotNpe() {
+    DigitalTwinSceneDAO dao = new DigitalTwinSceneDAO();
+    nullOutCachedSession(dao);
 
-    var actual = dao.findByNeo4jId(42L);
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(null);
 
-    assertSame(scene, actual);
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+
+      var actual = dao.findAll();
+
+      assertNotNull(actual);
+      assertTrue(actual.isEmpty());
+    }
   }
 }
