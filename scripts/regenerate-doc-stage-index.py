@@ -15,14 +15,20 @@ The canonical taxonomy lives in `aidocs/00-doc-stages.md`.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 AIDOCS_DIR = REPO_ROOT / "aidocs"
 INDEX_PATH = AIDOCS_DIR / "01-doc-stage-index.md"
+JSON_SIDECAR_PATH = AIDOCS_DIR / "01-doc-stage-index.json"
+# Also written to frontend/public/ so the Nuxt build can serve it at runtime
+# without needing to cross the src boundary.
+FRONTEND_PUBLIC_JSON_PATH = REPO_ROOT / "frontend" / "public" / "doc-stage-index.json"
 
 # Canonical stage order (matches aidocs/00-doc-stages.md).
 STAGE_ORDER = [
@@ -254,6 +260,43 @@ def check_missing_stages(rows: list[dict]) -> list[str]:
     return [row["path"] for row in rows if "UNTAGGED" in row["stages"]]
 
 
+def build_json_sidecar(rows: list[dict]) -> dict:
+    """Build the JSON sidecar structure keyed by stage name."""
+    grouped = group_by_stage(rows)
+    stages: dict[str, list[dict]] = {}
+    for stage in STAGE_ORDER + ["UNTAGGED", "upgrade-overlay"]:
+        items = grouped.get(stage, [])
+        if not items:
+            continue
+        stages[stage] = [
+            {
+                "path": row["path"],
+                "title": row["title"],
+                "last_stage_change": (
+                    row["last_stage_change"]
+                    if row["last_stage_change"] not in ("—", "")
+                    else None
+                ),
+            }
+            for row in sorted(items, key=lambda r: r["path"])
+        ]
+    return {
+        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "stages": stages,
+    }
+
+
+def write_json_sidecar(rows: list[dict]) -> None:
+    payload = build_json_sidecar(rows)
+    encoded = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    JSON_SIDECAR_PATH.write_text(encoded, encoding="utf-8")
+    print(f"Wrote {JSON_SIDECAR_PATH}")
+    # Mirror to frontend/public/ so the Nuxt page can fetch it at /doc-stage-index.json.
+    FRONTEND_PUBLIC_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+    FRONTEND_PUBLIC_JSON_PATH.write_text(encoded, encoding="utf-8")
+    print(f"Wrote {FRONTEND_PUBLIC_JSON_PATH}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
@@ -296,6 +339,7 @@ def main() -> int:
 
     INDEX_PATH.write_text(rendered, encoding="utf-8")
     print(f"Wrote {INDEX_PATH} ({len(rows)} docs).")
+    write_json_sidecar(rows)
     if missing:
         return 1
     return 0

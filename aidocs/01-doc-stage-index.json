@@ -1,0 +1,1993 @@
+{
+  "generated": "2026-06-01T22:16:27Z",
+  "stages": {
+    "fragment": [
+      {
+        "path": "aidocs/agent-findings/00-synergy-index.md",
+        "title": "00 — Synergy index",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/batch-api-audit-2026-05-27.md",
+        "title": "Batch API — Per-Substrate Primitives Audit (2026-05-27)",
+        "last_stage_change": null
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-15.md",
+        "title": "Dispatcher run — 2026-05-29 15:18 UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-16.md",
+        "title": "Dispatcher run — 2026-05-29 16:xx UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-17.md",
+        "title": "Dispatcher run — 2026-05-29 17:xx UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-18.md",
+        "title": "Dispatcher run — 2026-05-29 18:xx UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-19.md",
+        "title": "Dispatcher run — 2026-05-29 19:xx UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-20.md",
+        "title": "Dispatcher run — 2026-05-29 20:xx UTC",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md",
+        "title": "MFFD AFP Spatial Data — Analysis Cases",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-wiki-analysis-findings.md",
+        "title": "MFFD Confluence Wiki Analysis — Findings",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-wiki-reading-guide.md",
+        "title": "MFFD Confluence Wiki — Complete Systematic Review",
+        "last_stage_change": null
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-ai-accountability.md",
+        "title": "S-08 — AI accountability dashboard: MCP × Permission audit log × F(AI)²R",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-channel-as-individual.md",
+        "title": "S-01 — Channel-as-individual: HSDS HDF5 × AAS TimeSeriesData × sTC",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-openlineage-fair2r.md",
+        "title": "S-02 — OpenLineage RunEvent × F(AI)²R × PROV-O: EASA evidence for free",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-pidinst-three-exports.md",
+        "title": "S-05 — One PID, three exports: PIDINST × SOSA/SSN × AAS Nameplate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-roundtrip-wiki.md",
+        "title": "S-03 — Round-trip wiki: Confluence import × Wiki-writer × Snapshot chain",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-shacl-driven-mcp.md",
+        "title": "S-07 — SHACL × MCP tools × ShapesValidateRest: one validator, two surfaces",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-snapshots-garage-gap.md",
+        "title": "S-06 — Snapshots × Garage S3 (no versioning): Shepard absorbs the gap",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-23-trace3d-video-sync.md",
+        "title": "S-04 — Trace3D × Video × DataBinding: synchronized 3D-trace + camera-PiP",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synergy-2026-05-27.md",
+        "title": "Synergy findings — 2026-05-27",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/data/12-timescaledb-performance-analysis.md",
+        "title": "TimescaleDB Timeseries Integration — Performance Analysis & Mitigations",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/69-timeseries-upstream-migration.md",
+        "title": "Timeseries Schema — Migration from Upstream",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/88-thumbnail-spi.md",
+        "title": "TH1 — File Thumbnail SPI",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/input/input_raw.md",
+        "title": "Set up configuration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/22-admin-cli-draft.md",
+        "title": "Admin CLI — Candidate-Function Draft",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/27-convenience-clients-design.md",
+        "title": "Convenience Clients — `shepard-py` and `shepard-ts` (P16)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/28-paradigms-and-clients-synthesis.md",
+        "title": "28. Paradigms-and-Clients Synthesis — The Integrated Proposal",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/33-frontend-workflow-analysis.md",
+        "title": "33 — Frontend / UI Workflow Analysis + Suggestions",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/86-ui-changelog.md",
+        "title": "86 — UI Change Log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/11-implementation-plan.md",
+        "title": "Implementation Plan — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/19-architecture-feedback.md",
+        "title": "19 — Critical Architectural Feedback",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/20-epic-roadmap.md",
+        "title": "Epic Roadmap — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/23-api-critique.md",
+        "title": "API Critique — Usability, Redundancies, Paradigms, Client Generation",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/26-crud-consistency.md",
+        "title": "26. REST API CRUD Consistency Inventory",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/29-p10-implementation-design.md",
+        "title": "P10 — `POST /sql/timeseries` Implementation Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/32-long-running-process-pattern.md",
+        "title": "Long-Running Process Pattern — Async Jobs",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/A3c-namespace-migration.md",
+        "title": "A3c: infrastructure-vs-feature toggle namespace split",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/reference/v5-openapi-summary.md",
+        "title": "v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/13-search-improvements.md",
+        "title": "Search — Improvements & Unification Proposal",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/70-competitor-landscape-and-feature-ideas.md",
+        "title": "aidocs/70 — Competitor landscape & feature ideas for shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/71-fork-adoption-as-upstream.md",
+        "title": "aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/73-dlr-stakeholder.md",
+        "title": "aidocs/73 — shepard: Stakeholder brief for DLR",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/74-dlr-bt-stakeholder.md",
+        "title": "aidocs/74 — shepard: Stakeholder brief for DLR-BT (Stuttgart)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/82-zlp-augsburg-stakeholder.md",
+        "title": "aidocs/82 — shepard: Stakeholder brief for DLR ZLP Augsburg",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/86-shepard-predecessor-systems.md",
+        "title": "Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/95-damast-space-transport-data-management.md",
+        "title": "DaMaST — Data Management for Space Transport",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md",
+        "title": "HoKiTeP — ZLP extension and joint use-case orchestration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/31-rocrate-export-optimisation.md",
+        "title": "31 — RO-Crate Export Optimisation",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "concept": [
+      {
+        "path": "aidocs/agent-findings/mffd-welding-ts-analysis-cases.md",
+        "title": "MFFD CRW Welding Time-Series — Analysis Case Definitions",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/v5-metadata-enrichment-2026-05-23.md",
+        "title": "V5-METADATA-SURVEY — Metadata enrichment opportunities from v5 OpenAPI surface",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/data/05-db-inventory.md",
+        "title": "Shepard DB Schema Inventory",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/data/45-gridfs-to-s3-evaluation.md",
+        "title": "GridFS → S3 — Evaluation",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/46-gridfs-to-s3-migration-runbook.md",
+        "title": "GridFS → S3 (Garage) Migration — Operator Runbook",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/data/50-experiment-orchestration.md",
+        "title": "Experiment Orchestration — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/53-file-reference-rename-video-content.md",
+        "title": "FileReference Rename + Video Payload Kind — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/r4-novacrate-evaluation.md",
+        "title": "R4 — NovaCrate evaluation for RO-Crate metadata editing",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/frontend/02-css-layout-conventions.md",
+        "title": "Frontend CSS layout conventions",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/integrations/110-file-format-parser-plugin.md",
+        "title": "110 — File-format parser plugin SPI",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/integrations/52-aas-backend-integration.md",
+        "title": "AAS Backend Integration — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/60-shepard-edge.md",
+        "title": "shepard Edge — Concept Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/61-shepard-mount-as-network-drive.md",
+        "title": "shepard Mount as a Network Drive — Concept Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/49-in-app-user-docs.md",
+        "title": "In-App User Docs — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/57-openapi-client-generator-evaluation.md",
+        "title": "OpenAPI Client Generator Evaluation — `/v2/` Codegen",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/58-ui-and-graph-ergonomics.md",
+        "title": "UI & Graph Ergonomics — Design Cluster",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/p22-sse-proxy-compat-findings.md",
+        "title": "P22 — SSE proxy-compatibility findings",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/ops/vis-s2-garage-omezarr-storage-policy.md",
+        "title": "VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md",
+        "title": "`/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/API3-container-safe-delete-design.md",
+        "title": "API3 — Safe-Delete Design for Container Endpoints",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md",
+        "title": "Internal Semantic Repository via Neosemantics — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/190-thesis-idea-timeline.md",
+        "title": "Thesis Idea Timeline",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/workflows/40-spw-stc-integration-design.md",
+        "title": "shepard-process-wizard + shepard-timeseries-collector integration design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/54-templates-as-first-class-entity.md",
+        "title": "Templates as a First-Class Entity — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/55-provenance-and-activity-overhaul.md",
+        "title": "Provenance and Activity Overhaul — Design",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "idea": [
+      {
+        "path": "aidocs/98-thesis-perspective.md",
+        "title": "98 — Shepard as a thesis at a German university (perspective + viability)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v5-metadata-enrichment-survey-2026-05-23.md",
+        "title": "v5 OpenAPI — metadata enrichment survey for the MFFD importer (v15.10 candidates)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/109-mffd-scan-line-join-key.md",
+        "title": "109 — MFFD scan-line join key across TPS stores",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/integrations/112-mfg-plugin-design.md",
+        "title": "112 — `shepard-plugin-mfg` design sketch",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/integrations/116-btkvs-improved-schema.md",
+        "title": "116 — BT-KVS docket improved schema",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/platform/106-requirements-traceability.md",
+        "title": "106 — Requirements traceability — research direction",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/110-permissions-redesign-decision.md",
+        "title": "110 — Permissions: redesign or extend in place?",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/platform/68-plugin-vs-core-overview.md",
+        "title": "68 — Plugin-vs-core architecture overview",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/43-ai-opportunities.md",
+        "title": "AI Opportunities — Traditional ML + LLM Integration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/101-diva-project-context.md",
+        "title": "101 — DIVA: Drone Integration via AAS (project context)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/75-dfg-eresearch-funding.md",
+        "title": "aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/76-shepard-users-and-citations.md",
+        "title": "aidocs/76 — shepard: Known users, citations, and ecosystem",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/30-provenance-and-lineage-design.md",
+        "title": "Provenance and Data Lineage — Design Exploration",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "feature-defined": [
+      {
+        "path": "aidocs/43-reverse-engineered-requirements.md",
+        "title": "43 — Reverse-engineered requirements (to be challenged)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/185-v5-survey-bundle.md",
+        "title": "v5 Survey Bundle (v15.10)",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md",
+        "title": "AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc`",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/backend-jandex-hang-investigation-2026-05-28.md",
+        "title": "Backend rebuild — Quarkus/Jandex infinite-loop investigation (2026-05-28)",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md",
+        "title": "BT-KVS docket showcase — C/C and C/SiC fabrication tracking",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md",
+        "title": "BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md",
+        "title": "File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md",
+        "title": "Garage S3 + Docker stack audit — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md",
+        "title": "GH lean-extension cost consult — 2026-05-23",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/jandex-hang-fix-2026-05-29.md",
+        "title": "Jandex hang — root cause + fix (2026-05-29)",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md",
+        "title": "Jandex hang — trigger-class hunt (2026-05-28)",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-shared-container-scale-check.md",
+        "title": "MFFD shared-container scale check — 2026-05-26",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md",
+        "title": "MFFD v16 UI screenshots — first live look at the digital-thread tree",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md",
+        "title": "MongoDB substrate audit — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md",
+        "title": "No-UI gap survey + placeholder roll-out — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md",
+        "title": "Persona: Digital Native Researcher — GH-PM audit (2026-05-23)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/plugin-design-audit-2026-05-24.md",
+        "title": "Plugin design audit — Spatial + Tables + HDF5, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md",
+        "title": "Postgres + PgBouncer substrate audit — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md",
+        "title": "RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md",
+        "title": "RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md",
+        "title": "Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/synthesis-architecture-report-2026-05-24.md",
+        "title": "Synthesis architecture report — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md",
+        "title": "TIB Hannover outreach — Step 1 (\"Used by\" entry)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ts-design-audit-2026-05-24.md",
+        "title": "TimescaleDB design audit — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md",
+        "title": "TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02)",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md",
+        "title": "UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md",
+        "title": "UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md",
+        "title": "Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/data/107-cite-nanotom-shepard-substrate.md",
+        "title": "aidocs/107 — CITE + Nanotom as shepard data-management substrate",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/data/108-mffd-dump-ingestion-plan.md",
+        "title": "MFFD Dump Ingestion Plan",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/data/35-hdf5-hsds-implementation-design.md",
+        "title": "HDF5 / HSDS Implementation Design (E7 → A5 series)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/46-payload-versioning-design.md",
+        "title": "Payload Versioning — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/78-cad-geometry-annotator.md",
+        "title": "aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/79-cpacs-annotator.md",
+        "title": "aidocs/79 — CPACS Annotator (shepard-plugin-cpacs)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/81-spatial-data-binding.md",
+        "title": "aidocs/81 — Spatial Data Binding: Linking Geometry to Measurements",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/82-spatial-perf-evaluation.md",
+        "title": "Spatial-data performance evaluation (PostGIS reassessment)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/83-pointcloud-and-live-overlay.md",
+        "title": "aidocs/83 — Point Cloud Integration and Live Overlay Modalities",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/data/84-live-digital-twin.md",
+        "title": "aidocs/84 — Live Digital Twin: Moving Objects, Production Cell Scene, and State Streaming",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/85-coordinate-frame-tree.md",
+        "title": "aidocs/85 — Coordinate Frame Tree (CST1)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/86-scene-drive-and-replay.md",
+        "title": "aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/89-stale-channel-admin-design.md",
+        "title": "89 — Stale timeseries channel admin tool (ADMIN-STALE-CH)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/90-spatial-as-temporal-sweep.md",
+        "title": "aidocs/90 — Spatial as temporal sweep (v6 SSOT)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/data/PERM-INHERIT-MATRIX.md",
+        "title": "PERM-INHERIT-MATRIX — entity → permission source",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/frontend/01-user-research-findings-2024.md",
+        "title": "User research findings — 2024-06/07 interview round",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/frontend/100-cross-instance-prov-ui.md",
+        "title": "100 — Cross-instance provenance: client-side rendering design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md",
+        "title": "TPL17 — Distributed Ledger Anchoring for Tamper Evidence",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/integrations/113-urdf-viewer.md",
+        "title": "113 — URDF web viewer + animator (URDF-WEBVIEW-1)",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/integrations/114-process-monitoring-parser-plugin.md",
+        "title": "114 — Process-monitoring parser plugin family",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/integrations/115-otvis-tier2-frame-extraction.md",
+        "title": "115 — OTvis tier-2 design",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/integrations/117-krl-interpreter.md",
+        "title": "117 — KRL interpreter (KRL-INTERPRETER-01)",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/integrations/66-hmc-kip-integration.md",
+        "title": "66 — HMC Kernel Information Profile integration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/67-unhide-publish-plugin.md",
+        "title": "67 — Unhide publish plugin (Helmholtz Knowledge Graph integration)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/70-home-showcase-mqtt-design.md",
+        "title": "home-showcase — MQTT → shepard collector + demo (HOME1)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/72-invenio-publishing-plugin.md",
+        "title": "aidocs/72 — InvenioRDM publishing plugin (`shepard-plugin-invenio`)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/77-databus-moss-federation.md",
+        "title": "aidocs/77 — Databus + MOSS federation layer for shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/80-rce-integration.md",
+        "title": "aidocs/80 — RCE Integration: Data Distribution with Provenance Tracking (`shepard-plugin-rce`)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/81-jupyterhub-integration.md",
+        "title": "81 — JupyterHub Integration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/82-confluence-import.md",
+        "title": "82 — Confluence Data Center Space Export → Shepard Import",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/83-rebar-airflow-integration.md",
+        "title": "83 — ReBAR / Airflow Integration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/84-process-orchestrator-plugin.md",
+        "title": "84 — shepard-plugin-process-orchestrator",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/92-mffd-real-data-import-strategy.md",
+        "title": "92 — MFFD real-data import strategy",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md",
+        "title": "95 — shepard-plugin-importer: patterns from v15.x MFFD field experience",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/96-metrology-spatial-analyzer.md",
+        "title": "96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/integrations/97-shepard-plugin-ai-design.md",
+        "title": "97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/ops/88-helm-deployment.md",
+        "title": "88 — Helm chart for Kubernetes deployment",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/platform/103-v1-compat-plugin-extraction.md",
+        "title": "`shepard-plugin-v1-compat` — design for extracting the",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/103a-v1-compat-marker-plugin.md",
+        "title": "`shepard-plugin-v1-compat` — **Phase 1 marker plugin** design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/109-tpl6-network-shaped-data-organisation.md",
+        "title": "109 — TPL6: Network-shaped data organisation",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/platform/24-permission-system-review.md",
+        "title": "24 — Permission-System Review",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/platform/30-mcp-plugin-design.md",
+        "title": "30 — shepard-plugin-mcp: Full-Parity MCP Endpoint",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/51-instance-admin-role.md",
+        "title": "Instance-Admin Role — Design (A0 + C3 + F8)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/63-architecture-decision-log.md",
+        "title": "63 — Architecture Decision Log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/69-runtime-plugin-cdi.md",
+        "title": "69 — Runtime plugin CDI integration (deferred PM1b3)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/71-collection-watches-design.md",
+        "title": "Collection `:watches` Container — Design (WATCH1)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md",
+        "title": "TPL1+TPL2: Shapes as Templates + Views — M1 milestone tracker",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/platform/88-quarkus-mcp-server-migration.md",
+        "title": "88 — Native Quarkus MCP Server: Replacing the Python Sidecar",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/89-tpl9-fair2r-ai-provenance.md",
+        "title": "TPL9 — f(ai)²r AI provenance capture (PROV-O extension for AI transparency)",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/platform/91-appid-uri-scheme.md",
+        "title": "91 — appId URI Scheme: HTTPS Persistent Identifiers",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/100-consistent-semantic-annotation-design.md",
+        "title": "100 — Consistent semantic annotation surface (UI-first + MCP CRUD)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/semantics/101-canonical-iris.md",
+        "title": "101 — Canonical IRI namespaces for Shepard semantic documents",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/semantics/65-admin-configurable-ontology-preseed.md",
+        "title": "65 — Admin-configurable ontology pre-seeding (with custom-bundle support)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/94-metadata4ing-integration-design.md",
+        "title": "94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/96-upper-ontology-alignment.md",
+        "title": "96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md",
+        "title": "97 — TPL3 — Upper-ontology bootstrap migration + starter kit",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md",
+        "title": "FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md",
+        "title": "Shepard rollout plan — BT / ZLP Augsburg cells",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/102-institute-youtube-profile.md",
+        "title": "102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/102-thesis-timeline-of-ideas.md",
+        "title": "Timeline of ideas across Shepard's intellectual trajectory",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/103-research-network.md",
+        "title": "Shepard research network — DLR eLib + external-peer reconstruction",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/strategy/104-author-research-profile.md",
+        "title": "Author research profile — Florian Krebs, DLR ZLP Augsburg",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/105-postgres-multitenant-decision.md",
+        "title": "aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/strategy/106-shepard-industrial-ai-role.md",
+        "title": "106 — Shepard's Role in the Industrial-AI Value Chain",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/strategy/87-dlr-zlp-positioning.md",
+        "title": "DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/88-nfdi4ing-alignment.md",
+        "title": "88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/89-genai-methodology-and-reflexivity.md",
+        "title": "Generative AI as research method — Krebs's stated position and this project's observed practice",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/90-hmc-phase-2-positioning.md",
+        "title": "90 — HMC Phase 2 positioning: Shepard's pre-committed work-packages at DLR ZLP",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/91-forinfpro-semantically-driven-analytics.md",
+        "title": "ForInfPro and the semantically-driven analytics use case",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/92-aerospace-x-regulatory-context.md",
+        "title": "92 — Aerospace-X and the aerospace regulatory context",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/93-management-context-and-compliance.md",
+        "title": "Shepard inside the DLR management context — institutional stack, governance frame, compliance gates",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/94-federation-and-dataspaces.md",
+        "title": "94 — Federation and dataspaces: where Shepard sits in Manufacturing-X / Aerospace-X / Catena-X",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/ai-fork-production-readiness-2026-05-23.md",
+        "title": "Is the AI-collaborative `noheton/shepard` fork production-ready?",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md",
+        "title": "Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/sustainability/00-energy-estimation-log.md",
+        "title": "00 — Energy + CO₂ estimation log per commit",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/sustainability/01-methodology.md",
+        "title": "01 — Energy / CO₂ estimation methodology",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ux/73-personal-landing-page.md",
+        "title": "73 — Personal Landing Page",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ux/74-auto-refresh-stale-session.md",
+        "title": "74 — Auto-Refresh on Stale Session",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ux/76-uplot-timeseries-chart.md",
+        "title": "76 — uPlot Timeseries Chart",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ux/78-containerless-basic-mode.md",
+        "title": "78 — Container-hiding Basic Mode",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "audited-by-personas": [
+      {
+        "path": "aidocs/agent-findings/161-aidocs-ssot-audit.md",
+        "title": "161 — aidocs SSOT consolidation sweep",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md",
+        "title": "AI-assisted ontology mapping — research survey + adoption recommendation",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/aidocs-consolidation-survey.md",
+        "title": "aidocs consolidation survey — single source of truth enforcement",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/analytics-ai.md",
+        "title": "Applied ML & Data Science — Shepard Platform Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/api-annoyances.md",
+        "title": "API annoyances — running log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/api-scrutinizer-v14-import.md",
+        "title": "API Scrutinizer — v14 → v15 import-script review",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/api-scrutinizer.md",
+        "title": "API Scrutinizer — Shepard /v2/ Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/backend-logs-sift-2026-05-24.md",
+        "title": "Backend logs sift — 2026-05-24 ~06:00 CEST",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/competitive-reassessment-2026-05-24.md",
+        "title": "Competitive reassessment — post-V6-trinity verdict shift (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/data-ontologist-prov-o-v15.md",
+        "title": "PROV-O fragment design for v15 MFFD batch import",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/data-ontologist.md",
+        "title": "Data Ontologist — Discovery Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/db-schema-recommendations.md",
+        "title": "DB Schema Recommendations — Live Shepard Instance Audit",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md",
+        "title": "DLR-BT simulation cluster — \"unsere Simulanten\"",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/dlr-ontology-catalog.md",
+        "title": "DLR Ontology & Model Initiative Catalogue",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/docs-pages-refresh.md",
+        "title": "GH Pages docs refresh — pre-push survey + fix log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/easa-ai-regulatory-positioning.md",
+        "title": "EASA AI Regulatory Positioning for Shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/easa-data-management-learning-assurance.md",
+        "title": "EASA Data Management + Learning Assurance — deep dive (Shepard scope)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ecosystem-advocate.md",
+        "title": "Ecosystem Advocate — Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ecosystem-tools.md",
+        "title": "Ecosystem Tools — Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/elib-bt-project-sweep-2026-05-24.md",
+        "title": "eLib BT-project sweep + 5 user-flagged papers — Braunschweig / Stuttgart / Augsburg deep-dive",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/eu-machinery-regulation-2023-1230.md",
+        "title": "EU Machinery Regulation 2023/1230 — Shepard implications",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/garage-activation-runbook.md",
+        "title": "Garage activation runbook — findings & gotchas",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md",
+        "title": "gh-lean-traceability-consult — 2026-05-23",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/manufacturing-quality.md",
+        "title": "Manufacturing Quality Readiness Assessment",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-cleanup-2026-05-22.md",
+        "title": "MFFD-Dropbox (collection 515365) cleanup — 2026-05-22",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-process-chain-gap-analysis.md",
+        "title": "MFFD Synthetic Seed — Process Chain Gap Analysis",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md",
+        "title": "OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ogm-hydration-service-layer-2026-05-27.md",
+        "title": "OGM-HYDRATE-2026-05-24-004 — Service-layer composite-call hydration audit (2026-05-27)",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md",
+        "title": "Persona — API Scrutinizer (Minimalist) — GH-PM adoption review",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-audit-logstore-2026-05-23.md",
+        "title": "Persona audit — log-store-sidecar design (`aidocs/integrations/94`)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md",
+        "title": "Persona audit — AI-assisted ontology mapping survey (round 1)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md",
+        "title": "Persona audit — PromptLog design (aidocs/semantics/99)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-audit-views-as-shapes-2026-05-23.md",
+        "title": "Persona audit — views-as-shapes design (docs 95 + 98)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-digital-native-2026-05-24.md",
+        "title": "Persona: Digital Native Researcher — re-walk on live (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-manufacturing-quality-2026-05-24.md",
+        "title": "Persona audit — Industrial Manufacturing & Quality Engineer (live, 2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-rdm-gh-pm-2026-05-23.md",
+        "title": "Persona review — Research Data Manager / FAIR Steward",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-reluctant-senior-2026-05-24.md",
+        "title": "Reluctant Senior Researcher — re-walk on live, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-reluctant-senior-gh-pm-2026-05-23.md",
+        "title": "Reluctant Senior Researcher — audit of `aidocs/strategy/85`",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-ai-opportunities.md",
+        "title": "Persona Review — Analytics & AI Opportunities Specialist",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-api-scrutinizer.md",
+        "title": "API Scrutinizer — review of the `/v2/views` + view-shapes proposal",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-digital-native.md",
+        "title": "Persona Review: Digital Native Researcher (2026-05-22)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-ime-aqe.md",
+        "title": "Persona review — Industrial Manufacturing & Quality Engineer (IME/AQE) on the SHACL trio",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-ontologist.md",
+        "title": "Persona review — Data & Process Ontologist on the SHACL trio",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-rdm.md",
+        "title": "Persona review — Research Data Manager (FAIR Steward)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-review-reluctant-senior.md",
+        "title": "Reluctant Senior Researcher — review of the MFFD shapes / views / SPI proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md",
+        "title": "Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/repo-task-sweep-2026-05-23.md",
+        "title": "Repo task sweep — 2026-05-23",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/research-data-manager.md",
+        "title": "Shepard FAIR Compliance Evaluation",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/shacl-changeover-non-ts.md",
+        "title": "SHACL changeover (non-TS scope) — implementation log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/sidecars-spi-extension.md",
+        "title": "PM1f — `PluginManifest.sidecars()` SPI extension + file-s3 Garage declaration",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/strategy-advisor.md",
+        "title": "Shepard — Strategic Advisor Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/test-cleanup-2026-05-22.md",
+        "title": "Backend test cleanup — 2026-05-22",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/trace3d-spike.md",
+        "title": "Trace3D view — spike: library shortlist + view-shape input contract",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-annoyances.md",
+        "title": "UI annoyances — running log",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-scrutinizer-2026-05-24.md",
+        "title": "UI Scrutinizer — live-shepard systematic walk, 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-auditor.md",
+        "title": "UX Auditor — Discovery Report",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-progress-indicators-sweep.md",
+        "title": "UX progress indicators — Playwright-driven sweep (task #136)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md",
+        "title": "UX survey — collections + containers pages (barely-usable triage)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-walk-2026-05-29.md",
+        "title": "UX Walk 2026-05-29 — Live 4K regression sweep",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/v15-import-implementation.md",
+        "title": "v15 MFFD-import — implementation report",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15-review-data-ontologist.md",
+        "title": "v15 review — Data & Process Ontologist lens",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15-review-ime-aqe.md",
+        "title": "v15 review — IME + AQE lens",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15-review-rdm.md",
+        "title": "v15 import review — RDM / FAIR Data Steward lens",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15-review-reluctant-senior.md",
+        "title": "v15 import — review from the reluctant senior researcher",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15.1-implementation.md",
+        "title": "v15.1 MFFD-import — implementation report",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/v15.2-implementation.md",
+        "title": "v15.2 — Smart warmup phase (IMPORT-W1/W2/W3)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/vis-plugin-survey-addendum-cad-fem.md",
+        "title": "Visualization plugin survey — addendum: CAD + FEM",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/vis-plugin-survey.md",
+        "title": "Visualization plugin survey",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md",
+        "title": "Worktree Consolidation Triage — 2026-05-23",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ai-policy/147-oecd-ai-alignment.md",
+        "title": "Shepard AI design × authoritative policy alignment — 9-source × 4-band matrix",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/integrations/94-log-store-sidecar-design.md",
+        "title": "94 — Log-store-with-shape sidecar design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/95-shacl-templates-and-individuals.md",
+        "title": "95 — SHACL templates, named individuals, and ontology-driven UI",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/98-shapes-views-and-process-model.md",
+        "title": "98 — Shapes, views, and the MFFD process model",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/semantics/99-promptlog-design.md",
+        "title": "99 — PromptLog: prompts as first-class Shepard artefacts",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "feedback-implemented": [
+      {
+        "path": "aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md",
+        "title": "Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION)",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md",
+        "title": "RDM-002 — ORCID input on `/me/profile` (FAIR R1)",
+        "last_stage_change": "2026-05-24"
+      }
+    ],
+    "tests-implemented": [
+      {
+        "path": "aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md",
+        "title": "BUG-LJ-V1-COLL-ID — fix report",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/prov-resolver-fix-2026-05-24.md",
+        "title": "PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md",
+        "title": "UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/integrations/93-mffd-import-v15-requirements.md",
+        "title": "93 — MFFD real-data import (v15) requirements",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "deployed": [
+      {
+        "path": "aidocs/00-doc-stages.md",
+        "title": "00 — Doc lifecycle stages (taxonomy SSOT)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/00-index.md",
+        "title": "aidocs — Index",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/100-ui-annoyances.md",
+        "title": "100 — Shepard UI annoyances (live captured)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/16-dispatcher-backlog.md",
+        "title": "16 — Dispatcher Backlog",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/34-upstream-upgrade-path.md",
+        "title": "Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main`",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/40-ecosystem.md",
+        "title": "40 — Shepard ecosystem",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/41-synergy-sweep.md",
+        "title": "41 — Synergy sweep: collapse-where-generalisation-helps",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/42-vision.md",
+        "title": "shepard — Vision (for researchers)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/44-fork-vs-upstream-feature-matrix.md",
+        "title": "Fork vs Upstream — Feature Matrix",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/97-shepard-pipelines.md",
+        "title": "97 — Shepard-pipelines: modern REBAR, Shepard-native",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/99-api-annoyances.md",
+        "title": "99 — Shepard API annoyances (structural clunkiness)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md",
+        "title": "Audience-persona front-matter retrofit (DOCS-3A9)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/db-baseline-post-mffd.md",
+        "title": "DB Baseline: post-MFFD ingest (2026-05-26)",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/db-opt2-hot-path-analysis.md",
+        "title": "DB-OPT2: Hot-path index analysis",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/db-opt3-timescaledb-tuning.md",
+        "title": "DB-OPT3 — TimescaleDB Chunk + Compression Analysis",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/dispatcher-runs/2026-05-29-21.md",
+        "title": "Dispatcher run 2026-05-29-21",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/doc-alignment-2026-05-28.md",
+        "title": "Doc Alignment — 2026-05-28",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md",
+        "title": "FAIR8 — F-UJI Alignment Findings (2026-05-27)",
+        "last_stage_change": "2026-05-27"
+      },
+      {
+        "path": "aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md",
+        "title": "Feature & Synergy Hunt — 2026-05-26",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md",
+        "title": "Synthesis — GH-PM (policy doc 85) adoption decisions",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md",
+        "title": "GH-PM5 backfill — plan + execution log (2026-05-23)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/lic1-shipped-2026-05-24.md",
+        "title": "LIC1 shipped — license + accessRights end-to-end (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/mcp-validation-2026-05-26.md",
+        "title": "MCP End-to-End Validation — 2026-05-26",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md",
+        "title": "MFFD cube3 import slowness — diagnostic",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/neo4j-n10s-design-audit-2026-05-24.md",
+        "title": "Neo4j + n10s substrate audit — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ops-cleanup-2026-05-24.md",
+        "title": "ops-cleanup-2026-05-24 — un-ignore neo4j migrations + worktree env bootstrap",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ops-hygiene-bundle-2026-05-24.md",
+        "title": "OPS hygiene bundle — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ops-migration-healthcheck-2026-05-24.md",
+        "title": "ops-migration-healthcheck-2026-05-24 — readiness gate on Neo4j migration-chain integrity",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/persona-audit-admin-stale-ch-2026-05-23.md",
+        "title": "Persona audit — ADMIN-STALE-CH (Stale timeseries channel admin tool)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/plugin-docs-gap-audit-2026-05-23.md",
+        "title": "Plugin documentation gap audit — 2026-05-23",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/agent-findings/principle-candidates.md",
+        "title": "Implicit Design Principles — Candidate Discovery",
+        "last_stage_change": "2026-05-28"
+      },
+      {
+        "path": "aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md",
+        "title": "RDM-001 — \"Cite this dataset\" card on Collection landing (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md",
+        "title": "RDM-005 — Metadata Completeness Score widget (live)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/sema-v6-preseed-status.md",
+        "title": "SEMA-V6 Preseed Status (2026-05-26)",
+        "last_stage_change": "2026-05-26"
+      },
+      {
+        "path": "aidocs/agent-findings/ts-axis-verify-2026-05-29.md",
+        "title": "TS-AXIS-VERIFY — MFFD spatial-roles annotations verified live (2026-05-29)",
+        "last_stage_change": "2026-05-29"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md",
+        "title": "UI-002 — Header-search dropdown fix (2026-05-24)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-005-watches-me-silenced-2026-05-24.md",
+        "title": "UI-005 — silence `/watches/me` 404 spam on collection landing",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-006-007-009-015-home-polish-2026-05-24.md",
+        "title": "Home + file-row polish pass — UI-006/007/009/015",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-011-collections-list-fix-2026-05-24.md",
+        "title": "UI-011 — Collections list page column enrichment",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-011e-do-count-fix-2026-05-24.md",
+        "title": "UI-011e — `# DOs` column shows 0 everywhere on `/collections` — fix",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-013-help-search-anchors-2026-05-24.md",
+        "title": "UI-2026-05-24-013 — in-page help search + per-heading anchors (CLOSED)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-016-017-polish-2026-05-24.md",
+        "title": "UI-016 + UI-017 cosmetic polish — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-020-labjournal-bulk-fix-2026-05-24.md",
+        "title": "UI-020 — Lab-journal bulk fetch closes per-DataObject N+1",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ui-021-sd-list-fix-2026-05-24.md",
+        "title": "UI-021 — `/containers/structureddata` \"shows 0 rows\" — close as WAI/misreport",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-pattern-d-count-badges-2026-05-24.md",
+        "title": "UX Pattern D — count badges on DataObject reference panels",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/agent-findings/ux-polish-bundle-2026-05-24.md",
+        "title": "UX polish bundle — 2026-05-24",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/case-study-2026-05-19.md",
+        "title": "Case Study: One Month of AI-Assisted Fork Development",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/00-model-inventory.md",
+        "title": "00 — Model inventory (SSOT)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/37-lab-journal-and-jupyter-design.md",
+        "title": "Lab Journal Reassessment + Jupyter Feasibility — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/41-snapshots-design.md",
+        "title": "Snapshots — Design (versioning, reloaded)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/data/68-timeseries-data-model-tuning.md",
+        "title": "TimescaleDB Data Model Tuning — Recommendations",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/handover-2026-05-19.md",
+        "title": "Shepard Fork — Handover Document",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/59-performance-testing-and-tuning.md",
+        "title": "Performance testing + auto-tuning — design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/75-api-integration-test-suite.md",
+        "title": "API-Level Integration Test Suite — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/77-k6-performance-metrics.md",
+        "title": "k6 Per-Endpoint SLO Matrix + `/v2/` Coverage",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/85-ui-overhaul-design.md",
+        "title": "85 — UI Overhaul: Critique, Opportunities, and Roadmap",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ops/87-collection-container-duality.md",
+        "title": "87 — Collection / Container Duality: Design Discussion",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/25-neo4j-id-migration-design.md",
+        "title": "Neo4j ID Migration — Design (L2)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/47-dev-experience-and-plugin-system.md",
+        "title": "Dev Experience + Storage-Backend Plugin System — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/85-openapi-llm-readable.md",
+        "title": "OpenAPI documentation standard — LLM-readable",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/platform/87-timeseries-appid-migration.md",
+        "title": "87 — Timeseries appId Migration (TS-ID)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/plugins/69-aas-plugin-extraction-design.md",
+        "title": "AAS → plugin extraction — Design (AAS1-plugin)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/reading-list.md",
+        "title": "Reading list",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/roadmap.md",
+        "title": "Shepard Fork — Roadmap",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/83-github-features-leverage.md",
+        "title": "GitHub features — what shepard uses, deliberately skips, and why",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/strategy/85-github-project-management-policies.md",
+        "title": "85 — GitHub project-management policies (traceability SSOT)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/ux/82-basic-vs-advanced-mode-matrix.md",
+        "title": "82 — Basic vs Advanced Mode Feature Matrix",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/36-user-profile-and-settings-design.md",
+        "title": "User Profile & Settings — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/38-git-integration-design.md",
+        "title": "Git Integration — Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/39-templates-design.md",
+        "title": "Templates — Implementation Design",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/workflows/64-provenance-architecture.md",
+        "title": "64 — Provenance architecture (what's shipped + where it's going)",
+        "last_stage_change": "2026-05-23"
+      }
+    ],
+    "decommissioned": [
+      {
+        "path": "aidocs/archive/01-repo-overview.md",
+        "title": "Repo Overview — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/02-cluster-map.md",
+        "title": "Cluster Map — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/03-issues-status.md",
+        "title": "Issues Status — shepard (GitLab open items)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/04-reconciliation.md",
+        "title": "Reconciliation — GitHub mirror vs GitLab authoritative",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/05-dependency-report.md",
+        "title": "Dependency Report — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/06-code-quality.md",
+        "title": "Code Quality — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/07-security-issues.md",
+        "title": "Security Issues — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/08-first-issues.md",
+        "title": "First Issues — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/09-ready-to-close.md",
+        "title": "Ready to Close on GitHub — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/10-cleanup-plan.md",
+        "title": "Cleanup Plan — shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/15-phase-0-status.md",
+        "title": "Phase 0 — Housekeeping Status",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/17-startup-wait-audit.md",
+        "title": "17 — Startup Wait / Retry Audit",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/18-pagination-inventory.md",
+        "title": "Pagination — Inventory & Sized Rollout Plan",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/21-user-interest-gauge.md",
+        "title": "User / Scientific Interest Gauge — HDF5, Tabular Storage, KG Interfaces",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/ai-in-science-policy-alignment.md",
+        "title": "AI-in-Science policy alignment — does Shepard's AI design match the prevailing authoritative consensus?",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/analytics-ai-debate.md",
+        "title": "Analytics & AI Opportunities Specialist — Phase 2 Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/analytics-ai-proposals.md",
+        "title": "AI & Analytics Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/api-scrutinizer-debate.md",
+        "title": "API Scrutinizer — Phase 2 Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/api-scrutinizer-proposals.md",
+        "title": "API Scrutinizer — Concrete Improvement Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/data-ontologist-debate.md",
+        "title": "Data & Process Ontologist — Debate Output",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/data-ontologist-proposals.md",
+        "title": "Data Ontologist — Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/database-antipatterns-audit.md",
+        "title": "Database anti-pattern audit — Neo4j + Postgres/Hibernate + MongoDB/GridFS + PostGIS + Garage S3",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/database-schema-research-multi-db.md",
+        "title": "Database schema research — multi-substrate sweep (Neo4j + Postgres + MongoDB + PostGIS + Garage)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/easa-ai-compliance.md",
+        "title": "EASA AI Concept Paper Issue 2 — Compliance Gap Analysis",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/ecosystem-advocate-debate.md",
+        "title": "Ecosystem Advocate Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/ecosystem-advocate-proposals.md",
+        "title": "Ecosystem Advocate — Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/industrial-robotics-ontology-audit.md",
+        "title": "Industrial Robotics + ZLP-Domain Ontology Audit (Shepard scope)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/manufacturing-quality-debate.md",
+        "title": "Manufacturing & Quality Engineering — Cross-Agent Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/manufacturing-quality-proposals.md",
+        "title": "Manufacturing & Quality Engineering — Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/mffd-paper-198366.md",
+        "title": "MFFD Paper 198366 — Comprehensive Extraction",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/performance-baseline-2026-05-21.md",
+        "title": "Shepard performance baseline — 2026-05-21",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/persona-debate-round.md",
+        "title": "Persona Debate Round — Reluctant Senior vs. Digital Native",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/persona-digital-native.md",
+        "title": "Persona: Digital Native Researcher — Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/persona-reluctant-senior.md",
+        "title": "Reluctant Senior Researcher — Persona Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/plugin-registry-trust.md",
+        "title": "Plugin Registry Trust Mechanisms — Convenience-First Survey",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/quarkus-ecosystem.md",
+        "title": "Quarkus Extension Ecosystem — Opportunities for Shepard",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/quarkus-mcp-kadi-gaps.md",
+        "title": "Quarkus MCP, Kadi4Mat, and RDM Ecosystem Gaps — Findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/research-data-manager-debate.md",
+        "title": "Research Data Manager — Cross-Agent Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/research-data-manager-proposals.md",
+        "title": "Proposal 1: KIP1e — License Field on All Entities (Core, foundational)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/strategy-advisor-debate.md",
+        "title": "Strategy Advisor — Cross-Agent Debate",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/strategy-advisor-proposals.md",
+        "title": "Strategy Advisor — Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/timescaledb-schema-research.md",
+        "title": "TimescaleDB schema research — is the schema the MFFD ingest bottleneck?",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-debate.md",
+        "title": "UX Auditor Debate — Core Tech & UX Lens",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md",
+        "title": "UX Auditor — Feature Proposals",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md",
+        "title": "V1COMPAT.0 Phase 1 — live validation findings",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/agent-findings/predecessor-history-correction-2026-05-23.md",
+        "title": "Predecessor history — standing correction",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/platform/68-v2-baseline-v1-compat-layer.md",
+        "title": "V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE)",
+        "last_stage_change": "2026-05-23"
+      },
+      {
+        "path": "aidocs/archive/platform/86-ai-plugin-design.md",
+        "title": "`shepard-plugin-ai` — AI Platform Design (superseded)",
+        "last_stage_change": "2026-05-24"
+      },
+      {
+        "path": "aidocs/archive/semantics/14-semantic-improvements.md",
+        "title": "Semantic Annotations — Improvements & Knowledge-Graph Path (DECOMMISSIONED)",
+        "last_stage_change": "2026-05-24"
+      }
+    ]
+  }
+}
