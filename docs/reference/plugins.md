@@ -64,6 +64,7 @@ copy any JAR by hand.
 | `wiki-writer` | `plugins/wiki-writer/` (`shepard-plugin-wiki-writer`) | One-click Markdown lab-journal entry generator. `POST /v2/collections/{cid}/data-objects/{did}/wiki-write` assembles a layered prompt from the DataObject's attributes + Collection siblings + predecessors + successors, calls the TEXT capability of `shepard-plugin-ai`, and writes a `LabJournalEntry`. Default off. | WW1 |
 | `importer` | `plugins/importer/` (`shepard-plugin-importer`) | Cross-instance / cross-source import library. Carries the `importer_run` Postgres table + service (PR-2); the v5 source adapter + REST surface + CLI subcommand land in PR-3..PR-5. See [Cross-instance import](/reference/import/) for the v15 reference script that exercises the same shape. | IMP1a–IMP1b |
 | `v1-compat` | `plugins/v1-compat/` (`shepard-plugin-v1-compat`) | The byte-stability control plane for the upstream-frozen `/shepard/api/...` surface. Carries the `:LegacyV1Config` singleton, the v1 deprecation headers (`Deprecation`, `Link`, `X-Shepard-Legacy`), the admin REST (`/v2/admin/legacy/v1/{config,stats}`), and the frontend banner. Operators flip the singleton to disable the v1 surface when their tooling is ready — no fork-imposed sunset. See [v1 deprecation](/reference/v1-deprecation/). | V1COMPAT.0 |
+| `jupyter` | `plugins/jupyter/` (`shepard-plugin-jupyter`) | JupyterHub link-out gate — admin-configurable sidecar URL + enable/disable toggle. `GET/PATCH /v2/admin/jupyter/config`, `GET /v2/jupyter/config` (public). CLI: `shepard-admin jupyter {status,enable,disable,set-hub-url}`. Install guide: `plugins/jupyter/docs/install.md`. | J1e |
 
 To opt out of a bundled plugin without removing the JAR: set
 `shepard.plugins.<id>.enabled=false` in `application.properties`
@@ -734,3 +735,4 @@ It covers:
 - [aidocs/47]({{ '/aidocs/47-dev-experience-and-plugin-system' | relative_url }}) — the SPI design + future registries.
 - [aidocs/68]({{ '/aidocs/68-plugin-vs-core-overview' | relative_url }}) — plugin-vs-core decision matrix.
 - [Unhide publish feed]({{ '/reference/unhide-publish/' | relative_url }}) — the first shipped plugin (UH1a).
+- [JupyterHub integration](notebooks.md) — user-facing notebook surface built on the jupyter plugin.
