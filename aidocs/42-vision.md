@@ -424,9 +424,9 @@ Five typical entry points:
    **Templates admin page** (browse, create, edit, retire ShepardTemplates),
    **RO-Crate download button** on collection pages, **admin health
    dashboard** (heap, uptime, HTTP metrics), and **admin-configurable
-   instance-wide JupyterHub link-out** (J1e — replaces the earlier
+   instance-wide JupyterHub link-out** (**J2a** / `shepard-plugin-jupyter` — replaces the earlier
    per-user JupyterHub URL preference; the affordance is now a per-row
-   action in the unified Data References table). New in 2026-05-19: **inline timeseries charting**
+   action in the unified Data References table; plugin ships with a JupyterHub compose sidecar). New in 2026-05-19: **inline timeseries charting**
    (Apache ECharts line chart on every timeseries container page, with
    channel selection, live-mode auto-refresh, step-line toggle for
    boolean channels, smooth toggle, and per-container curated channel
@@ -548,15 +548,19 @@ Mid-horizon:
   HTML. **J1b shipped** — `GET /v2/lab-journal/{dataObjectAppId}/notebooks`
   lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
-  versions of a note so researchers can recover earlier drafts. **J1e shipped
-  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
-  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
-  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
-  they show up as **Notebook**-kind rows in the unified Data References table
-  with a one-click "Open in JupyterHub" launch button gated on the admin
-  config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
-  `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
-  can absorb it.
+  versions of a note so researchers can recover earlier drafts. **J2a shipped
+  (replaces J1c; delivered as `shepard-plugin-jupyter`)** — instance-wide
+  admin-configurable JupyterHub link-out (`:JupyterConfig` singleton +
+  canonical admin REST at `/v2/admin/plugins/jupyter/config` + `shepard-admin
+  jupyter` CLI) plus a JupyterHub compose sidecar (path-mounted at
+  `/jupyterhub`, OIDC token forwarded to kernel). Notebooks are no longer in
+  a dedicated DataObject panel; they show up as **Notebook**-kind rows in the
+  unified Data References table with a one-click "Open in JupyterHub" launch
+  button gated on the admin config (REF-UNIFIED-TABLE-FR1B). The launch URL
+  composes `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub
+  deploy can absorb it. **Remaining J2 work:** J2b (real notebook spawn +
+  result writeback), J2c (kernel lifecycle REST surface), J2d (Helm sidecar
+  values via PM1f) are queued.
 - **REST-driven digital-twin scene editing** (`aidocs/data/85`, DT1
   + SCENEGRAPH-REST-1). **SCENEGRAPH-REST-1 shipped** — nine
   `/v2/scene-graphs/...` endpoints + seven MCP tools + URDF XML
