@@ -135,10 +135,11 @@ class ProvenanceCaptureFilterTest {
   }
 
   @Test
-  void getCaptures_whenCaptureReadsOn() throws IOException {
+  void getCaptures_whenCaptureReadsOn_onV2Path() throws IOException {
     filter.captureReads = true;
     when(request.getMethod()).thenReturn("GET");
     when(response.getStatus()).thenReturn(200);
+    // setUp already sets path to "v2/collections"
 
     filter.filter(request, response);
 
@@ -157,6 +158,19 @@ class ProvenanceCaptureFilterTest {
       eq("human"),
       isNull()
     );
+  }
+
+  /** PROV-CAPTURE-READS-FLIP: v1 reads must NOT be captured even when captureReads=true. */
+  @Test
+  void getDoesNotCapture_whenCaptureReadsOn_onV1Path() throws IOException {
+    filter.captureReads = true;
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("shepard/api/collections");
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test

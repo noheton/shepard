@@ -125,7 +125,9 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);
-    if (!isMutation && !captureReads) return;
+    String path = request.getUriInfo().getPath();
+    boolean isV2 = path != null && path.startsWith("v2/");
+    if (!isMutation && !(captureReads && isV2)) return;
 
     int status = response.getStatus();
     // Only capture successful writes; failures aren't activities in
@@ -139,8 +141,6 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     long endedAtMillis = System.currentTimeMillis();
     Object startedObj = request.getProperty(PROP_STARTED_AT_MILLIS);
     long startedAtMillis = startedObj instanceof Long s ? s : endedAtMillis;
-
-    String path = request.getUriInfo().getPath();
     String summary = method + " /" + (path == null ? "" : path);
     String actionKind = actionKindFor(method);
 
