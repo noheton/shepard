@@ -21,23 +21,31 @@ import {
 } from './ContainerType';
 
 /**
- * 
+ *
  * @export
  * @interface ContainerSearchParams
  */
 export interface ContainerSearchParams {
     /**
-     * 
+     *
      * @type {string}
      * @memberof ContainerSearchParams
      */
     query: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof ContainerSearchParams
      */
     queryType: ContainerType;
+    /**
+     * Optional server-side filter on the createdBy field. When non-null and
+     * non-blank, only containers whose createdBy contains this value
+     * (case-insensitive substring) are returned.
+     * @type {string}
+     * @memberof ContainerSearchParams
+     */
+    createdBy?: string;
 }
 
 
@@ -60,9 +68,10 @@ export function ContainerSearchParamsFromJSONTyped(json: any, ignoreDiscriminato
         return json;
     }
     return {
-        
+
         'query': json['query'],
         'queryType': ContainerTypeFromJSON(json['queryType']),
+        ...(json['createdBy'] != null ? { 'createdBy': json['createdBy'] } : undefined),
     };
 }
 
@@ -71,9 +80,10 @@ export function ContainerSearchParamsToJSON(value?: ContainerSearchParams | null
         return value;
     }
     return {
-        
+
         'query': value['query'],
         'queryType': ContainerTypeToJSON(value['queryType']),
+        ...(value['createdBy'] != null ? { 'createdBy': value['createdBy'] } : undefined),
     };
 }
 
