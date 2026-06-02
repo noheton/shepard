@@ -1,21 +1,24 @@
 <script lang="ts" setup>
 /**
- * UI3a — VideoPlayer component.
+ * UI3a + MFFD-VIDEOREF-SCALE-1 — VideoPlayer component.
  *
- * Renders a native <video> element against the provided `src` URL.
- * Because the download endpoint requires a Bearer token and <video src>
- * cannot send custom headers, this component fetches the video as a blob
- * with the supplied accessToken and uses a blob: URL for the video element.
- * The blob URL is revoked on unmount to avoid memory leaks.
+ * Plays a video by handing the URL directly to a native HTML5 `<video>`
+ * element so the browser can do its own Range requests and scrub
+ * natively. This is the structural fix for the previous blob-fetch
+ * approach that downloaded the entire video before playing (fatal on
+ * multi-GB MFFD MP4s — froze the tab on a 6 GB welding video).
  *
- * VID1a note: HLS segmented delivery is deferred to VID1b. When VID1b ships
- * the m3u8 endpoint, upgrade to hls.js and drop the blob-URL approach.
+ * Auth: the browser cannot inject a custom `Authorization` header on
+ * `<video src>`, so the JWT travels as `?access_token=…` per
+ * MFFD-VIDEOREF-SCALE-1 — `JWTFilter` reads the query param as a
+ * fallback when no Authorization header is present (RFC 6750 §2.3).
  *
  * Props:
  *   src         — authenticated download URL (required)
- *   accessToken — Bearer token used to fetch the video blob (required for auth)
+ *   accessToken — Bearer token; appended as `?access_token=` when given
  *   poster      — optional poster image URL
  */
+import { withAccessTokenQueryParam } from "~/utils/videoUrl";
 
 const props = defineProps<{
   src: string;
@@ -23,61 +26,44 @@ const props = defineProps<{
   poster?: string | null;
 }>();
 
-const blobSrc = ref<string | null>(null);
-const loadError = ref<string | null>(null);
-const isLoading = ref(true);
+const playerError = ref<string | null>(null);
 
-onMounted(async () => {
-  if (!props.accessToken) {
-    blobSrc.value = props.src;
-    isLoading.value = false;
-    return;
-  }
-  try {
-    const response = await fetch(props.src, {
-      headers: { Authorization: `Bearer ${props.accessToken}` },
-    });
-    if (!response.ok) {
-      loadError.value = `HTTP ${response.status}`;
-      return;
-    }
-    const blob = await response.blob();
-    blobSrc.value = URL.createObjectURL(blob);
-  } catch (err) {
-    loadError.value = err instanceof Error ? err.message : "Network error";
-  } finally {
-    isLoading.value = false;
-  }
-});
+const playableSrc = computed(() =>
+  withAccessTokenQueryParam(props.src, props.accessToken),
+);
 
-onUnmounted(() => {
-  if (blobSrc.value?.startsWith("blob:")) {
-    URL.revokeObjectURL(blobSrc.value);
-  }
-});
+function onError(e: Event) {
+  const t = e.target as HTMLVideoElement | null;
+  const code = t?.error?.code;
+  const map: Record<number, string> = {
+    1: "Playback aborted by the user.",
+    2: "Network error while loading the video.",
+    3: "Video decoding error (codec not supported by the browser).",
+    4: "Video format not supported.",
+  };
+  playerError.value =
+    (code != null ? map[code] : undefined) ?? "Video could not be played.";
+}
 </script>
 
 <template>
   <div class="video-player-wrapper">
-    <div v-if="isLoading" class="video-loading">
-      <v-progress-circular indeterminate color="white" size="32" aria-label="Loading video" />
-    </div>
     <v-alert
-      v-else-if="loadError"
+      v-if="playerError"
       type="error"
       variant="tonal"
       density="compact"
       class="ma-2"
     >
-      Failed to load video: {{ loadError }}
+      {{ playerError }}
     </v-alert>
     <video
-      v-else-if="blobSrc"
       controls
-      preload="auto"
-      :src="blobSrc"
+      preload="metadata"
+      :src="playableSrc"
       :poster="props.poster ?? undefined"
       class="video-player"
+      @error="onError"
     >
       Your browser does not support video playback.
     </video>
@@ -91,13 +77,6 @@ onUnmounted(() => {
   border-radius: 4px;
   overflow: hidden;
   min-height: 60px;
-}
-
-.video-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 120px;
 }
 
 .video-player {

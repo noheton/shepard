@@ -15,8 +15,10 @@ import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamRe
 import de.dlr.shepard.context.references.videostreamreference.io.VideoStreamReferenceIO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import de.dlr.shepard.context.references.videostreamreference.services.VideoStreamReferenceService;
+import de.dlr.shepard.storage.StorageGetResponse;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -223,5 +225,119 @@ class VideoStreamReferenceV2RestTest {
     @SuppressWarnings("unchecked")
     List<VideoStreamReferenceIO> body = (List<VideoStreamReferenceIO>) r.getEntity();
     assertThat(body).isEmpty();
+  }
+
+  // ── download — MFFD-VIDEOREF-SCALE-1 range support ───────────────────────
+
+  private StorageGetResponse fakePayload(byte[] bytes) {
+    return new StorageGetResponse(
+      "gridfs",
+      "test.mp4",
+      "video/mp4",
+      (long) bytes.length,
+      new ByteArrayInputStream(bytes)
+    );
+  }
+
+  @Test
+  void download_noRangeHeader_returnsFullBodyWithAcceptRanges() throws Exception {
+    byte[] bytes = new byte[100];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, null, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getHeaderString("Accept-Ranges")).isEqualTo("bytes");
+    assertThat(r.getHeaderString("Content-Length")).isEqualTo("100");
+    assertThat(r.getHeaderString("Content-Disposition")).contains("test.mp4");
+  }
+
+  @Test
+  void download_validRange_returns206PartialContent() throws Exception {
+    byte[] bytes = new byte[1000];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=100-199", sc);
+    assertThat(r.getStatus()).isEqualTo(206);
+    assertThat(r.getHeaderString("Content-Range")).isEqualTo("bytes 100-199/1000");
+    assertThat(r.getHeaderString("Content-Length")).isEqualTo("100");
+    assertThat(r.getHeaderString("Accept-Ranges")).isEqualTo("bytes");
+  }
+
+  @Test
+  void download_openEndedRange_returns206ToEnd() throws Exception {
+    byte[] bytes = new byte[500];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=200-", sc);
+    assertThat(r.getStatus()).isEqualTo(206);
+    assertThat(r.getHeaderString("Content-Range")).isEqualTo("bytes 200-499/500");
+    assertThat(r.getHeaderString("Content-Length")).isEqualTo("300");
+  }
+
+  @Test
+  void download_unsatisfiableRange_returns416() throws Exception {
+    byte[] bytes = new byte[100];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=500-600", sc);
+    assertThat(r.getStatus()).isEqualTo(416);
+    assertThat(r.getHeaderString("Content-Range")).isEqualTo("bytes */100");
+    assertThat(r.getHeaderString("Accept-Ranges")).isEqualTo("bytes");
+  }
+
+  @Test
+  void download_returns401WhenUnauthenticated() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, null, sc);
+    assertThat(r.getStatus()).isEqualTo(401);
+  }
+
+  @Test
+  void download_returns403WhenNoReadPermission() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, null, sc);
+    assertThat(r.getStatus()).isEqualTo(403);
+  }
+
+  @Test
+  void download_returns404WhenRefMissing() {
+    when(videoStreamReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(null);
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=0-100", sc);
+    assertThat(r.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  void download_unknownTotalSize_fallsBackToFullBody() throws Exception {
+    // Legacy GridFS row without bookkeeping: no fileSizeBytes on the ref
+    // and no sizeBytes on the StorageGetResponse. A Range request must
+    // not crash — we serve the full body and still advertise Accept-Ranges.
+    byte[] bytes = new byte[50];
+    StorageGetResponse legacy = new StorageGetResponse(
+      "gridfs", "legacy.mp4", "video/mp4", null, new ByteArrayInputStream(bytes)
+    );
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(legacy);
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=10-20", sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getHeaderString("Accept-Ranges")).isEqualTo("bytes");
+  }
+
+  @Test
+  void download_malformedRange_returns416() throws Exception {
+    byte[] bytes = new byte[100];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=abc-def", sc);
+    assertThat(r.getStatus()).isEqualTo(416);
+  }
+
+  @Test
+  void download_multiRange_returns416() throws Exception {
+    // Multi-range is refused — caller gets 416 like any other unsatisfiable.
+    byte[] bytes = new byte[100];
+    when(videoStreamReferenceService.getPayload(ref)).thenReturn(fakePayload(bytes));
+
+    Response r = resource.download(DO_APP_ID, REF_APP_ID, "bytes=0-10,20-30", sc);
+    assertThat(r.getStatus()).isEqualTo(416);
   }
 }

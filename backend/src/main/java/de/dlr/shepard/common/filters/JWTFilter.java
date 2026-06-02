@@ -59,6 +59,37 @@ public class JWTFilter implements ContainerRequestFilter {
 
     String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
     String apiKeyHeader = requestContext.getHeaderString(Constants.API_KEY_HEADER);
+
+    // MFFD-VIDEOREF-SCALE-1 — query-param JWT fallback for surfaces the browser
+    // controls directly (HTML5 <video src>, <img src>, downloads triggered by
+    // <a href download>). The browser cannot inject a custom Authorization header
+    // on those elements, so they need a query-param channel. RFC 6750 §2.3
+    // tolerates the URI query parameter form ("access_token") for the same reason.
+    //
+    // Precedence: explicit Authorization / X-API-KEY headers win over the query
+    // param. The query param only applies when no header is present — so a
+    // regular API caller using a Bearer header always takes the header path.
+    //
+    // Logging: the query param value is NEVER logged (it is the JWT). The
+    // upstream WARN below only reports presence/absence of the header form.
+    if ((authorizationHeader == null || authorizationHeader.isBlank()) && apiKeyHeader == null) {
+      String queryToken = null;
+      try {
+        var queryParams = requestContext.getUriInfo().getQueryParameters();
+        if (queryParams != null) {
+          queryToken = queryParams.getFirst("access_token");
+        }
+      } catch (RuntimeException ignored) {
+        // The reactive servlet layer may throw on certain malformed URIs.
+        // The query-param channel is a best-effort fallback; on any
+        // resolution failure we fall through to the no-token path so the
+        // caller sees a normal 401 rather than a 500.
+      }
+      if (queryToken != null && !queryToken.isBlank()) {
+        authorizationHeader = "Bearer " + queryToken;
+      }
+    }
+
     if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
       try {
         principal = jwtTokenAuthService.parseBearerToken(authorizationHeader);

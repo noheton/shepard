@@ -442,4 +442,148 @@ class FileBundleReferenceRestTest {
     resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext);
     verify(fileGroupService, never()).deleteGroup(any(), org.mockito.ArgumentMatchers.anyBoolean());
   }
+
+  // ── MFFD-IMAGEBUNDLE-PAGINATE-1 — paginated GET /files ───────────────────
+
+  /**
+   * Build a FileGroup populated with N synthetic ShepardFile records.
+   * Used by every pagination test to drive the slicing math.
+   */
+  private FileGroup populatedGroup(int fileCount) {
+    var group = new FileGroup(11L);
+    group.setAppId(GROUP_APP_ID);
+    group.setName("default");
+    group.setIndex(0);
+    var files = new java.util.ArrayList<de.dlr.shepard.data.file.entities.ShepardFile>(fileCount);
+    for (int i = 0; i < fileCount; i++) {
+      var f = new de.dlr.shepard.data.file.entities.ShepardFile();
+      f.setFilename("frame-" + i + ".png");
+      files.add(f);
+    }
+    group.setFiles(files);
+    return group;
+  }
+
+  /** The pagination endpoint walks `checkAccess` → ensure the perm gate passes. */
+  private void stubReadAllowedForBundleParent() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId("do-app-id", AccessType.Read, CALLER)).thenReturn(true);
+  }
+
+  @Test
+  void listGroupFiles_defaultParams_returnsFirstPage() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(500));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, null, securityContext);
+    assertEquals(200, r.getStatus());
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(0, paged.getPage());
+    assertEquals(FileBundleReferenceRest.DEFAULT_FILES_PAGE_SIZE, paged.getSize());
+    assertEquals(500L, paged.getTotalElements());
+    assertEquals(3, paged.getTotalPages()); // 500 / 200 = ceil 3
+    assertEquals(200, paged.getItems().size());
+    assertEquals("frame-0.png", paged.getItems().get(0).getFilename());
+    assertEquals("frame-199.png", paged.getItems().get(199).getFilename());
+  }
+
+  @Test
+  void listGroupFiles_page1Size50_returnsCorrectSlice() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(120));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 1, 50, securityContext);
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(50, paged.getItems().size());
+    assertEquals("frame-50.png", paged.getItems().get(0).getFilename());
+    assertEquals("frame-99.png", paged.getItems().get(49).getFilename());
+    assertEquals(120L, paged.getTotalElements());
+    assertEquals(3, paged.getTotalPages());
+  }
+
+  @Test
+  void listGroupFiles_pageBeyondEnd_returnsEmptyItems() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(38));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 5, 200, securityContext);
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(0, paged.getItems().size());
+    assertEquals(38L, paged.getTotalElements());
+    assertEquals(1, paged.getTotalPages());
+  }
+
+  @Test
+  void listGroupFiles_oversizedPageSize_clampsToMax() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(2000));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    // Caller asks for 5000 per page — server caps at MAX_FILES_PAGE_SIZE.
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, 5000, securityContext);
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(FileBundleReferenceRest.MAX_FILES_PAGE_SIZE, paged.getSize());
+    assertEquals(1000, paged.getItems().size());
+  }
+
+  @Test
+  void listGroupFiles_negativePageSize_clampsToOne() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(10));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, -50, securityContext);
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(1, paged.getSize());
+    assertEquals(1, paged.getItems().size());
+    assertEquals(10, paged.getTotalPages());
+  }
+
+  @Test
+  void listGroupFiles_returns404WhenBundleMissing() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(null);
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, null, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void listGroupFiles_returns404WhenGroupBelongsToDifferentBundle() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(5));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn("some-other-bundle");
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, null, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void listGroupFiles_returns401WhenUnauthenticated() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, null, securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void listGroupFiles_emptyGroup_returnsZeroItems() {
+    stubReadAllowedForBundleParent();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.getByAppId(GROUP_APP_ID)).thenReturn(populatedGroup(0));
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, null, null, securityContext);
+    var paged = (de.dlr.shepard.v2.bundle.io.PagedFilesIO) r.getEntity();
+    assertEquals(0L, paged.getTotalElements());
+    assertEquals(0, paged.getTotalPages());
+    assertEquals(0, paged.getItems().size());
+  }
 }

@@ -192,7 +192,11 @@ function formatBitrate(
         </v-card-title>
 
         <v-card-text class="pt-0">
-          <!-- Player -->
+          <!-- Player — MFFD-VIDEOREF-SCALE-1: VideoPlayer now hands the
+               URL directly to the browser <video> element so Range
+               requests + scrubbing work natively on multi-GB MFFD MP4s.
+               The accessToken travels as ?access_token=… (JWTFilter
+               reads it as a query-param fallback when present). -->
           <VideoPlayer :src="downloadUrl(ref.appId)" :access-token="accessToken" />
 
           <!-- Annotation timeline bar (VID1b-annotation) -->
