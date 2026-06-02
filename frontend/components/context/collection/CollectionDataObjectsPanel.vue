@@ -184,7 +184,11 @@ const props = defineProps<{
 const router = useRouter();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
 
-const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED", "NCR_OPEN", "REJECTED"] as const;
+const STATUSES = [
+  "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
+  // MFG1 / QM1a — EN 9100 quality-engineering statuses
+  "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "CONCESSION_PENDING",
+] as const;
 type Status = (typeof STATUSES)[number];
 
 const searchInput = ref("");
@@ -315,8 +319,12 @@ function statusColor(status: string): string {
     PUBLISHED: "success",
     ARCHIVED: "default",
     FAILED: "red",
-    NCR_OPEN: "orange",
-    REJECTED: "deep-orange",
+    // MFG1 / QM1a — EN 9100 quality-engineering statuses
+    NCR_OPEN: "error",
+    ON_HOLD: "orange",
+    REJECTED: "error",
+    CERTIFIED: "success",
+    CONCESSION_PENDING: "warning",
   } as Record<string, string>)[status] ?? "grey";
 }
 

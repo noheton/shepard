@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.collection.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
@@ -689,6 +690,110 @@ public class DataObjectService {
       Log.warnf("PROV1k: failed to serialise typedPredecessors — stored as null. %s", e.getMessage());
       return null;
     }
+  }
+
+  /**
+   * QM1b — set / update the PROV-O / FAIR²R relationship type for a single
+   * predecessor edge of a DataObject. Used by the
+   * {@code PATCH /v2/collections/{cid}/data-objects/{did}/predecessors/{pid}}
+   * endpoint so an operator can annotate an existing predecessor with
+   * {@code "fair2r:repairs"} / {@code "fair2r:concession"} / etc. without
+   * tearing down and recreating the link.
+   *
+   * <p>Behaviour:
+   * <ul>
+   *   <li>The predecessor DataObject must already exist on this DataObject's
+   *       predecessor list (the edge must exist before its type can be
+   *       written) — otherwise throws {@link InvalidPathException} mapped to
+   *       HTTP 404.</li>
+   *   <li>{@code relationshipType} must be in
+   *       {@link TypedPredecessorIO#ALLOWED_TYPES} — otherwise throws
+   *       {@link InvalidBodyException} mapped to HTTP 400.</li>
+   *   <li>Existing typed entries for other predecessors are preserved;
+   *       only the entry for {@code predecessorAppId} is replaced.</li>
+   * </ul>
+   *
+   * <p>Idempotent: re-running with the same {@code relationshipType} is a no-op.
+   *
+   * @param dataObjectShepardId the subject DataObject's shepardId
+   * @param predecessorAppId    the predecessor's appId (must already be linked)
+   * @param relationshipType    one of {@link TypedPredecessorIO#ALLOWED_TYPES}
+   * @return the updated DataObject (post-save)
+   */
+  public DataObject setPredecessorRelationshipType(
+    long dataObjectShepardId,
+    String predecessorAppId,
+    String relationshipType
+  ) {
+    if (predecessorAppId == null || predecessorAppId.isBlank()) {
+      throw new InvalidBodyException("predecessorAppId must not be blank.");
+    }
+    if (relationshipType == null || relationshipType.isBlank()) {
+      throw new InvalidBodyException("relationshipType must not be blank.");
+    }
+    if (!TypedPredecessorIO.ALLOWED_TYPES.contains(relationshipType)) {
+      throw new InvalidBodyException(
+        "QM1b: unknown relationshipType '%s'. Allowed: %s.".formatted(
+          relationshipType, TypedPredecessorIO.ALLOWED_TYPES
+        )
+      );
+    }
+
+    DataObject subject = dataObjectDAO.findByShepardId(dataObjectShepardId);
+    if (subject == null || subject.isDeleted()) {
+      throw new InvalidPathException(
+        "DataObject with id %d is null or deleted".formatted(dataObjectShepardId)
+      );
+    }
+
+    // Auth: enforce Write on the parent Collection (mirrors update path).
+    collectionService.assertIsAllowedToEditCollection(subject.getCollection().getShepardId());
+    // #27-ARCHIVED — block when the Collection is frozen.
+    archiveStateGuard.assertCollectionNotArchived(subject.getCollection().getShepardId());
+
+    // Verify the predecessor edge actually exists. The PATCH endpoint annotates an
+    // already-linked predecessor; creating new links goes through the create / update path.
+    boolean edgeExists = subject.getPredecessors().stream()
+      .filter(p -> !p.isDeleted())
+      .anyMatch(p -> predecessorAppId.equals(p.getAppId()));
+    if (!edgeExists) {
+      throw new InvalidPathException(
+        "No predecessor edge from DataObject %d to predecessor appId '%s'."
+          .formatted(dataObjectShepardId, predecessorAppId)
+      );
+    }
+
+    // Parse the current typedPredecessorsJson into a mutable list.
+    List<TypedPredecessorIO> typed = new ArrayList<>();
+    String currentJson = subject.getTypedPredecessorsJson();
+    if (currentJson != null && !currentJson.isBlank()) {
+      try {
+        List<TypedPredecessorIO> parsed = MAPPER.readValue(
+          currentJson, new TypeReference<List<TypedPredecessorIO>>() {}
+        );
+        if (parsed != null) typed.addAll(parsed);
+      } catch (Exception e) {
+        Log.warnf("QM1b: failed to parse typedPredecessorsJson on %d — rebuilding fresh. %s",
+          dataObjectShepardId, e.getMessage());
+        typed.clear();
+      }
+    }
+
+    // Replace or insert the entry for this predecessor.
+    boolean replaced = false;
+    for (int i = 0; i < typed.size(); i++) {
+      if (predecessorAppId.equals(typed.get(i).predecessorAppId())) {
+        typed.set(i, new TypedPredecessorIO(predecessorAppId, relationshipType));
+        replaced = true;
+        break;
+      }
+    }
+    if (!replaced) {
+      typed.add(new TypedPredecessorIO(predecessorAppId, relationshipType));
+    }
+
+    subject.setTypedPredecessorsJson(serialiseTypedPredecessors(typed));
+    return dataObjectDAO.createOrUpdate(subject);
   }
 
   /**

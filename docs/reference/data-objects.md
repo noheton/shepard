@@ -25,7 +25,7 @@ are available; the new fields described below are additive.
 | `appId` | `string` | UUID v7. L2 native identifier. |
 | `name` | `string` | Required. |
 | `description` | `string` | Optional rich-text body. |
-| `status` | `string` (enum) | `DRAFT` \| `IN_REVIEW` \| `READY` \| `PUBLISHED` \| `ARCHIVED`. |
+| `status` | `string` (enum) | Standard lifecycle: `DRAFT` \| `IN_REVIEW` \| `READY` \| `PUBLISHED` \| `ARCHIVED`. Quality-engineering branch (MFG1 / QM1a, role-gated on write): `NCR_OPEN` \| `ON_HOLD` \| `REJECTED` \| `CERTIFIED` \| `CONCESSION_PENDING`. See [Quality lifecycle](#quality-lifecycle-statuses-mfg1--qm1a) below. |
 | `attributes` | `Map<String, String>` | Free-text key-value annotations. |
 | `collectionId` | `long` | The owning collection. |
 | `parentId` | `long` (nullable) | Parent in the hierarchy. |
@@ -98,6 +98,75 @@ in step 2 (Attributes). Both forms use:
 
 On the Data Object detail page both values render as small chips
 below the title when set.
+
+## Quality lifecycle statuses (MFG1 / QM1a)
+
+Beyond the standard lifecycle (`DRAFT → IN_REVIEW → READY → PUBLISHED → ARCHIVED`),
+DataObjects can carry one of five **quality-engineering statuses**. Writing any of
+these requires the caller to hold the `quality-engineer` Keycloak / Neo4j role
+(403 without it). Any user can read a DataObject that carries one of these statuses.
+
+| Status | Meaning | Typical predecessor / successor |
+|---|---|---|
+| `NCR_OPEN` | A non-conformance has been raised; the artefact is awaiting investigation. | After a process step's NDT inspection fails. |
+| `ON_HOLD` | Production has been paused while the cause is investigated. | After `NCR_OPEN`; before disposition is decided. |
+| `CONCESSION_PENDING` *(QM1a)* | The disposition decision (use-as-is concession) is pending approval. | Between `NCR_OPEN` and `CERTIFIED` / `REJECTED`. |
+| `REJECTED` | The artefact has been disposed as scrap or rework; not usable as-built. | Terminal for the failing branch. |
+| `CERTIFIED` | The disposition is closed; the artefact has been accepted (potentially with concession). | Final state for the accepted branch. |
+
+A typical EN 9100 §8.7 disposition window looks like:
+
+```
+READY  →  NCR_OPEN  →  ON_HOLD  →  CONCESSION_PENDING  →  CERTIFIED
+                                                       ↘  REJECTED
+```
+
+Each status renders as a distinctly-coloured chip in the UI — `CONCESSION_PENDING`
+is amber-outlined with a shield-alert icon so an auditor can spot disposition-window
+artefacts at a glance.
+
+The accompanying **Disposition record** template (QM1c, seeded by Neo4j
+migration `V102`) is a `STRUCTURED_RECIPE` carrying the EN 9100 §8.7 fields:
+`ncr_id`, `defect_type`, `disposition ∈ {use-as-is, rework, scrap, concession}`,
+`approver_orcid`, `approver_username`, `decided_at`, `notes`. Attach it as a
+`StructuredDataReference` on the DataObject that carries the NCR_OPEN /
+CONCESSION_PENDING status.
+
+## Typed predecessor relationships (PROV1k + QM1b)
+
+Every predecessor edge carries a PROV-O / FAIR²R relationship type so the
+"rework loop" in a process chain is queryable without reading attribute
+strings. The four values are:
+
+| Relationship type | Vocabulary | Maps to QM1b `transitionKind` | Meaning |
+|---|---|---|---|
+| `prov:wasInformedBy` | PROV-O | `normal` | Generic informational dependency. Default for any predecessor where no other type is set. |
+| `prov:wasRevisionOf` | PROV-O | `re-test` | The successor is a direct revision / correction (e.g. TR-006 corrects TR-004 after repair). |
+| `fair2r:repairs` | FAIR²R | `rework` | Rework / NCR-repair relationship (e.g. TR-005 is the repair action for TR-004's anomaly). |
+| `fair2r:concession` *(QM1b)* | FAIR²R | `concession` | The successor was accepted under a concession ("use-as-is") after the predecessor failed acceptance. |
+
+**Set the relationship type at create time:**
+
+```http
+POST /v2/collections/{cid}/data-objects
+{
+  "name": "TR-005",
+  "typedPredecessors": [
+    {"predecessorAppId": "01930a2b-…-tr-004", "relationshipType": "fair2r:repairs"}
+  ]
+}
+```
+
+**Or annotate an already-linked edge (QM1b):**
+
+```http
+PATCH /v2/collections/{cid}/data-objects/{did}/predecessors/{predAppId}
+{"relationshipType": "fair2r:concession"}
+```
+
+The PATCH endpoint requires Write permission on the parent Collection. The
+predecessor edge must already exist (404 otherwise); use the create / merge-patch
+paths to add new predecessor links.
 
 ## Time-bounds sparklines in the DataObjects list
 
