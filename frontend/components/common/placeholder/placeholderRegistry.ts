@@ -34,17 +34,8 @@ export interface PlaceholderEntry {
 
 export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
   // ---------- admin tiles (fragment-routed inside /admin) ----------
-  {
-    slug: "file-migration",
-    surface: "admin",
-    title: "File migration",
-    subtitle:
-      "Move file payloads between storage backends (e.g. legacy MinIO → Garage). Status surfaces here once the UI lands.",
-    endpoint: "/v2/admin/files/migrate/status",
-    backlogRow: "FS1e",
-    designDoc: "aidocs/data/35-hdf5-hsds-implementation-design.md",
-    backend: "shipped",
-  },
+  // NOTE: file-migration (FS1e1) placeholder removed — real AdminFileMigrationPane
+  // ships with PLACEHOLDER-REPLACE-FS1e1 (2026-06-02). See aidocs/16 + aidocs/34.
   {
     slug: "sql-timeseries",
     surface: "admin",
@@ -239,6 +230,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
 ];
 
 // TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
+// PLACEHOLDER-REPLACE-FS1e1: -1 for file-migration (real pane ships 2026-06-02)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

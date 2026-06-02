@@ -11,7 +11,9 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
   it("ships the documented count of placeholders", () => {
     // findings doc commits to a specific count; if this changes the doc
     // must change too (forces same-PR coupling).
-    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(18); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
+    // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
+    // PLACEHOLDER-REPLACE-FS1e1: -1 file-migration replaced by real pane (2026-06-02)
+    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(17);
     expect(PLACEHOLDER_ENTRIES).toHaveLength(EXPECTED_PLACEHOLDER_COUNT);
   });
 
@@ -67,7 +69,8 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const admin = placeholdersBySurface("admin");
     const profile = placeholdersBySurface("profile");
     const route = placeholdersBySurface("route");
-    expect(admin.length).toBe(10);
+    // PLACEHOLDER-REPLACE-FS1e1: admin goes from 10 → 9 (file-migration replaced, 2026-06-02)
+    expect(admin.length).toBe(9);
     expect(profile.length).toBe(1);
     expect(route.length).toBe(7); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
     expect(admin.length + profile.length + route.length).toBe(
