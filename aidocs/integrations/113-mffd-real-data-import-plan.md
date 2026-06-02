@@ -75,7 +75,7 @@ Re-running this plan must be **safe**, **fast**, and **lossless**:
 | W4   | wire Predecessor edges layup→bridge | n/a | YAML mapping + `POST /v2/admin/mffd/process-chain-mapping` | (flo-authored YAML) | 8,251 edges | wave 3 done + flo authors mapping YAML | **infra ready 2026-06-02 (MFFD-AF-TRACK-MAPPING shipped); pending flo YAML** |
 | W5   | RoboDK scene | bucket 4a (`MFZ.rdk`) | new SceneGraph attached at Collection level | SCENEGRAPH-CREATE-FROM-RDK | 1 scene | wave 2 done | pending |
 | W6   | thermography | bucket 4b (`thermography.7z`) | new DOs under `MFFD Upper-Fuselage (Real)` | new `7z` importer step | ~6,000 TIFFs as ImageBundleReference | wave 2 done | pending |
-| W7   | microsections re-anchor | already in Coll `019e7243…` | move under `MFFD Upper-Fuselage (Real)` | `re-anchor-mffd-microsections.cypher` | 8 DOs / 16 FR1b | wave 2 done | pending |
+| W7   | **TPS+FSD pointclouds → spatial substrate** (re-classify W2 file-stragglers) | `Track_NN__Run_NN_/files/TPS 3D pointclouds.*` + `FSD course 3D pointclouds` + `TPS raw data.*` | one `SpatialDataContainer` per track (plugin `spatiotemporal` v6) | new `shepard-plugin-spatial-importer` step | 8,251 tracks × {2 pointcloud + 1 FSD path + 38 raw-data chunks} = ~341,000 spatial profiles | wave 2 done, spatial plugin live | pending |
 | W8a  | Punktschweißungen .svdx parser | bucket 3 | new DO per `.svdx` | **new** `shepard-plugin-svdx` (TwinCAT Scope) | 29 files / 5.9 GB | parser plugin built | gap-blocked |
 | W8b  | process video sweep | bucket 3 | VideoReference under DOs | existing VID1 | 139 MP4s / 133 GB | UI scale-test passes | gap-blocked |
 | W8c  | ThermoCam TIFF stream | bucket 3 | ImageBundleReference | existing IB | 6,273 TIFFs / 0.95 GB | UI scale-test passes | gap-blocked |
@@ -199,18 +199,66 @@ Per-region (P01_1teBahn, P01_2teBahn, P05_1teBahn, ...) becomes one DO carrying 
 ImageBundleReference of its TIFF frames + a derived `quality_score`
 (`urn:shepard:ndt:thermography:peak-delta-c`).
 
-### W7 — Re-anchor microsections
+### W7 — TPS + FSD pointclouds → spatial substrate (re-classify W2 stragglers)
 
-```cypher
-MATCH (mffd:Collection {appId: '<new-coll-appId>'}),
-      (old:Collection {appId: '019e7243-f995-7914-be80-53e367aa5172'})-[:HAS_DATA_OBJECT]->(do)
-CREATE (mffd)-[:HAS_DATA_OBJECT]->(do)
-DELETE (old)-[r:HAS_DATA_OBJECT]->(do)
-WITH old DETACH DELETE old;
+**Microsections are NOT part of MFFD** (separate showcase, Collection `019e7243…` stays
+where it is). W7's real job is to re-classify the 3D-positioned tapelaying artefacts
+that W2 lands as opaque FileReferences into the `spatiotemporal` (v6) substrate.
+
+Per-track stragglers from `Track_NN__Run_NN_/files/`:
+
+| File | Real shape | Target Shepard entity |
+|------|------------|------------------------|
+| `TPS 3D pointclouds.0` / `.1` | Keyence LJ-X8000 laser profilometer scan of laid tape surface; per-point `(X_track, Y_cross, Z_height)` in TCP frame (see `aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md §1`) | `SpatialDataContainer` of `kind=profile` → `shepard_spatial.profile` PostGIS hypertable |
+| `FSD course 3D pointclouds` | Fast Send Driver (KUKA) per-step TCP trajectory of where the tape was laid | `SpatialDataContainer` of `kind=trajectory` → linestring `(X, Y, Z, t)` |
+| `TPS raw data.0 … .37` (38 chunks) | TPS device process stream — temporal series annotated with TCP position per sample (a *temporal sweep through space*) | `SpatialDataContainer` of `kind=brush-trace` (aidocs/data/90 §3) — each row = (timestamp, x, y, z, value-vector) joined to the timeseries channels |
+
+Why this is the right shape:
+- The `spatiotemporal` plugin already ships (`plugins/spatiotemporal/`), PostGIS + the
+  `shepard_spatial` schema land on next backend redeploy (per
+  `aidocs/data/90` live-runtime header), and the `vis-trace3d` plugin
+  (`plugins/vis-trace3d/`) renders these directly.
+- A FileReference holding a pointcloud blob is queryable only as "did this track produce
+  a file?". A `SpatialDataContainer` is queryable as "find tracks whose surface deviation
+  exceeded 0.4 mm in the cross-track band Y_cross ∈ [2, 4]" — the EN 9100 / R1 story.
+- The spatial substrate also reuses the existing `shepardId` permission walk, so no new
+  permission shape.
+
+Importer step (new `shepard-plugin-spatial-importer` thin module — sibling to the
+`importer` plugin):
+
+```bash
+shepard_importer/main.py --spatial-pass \
+  --source /opt/shepard/mffd-staging/w7/mffd-export/ts-export/tapelaying/ \
+  --target-collection "MFFD Upper-Fuselage (Real)" \
+  --pointcloud-glob "TPS 3D pointclouds.*" --pointcloud-kind profile \
+  --trajectory-glob "FSD course 3D pointclouds" --trajectory-kind trajectory \
+  --brush-trace-glob "TPS raw data.*" --brush-trace-kind brush-trace \
+  --workers 4
 ```
 
-Plus PROV-O Activity recording the move. The 16 FR1b singletons stay attached to their
-DOs — only the parent Collection changes.
+The pass:
+- For each `Track_NN__Run_NN_/` DO already created in W2, MERGE one
+  `:SpatialDataContainer` per kind referenced by that DO (idempotent on
+  `{dataObjectAppId, kind}`).
+- Streams pointcloud rows into `shepard_spatial.profile` with `track_appId`,
+  `(x_track, y_cross, z_height)`, and a `profile_geom GEOGRAPHY(POINTZ)` column.
+- Demotes the corresponding FileReferences to `:Archived` status with a
+  `urn:shepard:spatial:promoted-to = <SpatialDataContainer.appId>` annotation, so
+  the originals stay addressable but the canonical query path is now spatial.
+
+**Acceptance:** Open Track 244, the "Cross-section profile" panel shows the laser
+heightmap of the laid tape; the "FSD trajectory" panel renders the TCP path through
+the cell scene-graph (W5 RoboDK URDF, shared coordinate frame via aidocs/data/85);
+the brush-trace pane sweeps the TPS sensor field along that trajectory.
+
+Out of scope for this wave (file backlog rows):
+- **`MFFD-SPATIAL-IMPORTER-1`** — the importer plugin itself.
+- **`MFFD-SPATIAL-FRAME-HANDSHAKE`** — coordinate-frame negotiation between the
+  RoboDK scene (W5) and the TPS scanner frame so the brush trace renders *inside*
+  the cell, not floating in absolute coordinates.
+- **`MFFD-SPATIAL-FILEREF-DEMOTE`** — the FileReference → SpatialDataContainer
+  promotion path including the archived-original handling.
 
 ### W8 — Parser plugins & scale work
 

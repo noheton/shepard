@@ -19,7 +19,7 @@ prerequisite for the import plan.
 | 1 | **`mffd.tar.gz`** — exported `tapelaying` Collection | `/mnt/pve/unas/dump/dataset/mffd.tar.gz` | **271 GB** compressed | **YES**, importer-ready | DLR backend `bt-au-cube3.intra.dlr.de`, Collection `tapelaying` id=48297 |
 | 2 | **`4-Brückenschweißen/`** — exported `bridgewelding` Collection | `/mnt/pve/unas/dump/dataset/4-Brückenschweißen/` | 3.7 GB extracted | **YES**, structured-only | Same backend, Collection `bridgewelding` id=163811 |
 | 3 | **`Punktschweißungen/`** — raw factory files | `/mnt/pve/unas/dump/dataset/Punktschweißungen/` | 5.9 GB (29 files) | **NO** — needs a parser for `.svdx` | N:\Messdaten\MFFD_Demonstrator\Punktschweißungen (Windows share) |
-| 4 | **`thermography.7z`** + **`microsections/`** + **`RoboDK Cell Geometry/`** | dataset/ | ~4 GB + 12 MB | Partial (microsections seeded; the rest TBD) | Mixed origin |
+| 4 | **`thermography.7z`** + **`RoboDK Cell Geometry/`** | dataset/ | ~4 GB + 12 MB | Both TBD | Mixed origin |
 | 5 | **`later/`** — XIT / PPT / PDF / dissertation | `/mnt/pve/unas/dump/later/` | 11 files | **NO** — explicitly "later" | Mixed |
 
 Plus on-disk metadata:
@@ -136,18 +136,19 @@ The bulk of bucket 3 (and the as-yet-uningested bucket of the same shape) is the
 **Stringerverbindung step** which manifest.txt explicitly flags has *no source-side
 timeseries* — only raw scopes + videos. Different shape from `tapelaying`.
 
-## 5. Bucket 4 — thermography, microsections, RoboDK
+## 5. Bucket 4 — thermography + RoboDK
 
 - **`thermography.7z`** (4.0 GB) — NDT thermography for the layup. Sibling to the ThermoCam
   TIFF stream but compressed. Map to a **FileBundleReference of TIFFs** + a derived
   PNG/MP4 review track.
-- **`microsections/Schliffbilder.7z`** — already seeded into Collection
-  `019e7243-f995-7914-be80-53e367aa5172` per RESUME.md (16 FR1b singletons, 8 DOs);
-  the FR1b UI gap was the trigger for J1e/REF-UNIFIED.
 - **`RoboDK Cell Geometry/`** (12 MB) — `MFZ.rdk` (RoboDK scene file) + browser URLs
   + a `Gemini-Temporary Chat.md`. Direct candidate for the **scene-graph + URDF** track
   shipped via SCENEGRAPH-REST. **The RDK scene is the physical context** in which every
   track + welding pass takes place.
+
+> **`microsections/Schliffbilder.7z` is NOT MFFD** — it stays at its existing Collection
+> (`019e7243-f995-7914-be80-53e367aa5172`) as the dedicated micro-sections showcase. It is
+> tracked in `aidocs/agent-findings/...` separately and is **not part of this ingest plan**.
 
 ## 6. Bucket 5 — `later/`
 
