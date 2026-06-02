@@ -23,6 +23,12 @@ import { useFetchSingletonFileReferences } from "~/composables/context/useFetchS
 // imagery. Pane is self-contained (fetches its own cached plate-heatmap +
 // quality summary); we only need to discover the bundle's appId here.
 import DataObjectThermographyPane from "~/components/context/thermography/DataObjectThermographyPane.vue";
+// MFFD-MULTIPLAYER-1 — synchronised multi-payload player. Mounts when the
+// DO carries ≥ 2 distinct payload kinds; renders a shared scrubber + a
+// per-kind tile grid all bound to one `useSyncedTimeCursor` instance.
+import MultiPlayerPane from "~/components/context/multiplayer/MultiPlayerPane.vue";
+import { selectMultiPlayerTiles } from "~/utils/multiPlayerTiles";
+import { useSpatialDataReferencesForDataObject } from "~/composables/context/useSpatialDataReferencesForDataObject";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
@@ -74,6 +80,11 @@ const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
 // fetched via the additive /v2/files/by-data-object endpoint.
 const refreshFr1bRefs = ref<(() => void | Promise<void>) | null>(null);
 
+// MFFD-MULTIPLAYER-1 — surface the video-reference count outside the
+// watcher's closure so the multi-player tile gate (selectMultiPlayerTiles)
+// can react to it.
+const videoReferenceCount = ref<number>(0);
+
 watch(
   () => dataObject.value?.appId,
   (appId) => {
@@ -95,6 +106,8 @@ watch(
         ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
         ...fr1bComposable.references.value.map(mapSingletonFileReferenceToDataTableElement),
       ];
+      // MFFD-MULTIPLAYER-1: keep the video count in step with the composable.
+      videoReferenceCount.value = videoComposable.references.value.length;
     });
   },
   { immediate: true },
@@ -122,6 +135,15 @@ const totalReferenceCount = computed(
  * the pane itself stays unmounted until a match exists, so DOs without
  * thermography pay no cost.
  */
+/**
+ * MFFD-MULTIPLAYER-1 — detect spatial-data references (separate from
+ * dataReferences which only covers TS / file / structured / video / git).
+ * The composable is fail-soft: returns an empty array on error so the
+ * multi-player gate falls back to "no spatial tile".
+ */
+const { references: spatialDataReferences } =
+  useSpatialDataReferencesForDataObject(collectionId, dataObjectId);
+
 const thermographyBundleAppId = computed<string | null>(() => {
   const refs = dataReferences.value ?? [];
   for (const r of refs) {
@@ -139,6 +161,25 @@ const thermographyBundleAppId = computed<string | null>(() => {
   }
   return null;
 });
+
+/**
+ * MFFD-MULTIPLAYER-1 — pick the tiles to render in the synchronised
+ * multi-payload player. Returns an empty array when fewer than 2 distinct
+ * payload kinds are present; the panel hides itself in that case.
+ */
+const hasTimeseriesReference = computed<boolean>(() => {
+  const refs = dataReferences.value ?? [];
+  return refs.some(r => "timeseriesContainerId" in r);
+});
+
+const multiPlayerTiles = computed(() =>
+  selectMultiPlayerTiles({
+    hasTimeseries: hasTimeseriesReference.value,
+    hasVideo: videoReferenceCount.value > 0,
+    thermographyBundleAppId: thermographyBundleAppId.value,
+    hasSpatial: (spatialDataReferences.value?.length ?? 0) > 0,
+  }),
+);
 
 // PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
 // Best-effort: empty when the DataObject has no typed predecessors or backend
@@ -772,6 +813,24 @@ async function saveEmbargoEdit() {
                   <DataObjectSpatialContainersPane
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-MULTIPLAYER-1: synchronised multi-payload player.
+                     Mounts only when the DO carries ≥ 2 distinct payload
+                     kinds (TS + video / TS + thermo / etc.). One shared
+                     time cursor drives every tile; scrubbing the toolbar
+                     moves the TS marker AND the video playhead AND any
+                     other tile's representation of t. Lazy-mounted under
+                     v-if so the heavy ECharts / VideoPlayer setup runs
+                     only when a user opens this panel. -->
+                <ExpansionPanelItem
+                  v-if="multiPlayerTiles.length >= 2 && dataObject.appId"
+                  title="Synchronised player"
+                >
+                  <MultiPlayerPane
+                    :data-object-app-id="dataObject.appId"
+                    :tiles="multiPlayerTiles"
+                    :thermography-bundle-app-id="thermographyBundleAppId"
                   />
                 </ExpansionPanelItem>
                 <!-- Provenance: two views — a structured time-based log

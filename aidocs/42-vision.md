@@ -488,7 +488,13 @@ Five typical entry points:
    **session-expiry warning** (a snackbar fires 5 minutes before the
    access token expires, offering a "Stay signed in" button); **chunk
    error guard** (dynamic-import failures after a deploy now trigger a
-   single silent page reload rather than a broken UI loop).
+   single silent page reload rather than a broken UI loop);
+   **synchronised multi-payload player** (MFFD-MULTIPLAYER-1 — a
+   shared time cursor on the DataObject detail page binds timeseries
+   chart, video playhead, thermography summary, and spatial trajectory
+   readout into a single play/pause/scrub control, so scrubbing the
+   toolbar moves every payload at once — for finding "what happened
+   at t=8.2s when the TCP temperature spiked?" without flipping tabs).
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/lumen-showcase/notebooks/` are the canonical

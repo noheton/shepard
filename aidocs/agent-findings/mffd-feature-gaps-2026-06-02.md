@@ -301,7 +301,7 @@ defer.
 
 **Backlog row:** `MFFD-PLUGIN-XIT-1` (deferred to wave 5+).
 
-### GAP-11 — Multi-source DataObject (data + image + video)
+### GAP-11 — Multi-source DataObject (data + image + video) — ✅ closed 2026-06-02
 
 **The data:** Each ply is *one* event but has timeseries + thermal frames + multiple
 video angles + a robot program + pointcloud. Today one DO can hold all those references
@@ -314,6 +314,20 @@ component.
 
 **The fix:** New `MultiPlayer.vue` linked via a shared time cursor. Out of scope for
 near-horizon; track as `MFFD-MULTIPLAYER-1` (medium-effort).
+
+**✅ Shipped 2026-06-02 (`MFFD-MULTIPLAYER-1`):**
+`MultiPlayerPane.vue` mounts on the DataObject detail page between Spatial-data and
+Provenance when ≥ 2 distinct payload kinds are present; toolbar (play/pause + rewind +
+rate ∈ {0.5×, 1×, 2×, 4×} + scrubber + time readout) drives a shared
+`useSyncedTimeCursor` composable. Two tiles genuinely sync today: TS (mirroring the
+AAA3 `crossTime` idiom) and video (extending `VideoPlayer.vue` with a two-way
+`currentTime` binding). Thermography and spatial tiles render informational placeholders
+— the source components need follow-up work (frame-strip view / brush-head marker)
+before they can read + write the cursor; those are filed as
+`MFFD-MULTIPLAYER-THERMO-1` and `MFFD-MULTIPLAYER-SPATIAL-1`. Region annotation,
+montage export, multi-DO sync, pointcloud animation, live mode, Playwright 4K
+cross-tile playback test all queued under `MFFD-MULTIPLAYER-*` follow-ups. 29 Vitest
+tests on the composable + tile-selection helper; lint + typecheck clean.
 
 ### GAP-12 — Lineage graph at MFFD scale (task #25)
 

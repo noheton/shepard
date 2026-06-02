@@ -264,6 +264,37 @@ nested fields; track DB-OPT5-NESTED in `aidocs/16` for the follow-up.
 | Operator / debugging via `curl` | default | Conservative trim; readable. |
 | Bulk ETL exporters | `?fields=` listing only what the export needs | Bandwidth + latency. |
 
+## Synchronised player (MFFD-MULTIPLAYER-1)
+
+When a DataObject carries at least two distinct payload kinds (e.g.
+timeseries + video, or timeseries + thermography + spatial), the
+**Synchronised player** panel mounts above the per-kind tabs on the
+DataObject detail page. It exposes a single time cursor that every payload
+tile reads from and writes to:
+
+- **Toolbar**: play / pause, rewind to start, playback rate (0.5×, 1×, 2×,
+  4×), a scrubber over the intersected playable range, and a `t / tEnd`
+  readout in seconds.
+- **Tile grid** in canonical order: timeseries → video → thermography →
+  spatial. Tiles appear only for payload kinds the DataObject actually
+  carries.
+- **Hide rule**: the panel does not render when fewer than two distinct
+  payload kinds are present.
+
+The cursor and playable range are computed by
+`useSyncedTimeCursor` (`frontend/composables/context/useSyncedTimeCursor.ts`):
+the range is the **intersection** of every constraining tile's range, so the
+scrubber only spans times where every tile has data.
+
+**What syncs end-to-end today**: the timeseries tile (chart marker writes
+the cursor on hover; redraws on cursor change) and the video tile (native
+controls write the cursor; cursor writes seek the video). The thermography
+and spatial tiles render informational summaries today and link to follow-up
+backlog rows (`MFFD-MULTIPLAYER-THERMO-1`, `MFFD-MULTIPLAYER-SPATIAL-1`)
+that will wire genuine sync in a follow-up PR.
+
+See `help/synchronised-player.md` for the user task page.
+
 ## See also
 
 - `collections.md` — sibling page documenting the same fields at the
@@ -275,3 +306,5 @@ nested fields; track DB-OPT5-NESTED in `aidocs/16` for the follow-up.
   Shepard instance.
 - `provenance.md` — Predecessor/Successor chain semantics.
 - `nfdi4ing-federation.md` — m4i federation runbook (M4I-e).
+- `help/synchronised-player.md` — user task page for the synchronised
+  multi-payload player.

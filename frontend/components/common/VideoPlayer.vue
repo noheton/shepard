@@ -11,21 +11,82 @@
  * VID1a note: HLS segmented delivery is deferred to VID1b. When VID1b ships
  * the m3u8 endpoint, upgrade to hls.js and drop the blob-URL approach.
  *
+ * MFFD-MULTIPLAYER-1: optional two-way `currentTime` (seconds) binding +
+ * `durationLoaded` emit, used by the synchronised multi-payload player to
+ * drive playback from a shared cursor. Both are inert when callers don't
+ * use them — the native controls keep working exactly as before.
+ *
  * Props:
- *   src         — authenticated download URL (required)
- *   accessToken — Bearer token used to fetch the video blob (required for auth)
- *   poster      — optional poster image URL
+ *   src           — authenticated download URL (required)
+ *   accessToken   — Bearer token used to fetch the video blob (required for auth)
+ *   poster        — optional poster image URL
+ *   currentTime   — optional seconds; when changed externally, the player seeks
+ *   showControls  — show native controls (default true)
+ *   autoplay      — autoplay (default false)
+ *   muted         — mute audio (default false)
  */
 
-const props = defineProps<{
-  src: string;
-  accessToken?: string | null;
-  poster?: string | null;
+const props = withDefaults(
+  defineProps<{
+    src: string;
+    accessToken?: string | null;
+    poster?: string | null;
+    currentTime?: number;
+    showControls?: boolean;
+    autoplay?: boolean;
+    muted?: boolean;
+  }>(),
+  {
+    accessToken: null,
+    poster: null,
+    currentTime: undefined,
+    showControls: true,
+    autoplay: false,
+    muted: false,
+  },
+);
+
+const emit = defineEmits<{
+  (e: "update:currentTime" | "durationLoaded", value: number): void;
 }>();
 
 const blobSrc = ref<string | null>(null);
 const loadError = ref<string | null>(null);
 const isLoading = ref(true);
+const videoElement = ref<HTMLVideoElement | null>(null);
+
+/**
+ * MFFD-MULTIPLAYER-1: when a caller writes a new `currentTime` prop value,
+ * seek the underlying element. We compare against the element's own time so
+ * the two-way-binding update emit we send back doesn't trigger a re-seek.
+ */
+watch(
+  () => props.currentTime,
+  t => {
+    const el = videoElement.value;
+    if (el == null || t == null) return;
+    if (Math.abs(el.currentTime - t) > 0.05) {
+      try {
+        el.currentTime = t;
+      } catch {
+        // Some browsers throw if the video isn't fully loaded; ignore — the
+        // next watch tick will retry once the user buffer fills.
+      }
+    }
+  },
+);
+
+function onTimeUpdate(): void {
+  const el = videoElement.value;
+  if (!el) return;
+  emit("update:currentTime", el.currentTime);
+}
+
+function onLoadedMetadata(): void {
+  const el = videoElement.value;
+  if (!el || !Number.isFinite(el.duration)) return;
+  emit("durationLoaded", el.duration);
+}
 
 onMounted(async () => {
   if (!props.accessToken) {
@@ -73,11 +134,16 @@ onUnmounted(() => {
     </v-alert>
     <video
       v-else-if="blobSrc"
-      controls
+      ref="videoElement"
+      :controls="showControls"
+      :autoplay="autoplay"
+      :muted="muted"
       preload="auto"
       :src="blobSrc"
       :poster="props.poster ?? undefined"
       class="video-player"
+      @timeupdate="onTimeUpdate"
+      @loadedmetadata="onLoadedMetadata"
     >
       Your browser does not support video playback.
     </video>
