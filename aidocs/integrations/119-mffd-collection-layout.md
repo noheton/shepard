@@ -113,12 +113,131 @@ publication assembles here.
 **Display name:** *MFFD — AFP Tapelaying*
 **Source:** `cube3-export/mffd-export/ts-export/tapelaying/`
 **Importer:** v15 (shipped, four workers + exponential backoff + n10s PROV-O writeback)
-**Expected DOs:** ~8 251 per-track DOs, each carrying timeseries + per-track files (TPS pointclouds + line-scan PNGs + intermediate evaluations + video).
-**Primary template:** `MFFDTapelayingTrack` (TT, V100 — shipped 2026-05-30).
+**Expected DOs:** ~8 251 leaf Execution (Run) DOs, plus the intermediate Step / Layer / Ply-Group / Track grouping DOs that v16 PRESERVE-HIERARCHY creates above them — see §2.2.1 below for the full five-level shape.
+**Primary templates:** `MFFDStepRoot`, `MFFDLayer`, `MFFDPlyGroup`, `MFFDTrack`, `MFFDExecution` (all from TT, V100 — shipped 2026-05-30).
 **Process-type predicate:** `urn:shepard:mffd:process-type = afp-tapelaying`
 **Owning group:** `mffd-afp-team`
 
 This is the W2 ingest target. ETA ~24 h once W2 launches.
+
+#### 2.2.1 Internal hierarchy (five levels of DataObjects)
+
+`v16 PRESERVE-HIERARCHY` rebuilds the cube3 layup tree as nested DataObjects.
+The references (TimeseriesContainer, FileReferences, SpatialDataContainers,
+LabJournalEntries) attach to the **leaf Execution (Run) DO** — *not* to the
+Track DO. Track is an identity/grouping node, Run is the data carrier.
+
+```
+mffd-afp-tapelaying  Collection
+│
+└── DO  process-step-afp-tapelaying          ← Level 1 — Step root (1 DO)
+    │   template: MFFDStepRoot
+    │   annotations: mffd:level=step, mffd:process-type=afp-tapelaying
+    │
+    ├── DO  Layer_L8                          ← Level 2 — Layer (7 DOs total
+    │   │   template: MFFDLayer                  per the diproj layer set:
+    │   │   annotations: mffd:level=layer,        L8, L9, L11, L15, L18, L19, L19+)
+    │   │              mffd:layer=8
+    │   │
+    │   ├── DO  PG_001                         ← Level 3 — Ply Group (N per Layer)
+    │   │   │   template: MFFDPlyGroup
+    │   │   │   annotations: mffd:level=ply-group,
+    │   │   │              mffd:ply-group=PG_001, mffd:layer=8
+    │   │   │
+    │   │   ├── DO  Track_4231                 ← Level 4 — Track (~10–20 per PG)
+    │   │   │   │   template: MFFDTrack
+    │   │   │   │   annotations:
+    │   │   │   │     mffd:level=track
+    │   │   │   │     mffd:track=4231
+    │   │   │   │     mffd:layer=8
+    │   │   │   │     mffd:ply-group=PG_001
+    │   │   │   │     mffd:cell-frame-ref=<mffd-cell.scenegraph.appId>
+    │   │   │   │   sibling Predecessor/Successor edges within the PG:
+    │   │   │   │     ← Track_4230   → Track_4232
+    │   │   │   │   anomaly rollup (per §2.2.2): mffd:run-count, mffd:has-rerun
+    │   │   │   │
+    │   │   │   └── DO  Run_24261              ← Level 5 — Execution (1..N per Track)
+    │   │   │       │   template: MFFDExecution
+    │   │   │       │   annotations:
+    │   │   │       │     mffd:level=execution
+    │   │   │       │     mffd:run=24261
+    │   │   │       │     mffd:track=4231 / layer=8 / ply-group=PG_001
+    │   │   │       │     source:provenance = cube3:collection-48297:do-NNNN
+    │   │   │       │     createdAt, createdBy (:MirroredUser)
+    │   │   │       │
+    │   │   │       │   ── References attach here ──────────────
+    │   │   │       ├── TimeseriesContainer  "process channels"
+    │   │   │       ├── FileReference[]  TPS raw data, TPS/FSD ply, video, …
+    │   │   │       ├── SpatialDataContainer  kind=pointcloud  (W7)
+    │   │   │       ├── SpatialDataContainer  kind=brush-trace (W7b)
+    │   │   │       ├── LabJournalEntry[]  per-day Legeplan / Legetagebuch entries
+    │   │   │       └── Predecessor edges (cross-Collection, via appId)
+    │   │   │             → mffd-bridge-welding/AF_07_Exec_12.appId
+    │   │   │             ← Run_24260   (when same Track had to be re-run)
+    │   │   │
+    │   │   ├── DO  Track_4232  Track_4233  …  (sibling Tracks in same PG)
+    │   │
+    │   ├── DO  PG_002  …
+    │
+    ├── DO  Layer_L9  Layer_L11  Layer_L15  Layer_L18  Layer_L19  Layer_L19plus
+```
+
+The references live on **Run**, the grouping carries through the chain above.
+Total DO count is ~8 251 Runs + ~5 000 Tracks + ~800 PGs + 7 Layers + 1 Step
+= **~14 000 DOs** in `mffd-afp-tapelaying` (subject to the actual layer
+breakdown — the diproj gives ~8 251 leaves, the upper levels are derived by
+the importer).
+
+#### 2.2.2 Multi-run rule — same Track with multiple Run numbers signals a layup anomaly
+
+Operator rule 2026-06-02: **when a Track DO has more than one Run child, the
+re-runs are usually anomalies during layup** (splice cut, tape misalignment,
+silicone-roll defect, fibre fracture, …). The first Run failed or was aborted;
+later Runs are operator-driven corrections.
+
+The importer emits, on every Track DO that has ≥2 Runs:
+
+```
+urn:shepard:mffd:run-count        = <integer N>
+urn:shepard:mffd:has-rerun        = true           (only on Tracks with N >= 2)
+urn:shepard:mffd:run-order        = [ Run_24260.appId, Run_24261.appId, … ]
+                                    (oldest-first)
+```
+
+And on every Run DO that is **not** the first under its Track:
+
+```
+urn:shepard:status:nature         = re-run
+urn:shepard:mffd:supersedes       = <previous-run.appId>
+urn:shepard:mffd:rerun-index      = <1, 2, …>      (1-based; the original is 0)
+```
+
+The Predecessor edge `← Run_24260` already chains them in time order; the
+annotations make the anomaly machine-queryable without walking the edge graph
+(useful for the UI badge + the AI1c quality-score input).
+
+**UI consequence (PROJ-PANEL-1 + the dataobject-list filter):**
+
+- Track DO row shows a small `⟲ re-run` badge when `has-rerun = true`,
+  with the count.
+- The Collection's DO list grows a filter chip `status: re-run only`
+  (toggles `urn:shepard:status:nature = re-run`) so the operator can list
+  every anomalous Run in one click.
+- Trace3D + the Quality-Score widget (AI1c) treat `has-rerun = true` as a
+  positive label for "layup process anomaly" — labelled training data for
+  free.
+
+**NCR (AAA2 / GAP-3) coupling:**
+
+A `has-rerun = true` Track is a *candidate* for an NCR row (per AAA2's
+non-conformance status + disposition machinery), but NOT auto-promoted —
+the operator confirms whether the re-run resolved the issue cleanly (final
+Run passes NDT) or whether it left an NCR open. The wiki Legeplan +
+Legetagebuch entries (§120 track 1) often carry the operator note for why
+the re-run happened; the wiki-to-journal pass attaches that note to the
+Track DO, giving the NCR reviewer the context for free.
+
+**Tracked as:** `MFFD-RERUN-ANOMALY-DETECT` in `aidocs/16`.
 
 ### 2.3 `mffd-bridge-welding` — the second pass
 
