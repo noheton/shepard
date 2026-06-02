@@ -171,10 +171,7 @@ parallel `PointcloudReference` would have been EAV bloat (CLAUDE.md
 "per-kind annotation entities are an anti-pattern").
 
 **Not closed by this PR (file follow-ups):**
-- `MFFD-SPATIAL-RAW-DATA-INVESTIGATE` — `TPS raw data.0…37` are 1292×964 grayscale
-  PNG camera frames, NOT spatial point data. They stay as FileReferences. Open
-  question: do they carry per-frame robot-pose metadata that would let them
-  become a true `brush-trace` SpatialDataContainer?
+- `MFFD-SPATIAL-RAW-DATA-INVESTIGATE` — RESOLVED 2026-06-02. See GAP-5b below.
 - `MFFD-SPATIAL-IMPORTER-LIVE` — production deployment runbook; blocked on W2
   ingest draining into the dest Collection.
 - `REF-EDIT-SPATIAL` — edit / delete dialogs for SpatialDataReference (the W7 PR
@@ -182,6 +179,56 @@ parallel `PointcloudReference` would have been EAV bloat (CLAUDE.md
 
 **Commit:** `e654b87f9` (backend + importer) and `0a6b22291` (frontend viewer).
 **Backlog rows:** `MFFD-SPATIAL-*` in `aidocs/16-dispatcher-backlog.md`.
+
+### GAP-5b — TPS raw-data line-scan → brush-trace ✅ shipped 2026-06-02
+
+**The data:** Each `Track_NN__Run_NN_/files/` also carries `TPS raw data.0` …
+`TPS raw data.36` — observed 1292×964 8-bit grayscale PNGs. 38 chunks per
+Track × 8,251 Tracks × 964 rows per chunk = **~313 M measurement points**.
+
+**The original mis-classification:** AAC1's GAP-5 row treated these as Keyence
+"raw camera frames upstream of the .0/.1 pointcloud reduction" — and so they
+stayed as opaque FileReferences in the W7 pass. The operator correction
+(2026-06-02) reclassified each PNG row as **one sensor-measurement instant
+along the AFP track**: Y axis is time / along-track, X axis is sensor element,
+pixel intensity is the measurement value.
+
+**What shipped 2026-06-02 (MFFD-SPATIAL-LINESCAN-IMPORTER-1):**
+- **`plugins/spatial-importer/cli/linescan.py`** — streaming PIL decoder; one
+  `LineScanRow(row_index, intensities)` per PNG row; rejects non-PNG / non-L
+  mode with a typed `LineScanDecodeError`; accepts 16-bit `I;16` defensively
+  (with a follow-up format-drift row filed).
+- **`--linescan-pass`** on the existing AAC1 CLI — same SHA256-keyed
+  idempotency + FileReference demotion shape as the pointcloud pass.
+- **One SpatialDataContainer per chunk × one SpatialDataPoint per row** — the
+  per-row intensity vector lives in `measurements.intensities` (JSONB on the
+  postgres side; 1292 × uint8 ≈ 1.3 KB per row before TimescaleDB compression).
+- **`frontend/utils/brushTrace.ts`** + a new `brush-trace` render mode in
+  `SpatialPointsCanvas.vue` — re-uses the existing voxel-grid decimation cap
+  (964 × 1292 ≈ 1.25M points per chunk capped at 500k).
+
+**Test counts:** 28 pytest + 6 backend JUnit (`BrushTraceIOTest`) + 6 Vitest.
+
+**Honest scope:**
+- Today's storage shape rides through the legacy v5 `spatial_data_points`
+  table via the existing payload endpoint. Promotion to a first-class
+  `profile_kind='brush-trace'` on the SPATIAL-V6 hypertable is deferred and
+  tracked as `MFFD-SPATIAL-BRUSHTRACE-SCHEMA-1`.
+- Per-pixel mm/pixel calibration + wall-clock timestamp per chunk are not yet
+  surveyed — the line-scan decoder uses row-index-as-time fall-back and
+  tags the container `urn:shepard:spatial:t-axis = row-index` so renderers
+  know. Tracked as `MFFD-SPATIAL-LINESCAN-CALIB-1`.
+- Multi-resolution streaming pyramid for the canvas (`MFFD-SPATIAL-LINESCAN-PYRAMID-1`).
+- AI-driven defect detection (`MFFD-SPATIAL-LINESCAN-AI-1`).
+- 16-bit / RGB format-drift gate (`MFFD-SPATIAL-LINESCAN-FORMAT-DRIFT-1`).
+
+**Format research notes:** `plugins/spatial-importer/docs/linescan-format-notes.md`
+captures the byte-level facts (`file(1)` output, PIL probe, sample row vectors,
+sibling files in the same `files/` directory). The byte-stable regression
+fixture is `plugins/spatial-importer/tests/fixtures/tps_raw_data_chunk18_64x128.png`,
+the upper-left 64×128 crop of real `Track_66__Run_23133_/files/TPS raw data.18`.
+
+**Backlog rows:** `MFFD-SPATIAL-LINESCAN-*` family in `aidocs/16-dispatcher-backlog.md`.
 
 ### GAP-6 — RoboDK / URDF scene at Collection level
 

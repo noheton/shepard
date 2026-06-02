@@ -50,16 +50,36 @@ entry by filename prefix:
 |---------------------------------|-----------------------------|-----------------|
 | `TPS 3D pointclouds.0` / `.1`   | `profile`                   | pointcloud      |
 | `FSD course 3D pointclouds`     | `trajectory`                | trajectory line |
+| `TPS raw data.N` (PNG, N=0..36) | `brush-trace`               | brush-trace heatmap (`--linescan-pass`) |
 | anything else                   | (skipped)                   | —               |
 
-Files NOT promoted (intentionally — they aren't spatial point data):
+Files NOT promoted (intentionally):
 
-- `TPS raw data.0…37` — these are 1292×964 grayscale **PNG camera frames**
-  from the Keyence laser sensor, *upstream* of the .0/.1 reduction.
-  They stay as opaque FileReferences. Filed as
-  `MFFD-SPATIAL-RAW-DATA-INVESTIGATE` in `aidocs/16-dispatcher-backlog.md`.
 - `TPS intermediate evaluation files.*` — opaque vendor format.
 - `Robot program` — KRL source; promoted by the existing KRL plugin.
+
+## Line-scan pass (`--linescan-pass`, W7b, 2026-06-02)
+
+Per the 2026-06-02 operator confirmation, each row of a `TPS raw data.N`
+1292×964 8-bit grayscale PNG is **one sensor-measurement instant along
+the AFP track**: Y axis = time / along-track sweep; X axis = sensor
+element / across-track position; pixel intensity = the raw measurement
+value at that (time, position).
+
+The line-scan pass creates one `SpatialDataContainer` of `kind=brush-trace`
+per chunk and uploads one `SpatialDataPoint` per row, with the full
+1292-element intensity vector in `measurements.intensities` (JSONB on the
+postgres side). When no source-side timestamp is available, the importer
+uses row-index-as-time and annotates the container
+`urn:shepard:spatial:t-axis=row-index` so the renderer knows.
+
+Format research (byte-level reverse-engineering notes, regression fixture
+SHA256, sample pixel values, sibling-file inventory) lives in
+[`linescan-format-notes.md`](linescan-format-notes.md).
+
+Storage cost: 964 rows × 38 chunks × 8,251 tracks ≈ 313 M SpatialDataPoints
+(each ~5 KB JSONB pre-compression). Operator can lower this with
+`--intensity-decimation N` (keeps every Nth column).
 
 ## Format research (confirmed 2026-06-02)
 
@@ -90,6 +110,28 @@ SHEPARD_API_KEY=$(cat ~/.shepard.key) \
 
 `--dry-run` skips writes; useful to count source files first.
 
+The line-scan pass uses the same CLI:
+
+```bash
+SHEPARD_URL=https://shepard-api.nuclide.systems \
+SHEPARD_API_KEY=$(cat ~/.shepard.key) \
+  python3 -m cli.main --linescan-pass \
+    --collection-app-id 019e7243-…-… \
+    --source /opt/shepard/mffd-staging/w7/mffd-export/ts-export/tapelaying \
+    --intensity-decimation 1 \    # keep all 1292 columns; raise to 2/4/8 to trade fidelity for storage
+    --row-period-ns 1 \           # row-as-time period when no wall-clock available
+    --linescan-batch-size 64 \    # rows per /payload POST (default 64 keeps body ~5 MB)
+    --workers 4
+```
+
+Both passes can run together:
+
+```bash
+python3 -m cli.main --spatial-pass --linescan-pass \
+  --collection-app-id 019e7243-…-… \
+  --source /opt/shepard/mffd-staging/w7/mffd-export/ts-export/tapelaying
+```
+
 ## Annotation namespaces
 
 Predicates live under `urn:shepard:spatial:*` per CLAUDE.md's "evolve in
@@ -98,9 +140,14 @@ a new namespace" rule:
 | Predicate                          | Subject              | Value                                          |
 |------------------------------------|----------------------|------------------------------------------------|
 | `urn:shepard:spatial:promoted-to`  | `:FileReference`     | UUID of the SpatialDataContainer it became     |
-| `urn:shepard:spatial:source-sha256`| `:SpatialDataContainer` | SHA256 of the source ASCII file (idempotency) |
+| `urn:shepard:spatial:source-sha256`| `:SpatialDataContainer` | SHA256 of the source ASCII or PNG file (idempotency) |
 | `urn:shepard:spatial:kind`         | `:SpatialDataContainer` | `profile` / `trajectory` / `brush-trace`     |
 | `urn:shepard:spatial:source-filename` | `:SpatialDataContainer` | Original filename                            |
+| `urn:shepard:spatial:chunk-index`  | `:SpatialDataContainer` | (brush-trace only) the `N` from `TPS raw data.N` |
+| `urn:shepard:spatial:t-axis`       | `:SpatialDataContainer` | (brush-trace only) `row-index` until wall-clock calibration ships |
+| `urn:shepard:spatial:x-axis`       | `:SpatialDataContainer` | (brush-trace only) `column-index` until mm-calibration ships |
+| `urn:shepard:spatial:bit-depth`    | `:SpatialDataContainer` | (brush-trace only) `8` or `16`                  |
+| `urn:shepard:spatial:source-format`| `:SpatialDataContainer` | (brush-trace only) `PNG`                        |
 
 ## REST endpoints consumed
 

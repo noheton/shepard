@@ -76,6 +76,38 @@ Prints the file inventory for the first 5 Tracks without any writes.
 
 Useful for staged rollout.
 
+### Line-scan pass (W7b, 2026-06-02)
+
+The `--linescan-pass` step promotes the `TPS raw data.N` 1292×964 8-bit
+grayscale PNG chunks into brush-trace SpatialDataContainers. Each row of a
+PNG becomes one SpatialDataPoint carrying the full 1292-element intensity
+vector in `measurements.intensities`.
+
+```bash
+python3 -m cli.main --linescan-pass \
+  --collection-app-id 019e7243-…-… \
+  --source /mnt/mffd-staging/w7/mffd-export/ts-export/tapelaying \
+  --intensity-decimation 1 \      # 1 = preserve all 1292 cols; raise to 2/4/8 for storage trade-off
+  --row-period-ns 1 \              # row-as-time period when no wall-clock available
+  --linescan-batch-size 64 \      # rows per /payload POST (default 64 keeps body ~5 MB)
+  --workers 4
+```
+
+Storage cost: ~5 KB JSONB per row × 964 rows × 38 chunks per Track ≈
+180 MB per Track before TimescaleDB compression. Plan ≈ 40 GB for the
+full 8,251 Tracks at `intensity-decimation=1`.
+
+You can run both passes together:
+
+```bash
+python3 -m cli.main --spatial-pass --linescan-pass --collection-app-id … --source …
+```
+
+Format-drift gate: the decoder errors loudly on non-PNG / non-grayscale
+inputs. If a future MFFD export ships 16-bit PNGs, the importer emits
+`bit_depth=16` in the structured log and the operator decides whether to
+proceed (`MFFD-SPATIAL-LINESCAN-FORMAT-DRIFT-1`).
+
 ## Idempotency
 
 The pass is safe to re-run. SHA256 of each source file's bytes is

@@ -20,10 +20,14 @@ browser.
    promoted container, grouped by kind:
    - **Surface profile (laser scan)** — `TPS 3D pointclouds.0` and `.1`
    - **TCP trajectory** — `FSD course 3D pointclouds`
+   - **Brush-trace (line-scan)** — one per `TPS raw data.N` chunk (37
+     chunks observed per Track). Each row of the source PNG is one
+     sensor-measurement instant along the AFP track.
 3. Click **Open in 3D viewer** on any row.
 
-The viewer shows the points coloured by Z (height) for the profile
-and by time for the trajectory. Drag to rotate; scroll to zoom.
+The viewer shows the points coloured by Z (height) for the profile,
+by time for the trajectory, and by intensity for the brush-trace
+heatmap. Drag to rotate; scroll to zoom.
 
 ## What if the panel says "No spatial data containers"?
 
