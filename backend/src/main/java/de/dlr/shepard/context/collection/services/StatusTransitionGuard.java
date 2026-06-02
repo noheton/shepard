@@ -13,8 +13,13 @@ import java.util.Set;
  * <p>Valid statuses (full set):
  * {@code DRAFT}, {@code IN_REVIEW}, {@code READY}, {@code PUBLISHED},
  * {@code ARCHIVED} (base set, any authenticated user),
- * plus {@code NCR_OPEN}, {@code ON_HOLD}, {@code REJECTED}, {@code CERTIFIED}
- * (MFG1 quality-engineering statuses — require the {@code quality-engineer} role).
+ * plus {@code NCR_OPEN}, {@code ON_HOLD}, {@code REJECTED}, {@code CERTIFIED},
+ * {@code CONCESSION_PENDING}
+ * (MFG1 / QM1a quality-engineering statuses — require the
+ * {@code quality-engineer} role). The {@code CONCESSION_PENDING} state names the
+ * EN 9100 §8.7 disposition window between {@code NCR_OPEN} and a final
+ * {@code REJECTED} / {@code CERTIFIED} closure — the auditor's "use-as-is"
+ * concession is pending approval.
  *
  * <p>{@code null} is always valid (nullable field, may not be declared yet).
  *
@@ -35,17 +40,20 @@ class StatusTransitionGuard {
   /** The closed set of acceptable status values (all users). */
   static final Set<String> VALID_STATUSES = Set.of(
     "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
-    // MFG1 — EN 9100 / EASA quality-engineering statuses (role-gated on write)
-    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED"
+    // MFG1 / QM1a — EN 9100 / EASA quality-engineering statuses (role-gated on write)
+    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "CONCESSION_PENDING"
   );
 
   /**
-   * MFG1 — statuses that require the {@code quality-engineer} role to SET.
+   * MFG1 / QM1a — statuses that require the {@code quality-engineer} role to SET.
    * Any user may READ a DataObject that carries one of these statuses; only a
    * quality engineer may WRITE (create or transition TO) these values.
+   *
+   * <p>{@code CONCESSION_PENDING} (QM1a) is a disposition decision — it must
+   * be reachable only by an authorised reviewer, so it joins the role-gated set.
    */
   static final Set<String> QUALITY_RESTRICTED_STATUSES = Set.of(
-    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED"
+    "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "CONCESSION_PENDING"
   );
 
   /**

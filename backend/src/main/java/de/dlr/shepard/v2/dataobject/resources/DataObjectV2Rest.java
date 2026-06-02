@@ -21,6 +21,7 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.dataobject.io.PredecessorEdgePatchIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -610,6 +611,68 @@ public class DataObjectV2Rest {
     return Response.ok(result)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
+  }
+
+  // ── QM1b: set the relationship type of an existing predecessor edge ──────
+
+  @PATCH
+  @Path("/{dataObjectAppId}/predecessors/{predecessorAppId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+    summary = "QM1b — set the PROV-O / FAIR²R relationship type on an existing predecessor edge.",
+    description =
+      "Sets / replaces the relationship type for the predecessor edge from the DataObject " +
+      "identified by `dataObjectAppId` to the predecessor identified by `predecessorAppId`. " +
+      "The edge must already exist (use create / merge-patch to add new predecessor links).\n\n" +
+      "Allowed `relationshipType` values:\n" +
+      "  - `prov:wasInformedBy` — default / generic informational dependency (the QM1b 'normal' kind)\n" +
+      "  - `prov:wasRevisionOf` — direct revision / correction (the QM1b 're-test' kind)\n" +
+      "  - `fair2r:repairs` — rework / NCR-repair (the QM1b 'rework' kind)\n" +
+      "  - `fair2r:concession` — concession / use-as-is disposition (QM1b)\n\n" +
+      "Idempotent: re-running with the same `relationshipType` is a no-op.\n\n" +
+      "Auth: Write permission on the parent Collection.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity addressable at " +
+      "`GET /v2/provenance/entity/{appId}`."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Updated DataObject detail; `typedPredecessorSummaries` reflects the new relationship type.",
+    content = @Content(schema = @Schema(implementation = DataObjectDetailV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing or invalid `relationshipType` (not in the allowed set).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent Collection.")
+  @APIResponse(responseCode = "404",
+    description = "DataObject or predecessor not found, or no edge from this DataObject to that predecessor.")
+  public Response patchPredecessorEdge(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @PathParam("predecessorAppId") @NotBlank String predecessorAppId,
+    @RequestBody(
+      required = true,
+      description = "Single-field body: relationshipType. See operation description for allowed values.",
+      content = @Content(schema = @Schema(implementation = PredecessorEdgePatchIO.class))
+    ) PredecessorEdgePatchIO body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) {
+      throw new InvalidBodyException("PATCH body must include 'relationshipType'.");
+    }
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (collectionOgmId == null || dataObjectOgmId == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
+    if (gate != null) return gate;
+
+    // Service throws InvalidBodyException (→ 400) on bad type,
+    // InvalidPathException (→ 404) on missing DO or missing edge.
+    DataObject updated = dataObjectService.setPredecessorRelationshipType(
+      dataObjectOgmId, predecessorAppId, body.relationshipType()
+    );
+    return Response.ok(new DataObjectDetailV2IO(updated)).build();
   }
 
   @GET

@@ -51,6 +51,11 @@ public class TemplateBodyValidator {
       //               + POST /v2/shapes/render. First concrete consumer: Trace3D (X/Y/Z + scalar).
       case "PROCESS_RECIPE" -> Set.of("process", "steps", "stages");
       case "VIEW_RECIPE" -> Set.of("view", "shape", "renderer");
+      // QM1c — STRUCTURED_RECIPE: skeleton for structured-data payloads (e.g. EN 9100
+      // disposition records). Body root must declare the record schema under
+      // `structuredData` or `record` (a list of attribute descriptors), or carry
+      // a `schema` for JSON-Schema-style validation hints.
+      case "STRUCTURED_RECIPE" -> Set.of("structuredData", "record", "schema");
       default -> Set.of(); // permissive for unknown kinds
     };
   }

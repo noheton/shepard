@@ -169,13 +169,21 @@ Plus payload kinds (the things References point at):
 
 These work the same way across every primitive:
 
-- **Lifecycle status** *(ST1a shipped)*. Every Collection and
-  DataObject carries an optional free-form `status` string.
-  Suggested values DRAFT / IN_REVIEW / READY / PUBLISHED /
-  ARCHIVED; any custom string is accepted. Shown as a coloured
-  chip next to the entity name; editable via the description
-  edit dialog. The field is omitted from JSON when null so
-  upstream API clients are unaffected.
+- **Lifecycle status** *(ST1a / MFG1 / QM1a shipped)*. Every Collection and
+  DataObject carries an optional `status` string drawn from a closed enum:
+  DRAFT / IN_REVIEW / READY / PUBLISHED / ARCHIVED (standard lifecycle) plus
+  NCR_OPEN / ON_HOLD / REJECTED / CERTIFIED / CONCESSION_PENDING (EN 9100 §8.7
+  quality-engineering branch — role-gated on write). Each renders as a
+  distinctly-coloured chip — including an amber-outlined "Concession Pending"
+  badge with a shield-alert icon for the disposition window. The status
+  closed-set enforcement (MFG5) and the quality-engineer role gate (MFG1)
+  mean an auditor can scan a Collection and see at a glance which DataObjects
+  have an open non-conformance, which sit in disposition, and which have been
+  certified. The accompanying "Disposition record" template (QM1c) carries the
+  EN 9100 §8.7 fields (NCR id, defect type, disposition decision, approver
+  ORCID + username, timestamp, notes) as a structured payload on the NCR
+  DataObject. The field is omitted from JSON when null so upstream API
+  clients see no change.
 - **License + access rights** *(LIC1 / FAIR-1 shipped)*. Every
   Collection and DataObject carries an optional `license` (SPDX
   identifier expression, e.g. `CC-BY-4.0`, `MIT`, `Apache-2.0`,
@@ -193,7 +201,14 @@ These work the same way across every primitive:
 - **Lineage / predecessors.** Every DataObject can point at one or
   more predecessors. The "TR-006 was the bearing-replaced re-test
   of TR-004" relationship is a graph edge, traversable in both
-  directions.
+  directions. **Each edge carries a typed PROV-O / FAIR²R
+  relationship** (PROV1k + QM1b shipped): `prov:wasInformedBy` (default /
+  generic), `prov:wasRevisionOf` (re-test), `fair2r:repairs` (rework),
+  `fair2r:concession` (use-as-is disposition). The relationship type can
+  be set at create time or annotated onto an existing edge via
+  `PATCH /v2/collections/{cid}/data-objects/{did}/predecessors/{predAppId}` —
+  so the 9-retry rework loop in `bridgewelding/AF_3` (the MFFD AFP showcase)
+  carries audit-grade disposition metadata in the graph itself.
 - **Versioning + snapshots.** `Version` is a user-visible label.
   **Snapshots** *(V2b + V2c + V2e shipped, UI1a shipped)* are machine-faithful, immutable,
   point-in-time records of an entire Collection subtree — one
