@@ -2,7 +2,7 @@
 name: Project entity + sub-Collection registry (urn:shepard:partOf, non-exclusive)
 description: Project-as-registry pattern — an ordinary Collection with a urn:shepard:project role annotation that lets sibling Collections declare it as a parent (non-exclusively — a Collection can belong to multiple Projects). The funder/internal Programme is a text-typed urn:shepard:programme annotation on the Project itself, not a separate entity.
 type: design
-stage: feature-defined
+stage: tests-implemented
 last-stage-change: 2026-06-02
 ---
 

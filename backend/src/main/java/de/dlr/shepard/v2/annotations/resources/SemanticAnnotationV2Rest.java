@@ -14,6 +14,7 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints;
 import io.quarkus.logging.Log;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
@@ -81,6 +82,7 @@ public class SemanticAnnotationV2Rest {
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/annotations.bad-request";
   static final String PROBLEM_TYPE_NOT_FOUND = "/problems/annotations.not-found";
   static final String PROBLEM_TYPE_FORBIDDEN = "/problems/annotations.forbidden";
+  static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/annotations.unprocessable";
 
   @Inject
   SemanticAnnotationV2DAO annotationDAO;
@@ -93,6 +95,10 @@ public class SemanticAnnotationV2Rest {
 
   @Inject
   OntologyConfigService ontologyConfigService;
+
+  /** PROJ-SEMA-WRITE-GATE-1 — runtime gate for urn:shepard:project / partOf / programme. */
+  @Inject
+  ProjectAnnotationConstraints projectAnnotationConstraints;
 
   /** SEMA-V6-007 — mints `:Activity` nodes for annotation mutations. */
   @Inject
@@ -346,6 +352,17 @@ public class SemanticAnnotationV2Rest {
 
     Response gate = checkWriteAccessForSubject(body.getSubjectAppId(), body.getSubjectKind(), caller);
     if (gate != null) return gate;
+
+    // PROJ-SEMA-WRITE-GATE-1 — Project SHACL constraints (urn:shepard:project /
+    // partOf / programme). No-op for any other predicate.
+    String shaclViolation = projectAnnotationConstraints.check(
+      body.getSubjectAppId(), body.getSubjectKind(), body.getPredicateIri(),
+      body.getObjectLiteral(), body.getObjectIri());
+    if (shaclViolation != null) {
+      ProblemJson violationBody = new ProblemJson(PROBLEM_TYPE_UNPROCESSABLE,
+        "Project constraint violation", 422, shaclViolation, null);
+      return Response.status(422).type("application/problem+json").entity(violationBody).build();
+    }
 
     SemanticAnnotation annotation = new SemanticAnnotation();
     annotation.setAppId(AppIdGenerator.next());

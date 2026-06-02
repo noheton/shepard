@@ -1,0 +1,77 @@
+# project-shape.ttl — PROJ-PREDICATES-1 SHACL constraints for Project-as-registry.
+#
+# Cited from aidocs/integrations/121-project-and-subcollections.md §2 + §5.
+# Seeded by V107__add_project_predicates.cypher.
+#
+# Storage convention (important for the runtime gate):
+#   urn:shepard:project    — valueName MUST be the literal string "true"
+#                            (XOR with valueIRI per the SemanticAnnotationV2Rest
+#                            create gate).
+#   urn:shepard:partOf     — valueName MUST be the appId (UUID v7) of an existing
+#                            :Collection that itself carries
+#                            urn:shepard:project = "true". Stored as a literal
+#                            string, NOT as an IRI (so the v6 XOR holds).
+#   urn:shepard:programme  — valueName is a free-text label
+#                            (e.g. "Clean Aviation JU"). Only valid on a
+#                            :Collection that carries urn:shepard:project = "true".
+#
+# The runtime gate (PROJ-SEMA-WRITE-GATE-1) enforces the cross-target check
+# inside Java because Neo4j-OGM does not run a live SHACL engine. The .ttl
+# file is the authoritative declaration; the Java gate is the executable
+# mirror.
+
+@prefix shepard: <urn:shepard:> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── shepard:ProjectShape ─────────────────────────────────────────────────────
+
+shepard:ProjectShape a sh:NodeShape ;
+    rdfs:label "Project shape"@en ;
+    rdfs:comment "Constraints on a Collection acting as a Project."@en ;
+
+    # urn:shepard:project — boolean role marker, 0..1.
+    sh:property [
+        sh:path shepard:project ;
+        sh:datatype xsd:string ;
+        sh:in ( "true" ) ;
+        sh:minCount 0 ;
+        sh:maxCount 1 ;
+        sh:message "urn:shepard:project value must be the literal string \"true\"" ;
+    ] ;
+
+    # urn:shepard:partOf — non-exclusive parent pointer; 0..N.
+    # SPARQL constraint: every partOf target must itself be a Project.
+    sh:property [
+        sh:path shepard:partOf ;
+        sh:datatype xsd:string ;
+        sh:minCount 0 ;
+        sh:sparql [
+            sh:select """
+                SELECT $this WHERE {
+                    $this <urn:shepard:partOf> ?parent .
+                    FILTER NOT EXISTS { ?parent <urn:shepard:project> "true" }
+                }
+            """ ;
+            sh:message "urn:shepard:partOf target must itself be a Project (carry urn:shepard:project = \"true\")" ;
+        ]
+    ] ;
+
+    # urn:shepard:programme — free-text funder line on a Project.
+    # Only valid on a Collection that is itself a Project.
+    sh:property [
+        sh:path shepard:programme ;
+        sh:datatype xsd:string ;
+        sh:minCount 0 ;
+        sh:sparql [
+            sh:select """
+                SELECT $this WHERE {
+                    $this <urn:shepard:programme> ?p .
+                    FILTER NOT EXISTS { $this <urn:shepard:project> "true" }
+                }
+            """ ;
+            sh:message "urn:shepard:programme is only valid on a Project Collection" ;
+        ]
+    ] .

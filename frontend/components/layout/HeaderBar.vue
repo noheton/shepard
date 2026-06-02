@@ -25,6 +25,10 @@
       <!-- Desktop: inline nav links -->
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
+      <!-- PROJ-NAV-1 — Projects entry between Collections and Containers
+           (aidocs/integrations/121-project-and-subcollections.md §4.2).
+           Projects bundle non-exclusive child Collections via urn:shepard:partOf. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/projects">Projects</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
       <!-- TOOLS-NAV-01 (2026-05-30) — top-level Tools menu lifts six
            research-tooling routes from 4-click depth (avatar → /me →
@@ -360,6 +364,8 @@
     <v-list nav>
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
+      <!-- PROJ-NAV-1: mirror the desktop Projects entry on the mobile drawer. -->
+      <v-list-item title="Projects" to="/projects" prepend-icon="mdi-folder-multiple" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
       <!-- TOOLS-NAV-01 (2026-05-30) — mirror of the desktop Tools entry. -->
       <v-list-item title="Tools" to="/tools" prepend-icon="mdi-tools" @click="mobileDrawerOpen = false" />

@@ -61,6 +61,9 @@ class SemanticAnnotationV2RestTest {
   ProvenanceService provenanceService;
 
   @Mock
+  de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints projectAnnotationConstraints;
+
+  @Mock
   ContainerRequestContext requestContext;
 
   @Mock
@@ -80,6 +83,7 @@ class SemanticAnnotationV2RestTest {
     resource.entityIdResolver = entityIdResolver;
     resource.ontologyConfigService = ontologyConfigService;
     resource.provenanceService = provenanceService;
+    resource.projectAnnotationConstraints = projectAnnotationConstraints;
     resource.requestContext = requestContext;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
