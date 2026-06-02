@@ -12,6 +12,22 @@ export interface PagedDataObjectsOptions {
   pageSize?: number;
   /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
   includeTimeBounds?: boolean;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — annotation filter in the form
+   * `<predicateIRI>=<value>` (e.g. `urn:shepard:mffd:process-type=AFP`).
+   * When null / empty, no annotation filter is applied.
+   */
+  annotationFilter?: Ref<string | null>;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — ISO-8601 date lower bound (inclusive).
+   * When null / empty, no lower date bound is applied.
+   */
+  createdAfter?: Ref<string | null>;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — ISO-8601 date upper bound (inclusive).
+   * When null / empty, no upper date bound is applied.
+   */
+  createdBefore?: Ref<string | null>;
 }
 
 export interface PagedDataObjectsResult {
@@ -38,6 +54,9 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const status = opts.status;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
+  const annotationFilter = opts.annotationFilter;
+  const createdAfter = opts.createdAfter;
+  const createdBefore = opts.createdBefore;
 
   // DB-OPT5: explicit ?fields= allow-list of exactly what the collection-detail
   // panel renders. Drops description, attributes, predecessor/successor arrays,
@@ -80,6 +99,9 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     const nameFilter = name.value.trim() || undefined;
     const statusFilter = status?.value || undefined;
     const currentPage = page.value;
+    const annotationFilterVal = annotationFilter?.value || undefined;
+    const createdAfterVal = createdAfter?.value || undefined;
+    const createdBeforeVal = createdBefore?.value || undefined;
 
     loading.value = true;
     try {
@@ -96,6 +118,9 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
           size: pageSize,
           include: includeTimeBounds ? 'time-bounds' : undefined,
           fields: DO_LIST_FIELDS,
+          annotationFilter: annotationFilterVal,
+          createdAfter: createdAfterVal,
+          createdBefore: createdBeforeVal,
         } as unknown as Parameters<typeof v2Api.value.listDataObjectsWithCount>[0]);
         batch = fetched;
         totalItems.value = fetchedTotal;
@@ -119,12 +144,24 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  const watchSources = status
-    ? [collectionAppId, name, status, page] as const
-    : [collectionAppId, name, page] as const;
-  watch(watchSources, () => {
-    void fetch();
-  }, { immediate: true });
+  // Watch all filter sources as a computed snapshot so Vue can deep-compare.
+  // This replaces the earlier status-conditional array which couldn't accommodate
+  // the optional annotationFilter / createdAfter / createdBefore refs.
+  watch(
+    computed(() => ({
+      appId: collectionAppId.value,
+      name: name.value,
+      status: status?.value,
+      page: page.value,
+      annotationFilter: annotationFilter?.value,
+      createdAfter: createdAfter?.value,
+      createdBefore: createdBefore?.value,
+    })),
+    () => {
+      void fetch();
+    },
+    { immediate: true }
+  );
 
   return { items, totalItems, loading, hasMore };
 }

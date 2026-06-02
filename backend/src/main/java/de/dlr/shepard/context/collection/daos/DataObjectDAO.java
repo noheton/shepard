@@ -5,6 +5,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -715,6 +716,33 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       out.put(appId, ids);
     }
     return out;
+  }
+
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — fetch all SemanticAnnotations attached
+   * to the DataObject identified by {@code dataObjectAppId} in a single Cypher
+   * round-trip. Used by the annotation post-filter in
+   * {@code DataObjectV2Rest.list()} when the caller supplies
+   * {@code ?annotationFilter=<predicateIRI>=<value>}.
+   *
+   * <p>Returns an empty list when the DataObject has no annotations or when
+   * the appId is null/blank.
+   *
+   * <p>TODO(COLL-TIMELINE-DRILLDOWN-FILTER-1): Replace the per-DO call with
+   * a DAO-level Cypher join so annotation matching happens inside Neo4j
+   * rather than in the service layer. The current shape does one Cypher call
+   * per DataObject on the page — acceptable for the initial ship but will
+   * fan-out on large pages.
+   *
+   * @param dataObjectAppId the UUID v7 of the DataObject
+   * @return list of SemanticAnnotations; empty when none found
+   */
+  public List<SemanticAnnotation> findAnnotationsForDataObject(String dataObjectAppId) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) return Collections.emptyList();
+    String cypher =
+      "MATCH (d:DataObject {appId: $appId})-[:has_annotation]->(a:SemanticAnnotation) RETURN a";
+    var hits = session.query(SemanticAnnotation.class, cypher, Map.of("appId", dataObjectAppId));
+    return StreamSupport.stream(hits.spliterator(), false).collect(java.util.stream.Collectors.toList());
   }
 
   /**

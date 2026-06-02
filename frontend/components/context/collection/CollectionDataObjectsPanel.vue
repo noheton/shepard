@@ -1,5 +1,45 @@
 <template>
   <div>
+    <!-- COLL-TIMELINE-DRILLDOWN-FILTER-1: Active timeline drill-down filter banner.
+         Shown when a user clicked a timeline bin and landed here with URL params
+         ?process-type=<value>&date=<ISO>. Gives clear visual feedback that fewer
+         DataObjects are shown, with a one-click dismiss. -->
+    <v-alert
+      v-if="hasActiveTimelineFilter"
+      type="info"
+      density="compact"
+      variant="tonal"
+      class="mb-3"
+      closable
+      @click:close="clearTimelineFilter"
+    >
+      <div class="d-flex align-center flex-wrap ga-2">
+        <span>Timeline filter active:</span>
+        <v-chip
+          v-if="activeProcessType"
+          size="small"
+          variant="flat"
+          color="primary"
+          prepend-icon="mdi-tag-outline"
+          closable
+          @click:close="clearTimelineFilter"
+        >
+          process-type: {{ activeProcessType }}
+        </v-chip>
+        <v-chip
+          v-if="activeDateFilter"
+          size="small"
+          variant="flat"
+          color="secondary"
+          prepend-icon="mdi-calendar-outline"
+          closable
+          @click:close="clearTimelineFilter"
+        >
+          date: {{ activeDateFilter }}
+        </v-chip>
+      </div>
+    </v-alert>
+
     <!-- Search + status filter row -->
     <div class="d-flex flex-wrap align-center ga-2 pb-3">
       <v-text-field
@@ -172,7 +212,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
 
@@ -182,7 +222,44 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
+
+// ── COLL-TIMELINE-DRILLDOWN-FILTER-1: timeline drill-down URL params ──────
+// The timeline pane navigates here with ?process-type=<value>&date=<ISO-day>
+// when a user clicks a bin. We read those params and wire them to the API.
+
+const activeProcessType = computed<string | null>(() => {
+  const v = route.query['process-type'];
+  return typeof v === 'string' && v.length > 0 ? v : null;
+});
+
+const activeDateFilter = computed<string | null>(() => {
+  const v = route.query['date'];
+  return typeof v === 'string' && v.length > 0 ? v : null;
+});
+
+const hasActiveTimelineFilter = computed(() =>
+  activeProcessType.value !== null || activeDateFilter.value !== null
+);
+
+// Convert process-type → annotationFilter query param format.
+const annotationFilterParam = computed<string | null>(() => {
+  const pt = activeProcessType.value;
+  return pt ? `urn:shepard:mffd:process-type=${pt}` : null;
+});
+
+// For a single-day click the date range is [date, date] (inclusive).
+// createdAfter = date, createdBefore = date (backend makes it exclusive by adding 1 day).
+const createdAfterParam = computed<string | null>(() => activeDateFilter.value);
+const createdBeforeParam = computed<string | null>(() => activeDateFilter.value);
+
+function clearTimelineFilter(): void {
+  const q = { ...route.query };
+  delete q['process-type'];
+  delete q['date'];
+  void router.replace({ query: q });
+}
 
 const STATUSES = [
   "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
@@ -206,8 +283,9 @@ function onSearchChange() {
   scheduleSearch();
 }
 
-// Reset page when status filter changes and trigger a server-side refetch
+// Reset page when status filter or timeline filter changes.
 watch(statusFilter, () => { page.value = 0; });
+watch([activeProcessType, activeDateFilter], () => { page.value = 0; });
 
 const pageSize = 25;
 
@@ -219,6 +297,9 @@ const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   page,
   pageSize,
   includeTimeBounds: true,
+  annotationFilter: annotationFilterParam,
+  createdAfter: createdAfterParam,
+  createdBefore: createdBeforeParam,
 });
 
 // Computed total pages for the page-jump widget

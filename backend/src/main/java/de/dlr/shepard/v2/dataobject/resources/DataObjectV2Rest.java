@@ -50,8 +50,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,6 +189,9 @@ public class DataObjectV2Rest {
     @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
+    @QueryParam("annotationFilter") String annotationFilter,
+    @QueryParam("createdAfter") String createdAfter,
+    @QueryParam("createdBefore") String createdBefore,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -214,7 +221,77 @@ public class DataObjectV2Rest {
     if (status != null) params = params.withStatus(status);
     params = params.withPageAndSize(safePage, safeSize);
 
+    // Parse annotationFilter — format: <predicateIRI>=<value>
+    // Split on the first '=' so IRIs containing '=' are handled correctly.
+    String annotationPredicate = null;
+    String annotationValue = null;
+    if (annotationFilter != null && !annotationFilter.isBlank()) {
+      int eqIdx = annotationFilter.indexOf('=');
+      if (eqIdx > 0) {
+        annotationPredicate = annotationFilter.substring(0, eqIdx).trim();
+        annotationValue = annotationFilter.substring(eqIdx + 1).trim();
+      }
+    }
+
+    // Parse createdAfter / createdBefore — ISO-8601 date strings (YYYY-MM-DD).
+    // Inclusive on both ends: createdAfter is start of that day (00:00 UTC),
+    // createdBefore is start of the next day (exclusive).
+    Date afterDate = null;
+    Date beforeDate = null;
+    if (createdAfter != null && !createdAfter.isBlank()) {
+      try {
+        afterDate = Date.from(LocalDate.parse(createdAfter).atStartOfDay(ZoneOffset.UTC).toInstant());
+      } catch (DateTimeParseException ignored) {
+        // Invalid date string — treat as absent (no filter).
+      }
+    }
+    if (createdBefore != null && !createdBefore.isBlank()) {
+      try {
+        // Exclusive upper bound: start of the day after createdBefore.
+        beforeDate = Date.from(LocalDate.parse(createdBefore).plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant());
+      } catch (DateTimeParseException ignored) {
+        // Invalid date string — treat as absent (no filter).
+      }
+    }
+
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
+
+    // Post-filter: annotation predicate+value filter.
+    // TODO(COLL-TIMELINE-DRILLDOWN-FILTER-1): move to DAO-level Cypher for
+    // large collections; currently a page-level post-filter which is correct
+    // for paginated responses but may produce under-full pages when many DOs
+    // are excluded. Acceptable for the initial ship (typical page size 25).
+    final String finalAnnotationPredicate = annotationPredicate;
+    final String finalAnnotationValue = annotationValue;
+    final Date finalAfterDate = afterDate;
+    final Date finalBeforeDate = beforeDate;
+
+    boolean hasAnnotationFilter = finalAnnotationPredicate != null && finalAnnotationValue != null;
+    boolean hasDateFilter = finalAfterDate != null || finalBeforeDate != null;
+
+    if (hasAnnotationFilter || hasDateFilter) {
+      dataObjects = dataObjects.stream()
+        .filter(d -> {
+          if (hasDateFilter) {
+            Date ca = d.getCreatedAt();
+            if (ca == null) return false;
+            if (finalAfterDate != null && ca.before(finalAfterDate)) return false;
+            if (finalBeforeDate != null && !ca.before(finalBeforeDate)) return false;
+          }
+          if (hasAnnotationFilter) {
+            // Check whether any SemanticAnnotation on this DataObject matches.
+            // SemanticAnnotation.propertyIRI == predicate AND
+            // (SemanticAnnotation.valueIRI == value OR SemanticAnnotation.valueName == value).
+            var annotations = dataObjectDAO.findAnnotationsForDataObject(d.getAppId());
+            return annotations.stream().anyMatch(a ->
+              finalAnnotationPredicate.equals(a.getPropertyIRI()) &&
+              (finalAnnotationValue.equals(a.getValueIRI()) || finalAnnotationValue.equals(a.getValueName()))
+            );
+          }
+          return true;
+        })
+        .collect(Collectors.toList());
+    }
 
     // Collect appIds for the batch count query (one round-trip for the whole page).
     List<String> appIds = new ArrayList<>(dataObjects.size());

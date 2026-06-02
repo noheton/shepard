@@ -20,6 +20,25 @@ export interface ListDataObjectsV2Request {
    * name in the response body.
    */
   fields?: string;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — filter DataObjects by SemanticAnnotation
+   * predicate + value. Format: `<predicateIRI>=<value>`, e.g.
+   * `urn:shepard:mffd:process-type=AFP`. Split on the first `=`; predicateIRI
+   * may contain `=` characters. When absent, no annotation filter is applied.
+   */
+  annotationFilter?: string;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — ISO-8601 date lower bound (inclusive),
+   * e.g. `2024-06-01`. Filters DataObjects whose `createdAt` is on or after
+   * the start of this day (UTC). When absent, no lower bound is applied.
+   */
+  createdAfter?: string;
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1 — ISO-8601 date upper bound (inclusive),
+   * e.g. `2024-06-01`. Filters DataObjects whose `createdAt` is on or before
+   * the end of this day (UTC). When absent, no upper bound is applied.
+   */
+  createdBefore?: string;
 }
 
 /**
@@ -46,6 +65,9 @@ export class DataObjectV2Api extends runtime.BaseAPI {
     if (requestParameters['size'] != null) queryParameters['size'] = requestParameters['size'];
     if (requestParameters['include'] != null) queryParameters['include'] = requestParameters['include'];
     if (requestParameters['fields'] != null) queryParameters['fields'] = requestParameters['fields'];
+    if (requestParameters['annotationFilter'] != null) queryParameters['annotationFilter'] = requestParameters['annotationFilter'];
+    if (requestParameters['createdAfter'] != null) queryParameters['createdAfter'] = requestParameters['createdAfter'];
+    if (requestParameters['createdBefore'] != null) queryParameters['createdBefore'] = requestParameters['createdBefore'];
 
     const headerParameters: runtime.HTTPHeaders = {};
     if (this.configuration && this.configuration.accessToken) {
