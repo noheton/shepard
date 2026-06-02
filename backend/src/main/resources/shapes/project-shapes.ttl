@@ -1,0 +1,101 @@
+# project-shapes.ttl — SHACL NodeShape for the Project Collection concept.
+#
+# Loaded by SemanticShapeLoader on startup (same classpath discovery path
+# as mffd-shapes.ttl, hdf-shapes.ttl, and shepard-core-shapes.ttl).
+#
+# Spec: PROJ-PREDICATES-1 / aidocs/integrations/121 §2 + §5.
+#
+# A "Project" in Shepard is a regular :Collection carrying the annotation
+# urn:shepard:project = "true". The ProjectShape validates that annotation
+# structure and constrains:
+#
+#   urn:shepard:project   — maxCount 1, fixed value "true"
+#   urn:shepard:partOf    — 0..N; each value is a UUID v7 string representing
+#                           the appId of another Collection that is itself a
+#                           Project (cross-target constraint via sh:sparql)
+#   urn:shepard:programme — 0..N; free-text programme name (xsd:string)
+#
+# Prefix mapping: @prefix shepard: <http://semantics.dlr.de/shepard-upper#>
+# (consistent with all other shapes in this directory).
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── New class declaration ─────────────────────────────────────────────────
+
+shepard:Project a owl:Class ;
+    rdfs:subClassOf shepard:Collection ;
+    rdfs:label "Project Collection"@en ;
+    rdfs:comment "A Collection annotated with urn:shepard:project = 'true', acting as a project-level grouping node. Child Collections are linked via urn:shepard:partOf (non-exclusive — one Collection can belong to multiple Projects)."@en .
+
+# ─── shepard:ProjectShape ──────────────────────────────────────────────────
+
+shepard:ProjectShape a sh:NodeShape ;
+    sh:targetClass shepard:Project ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Project Collection shape"@en ;
+    rdfs:comment "Validates a Collection marked as a Project (urn:shepard:project = 'true'). Constrains the role marker, partOf links, and programme metadata. See PROJ-PREDICATES-1 / aidocs/integrations/121 §2."@en ;
+    sh:and ( shepard:CollectionShape ) ;
+
+    # ── urn:shepard:project — role marker, maxCount 1, value MUST be "true" ──
+    sh:property [
+        sh:path    <urn:shepard:project> ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:hasValue "true" ;
+        sh:name    "Project role marker"@en ;
+        sh:order   10 ;
+        sh:message "urn:shepard:project must be the literal string 'true' and may appear at most once per Collection."@en
+    ] ;
+
+    # ── urn:shepard:partOf — 0..N parent Project appIds ──────────────────────
+    # Each value is a UUID v7 string (the appId of a parent Project Collection).
+    # Cross-target constraint: the target Collection must itself bear
+    # urn:shepard:project = "true" — enforced by the sh:sparql rule below.
+    sh:property [
+        sh:path    <urn:shepard:partOf> ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" ;
+        sh:name    "Part of (parent Project appId)"@en ;
+        sh:order   20 ;
+        sh:message "urn:shepard:partOf value must be a UUID v7 string (the appId of a parent Project Collection)."@en
+    ] ;
+
+    # ── urn:shepard:programme — 0..N free-text programme names ───────────────
+    sh:property [
+        sh:path    <urn:shepard:programme> ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:name    "Programme"@en ;
+        sh:order   30 ;
+        sh:message "urn:shepard:programme must be a non-empty string (free-text programme name, e.g. 'Clean Aviation JU', 'Helmholtz', 'DFG SPP 2353')."@en
+    ] ;
+
+    # ── Cross-target constraint: partOf targets must themselves be Projects ───
+    # SHACL SPARQL constraint: for each urn:shepard:partOf annotation value V
+    # on this node, there must exist a SemanticAnnotation with
+    # subject = V, predicate = "urn:shepard:project", value = "true".
+    # This is an advisory constraint (sh:severity sh:Warning) because the
+    # target's annotations are resolved at query time; a strict VIOLATION
+    # would block partial-commit workflows where the parent is created first.
+    sh:sparql [
+        sh:message "urn:shepard:partOf target '{?partOfId}' does not appear to be a Project Collection (no urn:shepard:project = 'true' annotation found). Ensure the referenced Collection is annotated as a Project before linking."@en ;
+        sh:severity sh:Warning ;
+        sh:select """
+            PREFIX shepard: <http://semantics.dlr.de/shepard-upper#>
+            SELECT $this ?partOfId
+            WHERE {
+                $this <urn:shepard:partOf> ?partOfId .
+                FILTER NOT EXISTS {
+                    ?ann a shepard:SemanticAnnotation ;
+                         shepard:subjectAppId ?partOfId ;
+                         shepard:propertyIRI "urn:shepard:project" ;
+                         shepard:value "true" .
+                }
+            }
+        """
+    ] .

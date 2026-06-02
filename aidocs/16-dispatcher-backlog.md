@@ -2497,6 +2497,7 @@ them up immediately.
 
 | ID | One-line | Size | Notes |
 |---|---|---|---|
+| PROJ-PREDICATES-1 | Cypher migration: add `urn:shepard:project` + `urn:shepard:partOf` (non-exclusive, 0..N) + `urn:shepard:programme` (free-text Project metadata) to controlled vocab + SHACL shape (`shepard:ProjectShape` with the cross-target constraint that `partOf` targets must themselves be Projects). Spec: `aidocs/integrations/121 §2 + §5`. Migration file: `V107__add_project_predicates.cypher` + `project-shapes.ttl`. | S | **in-flight (this PR)** | Branch: `PROJ-PREDICATES-1-project-vocab-shape`. Files shipped: `backend/src/main/resources/neo4j/migrations/V107__add_project_predicates.cypher` + rollback twin `V107_R__add_project_predicates.cypher` + `backend/src/main/resources/shapes/project-shapes.ttl`. |
 | BTKVS-A2-OPS | Mount `/data/shepard/semantic-bundles` as writable backend volume; unblocks BTKVS-A2 live upload. | XS | Operator-approved direction; pure infra. |
 | FE-BUILD-03-REGEN | Regenerate `@dlr-shepard/backend-client` from current OpenAPI; retires the `as unknown as` cast in `usePagedDataObjects.ts`. | S | Real fix; cast holdover is shipped. |
 | UX-WALK-2026-05-29-05 | Collections list at 4K leaves ~1500 px whitespace; add density toggle or skeleton rows. | S | UX-PATTERN-D sibling concern. |
