@@ -2629,7 +2629,7 @@ them up immediately.
 | J1e-PR-05-VERIFY-SSO | End-to-end SSO verify (Playwright + Python kernel-side `/v2/users/me` check). | XS | Cannot run until J1e plugin admin endpoint is reachable on demo deploy. |
 | J1e-PR-05-KEYCLOAK-CLIENT-SEED | Bootstrap Keycloak client `jupyterhub-prod` via realm-export entry. | XS | Operator-comfort; not blocking. |
 | #27-ARCHIVED-01/02/03 | Extend ARCHIVED status to Container + Collection (operator-approved). | XS/S/XS | **-01 partially done:** Collection already accepts ARCHIVED; Container blocked on missing `BasicContainer.status` field (needs new row `#27-CONTAINER-STATUS-01`). |
-| PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | PROV-RESOLVER-PATHWALK prerequisite shipped. |
+| PROV-CAPTURE-READS-FLIP | One-line `application.properties` flip of `shepard.provenance.capture-reads=true` (v2 only). | XS | **done (2026-06-02)** — PROV-RESOLVER-PATHWALK prerequisite shipped; default flipped to `true`. |
 | J1e-PR-07/08/09 | aidocs/34 path-migration row + aidocs/42/44 corrections + reconcile with J2 plan. | XS each | Docs follow-on for the in-flight J1e plugin refactor. |
 
 ### Blocked on design
