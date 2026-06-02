@@ -98,9 +98,18 @@ fully monotonic series — 5,015,677 samples across all six data types**
 welding signals (ch1 = 20,656 samples / 20.655 s, matching the CSV) and
 the ~50 kHz `Sound.kanal_*` audio channels (1,032,096 samples each).
 
-**Note:** raw values are returned as stored; applying each channel's
-manifest `<ScaleFactor>`/`<Offset>` to recover engineering units is a
-separate, tracked step on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+**Note on engineering units:** in the 50 MB reference file **every**
+channel's manifest unit transform is the identity (`<ScaleFactor>1</…>`,
+`<Offset>0</…>` on all 149 `AdsAcquisition`s), so the decoded raw values
+already equal the manifest-"scaled" values — there is nothing to apply.
+The large raw magnitudes on some analog-input channels (e.g. an INT32
+`aKraftZylinderIstwert` of ~-9.1e7) are **not** corrected by these
+fields; that raw→physical (force/temperature) calibration is **not
+carried in the .svdx** and needs external calibration data. So the
+parser intentionally returns raw values; a unit-conversion layer is
+out of scope until a file with non-identity transforms (or external
+calibration) is available. (`<BaseSampleTime>10000</…>` in the same
+manifest independently confirms the 1 ms / 1 kHz analog cadence.)
 
 ## What the parser does NOT do
 
