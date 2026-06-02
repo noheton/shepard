@@ -1,7 +1,23 @@
 <script lang="ts" setup>
-import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import type { DataObject, ResponseError } from "@dlr-shepard/backend-client";
 import { useTimeoutFn } from "@vueuse/core";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+
+/**
+ * BUG-COLL-APPID-ROUTE-005 (2026-06-02): the initial-selection lookup
+ * routes through `GET /v2/collections/{collectionAppId}/data-objects/
+ * {dataObjectAppId}`. Pre-fix the generated v1 `getDataObject` was called
+ * with numeric Neo4j longs — post-reset Collections / DataObjects carry
+ * UUID v7 only, so the autocomplete failed to populate the chip when a
+ * dialog opened with an existing `initialDataObjectId`.
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
 interface AutoCompleteItem {
   title?: string;
@@ -75,10 +91,22 @@ onMounted(async () => {
 });
 
 async function getDataObjectById(dataObjectId: number): Promise<DataObject> {
-  return await useShepardApi(DataObjectApi).value.getDataObject({
-    collectionId: props.collectionId,
-    dataObjectId,
-  });
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(String(props.collectionId))}/data-objects/` +
+    `${encodeURIComponent(String(dataObjectId))}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const resp = await fetch(url, { headers });
+  if (!resp.ok) {
+    throw {
+      response: resp,
+      message: `HTTP ${resp.status}`,
+    } as unknown as ResponseError;
+  }
+  return (await resp.json()) as DataObject;
 }
 
 function mapToSearchResultAutoCompleteItem(

@@ -1,7 +1,59 @@
-import { DataObjectApi, ResponseError } from "@dlr-shepard/backend-client";
+import {
+  DataObjectApi,
+  ResponseError,
+  type DataObject,
+} from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
+
+/**
+ * BUG-COLL-APPID-ROUTE-005 (2026-06-02): the per-treeview-item DataObject
+ * lookup must route through the v2 appId-keyed endpoint
+ * `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}`.
+ * Pre-fix this composable hit the generated v1 `getDataObject({collectionId,
+ * dataObjectId})` expecting numeric Neo4j longs — post-Neo4j-reset Collections
+ * carry UUID v7 only and the v1 client 404'd on the stringified id, so the
+ * sidebar tree silently broke when a deep-link landed mid-tree (the parent
+ * walk in `getPathToItem` could not load any item by id).
+ *
+ * The list call `getAllDataObjects` stays on v1 — it's not in this BUG's
+ * scope and the upstream tree-view shape isn't blocked by the appId migration
+ * (the v1 collection list endpoint also accepts the numeric id transparently
+ * via the same `EntityIdResolver`).
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function fetchDataObjectV2(
+  collectionId: number,
+  dataObjectId: number,
+): Promise<DataObject> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(String(collectionId))}/data-objects/` +
+    `${encodeURIComponent(String(dataObjectId))}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const resp = await fetch(url, { headers });
+  if (!resp.ok) {
+    throw {
+      response: resp,
+      message: `HTTP ${resp.status}`,
+    } as unknown as ResponseError;
+  }
+  // DataObjectDetailV2IO extends DataObjectIO — treeview item mapping only
+  // reads `id`, `name`, `parentId`, `childrenIds`, all of which are present.
+  return (await resp.json()) as DataObject;
+}
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   // BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary so
@@ -202,11 +254,9 @@ async function fetchTreeviewItem(
   dataObjectId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem | undefined> {
-  return useShepardApi(DataObjectApi)
-    .value.getDataObject({
-      collectionId,
-      dataObjectId,
-    })
+  // BUG-COLL-APPID-ROUTE-005: route through v2 raw fetch — the v1 generated
+  // client 404s on UUID-shaped collection/dataObject ids post-reset.
+  return fetchDataObjectV2(collectionId, dataObjectId)
     .then(response => mapToTreeviewItem(response, parentItem))
     .catch(error => {
       if (error instanceof ResponseError) {
