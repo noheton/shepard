@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.video.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.HttpRangeUtil;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.io.VideoStreamReferenceIO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
@@ -15,6 +16,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -24,6 +26,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -233,21 +236,46 @@ public class VideoStreamReferenceV2Rest {
   @GET
   @Path("/{appId}/download")
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
-  @Operation(summary = "Download the raw video bytes for a VideoStreamReference (VID1a).")
+  @Operation(
+    summary = "Download the raw video bytes for a VideoStreamReference (VID1a + MFFD-VIDEOREF-SCALE-1).",
+    description =
+      "Streams the video bytes stored for the `VideoStreamReference` identified by " +
+      "`appId` (UUID v7). Designed for both download (`?download=1` + " +
+      "`Content-Disposition: attachment`) and inline HTML5 `<video>` playback.\n\n" +
+      "**Range requests:** a single `Range: bytes=START-END` header is honoured " +
+      "(single-range only; multi-range and suffix-range are declined per HttpRangeUtil " +
+      "semantics). A valid range returns HTTP 206 with `Content-Range` and " +
+      "`Accept-Ranges: bytes` headers — this is what unlocks browser-native scrubbing " +
+      "on multi-GB MP4s. An unsatisfiable range (start ≥ total) returns 416 with " +
+      "`Content-Range: bytes */TOTAL`. The `Accept-Ranges: bytes` header is always " +
+      "included in 200 responses so clients can probe range support.\n\n" +
+      "**Auth:** Read permission on the parent DataObject. The browser cannot send a " +
+      "custom `Authorization` header on `<video src>`, so the JWT may be supplied via " +
+      "the `?access_token=…` query param fallback handled by `JWTFilter`.\n\n" +
+      "**Content-Disposition:** set to `attachment; filename=\"<originalName>\"` for " +
+      "explicit download UX. HTML5 `<video>` ignores this and plays inline anyway."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "Full video bytes; `Accept-Ranges: bytes` indicates partial-content support.",
     content = @Content(
       mediaType = MediaType.APPLICATION_OCTET_STREAM,
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
+  @APIResponse(
+    responseCode = "206",
+    description = "Partial content — single-range `Range: bytes=START-END` was honoured; `Content-Range` header is set."
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with that appId, or bytes missing.")
+  @APIResponse(responseCode = "416", description = "Range not satisfiable — start offset is beyond the file size; `Content-Range: bytes */TOTAL` is included.")
   @APIResponse(responseCode = "503", description = "No active file storage adapter configured.")
   public Response download(
     @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("appId") String appId,
+    @HeaderParam("Range") String rangeHeader,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -280,12 +308,61 @@ public class VideoStreamReferenceV2Rest {
       ? payload.contentType()
       : (ref.getMimeType() != null ? ref.getMimeType() : MediaType.APPLICATION_OCTET_STREAM);
 
-    Response.ResponseBuilder rb = Response.ok(payload.stream(), contentType)
-      .header("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-    if (payload.sizeBytes() != null) {
-      rb.header("Content-Length", payload.sizeBytes());
+    Long total = payload.sizeBytes() != null
+      ? payload.sizeBytes()
+      : (ref.getFileSizeBytes() != null ? ref.getFileSizeBytes() : null);
+
+    // No range header → full body. Always advertise Accept-Ranges so HTML5
+    // <video> can probe for range support and scrub natively.
+    if (rangeHeader == null || rangeHeader.isBlank()) {
+      Response.ResponseBuilder rb = Response.ok(payload.stream(), contentType)
+        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+        .header("Accept-Ranges", "bytes");
+      if (total != null) {
+        rb.header("Content-Length", total);
+      }
+      return rb.build();
     }
-    return rb.build();
+
+    // Range path. If we don't know the total size (legacy GridFS row without
+    // bookkeeping), we can't satisfy a range — fall back to the full body.
+    if (total == null || total <= 0) {
+      Log.warnf(
+        "VID1a download: Range header supplied but total size unknown — serving full body (appId=%s)",
+        appId
+      );
+      return Response.ok(payload.stream(), contentType)
+        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+        .header("Accept-Ranges", "bytes")
+        .build();
+    }
+
+    long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
+    if (range == null) {
+      // Close the source stream so the underlying GridFS / S3 handle is
+      // released — we are not going to consume it.
+      try {
+        if (payload.stream() != null) payload.stream().close();
+      } catch (IOException ioe) {
+        Log.debugf("VID1a download: close-after-416 failed (ignored): %s", ioe.getMessage());
+      }
+      return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
+        .header("Content-Range", "bytes */" + total)
+        .header("Accept-Ranges", "bytes")
+        .build();
+    }
+    long start = range[0];
+    long end = range[1];
+    long length = end - start + 1;
+    StreamingOutput ranged = HttpRangeUtil.sliceStream(payload.stream(), start, length);
+    return Response.status(Response.Status.PARTIAL_CONTENT)
+      .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+      .header("Content-Length", length)
+      .header("Content-Range", "bytes " + start + "-" + end + "/" + total)
+      .header("Accept-Ranges", "bytes")
+      .entity(ranged)
+      .type(contentType)
+      .build();
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────

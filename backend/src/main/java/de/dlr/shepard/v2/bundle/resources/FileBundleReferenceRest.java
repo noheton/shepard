@@ -15,6 +15,7 @@ import de.dlr.shepard.context.references.file.services.FileGroupService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
+import de.dlr.shepard.v2.bundle.io.PagedFilesIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -387,6 +389,76 @@ public class FileBundleReferenceRest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
   }
+
+  // ─── paginated file listing inside a group ────────────────────────────────
+
+  @GET
+  @Path("/{bundleAppId}/groups/{groupAppId}/files")
+  @Operation(
+    summary = "List files in a FileGroup, paginated (MFFD-IMAGEBUNDLE-PAGINATE-1).",
+    description =
+      "Returns the files attached to the `:FileGroup` identified by `groupAppId` " +
+      "within the `:FileBundleReference` identified by `bundleAppId`, paginated.\n\n" +
+      "Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). " +
+      "The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the " +
+      "group's full embedded `files[]` for backward compatibility, but UI surfaces that " +
+      "scrub through thousands of frames should consume this paginated route instead.\n\n" +
+      "Query parameters:\n" +
+      "* `page` — 0-based page index. Default `0`. Values past the last page return an " +
+      "empty `items[]` with the correct `totalElements`/`totalPages`.\n" +
+      "* `size` — page size. Default `200`; min `1`; max `1000`. Values outside the range " +
+      "are clamped, never reject — the API gives a useful result even when a client " +
+      "supplies an out-of-policy hint.\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "PagedFilesIO envelope. `items[]` may be empty when the page is past the end.",
+    content = @Content(schema = @Schema(implementation = PagedFilesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
+  public Response listGroupFiles(
+    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("groupAppId") String groupAppId,
+    @QueryParam("page") Integer page,
+    @QueryParam("size") Integer size,
+    @Context SecurityContext securityContext
+  ) {
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
+    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = checkAccess(bundle, AccessType.Read, securityContext);
+    if (gate != null) return gate;
+
+    FileGroup group = fileGroupService.getByAppId(groupAppId);
+    if (group == null) return Response.status(Response.Status.NOT_FOUND).build();
+    String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
+    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+
+    // Clamp page + size to sensible defaults. Out-of-range hints are
+    // clamped, never rejected — surfacing a 400 here would be hostile to
+    // a UI that may just have a stale slider value while the bundle's
+    // file count is fluctuating.
+    int pageIdx = (page == null || page < 0) ? 0 : page;
+    int pageSize = (size == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, size));
+
+    List<ShepardFile> all = group.getFiles() != null ? group.getFiles() : List.of();
+    long total = all.size();
+    int totalPages = pageSize == 0 ? 0 : (int) ((total + pageSize - 1) / pageSize);
+    int from = Math.min((int) total, pageIdx * pageSize);
+    int to = Math.min((int) total, from + pageSize);
+    List<ShepardFile> slice = from >= to ? List.of() : new ArrayList<>(all.subList(from, to));
+
+    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, pageSize, total, totalPages);
+    return Response.ok(envelope).build();
+  }
+
+  /** MFFD-IMAGEBUNDLE-PAGINATE-1 — default page size for the paged files listing. */
+  static final int DEFAULT_FILES_PAGE_SIZE = 200;
+
+  /** MFFD-IMAGEBUNDLE-PAGINATE-1 — server-side cap so a hostile client can't request a whole-bundle dump. */
+  static final int MAX_FILES_PAGE_SIZE = 1000;
 
   // ─── file upload into a group ─────────────────────────────────────────────
 

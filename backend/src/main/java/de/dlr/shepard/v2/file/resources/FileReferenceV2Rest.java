@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.HttpRangeUtil;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.v2.file.io.FileReferenceV2IO;
@@ -31,7 +32,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -368,7 +368,7 @@ public class FileReferenceV2Rest {
 
     // Parse "bytes=START-END" (END optional). Multi-range and
     // suffix-range ("bytes=-N") not supported in FR1b.
-    long[] range = parseRange(rangeHeader, total);
+    long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
     if (range == null) {
       return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
         .header("Content-Range", "bytes */" + total)
@@ -377,26 +377,7 @@ public class FileReferenceV2Rest {
     long start = range[0];
     long end = range[1];
     long length = end - start + 1;
-    InputStream stream = payload.getInputStream();
-    StreamingOutput ranged = (OutputStream out) -> {
-      try (InputStream in = stream) {
-        long skipped = 0;
-        while (skipped < start) {
-          long s = in.skip(start - skipped);
-          if (s <= 0) break;
-          skipped += s;
-        }
-        byte[] buf = new byte[8192];
-        long remaining = length;
-        while (remaining > 0) {
-          int toRead = (int) Math.min(buf.length, remaining);
-          int n = in.read(buf, 0, toRead);
-          if (n < 0) break;
-          out.write(buf, 0, n);
-          remaining -= n;
-        }
-      }
-    };
+    StreamingOutput ranged = HttpRangeUtil.sliceStream(payload.getInputStream(), start, length);
     return Response.status(Response.Status.PARTIAL_CONTENT)
       .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
       .header("Content-Length", length)
@@ -562,33 +543,14 @@ public class FileReferenceV2Rest {
    * @return {@code [start, end]} (inclusive) or {@code null} if
    *   unparseable / unsatisfiable.
    */
+  /**
+   * @deprecated since MFFD-VIDEOREF-SCALE-1 — use
+   *   {@link HttpRangeUtil#parseRange(String, long)} directly.
+   *   Kept for test-compat; new code should depend on the shared util.
+   */
+  @Deprecated
   static long[] parseRange(String header, long total) {
-    if (header == null) return null;
-    String trimmed = header.trim();
-    if (!trimmed.startsWith("bytes=")) return null;
-    String spec = trimmed.substring("bytes=".length());
-    // Multi-range (comma-separated) — refuse.
-    if (spec.contains(",")) return null;
-    int dash = spec.indexOf('-');
-    if (dash < 0) return null;
-    String startStr = spec.substring(0, dash).trim();
-    String endStr = spec.substring(dash + 1).trim();
-    if (startStr.isEmpty()) {
-      // Suffix-range "bytes=-N" — refuse (FR1b).
-      return null;
-    }
-    long start;
-    long end;
-    try {
-      start = Long.parseLong(startStr);
-      end = endStr.isEmpty() ? total - 1 : Long.parseLong(endStr);
-    } catch (NumberFormatException nfe) {
-      return null;
-    }
-    if (start < 0 || start >= total) return null;
-    if (end >= total) end = total - 1;
-    if (end < start) return null;
-    return new long[] { start, end };
+    return HttpRangeUtil.parseRange(header, total);
   }
 
   /**
