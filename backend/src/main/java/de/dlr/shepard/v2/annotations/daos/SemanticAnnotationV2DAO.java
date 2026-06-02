@@ -121,6 +121,30 @@ public class SemanticAnnotationV2DAO extends GenericDAO<SemanticAnnotation> {
       .toList();
   }
 
+  // ─── subject-scoped bulk load ─────────────────────────────────────────────
+
+  /**
+   * SHAPES-V-PREFILL-2 — return all annotations whose {@code subjectAppId}
+   * equals the given value. Used by the {@code /v2/data-objects/{appId}/rdf}
+   * Turtle-export endpoint and by the {@code validate.vue} SHACL pre-fill flow.
+   *
+   * <p>No pagination — callers that need pagination should use
+   * {@link #findFiltered} instead. Assumes the annotation count per subject
+   * entity is bounded (expected: single digits to low hundreds).
+   *
+   * @param subjectAppId the entity's UUID v7 appId
+   * @return all annotations for this subject; empty list when none found
+   */
+  public List<SemanticAnnotation> findBySubjectAppId(String subjectAppId) {
+    if (subjectAppId == null || subjectAppId.isBlank()) return List.of();
+    String query =
+      "MATCH (a:SemanticAnnotation) WHERE a.subjectAppId = $sid WITH a " +
+      CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING);
+    return StreamSupport
+      .stream(findByQuery(query, Map.of("sid", subjectAppId)).spliterator(), false)
+      .toList();
+  }
+
   // ─── back-pointer stamp ────────────────────────────────────────────────────
 
   /**
