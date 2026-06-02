@@ -13,6 +13,25 @@ and `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md` (the gap analysis). 
 doc is the **execution plan**: which wave imports what, against which existing
 template, with which gate.
 
+**Updates 2026-06-02 (this session):**
+
+- **Collection layout decided** — operator picked option B
+  (`aidocs/integrations/119-mffd-collection-layout.md`): one **MFFD Programme**
+  + six step Collections + cross-step Predecessor edges + Programme UI for the
+  single entrypoint (`aidocs/integrations/121-programme-and-subcollections.md`).
+- **Source corpus extracted + organised** on the NFS dump per
+  `/mnt/pve/unas/dump/dataset/IMPORT_README.md` — thermography classified into
+  process/reference cohorts with full gap audit; wiki extracted; cube3-export
+  tarball mid-extraction.
+- **W6 corrected** — the archive is 744 OTvis files, NOT ~6 000 TIFFs (see
+  wave map row below for the corrected count + status flags).
+- **Wiki transformation specified** — `aidocs/integrations/120-mffd-wiki-transformation.md`
+  defines the journal / plans / glossary tracks driven by the operator's
+  2026-05-23 directive "create project terminology from wiki data".
+- **MFFD.diproj parsed** — confirms `L19+` is an official planned layer, not
+  a typo (regex update needed on OTVIS-PARSE-1); cross-references against the
+  archive resolve 100% with exact frame conservation (707 = 707).
+
 ## 1. Targets + non-targets
 
 **Targets** (in priority order):
@@ -74,7 +93,7 @@ Re-running this plan must be **safe**, **fast**, and **lossless**:
 | W3   | bridgewelding | bucket 2 | same Collection, as **`process-step-bridge-welding`** children | v16 PRESERVE-HIERARCHY | 13 AF parts + N executions | wave 2 done | pending |
 | W4   | wire Predecessor edges layup→bridge | n/a | YAML mapping + `POST /v2/admin/mffd/process-chain-mapping` | (flo-authored YAML) | 8,251 edges | wave 3 done + flo authors mapping YAML | **infra ready 2026-06-02 (MFFD-AF-TRACK-MAPPING shipped); pending flo YAML** |
 | W5   | RoboDK scene | bucket 4a (`MFZ.rdk`) | new SceneGraph attached at Collection level | SCENEGRAPH-CREATE-FROM-RDK | 1 scene | wave 2 done | pending |
-| W6   | thermography | bucket 4b (`thermography.7z`) | new DOs under `MFFD Upper-Fuselage (Real)` | new `7z` importer step | ~6,000 TIFFs as ImageBundleReference | wave 2 done | pending |
+| W6   | thermography (CORRECTED 2026-06-02 after the OTvis archive opened) | `thermography-extracted/process/L*/` (707 process) + `references/*` (37 calibration/reference) — see `/mnt/pve/unas/dump/dataset/IMPORT_README.md` | new DOs under `mffd-ndt-thermography` (per `aidocs/integrations/119`) | `shepard-plugin-fileformat-thermography` (OTVIS-PARSE-1 shipped 2026-05-28; tier-2 frame decoder spec'd at `aidocs/integrations/115`) — NOT a `7z` importer; archive already extracted to NFS | **744 OTvis files total** (corrected from "~6,000 TIFFs"): 561 clean `S<n>_M<n>_L<n>_F<n>` + 143 `L19+` variants + 3 typo-normalised + 37 references (Parameter, TRuTh, Referenzbauteil, Antenna, DoorCorners) | wave 2 done | **archive extracted + classified 2026-06-02**; awaiting deploy + smoke. Gap audit (vs `MFFD.diproj`): **707 frames planned, 707 captured** — 2 under-captures (`S7/M4/L19+`, `S9/M6/L19`) + 2 substitution-captures (`S7/M7/L19+`, `S9/M6/L18`) annotated per `urn:shepard:status:capture-{incomplete,substitution}` |
 | W7   | **TPS+FSD pointclouds → spatial substrate** (re-classify W2 file-stragglers) | `Track_NN__Run_NN_/files/TPS 3D pointclouds.0/.1` + `FSD course 3D pointclouds` | one `SpatialDataContainer` per track (plugin `spatiotemporal` v6) | new `shepard-plugin-spatial-importer` step (shipped 2026-06-02) | 8,251 tracks × {2 pointcloud + 1 FSD path} = ~24,753 spatial entities | wave 2 done, spatial plugin live | **importer shipped 2026-06-02; awaiting W2 + smoke** |
 | W8a  | Punktschweißungen .svdx parser | bucket 3 | new DO per `.svdx` | `shepard-plugin-fileformat-svdx` tier-1 (manifest extractor; binary samples deferred to `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`, CSV ingest to `MFFD-PLUGIN-SVDX-CSV-INGEST-1`) | 21 files / 4.9 GB (corrected from earlier 29-file estimate; one folder, not three) | **manifest parser shipped 2026-06-02; awaiting deploy + smoke** | partially unblocked — annotations land per upload; sample-level data still gated |
 | W8b  | process video sweep | bucket 3 | VideoReference under DOs | existing VID1 + MFFD-VIDEOREF-SCALE-1 | 139 MP4s / 133 GB | UI scale-test passes | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
