@@ -33,6 +33,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history needed: the index includes a per-file `last-touched`
+          # column populated via `git log -1 --format=%ad`. A shallow clone
+          # (the default fetch-depth: 1) makes every file's last-touched
+          # date equal to the merge commit's date, which then disagrees
+          # with the committed index → spurious DRIFT.
+          fetch-depth: 0
 
       - name: Check doc-stage index currency
         run: python3 scripts/regenerate-doc-stage-index.py --check
