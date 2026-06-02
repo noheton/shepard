@@ -2735,3 +2735,17 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+---
+
+### Project / Sub-Collections (PROJ series)
+
+Collections-as-projects: annotate a Collection as a "project hub" and query
+its member sub-collections via `urn:shepard:partOf` semantic annotations.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| PROJ-REST-1 | Backend `GET /v2/collections/{appId}/sub-collections` — returns `{parentAppId, parentIsProject, programmes:[…], subCollections:[…]}`. Default-trim shape; `?include=full` opts back into the full Collection IO (deferred to PROJ-REST-1b). | S | **in-flight (this PR)** | Spec: `aidocs/integrations/121 §3.1`. Cypher: single OPTIONAL MATCH walking `:HAS_SEMANTIC_ANNOTATION` to a `:SemanticAnnotation{predicate:'urn:shepard:partOf', value:$appId}`. Resource: `CollectionSubCollectionsRest`; DAO: `SubCollectionsDAO`; IO: `SubCollectionsIO` + `SubCollectionEntryIO`. Tests: `CollectionSubCollectionsRestTest` (7 cases). Additive `/v2/` endpoint — no migration. |
+| PROJ-REST-1b | `?include=full` — return full `CollectionIO` shape for each child. Calls `collectionService` per child after the DAO step. | S | queued | Gated on PROJ-REST-1. |
+| PROJ-REST-2 | `POST /v2/collections/{appId}/sub-collections` — accepts `{childAppId}` and creates a `urn:shepard:partOf` annotation via `SemanticAnnotationService`. Write-permission on both parent and child. | S | queued | Gated on PROJ-REST-1. |
+| PROJ-REST-3 | Filter sub-collections to only those the caller may Read (per-child `PermissionsService` walk). Acceptable omission in PROJ-REST-1 since sub-collections are visible to the DB traversal anyway — same as how `GET /v2/collections` returns all the caller's readable collections. | S | queued | Deferred; document the current behaviour explicitly in the spec. |

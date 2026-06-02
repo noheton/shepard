@@ -236,9 +236,22 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
+  // PROJ-REST-1
+  {
+    slug: "collection-sub-collections",
+    surface: "route",
+    title: "Sub-Collections",
+    subtitle:
+      "Browse the project/sub-collection membership structure for a Collection — which child Collections declare this as their urn:shepard:partOf parent. Backend shipped (GET /v2/collections/{appId}/sub-collections); Collection detail panel and project-hub landing page pending (PROJ-NAV-1).",
+    endpoint: "/v2/collections/{collectionAppId}/sub-collections",
+    backlogRow: "PROJ-REST-1",
+    designDoc: "aidocs/integrations/121-project-and-subcollections.md",
+    backend: "shipped",
+  },
 ];
 
 // TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
+// PROJ-REST-1: +1 for collection-sub-collections (2026-06-02)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {
