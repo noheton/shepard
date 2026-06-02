@@ -18,9 +18,14 @@ import { useOpenedItems } from "./useOpenedItems";
  * walk in `getPathToItem` could not load any item by id).
  *
  * The list call `getAllDataObjects` stays on v1 — it's not in this BUG's
- * scope and the upstream tree-view shape isn't blocked by the appId migration
- * (the v1 collection list endpoint also accepts the numeric id transparently
- * via the same `EntityIdResolver`).
+ * scope. NOTE: the v1 list endpoint
+ * `DataObjectRest.getAllDataObjects(@PathParam Long collectionId, ...)`
+ * declares a primitive-Long path param, so a UUID-only Collection will 400
+ * at the JAX-RS binding before the service ever runs. That means this
+ * composable's mid-tree single-item walk is fixed by -005 but the initial
+ * tree load remains broken for UUID-only Collections until the v2 list
+ * endpoint grows `parentId`/`predecessorId` support (filed as
+ * **BUG-COLL-APPID-ROUTE-006** in aidocs/16).
  */
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
