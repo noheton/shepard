@@ -587,6 +587,15 @@ useHead({
                     <CollectionLineageGraph :collection-id="collectionId" />
                   </div>
                 </ExpansionPanelItem>
+                <!-- TS-CROSS-DO-VIEW-2-FE — cross-DataObject small-multiples view.
+                     Default predicate is `urn:shepard:afp:tcp-temperature-c` per
+                     the V102 VIEW_RECIPE. Empty cells render for DOs that have
+                     no matching channel (e.g. non-AFP DOs in the Collection). -->
+                <ExpansionPanelItem title="Cross-track view">
+                  <div class="pt-2 pb-2">
+                    <CollectionCrossTrackViewPane :collection-id="collectionId" :collection-app-id="collectionAppId ?? undefined" />
+                  </div>
+                </ExpansionPanelItem>
                 <!-- WATCH1 — containers this collection is watching but does
                      not own via DataObject references. Useful for live-data
                      collections (home-showcase) that don't structure their

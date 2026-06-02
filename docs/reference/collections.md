@@ -113,6 +113,38 @@ the title (when set). The collection list table has a dedicated
 "Access" column showing the access-rights chip per row, so an
 auditor can scan a page of collections at a glance.
 
+## Cross-track view (TS-CROSS-DO-VIEW)
+
+The "Cross-track view" expansion panel on a Collection detail page
+shows one chart per DataObject in a 4-column small-multiples grid,
+each cell rendering a single timeseries channel resolved by semantic
+annotation predicate (default: `urn:shepard:afp:tcp-temperature-c`
+— TCP temperature for the AFP layup process). Cells share x/y axis
+range so traces are directly comparable; hovering a cell highlights
+the same x position in every other cell; clicking a cell opens that
+DataObject's detail page.
+
+DataObjects without a channel matching the predicate render an empty
+placeholder cell rather than disappearing — useful for mixed
+Collections where only some DOs participate in the same process. The
+view caps at 100 DataObjects per request; if the Collection holds
+more, a banner reports the truncation.
+
+Backend: `POST /v2/timeseries/cross-data-object-bulk-data` (one
+predicate, many DOs, one time window → one LTTB-downsampled series
+per DO). The endpoint is the canonical entry point for any
+"compare this channel across these tracks" question; callers can
+hit it directly from a script or the MCP layer.
+
+The predicate is currently fixed in the UI (no view-recipe picker
+yet); future work (TPL-VIEW-EDITOR) will let researchers pick from
+saved `VIEW_RECIPE` templates. The seeded default ("Cross-ply TCP
+temperature", V102) lives in the `:ShepardTemplate` store and is
+visible via `GET /v2/templates?kind=VIEW_RECIPE`.
+
+See also: `docs/help/cross-track-view.md` for the casual-user task
+page.
+
 ## See also
 
 - `data-objects.md` — same `license` + `accessRights` fields, same shape.
