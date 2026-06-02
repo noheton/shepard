@@ -359,8 +359,9 @@ public class SemanticAnnotationV2Rest {
       body.getSubjectAppId(), body.getSubjectKind(), body.getPredicateIri(),
       body.getObjectLiteral(), body.getObjectIri());
     if (shaclViolation != null) {
-      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Project constraint violation",
-        Response.Status.fromStatusCode(422), shaclViolation);
+      ProblemJson violationBody = new ProblemJson(PROBLEM_TYPE_UNPROCESSABLE,
+        "Project constraint violation", 422, shaclViolation, null);
+      return Response.status(422).type("application/problem+json").entity(violationBody).build();
     }
 
     SemanticAnnotation annotation = new SemanticAnnotation();

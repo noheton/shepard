@@ -179,8 +179,7 @@ public class ProjectsRest {
       @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
 
     if (predicate == null || predicate.isBlank()) {
-      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Missing predicate",
-        Response.Status.fromStatusCode(422), "Predicate path parameter must be non-blank.");
+      return problem422("Missing predicate", "Predicate path parameter must be non-blank.");
     }
     // Existence check before doing the value-coerce work.
     if (!projectsService.isProject(appId)) return notFound(appId);
@@ -206,5 +205,11 @@ public class ProjectsRest {
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
+  /** 422 Unprocessable Entity — not a standard {@link Response.Status} enum value. */
+  private static Response problem422(String title, String detail) {
+    ProblemJson body = new ProblemJson(PROBLEM_TYPE_UNPROCESSABLE, title, 422, detail, null);
+    return Response.status(422).type("application/problem+json").entity(body).build();
   }
 }
