@@ -32,7 +32,9 @@ public class CollectionTest extends BaseTestCase {
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
       // heroImageUrl is a fork addition (task #131); presentational metadata
       // that doesn't define entity equality.
-      .withIgnoredFields("appId", "heroImageUrl")
+      // sceneGraphAppId is a COLL-SCENE-1 fork addition (GAP-6, 2026-06-02);
+      // a presentation-layer link that doesn't define entity equality.
+      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId")
       .verify();
   }
 

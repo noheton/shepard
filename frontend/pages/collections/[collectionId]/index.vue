@@ -10,6 +10,7 @@ import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
 import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
+import CollectionSceneGraphHeader from "~/components/context/collection/CollectionSceneGraphHeader.vue";
 
 definePageMeta({ layout: "collection" });
 
@@ -198,6 +199,20 @@ const collectionAccessRights = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// COLL-SCENE-2-UI — appId of the linked :DigitalTwinScene that renders
+// as the Collection's hero scene-graph (MFFD robot cell, LUMEN test
+// bench, …). Defensive-read pattern: the generated `Collection` client
+// model may not expose this field yet, but the wire payload carries it
+// once the backend ships COLL-SCENE-1. Null means "no link" — the
+// header component then renders the writer-only "Link scene-graph"
+// CTA instead of the viewer.
+const collectionSceneGraphAppId = computed<string | null>(() => {
+  if (!collection.value) return null;
+  const raw = (collection.value as unknown as { sceneGraphAppId?: string | null })
+    .sceneGraphAppId;
+  return raw ?? null;
+});
+
 // MFFD-NDT-GRID-1 — cheap probe to decide whether the 14x14 thermography
 // coverage card should mount on this Collection page. Fetches the DO list
 // (cached) + samples the first 5 DOs' annotations for the
@@ -232,6 +247,27 @@ useHead({
   <PageShell>
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
+        <!-- COLL-SCENE-2-UI — Hero scene-graph band. Renders at the top
+             of the Collection page when a :DigitalTwinScene is linked
+             (MFFD robot cell, LUMEN test bench, …). Writers see a
+             "Link scene-graph" CTA when no scene is linked yet; readers
+             see nothing in that case. The component itself renders
+             EntityNotFound for the band if the link dangles. -->
+        <v-col
+          v-if="
+            collectionAppId &&
+            (collectionSceneGraphAppId || isAllowedToEditCollection)
+          "
+          cols="12"
+          class="pa-0"
+        >
+          <CollectionSceneGraphHeader
+            :collection-app-id="collectionAppId"
+            :scene-graph-app-id="collectionSceneGraphAppId"
+            :can-link="!!isAllowedToEditCollection"
+            @changed="handleCollectionUpdate"
+          />
+        </v-col>
         <!-- Feature B: Hero banner — only rendered when heroImageUrl is set.
              #metadata-heroimage-edit doubles as the RDM-005 deep-link target;
              when no hero image is set we render a thin placeholder
