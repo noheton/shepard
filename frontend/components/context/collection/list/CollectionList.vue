@@ -3,6 +3,7 @@ import type { Collection } from "@dlr-shepard/backend-client";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { useProjectMembership } from "~/composables/context/useProjectMembership";
 import { descriptionPreview, toShortDateString } from "~/utils/helpers";
 import { useDoCountChip } from "~/utils/doCountChip";
 
@@ -18,6 +19,12 @@ const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { advancedMode } = useAdvancedMode();
+// PROJ-BADGE-1 — Project chip on Collection rows that carry urn:shepard:project = "true".
+const { isProject: isCollectionProject } = useProjectMembership();
+
+function rowAppId(item: Collection): string | null {
+  return (item as unknown as { appId?: string | null }).appId ?? null;
+}
 
 // UI-011: Description preview chars in the list cell.
 const DESCRIPTION_PREVIEW_CHARS = 120;
@@ -152,6 +159,16 @@ function onPageChange(page: number) {
         </template>
         <template #[`item.name`]>
           {{ rowProps.item.name }}
+          <!-- PROJ-BADGE-1 — Project chip when this Collection carries urn:shepard:project = "true". -->
+          <v-chip
+            v-if="isCollectionProject(rowAppId(rowProps.item))"
+            size="x-small"
+            variant="tonal"
+            color="primary"
+            class="ml-2"
+            prepend-icon="mdi-folder-multiple"
+            data-testid="collection-row-project-chip"
+          >Project</v-chip>
           <span
             v-if="(rowProps.item as any).importedFrom"
             class="text-caption text-medium-emphasis ml-2"

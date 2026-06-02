@@ -531,6 +531,15 @@ useHead({
               />
             </section>
 
+            <!-- PROJ-PANEL-1 — Sub-Collections panel.
+                 The panel hides itself entirely when this Collection is not a
+                 Project (or is a Project with no children + no programmes),
+                 so it's free to mount unconditionally here. -->
+            <CollectionSubCollectionsPanel
+              v-if="collectionAppId"
+              :app-id="collectionAppId"
+            />
+
             <!-- Always-visible: flat, searchable DataObjects list. The
                  #24 "Collection-scale navigation" entry point — user
                  can answer "where is X" without opening collapsibles. -->
