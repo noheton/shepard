@@ -269,8 +269,8 @@ Layer-overview composes them via SPARQL/Cypher, and the join key
 **What the operator sees (UI surface):**
 
 The view ships as a `VIEW_RECIPE` SHACL template (TPL2, shipped) named
-`MFFDLayerOverview`. It's attached at the Layer DO so the operator gets to
-it by drilling:
+`MFFDLayerOverview`. It's mounted on the **Layer DO** — drilling from any
+entry path that reaches a Layer:
 
 ```
 /projects  →  mffd-project  →  mffd-afp-tapelaying  →  Step root  →  Layer_L18
@@ -294,10 +294,19 @@ it by drilling:
    └───────────────────────────────────────────────────────────────────────┘
 ```
 
-The same view recipe also gets surfaced from the Project Collection's main
-landing — a "Layers" tab next to the Sub-Collections panel — so the analyst
-doesn't have to drill into `mffd-afp-tapelaying` to start. From the Project,
-`Layers → L18 → Overview` is 3 clicks.
+Layers are an MFFD-specific concept (composite layup layers), **not** a
+Project-level primitive. The Project entity (§121) stays domain-agnostic; it
+gives the Layer view its scaffolding (the `partOf` chain tells the query
+which sibling Collections to walk) without learning about layers itself.
+Reaching the Layer view is just: navigate to a Layer DO inside
+`mffd-afp-tapelaying`, open its Overview tab.
+
+For shortcut access, the `mffd-afp-tapelaying` Collection's landing page
+surfaces a "Layers" navigation card (a list of its 7 Layer DOs with
+descendant counts) — domain-specific to this Collection, sourced from the
+existing Sub-DataObjects panel pattern. **No new generic Project UI is
+needed for this view**, and other Projects (PLUTO, LUMEN, BT-KVS) won't
+inherit any layer concept.
 
 **What's already shipped that this composes:**
 
@@ -315,20 +324,29 @@ doesn't have to drill into `mffd-afp-tapelaying` to start. From the Project,
 
 1. The `MFFDLayerOverview` VIEW_RECIPE template itself — a SHACL recipe that
    declares which queries feed which panels.
-2. A backend convenience endpoint `GET /v2/projects/{projectAppId}/by-layer/{layer}` that returns the join set in one call (rather than the frontend running 5 separate queries against 5 Collections). The endpoint walks `urn:shepard:partOf = projectAppId` to find candidate child Collections, then filters each by `mffd:layer = N`.
-3. A "Layers" tab on the Project Collection's landing that lists the union of
-   layer values seen across the Project (so the operator doesn't need to know
-   which Collection holds layers — just clicks `L18` and gets the cross-
-   Collection roll-up).
+2. A backend convenience endpoint `GET /v2/mffd/by-layer/{layer}` (MFFD-namespaced,
+   not generic) that returns the cross-Collection join set in one call rather
+   than the frontend running 5 separate queries. The endpoint walks the MFFD
+   Project's `partOf` children, filters each by `mffd:layer = N`. Lives under
+   `/v2/mffd/` because Layer is a domain concept; the generic Project
+   surface (§121) stays unaware.
+3. A "Layers" navigation card on `mffd-afp-tapelaying`'s Collection landing
+   page (a card listing its 7 Layer DOs with descendant counts) — sourced
+   from the existing Sub-DataObjects panel pattern, **only on this Collection**,
+   so the operator can jump from the AFP Collection straight to a Layer DO
+   without clicking through Step.
 
 **Tracked as:** `MFFD-LAYER-OVERVIEW-VIEW` in `aidocs/16`.
 
-This is the killer demo for the Project entity (per `121`): a one-click
-cross-Collection analytical view that *only works* because the Project
-ties the source Collections together by `partOf`, and the analytical key
-(`mffd:layer = N`) is a uniform annotation across all of them. The pattern
-generalises: a "per-PlyGroup overview" or a "per-AF overview" works the same
-way — same recipe, different join key.
+The Project entity (`121`) provides the scaffolding (`partOf` makes
+"which sibling Collections" queryable in one walk); the Layer view is
+domain-specific on top of that scaffolding. The general lesson: cross-
+Collection analytical views are easy whenever the analytical key is a
+uniform annotation across siblings — the same shape can be re-used for
+non-MFFD domains (PLUTO mission-phase overview, LUMEN per-test-bench
+overview), each with their own VIEW_RECIPE template + their own
+domain-namespaced `/v2/<domain>/by-<key>/{value}` endpoint. The Project
+substrate doesn't grow with each one — it stays the partOf-scaffold.
 
 ### 2.3 `mffd-bridge-welding` — the second pass
 
