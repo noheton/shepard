@@ -55,105 +55,117 @@ FileReference. See `reference.md` for the full predicate catalogue.
 
 ## What's NOT solved (deferred to MFFD-PLUGIN-SVDX-BINARY-PARSER-1)
 
-### Binary sample blocks (bytes 16..BOM) — STRUCTURE PARTIALLY DECODED 2026-06-02
+### Binary sample blocks (bytes 16..BOM) — INDEX STRUCTURE DECODED 2026-06-02 (pass 2)
 
-The 1 KB to 1 GB region between the envelope header and the trailing
-XML manifest holds the actual recorded sample data. **This region is
-proprietary and undocumented by Beckhoff.** No ZIP / gzip / lz4 /
-zstd / bzip2 magic anywhere; the bytes are uncompressed.
+The region between the envelope header and the trailing XML manifest
+holds the recorded sample data, fronted by an **acquisition index**.
+**This region is proprietary and undocumented by Beckhoff.** No ZIP /
+gzip / lz4 / zstd / bzip2 magic anywhere; the bytes are uncompressed.
 
-#### Layout decoded so far (verified on `Scope Project_AutoSave_19_04_29.svdx`, 50 MB, fmt-ver 0x0c9673)
+> **Pass-1 correction (2026-06-02):** the earlier note claimed a
+> *uniform* 156,311-byte per-acquisition stride and an unexplained
+> "26 MB gap". Both were artifacts of reading only the first 5 index
+> records, whose sizes happened to be equal. Record sizes are
+> **variable**; with variable sizes the cumulative offset reaches
+> 49.3 MB by record 148, so there is **no gap** — the file is almost
+> entirely data + a ~1 MB trailing XML manifest. Superseded below.
+
+#### Header + index layout (verified on `Scope Project_AutoSave_19_04_29.svdx`, 50,348,082 B, fmt-ver low byte 0x73)
 
 ```
 Offset  Size  Field                                       Value (example)
 ─────── ──── ─────────────────────────────────────────── ──────────────────────────────
 0x10    u32  n_acquisitions                              149   (= manifest AdsAcquisition count)
-0x14    u64  data_section_start_offset                   3000  (= 0xbb8; relative to envelope?)
-0x1c    u64  first_record_size_field                     156311  (= 0x26297; recurs in every record)
+0x14    u64  data_section_start                          3000  (= 0xbb8; abs file offset where acq #1 data begins)
+0x1c    u64  size_of_record_1                            156311  (= 0x26297; on-disk byte size of acquisition #1)
 ─────── ──── ─────────────────────────────────────────── ──────────────────────────────
-0x24    ─    BEGIN per-acquisition index (149 × 20 bytes = 2980 bytes)
+0x24    ─    BEGIN acquisition index: 148 × 20-byte records, then a u32 trailer
+0xbb4   u32  trailer = 149                               (= n_acquisitions, little-endian 95 00 00 00)
+0xbb8   ─    BEGIN acquisition #1 data (== data_section_start)
 ```
 
-**Per-acquisition index record (20 bytes each):**
+The index region is `data_section_start - 0x24 = 2964` bytes =
+**148 records × 20 bytes + a 4-byte u32 trailer (`149`)**. So the
+index physically stores **148** records; the 149th acquisition's
+size is implied (file_tail − cum_off[148], see below). The trailing
+u32 repeats `n_acquisitions`.
 
-| Sub-offset | Type | Field                  | Notes |
-|------------|------|------------------------|-------|
-| +0         | u32  | `acquisition_index`    | 1-based, monotonic |
-| +4         | u64  | `cumulative_offset`    | end-byte-position of this acquisition's data (relative to envelope or data-section start — see open question below) |
-| +12        | u64  | `record_size_const`    | Always `156311` (`0x26297`) in observed files; possibly the **nominal** per-acquisition size, while the actual data size varies per `cumulative_offset` deltas |
+**Acquisition index record (20 bytes each):**
 
-**Observed cumulative offsets, first 5 records:**
+| Sub-offset | Type | Field               | Semantics (verified) |
+|------------|------|---------------------|----------------------|
+| +0         | u32  | `acquisition_index` | 1-based, strictly monotonic 1..148 |
+| +4         | u64  | `cumulative_offset` | **absolute end offset** of this acquisition's data. Acq *i* data spans `[cum_off[i-1], cum_off[i])`; acq #1 spans `[data_section_start, cum_off[1])` and `cum_off[1] − data_section_start == size_of_record_1` ✓ |
+| +12        | u64  | `next_record_size`  | on-disk byte size of acquisition **i+1** (look-ahead). Verified: `next_record_size[i] == cum_off[i+1] − cum_off[i]` for all i. Size of acq #1 is the header field at 0x1c. |
+
+The "+12 = next record's size" semantics is what produced the 24
+apparent delta≠size "mismatches" in the naive check — they are exactly
+the records where the size changes between neighbours (off-by-one), not
+errors. Where consecutive acquisitions share a size, delta==field
+trivially.
+
+**Verified invariants on the 50 MB file:**
+
+- `cum_off[1] − data_section_start == size_of_record_1` (3000 + 156311 = 159311 ✓)
+- `next_record_size[i] == cum_off[i+1] − cum_off[i]` for all 0 ≤ i < 147 ✓
+- acquisition_index monotonic 1..148, no drift ✓
+- sizes are **variable** (observed 132,797 / 156,311 / 201,887 / 202,199 / 203,135 …) — *not* a constant
+- `cum_off[148] = 49,321,248`; file size 50,348,082 ⇒ trailing 1,026,834 B = acq #149 data **+** XML manifest
+- trailing XML manifest (`<Unit>…<ReturnText> (None) </ReturnText>…`) begins ≈ file offset 50,148,087 (last ~200 KB)
+
+This **resolves former open Q1 (boundary = 20 B confirmed) and Q3 (no
+26 MB gap — variable sizes account for the full file).**
+
+#### Companion CSV structure (matched Pair B)
+
+Native export `Scope Project_AutoSave_19_04_29.csv` (TwinCAT Scope
+Export Tool output, **tab-separated**, 2079 lines):
 
 ```
-idx=1  cum_off=159,311  (Δ = ?, baseline unknown)
-idx=2  cum_off=315,622  (Δ from idx=1 = 156,311) ← matches record_size_const
-idx=3  cum_off=471,933  (Δ = 156,311)            ← matches
-idx=4  cum_off=628,244  (Δ = 156,311)            ← matches
-idx=5  cum_off=784,555  (Δ = 156,311)            ← matches
+Name<TAB>Scope Project_AutoSave_19_04_29
+File<TAB>D:\autosave\Scope Project_AutoSave_19_04_29.csv
+Starttime of export<TAB>133238090634380000<TAB>Montag, 20. März 2023<TAB>19:04:23.438
+Endtime of export  <TAB>133238090654910000<TAB>Montag, 20. März 2023<TAB>19:04:25.491
 ```
 
-**Strong signal**: the per-acquisition data is uniformly 156,311 bytes.
-Total expected data section = 149 × 156,311 = 23,290,339 bytes
-+ index header (3000 bytes) + envelope (16 bytes) + XML manifest
-(824,944 bytes) ≈ 24,118,283 bytes. **Actual file size: 50,348,082 bytes**
-— there's a 26.2 MB gap unaccounted for. Two hypotheses:
-
-1. There are **two index passes**: a 149-record "early" pass at file
-   start, plus a second 149-record pass with `156,823`-byte records
-   (the irregular deltas observed at higher indices) representing a
-   second acquisition cycle. The dataset would be 149 × 2 × ~156k
-   bytes ≈ 46 MB, much closer to the 50 MB file.
-2. The 156,311-byte chunks contain padding / metadata interleaved
-   with the actual samples. Per-acquisition raw sample size could be
-   smaller, with the remainder being headers / timestamps / footers.
-
-#### Cross-check against the matched `_parsed.csv` (Pair B)
-
-- `_parsed.csv` has **2053 data rows × 46 channels** = 94,438 samples total.
-- Per-acquisition: 2053 / 149 = **13.78 rows per acquisition** — **non-integer**,
-  meaning rows do NOT distribute uniformly across acquisitions, OR
-  acquisitions overlap, OR the CSV represents only the LATEST sample
-  per row across overlapping acquisitions.
-- 156,311 bytes / (46 channels × 8-byte double) = **424.76 samples** per
-  acquisition per channel. Not clean.
-- 156,311 bytes / (46 channels × 4-byte float) = **849.51 samples** per
-  acquisition per channel. Not clean either.
-- The acquisition record size likely includes a per-record header.
-  Conjecture: `record = 24-byte header + (840 × 46 × 4)` = 24 + 154,560
-  = 154,584 bytes payload + 1,727-byte trailer = 156,311. Not yet
-  cross-validated.
+- Export window = 19:04:23.438 → 19:04:25.491 = **2.053 s**.
+- `_parsed.csv` (cleaned, **semicolon-separated**, German decimal comma)
+  = 2054 lines = **2053 data rows × 46 channels**. 2053 rows over
+  2.053 s ⇒ **~1 kHz** export resampling.
+- The 148/149 acquisitions are **ADS transport chunks**, NOT sample
+  boundaries — so `2053 / 149 = 13.78` being non-integer is *expected*,
+  not a contradiction. The CSV is a time-resampled view; acquisitions
+  are the on-the-wire delivery granularity from the PLC.
 
 #### Format-version sub-grouping
 
 Among the 21 campaign files, observed format-version low bytes:
-`0x71`, `0x73`, `0x6d`. Initial hypothesis: each version family may
-have a slightly different layout. **Pair A** (`19_03_26.svdx`,
-fmt 0x73) and **Pair B** (`19_04_29.svdx`, fmt 0x73) share the same
-header shape; we have not yet diffed against an `0x71` or `0x6d` file.
+`0x71`, `0x73`, `0x6d`. **Pair A** (`19_03_26.svdx`) and **Pair B**
+(`19_04_29.svdx`) are both `0x73` and share the header shape above.
+Still to diff: an `0x71` and a `0x6d` file to confirm the index layout
+is version-stable.
 
-#### What still needs to be verified
+#### What still needs to be verified (remaining)
 
-1. **Index-record byte boundaries**: are records 20 bytes (decoded
-   above) or 24 bytes (AAB1's initial seed observation)? Memory walk
-   strongly suggests 20, but final 49 records (indices 100-149)
-   should be checked for alignment drift.
-2. **Sample data layout per acquisition**: is the 156,311-byte block
-   raw samples + small header, or do per-record metadata + variable
-   sizes alternate? Need to dump one full acquisition block + cross-
-   reference against CSV rows.
-3. **The 26.2 MB gap**: between expected (149 × 156k = 22 MB) and
-   actual (50 MB) file size, what is the second 26 MB block? Walk the
-   bytes after acquisition 149's end-offset and look for a second
-   index header.
-4. **CSV-to-binary row mapping**: 2053 CSV rows ÷ 149 acquisitions =
-   13.78 rows/acquisition (non-integer). Is the CSV row #N the last
-   sample of acquisition #floor(N×149/2053)? Or is the CSV the
-   union of all acquisitions' final values?
+1. **Per-acquisition sample layout** (former Q2 — *still open*): inside
+   one data block (e.g. acq #1, bytes 3000..159311 = 156,311 B), how are
+   the 46 channels' samples laid out — dtype (f32/f64/i16 mix per the
+   manifest's per-channel `DataType`), interleave order, per-block header?
+   `156,311` factors cleanly by neither `46×4` nor `46×8`, so a
+   per-block header and/or per-channel sub-streams are likely. **This is
+   the gate to actually extracting values**; needs a hex dump of acq #1
+   aligned against the manifest's per-channel `DataType`/`ScaleFactor`.
+2. **CSV↔binary row mapping** (former Q4 — *still open*): since
+   acquisitions are transport chunks and the CSV is ~1 kHz resampled,
+   the cleanest validation is to decode acq #1 per (1) and match its
+   first samples against `_parsed.csv` row 1
+   (`aSDATTylinderRechstIstwert=23103`, `F_welding[N]=568`, …).
+3. **Cross-version stability**: diff `0x71` / `0x6d` headers against
+   the `0x73` layout above.
 
-The first three questions are now answerable in 1-2 hours of focused
-work given the structure decoded above. The CSV-to-binary mapping is
-the trickier one and probably needs synthetic test data (a small
-.svdx generated by a known TwinCAT install).
+Next concrete step: dump acq #1 (bytes 3000..159311) and bit-align
+against the 46 manifest channels — that single block, matched to
+`_parsed.csv` row 1, cracks both remaining questions at once.
 
 The closest community tool, [`pytcs`](https://github.com/CagtayFabry/pytcs)
 ([PyPI](https://pypi.org/project/pytcs/)), **explicitly works on
