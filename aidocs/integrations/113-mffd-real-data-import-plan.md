@@ -18,7 +18,7 @@ template, with which gate.
 - **Collection layout decided** — operator picked option B
   (`aidocs/integrations/119-mffd-collection-layout.md`): one **MFFD Programme**
   + six step Collections + cross-step Predecessor edges + Programme UI for the
-  single entrypoint (`aidocs/integrations/121-programme-and-subcollections.md`).
+  single entrypoint (`aidocs/integrations/121-project-and-subcollections.md`).
 - **Source corpus extracted + organised** on the NFS dump per
   `/mnt/pve/unas/dump/dataset/IMPORT_README.md` — thermography classified into
   process/reference cohorts with full gap audit; wiki extracted; cube3-export

@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 62 |
+| `fragment` | 63 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 124 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 96 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **449** |
+| **total docs** | **450** |
 | **UNTAGGED** | **0** |
 
-## fragment (62)
+## fragment (63)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -68,6 +68,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-02.md`](agent-findings/dispatcher-runs/2026-06-02-02.md) | Dispatcher fire 2026-06-02-02 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-03.md`](agent-findings/dispatcher-runs/2026-06-02-03.md) | Dispatcher fire 2026-06-02-03 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-04.md`](agent-findings/dispatcher-runs/2026-06-02-04.md) | Dispatcher run 2026-06-02-04 | 2026-06-02 | 2026-06-02 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-15.md`](agent-findings/dispatcher-runs/2026-06-02-15.md) | Dispatcher run — 2026-06-02 15:xx UTC | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -223,9 +224,9 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/117-krl-interpreter.md`](integrations/117-krl-interpreter.md) | 117 — KRL interpreter (KRL-INTERPRETER-01) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/integrations/118-mffd-process-chain-mapping.md`](integrations/118-mffd-process-chain-mapping.md) | MFFD process-chain mapping (118) | 2026-06-02 | 2026-06-02 |
-| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | — |
-| [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | — |
-| [`aidocs/integrations/121-programme-and-subcollections.md`](integrations/121-programme-and-subcollections.md) | 121 — Programme entity + sub-Collection registry | 2026-06-02 | — |
+| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-02 |
+| [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
+| [`aidocs/integrations/121-project-and-subcollections.md`](integrations/121-project-and-subcollections.md) | 121 — Project entity + sub-Collection registry | 2026-06-02 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |

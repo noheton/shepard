@@ -1,6 +1,6 @@
 ---
 name: MFFD Collection layout (B-pattern)
-description: Authoritative Collection-level layout for the real MFFD upper-shell ingest — six process-step Collections + a Programme umbrella, with cross-step Predecessor edges by appId.
+description: Authoritative Collection-level layout for the real MFFD upper-shell ingest — six process-step Collections + a Project umbrella, with cross-step Predecessor edges by appId.
 type: design
 stage: feature-defined
 last-stage-change: 2026-06-02
@@ -16,18 +16,17 @@ last-stage-change: 2026-06-02
 
 ## 0. TL;DR
 
-One umbrella **MFFD Programme** Collection + six process-step Collections.
-The Programme carries `urn:shepard:programme = true`; each step Collection
-carries `urn:shepard:partOf = <mffd-programme.appId>` — making the
-Programme's Collection-detail page the **single operator entrypoint** that
-renders the 6 step Collections as tiles (per the Programme UI shipped in
-`aidocs/integrations/121-programme-and-subcollections.md`). Cross-step
+One umbrella **MFFD Project** Collection + six process-step Collections.
+The Project carries `urn:shepard:project = true`; each step Collection
+carries `urn:shepard:partOf = <mffd-project.appId>` — making the
+Project's Collection-detail page the **single operator entrypoint** that
+renders the 6 step Collections as tiles (per the Project UI (sub-collections panel + /projects route) shipped in
+`aidocs/integrations/121-project-and-subcollections.md`). Cross-step
 Predecessor edges use `appId` and walk Collection boundaries via L2d. Each
-step is independently citable; the umbrella is the publishable digital-thread
-aggregate.
+step is independently citable; the umbrella is the publishable digital-thread aggregate.
 
 ```
-mffd-programme              ← umbrella, citable digital-thread aggregate (5 DOs)
+mffd-project              ← umbrella, citable digital-thread aggregate (5 DOs)
   │
   ├── (process flow, cross-Collection edges)
   │
@@ -57,7 +56,7 @@ Splitting along the natural process-step seam:
 - allows **parallel ingest waves** (W2 doesn't block W3 / W6 / W8a in code,
   only in chronological data dependency),
 - supports **per-step DataCite DOIs** (one citation per step + one for the
-  Programme aggregate — matches DFG / Clean Aviation JU citation expectations),
+  Project aggregate — matches DFG / Clean Aviation JU citation expectations),
 - preserves the **digital-thread** narrative via cross-Collection Predecessor
   edges (L2d's `appId` is global; the edges traverse Collections trivially).
 
@@ -66,42 +65,47 @@ The downsides are real but bounded:
 - Cross-Collection queries cost one extra hop (mitigated by the existing
   `appId`-keyed lineage walker — same cost as in-Collection),
 - Operators need to know *which* Collection to land on first
-  (mitigated by the Programme umbrella's nav-link grid).
+  (mitigated by the Project umbrella's nav-link grid).
 
 ## 2. The six Collections
 
-### 2.1 `mffd-programme` — umbrella
+### 2.1 `mffd-project` — umbrella
 
-**Slug:** `mffd-programme`
-**Display name:** *MFFD Upper Shell — Programme*
+**Slug:** `mffd-project`
+**Display name:** *MFFD Upper Shell — Project*
 **Why it exists:** the citable, discoverable top-level. The digital-thread
 publication assembles here.
 **DataObjects (~5, hand-seeded):**
 
 | DO | Type | Content |
 |---|---|---|
-| `programme-overview` | text + hero | README-style narrative, hero image of the upper shell, FAIR metadata (license, accessRights, funders = Clean Aviation JU / DLR programme line) |
+| `project-overview` | text + hero | README-style narrative, hero image of the upper shell, FAIR metadata (license, accessRights, funders = Clean Aviation JU / DLR programme line) |
 | `ro-crate-manifest` | structured (JSON-LD) | nightly-generated RO-Crate aggregating the 6 per-step Collections by `appId` (`isPartOf`) |
 | `process-chain-mapping` | structured (YAML) | the YAML driving MFFD-AF-TRACK-MAPPING (118) — Predecessor relations layer-by-layer |
 | `cell-scene-graph-ref` | reference | points at `mffd-cell` for the URDF/RoboDK link |
 | `vocabulary-manifest` | structured (JSON-LD) | the `urn:shepard:mffd:*` controlled-vocab subset this programme uses (SHACL-checkable) |
 
-**Annotations on the Programme Collection:** `urn:shepard:programme = true` (per
-121 — declares this Collection as a Programme; the UI surfaces a "Sub-collections"
-panel and the global `/programmes` route lists it).
+**Annotations on the Project Collection:**
+
+- `urn:shepard:project = true` (per 121 — declares this Collection as a
+  Project; the UI surfaces a "Sub-collections" panel and the global
+  `/projects` route lists it).
+- `urn:shepard:programme = "Clean Aviation JU"` (per 121 §2 — free-text
+  funding-line metadata; additional values can be added for DLR-internal
+  programme lines as the operator decides at seed time).
 
 **Annotations on every child Collection:**
 
-- `urn:shepard:partOf = <mffd-programme.appId>` — the navigational parent
-  (per 121; renders a "child of MFFD Programme" chip on the child's Collection
-  card and lets the Programme's Collection-detail page enumerate it).
-- `urn:shepard:mffd:programme = <mffd-programme.appId>` — the **semantic**
+- `urn:shepard:partOf = <mffd-project.appId>` — the navigational parent
+  (per 121; renders a "child of MFFD Project" chip on the child's Collection
+  card and lets the Project's Collection-detail page enumerate it).
+- `urn:shepard:mffd:programme = <mffd-project.appId>` — the **semantic**
   programme membership (lets SPARQL "list every DO in any MFFD step Collection"
   walk through the umbrella regardless of navigation shape). Kept distinct
-  from `urn:shepard:partOf` because the SPARQL queries pre-date the Programme
+  from `urn:shepard:partOf` because the SPARQL queries pre-date the Project
   UI and we don't want to couple them.
 
-**Owning group:** `mffd-programme-stewards` (read for all `mffd-*-readers`).
+**Owning group:** `mffd-project-stewards` (read for all `mffd-*-readers`).
 
 ### 2.2 `mffd-afp-tapelaying` — the chokepoint
 
@@ -128,7 +132,7 @@ This is the W2 ingest target. ETA ~24 h once W2 launches.
 **Owning group:** `mffd-welding-team`
 
 Predecessor edges from `mffd-afp-tapelaying` materialise per the YAML in
-`mffd-programme/process-chain-mapping`.
+`mffd-project/process-chain-mapping`.
 
 ### 2.4 `mffd-spot-welding` — ultrasonic weld step
 
@@ -138,7 +142,7 @@ Predecessor edges from `mffd-afp-tapelaying` materialise per the YAML in
 **Importer:** `shepard-plugin-svdx` (tier-1 manifest + tier-2 binary, shipped 2026-06-02)
 **Expected DOs:** ~21 per-svdx DOs, each with the full 149-channel time-series decoded
 (`Scope Project_AutoSave_19_04_29.svdx` validated: 5 015 677 samples, 149/149 channels monotonic).
-**Companion:** the `Punktschweißen Prozessdaten.xlsx` + Origin `.opj` analyses attach as FileReferences on the spot-welding Programme DO.
+**Companion:** the `Punktschweißen Prozessdaten.xlsx` + Origin `.opj` analyses attach as FileReferences on the spot-welding Project DO.
 **Primary template:** `MFFDSpotWeld`
 **Process-type predicate:** `urn:shepard:mffd:process-type = spot-welding`
 **Owning group:** `mffd-welding-team`
@@ -233,12 +237,12 @@ Implementation:
   YAML loader + admin REST endpoint `POST /v2/admin/mffd/process-chain-mapping`).
 - The YAML lives in the umbrella's `process-chain-mapping` DO (§2.1).
 - `appId` is globally unique post-L2d, so the edges have zero special-case logic.
-- The Programme RO-Crate aggregates all six per-step Collections; queries
+- The Project's aggregate RO-Crate aggregates all six per-step Collections; queries
   "show me TR-2031 across all process steps" walk via `appId`.
 
 ## 4. Citation model
 
-Per-Collection: **one DataCite DOI each** (6 step Collections + 1 Programme = 7 DOIs).
+Per-Collection: **one DataCite DOI each** (6 step Collections + 1 Project umbrella = 7 DOIs).
 
 Each per-step RO-Crate ships its own provenance + license — citable on its own:
 
@@ -250,24 +254,24 @@ Each per-step RO-Crate ships its own provenance + license — citable on its own
 }
 ```
 
-Programme-level: a **meta-publication** RO-Crate aggregates the 7 child DOIs via
+Project-level: a **meta-publication** RO-Crate at the Project aggregates the 7 child DOIs via
 `isPartOf`. This is the Clean Aviation JU citation handle for the digital-thread
 case study.
 
 This means:
 
 - A paper citing "the MFFD AFP tapelaying dataset" cites just `mffd-afp-tapelaying`.
-- A paper citing "the MFFD digital-thread case study" cites `mffd-programme`.
+- A paper citing "the MFFD digital-thread case study" cites `mffd-project`.
 
 Both work without merging Collections.
 
 ## 5. ACL / ownership
 
 One UserGroup per Collection (`mffd-afp-team`, `mffd-welding-team`,
-`mffd-ndt-team`, `mffd-cell-admins`, `mffd-programme-stewards`), with broad read
-access for `mffd-programme-readers`.
+`mffd-ndt-team`, `mffd-cell-admins`, `mffd-project-stewards`), with broad read
+access for `mffd-project-readers`.
 
-The Programme's vocabulary-manifest + RO-Crate are world-readable; everything
+The Project's vocabulary-manifest + RO-Crate are world-readable; everything
 else is opt-in per team.
 
 ## 6. Open decisions (locked after the operator pass 2026-06-02)
@@ -275,7 +279,7 @@ else is opt-in per team.
 | # | Question | Decision |
 |---|---|---|
 | 1 | Adjacent OTvis (TRuTh, Antenna, DoorCorners, Referenzbauteil, Parameter) — own Collection or `mffd-ndt-thermography` with scope tag? | **same Collection, scope-tagged** (`urn:shepard:mffd:scope`) |
-| 2 | Wiki plan documents (5) — fold into Programme description or attach as FileReferences? | **both** — fold into `programme-overview` text AND attach as FileReferences |
+| 2 | Wiki plan documents (5) — fold into Project description or attach as FileReferences? | **both** — fold into `project-overview` text AND attach as FileReferences |
 | 3 | ~99 reference wiki pages — skip, or mine for glossary? | **mine for glossary** (`MFFD-WIKI-TO-GLOSSARY`) |
 | 4 | Wiki author preservation — `:MirroredUser` or generic agent? | **`:MirroredUser`** per PROV-O `wasAttributedTo` |
 | 5 | The 2 under-captures + 2 substitutions in OTvis | **annotate, do not block ingest** (§2.5.1) |
@@ -293,13 +297,13 @@ This layout uses **zero new infrastructure** beyond what is already shipped:
 - Scene-graph attached at Collection level: ✅ AAA1 / GAP-6 shipped 2026-06-02
 - Cross-Collection lineage walker: ✅ L2d `appId` makes this implicit
 
-What changes is **policy + naming** (`urn:shepard:mffd:programme`, six slugs,
+What changes is **policy + naming** (`urn:shepard:mffd:project`, six slugs,
 six teams) — no Java or TypeScript needed for the layout itself. The per-wave
 importers do the actual writes.
 
 ## 8. Implementation sequence
 
-1. **Now (pre-W2):** seed the Programme Collection (5 DOs) + create the 5 empty
+1. **Now (pre-W2):** seed the Project Collection (5 DOs) + create the 5 empty
    step Collections + create the UserGroups. ~30 min of Cypher / admin REST,
    bookmarked at `examples/mffd-showcase/scripts/seed-mffd-collections.py` (to
    be written; the script is idempotent and uses the same `shepard_client` SDK
@@ -314,7 +318,7 @@ importers do the actual writes.
 5. **W4 (~1 min):** YAML loader materialises Predecessor edges across `mffd-afp-*`
    and `mffd-bridge-*`.
 6. **W5, W6, W8a, W8b, W8c, W7, W7b** run in any order after W2 (they only
-   need the relevant per-step Collection to exist; the Programme + Collection
+   need the relevant per-step Collection to exist; the Project + sub-Collection
    bootstrap of step 1 covers that).
 
 ## 9. References
@@ -324,6 +328,6 @@ importers do the actual writes.
 - `aidocs/integrations/115-otvis-tier2-frame-extraction.md` — OTvis tier-2
 - `aidocs/integrations/118-mffd-process-chain-mapping.md` — Predecessor YAML
 - `aidocs/integrations/120-mffd-wiki-transformation.md` — wiki→journal+glossary
-- `aidocs/integrations/121-programme-and-subcollections.md` — **the Programme entity + sub-Collection UI** (the operator's single entrypoint)
+- `aidocs/integrations/121-project-and-subcollections.md` — **the Project entity + sub-Collection UI** (the operator's single entrypoint; programmes are project-metadata strings)
 - `aidocs/agent-findings/mffd-data-inventory-2026-06-02.md` — inventory
 - `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md` — feature gaps
