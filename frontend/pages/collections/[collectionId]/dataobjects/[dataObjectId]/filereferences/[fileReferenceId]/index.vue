@@ -182,6 +182,17 @@ watch(fileReference, () => {
                 id-label="ID"
               />
             </v-row>
+            <v-row v-if="fileReference?.appId">
+              <v-col cols="12" class="d-flex flex-wrap ga-2">
+                <OpenInSceneGraphButton
+                  :file-reference-name="fileReference.name"
+                  :collection-id="collectionId"
+                  :data-object-id="dataObjectId"
+                  :file-reference-id="fileReferenceId"
+                  :file-reference-app-id="fileReference.appId"
+                />
+              </v-col>
+            </v-row>
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
