@@ -28,10 +28,15 @@ Datasets (DataObjects) in a collection can be linked by two types of relationshi
 
 **Interacting:**
 
-- **Scroll** to zoom in/out.
-- **Drag** a node to rearrange the layout.
+- **Scroll** to zoom in/out — the graph adapts to the zoom level (process-type
+  bubbles when zoomed far out, individual datasets when zoomed in). See
+  [Navigate a large lineage graph]({% link help/lineage-graph.md %}) for
+  the full zoom-mode / filter / minimap walkthrough.
+- **Drag the canvas** to pan around.
 - **Hover** a node to see the dataset name, status, and description.
-- **Click** a node to highlight its directly connected neighbours.
+- **Click** a node to open its detail page.
+- Use the **filter pills** above the graph to scope by status or process
+  type without reloading.
 
 ## Setting relationships
 

@@ -220,8 +220,8 @@ stay admin-only regardless of how many Collections link to them.
 `GET /v2/collections/{appId}/timeline?binSizeDays=1|7|30|90|365` returns a
 **process-chain swimlane chronograph** for the Collection: one row per
 process-type, day-binned DataObject counts, NCR and REJECTED status overlays.
-Designed for campaign-scale Collections where the Lineage graph stops
-scaling (~500 nodes); the Timeline answers "how many tracks per day,
+Designed for campaign-scale Collections — the temporal counterpart to the
+structural Lineage graph. The Timeline answers "how many tracks per day,
 when did NCRs cluster, when did we re-test?" at MFFD scale (8k+ DataObjects
 across 2.6 years).
 
@@ -298,3 +298,67 @@ process-type + date filter pre-applied.
 - `docs/help/collection-timeline.md` — short user-task page.
 - `COLL-TIMELINE-DRILLDOWN-FILTER-1` in `aidocs/16` — drill-down filter
   pass-through follow-up.
+
+## Lineage graph (`LINEAGE-GRAPH-MFFD-SCALE`)
+
+The **Lineage** expansion panel on the Collection landing page renders the
+parent/child + predecessor/successor graph for every DataObject in the
+Collection. Layered DAG layout (`@dagrejs/dagre`, left-to-right) drawn on an
+ECharts Canvas so the graph stays interactive at MFFD scale (~20k edges
+across 8,251 tracks).
+
+### Three zoom modes (LOD)
+
+The renderer adapts to the user's zoom level:
+
+| Zoom level | Mode | What you see |
+|---|---|---|
+| `< 0.3` | **macro** | One bubble per `urn:shepard:mffd:ply-number` (or `urn:shepard:mffd:process-type` if no ply annotation). Bubble size scales with the count of underlying DataObjects; edge thickness scales with the count of crossings. |
+| `0.3 ≤ z < 0.8` | **meso** | Every DataObject becomes its own node; labels hidden so the eye can read the structure. |
+| `z ≥ 0.8` | **detail** | Full labels, status colour, status chip on hover. |
+
+Zoom is tracked from the chart's roam event (mouse-wheel + pinch). The
+mode is shown in the caption beneath the canvas (`zoom mode: detail`).
+
+### Filter pills
+
+The pill row above the canvas applies client-side filters to the already-
+fetched DataObject list:
+
+- **Status** — multi-select. Keeps only DataObjects whose `.status` matches.
+- **Process type** — multi-select. Reads
+  `attributes["urn:shepard:mffd:process-type"]` on the DataObject (the
+  V100 MFFD seed value); empty for non-MFFD Collections.
+- **Around DO N · depth ≤ K** — neighborhood BFS. When set, keeps only
+  DataObjects within K parent + predecessor hops of DO N. Click the chip
+  to clear.
+
+Pills compose with AND. The **Reset** button next to the chips clears
+everything at once.
+
+### Minimap
+
+Bottom-right (or stacked under the main chart on narrow viewports) a
+small overview chart shows the same graph with 2-px markers, roam
+disabled. The **Hide minimap** button removes it.
+
+### Click-through
+
+Clicking a node in **macro** mode applies the corresponding process-type
+filter pill (drill down to that bubble's DataObjects). Clicking a node in
+**meso** or **detail** mode opens the DataObject detail page.
+
+### Performance budget
+
+The implementation targets ≤ 3 s for the initial layout of 20,000
+DataObjects on a modern dev box. The pure-helper module
+(`frontend/utils/lineageLayout.ts`) carries a Vitest perf smoke that
+guards against catastrophic regressions.
+
+### Related
+
+- `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md §GAP-12` — origin
+  (task #25).
+- `docs/help/lineage-graph.md` — short user-task page.
+- `LINEAGE-EDIT-1` / `LINEAGE-CROSS-1` / `LINEAGE-TIMELINE-1` /
+  `LINEAGE-AI-GAP-1` in `aidocs/16` — queued follow-ups.
