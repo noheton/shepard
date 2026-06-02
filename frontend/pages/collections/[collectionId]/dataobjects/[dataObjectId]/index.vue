@@ -730,6 +730,16 @@ async function saveEmbargoEdit() {
                      table. Notebooks render as rows with a notebook icon and,
                      when the admin-configurable JupyterConfig (J1e) is open,
                      an "Open in JupyterHub" action button. -->
+                <!-- MFFD W7 / GAP-5: SpatialDataContainer pane lists pointcloud /
+                     trajectory references promoted by the spatial-importer
+                     (plugins/spatial-importer/). Each row links to the 3D
+                     viewer at /containers/spatialdata/{containerId}. -->
+                <ExpansionPanelItem title="Spatial data">
+                  <DataObjectSpatialContainersPane
+                    :collection-id="collectionId"
+                    :data-object-id="dataObjectId"
+                  />
+                </ExpansionPanelItem>
                 <!-- Provenance: two views — a structured time-based log
                      (default, easier to read) and the force-directed
                      graph (eye-candy, second tab). Both render the same
