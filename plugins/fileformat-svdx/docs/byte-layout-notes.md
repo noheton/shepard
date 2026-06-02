@@ -55,26 +55,105 @@ FileReference. See `reference.md` for the full predicate catalogue.
 
 ## What's NOT solved (deferred to MFFD-PLUGIN-SVDX-BINARY-PARSER-1)
 
-### Binary sample blocks (bytes 16..BOM)
+### Binary sample blocks (bytes 16..BOM) — STRUCTURE PARTIALLY DECODED 2026-06-02
 
 The 1 KB to 1 GB region between the envelope header and the trailing
 XML manifest holds the actual recorded sample data. **This region is
-proprietary and undocumented by Beckhoff.** Empirical inspection
-shows:
+proprietary and undocumented by Beckhoff.** No ZIP / gzip / lz4 /
+zstd / bzip2 magic anywhere; the bytes are uncompressed.
 
-* No ZIP central-directory signature (`unzip -l` rejects every file).
-* No gzip / lz4 / zstd / bzip2 magic at any offset checked.
-* The literal string `01.00.00.40` appears ~149 times in the smallest
-  file (= the AdsAcquisition count); appears to be embedded as a
-  version stamp inside per-acquisition record headers.
-* 24-byte aligned records visible in the first ~256 bytes, with the
-  constant `23 51 00 00 00 00 00 00` (`0x5123` LE = 20,771) appearing
-  as a recurring sentinel. Hypothesis: per-acquisition record-size in
-  bytes, but unverified.
-* The XML manifest's `<AdsAcquisition>` blocks carry `<IndexGroup>`
-  and `<IndexOffset>` pairs that point into the binary section, but
-  no per-acquisition data-start offset is exposed — those would have
-  to be inferred by walking the binary headers.
+#### Layout decoded so far (verified on `Scope Project_AutoSave_19_04_29.svdx`, 50 MB, fmt-ver 0x0c9673)
+
+```
+Offset  Size  Field                                       Value (example)
+─────── ──── ─────────────────────────────────────────── ──────────────────────────────
+0x10    u32  n_acquisitions                              149   (= manifest AdsAcquisition count)
+0x14    u64  data_section_start_offset                   3000  (= 0xbb8; relative to envelope?)
+0x1c    u64  first_record_size_field                     156311  (= 0x26297; recurs in every record)
+─────── ──── ─────────────────────────────────────────── ──────────────────────────────
+0x24    ─    BEGIN per-acquisition index (149 × 20 bytes = 2980 bytes)
+```
+
+**Per-acquisition index record (20 bytes each):**
+
+| Sub-offset | Type | Field                  | Notes |
+|------------|------|------------------------|-------|
+| +0         | u32  | `acquisition_index`    | 1-based, monotonic |
+| +4         | u64  | `cumulative_offset`    | end-byte-position of this acquisition's data (relative to envelope or data-section start — see open question below) |
+| +12        | u64  | `record_size_const`    | Always `156311` (`0x26297`) in observed files; possibly the **nominal** per-acquisition size, while the actual data size varies per `cumulative_offset` deltas |
+
+**Observed cumulative offsets, first 5 records:**
+
+```
+idx=1  cum_off=159,311  (Δ = ?, baseline unknown)
+idx=2  cum_off=315,622  (Δ from idx=1 = 156,311) ← matches record_size_const
+idx=3  cum_off=471,933  (Δ = 156,311)            ← matches
+idx=4  cum_off=628,244  (Δ = 156,311)            ← matches
+idx=5  cum_off=784,555  (Δ = 156,311)            ← matches
+```
+
+**Strong signal**: the per-acquisition data is uniformly 156,311 bytes.
+Total expected data section = 149 × 156,311 = 23,290,339 bytes
++ index header (3000 bytes) + envelope (16 bytes) + XML manifest
+(824,944 bytes) ≈ 24,118,283 bytes. **Actual file size: 50,348,082 bytes**
+— there's a 26.2 MB gap unaccounted for. Two hypotheses:
+
+1. There are **two index passes**: a 149-record "early" pass at file
+   start, plus a second 149-record pass with `156,823`-byte records
+   (the irregular deltas observed at higher indices) representing a
+   second acquisition cycle. The dataset would be 149 × 2 × ~156k
+   bytes ≈ 46 MB, much closer to the 50 MB file.
+2. The 156,311-byte chunks contain padding / metadata interleaved
+   with the actual samples. Per-acquisition raw sample size could be
+   smaller, with the remainder being headers / timestamps / footers.
+
+#### Cross-check against the matched `_parsed.csv` (Pair B)
+
+- `_parsed.csv` has **2053 data rows × 46 channels** = 94,438 samples total.
+- Per-acquisition: 2053 / 149 = **13.78 rows per acquisition** — **non-integer**,
+  meaning rows do NOT distribute uniformly across acquisitions, OR
+  acquisitions overlap, OR the CSV represents only the LATEST sample
+  per row across overlapping acquisitions.
+- 156,311 bytes / (46 channels × 8-byte double) = **424.76 samples** per
+  acquisition per channel. Not clean.
+- 156,311 bytes / (46 channels × 4-byte float) = **849.51 samples** per
+  acquisition per channel. Not clean either.
+- The acquisition record size likely includes a per-record header.
+  Conjecture: `record = 24-byte header + (840 × 46 × 4)` = 24 + 154,560
+  = 154,584 bytes payload + 1,727-byte trailer = 156,311. Not yet
+  cross-validated.
+
+#### Format-version sub-grouping
+
+Among the 21 campaign files, observed format-version low bytes:
+`0x71`, `0x73`, `0x6d`. Initial hypothesis: each version family may
+have a slightly different layout. **Pair A** (`19_03_26.svdx`,
+fmt 0x73) and **Pair B** (`19_04_29.svdx`, fmt 0x73) share the same
+header shape; we have not yet diffed against an `0x71` or `0x6d` file.
+
+#### What still needs to be verified
+
+1. **Index-record byte boundaries**: are records 20 bytes (decoded
+   above) or 24 bytes (AAB1's initial seed observation)? Memory walk
+   strongly suggests 20, but final 49 records (indices 100-149)
+   should be checked for alignment drift.
+2. **Sample data layout per acquisition**: is the 156,311-byte block
+   raw samples + small header, or do per-record metadata + variable
+   sizes alternate? Need to dump one full acquisition block + cross-
+   reference against CSV rows.
+3. **The 26.2 MB gap**: between expected (149 × 156k = 22 MB) and
+   actual (50 MB) file size, what is the second 26 MB block? Walk the
+   bytes after acquisition 149's end-offset and look for a second
+   index header.
+4. **CSV-to-binary row mapping**: 2053 CSV rows ÷ 149 acquisitions =
+   13.78 rows/acquisition (non-integer). Is the CSV row #N the last
+   sample of acquisition #floor(N×149/2053)? Or is the CSV the
+   union of all acquisitions' final values?
+
+The first three questions are now answerable in 1-2 hours of focused
+work given the structure decoded above. The CSV-to-binary mapping is
+the trickier one and probably needs synthetic test data (a small
+.svdx generated by a known TwinCAT install).
 
 The closest community tool, [`pytcs`](https://github.com/CagtayFabry/pytcs)
 ([PyPI](https://pypi.org/project/pytcs/)), **explicitly works on
