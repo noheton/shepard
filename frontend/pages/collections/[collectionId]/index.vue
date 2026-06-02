@@ -632,6 +632,20 @@ useHead({
                     <CollectionCrossTrackViewPane :collection-id="collectionId" :collection-app-id="collectionAppId ?? undefined" />
                   </div>
                 </ExpansionPanelItem>
+                <!-- COLL-TIMELINE-1 — process-chain swimlane chronograph.
+                     Renders bins per day per process-type (derived from
+                     urn:shepard:mffd:process-type annotations) with NCR /
+                     REJECTED colour overlays. Cardinality-friendly answer to
+                     "campaign cadence at MFFD scale" where the Lineage graph
+                     stops scaling (~500 nodes). -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="Timeline"
+                >
+                  <div class="pt-2 pb-2">
+                    <CollectionTimelinePane :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
                 <!-- WATCH1 — containers this collection is watching but does
                      not own via DataObject references. Useful for live-data
                      collections (home-showcase) that don't structure their
