@@ -132,40 +132,74 @@ Endtime of export  <TAB>133238090654910000<TAB>Montag, 20. März 2023<TAB>19:04:
 - `_parsed.csv` (cleaned, **semicolon-separated**, German decimal comma)
   = 2054 lines = **2053 data rows × 46 channels**. 2053 rows over
   2.053 s ⇒ **~1 kHz** export resampling.
-- The 148/149 acquisitions are **ADS transport chunks**, NOT sample
-  boundaries — so `2053 / 149 = 13.78` being non-integer is *expected*,
-  not a contradiction. The CSV is a time-resampled view; acquisitions
-  are the on-the-wire delivery granularity from the PLC.
+
+#### Acquisition = CHANNEL (decoded 2026-06-02, pass 3) — FORMAT CRACKED
+
+The trailing XML manifest contains **exactly 149** `<SymbolName>` /
+`<DataType>` entries — equal to `n_acquisitions`. **Each acquisition is
+one channel's full recording, not a time chunk.** DataType histogram
+across the 149 channels: `INT32×103, INT16×22, REAL32×15, REAL64×6,
+BIT×2, UINT64×1`. Channel #1 = `GVL_IO_US_Endeffektor.aTemperatureAnalogIntput1`
+(INT16); in `_parsed.csv` that column is railed at `32767` (= INT16
+max, `0x7FFF`, disconnected sensor) on every row.
+
+**Proof the model is right:** acq #1's data block (bytes 3000..159311)
+contains `0xFF 0x7F` (32767 LE) **23,412 times**, and the dominant gap
+between markers is **6 bytes** (19,365 of them). So:
+
+**Per-sample record (INT16 channel) = 6 bytes:**
+
+| Sub-offset | Type  | Field | Notes |
+|------------|-------|-------|-------|
+| +0 | `<DataType>` value | sample value | width = channel DataType (INT16→2 B, REAL64→8 B, …) |
+| +2 | u32 | `tick` | timestamp, **100 ns units**, relative to acquisition start |
+
+Decoded ticks in a steady region step by exactly **10000** (`100000,
+110000, 120000, 130000, 140000…`) ⇒ 10000 × 100 ns = **1 ms → 1 kHz**,
+matching the CSV resample rate. ✓
+
+**Per-channel block header (~355 B)** begins with ASCII version string
+`"01.00.00.40"` then carries three Windows `FILETIME`s — **validated
+byte-for-byte against the CSV**:
+
+| Header offset | FILETIME | Decoded (UTC) | Meaning |
+|---------------|----------|---------------|---------|
+| +11 | `0x01d95b565c084060` | 2023-03-20 18:04:05.350 | acquisition START |
+| +27 | `0x01d95b5666d042e0` | 2023-03-20 18:04:23.438 | = CSV `Starttime of export` ✓ |
+| +35 | `0x01d95b5668098630` | 2023-03-20 18:04:25.491 | = CSV `Endtime of export` ✓ |
+
+Both window timestamps match the CSV's exported `133238090634380000` /
+`133238090654910000` FILETIMEs exactly. This nails the absolute-time
+base: per-sample wall-clock = `FILETIME(@+11) + tick × 100 ns`.
+
+This **resolves former Q2 (sample layout) and Q4 (CSV↔binary mapping)**.
 
 #### Format-version sub-grouping
 
 Among the 21 campaign files, observed format-version low bytes:
 `0x71`, `0x73`, `0x6d`. **Pair A** (`19_03_26.svdx`) and **Pair B**
 (`19_04_29.svdx`) are both `0x73` and share the header shape above.
-Still to diff: an `0x71` and a `0x6d` file to confirm the index layout
-is version-stable.
+Still to diff: an `0x71` and a `0x6d` file to confirm version-stability.
 
 #### What still needs to be verified (remaining)
 
-1. **Per-acquisition sample layout** (former Q2 — *still open*): inside
-   one data block (e.g. acq #1, bytes 3000..159311 = 156,311 B), how are
-   the 46 channels' samples laid out — dtype (f32/f64/i16 mix per the
-   manifest's per-channel `DataType`), interleave order, per-block header?
-   `156,311` factors cleanly by neither `46×4` nor `46×8`, so a
-   per-block header and/or per-channel sub-streams are likely. **This is
-   the gate to actually extracting values**; needs a hex dump of acq #1
-   aligned against the manifest's per-channel `DataType`/`ScaleFactor`.
-2. **CSV↔binary row mapping** (former Q4 — *still open*): since
-   acquisitions are transport chunks and the CSV is ~1 kHz resampled,
-   the cleanest validation is to decode acq #1 per (1) and match its
-   first samples against `_parsed.csv` row 1
-   (`aSDATTylinderRechstIstwert=23103`, `F_welding[N]=568`, …).
+1. **Multi-byte DataType records**: confirmed only on an INT16 channel.
+   REAL32/REAL64/INT32/UINT64 channels should follow `[value][u32 tick]`
+   with the wider value, but a REAL64 channel (e.g. `rRoboPosX`) must be
+   decoded to confirm the tick stays u32 and isn't promoted to u64.
+2. **Segment sub-headers**: `155956 B payload / 6 ≠ integer` and the
+   minority gap outliers (`10`, `18` bytes) indicate the sample stream
+   is interrupted by intra-block segment headers (re-emitting an 8-byte
+   FILETIME base on each trigger/restart). Need to walk one full block
+   start-to-end and tabulate segment boundaries.
 3. **Cross-version stability**: diff `0x71` / `0x6d` headers against
    the `0x73` layout above.
 
-Next concrete step: dump acq #1 (bytes 3000..159311) and bit-align
-against the 46 manifest channels — that single block, matched to
-`_parsed.csv` row 1, cracks both remaining questions at once.
+These are refinements, not blockers — a working tier-2 binary parser
+can now be written: read the 20-byte index → for each channel slice
+`[cum_off[i-1], cum_off[i])` → skip the ~355 B header → decode
+`[DataType value][u32 tick]` records → emit `(wall_clock, value)` pairs,
+scaled by the manifest's per-channel `<ScaleFactor>`/`<Offset>`.
 
 The closest community tool, [`pytcs`](https://github.com/CagtayFabry/pytcs)
 ([PyPI](https://pypi.org/project/pytcs/)), **explicitly works on
