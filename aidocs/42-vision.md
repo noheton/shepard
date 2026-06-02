@@ -453,7 +453,15 @@ Five typical entry points:
    Lineage Graph** (interactive force-directed graph on the collection
    page showing parent/child and predecessor/successor edges between
    datasets — drag, zoom, hover for status, click to highlight
-   neighbours); **DataObject Provenance Graph** (force-directed graph on
+   neighbours); **Collection Timeline** (process-chain swimlane
+   chronograph on the Collection landing page — one row per
+   process-type derived from `urn:shepard:mffd:process-type`
+   annotations, day-binned DataObject counts as stacked bars in OK /
+   NCR / REJECTED colour; bin-size toggle 1 / 7 / 30 days with
+   server-side auto-coarsening so a 2.6-year campaign stays
+   renderable; the cardinality-friendly answer to "when did NCRs
+   cluster, when did we re-test?" where the Lineage graph stops
+   scaling — COLL-TIMELINE-1 shipped 2026-06-02); **DataObject Provenance Graph** (force-directed graph on
    the dataset detail page linking the dataset to related datasets and to
    the users who acted on it, with edge labels for action kinds and
    counts); **personal landing page** (authenticated users land on a

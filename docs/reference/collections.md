@@ -214,3 +214,87 @@ stay admin-only regardless of how many Collections link to them.
 - `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md` GAP-6 — the
   COLL-SCENE-1 origin story.
 - `aidocs/34-upstream-upgrade-path.md` — operator upgrade notes.
+
+## Timeline (`COLL-TIMELINE-1`)
+
+`GET /v2/collections/{appId}/timeline?binSizeDays=1|7|30|90|365` returns a
+**process-chain swimlane chronograph** for the Collection: one row per
+process-type, day-binned DataObject counts, NCR and REJECTED status overlays.
+Designed for campaign-scale Collections where the Lineage graph stops
+scaling (~500 nodes); the Timeline answers "how many tracks per day,
+when did NCRs cluster, when did we re-test?" at MFFD scale (8k+ DataObjects
+across 2.6 years).
+
+### Endpoint
+
+`GET /v2/collections/{appId}/timeline`
+
+| Query | Default | Description |
+|---|---|---|
+| `binSizeDays` | `1` | Requested bin window. Snaps to the next-larger ladder rung (1 → 7 → 30 → 90 → 365). When the campaign span / requested-bin exceeds **730 bins per lane**, the server auto-coarsens upward. The actually-used size is echoed in `binSizeDays` of the response. |
+
+### Response envelope
+
+```json
+{
+  "binSizeDays": 7,
+  "rangeStart": "2023-03-20T00:00:00Z",
+  "rangeEnd":   "2025-11-12T23:59:59Z",
+  "totalDataObjects": 8251,
+  "lanes": [
+    {
+      "key": "afp-layup",
+      "label": "AFP Layup",
+      "bins": [
+        { "day": "2023-03-20", "count": 12, "ncrCount": 0, "rejectCount": 0 },
+        { "day": "2023-03-27", "count": 34, "ncrCount": 1, "rejectCount": 0 }
+      ]
+    },
+    { "key": "ndt-inspection", "label": "NDT Inspection", "bins": [ … ] }
+  ]
+}
+```
+
+### Lane derivation
+
+Lanes are derived from distinct values of the `urn:shepard:mffd:process-type`
+SemanticAnnotation on each DataObject (V100 MFFD_PROCESS_TEMPLATES seed).
+DataObjects without that annotation collect into a synthetic `unclassified`
+lane — so non-MFFD Collections (LUMEN, home-showcase) still get a useful
+chronograph rather than an empty plot.
+
+### Bin math
+
+- Anchor timestamp is the DataObject's `createdAt` (UTC midnight truncation).
+- `count` is the total DataObjects in the bin window for that lane.
+- `ncrCount` counts DataObjects whose status is `NCR_OPEN` or `CONCESSION_PENDING`.
+- `rejectCount` counts DataObjects whose status is `REJECTED`.
+- These are nested sums — `ncrCount + rejectCount ≤ count` (a single DO
+  can hold at most one of those statuses at a time).
+
+### Cache + perf
+
+- Response carries `Cache-Control: max-age=300, must-revalidate` — same
+  convention as the rest of the v2 surface.
+- Single Cypher round-trip for the grouping aggregate plus one campaign
+  range probe — sub-2 s on an MFFD-scale Collection (≈ 8.2k DOs × 5 lanes).
+- The bin-size ladder snap means the response payload tops out around
+  ~3.6k bins regardless of campaign duration.
+
+### UI
+
+The Collection landing page mounts a `CollectionTimelinePane` in a new
+"Timeline" expansion panel after the "Cross-track view" panel. Each lane
+renders as its own ECharts stacked-bar chart (green = OK, amber = NCR,
+red = REJECTED). The toolbar offers Day / Week / Month bin-size toggles;
+the response's echoed `binSizeDays` (after server-side coarsening) is
+what the chart actually uses. Hover a bar to see "AFP Layup, 2024-04-15 —
+34 DOs (1 NCR)"; click to drill down to the DataObjects list with the
+process-type + date filter pre-applied.
+
+### Related
+
+- `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md §GAP-8` — origin.
+- `docs/help/collection-timeline.md` — short user-task page.
+- `COLL-TIMELINE-DRILLDOWN-FILTER-1` in `aidocs/16` — drill-down filter
+  pass-through follow-up.

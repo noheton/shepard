@@ -185,21 +185,31 @@ heatmap overlay, no peak-delta-C extraction.
 
 **Backlog rows:** `MFFD-NDT-QUALITY-1` (plugin), `MFFD-NDT-HEATMAP-2-UI`.
 
-### GAP-8 — Process-chain "as-built timeline" view
+### GAP-8 — Process-chain "as-built timeline" view ✅ closed 2026-06-02
 
 **The data:** 2.6 years of production (2023-03-20 → 2025-11-12). Currently you'd
 browse it ply-by-ply; researchers want a **timeline** showing the entire campaign:
 "how many tracks per day, when did NCRs cluster, when did we re-test?"
 
-**The gap:** No timeline view exists at Collection level. The closest is the
+**The gap:** No timeline view existed at Collection level. The closest was the
 CollectionLineageGraph which scales linearly (task #25) and doesn't have time-on-x.
 
-**The fix:** New Collection-landing tab "Timeline":
-- D3 / Plotly **swimlane** of DOs binned by day (rows = process steps).
-- NCR markers stacked.
-- Click-into to a day → list of DOs.
+**Shipped 2026-06-02 (COLL-TIMELINE-1 + COLL-TIMELINE-1-FE):**
+- Backend `GET /v2/collections/{appId}/timeline?binSizeDays=` returns a swimlane
+  envelope (lanes derived from `urn:shepard:mffd:process-type` annotations).
+- Per-bin counts plus NCR / REJECTED status overlays.
+- Adaptive auto-coarsening so a 2.6-year campaign renders cleanly (1 → 7 → 30 → 90 → 365 ladder).
+- Frontend Timeline `ExpansionPanelItem` on the Collection landing page —
+  one ECharts stacked-bar swimlane per lane (OK / NCR / REJECTED colours),
+  Day / Week / Month bin-size toggle, hover tooltip, click drill-down.
+- 24 JUnit + 18 Vitest tests; sub-second perf on a 1000-row mock.
 
-**Backlog row:** `COLL-TIMELINE-1`.
+**Follow-ups (queued):**
+- `COLL-TIMELINE-DRILLDOWN-FILTER-1` — make the DataObjects list panel
+  honour the `?process-type=&date=` filter the Timeline link adds.
+- `COLL-TIMELINE-CROSS-1` — multi-Collection campaign view.
+- `COLL-TIMELINE-ANNOTATE-1` — annotate-on-a-bin affordance.
+- `COLL-TIMELINE-LIVE-1` — SSE-driven live bin updates.
 
 ### GAP-9 — Video scale + scrubbing
 
