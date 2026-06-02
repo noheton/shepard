@@ -66,6 +66,48 @@ public class SpatialDataContainerServiceTest {
   }
 
   @Test
+  public void createContainer_frameAppId_passedThroughToEntity() {
+    // MFFD-SPATIAL-FRAME-HANDSHAKE: the optional CoordinateFrame appId on the
+    // IO must be persisted on the Neo4j entity so a future graph traversal
+    // can land on the right :CoordinateFrame node without a PostGIS lookup.
+    when(userService.getCurrentUser()).thenReturn(user);
+    var captor = org.mockito.ArgumentCaptor.forClass(SpatialDataContainer.class);
+    when(spatialDataContainerDAO.createOrUpdate(captor.capture())).thenReturn(new SpatialDataContainer());
+
+    SpatialDataContainerIO containerIO = new SpatialDataContainerIO();
+    containerIO.setName("AFP-laser-profile");
+    containerIO.setFrameAppId("01931f0a-1234-7890-abcd-ef0123456789");
+
+    spatialDataContainerService.createContainer(containerIO);
+
+    assertEquals(
+      "01931f0a-1234-7890-abcd-ef0123456789",
+      captor.getValue().getFrameAppId(),
+      "createContainer must propagate the frame appId from the IO to the entity"
+    );
+  }
+
+  @Test
+  public void createContainer_nullFrameAppId_persistedAsNull() {
+    // Pre-feature flow: the legacy /shepard/api/ caller never sends
+    // frameAppId. The entity must hold null so existing data continues to
+    // round-trip with no wire change.
+    when(userService.getCurrentUser()).thenReturn(user);
+    var captor = org.mockito.ArgumentCaptor.forClass(SpatialDataContainer.class);
+    when(spatialDataContainerDAO.createOrUpdate(captor.capture())).thenReturn(new SpatialDataContainer());
+
+    SpatialDataContainerIO containerIO = new SpatialDataContainerIO();
+    containerIO.setName("legacyContainer");
+
+    spatialDataContainerService.createContainer(containerIO);
+
+    org.junit.jupiter.api.Assertions.assertNull(
+      captor.getValue().getFrameAppId(),
+      "legacy callers without a frame must produce a null entity field"
+    );
+  }
+
+  @Test
   public void getContainer_containerDoesExist_returnContainer() {
     SpatialDataContainer container = new SpatialDataContainer(1);
 
