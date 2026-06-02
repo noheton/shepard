@@ -27,15 +27,15 @@
 // in-Shepard handle so legacy installs without ORCID adoption stay usable.
 //
 // Idempotency: MERGE on {name, version}; re-running is a no-op.
-// Rollback: V102_R__Disposition_record_template.cypher.
+// Rollback: V103_R__Disposition_record_template.cypher.
 //
 // Operator runbook:
 //   Apply via the standard MigrationsRunner (Flyway-style ordering).
-//   Manual run: `cypher-shell -u neo4j -p <password> -f V102__Disposition_record_template.cypher`
+//   Manual run: `cypher-shell -u neo4j -p <password> -f V103__Disposition_record_template.cypher`
 //   Verify:    `MATCH (t:ShepardTemplate {name: 'Disposition record', version: 1}) RETURN t.appId, t.templateKind, t.retired;`
 //              → returns exactly one row; templateKind = STRUCTURED_RECIPE; retired = false.
 //
-// aidocs/16 QM1c; aidocs/34 V102 row.
+// aidocs/16 QM1c; aidocs/34 V103 row.
 
 MERGE (t:ShepardTemplate {name: 'Disposition record', version: 1})
 ON CREATE SET
@@ -48,5 +48,5 @@ ON CREATE SET
   t.createdAt     = timestamp(),
   t.updatedAt     = timestamp(),
   t.retired       = false,
-  t.source        = 'V102-builtin'
+  t.source        = 'V103-builtin'
 ;

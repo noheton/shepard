@@ -126,7 +126,7 @@ is amber-outlined with a shield-alert icon so an auditor can spot disposition-wi
 artefacts at a glance.
 
 The accompanying **Disposition record** template (QM1c, seeded by Neo4j
-migration `V102`) is a `STRUCTURED_RECIPE` carrying the EN 9100 §8.7 fields:
+migration `V103`) is a `STRUCTURED_RECIPE` carrying the EN 9100 §8.7 fields:
 `ncr_id`, `defect_type`, `disposition ∈ {use-as-is, rework, scrap, concession}`,
 `approver_orcid`, `approver_username`, `decided_at`, `notes`. Attach it as a
 `StructuredDataReference` on the DataObject that carries the NCR_OPEN /

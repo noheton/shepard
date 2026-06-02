@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * QM1c smoke test — guards the body seeded by
- * {@code V102__Disposition_record_template.cypher} against drift.
+ * {@code V103__Disposition_record_template.cypher} against drift.
  *
  * <p>Verifies:
  * <ul>
@@ -30,13 +30,13 @@ import org.junit.jupiter.api.Test;
  *       approver_username, decided_at, notes.</li>
  *   <li>The disposition enum lists {@code use-as-is / rework / scrap / concession}.</li>
  *   <li>Both the migration and its rollback twin carry the
- *       {@code V102-builtin} source marker.</li>
+ *       {@code V103-builtin} source marker.</li>
  * </ul>
  */
-class V102DispositionRecordTemplateTest {
+class V103DispositionRecordTemplateTest {
 
-  private static final String MIGRATION_PATH = "neo4j/migrations/V102__Disposition_record_template.cypher";
-  private static final String ROLLBACK_PATH = "neo4j/migrations/V102_R__Disposition_record_template.cypher";
+  private static final String MIGRATION_PATH = "neo4j/migrations/V103__Disposition_record_template.cypher";
+  private static final String ROLLBACK_PATH = "neo4j/migrations/V103_R__Disposition_record_template.cypher";
 
   private static final Pattern KIND_PATTERN = Pattern.compile("t\\.templateKind\\s*=\\s*'([^']+)'");
   private static final Pattern BODY_PATTERN = Pattern.compile("t\\.body\\s+=\\s+'(\\{.*?\\})'\\s*,");
@@ -56,7 +56,7 @@ class V102DispositionRecordTemplateTest {
   void migrationSeedsExactlyOneTemplate() throws IOException {
     String migration = load(MIGRATION_PATH);
     assertEquals(1, matchAll(KIND_PATTERN, migration).size(),
-      "QM1c V102 must seed exactly one ShepardTemplate");
+      "QM1c V103 must seed exactly one ShepardTemplate");
     assertEquals(1, matchAll(BODY_PATTERN, migration).size());
   }
 
@@ -76,7 +76,7 @@ class V102DispositionRecordTemplateTest {
     assertEquals(1, bodies.size());
     List<String> errors = validator.collectErrors(bodies.get(0), "STRUCTURED_RECIPE");
     assertTrue(errors.isEmpty(),
-      "V102 body failed STRUCTURED_RECIPE validation: " + errors +
+      "V103 body failed STRUCTURED_RECIPE validation: " + errors +
       " — body was: " + bodies.get(0));
   }
 
@@ -129,16 +129,16 @@ class V102DispositionRecordTemplateTest {
   }
 
   @Test
-  void migrationAndRollbackCarryV102BuiltinSource() throws IOException {
+  void migrationAndRollbackCarryV103BuiltinSource() throws IOException {
     String migration = load(MIGRATION_PATH);
     List<String> sources = matchAll(SOURCE_PATTERN, migration);
     assertEquals(1, sources.size());
-    assertEquals("V102-builtin", sources.get(0),
-      "V102 row must carry source='V102-builtin' for scoped rollback");
+    assertEquals("V103-builtin", sources.get(0),
+      "V103 row must carry source='V103-builtin' for scoped rollback");
 
     String rollback = load(ROLLBACK_PATH);
-    assertTrue(rollback.contains("V102-builtin"),
-      "Rollback must scope DELETE to source='V102-builtin'");
+    assertTrue(rollback.contains("V103-builtin"),
+      "Rollback must scope DELETE to source='V103-builtin'");
     assertTrue(rollback.contains("DETACH DELETE"),
       "Rollback must DETACH DELETE");
   }
