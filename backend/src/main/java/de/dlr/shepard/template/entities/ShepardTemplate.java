@@ -136,6 +136,23 @@ public class ShepardTemplate implements HasId, HasAppId {
   @Property("retired")
   private boolean retired = false;
 
+  /**
+   * Optional Material Design Icons (MDI) name string (with the
+   * {@code mdi-} prefix, e.g. {@code "mdi-layers"}) — the icon the
+   * UI renders wherever DataObjects of this template are shown
+   * (tree rows, breadcrumbs, sidebar, list cards, prov-graph chips,
+   * picker dialogs). Nullable: when absent the frontend falls back
+   * to the per-kind default (see
+   * {@code frontend/composables/useTemplateIcon.ts}).
+   *
+   * <p>Admin-configurable at runtime via {@code PATCH
+   * /v2/templates/{appId}} — subsumes the long-pending
+   * {@code project_feature_ideas} task #22 (admin-configurable
+   * type icons). Design: {@code aidocs/integrations/122}.
+   */
+  @Property("iconKey")
+  private String iconKey;
+
   public ShepardTemplate(String name, String templateKind, String body) {
     this.name = name;
     this.templateKind = templateKind;

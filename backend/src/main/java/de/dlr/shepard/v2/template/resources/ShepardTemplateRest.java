@@ -130,6 +130,7 @@ public class ShepardTemplateRest {
     ShepardTemplate t = new ShepardTemplate(body.getName(), body.getTemplateKind(), body.getBody());
     t.setDescription(body.getDescription());
     if (body.getTags() != null) t.setTags(body.getTags());
+    if (body.getIconKey() != null) t.setIconKey(body.getIconKey());
     t.setCreatedBy(caller);
     t.setCreatedAt(now);
     t.setUpdatedAt(now);
@@ -179,6 +180,10 @@ public class ShepardTemplateRest {
       if (body.getBody() != null) next.setBody(body.getBody());
       if (body.getDescription() != null) next.setDescription(body.getDescription());
       if (body.getTags() != null) next.setTags(body.getTags());
+      // iconKey: empty string clears (sets to null) so admins can revert to per-kind default.
+      if (body.getIconKey() != null) {
+        next.setIconKey(body.getIconKey().isEmpty() ? null : body.getIconKey());
+      }
     }
     next.setCreatedBy(caller);
     next.setCreatedAt(now);

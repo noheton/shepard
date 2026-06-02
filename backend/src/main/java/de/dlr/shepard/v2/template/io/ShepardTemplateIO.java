@@ -62,6 +62,14 @@ public class ShepardTemplateIO {
   @Schema(required = true, description = "true when retired and filtered from picker listings (still kept on disk).")
   private boolean retired;
 
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "MDI (Material Design Icons) name with the 'mdi-' prefix, e.g. 'mdi-layers'. " +
+    "Null means the UI uses the per-kind default. Design: aidocs/integrations/122."
+  )
+  private String iconKey;
+
   public static ShepardTemplateIO from(ShepardTemplate t) {
     return new ShepardTemplateIO(
       t.getAppId(),
@@ -74,7 +82,8 @@ public class ShepardTemplateIO {
       DisplayNameResolver.redactUsername(t.getCreatedBy()),
       t.getCreatedAt(),
       t.getUpdatedAt(),
-      t.isRetired()
+      t.isRetired(),
+      t.getIconKey()
     );
   }
 }

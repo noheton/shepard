@@ -105,7 +105,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400WhenBodyMissingRequiredFields() {
-    Response r = resource.create(new CreateShepardTemplateIO(null, "EXPERIMENT_RECIPE", "{}", null, null), securityContext);
+    Response r = resource.create(new CreateShepardTemplateIO(null, "EXPERIMENT_RECIPE", "{}", null, null, null), securityContext);
     assertEquals(400, r.getStatus());
   }
 
@@ -122,7 +122,7 @@ class ShepardTemplateRestTest {
       t.setAppId("server-minted-appid");
       return t;
     });
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{\"steps\":[]}}", "desc", List.of("lumen"));
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{\"steps\":[]}}", "desc", List.of("lumen"), null);
     Response r = resource.create(body, securityContext);
     assertEquals(201, r.getStatus());
     var io = (ShepardTemplateIO) r.getEntity();
@@ -136,7 +136,7 @@ class ShepardTemplateRestTest {
   @Test
   void patchReturns404WhenMissing() {
     when(dao.findByAppId("ghost")).thenReturn(Optional.empty());
-    Response r = resource.patch("ghost", new PatchShepardTemplateIO("new", null, null, null), securityContext);
+    Response r = resource.patch("ghost", new PatchShepardTemplateIO("new", null, null, null, null), securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -157,7 +157,7 @@ class ShepardTemplateRestTest {
       return t;
     });
 
-    var body = new PatchShepardTemplateIO(null, "{\"experiment\":{\"v\":2}}", null, null);
+    var body = new PatchShepardTemplateIO(null, "{\"experiment\":{\"v\":2}}", null, null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -227,7 +227,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400OnMalformedJson() {
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null);
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -239,7 +239,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400OnWrongShapeBodyForKind() {
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null);
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -249,13 +249,117 @@ class ShepardTemplateRestTest {
     assertTrue(errors.get(0).contains("templateKind=EXPERIMENT_RECIPE"));
   }
 
+  // ────────────────────────────────────────────────────────────────────
+  // TEMPLATE-ICONS-1 — iconKey lifecycle through create + patch (COW)
+  // ────────────────────────────────────────────────────────────────────
+
+  @Test
+  void createCarriesIconKeyThroughToEntity() {
+    ArgumentCaptor<ShepardTemplate> captor = ArgumentCaptor.forClass(ShepardTemplate.class);
+    when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> {
+      ShepardTemplate t = inv.getArgument(0);
+      t.setAppId("server-minted-appid");
+      return t;
+    });
+    var body = new CreateShepardTemplateIO(
+      "Recipe",
+      "EXPERIMENT_RECIPE",
+      "{\"experiment\":{\"steps\":[]}}",
+      null,
+      null,
+      "mdi-layers"
+    );
+    Response r = resource.create(body, securityContext);
+    assertEquals(201, r.getStatus());
+    verify(dao).createOrUpdate(captor.capture());
+    assertEquals("mdi-layers", captor.getValue().getIconKey());
+    assertEquals("mdi-layers", ((ShepardTemplateIO) r.getEntity()).getIconKey());
+  }
+
+  @Test
+  void patchUpdatesIconKeyAndPreservesOnNewVersion() {
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    prior.setAppId("prior-appid");
+    prior.setVersion(1);
+    prior.setIconKey("mdi-circle-medium");
+    when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
+    when(dao.nextVersionOf(prior)).thenAnswer(inv -> {
+      // Simulate the real DAO behaviour — iconKey is carried through on COW.
+      ShepardTemplate next = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+      next.setVersion(2);
+      next.setIconKey(prior.getIconKey());
+      return next;
+    });
+    when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var body = new PatchShepardTemplateIO(null, null, null, null, "mdi-layers");
+    Response r = resource.patch("prior-appid", body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<ShepardTemplate> captor = ArgumentCaptor.forClass(ShepardTemplate.class);
+    verify(dao, times(2)).createOrUpdate(captor.capture());
+    var newRow = captor.getAllValues().get(1);
+    assertEquals("mdi-layers", newRow.getIconKey());
+  }
+
+  @Test
+  void patchEmptyStringClearsIconKey() {
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    prior.setAppId("prior-appid");
+    prior.setVersion(1);
+    prior.setIconKey("mdi-layers");
+    when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
+    when(dao.nextVersionOf(prior)).thenAnswer(inv -> {
+      ShepardTemplate next = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+      next.setVersion(2);
+      next.setIconKey(prior.getIconKey());
+      return next;
+    });
+    when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var body = new PatchShepardTemplateIO(null, null, null, null, "");
+    Response r = resource.patch("prior-appid", body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<ShepardTemplate> captor = ArgumentCaptor.forClass(ShepardTemplate.class);
+    verify(dao, times(2)).createOrUpdate(captor.capture());
+    var newRow = captor.getAllValues().get(1);
+    org.junit.jupiter.api.Assertions.assertNull(newRow.getIconKey());
+  }
+
+  @Test
+  void patchOmittingIconKeyPreservesPriorValueViaCow() {
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    prior.setAppId("prior-appid");
+    prior.setVersion(1);
+    prior.setIconKey("mdi-layers");
+    when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
+    when(dao.nextVersionOf(prior)).thenAnswer(inv -> {
+      ShepardTemplate next = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+      next.setVersion(2);
+      next.setIconKey(prior.getIconKey()); // mimic DAO COW
+      return next;
+    });
+    when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    // Only name patched; iconKey omitted ⇒ COW preserves "mdi-layers".
+    var body = new PatchShepardTemplateIO("Renamed Recipe", null, null, null, null);
+    Response r = resource.patch("prior-appid", body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<ShepardTemplate> captor = ArgumentCaptor.forClass(ShepardTemplate.class);
+    verify(dao, times(2)).createOrUpdate(captor.capture());
+    var newRow = captor.getAllValues().get(1);
+    assertEquals("mdi-layers", newRow.getIconKey());
+  }
+
   @Test
   void patchReturns400OnMalformedBody() {
     var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
     prior.setAppId("prior-appid");
     when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
 
-    var body = new PatchShepardTemplateIO(null, "[]", null, null);
+    var body = new PatchShepardTemplateIO(null, "[]", null, null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(400, r.getStatus());
