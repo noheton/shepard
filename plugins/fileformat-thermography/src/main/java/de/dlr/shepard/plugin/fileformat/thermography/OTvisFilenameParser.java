@@ -38,7 +38,7 @@ public final class OTvisFilenameParser {
     // accidentally produce false positives. Capture groups intentionally
     // include the S/M/L/F prefix letter for round-trip fidelity.
     private static final Pattern PATTERN = Pattern.compile(
-            "(?i)(S\\d+)_(M\\d+)_(L\\d+)_(F\\d+)\\.OTvis$");
+            "(?i)(S\\d+)_(M\\d+)_(L\\d+\\+?)_(F\\d+)\\.OTvis$");
 
     private OTvisFilenameParser() {
         // utility class

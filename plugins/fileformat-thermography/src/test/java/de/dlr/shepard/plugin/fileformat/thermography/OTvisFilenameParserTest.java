@@ -77,4 +77,23 @@ class OTvisFilenameParserTest {
         assertThat(g.get().layer()).isEqualTo("L1234");
         assertThat(g.get().frame()).isEqualTo("F5678");
     }
+
+    @Test
+    void acceptsLayerPlusSuffix() {
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("S4_M13_L19+_F4.OTvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().section()).isEqualTo("S4");
+        assertThat(g.get().module()).isEqualTo("M13");
+        assertThat(g.get().layer()).isEqualTo("L19+");
+        assertThat(g.get().frame()).isEqualTo("F4");
+    }
+
+    @Test
+    void acceptsLayerPlusSuffixLowercase() {
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("s1_m2_l3+_f4.otvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().layer()).isEqualTo("L3+");
+    }
 }
