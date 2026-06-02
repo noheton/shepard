@@ -5,4 +5,4 @@
 // propertyIRI are *not* touched — the data they encode is independent of
 // the registry node.
 
-MATCH (p:Predicate {source: 'V107-project-predicates'}) DETACH DELETE p;
+MATCH (p:Predicate {source: 'V108-project-predicates'}) DETACH DELETE p;

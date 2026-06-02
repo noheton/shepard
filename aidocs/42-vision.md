@@ -115,7 +115,7 @@ shepard organises everything into five primitives:
 
 | Primitive | What it represents | Example |
 |---|---|---|
-| **Collection** | A campaign, project, or topic — the top-level grouping | "LUMEN-Inspired Hot-Fire Test Campaign — Q3 2024" |
+| **Collection** | A campaign, project, or topic — the top-level grouping. **PROJ-1 shipped 2026-06-02**: a Collection can be marked as a **Project** (annotation `urn:shepard:project = "true"`) to bundle other Collections non-exclusively via `urn:shepard:partOf`. Projects surface at `/projects` in the top nav, get a Project-flavoured `/v2/projects/{appId}` REST namespace, a sub-Collections panel on the Collection detail page, four MCP tools, and free-text programme labels (`urn:shepard:programme`). One Collection can be a member of multiple Projects. | "LUMEN-Inspired Hot-Fire Test Campaign — Q3 2024" (a Collection); "MFFD Upper Shell" (a Project that bundles 5 step Collections) |
 | **DataObject** | A logical thing inside a Collection, freely nestable, with attributes | "TR-004 — fired run with anomaly" |
 | **Reference** | A pointer from a DataObject to a payload of one of five kinds | "`tr-004-sensors`" — TimeseriesReference |
 | **Annotation** | A semantic tag from an ontology attached to a Collection, DataObject, Reference, Timeseries channel, **or Container itself** (SA-CONT shipped) | `phase = ramp_up`, `severity = HIGH`, `instrument = "B&K LAN-XI"` |

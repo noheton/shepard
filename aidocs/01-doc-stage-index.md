@@ -33,10 +33,10 @@ section and the `upgrade-overlay` section.
 | `fragment` | 63 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 125 |
+| `feature-defined` | 124 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
-| `tests-implemented` | 4 |
+| `tests-implemented` | 5 |
 | `deployed` | 100 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
@@ -159,7 +159,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (125)
+## feature-defined (124)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -226,7 +226,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/118-mffd-process-chain-mapping.md`](integrations/118-mffd-process-chain-mapping.md) | MFFD process-chain mapping (118) | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
-| [`aidocs/integrations/121-project-and-subcollections.md`](integrations/121-project-and-subcollections.md) | 121 — Project entity + sub-Collection registry | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/122-template-icons.md`](integrations/122-template-icons.md) | 122 — ShepardTemplate icons | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
@@ -375,13 +374,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
-## tests-implemented (4)
+## tests-implemented (5)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md`](agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md) | BUG-LJ-V1-COLL-ID — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
+| [`aidocs/integrations/121-project-and-subcollections.md`](integrations/121-project-and-subcollections.md) | 121 — Project entity + sub-Collection registry | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
 ## deployed (100)

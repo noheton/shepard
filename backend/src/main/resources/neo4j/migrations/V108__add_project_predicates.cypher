@@ -44,7 +44,7 @@ ON CREATE SET
   p.description  = 'Role marker on a Collection that designates it as a Project — a bundle of non-exclusive child Collections joined via urn:shepard:partOf. Value must be the literal "true".',
   p.deleted      = false,
   p.createdAt    = timestamp(),
-  p.source       = 'V107-project-predicates';
+  p.source       = 'V108-project-predicates';
 
 // ── Non-exclusive parent pointer ──────────────────────────────────────────────
 MERGE (p:Predicate {iri: 'urn:shepard:partOf'})
@@ -55,7 +55,7 @@ ON CREATE SET
   p.description  = 'Non-exclusive parent pointer. Value is the appId (UUID v7) of a Project Collection, stored as a literal string. A Collection may carry multiple partOf annotations to be a member of multiple Projects.',
   p.deleted      = false,
   p.createdAt    = timestamp(),
-  p.source       = 'V107-project-predicates';
+  p.source       = 'V108-project-predicates';
 
 // ── Free-text programme name on a Project ─────────────────────────────────────
 MERGE (p:Predicate {iri: 'urn:shepard:programme'})
@@ -66,4 +66,4 @@ ON CREATE SET
   p.description  = 'Free-text funder / DLR-internal programme line (e.g. "Clean Aviation JU", "DLR Project Line 4"). Only valid on a Collection that also carries urn:shepard:project = "true". A Project may declare multiple programmes.',
   p.deleted      = false,
   p.createdAt    = timestamp(),
-  p.source       = 'V107-project-predicates';
+  p.source       = 'V108-project-predicates';
