@@ -18,6 +18,11 @@ import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
+// MFFD-NDT-QUALITY-1 — thermography NDT pane mounts conditionally when the
+// DO carries at least one FileBundleReference whose name suggests thermal
+// imagery. Pane is self-contained (fetches its own cached plate-heatmap +
+// quality summary); we only need to discover the bundle's appId here.
+import DataObjectThermographyPane from "~/components/context/thermography/DataObjectThermographyPane.vue";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
@@ -105,6 +110,35 @@ function refreshExtraReferences() {
 const totalReferenceCount = computed(
   () => (dataReferences.value?.length ?? 0) + extraReferenceItems.value.length,
 );
+
+/**
+ * MFFD-NDT-QUALITY-1 — discover a thermography FileBundleReference on this
+ * DataObject. Heuristic: name contains "thermo" / "ndt" / "tif" (case-
+ * insensitive). The first matching bundle wins (DataObjects usually carry
+ * one thermography region per process step). Returns the bundle's appId
+ * when found, null otherwise.
+ *
+ * <p>The detection is local + cheap (string match on already-fetched refs);
+ * the pane itself stays unmounted until a match exists, so DOs without
+ * thermography pay no cost.
+ */
+const thermographyBundleAppId = computed<string | null>(() => {
+  const refs = dataReferences.value ?? [];
+  for (const r of refs) {
+    if (!("fileReferenceId" in r || "fileContainerId" in r)) continue;
+    const name = ((r as { name?: string }).name ?? "").toLowerCase();
+    if (
+      name.includes("thermo") ||
+      name.includes("ndt") ||
+      name.includes(".tif")
+    ) {
+      // FileBundleReference exposes its appId on the underlying entity.
+      const appId = (r as { appId?: string | null }).appId;
+      if (appId) return appId;
+    }
+  }
+  return null;
+});
 
 // PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
 // Best-effort: empty when the DataObject has no typed predecessors or backend
@@ -757,6 +791,22 @@ async function saveEmbargoEdit() {
                       :collection-id="collectionId"
                     />
                   </div>
+                </ExpansionPanelItem>
+                <!-- MFFD-NDT-QUALITY-1: Thermography NDT pane — mounts only
+                     when a thermography-shaped FileBundleReference is
+                     attached to the DataObject. Self-contained: fetches
+                     its own cached plate-heatmap + quality summary via
+                     /v2/thermography/*. Caller passes canEdit so the
+                     Re-analyze button gates Write properly. -->
+                <ExpansionPanelItem
+                  v-if="thermographyBundleAppId && dataObject.appId"
+                  title="Thermography NDT"
+                >
+                  <DataObjectThermographyPane
+                    :data-object-app-id="dataObject.appId"
+                    :image-bundle-app-id="thermographyBundleAppId"
+                    :can-edit="!!isAllowedToEditCollection"
+                  />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.
                      Shows the upstream predecessor chain as a vertical

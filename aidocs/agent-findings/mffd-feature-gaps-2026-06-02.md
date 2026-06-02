@@ -168,22 +168,57 @@ robot cell as ambient context. Once the scene is on every detail page, the viewe
 **Backlog rows:** `COLL-SCENE-1` (entity link), `COLL-SCENE-2-UI` (Collection-landing renderer),
 `MFFD-RDK-URDF-CONVERTER` (RDK→URDF tooling — plan W5 right-path).
 
-### GAP-7 — Thermography NDT quality score + heatmap
+### GAP-7 — Thermography NDT quality score + heatmap — ✅ closed 2026-06-02
 
 **The data:** 6,273 TIFFs of thermal images across the layup; plus `thermography.7z` of
 the post-layup inspection.
 
-**The gap:** ImageBundleReference exists but has no derived `quality_score` per frame, no
-heatmap overlay, no peak-delta-C extraction.
+**The gap (original):** ImageBundleReference exists but has no derived `quality_score`
+per frame, no heatmap overlay, no peak-delta-C extraction.
 
-**The fix:** Two halves —
-- **Plugin:** `shepard-plugin-thermography` (or extend
-  `shepard-plugin-ai`'s vision capability) computes `urn:shepard:ndt:peak-delta-c` per
-  TIFF, surfaces aggregate `aiGenerated` quality score per DO.
-- **UI:** Thermal-frame strip with frame-grid heatmap (3D coloured plate showing where
-  the hot-spots were).
+**What shipped (2026-06-02):**
+- **Backend (`MFFD-NDT-QUALITY-1`):** `POST /v2/thermography/analyze` +
+  `GET /v2/thermography/{appId}/plate-heatmap`. Stream-decodes each TIFF via the new
+  TwelveMonkeys `imageio-tiff` 3.10.1 dep; per-frame `peakDeltaC = max(pixel) − median(pixel)`;
+  bundle-wide composite plate heatmap (default 64×64 cells, configurable); DataObject-
+  level `quality-score = 1 − clip(maxPeakDeltaC / threshold-c, 0, 1)` (default
+  threshold 80 °C, deploy-tunable). Seven `urn:shepard:ndt:*` SemanticAnnotations
+  written per analysis with `sourceMode=ai` + `confidence=1.0` (deterministic
+  computation — local-default rule satisfied; no AI backend required). Lives in-tree
+  at `backend/src/main/java/de/dlr/shepard/v2/thermography/` until the
+  `OTVIS-WIRE-AGGREGATOR-1` Jandex blocker clears; relocation to the plugin tracked
+  as `MFFD-THERMO-MOVE-TO-PLUGIN-1`. 26 JUnit tests green.
+- **Frontend (`MFFD-NDT-HEATMAP-2-UI`):** `DataObjectThermographyPane.vue` mounts
+  conditionally on the DataObject detail page when a thermography-shaped
+  FileBundleReference is attached (name match: `thermo` / `ndt` / `.tif`). Canvas-
+  backed inferno-colormap heatmap; Vuetify quality chip (green/amber/red bands);
+  hover tooltip → exact cell temperature; Re-analyze CTA (Write-gated). Pure helpers
+  in `~/utils/thermographyHeatmap.ts` (11 Vitest cases).
+- **Plugin docs:** `plugins/fileformat-thermography/docs/{reference,quickstart,install}.md`
+  updated with the new surface, the metric math, the annotation predicate list, and
+  the deploy-time keys.
 
-**Backlog rows:** `MFFD-NDT-QUALITY-1` (plugin), `MFFD-NDT-HEATMAP-2-UI`.
+**Deferred follow-ups (filed in `aidocs/16`):**
+- `MFFD-NDT-AI-CLASSIFY-1` — layer `AiCapability.VISION` over the deterministic
+  pipeline for per-frame defect segmentation (void / porosity / delamination) once a
+  VISION provider lands in `plugins/ai/`.
+- `MFFD-NDT-CROSS-REGION-1` — Collection-landing cross-region heatmap comparison
+  (P05 vs P06 …) reusing the cached plate-heatmap JSON.
+- `MFFD-NDT-LIVE-1` — live streaming during layup (new
+  `ThermographyStreamReference` kind).
+- `MFFD-NDT-ADMIN-CONFIG-1` — promote the three deploy-time keys to a runtime-
+  mutable `:ThermographyConfig` admin singleton.
+- `MFFD-NDT-HEATMAP-MOUNT-TEST-1` — vue-test-utils mount-integration test (helper
+  layer is already covered by the 11 Vitest cases).
+
+**Honest scope:** Real-camera radiometric calibration assumed pre-calibrated TIFFs
+(°C-valued floats). Falls back to greyscale-pixel-value interpretation for unitless
+TIFFs — usable but the threshold knob loses physical meaning. The deferred
+calibration row is `MFFD-NDT-CALIBRATION-1` (not yet filed; flag if the use case
+arises).
+
+**Backlog rows:** `MFFD-NDT-QUALITY-1` (✅ shipped), `MFFD-NDT-HEATMAP-2-UI` (✅ shipped),
+follow-ups above.
 
 ### GAP-8 — Process-chain "as-built timeline" view
 

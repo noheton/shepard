@@ -24,6 +24,29 @@ FileReference are enriched with up to 17 semantic annotations:
 Find them in the DataObject's annotations panel under the
 `urn:shepard:thermography:*` and `urn:shepard:mffd:*` namespaces.
 
+## Spot the hot-spots in a layup region (MFFD-NDT-QUALITY-1)
+
+Once your DataObject carries a thermography FileBundleReference (a bag
+of TIFF frames from the layup pass), open its detail page. The
+**Thermography NDT** panel mounts automatically — three things appear:
+
+1. **Quality chip** — green ≥ 0.8, amber 0.5–0.8, red < 0.5.
+   The score is `1 − max(peak-delta-c) / threshold-c`. A perfectly
+   uniform layup scores 1.0; a layup whose worst frame's peak hit
+   the 80 °C threshold scores 0.0.
+2. **Plate heatmap** — a single composite image showing the maximum
+   temperature observed at each pixel across the entire layup pass.
+   Bright yellow = hot-spot zones; deep purple = cold zones. Hover
+   to see exact temperatures.
+3. **Re-analyze** button — click to re-run the analysis (Write
+   permission required). Useful after uploading new TIFFs or after
+   adjusting the threshold via the admin config.
+
+You never need to click into a 6,000-frame strip to find the bad
+plies — the heatmap surfaces them at a glance. If you need the
+individual frame, the bundle's existing image-strip view remains
+available below the heatmap.
+
 ## Filename convention matters
 
 The parser uses the filename to determine the grid position. The

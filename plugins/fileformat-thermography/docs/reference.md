@@ -83,6 +83,97 @@ malformed file:
 | Filename does not match `S_M_L_F` pattern | All four MFFD grid annotations are dropped; acquisition annotations still emit. |
 | Both DataObject and FileReference appIds absent | Zero annotations emitted (nothing to anchor on). |
 
+## 4.5. NDT quality score + plate heatmap (MFFD-NDT-QUALITY-1, 2026-06-02)
+
+A complementary surface ships in the main backend (not in this plugin —
+see "Why in-tree" below): `POST /v2/thermography/analyze` and
+`GET /v2/thermography/{imageBundleAppId}/plate-heatmap`. These compute
+per-frame statistics on TIFF bundles and surface a DataObject-level
+quality score for the MFFD upper-shell NDT use case.
+
+### 4.5.1 Endpoints
+
+| Verb | Path | Body | Returns |
+|---|---|---|---|
+| `POST` | `/v2/thermography/analyze` | `AnalyzeRequestIO` | `AnalyzeResultIO` |
+| `GET`  | `/v2/thermography/{imageBundleAppId}/plate-heatmap` | — | `PlateHeatmapIO` |
+
+`AnalyzeRequestIO`:
+
+```json
+{ "imageBundleAppId": "0197b6a2-...", "thresholdC": 80.0, "gridWidth": 64, "gridHeight": 64 }
+```
+
+`thresholdC`, `gridWidth`, `gridHeight` are optional; deploy defaults
+(`shepard.v2.thermography.threshold-c=80.0`,
+`shepard.v2.thermography.grid-width=64`,
+`shepard.v2.thermography.grid-height=64`) apply when omitted.
+
+`AnalyzeResultIO` summary fields: `framesAnalyzed`, `framesSkipped`,
+`maxPeakDeltaC`, `meanOfMeanDeltaC`, `maxC`, `thresholdC`, `qualityScore`,
+`hotspotCentroidX`, `hotspotCentroidY`, `annotationsWritten`.
+
+`PlateHeatmapIO`: `width`, `height`, `cells` (row-major `[h][w]` floats,
+degrees Celsius), `minTemp`, `maxTemp`, `thresholdTemp`, `frameCount`.
+
+### 4.5.2 Metric math
+
+For each TIFF frame, the service computes (post-calibration, °C):
+
+- `peakDeltaC = max(pixel) − median(pixel)` — hot-spot signal isolated
+  from the bulk temperature offset.
+- `meanDeltaC = mean(pixel) − median(pixel)` — distribution skew.
+- `hotspotIx / hotspotIy` — pixel coords of the hottest pixel (argmax;
+  first wins on ties).
+
+The plate-heatmap accumulator is a `float[gridH][gridW]` of running
+maxima — each pixel maps to one grid cell via integer division
+(`cx = px * gridW / frameW`). The accumulator never holds a frame stack:
+each TIFF is decoded, scored, applied to the grid, then discarded.
+
+DataObject-level `qualityScore = 1 − clip(maxPeakDeltaC / thresholdC, 0, 1)`.
+A perfectly uniform bundle scores 1.0; a bundle whose worst frame's
+peak-delta-C meets or exceeds the threshold scores 0.0. The DO score
+is the conservative `min` across multiple thermography bundles attached
+to the same DataObject — the worst region surfaces first.
+
+### 4.5.3 Annotations written
+
+All annotations carry `sourceMode = "ai"` (system-generated) and
+`confidence = 1.0` (deterministic computation) per the
+{@link ChannelUnitInferenceService} convention.
+
+| Predicate | Subject | Value | Source |
+|---|---|---|---|
+| `urn:shepard:ndt:peak-delta-c` | FileBundleReference | numeric °C | `thermography-analyze` |
+| `urn:shepard:ndt:mean-delta-c` | FileBundleReference | numeric °C | `thermography-analyze` |
+| `urn:shepard:ndt:hotspot-centroid-x` | FileBundleReference | numeric px | `thermography-analyze` |
+| `urn:shepard:ndt:hotspot-centroid-y` | FileBundleReference | numeric px | `thermography-analyze` |
+| `urn:shepard:ndt:threshold-c` | FileBundleReference | numeric °C | `thermography-analyze` |
+| `urn:shepard:ndt:frame-count` | FileBundleReference | numeric | `thermography-analyze` |
+| `urn:shepard:ndt:plate-heatmap-json` | FileBundleReference | encoded grid | `thermography-analyze` |
+| `urn:shepard:ndt:quality-score` | DataObject | numeric [0,1] | `thermography-analyze` |
+
+Re-running `analyze` is idempotent: existing `urn:shepard:ndt:*` rows on
+the bundle are wiped before the re-write. The DO-level `quality-score`
+takes the `min` of the existing value and the new computation so a
+second bundle with a worse region replaces an earlier permissive score.
+
+### 4.5.4 Why in-tree, not in this plugin
+
+This plugin is currently standalone (NOT wired into the backend
+aggregator) because of the Quarkus / Jandex `CompositeIndex` hang in
+the main backend — see `OTVIS-WIRE-AGGREGATOR-1`. Plugin-resident
+classes cannot serve a `/v2/` REST endpoint until that's fixed.
+
+The MFFD-NDT-QUALITY-1 implementation therefore lives at
+`backend/src/main/java/de/dlr/shepard/v2/thermography/` so it can be
+called immediately. A follow-up row `MFFD-THERMO-MOVE-TO-PLUGIN-1`
+will relocate the code into this plugin once
+`OTVIS-WIRE-AGGREGATOR-1` lands. The wire shape (REST paths +
+annotation predicates) does not change with the move — operators won't
+notice the transplant.
+
 ## 5. Out-of-scope (tier-2+)
 
 | Concern | Filed as |

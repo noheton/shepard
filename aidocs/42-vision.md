@@ -610,7 +610,15 @@ Mid-horizon:
   pure Java, no ML library, LLM-independent; configurable rolling
   window (default 51) and Z-score threshold k (default 6.0);
   optional `createAnnotations=true` persists one `TimeseriesAnnotation`
-  per contiguous anomaly run. **AI1a shipped** — `shepard-plugin-ai`
+  per contiguous anomaly run. **MFFD-NDT-QUALITY-1 shipped** —
+  `POST /v2/thermography/analyze` + `GET /v2/thermography/{appId}/plate-heatmap`
+  for FileBundleReferences of TIFF frames: pure deterministic Java
+  metric (no AI backend required); per-frame peak-delta-c +
+  hot-spot centroid; bundle-wide composite plate heatmap; DataObject-
+  level `quality-score` chip green / amber / red on the detail page.
+  The MFFD upper-shell NDT use case can find an overheated ply at a
+  glance instead of clicking through 6,000 thermal frames. **AI1a shipped** —
+  `shepard-plugin-ai`
   LlmProvider SPI: connects any OpenAI-compatible endpoint per
   capability slot (TEXT / FAST_TEXT / …); admin-configurable at
   runtime via `PATCH /v2/admin/ai/capabilities/{capability}`; writes
