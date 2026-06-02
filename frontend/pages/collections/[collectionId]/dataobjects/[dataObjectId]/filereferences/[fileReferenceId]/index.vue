@@ -30,10 +30,18 @@ const selectedFileName = ref<string>("");
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
-const { fileReference, files } = useFetchFileReference(
+const { fileReference, files, fileContainerAppId } = useFetchFileReference(
   collectionId,
   dataObjectId,
   fileReferenceId,
+);
+
+/**
+ * UI7 — first file in this reference; used to drive the PayloadVersionHistoryPanel.
+ * FileReferences typically hold one file (singleton pattern, per CLAUDE.md).
+ */
+const primaryFileName = computed(
+  () => files.value.find(f => f.availability === "available")?.filename ?? null,
 );
 
 const headers = ref([
@@ -263,6 +271,20 @@ watch(fileReference, () => {
                   </ActionContainer>
                 </template>
               </DataTable>
+            </v-row>
+
+            <!-- UI7: PayloadVersion history panel — collapsed by default; lazy-loads on expand. -->
+            <v-row
+              v-if="fileContainerAppId && primaryFileName && fileReference"
+            >
+              <v-col cols="12" class="pt-0">
+                <v-divider class="mb-2" />
+                <PayloadVersionHistoryPanel
+                  :container-app-id="fileContainerAppId"
+                  :container-id="fileReference.fileContainerId"
+                  :file-name="primaryFileName"
+                />
+              </v-col>
             </v-row>
           </v-container>
         </v-col>
