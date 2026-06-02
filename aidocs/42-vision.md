@@ -591,7 +591,15 @@ Mid-horizon:
   pure-stdlib URDF parser, idempotent re-runs, follow-on
   `urn:shepard:scenegraph:scene-appId` annotation on the kr210 URDF
   FileReference so the scene is discoverable from its source artefact.
-  Per-scene permission anchor (SCENEGRAPH-PERMS-1) still queued.
+  **Per-scene permission gate shipped (SCENEGRAPH-PERMS-1, 2026-05-31)**
+  — scenes inherit Read/Write from their source URDF FileReference's
+  parent Collection. **Collection-level hero scene-graph shipped
+  (COLL-SCENE-1 + COLL-SCENE-2-UI, 2026-06-02)** — every Collection
+  can pin one `:DigitalTwinScene` (the physical robot cell, test
+  bench, instrument layout) that renders as a URDF-viewer band above
+  the Collection's DataObject list. The MFFD AFP cell now surfaces
+  directly on the Collection landing page that contains its tracks
+  rather than living one click away in `/scene-graphs/{appId}`.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.

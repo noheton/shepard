@@ -145,9 +145,72 @@ visible via `GET /v2/templates?kind=VIEW_RECIPE`.
 See also: `docs/help/cross-track-view.md` for the casual-user task
 page.
 
+## Hero scene-graph link (COLL-SCENE-1, 2026-06-02)
+
+A Collection can carry a single primary `:DigitalTwinScene`
+("hero scene") that renders at the top of its detail page — useful
+for surfacing the physical robot cell, test bench, or instrument
+layout the Collection's DataObjects were produced in (e.g. the
+MFFD `MFZ.rdk`-derived URDF appears above every track produced in
+that cell).
+
+The link is a scalar `sceneGraphAppId` property on the Collection
+itself, with a dedicated `/v2/collections/{appId}/scene-graph`
+resource for mutations:
+
+- `GET /v2/collections/{appId}/scene-graph` — returns the linked
+  scene's identity tuple (`sceneGraphAppId`, `name`, `description`,
+  `rootFrameAppId`, `sourceFileAppId`, `frameCount`, `jointCount`).
+  Returns 404 when the Collection has no scene linked. Requires
+  Read on the Collection.
+- `PUT /v2/collections/{appId}/scene-graph` — body
+  `{"sceneGraphAppId":"<scene-uuid>"}`. Requires Write on the
+  Collection AND Read on the target scene (the two-sided gate
+  prevents linking a private scene the caller cannot themselves
+  read). 200 on success, 400 missing body, 403 / 404 per the
+  permission/existence checks.
+- `DELETE /v2/collections/{appId}/scene-graph` — clears the link.
+  Does **not** delete the `:DigitalTwinScene` itself — that stays
+  addressable via `/v2/scene-graphs/{appId}`. Requires Write on the
+  Collection. Idempotent (204 even when no link was set).
+
+### UI
+
+The Collection landing page mounts a `CollectionSceneGraphHeader`
+band above the hero image when the link is set, rendering the
+URDF via the existing URDF viewer (~360px tall, full-bleed). When
+no scene is linked, writers see a "Link scene-graph" CTA that
+opens a picker scoped to scenes the user can read; readers see
+nothing. A dangling pointer (the scene was deleted out from under
+the link) renders the standard 404 empty-state for the band
+rather than crashing the page.
+
+### What this does NOT do
+
+The Collection→Scene link is a render affordance only. It does
+**not** widen the scene's permission surface: the scene-side
+walk (scene → FileReference → DataObject → Collection) defined
+by `SceneGraphPermissionService` remains the source-of-truth for
+who can read or edit the scene itself. A user who can write to
+Collection A but cannot read scene B is blocked from linking B
+to A by the PUT gate. Hand-built scenes (no `sourceFileAppId`)
+stay admin-only regardless of how many Collections link to them.
+
+### Related gaps (out of scope today)
+
+- **RDK → URDF conversion** (`MFFD-RDK-URDF-CONVERTER` in
+  `aidocs/16`) — for now an operator uploads a URDF (or runs
+  `examples/mffd-rdk-urdf-showcase/scenegraph/build_mffd_scene.py`).
+- **Direct RDK upload** (`MFFD-RDK-DIRECT-1`) — fallback path.
+- **Multiple scenes per Collection** — `:Collection` carries one
+  primary scene; multi-scene Collections (e.g. an AAS-shape
+  registry) are a follow-on design.
+
 ## See also
 
 - `data-objects.md` — same `license` + `accessRights` fields, same shape.
 - `aidocs/semantics/98-shapes-views-and-process-model.md §4.1` — the FAIR-1
   motivation and the deferred items (embargo-date, PID strategy).
+- `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md` GAP-6 — the
+  COLL-SCENE-1 origin story.
 - `aidocs/34-upstream-upgrade-path.md` — operator upgrade notes.

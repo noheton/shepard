@@ -92,6 +92,29 @@ public class CollectionIO extends AbstractDataObjectIO {
   @Schema(nullable = true, enumeration = {"HASH_ONLY", "BODY_REDACTED", "BODY_RAW"})
   private String promptLogMode;
 
+  /**
+   * COLL-SCENE-1 — appId of the {@code :DigitalTwinScene} linked as the
+   * Collection's hero scene-graph (renders on the Collection landing page
+   * via {@code CollectionSceneGraphHeader.vue}). Nullable: when null, the
+   * frontend renders a "Link scene-graph" affordance (writer-only) instead
+   * of the viewer.
+   *
+   * <p>Read-only on the wire — the dedicated
+   * {@code /v2/collections/{appId}/scene-graph} resource (GET/PUT/DELETE)
+   * is the mutation surface. Setting this field via the legacy
+   * {@code PATCH /shepard/api/collections} or v2 collection PATCH is not
+   * supported; that path stays untouched.
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * omitted from the v1 {@code /shepard/api/} wire when null so upstream
+   * 5.2.0 byte-fidelity is preserved.
+   *
+   * <p>See {@code aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md} GAP-6.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, readOnly = true)
+  private String sceneGraphAppId;
+
   public CollectionIO(Collection collection) {
     super(collection);
     this.dataObjectIds = extractShepardIds(collection.getDataObjects());
@@ -106,6 +129,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     this.heroImageUrl = collection.getHeroImageUrl();
     this.importedFrom = collection.getImportedFrom();
     this.promptLogMode = collection.getPromptLogMode();
+    this.sceneGraphAppId = collection.getSceneGraphAppId();
   }
 
   @Override
@@ -120,7 +144,8 @@ public class CollectionIO extends AbstractDataObjectIO {
       Objects.equals(defaultFileContainerId, other.defaultFileContainerId) &&
       Objects.equals(heroImageUrl, other.heroImageUrl) &&
       Objects.equals(importedFrom, other.importedFrom) &&
-      Objects.equals(promptLogMode, other.promptLogMode)
+      Objects.equals(promptLogMode, other.promptLogMode) &&
+      Objects.equals(sceneGraphAppId, other.sceneGraphAppId)
     );
   }
 
@@ -134,6 +159,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     result = prime * result + Objects.hashCode(heroImageUrl);
     result = prime * result + Objects.hashCode(importedFrom);
     result = prime * result + Objects.hashCode(promptLogMode);
+    result = prime * result + Objects.hashCode(sceneGraphAppId);
     return result;
   }
 }
