@@ -175,13 +175,18 @@ export const BIN_SIZE_CHOICES = [
 ];
 
 /**
- * Empty-state copy. Surfaced when the envelope reports zero lanes — happens
- * when the Collection has no DataObjects OR no DataObject carries a
- * `urn:shepard:mffd:process-type` annotation AND the unclassified lane is
- * also empty (which can't happen given the backend's coalesce, but guard
- * anyway). Different from "ECharts is rendering nothing" — that's an empty
- * bins array on a known lane and the pane keeps the chart shell.
+ * Empty-state copy. Surfaced when the envelope reports zero lanes — which
+ * (given the backend coalesces unannotated DOs into an `unclassified` lane)
+ * only happens when the Collection has zero non-deleted DataObjects. The
+ * advice therefore points at creating DataObjects, not at annotating them.
+ *
+ * (Once at least one DataObject exists, the Timeline always shows at least
+ * the `unclassified` lane. To split that lane into process-step swimlanes,
+ * annotate the DOs with `urn:shepard:mffd:process-type` — but that's a
+ * different problem from "the pane is blank".)
  */
 export const EMPTY_STATE_HINT =
-  "No process-type activity to plot. Annotate your DataObjects with " +
-  "`urn:shepard:mffd:process-type` to populate swimlanes.";
+  "No DataObjects in this Collection yet. Create one (via the Data Objects " +
+  "section above or a template) to populate the Timeline. Annotate the " +
+  "DataObjects with `urn:shepard:mffd:process-type` to split the default " +
+  "`unclassified` lane into process-step swimlanes.";
