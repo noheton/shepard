@@ -78,12 +78,13 @@ let longRunningTimer: ReturnType<typeof setTimeout> | null = null;
 const { run, loading, error, lastResponse, reset } = useKrlInterpret();
 
 // ── Validation ────────────────────────────────────────────────────────────────
+// timeseriesContainerAppId is optional — blank triggers auto-mint of the
+// per-DataObject "krl-default" container (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER)
 
 const formValid = computed(() =>
   isKrlFormValid({
     urdfFileAppId: urdfFileAppId.value,
     targetDataObjectAppId: targetDataObjectAppId.value,
-    timeseriesContainerAppId: timeseriesContainerAppId.value,
   }),
 );
 
@@ -263,12 +264,11 @@ const urdfPayloadUrl = computed<string | null>(() => {
 
         <v-text-field
           v-model="timeseriesContainerAppId"
-          label="TimeseriesContainer appId"
+          label="TimeseriesContainer appId (optional)"
           variant="outlined"
           density="comfortable"
           class="mb-2"
-          required
-          hint="The container the trajectory is written to. Tier-2 (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER) will auto-mint this."
+          hint="Leave blank to auto-use the per-DataObject 'krl-default' container. Supply an appId to write into a specific container."
           persistent-hint
           data-test="krl-ts-container"
         />

@@ -6,16 +6,20 @@
  */
 import type { KrlInterpretRequest } from "~/composables/useKrlInterpret";
 
+/**
+ * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — `timeseriesContainerAppId` is
+ * now optional. When blank, the backend auto-mints the per-DataObject
+ * "krl-default" container. The form is valid as long as a URDF file and a
+ * target DataObject are provided.
+ */
 export function isKrlFormValid(state: {
   urdfFileAppId: string | null;
   targetDataObjectAppId: string;
-  timeseriesContainerAppId: string;
 }): boolean {
   return (
     !!state.urdfFileAppId &&
     state.urdfFileAppId.trim().length > 0 &&
-    state.targetDataObjectAppId.trim().length > 0 &&
-    state.timeseriesContainerAppId.trim().length > 0
+    state.targetDataObjectAppId.trim().length > 0
   );
 }
 
@@ -52,7 +56,10 @@ export function buildKrlRequestBody(input: BuildBodyInput): KrlInterpretRequest 
     srcFileAppId: input.srcFileAppId,
     urdfFileAppId: input.urdfFileAppId,
     targetDataObjectAppId: input.targetDataObjectAppId,
-    timeseriesContainerAppId: input.timeseriesContainerAppId,
+    // omit timeseriesContainerAppId when blank — the backend auto-mints "krl-default"
+    ...(input.timeseriesContainerAppId.trim()
+      ? { timeseriesContainerAppId: input.timeseriesContainerAppId }
+      : {}),
     timeStep: input.timeStep,
     options: {
       ikTolerance: input.ikTolerance,

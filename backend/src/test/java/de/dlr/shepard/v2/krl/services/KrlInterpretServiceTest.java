@@ -18,6 +18,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
+
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.neo4j.NeoConnector;
@@ -40,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -157,10 +160,34 @@ class KrlInterpretServiceTest {
   }
 
   @Test
-  void validate_missingTsContainer_throwsBadRequest() {
+  void validate_missingTsContainer_noLongerThrows_autoMintsDefault() {
+    // KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: blank timeseriesContainerAppId is
+    // now valid — the service auto-mints the "krl-default" container.
+    when(sidecar.interpret(any())).thenReturn(KrlSidecarClient.SidecarOutcome.ok(sidecarOk()));
+    lenient().when(timeseriesContainerService.createContainer(any(TimeseriesContainerIO.class)))
+      .thenReturn(container);
+
     KrlInterpretRequestIO req = makeRequest();
     req.setTimeseriesContainerAppId(null);
-    assertThrows(BadRequestException.class, () -> service.interpret(req, "alice", null));
+
+    // Should NOT throw — auto-mint path is invoked instead (Neo session returns empty).
+    assertNotNull(runWithStaticNeo(req, "alice", null, Optional.empty()));
+  }
+
+  @Test
+  void blankTsContainer_reusesExistingKrlDefault() {
+    // When a krl-default container already exists for the DataObject,
+    // findKrlDefaultContainerForDataObject returns it and createContainer is not called.
+    when(sidecar.interpret(any())).thenReturn(KrlSidecarClient.SidecarOutcome.ok(sidecarOk()));
+
+    KrlInterpretRequestIO req = makeRequest();
+    req.setTimeseriesContainerAppId("");
+
+    // The lookup path returns the container via the NeoConnector session stub;
+    // verify createContainer is never called (reuse path).
+    KrlInterpretResponseIO response = runWithStaticNeo(req, "alice", null, Optional.of(container));
+    assertNotNull(response);
+    verify(timeseriesContainerService, never()).createContainer(any());
   }
 
   // ── sidecar error mapping ──────────────────────────────────────────────────
@@ -294,6 +321,45 @@ class KrlInterpretServiceTest {
     Session session = mock(Session.class);
     NeoConnector connector = mock(NeoConnector.class);
     when(connector.getNeo4jSession()).thenReturn(session);
+    try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
+      ms.when(NeoConnector::getInstance).thenReturn(connector);
+      return service.interpret(req, user, agent);
+    }
+  }
+
+  /**
+   * Variant used in auto-mint tests: stubs the NeoConnector session to return an
+   * empty Cypher result for the krl-default lookup (simulating "no existing container
+   * linked to this DataObject"), and when {@code existingContainer} is present, stubs
+   * the session to return the container's appId so the find path short-circuits.
+   *
+   * @param existingContainer when present, the krl-default lookup returns this container
+   */
+  @SuppressWarnings("unchecked")
+  private KrlInterpretResponseIO runWithStaticNeo(
+    KrlInterpretRequestIO req,
+    String user,
+    String agent,
+    Optional<TimeseriesContainer> existingContainer
+  ) {
+    Session session = mock(Session.class);
+    NeoConnector connector = mock(NeoConnector.class);
+    when(connector.getNeo4jSession()).thenReturn(session);
+
+    // Stub the Cypher result for findKrlDefaultContainerForDataObject.
+    org.neo4j.ogm.model.Result queryResult = mock(org.neo4j.ogm.model.Result.class);
+    if (existingContainer.isPresent()) {
+      String foundAppId = existingContainer.get().getAppId();
+      when(queryResult.iterator()).thenReturn(
+        List.of(Map.of("containerAppId", foundAppId)).iterator()
+      );
+      lenient().when(timeseriesContainerService.findByAppId(foundAppId))
+        .thenReturn(existingContainer);
+    } else {
+      when(queryResult.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
+    }
+    when(session.query(anyString(), any(Map.class))).thenReturn(queryResult);
+
     try (MockedStatic<NeoConnector> ms = mockStatic(NeoConnector.class)) {
       ms.when(NeoConnector::getInstance).thenReturn(connector);
       return service.interpret(req, user, agent);

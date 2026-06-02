@@ -16,13 +16,14 @@ import {
 } from "../../components/dialog/runKrlPreviewHelpers";
 
 describe("RunKrlPreviewDialog — isKrlFormValid", () => {
+  // KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: timeseriesContainerAppId is now
+  // optional — blank triggers auto-mint of the per-DataObject "krl-default" container.
   const base = {
     urdfFileAppId: "u-1",
     targetDataObjectAppId: "d-1",
-    timeseriesContainerAppId: "c-1",
   };
 
-  it("is valid when all three required fields are set", () => {
+  it("is valid when URDF + target DataObject are set (container optional)", () => {
     expect(isKrlFormValid(base)).toBe(true);
   });
 
@@ -33,10 +34,6 @@ describe("RunKrlPreviewDialog — isKrlFormValid", () => {
   it("is invalid when target DataObject appId is blank", () => {
     expect(isKrlFormValid({ ...base, targetDataObjectAppId: "" })).toBe(false);
     expect(isKrlFormValid({ ...base, targetDataObjectAppId: "   " })).toBe(false);
-  });
-
-  it("is invalid when TimeseriesContainer appId is blank", () => {
-    expect(isKrlFormValid({ ...base, timeseriesContainerAppId: "" })).toBe(false);
   });
 });
 
@@ -82,12 +79,20 @@ describe("RunKrlPreviewDialog — buildKrlRequestBody", () => {
     const body = buildKrlRequestBody(baseInput);
     expect(body.srcFileAppId).toBe("src-1");
     expect(body.urdfFileAppId).toBe("urdf-1");
+    expect(body.timeseriesContainerAppId).toBe("tsc-1");
     expect(body.timeStep).toBe(0.01);
     expect(body.options).toEqual({ ikTolerance: 0.001, maxIterations: 300 });
     expect(body.datFileAppIds).toBeUndefined();
     expect(body.baseFrame).toBeUndefined();
     expect(body.toolFrame).toBeUndefined();
     expect(body.seedPose).toBeUndefined();
+  });
+
+  it("omits timeseriesContainerAppId when blank — triggers auto-mint", () => {
+    // KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER: when the user leaves the
+    // container field empty, the backend auto-mints "krl-default".
+    const body = buildKrlRequestBody({ ...baseInput, timeseriesContainerAppId: "" });
+    expect(body.timeseriesContainerAppId).toBeUndefined();
   });
 
   it("includes datFileAppIds when set", () => {

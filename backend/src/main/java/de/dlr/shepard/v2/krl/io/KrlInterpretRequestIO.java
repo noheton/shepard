@@ -57,16 +57,17 @@ public class KrlInterpretRequestIO {
   private String targetDataObjectAppId;
 
   /**
-   * Required — the {@code TimeseriesContainer} the trajectory data
+   * Optional — the {@code TimeseriesContainer} the trajectory data
    * points are written to. Each interpret run is one "trajectory
    * envelope" against this container (the container is the storage
    * substrate; the {@code TimeseriesReference} is the addressable
    * handle the user navigates to).
    *
-   * <p>Tier-1: the caller picks the container explicitly. Tier-2
-   * (deferred to {@code KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER})
-   * will auto-mint a per-DataObject default container so the UI's
-   * "Run / preview" affordance does not need to ask the user.
+   * <p>When blank or {@code null}, the service auto-mints (or reuses)
+   * a {@code TimeseriesContainer} named {@code "krl-default"} scoped to
+   * the target DataObject (idempotent — a second call returns the same
+   * container). Supply an explicit appId to write into a specific
+   * container instead (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER).
    */
   private String timeseriesContainerAppId;
 

@@ -121,6 +121,21 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
   }
 
   /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — look up a non-deleted
+   * {@code TimeseriesContainer} by appId without throwing. Returns
+   * {@link Optional#empty()} when the container does not exist or is
+   * deleted. No permission check is performed (the caller is an internal
+   * find-or-create path that created the container itself).
+   *
+   * @param appId the container's appId
+   * @return the container, or empty when not found / deleted
+   */
+  public Optional<TimeseriesContainer> findByAppId(String appId) {
+    return timeseriesContainerDAO.findByAppId(appId)
+      .filter(c -> !c.isDeleted());
+  }
+
+  /**
    * CC1b — return the list of non-deleted DataObjects that reference this
    * TimeseriesContainer via a TimeseriesReference.
    *

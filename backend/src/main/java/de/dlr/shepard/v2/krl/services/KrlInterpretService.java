@@ -9,6 +9,7 @@ import de.dlr.shepard.context.references.file.services.SingletonFileReferenceSer
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -113,12 +115,19 @@ public class KrlInterpretService {
     long collectionShepardId = target.getCollection().getShepardId();
 
     // 3. Resolve the TimeseriesContainer the trajectory writes to.
-    TimeseriesContainer container = timeseriesContainerService
-      .getContainerByAppId(request.getTimeseriesContainerAppId());
-    if (container == null) {
-      throw new NotFoundException(
-        "No TimeseriesContainer with appId " + request.getTimeseriesContainerAppId()
-      );
+    //    When timeseriesContainerAppId is blank, auto-mint (or reuse) the
+    //    per-DataObject "krl-default" container (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER).
+    TimeseriesContainer container;
+    String tsContainerAppId = request.getTimeseriesContainerAppId();
+    if (tsContainerAppId == null || tsContainerAppId.isBlank()) {
+      container = findOrCreateKrlDefaultContainer(request.getTargetDataObjectAppId());
+    } else {
+      container = timeseriesContainerService.getContainerByAppId(tsContainerAppId);
+      if (container == null) {
+        throw new NotFoundException(
+          "No TimeseriesContainer with appId " + tsContainerAppId
+        );
+      }
     }
     long containerShepardId = container.getId();
 
@@ -169,7 +178,8 @@ public class KrlInterpretService {
     requireBlank("srcFileAppId", request.getSrcFileAppId());
     requireBlank("urdfFileAppId", request.getUrdfFileAppId());
     requireBlank("targetDataObjectAppId", request.getTargetDataObjectAppId());
-    requireBlank("timeseriesContainerAppId", request.getTimeseriesContainerAppId());
+    // timeseriesContainerAppId is optional — blank triggers auto-mint of "krl-default"
+    // (KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER)
   }
 
   private static void requireBlank(String name, String value) {
@@ -179,6 +189,72 @@ public class KrlInterpretService {
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * KRL-INTERPRETER-05-FOLLOWUP-AUTO-CONTAINER — find-or-create the
+   * per-DataObject default {@code TimeseriesContainer} named
+   * {@code "krl-default"}.
+   *
+   * <p>Idempotent: a second call for the same {@code dataObjectAppId}
+   * reuses the same container. The lookup walks the graph via the
+   * {@code DataObject → TimeseriesReference → TimeseriesContainer} path
+   * and filters by name so the container stays scoped to this DataObject.
+   *
+   * <p>If no existing container is found, creates a new one via
+   * {@link TimeseriesContainerService#createContainer}. If creation fails
+   * for any reason (e.g. permission issue in the container service), the
+   * exception propagates to the caller as a 500 — this is a primary write,
+   * not a secondary/fire-and-forget write.
+   *
+   * @param dataObjectAppId appId of the target {@code DataObject}
+   * @return the existing or newly created {@code TimeseriesContainer}
+   */
+  TimeseriesContainer findOrCreateKrlDefaultContainer(String dataObjectAppId) {
+    // 1. Try to find an existing container linked to this DataObject via a
+    //    prior KRL interpret run.
+    Optional<TimeseriesContainer> existing = findKrlDefaultContainerForDataObject(dataObjectAppId);
+    if (existing.isPresent()) {
+      Log.debugf("KRL: reusing existing krl-default container for DataObject %s", dataObjectAppId);
+      return existing.get();
+    }
+
+    // 2. Not found — create a new one.
+    Log.infof("KRL: auto-minting krl-default TimeseriesContainer for DataObject %s", dataObjectAppId);
+    TimeseriesContainerIO io = new TimeseriesContainerIO();
+    io.setName("krl-default");
+    return timeseriesContainerService.createContainer(io);
+  }
+
+  /**
+   * Looks up a {@code TimeseriesContainer} named {@code "krl-default"} that
+   * is already linked to the given DataObject via a {@code TimeseriesReference}.
+   *
+   * <p>Cypher path:
+   * {@code (:DataObject {appId})-[:has_reference]->()-[:is_in_container]->(c:TimeseriesContainer {name:"krl-default"})}.
+   *
+   * <p>Returns {@code Optional.empty()} when the session is unavailable or
+   * the query finds no match — allowing the caller to create a new container.
+   */
+  Optional<TimeseriesContainer> findKrlDefaultContainerForDataObject(String dataObjectAppId) {
+    try {
+      Session session = NeoConnector.getInstance().getNeo4jSession();
+      if (session == null) return Optional.empty();
+      String query =
+        "MATCH (:DataObject {appId: $doAppId})-[:has_reference]->()-[:is_in_container]->" +
+        "(c:TimeseriesContainer) " +
+        "WHERE c.name = 'krl-default' AND (c.deleted IS NULL OR c.deleted = false) " +
+        "RETURN c.appId AS containerAppId LIMIT 1";
+      var result = session.query(query, Map.of("doAppId", dataObjectAppId));
+      var it = result.iterator();
+      if (!it.hasNext()) return Optional.empty();
+      Object appIdObj = it.next().get("containerAppId");
+      if (appIdObj == null) return Optional.empty();
+      return timeseriesContainerService.findByAppId(String.valueOf(appIdObj));
+    } catch (RuntimeException ex) {
+      Log.warnf(ex, "KRL: findKrlDefaultContainer lookup failed for DataObject %s — will create new", dataObjectAppId);
+      return Optional.empty();
+    }
+  }
 
   byte[] fetchBytes(String fileReferenceAppId, String fieldName) {
     NamedInputStream named;

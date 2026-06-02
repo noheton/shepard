@@ -28,7 +28,7 @@ Resolves a KRL `.src` against a URDF and persists the joint trajectory.
 | `srcFileAppId` | string (UUID v7) | yes | FileReference appId for the KRL `.src` |
 | `urdfFileAppId` | string (UUID v7) | yes | FileReference appId for the URDF |
 | `targetDataObjectAppId` | string | yes | Where the trajectory attaches |
-| `timeseriesContainerAppId` | string | yes | The container the trajectory bytes are written to (tier-2 auto-mints) |
+| `timeseriesContainerAppId` | string | **no** | Container for the trajectory data. When omitted, the service auto-mints (or reuses) a container named `"krl-default"` scoped to `targetDataObjectAppId`. Supply an explicit appId to write into a specific container. |
 | `datFileAppIds` | string[] | no | `.dat` companion FileReferences |
 | `sceneAppId` | string | no | `:DigitalTwinScene` for default base/tool frames |
 | `baseFrame` | `{x,y,z,rx,ry,rz}` | no | Override `$BASE` |
