@@ -30,20 +30,20 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 53 |
+| `fragment` | 62 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 117 |
+| `feature-defined` | 120 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 4 |
-| `deployed` | 92 |
+| `deployed` | 96 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **429** |
+| **total docs** | **445** |
 | **UNTAGGED** | **0** |
 
-## fragment (53)
+## fragment (62)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -60,6 +60,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-21.md`](agent-findings/dispatcher-runs/2026-05-30-21.md) | Dispatcher run — 2026-05-30 21:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-22.md`](agent-findings/dispatcher-runs/2026-05-30-22.md) | Dispatcher run — 2026-05-30 22:xx UTC | 2026-05-30 | 2026-05-30 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-30-23.md`](agent-findings/dispatcher-runs/2026-05-30-23.md) | Dispatcher run — 2026-05-30 23:17 UTC | 2026-05-30 | 2026-05-30 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-21.md`](agent-findings/dispatcher-runs/2026-06-01-21.md) | Dispatcher run 2026-06-01-21 | 2026-06-02 | 2026-06-01 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-22.md`](agent-findings/dispatcher-runs/2026-06-01-22.md) | Dispatcher run 2026-06-01-22 | 2026-06-02 | 2026-06-01 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-23.md`](agent-findings/dispatcher-runs/2026-06-01-23.md) | Dispatcher fire 2026-06-01-23 | 2026-06-02 | 2026-06-01 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-00.md`](agent-findings/dispatcher-runs/2026-06-02-00.md) | Dispatcher fire 2026-06-02-00 | 2026-06-02 | 2026-06-02 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-01.md`](agent-findings/dispatcher-runs/2026-06-02-01.md) | Dispatcher fire 2026-06-02-01 | 2026-06-02 | 2026-06-02 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-02.md`](agent-findings/dispatcher-runs/2026-06-02-02.md) | Dispatcher fire 2026-06-02-02 | 2026-06-02 | 2026-06-02 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-03.md`](agent-findings/dispatcher-runs/2026-06-02-03.md) | Dispatcher fire 2026-06-02-03 | 2026-06-02 | 2026-06-02 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-04.md`](agent-findings/dispatcher-runs/2026-06-02-04.md) | Dispatcher run 2026-06-02-04 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -72,6 +80,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/synergy-2026-05-23-snapshots-garage-gap.md`](agent-findings/synergy-2026-05-23-snapshots-garage-gap.md) | S-06 — Snapshots × Garage S3 (no versioning): Shepard absorbs the gap | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-trace3d-video-sync.md`](agent-findings/synergy-2026-05-23-trace3d-video-sync.md) | S-04 — Trace3D × Video × DataBinding: synchronized 3D-trace + camera-PiP | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-27.md`](agent-findings/synergy-2026-05-27.md) | Synergy findings — 2026-05-27 | 2026-05-27 | 2026-05-27 |
+| [`aidocs/agent-findings/ui-paths-audit.md`](agent-findings/ui-paths-audit.md) | UI-PATHS-01-AUDIT — Free-form path/URL input audit | 2026-06-01 | 2026-06-01 |
 | [`aidocs/data/12-timescaledb-performance-analysis.md`](data/12-timescaledb-performance-analysis.md) | TimescaleDB Timeseries Integration — Performance Analysis & Mitigations | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-26 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
@@ -149,7 +158,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (117)
+## feature-defined (120)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -164,6 +173,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/agent-findings/mffd-data-inventory-2026-06-02.md`](agent-findings/mffd-data-inventory-2026-06-02.md) | MFFD real-data inventory — 2026-06-02 | 2026-06-02 | — |
+| [`aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md`](agent-findings/mffd-feature-gaps-2026-06-02.md) | MFFD feature-gap discovery — 2026-06-02 | 2026-06-02 | — |
 | [`aidocs/agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md`](agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md) | MFFD ingest readiness audit — 346 GB scale (2026-05-31) | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/mffd-ingest-prep-capacity-2026-05-31.md`](agent-findings/mffd-ingest-prep-capacity-2026-05-31.md) | MFFD ingest prep — capacity snapshot (2026-05-31) | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/mffd-ingest-prep-summary-2026-05-31.md`](agent-findings/mffd-ingest-prep-summary-2026-05-31.md) | MFFD ingest prep — one-page status (2026-05-31) | 2026-05-31 | 2026-05-31 |
@@ -176,7 +187,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md`](agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md) | Postgres + PgBouncer substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md`](agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md) | RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md`](agent-findings/rdm-scrutinizer-2026-05-24.md) | RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/repo-reconciliation-2026-05-31.md`](agent-findings/repo-reconciliation-2026-05-31.md) | Repo hygiene reconciliation — 2026-05-31 | 2026-05-31 | — |
+| [`aidocs/agent-findings/repo-reconciliation-2026-05-31.md`](agent-findings/repo-reconciliation-2026-05-31.md) | Repo hygiene reconciliation — 2026-05-31 | 2026-05-31 | 2026-06-02 |
 | [`aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md`](agent-findings/research-network-orcid-anchor-2026-05-23.md) | Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synthesis-architecture-report-2026-05-24.md`](agent-findings/synthesis-architecture-report-2026-05-24.md) | Synthesis architecture report — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md`](agent-findings/tib-hannover-outreach-2026-05-23.md) | TIB Hannover outreach — Step 1 ("Used by" entry) | 2026-05-23 | 2026-05-23 |
@@ -206,6 +217,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md`](integrations/111-tpl17-distributed-ledger-anchoring.md) | TPL17 — Distributed Ledger Anchoring for Tamper Evidence | 2026-05-26 | 2026-05-28 |
+| [`aidocs/integrations/113-mffd-real-data-import-plan.md`](integrations/113-mffd-real-data-import-plan.md) | MFFD real-data import plan (113) | 2026-06-02 | — |
 | [`aidocs/integrations/113-urdf-viewer.md`](integrations/113-urdf-viewer.md) | 113 — URDF web viewer + animator (URDF-WEBVIEW-1) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/114-process-monitoring-parser-plugin.md`](integrations/114-process-monitoring-parser-plugin.md) | 114 — Process-monitoring parser plugin family | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
@@ -366,7 +378,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (92)
+## deployed (96)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -406,6 +418,10 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-15.md`](agent-findings/dispatcher-runs/2026-05-31-15.md) | Dispatcher fire 2026-05-31-15 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-16.md`](agent-findings/dispatcher-runs/2026-05-31-16.md) | Dispatcher fire 2026-05-31-16 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-05-31-17.md`](agent-findings/dispatcher-runs/2026-05-31-17.md) | Dispatcher run — 2026-05-31-17 UTC | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-18.md`](agent-findings/dispatcher-runs/2026-05-31-18.md) | Dispatcher run — 2026-05-31-18 UTC | 2026-05-31 | 2026-05-31 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-18.md`](agent-findings/dispatcher-runs/2026-06-01-18.md) | Dispatcher run — 2026-06-01-18 UTC | 2026-06-01 | 2026-06-01 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-19.md`](agent-findings/dispatcher-runs/2026-06-01-19.md) | Dispatcher run — 2026-06-01-19 UTC | 2026-06-01 | 2026-06-01 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-20.md`](agent-findings/dispatcher-runs/2026-06-01-20.md) | Dispatcher run — 2026-06-01-20 UTC | 2026-06-01 | 2026-06-01 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
