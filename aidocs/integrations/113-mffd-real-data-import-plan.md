@@ -72,7 +72,7 @@ Re-running this plan must be **safe**, **fast**, and **lossless**:
 | W1   | tapelaying small-batch dry-run | `mffd.tar.gz` (10 tracks) | new Collection `MFFD Upper-Fuselage (Real)` | v15 importer | 10 DOs, 10 TS, ~100 files | manual review | pending |
 | W2   | tapelaying full | bucket 1 | same | v15 importer | 8,251 DOs, 8,251 TS, 241,962 files | TS-OPT3 ON, Garage healthy, 4 workers | pending |
 | W3   | bridgewelding | bucket 2 | same Collection, as **`process-step-bridge-welding`** children | v16 PRESERVE-HIERARCHY | 13 AF parts + N executions | wave 2 done | pending |
-| W4   | wire Predecessor edges layup→bridge | n/a | Neo4j Cypher | `scripts/wire-mffd-predecessors.cypher` | 8,251 edges | wave 3 done | pending |
+| W4   | wire Predecessor edges layup→bridge | n/a | YAML mapping + `POST /v2/admin/mffd/process-chain-mapping` | (flo-authored YAML) | 8,251 edges | wave 3 done + flo authors mapping YAML | **infra ready 2026-06-02 (MFFD-AF-TRACK-MAPPING shipped); pending flo YAML** |
 | W5   | RoboDK scene | bucket 4a (`MFZ.rdk`) | new SceneGraph attached at Collection level | SCENEGRAPH-CREATE-FROM-RDK | 1 scene | wave 2 done | pending |
 | W6   | thermography | bucket 4b (`thermography.7z`) | new DOs under `MFFD Upper-Fuselage (Real)` | new `7z` importer step | ~6,000 TIFFs as ImageBundleReference | wave 2 done | pending |
 | W7   | microsections re-anchor | already in Coll `019e7243…` | move under `MFFD Upper-Fuselage (Real)` | `re-anchor-mffd-microsections.cypher` | 8 DOs / 16 FR1b | wave 2 done | pending |
@@ -135,13 +135,42 @@ shepard_importer/main.py \
 StructuredDataReference (deduplicate the shared-file refs to one logical SD ref +
 N citing-edges, see SD-DEDUPE-1 backlog row).
 
-### W4 — Predecessor edges (Cypher)
+### W4 — Predecessor edges (YAML mapping + admin REST loader)
 
 The natural join is on the `Track_NN__Run_NN_` → `AF_N` mapping. Today this mapping is
 **not in the data** — it lives in flo's head as "AF_N is welded after layup of plies
-P_{a..b} which contain tracks T_{x..y}". W4 ships a placeholder script that materialises
-known edges and writes a `NEEDS-MAPPING` Activity for the unknown ones. **Domain expert
-input required for the canonical AF-→-track table.**
+P_{a..b} which contain tracks T_{x..y}".
+
+**Infrastructure shipped 2026-06-02** — `MFFD-AF-TRACK-MAPPING` (closes GAP-4):
+the YAML schema, validator, idempotent loader, REST endpoint, admin UI, and operator
+runbook are all in place. The only remaining unblocker is flo authoring the YAML
+mapping file. Until then, this wave is **infra-ready, content-pending**.
+
+Operator workflow at W4 wave time:
+
+1. flo authors `mffd-af-track-mapping.yaml` (off-repo) per the schema in
+   [`aidocs/integrations/118-mffd-process-chain-mapping.md`](118-mffd-process-chain-mapping.md).
+2. Validate read-only against the live instance:
+
+   ```bash
+   python3 scripts/validate-mffd-process-chain-mapping.py \
+       --url https://shepard.example.org/v2 --api-key <key> \
+       mffd-af-track-mapping.yaml
+   ```
+
+3. Apply via the admin UI (`/admin` → "MFFD process-chain mapping" tile) or curl:
+
+   ```bash
+   curl -X POST -H "Content-Type: application/yaml" -H "X-API-Key: <key>" \
+       --data-binary @mffd-af-track-mapping.yaml \
+       https://shepard.example.org/v2/admin/mffd/process-chain-mapping
+   ```
+
+4. The response carries `{matched, unmatched, edgesCreated, unresolved[], warnings[]}` —
+   iterate the YAML until `unresolved[]` is empty.
+
+Idempotent — re-applying the same YAML preserves the edge set; updating a
+`transitionKind` refreshes the existing edge.
 
 ### W5 — RoboDK scene
 

@@ -230,6 +230,14 @@ const landingCards = [
     title: "JupyterHub link-out",
     description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
   },
+  // MFFD-AF-TRACK-MAPPING — see aidocs/integrations/118
+  {
+    fragment: "mffd-process-chain",
+    icon: "mdi-graph-outline",
+    title: "MFFD process-chain mapping",
+    description: "Apply a YAML mapping of cross-process Predecessor edges (tapelaying → bridgewelding → NDT → cleats).",
+    path: "/admin/mffd-process-chain",
+  },
 ];
 </script>
 
