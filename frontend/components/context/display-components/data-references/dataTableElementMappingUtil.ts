@@ -134,6 +134,8 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
   if (instanceOfFileReference(ref))
     return {
       id: ref.id,
+      // REF-EDIT-4: carry appId so the edit-dialog action can call PATCH /v2/bundles/{appId}
+      appId: ref.appId,
       containerId: ref.fileContainerId,
       ...mapNameAndAvailability(ref),
       fileCount: ref.fileOids.length,

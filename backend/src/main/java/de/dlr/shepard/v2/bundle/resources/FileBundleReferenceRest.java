@@ -3,8 +3,10 @@ package de.dlr.shepard.v2.bundle.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
@@ -101,6 +103,12 @@ public class FileBundleReferenceRest {
   @Inject
   ObjectMapper objectMapper;
 
+  @Inject
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
+
   // ─── bundle ───────────────────────────────────────────────────────────────
 
   @GET
@@ -145,6 +153,76 @@ public class FileBundleReferenceRest {
     var groups = fileGroupDAO.findByBundleAppId(bundleAppId);
     bundle.setGroups(groups);
     return Response.ok(new FileBundleReferenceIO(bundle)).build();
+  }
+
+  // ─── bundle-level PATCH (REF-EDIT-4) ─────────────────────────────────────
+
+  @PATCH
+  @Path("/{bundleAppId}")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "RFC 7396 merge-patch on a FileBundleReference (bundle-level metadata).",
+    description =
+      "Applies a partial update to the `:FileBundleReference` identified by `bundleAppId` " +
+      "(UUID v7).\n\n" +
+      "Patchable fields: `name` (string, must be non-blank if present), " +
+      "`description` (string, nullable — explicit JSON `null` clears it).\n\n" +
+      "Fields absent from the body are left unchanged. Setting `name` to `null` or blank " +
+      "returns 400.\n\n" +
+      "Example: rename bundle — `{\"name\": \"my-renamed-bundle\"}`.\n" +
+      "Example: set description — `{\"description\": \"MFFD upper-panel AFP layup files\"}`.\n" +
+      "Example: clear description — `{\"description\": null}`.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json`; `application/json` also accepted.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity. " +
+      "REF-EDIT-4 — see `aidocs/16-dispatcher-backlog.md`."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Updated FileBundleReferenceIO reflecting the patched fields.",
+    content = @Content(schema = @Schema(implementation = FileBundleReferenceIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object, or `name` is null / blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
+  public Response patchBundle(
+    @PathParam("bundleAppId") String bundleAppId,
+    @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body,
+    @Context SecurityContext securityContext
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+    }
+
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
+    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = checkAccess(bundle, AccessType.Write, securityContext);
+    if (gate != null) return gate;
+
+    Map<String, Object> patch = jsonNodeToMap(body);
+
+    if (patch.containsKey("name")) {
+      Object v = patch.get("name");
+      if (v == null || v.toString().isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("name must not be blank").build();
+      }
+      bundle.setName(v.toString());
+    }
+    if (patch.containsKey("description")) {
+      Object v = patch.get("description");
+      bundle.setDescription(v != null ? v.toString() : null);
+    }
+
+    bundle.setUpdatedAt(dateHelper.getDate());
+    bundle.setUpdatedBy(userService.getCurrentUser());
+
+    FileBundleReference saved = fileBundleReferenceDAO.createOrUpdate(bundle);
+
+    // Re-load groups to return the full IO shape.
+    var groups = fileGroupDAO.findByBundleAppId(bundleAppId);
+    saved.setGroups(groups);
+    return Response.ok(new FileBundleReferenceIO(saved)).build();
   }
 
   // ─── groups ───────────────────────────────────────────────────────────────

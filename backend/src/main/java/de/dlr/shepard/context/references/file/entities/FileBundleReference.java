@@ -20,6 +20,13 @@ import org.neo4j.ogm.annotation.Relationship;
  * {@link FileContainer}, optionally organised into one or more
  * {@link FileGroup}s (FR1a, see {@code aidocs/53 §1.4}).
  *
+ * <p><strong>REF-EDIT-4.</strong> Bundle-level {@code description} was
+ * added as a nullable property to support the PATCH endpoint at
+ * {@code /v2/bundles/{appId}}. Pre-existing rows carry {@code null};
+ * callers that set it to {@code null} explicitly clear it.  No schema
+ * migration is needed — the Neo4j property bag accepts the addition
+ * without backfill.</p>
+ *
  * <p><strong>Naming history.</strong> This class is the renamed
  * descendant of the original {@code FileReference} per FR1a
  * ({@code aidocs/53 §1.7}). Two Neo4j labels are written on every
@@ -50,6 +57,13 @@ import org.neo4j.ogm.annotation.Relationship;
 @Data
 @NoArgsConstructor
 public class FileBundleReference extends BasicReference {
+
+  /**
+   * Free-form description for the bundle (REF-EDIT-4, nullable).
+   * Pre-existing rows read {@code null}; callers may set or clear it
+   * via {@code PATCH /v2/bundles/{appId}}.
+   */
+  private String description;
 
   /**
    * Two-label OGM trick: this {@code @Labels}-annotated field is

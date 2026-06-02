@@ -42,6 +42,9 @@ public class FileBundleReferenceIO extends BasicReferenceIO {
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;
 
+  @Schema(nullable = true, description = "Optional free-form description of the bundle (REF-EDIT-4, patchable).")
+  private String description;
+
   @Schema(readOnly = true, nullable = true, description = "Mongo ObjectId of the underlying FileContainer.")
   private String containerMongoId;
 
@@ -54,6 +57,7 @@ public class FileBundleReferenceIO extends BasicReferenceIO {
   public FileBundleReferenceIO(FileBundleReference src) {
     super(src);
     this.appId = src.getAppId();
+    this.description = src.getDescription();
     this.containerMongoId = src.getFileContainer() != null ? src.getFileContainer().getMongoId() : null;
     if (src.getGroups() != null) {
       this.groups = src.getGroups().stream()

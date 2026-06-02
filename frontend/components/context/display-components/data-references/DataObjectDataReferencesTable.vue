@@ -20,6 +20,19 @@ interface DataObjectDataReferencesTableProps {
 const props = defineProps<DataObjectDataReferencesTableProps>();
 const router = useRouter();
 
+// ── REF-EDIT-4: FileBundleReference edit dialog ──────────────────────────────
+const showEditBundleDialog = ref(false);
+const editBundleAppId = ref<string>("");
+const editBundleName = ref<string>("");
+const editBundleDescription = ref<string | null>(null);
+
+function openEditBundleDialog(item: DataTableElement) {
+  editBundleAppId.value = item.meta.appId!;
+  editBundleName.value = item.name;
+  editBundleDescription.value = null; // description not carried in legacy meta; will pre-fill from props
+  showEditBundleDialog.value = true;
+}
+
 // ── Legacy annotation dialog (v1 AnnotatedReference path — numeric id) ───────
 const selectedReferenceId = ref<number>(0);
 const showAddAnnotationDialog = ref(false);
@@ -461,6 +474,13 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-tag-outline"
             @click="() => openAddAnnotationDialog(item.actions.elementId!)"
           />
+          <!-- REF-EDIT-4: edit name/description for File Bundle rows (requires appId) -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'File Bundle' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            aria-label="Edit bundle"
+            @click="() => openEditBundleDialog(item)"
+          />
           <!-- New kinds: SEMA-V6 annotation dialog -->
           <ActionButton
             v-if="isAllowedToEditCollection && NEW_KINDS.has(item.type) && item.meta.appId"
@@ -539,6 +559,16 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-4: File Bundle edit dialog -->
+  <EditFileBundleReferenceDialog
+    v-if="showEditBundleDialog && editBundleAppId"
+    v-model:show-dialog="showEditBundleDialog"
+    :bundle-app-id="editBundleAppId"
+    :current-name="editBundleName"
+    :current-description="editBundleDescription"
+    @saved="(name, _desc) => { emit('refresh'); editBundleName = name; }"
   />
 </template>
 

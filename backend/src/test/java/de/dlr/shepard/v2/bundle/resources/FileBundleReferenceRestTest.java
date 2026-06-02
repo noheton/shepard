@@ -10,11 +10,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
@@ -30,6 +35,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,6 +74,12 @@ class FileBundleReferenceRestTest {
   EntityIdResolver entityIdResolver;
 
   @Mock
+  UserService userService;
+
+  @Mock
+  DateHelper dateHelper;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -86,9 +98,15 @@ class FileBundleReferenceRestTest {
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
     resource.objectMapper = new ObjectMapper();
+    resource.userService = userService;
+    resource.dateHelper = dateHelper;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), any(AccessType.class), eq(CALLER), anyLong())).thenReturn(true);
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(userService.getCurrentUser()).thenReturn(new User());
+    // By default, allow bundle DAO to return updated bundle for patchBundle
+    when(fileBundleReferenceDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   private FileBundleReference existingBundle() {
@@ -441,5 +459,107 @@ class FileBundleReferenceRestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
     resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext);
     verify(fileGroupService, never()).deleteGroup(any(), org.mockito.ArgumentMatchers.anyBoolean());
+  }
+
+  // ─── PATCH /v2/bundles/{bundleAppId} (REF-EDIT-4) ─────────────────────────
+
+  @Test
+  void patchBundle_returns200OnNameChange() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"renamed-bundle\"}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    var io = (FileBundleReferenceIO) r.getEntity();
+    assertEquals("renamed-bundle", io.getName());
+  }
+
+  @Test
+  void patchBundle_returns200OnDescriptionSet() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"description\":\"MFFD AFP layup files\"}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    var io = (FileBundleReferenceIO) r.getEntity();
+    assertEquals("MFFD AFP layup files", io.getDescription());
+  }
+
+  @Test
+  void patchBundle_returns200OnDescriptionClear() {
+    var bundle = existingBundle();
+    bundle.setDescription("some existing description");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"description\":null}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    var io = (FileBundleReferenceIO) r.getEntity();
+    assertNull(io.getDescription());
+  }
+
+  @Test
+  void patchBundle_returns400WhenNameBlank() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"  \"}"), securityContext);
+
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNotObject() {
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("\"oops\""), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNull() {
+    assertEquals(400, resource.patchBundle(BUNDLE_APP_ID, null, securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext);
+
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns403WhenNoWritePermission() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext);
+
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns404WhenBundleMissing() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(null);
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext);
+
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_emptyPatchBodyReturns200WithUnchangedBundle() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    var io = (FileBundleReferenceIO) r.getEntity();
+    assertEquals("my bundle", io.getName());
   }
 }
