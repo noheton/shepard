@@ -17,6 +17,10 @@ import AncestorChainPanel from "~/components/context/data-object/AncestorChainPa
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
+// MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — image bundle viewer pane. Mounts when
+// the DO carries at least one FileBundleReference whose name matches an
+// image-bundle heuristic (.png / .jpg / .tif extensions or keywords).
+import DataObjectImageBundlePane from "~/components/context/file/DataObjectImageBundlePane.vue";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
@@ -89,6 +93,31 @@ function refreshExtraReferences() {
 const totalReferenceCount = computed(
   () => (dataReferences.value?.length ?? 0) + extraReferenceItems.value.length,
 );
+
+/**
+ * MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — detect FileBundleReferences whose name
+ * suggests generic image frames. Heuristic: name ends with `.png`, `.jpg`,
+ * `.tif`, or contains "image"/"img"/"frame"/"scan" (case-insensitive).
+ * Returns a deduplicated list of bundle appIds sorted by natural order.
+ *
+ * This is intentionally broader than the thermography heuristic so that
+ * any image-bearing bundle surfaces in the scrubber pane.
+ */
+const IMAGE_NAME_RE = /\.(png|jpg|jpeg|tif|tiff)$/i;
+const IMAGE_KEYWORD_RE = /image|img|frame|scan/i;
+
+const imageBundleAppIds = computed<string[]>(() => {
+  const refs = dataReferences.value ?? [];
+  const ids: string[] = [];
+  for (const r of refs) {
+    if (!("fileReferenceId" in r || "fileContainerId" in r)) continue;
+    const name = ((r as { name?: string }).name ?? "");
+    if (!IMAGE_NAME_RE.test(name) && !IMAGE_KEYWORD_RE.test(name)) continue;
+    const appId = (r as { appId?: string | null }).appId;
+    if (appId && !ids.includes(appId)) ids.push(appId);
+  }
+  return ids;
+});
 
 // PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
 // Best-effort: empty when the DataObject has no typed predecessors or backend
@@ -713,6 +742,21 @@ async function saveEmbargoEdit() {
                       :collection-id="collectionId"
                     />
                   </div>
+                </ExpansionPanelItem>
+                <!-- MFFD-IMAGEBUNDLE-PANE-MOUNT-1: Image Frames pane — mounts only
+                     when the DO carries at least one FileBundleReference whose
+                     name matches the image-bundle heuristic. Self-contained:
+                     the pane fetches group lists and renders the ImageBundleViewer
+                     scrubber. When multiple image bundles exist a bundle picker is
+                     shown so the researcher can switch between them. -->
+                <ExpansionPanelItem
+                  v-if="imageBundleAppIds.length > 0 && dataObject.appId"
+                  title="Image Frames"
+                >
+                  <DataObjectImageBundlePane
+                    :data-object-app-id="dataObject.appId"
+                    :image-bundle-app-ids="imageBundleAppIds"
+                  />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.
                      Shows the upstream predecessor chain as a vertical
