@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shepard-plugin-fileformat-svdx — Beckhoff TwinCAT Scope (.svdx) tier-1 parser
+
+  STANDALONE MODULE. This pom is deliberately NOT wired into
+  /opt/shepard/plugins/pom.xml or /opt/shepard/backend/pom.xml — the
+  main aggregator build is currently wedged on a Quarkus/Jandex
+  CompositeIndex.getClassByName infinite-loop hang, and pulling this
+  module into the aggregator would make that worse. See the sibling
+  fileformat-thermography and fileformat-robotics poms for the same
+  constraint.
+
+  Build:
+    cd plugins/fileformat-svdx && mvn package
+
+  Aggregator wire-up is a follow-up row (MFFD-PLUGIN-SVDX-WIRE-1)
+  deferred until the Jandex hang in backend is resolved.
+
+  Tier-1 scope (MFFD-PLUGIN-SVDX-1, this commit):
+    - Detect .svdx magic envelope (bytes 8-15 carry the TwinCAT Scope
+      format-version stamp 0xXX 0x96 0x0c 0x00…)
+    - Decode bytes 0-7 as uint64 LE pointing 3 bytes before the
+      embedded XML manifest (verified across 21 real DLR MFFD AFP
+      ultrasonic-spot-welding files from 2023-03-20)
+    - Parse the trailing XML <ScopeProject> manifest using javax.xml.stream
+      (StAX streaming, no DOM, no schema validation)
+    - Emit SemanticAnnotations under urn:shepard:svdx:* on the parent
+      FileReference (projectGuid, dataPoolGuid, mainServer, recordTime,
+      autoSaveMode, channelCount, channelNames[], symbolNames[],
+      dataTypes[], amsNetId, port, companionCsv when a sibling .csv
+      is detected in the same FileContainer)
+    - NO sample-block parsing (binary layout proprietary and
+      undocumented by Beckhoff; deferred to MFFD-PLUGIN-SVDX-BINARY-PARSER-1)
+    - NO TimeseriesReference creation (the canonical ingestion path
+      is the operator-driven CSV export from TwinCAT Scope Export
+      Tool; deferred to MFFD-PLUGIN-SVDX-CSV-INGEST-1)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — fileformat svdx (Beckhoff TwinCAT Scope tier-1)</name>
+  <description>
+    Tier-1 manifest-extraction parser for Beckhoff TwinCAT Scope project
+    files (.svdx) from the MFFD upper-shell ultrasonic spot-welding
+    campaign at DLR ZLP Augsburg. Decodes the 16-byte envelope header,
+    locates the trailing XML manifest via a uint64 LE pointer, and
+    parses the manifest with StAX to emit urn:shepard:svdx:*
+    SemanticAnnotations (projectGuid, channelCount, symbolNames, etc.)
+    on the parent FileReference. The proprietary binary sample layout
+    is NOT decoded — Beckhoff publishes no spec for it; the existing
+    pytcs community project explicitly works on CSV/TXT exports only.
+    Sample-level ingestion is the operator-driven CSV path
+    (MFFD-PLUGIN-SVDX-CSV-INGEST-1) or future binary RE
+    (MFFD-PLUGIN-SVDX-BINARY-PARSER-1).
+  </description>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <compiler-plugin.version>3.13.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.2</surefire-plugin.version>
+
+    <junit.version>5.11.4</junit.version>
+    <assertj.version>3.27.3</assertj.version>
+  </properties>
+
+  <dependencies>
+    <!-- No runtime deps beyond the JDK: javax.xml.stream (StAX) is
+         built into the JDK; java.nio.ByteBuffer handles the envelope
+         decode; java.nio.channels.SeekableByteChannel handles the
+         trailing-tail read without buffering the front section. -->
+
+    <!-- test scope only -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-fileformat-svdx-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
