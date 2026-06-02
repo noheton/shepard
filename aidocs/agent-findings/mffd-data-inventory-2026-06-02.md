@@ -187,7 +187,7 @@ defined.
 | `Track_NN__Run_NN_` DO | `DataObject` with template `process-step-afp-layup` | ✅ V100 |
 | `ts/Timeseries.csv` | `TimeseriesReference` → TimescaleDB hypertable | ✅ TS-OPT3 + 192-channel bulk endpoint |
 | `files/Robot program` | `FileReference (FR1b singleton)` | ✅ J1e |
-| `files/TPS raw data.N` | **`ImageBundleReference` of 38 PNG camera frames per track** (1292×964 grayscale; AAC1 reverse-engineered 2026-06-02 — NOT binary chunks) | ⚠️ alpha; scale-untested at 313,538 frames; candidate for VID1 synthesis |
+| `files/TPS raw data.N` | **`SpatialDataContainer` of `kind=brush-trace`** (line-scan PNG: each row = one sensor measurement instant along the track per operator correction 2026-06-02; 38 chunks × 964 rows × 1292 cols = ~46M points per track). 1292×964 grayscale verified by AAC1 — image *envelope* is PNG but the semantics are spatial line-scan, not video. | ⚠️ gap-blocked on `MFFD-SPATIAL-LINESCAN-IMPORTER-1` (extends AAC1 spatial-importer) |
 | `files/TPS 3D pointclouds.N` | `FileBundleReference` | ⚠️ **no 3D viewer yet** |
 | `files/FSD course 3D pointclouds` | `FileBundleReference` | ⚠️ ditto |
 | `metadata.json` | `attributes` + `:SemanticAnnotation` | ✅ TPL4 dual-write |
