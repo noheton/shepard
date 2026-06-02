@@ -39,7 +39,8 @@ public class ContainerSearchService {
       containerSearchParams.getQuery(),
       containerSearchParams.getQueryType(),
       sortOrder,
-      user.getUsername()
+      user.getUsername(),
+      containerSearchParams.getCreatedBy()
     );
     List<BasicContainerIO> resultList = findContainerList(neo4jSelectionQuery, containerSearchParams, pagination);
     Integer totalResultCount = searchDAO.getContainerTotalCount(
