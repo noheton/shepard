@@ -1,5 +1,5 @@
 import {
-  CollectionApi,
+  type Collection,
   type CollectionReference,
   CollectionReferenceApi,
   type DataObject,
@@ -21,6 +21,43 @@ import type {
   Successor,
 } from "~/components/context/display-components/relationships/relatedEntity";
 import { useShepardApi } from "../common/api/useShepardApi";
+
+/**
+ * BUG-COLL-APPID-ROUTE-003 (2026-06-02): raw `fetch` against the v2 Collection
+ * GET endpoint so post-reset Collections (UUID v7 only, no numeric long `id`)
+ * resolve. Mirrors the pattern in `useFetchCollection.ts` /
+ * `useFetchDataObject.ts`. Accepts either UUID v7 or numeric stringified id —
+ * the backend `EntityIdResolver` handles both shapes.
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function fetchCollectionByAnyIdV2(
+  collectionId: string,
+): Promise<Collection> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url = `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionId)}`;
+  const resp = await fetch(url, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      Accept: "application/json",
+    },
+  });
+  if (!resp.ok) {
+    throw {
+      response: resp,
+      message: `HTTP ${resp.status}`,
+    } as unknown as ResponseError;
+  }
+  return (await resp.json()) as Collection;
+}
 
 export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   const relatedEntities = ref<RelatedEntity[] | undefined>(undefined);
@@ -81,12 +118,18 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
         handleError(error, "fetchDataObjectReferencePayload");
       });
     if (!dataObject) return;
-    const collection = await useShepardApi(CollectionApi)
-      .value.getCollection({ collectionId: dataObject.collectionId })
-      .catch((error: ResponseError) => {
-        if (error.response.status === 403) return;
-        handleError(error, "fetchDataObjectReferencePayload");
-      });
+    // BUG-COLL-APPID-ROUTE-003 (2026-06-02): route through the v2 appId-keyed
+    // endpoint so post-Neo4j-reset Collections (UUID v7 only, no numeric `id`)
+    // resolve correctly. `dataObject.collectionId` here may be either a UUID
+    // string cast as a number (post-reset) or a real numeric id; the v2
+    // EntityIdResolver accepts both shapes when stringified.
+    const collection = await fetchCollectionByAnyIdV2(
+      String(dataObject.collectionId),
+    ).catch((error: ResponseError) => {
+      if (error.response?.status === 403) return undefined;
+      handleError(error, "fetchDataObjectReferencePayload");
+      return undefined;
+    });
     if (!collection) return;
     return { ...dataObject, collection };
   }
