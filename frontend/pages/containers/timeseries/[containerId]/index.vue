@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import DeleteContainerButton from "~/components/container/DeleteContainerButton.vue";
+import ViewRecipeBuilderDialog from "~/components/container/timeseries/ViewRecipeBuilderDialog.vue";
 import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesContainerAccessor";
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 import { useTimeseriesContainerChartView } from "~/composables/containers/useTimeseriesContainerChartView";
@@ -72,6 +73,16 @@ function channelLabel(ch: { measurement?: string | null; device?: string | null;
   return parts.length ? parts.join(" · ") : "(unnamed channel)";
 }
 
+// UX-WALK-2026-05-29-07 — "Visualize in 3D" CTA one level upstream of the
+// TimeseriesReference detail page. Enabled when the container has ≥ 3 channels
+// (x/y/z minimum for Trace3D). startNs/endNs are 0 so the render page falls
+// back to its default "last 1 hour" window — appropriate when no reference
+// time-range has been selected yet.
+const showVisualize3D = ref<boolean>(false);
+const canVisualize3D = computed<boolean>(
+  () => containerAccessor.measurements.value.length >= 3,
+);
+
 const deleteWarning = computed<string | undefined>(() => {
   const n = linkedDataObjects.value?.length ?? 0;
   if (n === 0) return undefined;
@@ -141,6 +152,17 @@ useHead({
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
+                  <!-- UX-WALK-2026-05-29-07: Trace3D CTA at the container level -->
+                  <v-btn
+                    v-if="canVisualize3D"
+                    size="small"
+                    variant="tonal"
+                    color="primary"
+                    prepend-icon="mdi-cube-outline"
+                    @click="showVisualize3D = true"
+                  >
+                    Visualize in 3D
+                  </v-btn>
                   <UploadFilesButton
                     v-if="containerAccessor.isAllowedToEditData.value"
                     accept=".csv"
@@ -321,6 +343,17 @@ useHead({
         </ExpansionPanelItem>
       </ExpansionPanels>
     </v-container>
+    <!-- UX-WALK-2026-05-29-07: Trace3D dialog at container level.
+         startNs/endNs are 0 so the render page defaults to its "last 1 hour"
+         fallback window — appropriate when no reference time-range is selected. -->
+    <ViewRecipeBuilderDialog
+      v-if="canVisualize3D"
+      v-model="showVisualize3D"
+      :container-id="containerId"
+      :channels="containerAccessor.measurements.value"
+      :start-ns="0"
+      :end-ns="0"
+    />
   </PageShell>
 </template>
 
