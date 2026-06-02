@@ -75,6 +75,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     next.setBody(prior.getBody());
     next.setDescription(prior.getDescription());
     next.setTags(prior.getTags() == null ? new ArrayList<>() : new ArrayList<>(prior.getTags()));
+    next.setIconKey(prior.getIconKey());
     next.setRetired(false);
     return next;
   }

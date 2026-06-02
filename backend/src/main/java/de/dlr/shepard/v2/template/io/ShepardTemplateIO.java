@@ -62,6 +62,9 @@ public class ShepardTemplateIO {
   @Schema(required = true, description = "true when retired and filtered from picker listings (still kept on disk).")
   private boolean retired;
 
+  @Schema(required = false, nullable = true, description = "MDI icon name, e.g. 'mdi-layers'. Null means use the per-kind default.")
+  private String iconKey;
+
   public static ShepardTemplateIO from(ShepardTemplate t) {
     return new ShepardTemplateIO(
       t.getAppId(),
@@ -74,7 +77,8 @@ public class ShepardTemplateIO {
       DisplayNameResolver.redactUsername(t.getCreatedBy()),
       t.getCreatedAt(),
       t.getUpdatedAt(),
-      t.isRetired()
+      t.isRetired(),
+      t.getIconKey()
     );
   }
 }

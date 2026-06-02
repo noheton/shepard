@@ -33,4 +33,7 @@ public class CreateShepardTemplateIO {
 
   @Schema(required = false, nullable = true, description = "Author-supplied tags for picker filtering.")
   private List<String> tags;
+
+  @Schema(required = false, nullable = true, description = "MDI icon name, e.g. 'mdi-layers'. Null means use the per-kind default.")
+  private String iconKey;
 }

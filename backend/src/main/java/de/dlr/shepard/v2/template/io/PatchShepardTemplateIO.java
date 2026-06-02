@@ -31,4 +31,7 @@ public class PatchShepardTemplateIO {
 
   @Schema(required = false, nullable = true, description = "If set, replaces the tag list (full replace, not merge).")
   private List<String> tags;
+
+  @Schema(required = false, nullable = true, description = "If set, replaces the MDI icon name. Supply null explicitly to clear the icon (use the per-kind default).")
+  private String iconKey;
 }

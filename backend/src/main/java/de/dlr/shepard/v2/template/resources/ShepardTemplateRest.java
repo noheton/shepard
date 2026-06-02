@@ -130,6 +130,7 @@ public class ShepardTemplateRest {
     ShepardTemplate t = new ShepardTemplate(body.getName(), body.getTemplateKind(), body.getBody());
     t.setDescription(body.getDescription());
     if (body.getTags() != null) t.setTags(body.getTags());
+    t.setIconKey(body.getIconKey());
     t.setCreatedBy(caller);
     t.setCreatedAt(now);
     t.setUpdatedAt(now);
@@ -179,6 +180,7 @@ public class ShepardTemplateRest {
       if (body.getBody() != null) next.setBody(body.getBody());
       if (body.getDescription() != null) next.setDescription(body.getDescription());
       if (body.getTags() != null) next.setTags(body.getTags());
+      if (body.getIconKey() != null) next.setIconKey(body.getIconKey());
     }
     next.setCreatedBy(caller);
     next.setCreatedAt(now);
