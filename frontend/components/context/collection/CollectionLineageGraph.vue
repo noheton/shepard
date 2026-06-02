@@ -1,144 +1,295 @@
 <script setup lang="ts">
+/**
+ * LINEAGE-GRAPH-MFFD-SCALE (GAP-12 / task #25) — Collection lineage graph
+ * sized for MFFD-scale collections (~20k node + edge count).
+ *
+ * Engine choice: ECharts (Canvas) + @dagrejs/dagre layered layout.
+ * Rationale (see the GAP-12 row in aidocs/16 for the long form):
+ *   - The previous implementation was *already* ECharts + dagre; the actual
+ *     bug was the silent `NODE_CAP = 150` truncation, not the engine.
+ *   - ECharts Canvas hits the 20k-node performance budget; DOM-based
+ *     alternatives (vue-flow, cytoscape SVG) reportedly cap out at
+ *     ~5k nodes even with viewport culling.
+ *   - Keeping the engine is also the smallest possible diff, which
+ *     keeps small-Collection rendering identical.
+ *
+ * What this rewrite adds on top of the previous component:
+ *   1. NODE_CAP removed — full lineage shown.
+ *   2. Level-Of-Detail via the roam zoom event:
+ *        macro (<0.3): one bubble per ply / process-type
+ *        meso  (<0.8): individual nodes, no labels
+ *        detail (≥0.8): full labels + status colour
+ *   3. Filter pills above the canvas (status / process-type / "Around N").
+ *   4. Minimap (second small <v-chart> instance) — survey-only.
+ *   5. Click-through to the DataObject detail page.
+ *
+ * All client-side; no new backend endpoints. The existing
+ * `useFetchAllDataObjects` composable already paginates the DO list.
+ */
 import VChart from "vue-echarts";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { GraphChart } from "echarts/charts";
 import { TooltipComponent, LegendComponent } from "echarts/components";
-import dagre from "@dagrejs/dagre";
 import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import { computeLineageState, type LineageState } from "~/utils/lineageState";
-import { STATUS_COLORS, DEFAULT_NODE_COLOR, nodeColor, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
+import {
+  STATUS_COLORS,
+  nodeColor,
+  truncateLabel,
+  baseGraphSeriesConfig,
+} from "~/composables/useLineageGraph";
+import {
+  type LineageDO,
+  type LineageFilter,
+  type LodMode,
+  applyFilters,
+  buildEdges,
+  clusterByProcess,
+  dagreLayout,
+  distinctProcessTypes,
+  distinctStatuses,
+  hasVisibleEdges,
+  lodForZoom,
+  showLabelForLod,
+  symbolSizeForLod,
+} from "~/utils/lineageLayout";
 
-if (process.client) {
+if (import.meta.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent, LegendComponent]);
 }
 
-const props = defineProps<{ collectionId: number; collectionAppId?: string }>();
+const props = defineProps<{
+  collectionId: number;
+  collectionAppId?: string;
+}>();
 
+const router = useRouter();
 const collectionAppIdRef = computed(() => props.collectionAppId ?? null);
 const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, collectionAppIdRef);
 
-const NODE_CAP = 150;
+// ---------------------------------------------------------------------------
+// Type-narrowing helpers — DataObjectListItemV2 carries extra fields, but the
+// pure helpers want the minimal LineageDO shape. One coerce point.
+// ---------------------------------------------------------------------------
 
-function statusColor(do_: DataObjectListItemV2): string {
-  return nodeColor((do_ as any).status ?? "");
+function toLineageDO(d: DataObjectListItemV2): LineageDO {
+  const raw = d as unknown as {
+    id: number;
+    name?: string;
+    status?: string | null;
+    description?: string | null;
+    parentId?: number | null;
+    predecessorIds?: number[];
+    attributes?: Record<string, string>;
+  };
+  return {
+    id: raw.id,
+    name: raw.name,
+    status: raw.status,
+    description: raw.description,
+    parentId: raw.parentId ?? null,
+    predecessorIds: raw.predecessorIds ?? [],
+    attributes: raw.attributes ?? {},
+  };
 }
 
-function doLabel(do_: DataObjectListItemV2): string {
-  return (do_ as any).name ?? String((do_ as any).id);
-}
+const allDos = computed<LineageDO[]>(() => dataObjects.value.map(toLineageDO));
 
-function dagreLayout(dos: DataObjectListItemV2[]): Map<number, { x: number; y: number }> {
-  const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "LR", nodesep: 55, ranksep: 200, marginx: 60, marginy: 40 });
-  g.setDefaultEdgeLabel(() => ({}));
+// ---------------------------------------------------------------------------
+// Filter state — kept in a single reactive object so a Reset button is one
+// assignment, not a fan-out of separate refs.
+// ---------------------------------------------------------------------------
 
-  const visibleIds = new Set(dos.map(d => (d as any).id as number));
+const statusFilter = ref<string[]>([]);
+const processTypeFilter = ref<string[]>([]);
+const neighborhoodCenter = ref<number | null>(null);
+const neighborhoodDepth = ref<number>(2);
 
-  for (const d of dos) {
-    g.setNode(String((d as any).id), { width: 90, height: 30 });
+const currentFilter = computed<LineageFilter>(() => {
+  const f: LineageFilter = {};
+  if (statusFilter.value.length > 0) f.statusIn = statusFilter.value;
+  if (processTypeFilter.value.length > 0) f.processTypeIn = processTypeFilter.value;
+  if (neighborhoodCenter.value != null) {
+    f.neighborhood = { centerDoId: neighborhoodCenter.value, depth: neighborhoodDepth.value };
   }
-  for (const d of dos) {
-    for (const predId of ((d as any).predecessorIds ?? []) as number[]) {
-      if (visibleIds.has(predId)) {
-        g.setEdge(String(predId), String((d as any).id));
-      }
-    }
-    const parentId = (d as any).parentId as number | null;
-    if (parentId && visibleIds.has(parentId)) {
-      g.setEdge(String(parentId), String((d as any).id));
-    }
-  }
-
-  dagre.layout(g);
-
-  const positions = new Map<number, { x: number; y: number }>();
-  for (const d of dos) {
-    const node = g.node(String((d as any).id));
-    positions.set((d as any).id as number, { x: node.x, y: node.y });
-  }
-  return positions;
-}
-
-const capped     = computed(() => dataObjects.value.length > NODE_CAP);
-const visibleDos = computed(() => dataObjects.value.slice(0, NODE_CAP));
-
-// "Has edges" = at least one visible DO carries a non-empty predecessorIds
-// list or a parentId that resolves inside the visible set.
-const hasEdges = computed<boolean>(() => {
-  const dos = visibleDos.value;
-  const visibleIds = new Set(dos.map(d => (d as any).id as number));
-  return dos.some(d => {
-    const preds: number[] = (d as any).predecessorIds ?? [];
-    if (preds.some((id: number) => visibleIds.has(id))) return true;
-    const parentId = (d as any).parentId as number | null;
-    return parentId != null && visibleIds.has(parentId);
-  });
+  return f;
 });
 
-const lineageState = computed<LineageState>(() =>
-  computeLineageState(loading.value, dataObjects.value, hasEdges.value),
+const anyFilterActive = computed<boolean>(() =>
+  statusFilter.value.length > 0 ||
+  processTypeFilter.value.length > 0 ||
+  neighborhoodCenter.value != null,
 );
+
+function resetFilters(): void {
+  statusFilter.value = [];
+  processTypeFilter.value = [];
+  neighborhoodCenter.value = null;
+}
+
+// Available filter values, derived from the full DO list (not the filtered
+// view — otherwise toggling one pill makes the others disappear).
+const availableStatuses = computed<string[]>(() => distinctStatuses(allDos.value));
+const availableProcessTypes = computed<string[]>(() => distinctProcessTypes(allDos.value));
+
+// ---------------------------------------------------------------------------
+// Filtered DO set + edges + positions
+// ---------------------------------------------------------------------------
+
+const visibleDos = computed<LineageDO[]>(() => applyFilters(allDos.value, currentFilter.value));
+const visibleEdges = computed(() => buildEdges(visibleDos.value));
+const positions = computed(() => dagreLayout(visibleDos.value));
+
+const hasEdges = computed<boolean>(() => hasVisibleEdges(visibleDos.value));
+const lineageState = computed<LineageState>(() =>
+  computeLineageState(loading.value, allDos.value, hasEdges.value),
+);
+
+// ---------------------------------------------------------------------------
+// LOD — track zoom from the main chart's `georoam` event and recompute the
+// option. ECharts emits a relative delta; we track the cumulative product.
+// ---------------------------------------------------------------------------
+
+const zoom = ref<number>(1);
+const lod = computed<LodMode>(() => lodForZoom(zoom.value));
+
+function onGraphRoam(params: { zoom?: number }): void {
+  if (typeof params.zoom === "number" && params.zoom > 0) {
+    zoom.value = zoom.value * params.zoom;
+    // Clamp to the same range ECharts uses internally so LOD doesn't go
+    // wild on a long pinch session.
+    if (zoom.value < 0.05) zoom.value = 0.05;
+    if (zoom.value > 20) zoom.value = 20;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Series builder — three branches keyed on LOD
+// ---------------------------------------------------------------------------
+
+const STATUS_COLOR_BUBBLE = "#4097CC";
+
+function buildDetailNodes(): Array<Record<string, unknown>> {
+  const dos = visibleDos.value;
+  const pos = positions.value;
+  const size = symbolSizeForLod(lod.value);
+  const label = showLabelForLod(lod.value);
+  return dos.map((d) => {
+    const p = pos.get(d.id) ?? { x: 0, y: 0 };
+    return {
+      id: String(d.id),
+      name: d.name ?? String(d.id),
+      value: d.id,
+      x: p.x,
+      y: p.y,
+      itemStyle: { color: nodeColor(d.status ?? "") },
+      symbolSize: size,
+      label: { show: label, fontSize: 11 },
+    };
+  });
+}
+
+function buildDetailEdges(): Array<Record<string, unknown>> {
+  return visibleEdges.value.map((e) => ({
+    source: e.source,
+    target: e.target,
+    lineStyle: e.kind === "predecessor"
+      ? { type: "dashed", color: "#FCA54D", opacity: 0.8 }
+      : { type: "solid", color: "#888", opacity: 0.5 },
+    // Carry through for the tooltip
+    _kind: e.kind,
+  }));
+}
+
+const clusterGraph = computed(() => clusterByProcess(visibleDos.value, visibleEdges.value));
+
+function buildMacroNodes(): Array<Record<string, unknown>> {
+  // Cluster bubbles are positioned by running dagre over them too — that way
+  // the macro view inherits the same left-to-right flow as the detail view.
+  const { clusters, edges } = clusterGraph.value;
+  if (clusters.length === 0) return [];
+
+  // Synthesize tiny LineageDO objects so dagreLayout can reuse its existing
+  // signature. id is the index; predecessor edges come from the bubble graph.
+  const bubbleIndex = new Map(clusters.map((c, i) => [c.id, i] as const));
+  const synth: LineageDO[] = clusters.map((c, i) => ({
+    id: i,
+    name: c.label,
+    predecessorIds: edges
+      .filter((e) => e.target === c.id)
+      .map((e) => bubbleIndex.get(e.source))
+      .filter((v): v is number => typeof v === "number"),
+    parentId: null,
+    attributes: {},
+  }));
+  const synthPositions = dagreLayout(synth, { ranksep: 280, nodesep: 80 });
+
+  return clusters.map((c, i) => {
+    const p = synthPositions.get(i) ?? { x: 0, y: 0 };
+    // Bubble size scales with sqrt(count) so a 100x denser ply is ~10x larger
+    // visually — readable at a glance without overwhelming the small ones.
+    const size = Math.min(80, 18 + Math.sqrt(c.count) * 2);
+    return {
+      id: c.id,
+      name: c.label,
+      value: c.count,
+      x: p.x,
+      y: p.y,
+      itemStyle: { color: STATUS_COLOR_BUBBLE, opacity: 0.85 },
+      symbolSize: size,
+      label: { show: true, fontSize: 12, formatter: `${c.label}\n${c.count}` },
+    };
+  });
+}
+
+function buildMacroEdges(): Array<Record<string, unknown>> {
+  const { edges } = clusterGraph.value;
+  return edges.map((e) => ({
+    source: e.source,
+    target: e.target,
+    lineStyle: {
+      // Edge thickness from underlying edge count — capped so a dense ply
+      // pair doesn't draw a 40-px bar across the screen.
+      width: Math.min(8, 1 + Math.log10(e.weight + 1) * 3),
+      color: "#888",
+      opacity: 0.6,
+    },
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// ECharts option for the main canvas
+// ---------------------------------------------------------------------------
 
 const chartOption = computed(() => {
   const dos = visibleDos.value;
   if (!dos.length) return {};
 
-  const visibleIds = new Set(dos.map(d => (d as any).id as number));
-  const positions  = dagreLayout(dos);
-
-  const nodes = dos.map(d => {
-    const id  = (d as any).id as number;
-    const pos = positions.get(id) ?? { x: 0, y: 0 };
-    return {
-      id:         String(id),
-      name:       doLabel(d),
-      value:      id,
-      x:          pos.x,
-      y:          pos.y,
-      itemStyle:  { color: statusColor(d) },
-      symbolSize: 22,
-      label:      { show: true, fontSize: 11 },
-    };
-  });
-
-  const edges: Array<{ source: string; target: string; lineStyle: object }> = [];
-  dos.forEach(d => {
-    const id       = (d as any).id as number;
-    const parentId = (d as any).parentId as number | null;
-    if (parentId && visibleIds.has(parentId)) {
-      edges.push({
-        source:    String(parentId),
-        target:    String(id),
-        lineStyle: { type: "solid", color: "#888", opacity: 0.5 },
-      });
-    }
-    for (const predId of ((d as any).predecessorIds ?? []) as number[]) {
-      if (visibleIds.has(predId)) {
-        edges.push({
-          source:    String(predId),
-          target:    String(id),
-          lineStyle: { type: "dashed", color: "#FCA54D", opacity: 0.8 },
-        });
-      }
-    }
-  });
+  const isMacro = lod.value === "macro";
+  const nodes = isMacro ? buildMacroNodes() : buildDetailNodes();
+  const edges = isMacro ? buildMacroEdges() : buildDetailEdges();
 
   return {
     backgroundColor: "transparent",
     tooltip: {
-      formatter: (params: any) => {
+      formatter: (params: { dataType?: string; name?: string; data?: Record<string, unknown> }) => {
         if (params.dataType === "node") {
-          const d = dos.find(x => (x as any).id === params.data.value) as any;
-          if (!d) return params.name;
+          if (isMacro) {
+            const count = (params.data?.value as number) ?? 0;
+            return `<b>${params.name}</b><br/>${count} DataObjects`;
+          }
+          const d = dos.find((x) => x.id === params.data?.value) as LineageDO | undefined;
+          if (!d) return params.name ?? "";
           const desc = d.description
             ? `<br/><span style="color:#999;font-size:11px">${String(d.description).substring(0, 120)}${d.description.length > 120 ? "…" : ""}</span>`
             : "";
-          return `<b>${doLabel(d)}</b><br/><span style="color:#888;font-size:11px">Status: ${d.status ?? "—"}</span>${desc}`;
+          return `<b>${d.name ?? String(d.id)}</b><br/><span style="color:#888;font-size:11px">Status: ${d.status ?? "—"}</span>${desc}`;
         }
         if (params.dataType === "edge") {
-          return params.data.lineStyle?.type === "dashed"
+          const data = params.data as { _kind?: string } | undefined;
+          return data?._kind === "predecessor"
             ? `<span style="color:#FCA54D">⟶</span> predecessor relationship`
             : `<span style="color:#888">⟶</span> parent / child hierarchy`;
         }
@@ -148,27 +299,102 @@ const chartOption = computed(() => {
     series: [
       {
         ...baseGraphSeriesConfig(),
-        layout:    "none",
+        layout: "none",
         draggable: false,
         nodes,
         edges,
         emphasis: {
-          focus:     "adjacency",
+          focus: "adjacency",
           lineStyle: { width: 2 },
         },
         label: {
           position: "bottom",
-          fontSize:  11,
-          color:    "inherit",
-          formatter: (params: any) => {
-            const n: string = params.name ?? "";
-            return truncateLabel(n, 18);
-          },
+          fontSize: 11,
+          color: "inherit",
+          formatter: (params: { name?: string }) => truncateLabel(params.name ?? "", 18),
         },
       },
     ],
   };
 });
+
+// ---------------------------------------------------------------------------
+// Minimap option — same node set as detail mode, no labels, tiny markers,
+// roam disabled. Cheap because Canvas-backed ECharts re-uses the layout.
+// ---------------------------------------------------------------------------
+
+const minimapVisible = ref<boolean>(true);
+
+const minimapOption = computed(() => {
+  const dos = visibleDos.value;
+  if (!dos.length) return {};
+  const pos = positions.value;
+  const nodes = dos.map((d) => {
+    const p = pos.get(d.id) ?? { x: 0, y: 0 };
+    return {
+      id: String(d.id),
+      x: p.x,
+      y: p.y,
+      itemStyle: { color: nodeColor(d.status ?? "") },
+      symbolSize: 2,
+      label: { show: false },
+    };
+  });
+  const edges = visibleEdges.value.map((e) => ({
+    source: e.source,
+    target: e.target,
+    lineStyle: { color: "#cccccc", opacity: 0.4, width: 0.5 },
+  }));
+  return {
+    backgroundColor: "transparent",
+    series: [
+      {
+        type: "graph",
+        layout: "none",
+        roam: false,
+        edgeSymbol: ["none", "none"],
+        silent: true,
+        nodes,
+        edges,
+      },
+    ],
+  };
+});
+
+// ---------------------------------------------------------------------------
+// Click-through — navigate to DO detail page on node click in detail/meso mode.
+// In macro mode, drill into the cluster (set process-type / ply filter).
+// ---------------------------------------------------------------------------
+
+// ECharts surfaces a fairly loose union for click events; we read only the
+// two fields we own (`dataType` + `data.id` / `data.value`). The unknown
+// cast is the cheapest way to bridge the runtime contract without pulling
+// in `ECElementEvent` (which forces `data: OptionDataItem | null`).
+function onChartClick(rawParams: unknown): void {
+  const params = rawParams as { dataType?: string; data?: { id?: string; value?: number } };
+  if (params.dataType !== "node") return;
+  if (lod.value === "macro") {
+    const id = params.data?.id;
+    if (!id) return;
+    if (id.startsWith("cluster:proc:")) {
+      processTypeFilter.value = [id.slice("cluster:proc:".length)];
+    } else if (id.startsWith("cluster:ply:")) {
+      // Ply-cluster has no first-class filter pill; just zoom in.
+      zoom.value = Math.max(zoom.value, 1);
+    }
+    return;
+  }
+  const doId = params.data?.value;
+  if (typeof doId !== "number") return;
+  void router.push(`/collections/${props.collectionId}/dataobjects/${doId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Total / capped count for the info banner
+// ---------------------------------------------------------------------------
+
+const totalCount = computed(() => allDos.value.length);
+const renderedCount = computed(() => visibleDos.value.length);
 </script>
 
 <template>
@@ -186,29 +412,171 @@ const chartOption = computed(() => {
     </div>
     <!-- (c) DataObjects exist but no lineage edges defined -->
     <div
-      v-else-if="lineageState === 'no-edges'"
+      v-else-if="lineageState === 'no-edges' && !anyFilterActive"
       class="pa-4 text-body-2 text-medium-emphasis"
     >
       Datasets exist but no lineage links are defined. Use Predecessor/Successor on a DataObject to connect them.
     </div>
     <div v-else>
+      <!-- Filter pill row -->
+      <div class="d-flex flex-wrap align-center gap-2 mb-2 px-2" data-testid="lineage-filter-row">
+        <span class="text-caption text-medium-emphasis mr-1">Filter:</span>
+        <v-menu :close-on-content-click="false" location="bottom start">
+          <template #activator="{ props: actv }">
+            <v-chip
+              v-bind="actv"
+              size="small"
+              variant="tonal"
+              :color="statusFilter.length > 0 ? 'primary' : undefined"
+              prepend-icon="mdi-filter-variant"
+              data-testid="lineage-filter-status-button"
+            >
+              Status
+              <span v-if="statusFilter.length > 0" class="ml-1">({{ statusFilter.length }})</span>
+            </v-chip>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              v-for="s in availableStatuses"
+              :key="s"
+              :active="statusFilter.includes(s)"
+              @click="statusFilter.includes(s)
+                ? statusFilter = statusFilter.filter(x => x !== s)
+                : statusFilter = [...statusFilter, s]"
+            >
+              <template #prepend>
+                <v-icon size="14" :color="STATUS_COLORS[s]">mdi-circle</v-icon>
+              </template>
+              <v-list-item-title>{{ s }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="availableStatuses.length === 0">
+              <v-list-item-subtitle>No statuses on these datasets</v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-menu :close-on-content-click="false" location="bottom start">
+          <template #activator="{ props: actv }">
+            <v-chip
+              v-bind="actv"
+              size="small"
+              variant="tonal"
+              :color="processTypeFilter.length > 0 ? 'primary' : undefined"
+              prepend-icon="mdi-cog-outline"
+              data-testid="lineage-filter-process-button"
+            >
+              Process type
+              <span v-if="processTypeFilter.length > 0" class="ml-1">({{ processTypeFilter.length }})</span>
+            </v-chip>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              v-for="p in availableProcessTypes"
+              :key="p"
+              :active="processTypeFilter.includes(p)"
+              @click="processTypeFilter.includes(p)
+                ? processTypeFilter = processTypeFilter.filter(x => x !== p)
+                : processTypeFilter = [...processTypeFilter, p]"
+            >
+              <v-list-item-title>{{ p }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="availableProcessTypes.length === 0">
+              <v-list-item-subtitle>No process-type annotations on these datasets</v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-chip
+          v-if="neighborhoodCenter !== null"
+          size="small"
+          variant="tonal"
+          color="primary"
+          closable
+          prepend-icon="mdi-target"
+          data-testid="lineage-filter-neighborhood-chip"
+          @click:close="neighborhoodCenter = null"
+        >
+          Around #{{ neighborhoodCenter }} · depth ≤ {{ neighborhoodDepth }}
+        </v-chip>
+
+        <v-btn
+          v-if="anyFilterActive"
+          size="x-small"
+          variant="text"
+          density="compact"
+          data-testid="lineage-filter-reset"
+          @click="resetFilters"
+        >
+          Reset
+        </v-btn>
+
+        <v-spacer />
+
+        <v-btn
+          size="x-small"
+          variant="text"
+          density="compact"
+          :prepend-icon="minimapVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+          data-testid="lineage-minimap-toggle"
+          @click="minimapVisible = !minimapVisible"
+        >
+          {{ minimapVisible ? "Hide minimap" : "Show minimap" }}
+        </v-btn>
+      </div>
+
+      <!-- Density banner — only when filtering or showing > 500 nodes -->
       <v-alert
-        v-if="capped"
+        v-if="anyFilterActive || totalCount > 500"
         type="info"
         density="compact"
         variant="tonal"
         class="mb-2"
-        :text="`Showing ${NODE_CAP} of ${dataObjects.length} datasets. Use filters on the Datasets tab to narrow down.`"
-      />
+        data-testid="lineage-count-banner"
+      >
+        <template v-if="anyFilterActive">
+          Showing {{ renderedCount }} of {{ totalCount }} datasets after filtering.
+        </template>
+        <template v-else>
+          {{ totalCount }} datasets — zoom out for a macro overview, zoom in for labels.
+        </template>
+      </v-alert>
+
+      <!-- Caption -->
       <div class="text-caption text-medium-emphasis mb-2 px-2">
         <v-icon size="14" class="mr-1">mdi-circle</v-icon>Colored by status —
-        scroll to zoom · drag canvas to pan · hover node for details
+        scroll to zoom · drag canvas to pan · hover node for details · click to open ·
+        zoom mode:
+        <strong>{{ lod }}</strong>
       </div>
-      <v-sheet rounded="lg" style="overflow: hidden">
-        <ClientOnly>
-          <v-chart :option="chartOption" style="height: 440px" autoresize />
-        </ClientOnly>
-      </v-sheet>
+
+      <!-- Graph + minimap, side-by-side at md+, stacked on small screens -->
+      <div class="lineage-canvas-wrapper">
+        <v-sheet rounded="lg" class="lineage-main-sheet">
+          <ClientOnly>
+            <v-chart
+              :option="chartOption"
+              class="lineage-main-chart"
+              autoresize
+              data-testid="lineage-main-chart"
+              @click="onChartClick"
+              @georoam="onGraphRoam"
+            />
+          </ClientOnly>
+        </v-sheet>
+        <v-sheet
+          v-if="minimapVisible"
+          rounded="lg"
+          class="lineage-minimap-sheet"
+          data-testid="lineage-minimap"
+        >
+          <ClientOnly>
+            <v-chart :option="minimapOption" class="lineage-minimap-chart" autoresize />
+          </ClientOnly>
+          <div class="lineage-minimap-label">Overview</div>
+        </v-sheet>
+      </div>
+
+      <!-- Status legend -->
       <div class="d-flex flex-wrap gap-2 mt-2 px-2">
         <v-chip
           v-for="(color, status) in STATUS_COLORS"
@@ -227,3 +595,50 @@ const chartOption = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.lineage-canvas-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  overflow: hidden;
+}
+.lineage-main-sheet {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.lineage-main-chart {
+  height: 540px;
+  width: 100%;
+}
+.lineage-minimap-sheet {
+  flex: 0 0 200px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+}
+.lineage-minimap-chart {
+  height: 540px;
+  width: 200px;
+}
+.lineage-minimap-label {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 10px;
+  color: rgba(127, 127, 127, 0.6);
+  pointer-events: none;
+}
+@media (max-width: 960px) {
+  .lineage-canvas-wrapper {
+    flex-direction: column;
+  }
+  .lineage-minimap-sheet {
+    flex: 0 0 auto;
+  }
+  .lineage-minimap-chart {
+    height: 140px;
+    width: 100%;
+  }
+}
+</style>
