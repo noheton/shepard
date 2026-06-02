@@ -2,7 +2,7 @@
 name: ShepardTemplate icons — templates carry their visual identity
 description: Every ShepardTemplate gains an optional iconKey field; the UI renders the template's icon everywhere a DataObject is shown (tree rows, breadcrumbs, sidebar, cards, pickers).
 type: design
-stage: feature-defined
+stage: tests-implemented
 last-stage-change: 2026-06-02
 ---
 
@@ -84,7 +84,15 @@ canonical naming layer; templates override.
 
 V100 already shipped 2026-05-30 without `iconKey`. Per the CLAUDE.md
 "never edit a migration file that has been applied to any production instance"
-rule, a new migration (V104, additive) sets the icons on the existing templates.
+rule, a new migration (`V107` — V104 was already taken by the SceneGraph
+collection-link migration) sets the icons on the existing templates.
+
+The shipped V107 also includes the **actual** template names from V93 /
+V100 / V101 / V102 / V103 (`MFFD AFP Layup`, `MFFD Ultrasonic Welding`,
+`EquipmentItem`, `Generic Test Run`, `Disposition record`, …) so icons
+are observable today on the current dataset. The CamelCase names below
+remain in the migration as no-ops until a future seed lands the matching
+templates — at which point the icons attach with zero follow-up.
 
 | Template                  | iconKey                                | Reads as            |
 |---------------------------|----------------------------------------|---------------------|
