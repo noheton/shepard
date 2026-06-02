@@ -56,6 +56,99 @@ final class SyntheticSvdxBuilder {
         return out.toByteArray();
     }
 
+    /** A single channel's recording plan for the synthetic binary section. */
+    record ChannelPlan(String dataType, long acqStartFiletime, int sampleCount, int valueWidth) {}
+
+    /**
+     * Build a synthetic .svdx whose binary section follows the layout
+     * reverse-engineered in {@code docs/byte-layout-notes.md}: an
+     * acquisition-index header + one block per channel, each block being a
+     * 43-byte header (version tag + three FILETIMEs) followed by a single
+     * clean 1 kHz sample run of {@code [value][u32 tick]} records.
+     *
+     * <p>The value written for sample {@code k} of channel {@code c} is
+     * {@code c * 1000 + k} (encoded in the channel's data type), so a
+     * round-trip test can assert exact recovery.
+     *
+     * @param plans   one entry per channel/acquisition, in document order
+     * @param xmlBody the trailing manifest (must declare the same channels)
+     */
+    static byte[] buildWithBinary(java.util.List<ChannelPlan> plans, String xmlBody) throws IOException {
+        // 1. Lay out each channel block: 43-byte header + sampleCount × (vw+4).
+        java.util.List<byte[]> blocks = new java.util.ArrayList<>();
+        for (int c = 0; c < plans.size(); c++) {
+            ChannelPlan p = plans.get(c);
+            int rec = p.valueWidth() + 4;
+            int blockLen = 43 + p.sampleCount() * rec;
+            ByteBuffer blk = ByteBuffer.allocate(blockLen).order(ByteOrder.LITTLE_ENDIAN);
+            blk.put("01.00.00.40".getBytes(StandardCharsets.US_ASCII)); // 11 bytes
+            blk.putLong(SvdxBinaryParser.FT_ACQ_START, p.acqStartFiletime());
+            blk.putLong(SvdxBinaryParser.FT_WINDOW_START, p.acqStartFiletime() + 1_000_000L);
+            blk.putLong(SvdxBinaryParser.FT_WINDOW_END, p.acqStartFiletime() + 2_000_000L);
+            int o = 43;
+            for (int k = 0; k < p.sampleCount(); k++) {
+                writeValue(blk, o, p.dataType(), c * 1000 + k);
+                blk.putInt(o + p.valueWidth(), k * 10000); // 1 kHz: tick step 10000 (100ns units)
+                o += rec;
+            }
+            blocks.add(blk.array());
+        }
+
+        // 2. Acquisition-index header (20 bytes) + index records.
+        int n = plans.size();
+        // envelope(16) + header(20) + index((n-1)*20) + u32 trailer(4)
+        long dataStart = 16L + 20L + 20L * (n - 1) + 4L;
+        // cumulative end offsets
+        long[] cum = new long[n];
+        long pos = dataStart;
+        for (int i = 0; i < n; i++) { pos += blocks.get(i).length; cum[i] = pos; }
+
+        ByteArrayOutputStream binary = new ByteArrayOutputStream();
+        ByteBuffer head = ByteBuffer.allocate(20).order(ByteOrder.LITTLE_ENDIAN);
+        head.putInt(0, n);                       // file 0x10
+        head.putLong(4, dataStart);              // file 0x14
+        head.putLong(12, blocks.get(0).length);  // file 0x1c size_of_record_1
+        binary.write(head.array());
+        ByteBuffer idx = ByteBuffer.allocate(20 * (n - 1) + 4).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < n - 1; i++) {
+            int base = i * 20;
+            idx.putInt(base, i + 1);
+            idx.putLong(base + 4, cum[i]);
+            idx.putLong(base + 12, blocks.get(i + 1).length);
+        }
+        idx.putInt(20 * (n - 1), n); // trailer
+        binary.write(idx.array());
+        for (byte[] b : blocks) binary.write(b);
+
+        // 3. Assemble the full file: envelope + actual binary section + BOM + XML.
+        byte[] binarySection = binary.toByteArray();
+        byte[] xmlBodyBytes = xmlBody.getBytes(StandardCharsets.UTF_8);
+        byte[] bom = new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
+        long bomOffset = 16L + binarySection.length;
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteBuffer hdr = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN);
+        hdr.putLong(0, bomOffset);
+        hdr.putLong(8, DEFAULT_VERSION_WORD);
+        out.write(hdr.array());
+        out.write(binarySection);
+        out.write(bom);
+        out.write(xmlBodyBytes);
+        return out.toByteArray();
+    }
+
+    private static void writeValue(ByteBuffer bb, int off, String dataType, long v) {
+        switch (dataType.trim().toUpperCase()) {
+            case "BIT", "BOOL", "BYTE", "USINT", "SINT" -> bb.put(off, (byte) v);
+            case "INT16", "INT", "UINT16", "UINT", "WORD" -> bb.putShort(off, (short) v);
+            case "INT32", "DINT", "UINT32", "UDINT", "DWORD" -> bb.putInt(off, (int) v);
+            case "REAL32", "REAL" -> bb.putFloat(off, (float) v);
+            case "REAL64", "LREAL" -> bb.putDouble(off, (double) v);
+            case "INT64", "LINT", "UINT64", "ULINT", "LWORD" -> bb.putLong(off, v);
+            default -> throw new IllegalArgumentException("unsupported synthetic dtype " + dataType);
+        }
+    }
+
     /**
      * A minimal-but-realistic ScopeProject XML body patterned after
      * the real MFFD AFP files. The structure mirrors the empirically

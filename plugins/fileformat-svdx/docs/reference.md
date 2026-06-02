@@ -58,12 +58,38 @@ Total emissions per real MFFD file: ~250 annotations
 (46 channelName + 149 symbolName + ~10 metadata + ~3 dedup-list
 entries).
 
+## Tier-2: binary sample decoding (`SvdxBinaryParser`)
+
+`SvdxBinaryParser` decodes the proprietary binary sample region — the
+format reverse-engineered and validated in `byte-layout-notes.md`
+(`MFFD-PLUGIN-SVDX-BINARY-PARSER-1`). It exposes:
+
+* `decodeHeader(byte[])` → the acquisition-index preamble
+  (`n_acquisitions`, `data_section_start`, `size_of_record_1`).
+* `decodeIndex(file, header, xmlBomOffset)` → one `IndexEntry` per
+  acquisition (each acquisition is **one channel's** recording).
+* `decodeChannel(block, idx, symbol, dataType)` → the per-channel
+  header timing (three FILETIMEs) plus decoded `Sample(tickNs100,
+  value)` records, where each on-disk record is
+  `[value : DataType width][u32 tick · 100 ns]`.
+* `decodeAll(file, manifest, xmlBomOffset)` → all channels, joining
+  per-channel `DataType` from the manifest's acquisition order.
+
+Validated against the real 50 MB campaign file
+`Scope Project_AutoSave_19_04_29.svdx`: 149 channels, 5,069,675
+samples, `acqStart` and railed/observed values matching the companion
+CSV. **Known limitation:** intra-block segment sub-headers (which
+re-zero the tick on each trigger/restart) are not yet modelled, so on
+multi-segment captures the decoder returns the union of cleanly-aligned
+runs with per-segment-relative ticks; absolute per-segment timing is
+the tracked refinement on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+
 ## What the parser does NOT do
 
-* **Sample-block decoding.** The proprietary binary region between
-  the envelope and the trailing XML is not parsed. See
-  `byte-layout-notes.md` for the reverse-engineering notes and
-  `MFFD-PLUGIN-SVDX-BINARY-PARSER-1` for the follow-up row.
+* **TimeseriesReference creation from the binary.** `SvdxBinaryParser`
+  decodes samples in-memory; wiring the decoded channels into a
+  TimeseriesContainer is the `MFFD-PLUGIN-SVDX-CSV-INGEST-1` follow-up
+  (which can now ingest from the binary directly, not only the CSV).
 * **TimeseriesReference creation.** The canonical ingestion path is
   the operator-driven CSV export from the TwinCAT Scope Export Tool,
   uploaded as a sibling file; the plugin's role stops at annotation
