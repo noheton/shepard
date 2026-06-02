@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { DataObjectApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 
 const props = defineProps<{
   collectionId: number;
@@ -21,15 +20,46 @@ const showCreateDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showContextMenuButton = ref<boolean>(false);
 
+/**
+ * BUG-COLL-APPID-ROUTE-005 (2026-06-02): DataObject DELETE routes through
+ * `DELETE /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}`.
+ * The generated v1 `deleteDataObject({collectionId, dataObjectId})` expects
+ * numeric Neo4j longs in the path — post-Neo4j-reset DataObjects carry
+ * UUID v7 only, so the v1 path returned 404 and the sidebar delete silently
+ * failed (item stayed visible, no toast). The v2 EntityIdResolver accepts
+ * either UUID v7 or numeric stringified id transparently.
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
 async function deleteItem() {
-  const deletionSuccessful = await useShepardApi(DataObjectApi)
-    .value.deleteDataObject({
-      collectionId: props.collectionId,
-      dataObjectId: props.dataObjectId,
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(String(props.collectionId))}/data-objects/` +
+    `${encodeURIComponent(String(props.dataObjectId))}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  const deletionSuccessful = await fetch(url, { method: "DELETE", headers })
+    .then(resp => {
+      if (!resp.ok) {
+        throw {
+          response: resp,
+          message: `HTTP ${resp.status}`,
+        } as unknown as ResponseError;
+      }
+      return true;
     })
-    .then(() => true)
     .catch(error => {
-      handleError(error, "deleteDataObject");
+      handleError(error as ResponseError, "deleteDataObject");
       return false;
     });
 

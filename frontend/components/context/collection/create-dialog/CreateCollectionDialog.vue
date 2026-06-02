@@ -4,11 +4,30 @@ import {
   CollectionTemplateApi,
   PermissionType,
   ShepardTemplateApi,
+  type Collection,
+  type ResponseError,
   type ShepardTemplateIO,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { CollectionToCreate } from "./collectionToCreate";
+
+/**
+ * BUG-COLL-APPID-ROUTE-005 (2026-06-02): Collection CREATE routes through
+ * `POST /v2/collections`. The generated v1 `createCollection` still works
+ * but returns a Collection whose `appId` may be unstamped on legacy
+ * deploys; using v2 guarantees both `id` and `appId` are present in the
+ * response so the post-create permissions flow (still on v1 per PERMS-1
+ * hold-back) can look up by `id` reliably.
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -68,10 +87,32 @@ async function saveChanges() {
   if (isValid.value === false) return;
   const collectionApi = useShepardApi(CollectionApi);
 
-  const created = await collectionApi.value
-    .createCollection({ collection: collectionToCreate.value })
+  // BUG-COLL-APPID-ROUTE-005: CREATE via v2. Permissions edit + lookup
+  // below stay on v1 (PERMS-1 hold-back).
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  const created = await fetch(`${v2BaseUrl()}/v2/collections`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(collectionToCreate.value),
+  })
+    .then(async resp => {
+      if (!resp.ok) {
+        throw {
+          response: resp,
+          message: `HTTP ${resp.status}`,
+        } as unknown as ResponseError;
+      }
+      return (await resp.json()) as Collection;
+    })
     .catch(error => {
-      handleError(error, "updateCollection");
+      handleError(error as ResponseError, "createCollection");
       return undefined;
     });
   if (!created) return;

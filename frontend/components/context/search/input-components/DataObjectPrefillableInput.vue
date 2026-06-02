@@ -1,7 +1,43 @@
 <script lang="ts" setup>
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { DataObjectApi } from "@dlr-shepard/backend-client";
+import type { DataObject, ResponseError } from "@dlr-shepard/backend-client";
+
+/**
+ * BUG-COLL-APPID-ROUTE-005 (2026-06-02): the prefill lookup routes through
+ * `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}`.
+ * The generated v1 `getDataObject` expects numeric Neo4j longs; post-reset
+ * DataObjects carry UUID v7 only so the prefill chip stayed empty.
+ */
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function fetchDataObjectV2(
+  collectionId: number,
+  dataObjectId: number,
+): Promise<DataObject> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(String(collectionId))}/data-objects/` +
+    `${encodeURIComponent(String(dataObjectId))}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const resp = await fetch(url, { headers });
+  if (!resp.ok) {
+    throw {
+      response: resp,
+      message: `HTTP ${resp.status}`,
+    } as unknown as ResponseError;
+  }
+  return (await resp.json()) as DataObject;
+}
 
 const props = defineProps<{
   collectionId: number;
@@ -47,10 +83,10 @@ watch(selectedItem, () => {
 if (dataObjectId.value) {
   isLoading.value = true;
   try {
-    const dataObject = await useShepardApi(DataObjectApi).value.getDataObject({
-      collectionId: props.collectionId,
-      dataObjectId: dataObjectId.value,
-    });
+    const dataObject = await fetchDataObjectV2(
+      props.collectionId,
+      dataObjectId.value,
+    );
     selectedItem.value = mapToSearchResultAutoCompleteItem({
       dataObjectId: dataObject.id,
       dataObjectName: dataObject.name,

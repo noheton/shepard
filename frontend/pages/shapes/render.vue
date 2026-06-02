@@ -28,8 +28,7 @@ import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/compon
 import TemplateAutocomplete from "~/components/context/templates/TemplateAutocomplete.vue";
 import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
 import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
-import { DataObjectApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import type { DataObject } from "@dlr-shepard/backend-client";
 
 useHead({ title: "Shape render playground | shepard" });
 
@@ -52,10 +51,26 @@ watch(pickerDataObjectId, async newId => {
     return;
   }
   try {
-    const doFetched = await useShepardApi(DataObjectApi).value.getDataObject({
-      collectionId: pickerCollectionId.value,
-      dataObjectId: newId,
-    });
+    // BUG-COLL-APPID-ROUTE-005 (2026-06-02): resolve the DataObject's appId
+    // via the v2 endpoint. The generated v1 `getDataObject` expects numeric
+    // Neo4j longs in the path — post-Neo4j-reset DataObjects carry UUID v7
+    // only, so the picker → focusShepardId chain silently broke. v2's
+    // EntityIdResolver accepts either UUID v7 or numeric stringified id,
+    // and the response carries `appId` directly so the downstream renderer
+    // never sees the legacy long.
+    const url =
+      `${getV2Base()}/v2/collections/` +
+      `${encodeURIComponent(String(pickerCollectionId.value))}/data-objects/` +
+      `${encodeURIComponent(String(newId))}`;
+    const resp = await fetch(url, { headers: getAuthHeaders() });
+    if (!resp.ok) {
+      handleError(
+        new Error(`HTTP ${resp.status}`),
+        "resolving DataObject appId for shapes render",
+      );
+      return;
+    }
+    const doFetched = (await resp.json()) as DataObject;
     focusShepardId.value = (doFetched as { appId?: string }).appId ?? "";
   } catch (e) {
     handleError(e as Error, "resolving DataObject appId for shapes render");
