@@ -110,12 +110,63 @@ urn:shepard:programme               on a Project Collection, names the funding /
 `instance-admin` role OR ownership of *both* the parent Project and the child
 Collection. Enforced in `SemanticAnnotationService.write()`.
 
-## 3. Backend — single new endpoint
+## 3. Backend — generic `/v2/projects/` REST surface
 
-### 3.1 `GET /v2/collections/{appId}/sub-collections`
+Projects get their **own dedicated REST namespace** at `/v2/projects/{appId}`
+— not a one-off sub-resource on `/v2/collections/`. Even though a Project is
+*implemented* as a Collection carrying `urn:shepard:project = true`, callers
+should be able to talk to it through a clean Project-shaped API without
+threading Collection-semantics through. This keeps Project-aware behaviour
+discoverable in the OpenAPI surface and lets future Project features
+(programme metadata, cross-Collection roll-ups, REP export, …) land on
+that namespace rather than accreting on `/v2/collections/`.
+
+`{appId}` is the Project's Collection appId (UUID v7). Requests against a
+non-Project Collection appId return **404** uniformly across the
+sub-resources — `/v2/projects/` only addresses Collections that carry
+`urn:shepard:project = true`.
+
+### 3.1 `GET /v2/projects/{appId}` — Project resource
 
 ```
-Path  : /v2/collections/{appId}/sub-collections
+Path  : /v2/projects/{appId}
+Method: GET
+Auth  : same as /v2/collections/{appId} (read)
+
+Response 200:
+  {
+    "appId": "...",
+    "id": 42,
+    "name": "MFFD",
+    "heroImage": "...",
+    "synopsis": "...",
+    "ownerGroup": "...",
+    "programmes": ["Clean Aviation JU", "DLR Project Line 4"],
+    "subCollectionCount": 6,
+    "aggregateDoCount": 17324,
+    "lastActivity": "2026-06-02T18:42:00Z",
+    "isProject": true   // always true here; included for cross-API parity
+  }
+
+404: when the Collection at {appId} is not a Project
+     (does not carry urn:shepard:project = true).
+```
+
+The shape is *Project-flavoured* — it adds `programmes`,
+`subCollectionCount`, `aggregateDoCount` to the base Collection fields and
+drops Collection-only internals (DataObject pagination cursors, container
+references, …). Callers wanting the raw Collection shape stay on
+`/v2/collections/{appId}`.
+
+### 3.2 `GET /v2/projects/{appId}/sub-collections`
+
+(Was `GET /v2/collections/{appId}/sub-collections` in the original draft;
+moved here because it is the canonical Project navigation resource. A thin
+forwarder remains at the Collection path during the deprecation window —
+see §3.5.)
+
+```
+Path  : /v2/projects/{appId}/sub-collections
 Method: GET
 Auth  : same as /v2/collections/{appId} (read)
 Params:
@@ -124,8 +175,7 @@ Params:
 
 Response 200:
   {
-    "parentAppId": "<this collection appId>",
-    "parentIsProject": true|false,
+    "projectAppId": "<this project appId>",
     "programmes": ["Clean Aviation JU", "DLR Project Line 4"],   // urn:shepard:programme values
     "subCollections": [
       {
@@ -154,27 +204,94 @@ RETURN c.appId         AS parentAppId,
        collect({child: child, alsoMemberOf: collect(DISTINCT also.value)}) AS subCollections
 ```
 
-`SubCollectionsRest` resource → `SubCollectionsService` → `SubCollectionsDAO`.
-Returns 404 when the parent Collection doesn't exist. Returns 200 with empty
-`subCollections: []` when the parent has no children.
+`ProjectsRest` resource → `ProjectsService` → `ProjectsDAO`.
+Returns 404 when `{appId}` is not a Project. Returns 200 with empty
+`subCollections: []` when the Project has no children.
 
-### 3.2 No new write endpoints
+### 3.3 `GET /v2/projects/{appId}/by-annotation/{predicate}/{value}`
 
-The new annotations are set via the existing
+Generic cross-Collection roll-up: walk the Project's
+`urn:shepard:partOf` children and return every DataObject across them whose
+annotation `{predicate} = {value}` is set — directly on the DO or inherited
+via a parent walk.
+
+```
+Path  : /v2/projects/{appId}/by-annotation/{predicate}/{value}
+        {predicate} URL-encoded (e.g. urn%3Ashepard%3Amffd%3Alayer)
+Method: GET
+Auth  : read permission on the Project Collection
+Params:
+  ?inherit=true            default: include DOs that inherit the annotation from a parent DO
+  ?include=identity        default: identity-only shape (appId, id, name, kind, collectionAppId)
+                           ?include=annotations adds the matched annotation values
+  ?page=N&pageSize=K       standard pagination (k≤500)
+
+Response 200:
+  {
+    "projectAppId": "...",
+    "predicate": "urn:shepard:mffd:layer",
+    "value": "18",
+    "totalCount": 174,
+    "page": 1, "pageSize": 100,
+    "results": [
+      {
+        "appId": "...", "id": ..., "name": "Run_S2_M3_L18_F4_R1",
+        "kind": "DataObject",
+        "collectionAppId": "...",     // which Collection in the partOf set holds it
+        "collectionName": "mffd-afp-tapelaying",
+        "matchedAnnotations": [        // only when ?include=annotations
+          {"predicate": "urn:shepard:mffd:layer", "value": "18", "source": "inherited", "fromAppId": "..."}
+        ]
+      },
+      ...
+    ]
+  }
+
+404: when {appId} is not a Project
+422: when {predicate} is unknown to the SemanticVocabularyProvider
+```
+
+This is the **single generic surface** that consumers — UIs, MCP tools,
+notebook scripts, the VIEW_RECIPE renderer — use to compose "all data
+across a Project keyed by one annotation". MFFD per-Layer, PLUTO
+per-mission-phase, LUMEN per-test-bench, BT-KVS per-LRU-batch all
+resolve through this endpoint with their domain's predicate. No
+domain-specific routes accreted.
+
+### 3.4 No new write endpoints
+
+The Project-marking annotations (`urn:shepard:project`, `urn:shepard:partOf`,
+`urn:shepard:programme`) are written via the existing
 `POST /v2/collections/{appId}/annotations` endpoint, gated by the §2 SHACL
 constraints. No new write surface.
 
-### 3.3 v1 compatibility
+### 3.5 v1 compatibility + transitional aliases
 
 `/shepard/api/...` endpoints (upstream-frozen surface) are untouched.
-Project-aware behaviour is exposed only via `/v2/`. Per CLAUDE.md
-§API-version-policy, this stays additive.
 
-### 3.4 MCP coverage
+For the prior draft that placed sub-collections on
+`/v2/collections/{appId}/sub-collections`: a thin forwarder may be added at
+that path during the SHACL-substrate deprecation window, 301-redirecting
+to `/v2/projects/{appId}/sub-collections`. It is acceptable to skip the
+forwarder entirely if no production caller has bound to the old path yet
+(check the access logs before deciding). The PR landing PROJ-REST-2
+should make this call.
 
-One new MCP tool: `getSubCollections({collectionAppId})` → same response
-shape as the REST endpoint. Lets Claude / agent clients walk the Project
-tree without hand-rolling SemanticAnnotation queries.
+Per CLAUDE.md §API-version-policy, `/v2/projects/` is additive — `/v2/`
+is the development surface where new resources land.
+
+### 3.6 MCP coverage
+
+Two new MCP tools, both Project-shaped:
+
+- `getProject({projectAppId})` → `/v2/projects/{appId}` shape
+- `getProjectSubCollections({projectAppId})` → `/v2/projects/{appId}/sub-collections`
+- `queryProjectByAnnotation({projectAppId, predicate, value, inherit?, page?, pageSize?})`
+  → `/v2/projects/{appId}/by-annotation/{predicate}/{value}` shape
+
+Lets Claude / agent clients walk a Project's structure, fetch its
+programme metadata, and pull cross-Collection annotation roll-ups without
+hand-rolling SemanticAnnotation queries.
 
 ## 4. Frontend — three surfaces
 
