@@ -2,6 +2,7 @@
 import { useSearchCollections } from "./useSearchCollections";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { useCollectionListDensity } from "~/composables/context/useCollectionListDensity";
 
 const router = useRouter();
 
@@ -42,6 +43,24 @@ function setViewMode(mode: ViewMode) {
 // UI-011a: per-page advanced-mode toggle so users can flip the mode
 // directly from the collections header without opening their profile.
 const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
+
+// UX-WALK-2026-05-29-05: density toggle — compact/comfortable/default
+// Persisted in localStorage so the preference survives page reloads.
+const { density, setDensity } = useCollectionListDensity();
+
+/** MDI icon for each density level, shown in the toggle buttons. */
+const DENSITY_ICONS: Record<string, string> = {
+  compact:     "mdi-format-list-bulleted",
+  comfortable: "mdi-format-list-text",
+  default:     "mdi-format-list-group",
+};
+
+/** Human-readable tooltip for each density level. */
+const DENSITY_LABELS: Record<string, string> = {
+  compact:     "Compact rows",
+  comfortable: "Comfortable rows (default)",
+  default:     "Spacious rows",
+};
 </script>
 
 <template>
@@ -122,6 +141,30 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
               {{ advancedMode ? "Advanced" : "Basic" }}
             </v-chip>
           </v-col>
+          <!-- UX-WALK-2026-05-29-05: row-density toggle -->
+          <v-col cols="auto" class="pb-4 d-flex align-center">
+            <v-btn-toggle
+              :model-value="density"
+              mandatory
+              density="compact"
+              variant="outlined"
+              divided
+              data-testid="collection-density-toggle"
+              @update:model-value="setDensity"
+            >
+              <v-btn
+                v-for="opt in ['compact', 'comfortable', 'default']"
+                :key="opt"
+                :value="opt"
+                icon
+                size="small"
+                :title="DENSITY_LABELS[opt]"
+                :data-testid="`density-${opt}-btn`"
+              >
+                <v-icon>{{ DENSITY_ICONS[opt] }}</v-icon>
+              </v-btn>
+            </v-btn-toggle>
+          </v-col>
           <!-- #36: view-mode toggle — list ↔ gallery -->
           <v-col cols="auto" class="pb-4 d-flex align-center">
             <v-btn-toggle
@@ -174,6 +217,7 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
               :server-items="serverItems"
               :loading="loading"
               :page-count="pageCount"
+              :density="density"
             />
             <!-- Gallery / card view (#36) -->
             <template v-else>

@@ -12,6 +12,11 @@ const props = defineProps({
     required: false,
     default: () => [],
   },
+  density: {
+    type: String as () => "compact" | "comfortable" | "default",
+    required: false,
+    default: "comfortable",
+  },
 });
 
 const page = ref(1);
@@ -32,6 +37,7 @@ const paginatedItems = computed(() => {
     sort-asc-icon="mdi-triangle-small-up"
     :items="paginatedItems"
     :items-per-page="itemsPerPage"
+    :density="density"
   >
     <template v-for="(_, slot) of $slots" #[slot]="scope">
       <slot :name="slot" v-bind="scope" />

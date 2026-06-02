@@ -6,12 +6,24 @@ import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { descriptionPreview, toShortDateString } from "~/utils/helpers";
 import { useDoCountChip } from "~/utils/doCountChip";
 
-defineProps<{
+const props = defineProps<{
   itemsPerPage: number;
   serverItems: Collection[];
   loading: boolean;
   pageCount: number;
+  density?: "compact" | "comfortable" | "default";
 }>();
+
+// Derive per-density row padding so the table feels intentionally scaled,
+// not accidentally cramped.  Comfortable matches the prior hardcoded value.
+const rowPadding = computed(() => {
+  switch (props.density) {
+    case "compact":     return "6px 24px";
+    case "default":     return "28px 24px";
+    case "comfortable":
+    default:            return "20px 24px";
+  }
+});
 
 const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
@@ -138,6 +150,7 @@ function onPageChange(page: number) {
     :items="serverItems"
     :items-per-page="itemsPerPage"
     :loading="loading"
+    :density="density"
     @update:sort-by="onSortBy"
   >
     <template #item="rowProps">
@@ -237,7 +250,8 @@ function onPageChange(page: number) {
   }
 
   :deep(tbody) > tr > td {
-    padding: 20px 24px !important;
+    /* UX-WALK-2026-05-29-05: padding driven by v-bind so density prop is honoured */
+    padding: v-bind(rowPadding) !important;
   }
 
   :deep(tbody > tr) {
