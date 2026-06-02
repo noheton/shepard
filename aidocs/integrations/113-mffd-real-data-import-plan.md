@@ -252,13 +252,31 @@ heightmap of the laid tape; the "FSD trajectory" panel renders the TCP path thro
 the cell scene-graph (W5 RoboDK URDF, shared coordinate frame via aidocs/data/85);
 the brush-trace pane sweeps the TPS sensor field along that trajectory.
 
-Out of scope for this wave (file backlog rows):
-- **`MFFD-SPATIAL-IMPORTER-1`** — the importer plugin itself.
-- **`MFFD-SPATIAL-FRAME-HANDSHAKE`** — coordinate-frame negotiation between the
-  RoboDK scene (W5) and the TPS scanner frame so the brush trace renders *inside*
-  the cell, not floating in absolute coordinates.
-- **`MFFD-SPATIAL-FILEREF-DEMOTE`** — the FileReference → SpatialDataContainer
-  promotion path including the archived-original handling.
+Status (2026-06-02):
+- **`MFFD-SPATIAL-IMPORTER-1`** — ✓ shipped at `plugins/spatial-importer/`. Python
+  CLI; parses the two ASCII formats; 19 pytest cases against real Track 66 / Track
+  67 fixture bytes. SHA256 idempotency.
+- **`MFFD-SPATIAL-FRAME-HANDSHAKE`** — ✓ shipped. `SpatialDataContainer.frameAppId`
+  property + `SpatialDataContainerIO.frameAppId` + V106 NOOP Cypher migration +
+  service create-flow propagation + 4 IOTest + 2 service tests.
+- **`MFFD-SPATIAL-FILEREF-DEMOTE`** — ✓ shipped inside the importer (fire-and-forget
+  PATCH of the original FileReference to `status=ARCHIVED` + `urn:shepard:spatial:promoted-to`
+  annotation).
+- **`MFFD-SPATIAL-VIEWER-UI`** — ✓ shipped (bonus). `SpatialPointsCanvas.vue` Three.js
+  renderer with pointcloud + trajectory modes; `DataObjectSpatialContainersPane.vue`
+  lists per-DO refs grouped by kind; spatial container detail page wires the viewer.
+  13 Vitest cases.
+- **`MFFD-SPATIAL-IMPORTER-LIVE`** — queued (blocked on W2 dest ingestion).
+
+Honest scope statement (the prompt anticipated this): the original W7 plan called
+out `TPS raw data.*` as a `kind=brush-trace` SpatialDataContainer carrying
+(timestamp, x, y, z, value-vector) rows. Format research showed those files are
+1292×964 grayscale PNG **camera frames** (the Keyence raw frame upstream of the
+.0/.1 reduction), NOT point data with TCP-position tagging. They stay as
+FileReferences. Filed as `MFFD-SPATIAL-RAW-DATA-INVESTIGATE` — the open question
+is whether the PNGs carry per-frame robot-pose metadata that would let a future
+pass join them to TimescaleDB channel values and produce a true brush-trace
+container. The base W7 acceptance is met without that follow-up.
 
 ### W8 — Parser plugins & scale work
 
