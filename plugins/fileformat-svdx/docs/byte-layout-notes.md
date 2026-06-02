@@ -210,18 +210,23 @@ rejects it).
 
 #### What still needs to be verified (remaining)
 
-1. **Wide-DataType false segments**: the FILETIME-anchored segment walk
-   is clean on INT16 channels (113 of 149 decode to a fully monotonic
-   series). On INT32/REAL64 channels an 8-byte *value* can coincidentally
-   fall in the 2023 FILETIME range and trigger a spurious segment,
-   breaking monotonicity (36/149 channels). The fix is a **contiguous
-   segment walk** (each segment begins exactly where the previous ends)
-   instead of a free scan — which needs the first-segment offset pinned
-   (item 2). Tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+1. **High-rate channel segmentation** (the real open item): the
+   FILETIME-anchored walk now decodes the **1 kHz analog channels**
+   cleanly — **147 of 149 channels** yield a fully monotonic series after
+   adding a *constant-tick-period* guard (`SEGMENT_PROBE` samples must
+   share one period). That guard rejects the coincidental FILETIME-range
+   matches that the wide INT32/REAL64 channels would otherwise produce, so
+   those channels now return **empty rather than garbage**. The high-rate
+   channels (e.g. the 10 MB INT32 robot-data block, acqStart 05.372) carry
+   *far* more samples and a denser segmentation whose header cadence is
+   **not** the 16-sample/16-ms shape — their layout still needs decoding
+   (likely larger or variable `count`, possibly a wider tick). 2 of 149
+   channels still slip a residual false match. Tracked on
+   `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
 2. **Per-channel header length**: fine segments begin well into the block
    (~16.9 KB on the 50 MB ch1), after the version tag, 3 FILETIMEs and
-   the coarse index table. Pinning this offset turns the scan into a
-   deterministic contiguous walk and fixes item 1.
+   the coarse index table. Pinning this offset would let the scan become a
+   deterministic contiguous walk.
 3. **Cross-version stability**: diff `0x71` / `0x6d` headers against the
    `0x73` layout above.
 

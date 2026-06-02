@@ -270,14 +270,34 @@ public final class SvdxBinaryParser {
         return out;
     }
 
-    /** A run is a valid segment body iff sample 0's tick is 0 and (for
-     *  count ≥ 2) sample 1's tick is a positive, sane period. */
+    /** Samples cross-checked for a constant tick period before a candidate
+     *  is accepted as a real segment. 4 is enough to reject the coincidental
+     *  FILETIME-range matches seen on wide-DataType channels (whose
+     *  "ticks" are not a regular cadence) while accepting genuine runs. */
+    private static final int SEGMENT_PROBE = 8;
+
+    /**
+     * A run is a valid segment body iff sample 0's tick is 0 and the first
+     * few samples advance by a single constant positive period. The
+     * constant-period check is the load-bearing guard: on INT32/REAL64
+     * channels an 8-byte value can land in the FILETIME range and fake a
+     * header, but the bytes that follow are not a regular cadence, so they
+     * are rejected here rather than emitted as non-monotonic garbage.
+     */
     private static boolean isValidSegmentRun(
         ByteBuffer bb, int dataOff, int count, int recSize, int valueWidth) {
         if ((bb.getInt(dataOff + valueWidth) & 0xFFFFFFFFL) != 0L) return false;
-        if (count == 1) return true;
-        long t1 = bb.getInt(dataOff + recSize + valueWidth) & 0xFFFFFFFFL;
-        return t1 > 0 && t1 < 0x4000_0000L;
+        if (count < 2) return true;
+        int probe = Math.min(count, SEGMENT_PROBE);
+        long period = (bb.getInt(dataOff + recSize + valueWidth) & 0xFFFFFFFFL);
+        if (period <= 0 || period >= 0x4000_0000L) return false;
+        long prev = period;
+        for (int k = 2; k < probe; k++) {
+            long t = bb.getInt(dataOff + k * recSize + valueWidth) & 0xFFFFFFFFL;
+            if (t - prev != period) return false;
+            prev = t;
+        }
+        return true;
     }
 
     /**

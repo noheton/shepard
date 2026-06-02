@@ -79,15 +79,21 @@ format reverse-engineered and validated in `byte-layout-notes.md`
 * `decodeAll(file, manifest, xmlBomOffset)` → all channels, joining
   per-channel `DataType` from the manifest's acquisition order.
 
+A segment candidate is only accepted when its first samples advance by a
+single **constant tick period** (`SEGMENT_PROBE` = 8 samples). This guard
+rejects the coincidental FILETIME-range matches that wide-DataType
+channels would otherwise produce — the decoder emits clean data or
+nothing, never non-monotonic garbage.
+
 Validated against the real 50 MB campaign file
 `Scope Project_AutoSave_19_04_29.svdx`: ch1 (`aTemperatureAnalogIntput1`)
 decodes to 20,656 samples spanning a monotonic 20.655 s (t0=0 →
-206,550,000), values matching the companion CSV; 113 of 149 channels
-decode to a fully monotonic series. **Known limitation:** on
-INT32/REAL64 channels an 8-byte value can coincidentally match the 2023
-FILETIME range and trigger a spurious segment (36/149 channels). The fix
-is a contiguous segment walk anchored on a pinned first-segment offset —
-tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+206,550,000), values matching the companion CSV; **147 of 149 channels
+decode to a fully monotonic series**, the remainder returning empty.
+**Known limitation:** the high-rate INT32/REAL64 channels (e.g. the
+10 MB robot-data channels) use a distinct, denser segmentation that is
+not yet decoded — those channels return empty rather than partial data.
+Decoding them is tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
 
 ## What the parser does NOT do
 
