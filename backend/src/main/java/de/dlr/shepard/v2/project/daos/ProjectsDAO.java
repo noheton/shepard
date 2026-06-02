@@ -126,7 +126,12 @@ public class ProjectsDAO {
     io.setProgrammes(findProgrammes(projectAppId));
 
     // 3) Sub-Collection count + aggregate DataObject count + last-activity rollup.
-    String aggCypher =
+    // Two separate queries to keep the shape simple and to correctly return
+    // zero rows for a Project that has no children (an UNWIND over an empty
+    // children-list would yield no rows on the aggregate query, which would
+    // then leave the io fields at their default 0L — but only by accident;
+    // the explicit count-zero path here is the robust shape).
+    String childCountCypher =
       "MATCH (child:Collection) " +
       "WHERE (child.deleted IS NULL OR child.deleted = false) " +
       "  AND EXISTS { " +
@@ -134,19 +139,31 @@ public class ProjectsDAO {
       "      subjectAppId: child.appId, " +
       "      propertyIRI: $predPartOf, valueName: $appId }) " +
       "  } " +
-      "WITH count(DISTINCT child) AS subCollectionCount, collect(DISTINCT child) AS children " +
-      "UNWIND children AS childUw " +
-      "OPTIONAL MATCH (childUw)-[:`" + Constants.HAS_DATAOBJECT + "`]->(do:DataObject) " +
-      "WHERE (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN subCollectionCount, " +
-      "       count(do) AS aggregateDoCount, " +
+      "RETURN count(DISTINCT child) AS subCollectionCount";
+    var cnt = session.query(childCountCypher, Map.of(
+      "appId", projectAppId,
+      "predPartOf", PRED_PART_OF
+    ));
+    for (var row : cnt) {
+      io.setSubCollectionCount(asLongOrZero(row.get("subCollectionCount")));
+    }
+
+    String aggCypher =
+      "MATCH (child:Collection)-[:`" + Constants.HAS_DATAOBJECT + "`]->(do:DataObject) " +
+      "WHERE (child.deleted IS NULL OR child.deleted = false) " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "  AND EXISTS { " +
+      "    MATCH (po:SemanticAnnotation { " +
+      "      subjectAppId: child.appId, " +
+      "      propertyIRI: $predPartOf, valueName: $appId }) " +
+      "  } " +
+      "RETURN count(do) AS aggregateDoCount, " +
       "       max(coalesce(do.updatedAt, do.createdAt)) AS lastActivityMillis";
     var agg = session.query(aggCypher, Map.of(
       "appId", projectAppId,
       "predPartOf", PRED_PART_OF
     ));
     for (var row : agg) {
-      io.setSubCollectionCount(asLongOrZero(row.get("subCollectionCount")));
       io.setAggregateDoCount(asLongOrZero(row.get("aggregateDoCount")));
       Long la = asLong(row.get("lastActivityMillis"));
       if (la != null && la > 0L) io.setLastActivityMillis(la);
