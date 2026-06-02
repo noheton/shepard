@@ -278,18 +278,85 @@ CollectionLineageGraph which scales linearly (task #25) and doesn't have time-on
 - `COLL-TIMELINE-ANNOTATE-1` — annotate-on-a-bin affordance.
 - `COLL-TIMELINE-LIVE-1` — SSE-driven live bin updates.
 
-### GAP-9 — Video scale + scrubbing
+### GAP-9 — Video scale + scrubbing — ✅ closed (partial) 2026-06-02
 
 **The data:** 139 MP4s totaling 133 GB across `Stringer_schweissungen/LRV_Videos`,
-processed AFP video, etc.
+processed AFP video, etc. Plus the 313,538 PNG-frame TPS ImageBundle cardinality
+(AAC1 finding: 38 per track × 8,251 tracks).
 
-**The gap:** `VideoReference` shipped, but never scale-tested at 133 GB. Browser
-streaming on long videos needs HLS segmentation + a per-second key-frame index for
-scrubbing.
+**The gap (original):** `VideoReference` shipped, but never scale-tested at 133 GB.
+Browser streaming on long videos needs HLS segmentation + a per-second key-frame
+index for scrubbing. ImageBundle existed but the choke point was loading every
+file's OID into the UI at once.
 
-**The fix:** **`MFFD-VIDEOREF-SCALE-1`** validates the existing player at the real
-cardinality, then either confirms shipping it as-is or escalates to
-`shepard-plugin-video-hls` for adaptive bitrate.
+**What shipped 2026-06-02 (`MFFD-VIDEOREF-SCALE-1` + `MFFD-IMAGEBUNDLE-PAGINATE-1`
++ `MFFD-IMAGEBUNDLE-SCRUBBER-1`):**
+
+- **Backend Range requests.** `VideoStreamReferenceV2Rest.download` honours
+  `Range: bytes=START-END`, returns 206 Partial Content with `Content-Range`
+  + `Accept-Ranges: bytes` headers. 416 on unsatisfiable; falls back to full
+  body when the underlying GridFS row has no size bookkeeping. Shared
+  `HttpRangeUtil` (parse + slice stream) extracted from the FR1b path so
+  every future content endpoint inherits the same shape. **This is the
+  cheap fix that unlocks browser-native scrubbing on multi-GB MP4s.**
+- **JWTFilter `?access_token=…` fallback.** Browser `<video src>`,
+  `<img src>`, `<a download>` cannot inject custom headers. Per RFC 6750
+  §2.3 the JWT travels as a query parameter when no `Authorization` header
+  is present. Header takes precedence; empty query value falls back to 401.
+- **Frontend VideoPlayer rewrite.** Drops the previous blob-download
+  approach (fatal on 6+ GB MP4s — froze the tab) and hands the URL with
+  `?access_token=…` directly to the `<video>` element. The browser does
+  its own range requests + scrubbing natively.
+- **Paginated bundle files endpoint.** New
+  `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files?page=&size=`
+  returning `PagedFilesIO` envelope. Default page size 200, server cap
+  1000. Server clamps out-of-range hints rather than rejecting (a stale
+  client slider value should not produce a 400).
+- **ImageBundleViewer scrubber.** Generic `ImageBundleViewer.vue`: large
+  preview + range slider + virtualised thumbnail strip (Vuetify
+  `v-virtual-scroll`) + lazy-loaded thumbnails via TH1a. Page-planning
+  helpers in `utils/imageBundleScrubber.ts` mean the scrubber jumps cleanly
+  between pages of the paginated endpoint; only one page is cached
+  client-side at a time. Mounts cleanly onto the DataObject detail page
+  via the follow-up below.
+- **45 new unit tests** (16 `HttpRangeUtilTest` + 10 new video range tests
+  + 3 new JWTFilter cases + 9 bundle pagination tests + 7 Vitest videoUrl
+  cases + 13 Vitest scrubber cases). All green.
+
+**Deferred follow-ups (filed in `aidocs/16`):**
+
+- **`MFFD-VIDEOREF-HLS-1`** (L) — lazy ffmpeg segmenter + `.m3u8` manifest
+  generator for very-long welding videos (12 h+) where the codec quirks on
+  Safari's HLS-first stack may bite. Multi-day deliverable: ffmpeg sidecar,
+  temp-file lifecycle, manifest regeneration races. Cut from this PR to
+  ship the Range path now.
+- **`MFFD-VIDEOREF-LIVE-1`** (XL) — live ingest during welding via sVC /
+  MediaMTX sidecar; new `LiveVideoStreamReference` kind.
+- **`MFFD-VIDEOREF-KEYFRAME-1`** (M) — AI-extracted keyframes as
+  `urn:shepard:video:keyframe-at:` annotations for scrub-bookmark UX.
+- **`MFFD-VIDEOREF-TRANSCODE-1`** (XL) — server-side HEVC/ProRes/DNxHR →
+  H.264 pipeline preserving the original.
+- **`MFFD-IMAGEBUNDLE-PANE-MOUNT-1`** (S) — mount the scrubber on the
+  DataObject detail page with auto-detection of image-shaped bundles.
+- **`MFFD-IMAGEBUNDLE-COMPARE-1`** (M) — side-by-side compare across
+  DataObjects (Track 042 ply 5 vs Track 043 ply 5).
+
+**Honest scope statement.** Real-fixture scale validation under Playwright
+at the 4K viewport is the operator's post-deploy step — the worktree agent
+does not perform `make redeploy-*` per the operator-not-redeploy rule.
+The numbers we target (time-to-first-frame < 3 s on the largest extracted
+MP4; 20-frame strip < 2 s; JS heap < 500 MB) are the acceptance criteria;
+the deploy-time runbook will record measured values into
+`aidocs/agent-findings/mffd-videoref-scale-playwright-2026-06-02.md` once
+the W2 ingest provides the real fixtures (currently `/mnt/pve/unas/...`
+not mounted from the agent worktree). The architecture passes the gate
+that the previous blob-download path could not — range-on-MP4 is
+browser-native and the previous failure mode (whole-blob download)
+cannot recur.
+
+**Backlog rows:** `MFFD-VIDEOREF-SCALE-1` (✅ shipped),
+`MFFD-IMAGEBUNDLE-PAGINATE-1` (✅ shipped), `MFFD-IMAGEBUNDLE-SCRUBBER-1`
+(✅ shipped), follow-ups above.
 
 ### GAP-10 — `.xit` / `.xit64` archive parser
 

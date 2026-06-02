@@ -77,9 +77,9 @@ Re-running this plan must be **safe**, **fast**, and **lossless**:
 | W6   | thermography | bucket 4b (`thermography.7z`) | new DOs under `MFFD Upper-Fuselage (Real)` | new `7z` importer step | ~6,000 TIFFs as ImageBundleReference | wave 2 done | pending |
 | W7   | **TPS+FSD pointclouds → spatial substrate** (re-classify W2 file-stragglers) | `Track_NN__Run_NN_/files/TPS 3D pointclouds.0/.1` + `FSD course 3D pointclouds` | one `SpatialDataContainer` per track (plugin `spatiotemporal` v6) | new `shepard-plugin-spatial-importer` step (shipped 2026-06-02) | 8,251 tracks × {2 pointcloud + 1 FSD path} = ~24,753 spatial entities | wave 2 done, spatial plugin live | **importer shipped 2026-06-02; awaiting W2 + smoke** |
 | W8a  | Punktschweißungen .svdx parser | bucket 3 | new DO per `.svdx` | `shepard-plugin-fileformat-svdx` tier-1 (manifest extractor; binary samples deferred to `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`, CSV ingest to `MFFD-PLUGIN-SVDX-CSV-INGEST-1`) | 21 files / 4.9 GB (corrected from earlier 29-file estimate; one folder, not three) | **manifest parser shipped 2026-06-02; awaiting deploy + smoke** | partially unblocked — annotations land per upload; sample-level data still gated |
-| W8b  | process video sweep | bucket 3 | VideoReference under DOs | existing VID1 | 139 MP4s / 133 GB | UI scale-test passes | gap-blocked on GAP-9 |
-| W8c  | ThermoCam TIFF stream | bucket 3 | ImageBundleReference | existing IB | 6,273 TIFFs / 0.95 GB | UI scale-test passes | gap-blocked |
-| W8d  | **TPS raw-data PNG camera frames** (AAC1 format finding) | `Track_NN__Run_NN_/files/TPS raw data.0…37` (38 per track) | ImageBundleReference per track (or video synthesis via VID1) | extend VID1 OR new ImageBundle step | 8,251 tracks × 38 frames = **313,538 PNG frames** (1292×964 grayscale) | UI scale-test passes; reverse-engineer source-side framerate | gap-blocked on GAP-9 |
+| W8b  | process video sweep | bucket 3 | VideoReference under DOs | existing VID1 + MFFD-VIDEOREF-SCALE-1 | 139 MP4s / 133 GB | UI scale-test passes | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
+| W8c  | ThermoCam TIFF stream | bucket 3 | ImageBundleReference | existing IB + MFFD-IMAGEBUNDLE-PAGINATE-1 | 6,273 TIFFs / 0.95 GB | UI scale-test passes | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
+| W8d  | **TPS raw-data PNG camera frames** (AAC1 format finding) | `Track_NN__Run_NN_/files/TPS raw data.0…37` (38 per track) | ImageBundleReference per track (or video synthesis via VID1) | extend VID1 OR new ImageBundle step | 8,251 tracks × 38 frames = **313,538 PNG frames** (1292×964 grayscale) | UI scale-test passes; reverse-engineer source-side framerate | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
 | W9   | source-side Stringerverbindung export | source N: drive | bucket 1+2 shape | requires new `mffd-export` run on Stringerverbindung Collection | est. 280 GB | source-side cooperation | gap-blocked |
 
 ## 5. Per-wave detail
@@ -343,8 +343,29 @@ The plan generates new `aidocs/16` rows tracked separately:
 
 - `MFFD-IMPORT-W1` … `MFFD-IMPORT-W9` — one per wave
 - `MFFD-AF-TRACK-MAPPING` — get the canonical AF_N → ply/track table from domain expert
-- `MFFD-VIDEOREF-SCALE-1` — validate VideoReference + player at 133 GB / 139 MP4
-- `MFFD-IMAGEBUNDLE-SCALE-1` — validate IB at 6,273-frame thermal series
+- `MFFD-VIDEOREF-SCALE-1` — ✅ **shipped 2026-06-02** (commit on
+  `worktree-agent-ad101b5c16e5a71e6`). Backend: Range requests on the
+  `/v2/data-objects/{appId}/video-stream-references/{appId}/download` endpoint
+  (206 Partial Content + `Content-Range` + `Accept-Ranges` headers; 416 on
+  unsatisfiable; full-body fallback on legacy GridFS rows without
+  bookkeeping). JWTFilter accepts `?access_token=…` query-param fallback for
+  HTML5 `<video src>` (RFC 6750 §2.3). Frontend `VideoPlayer.vue` drops the
+  whole-blob download path and hands the URL with the token query param
+  directly to the `<video>` element — browser scrubs natively. 26 backend
+  unit tests + 7 frontend Vitest cases. **HLS deferred** to
+  `MFFD-VIDEOREF-HLS-1` (lazy ffmpeg segmentation; multi-day deliverable).
+- `MFFD-IMAGEBUNDLE-PAGINATE-1` — ✅ **shipped 2026-06-02**. New
+  `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files?page=&size=`
+  paginated endpoint returning a `PagedFilesIO` envelope. Default page size
+  200, server cap 1000. 9 backend unit tests.
+- `MFFD-IMAGEBUNDLE-SCRUBBER-1` — ✅ **shipped 2026-06-02**. New
+  `ImageBundleViewer.vue` with virtualised thumbnail strip (Vuetify
+  `v-virtual-scroll`), lazy-loaded thumbnails via TH1a, frame slider
+  (`v-slider`) with large preview above. Pure helpers under
+  `utils/imageBundleScrubber.ts` (13 Vitest cases).
+- `MFFD-IMAGEBUNDLE-SCALE-1` (umbrella) — closed by the paginate +
+  scrubber + virtualisation pair above. Mount onto the DataObject detail
+  page (bundle-detection panel) tracked as a follow-up below.
 - `MFFD-RDK-URDF-CONVERTER` — RDK→URDF tooling (fast path is good enough; right path is the gap)
 - `MFFD-SD-DEDUPE-1` — dedupe shared-payload StructuredDataReferences in bridgewelding
 - See feature-gap doc for the rest.

@@ -742,9 +742,27 @@ Mid-horizon:
   upload (`POST /v2/data-objects/{appId}/video-stream-references`),
   ffprobe metadata extraction (`durationSeconds`, `width`, `height`,
   `frameRate`, `videoCodec`, `audioCodec`), and `wallClockTimestamp`
-  as the TM1 temporal anchor. Still ahead: HLS segmentation, live
-  ingest via `shepard-video-collector` / MediaMTX sidecar,
-  video-time + wall-clock navigation, frame extraction (VID1d).
+  as the TM1 temporal anchor. **MFFD-VIDEOREF-SCALE-1 shipped
+  2026-06-02**: the download endpoint honours HTTP Range requests
+  (206 Partial Content + `Content-Range` + `Accept-Ranges`) so a
+  researcher can scrub a multi-GB welding video inside the browser
+  without downloading the whole file first. `JWTFilter` accepts the
+  JWT via `?access_token=…` per RFC 6750 §2.3 because the HTML5
+  `<video>` element can't inject custom headers. Still ahead: HLS
+  segmentation for very-long videos (`MFFD-VIDEOREF-HLS-1`), live
+  ingest via `shepard-video-collector` / MediaMTX sidecar
+  (`MFFD-VIDEOREF-LIVE-1`), AI keyframe extraction
+  (`MFFD-VIDEOREF-KEYFRAME-1`), transcoding pipeline
+  (`MFFD-VIDEOREF-TRANSCODE-1`).
+- **ImageBundle at MFFD scale** (`MFFD-IMAGEBUNDLE-PAGINATE-1` +
+  `MFFD-IMAGEBUNDLE-SCRUBBER-1` shipped 2026-06-02). A new paginated
+  `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files`
+  endpoint plus a generic `ImageBundleViewer.vue` frame scrubber
+  (large preview + range slider + virtualised thumbnail strip,
+  lazy-loaded thumbnails). Built specifically for the 313,538-PNG-frame
+  MFFD TPS raw-data cardinality (38 frames × 8,251 tracks per the
+  AAC1 inventory). Compare-mode across DataObjects deferred to
+  `MFFD-IMAGEBUNDLE-COMPARE-1`.
 - **`FileReference` → `FileBundleReference` + `FileGroup` rename**
   (`aidocs/53`, FR1 series — **FR1a + FR1b shipped**. FR1a: V21
   migration adds the second label + default group; `/v2/bundles/{appId}`
