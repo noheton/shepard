@@ -134,22 +134,54 @@ which is welded into AF_3". The mapping lives in flo's domain knowledge.
 
 **Backlog rows:** `MFFD-AF-TRACK-MAPPING-1` (input file authoring), `MFFD-AF-TRACK-MAPPING-2-CYPHER`.
 
-### GAP-5 — 3D pointcloud viewer
+### GAP-5 — 3D pointcloud viewer  ✅ shipped 2026-06-02
 
 **The data:** Each `Track_NN__Run_NN_/files/` has `TPS 3D pointclouds.0`, `TPS 3D
 pointclouds.1`, `FSD course 3D pointclouds`. That's **24,753 pointclouds** across the
 dataset.
 
-**The gap:** No `PointcloudReference` payload kind. Today these are opaque
-FileReferences. The Trace3D viewer (#142) handles single (x,y,z,value) curves, not point
-sets.
+**The gap (original assessment):** No `PointcloudReference` payload kind. The
+Trace3D viewer (#142) handles single (x,y,z,value) curves, not point sets.
 
-**The fix:** New `shepard-plugin-pointcloud` (plugin-first rule):
-- `PayloadKind PCD` accepting `.pcd` / `.ply` / our custom `.tps-3d` format.
-- Three.js viewer reusing the spatial-plugin substrate (SP1).
-- Tile/decimate strategy for browser-side rendering of >1M points.
+**What shipped 2026-06-02:** The format research showed a cleaner fix than a
+brand-new `PointcloudReference` payload kind: both `TPS 3D pointclouds.*` and
+`FSD course 3D pointclouds` are 6-column ASCII (`X Y Z R G B`, CRLF, RGB always
+the export-artefact triple `0 130 255`). They fit the *already-shipped*
+`shepard-plugin-spatiotemporal` substrate (PostGIS `shepard_spatial.profile`
+hypertable, SpatialDataContainer entity, REST endpoints) with no new payload
+kind. The W7 plan in `aidocs/integrations/113 §W7` is the canonical reference.
 
-**Backlog row:** `MFFD-PLUGIN-POINTCLOUD-1` (plugin-first; aligns with #79 SP1 work).
+The shipped solution:
+- **Python promotion pass** (`plugins/spatial-importer/`) — parses the two ASCII
+  formats, MERGEs `:SpatialDataContainer` rows per (DO, kind, SHA256), uploads
+  points via existing payload endpoint, demotes original FileReferences to
+  ARCHIVED. SHA256 idempotency makes re-runs zero-write.
+- **`SpatialPointsCanvas.vue`** — Three.js `Points` (pointcloud) + `Line`
+  (trajectory) renderer with voxel-grid downsample capped at 500k points.
+  Pointcloud colour-maps by value (height by default); trajectory by time.
+- **`DataObjectSpatialContainersPane.vue`** — lists every spatial container on
+  the DataObject grouped by kind, with "Open in 3D viewer" button per row.
+- **`SpatialDataContainer.frameAppId`** (Neo4j) + V106 NOOP migration — wires
+  each container to a CST1 `:CoordinateFrame` so the viewer renders inside the
+  W5 RoboDK scene (GAP-6 sibling).
+
+The original "new payload kind" idea (`shepard-plugin-pointcloud`) was correctly
+rejected because the spatiotemporal substrate already covers point storage; a
+parallel `PointcloudReference` would have been EAV bloat (CLAUDE.md
+"per-kind annotation entities are an anti-pattern").
+
+**Not closed by this PR (file follow-ups):**
+- `MFFD-SPATIAL-RAW-DATA-INVESTIGATE` — `TPS raw data.0…37` are 1292×964 grayscale
+  PNG camera frames, NOT spatial point data. They stay as FileReferences. Open
+  question: do they carry per-frame robot-pose metadata that would let them
+  become a true `brush-trace` SpatialDataContainer?
+- `MFFD-SPATIAL-IMPORTER-LIVE` — production deployment runbook; blocked on W2
+  ingest draining into the dest Collection.
+- `REF-EDIT-SPATIAL` — edit / delete dialogs for SpatialDataReference (the W7 PR
+  ships list-only; create is via the Python importer).
+
+**Commit:** `e654b87f9` (backend + importer) and `0a6b22291` (frontend viewer).
+**Backlog rows:** `MFFD-SPATIAL-*` in `aidocs/16-dispatcher-backlog.md`.
 
 ### GAP-6 — RoboDK / URDF scene at Collection level
 

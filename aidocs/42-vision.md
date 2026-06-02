@@ -153,7 +153,14 @@ Plus payload kinds (the things References point at):
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
-  PostGIS (optional feature toggle).
+  PostGIS (default-on after SPATIAL-V6-GATE-CLEANUP).
+  *(MFFD W7, 2026-06-02: TPS laser-stripe pointclouds and FSD TCP
+  trajectories from AFP tapelaying are promoted from opaque
+  FileReferences into typed SpatialDataContainers by
+  `plugins/spatial-importer/`; the SpatialPointsCanvas viewer renders
+  them in-browser as colour-mapped point scatters or trajectory tubes;
+  the optional `frameAppId` anchors each container in a CST1
+  CoordinateFrame so the pointcloud sits inside the W5 RoboDK scene.)*
 - **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
   create/read/delete + opt-in `hdf` compose profile + HTTP Basic
   Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the
