@@ -13,4 +13,10 @@ export interface CreateShepardTemplateIO {
   body: string;
   description?: string | null;
   tags?: string[] | null;
+  /**
+   * Optional MDI icon name (e.g. "mdi-layers") — sets the template's
+   * iconKey on create / patch. Empty string clears (UI falls back to
+   * per-kind default). Design: aidocs/integrations/122.
+   */
+  iconKey?: string | null;
 }

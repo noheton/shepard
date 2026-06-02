@@ -34,6 +34,7 @@ const KIND_OPTIONS = [
 ];
 
 const TABLE_HEADERS = [
+  { title: "", key: "icon", sortable: false, width: "48px" },
   { title: "Name", key: "name", sortable: true },
   { title: "Kind", key: "templateKind", sortable: true },
   { title: "Version", key: "version", sortable: true, width: "80px" },
@@ -202,6 +203,15 @@ watch(showRetired, (val) => {
       density="compact"
       hover
     >
+      <!-- Icon column — TEMPLATE-ICONS-2-FE -->
+      <template #[`item.icon`]="{ item }">
+        <v-icon
+          :icon="useTemplateIcon(item, 'DataObject')"
+          size="small"
+          data-test="template-icon"
+        />
+      </template>
+
       <!-- Kind column -->
       <template #item.templateKind="{ item }">
         <v-chip :color="kindColor(item.templateKind)" variant="tonal" size="small">

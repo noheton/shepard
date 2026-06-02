@@ -136,6 +136,7 @@ function openDetails(t: ShepardTemplateIO) {
     <v-card v-else-if="!isLoading" variant="outlined" data-test="templates-card">
       <v-data-table
         :headers="[
+          { title: '', key: 'icon', sortable: false, width: 40 },
           { title: 'Name', key: 'name', sortable: true },
           { title: 'Kind', key: 'templateKind', sortable: true },
           { title: 'Description', key: 'description', sortable: false },
@@ -147,6 +148,14 @@ function openDetails(t: ShepardTemplateIO) {
         density="compact"
         data-test="templates-table"
       >
+        <template #[`item.icon`]="{ item }">
+          <!-- TEMPLATE-ICONS-2-FE — template's icon (or per-kind default) -->
+          <v-icon
+            :icon="useTemplateIcon(item, 'DataObject')"
+            size="small"
+            data-test="template-icon"
+          />
+        </template>
         <template #[`item.description`]="{ item }">
           <span class="text-medium-emphasis">
             {{ (item.description ?? "").slice(0, 100) }}
@@ -171,6 +180,11 @@ function openDetails(t: ShepardTemplateIO) {
     <v-dialog v-model="showDetails" max-width="720">
       <v-card v-if="selected">
         <v-card-title>
+          <v-icon
+            :icon="useTemplateIcon(selected, 'DataObject')"
+            class="mr-2"
+            size="small"
+          />
           {{ selected.name }}
           <v-chip
             size="x-small"

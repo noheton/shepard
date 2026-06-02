@@ -68,11 +68,13 @@ const { mobile } = useDisplay();
                 @click="emit('select', template)"
               >
                 <div class="d-flex align-start ga-2">
+                  <!-- TEMPLATE-ICONS-2-FE — render the template's own icon (or per-kind default) -->
                   <v-icon
-                    icon="mdi-file-document-outline"
+                    :icon="useTemplateIcon(template, 'DataObject')"
                     color="primary"
                     size="20"
                     class="mt-1 flex-shrink-0"
+                    data-test="template-card-icon"
                   />
                   <div>
                     <div class="text-subtitle-2 font-weight-bold">

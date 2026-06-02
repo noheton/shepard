@@ -32,6 +32,8 @@ const templateKind = ref("DATAOBJECT_RECIPE");
 const description = ref<string>("");
 const tags = ref<string[]>([]);
 const body = ref("{}");
+// TEMPLATE-ICONS-2-FE — admin-settable MDI name. Empty string clears.
+const iconKey = ref<string>("");
 
 const isEdit = computed(() => !!props.template);
 const dialogTitle = computed(() =>
@@ -50,12 +52,14 @@ watch(
         description.value = props.template.description ?? "";
         tags.value = props.template.tags ? [...props.template.tags] : [];
         body.value = props.template.body;
+        iconKey.value = props.template.iconKey ?? "";
       } else {
         name.value = "";
         templateKind.value = "DATAOBJECT_RECIPE";
         description.value = "";
         tags.value = [];
         body.value = "{}";
+        iconKey.value = "";
       }
     }
   },
@@ -76,6 +80,8 @@ async function save() {
       body: body.value.trim(),
       description: description.value.trim() || null,
       tags: tags.value.length > 0 ? [...tags.value] : null,
+      // TEMPLATE-ICONS-2-FE — empty string clears (server resets to null).
+      iconKey: iconKey.value.trim(),
     };
 
     if (isEdit.value && props.template) {
@@ -158,6 +164,39 @@ async function save() {
               variant="outlined"
               density="compact"
             />
+          </v-col>
+
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="iconKey"
+              label="Icon (MDI name, optional)"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-shape-outline"
+              :hint="
+                iconKey.trim()
+                  ? `Preview shown to the right. Leave empty for per-kind default.`
+                  : `e.g. mdi-layers. Leave empty for per-kind default. Browse names at materialdesignicons.com.`
+              "
+              persistent-hint
+              clearable
+              data-test="template-icon-key-field"
+            />
+          </v-col>
+
+          <v-col cols="12" sm="6" class="d-flex align-center justify-center">
+            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center" min-width="80">
+              <span class="text-caption text-medium-emphasis">Preview</span>
+              <v-icon
+                :icon="iconKey.trim() || 'mdi-circle-medium'"
+                size="x-large"
+                class="mt-1"
+                data-test="template-icon-preview"
+              />
+              <span class="text-caption text-medium-emphasis mt-1">
+                {{ iconKey.trim() || "(default)" }}
+              </span>
+            </v-card>
           </v-col>
 
           <v-col cols="12">

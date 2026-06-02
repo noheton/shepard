@@ -88,6 +88,13 @@ const options = computed(() => items.value.map(t => formatOption(t, props.kind))
       :error-messages="fetchError ? [`Failed to load templates: ${fetchError}`] : []"
       :hint="`Pick a ${kind === '*' ? 'template' : kind + ' template'} — picker reads /v2/templates`"
       persistent-hint
-    />
+    >
+      <!-- TEMPLATE-ICONS-2-FE — render the template's icon in each item -->
+      <template #item="{ props: itemProps, item }">
+        <v-list-item v-bind="itemProps" :prepend-icon="(item.raw?.iconKey ?? null) || 'mdi-circle-medium'">
+          <template v-if="item.raw?.subtitle" #subtitle>{{ item.raw.subtitle }}</template>
+        </v-list-item>
+      </template>
+    </v-autocomplete>
   </div>
 </template>

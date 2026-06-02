@@ -21,4 +21,10 @@ export interface ShepardTemplateIO {
   /** Millis since epoch when the row was last touched */
   updatedAt?: number | null;
   retired: boolean;
+  /**
+   * Optional MDI icon name (e.g. "mdi-layers"). The UI renders this
+   * everywhere a DataObject is shown. Null means the UI falls back to
+   * the per-kind default. Design: aidocs/integrations/122.
+   */
+  iconKey?: string | null;
 }
