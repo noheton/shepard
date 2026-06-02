@@ -53,7 +53,7 @@ mffd-export/
 │       └── Track_NN__Run_NN_/    # 8,251 of these
 │           ├── files/
 │           │   ├── Robot program                            # ~7 KB
-│           │   ├── TPS raw data.0 … .37                     # binary chunks
+│           │   ├── TPS raw data.0 … .37                     # 1292×964 PNG camera frames (AAC1 finding 2026-06-02)
 │           │   ├── TPS intermediate evaluation files.0 … .N
 │           │   ├── TPS 3D pointclouds.0, .1                 # ← 3D
 │           │   └── FSD course 3D pointclouds                # ← 3D
@@ -187,7 +187,7 @@ defined.
 | `Track_NN__Run_NN_` DO | `DataObject` with template `process-step-afp-layup` | ✅ V100 |
 | `ts/Timeseries.csv` | `TimeseriesReference` → TimescaleDB hypertable | ✅ TS-OPT3 + 192-channel bulk endpoint |
 | `files/Robot program` | `FileReference (FR1b singleton)` | ✅ J1e |
-| `files/TPS raw data.N` | `FileBundleReference` (38-chunk bundle) | ⚠️ singletons-only rule says reconsider |
+| `files/TPS raw data.N` | **`ImageBundleReference` of 38 PNG camera frames per track** (1292×964 grayscale; AAC1 reverse-engineered 2026-06-02 — NOT binary chunks) | ⚠️ alpha; scale-untested at 313,538 frames; candidate for VID1 synthesis |
 | `files/TPS 3D pointclouds.N` | `FileBundleReference` | ⚠️ **no 3D viewer yet** |
 | `files/FSD course 3D pointclouds` | `FileBundleReference` | ⚠️ ditto |
 | `metadata.json` | `attributes` + `:SemanticAnnotation` | ✅ TPL4 dual-write |
