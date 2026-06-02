@@ -2735,3 +2735,22 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+## PROJ-* — Project entity + sub-Collection registry (`aidocs/integrations/121`)
+
+Design doc: `aidocs/integrations/121-project-and-subcollections.md`.
+A **Project** is an ordinary Collection with `urn:shepard:project = true`.
+Sub-collections declare `urn:shepard:partOf = <project.appId>` (non-exclusive).
+Programme affiliation is a `urn:shepard:programme = "Clean Aviation JU"` text
+annotation on the Project — not a separate entity.
+
+| ID | Subject | Size | Status | Notes |
+|---|---|---|---|---|
+| `PROJ-PREDICATES-1` | Cypher migration: add `urn:shepard:project`, `urn:shepard:partOf`, `urn:shepard:programme` to controlled vocab + SHACL shape `project.shape.ttl`. | S | queued | See `121 §5`. |
+| `PROJ-REST-1` | Backend `GET /v2/collections/{appId}/sub-collections` endpoint (includes `programmes` array + `alsoMemberOf` per child). | S | queued | See `121 §3.1`. |
+| `PROJ-MCP-1` | MCP tool `getSubCollections({collectionAppId})` → same response shape as REST endpoint. | XS | queued | See `121 §3.4`. |
+| `PROJ-PANEL-1` | Frontend `CollectionSubCollectionsPanel.vue` (with programme strip + alsoMemberOf chips). Mounted on Collection-detail page. | S | queued | See `121 §4.1`. |
+| `PROJ-NAV-1` | Frontend top-nav route `/projects` + `pages/projects/index.vue` — global list of every Collection with `urn:shepard:project = true`. Frontend-filter first via `useFetchProjectCollections`; add backend filter later if needed. | S | **🚧 in-flight (PROJ-NAV-1-projects-list-page)** | Spec: `121 §4.2`. Per CLAUDE.md §top-nav-reachable-before-beta. Renames row from `/programmes` to `/projects` per 2026-06-02 commit `35a8d62`. Delivered: `frontend/pages/projects/index.vue` + `frontend/composables/context/useFetchProjectCollections.ts` + `frontend/components/layout/HeaderBar.vue` nav entry (desktop + mobile) + 18 Vitest tests. |
+| `PROJ-BADGE-1` | Project + "member of" chips on `CollectionList.vue` rows (multi-parent chip group). | XS | queued | See `121 §4.3`. |
+| `PROJ-ADMIN-RUNBOOK-1` | Three-audience docs: admin runbook for "mark as Project" + "add sub-Collection (non-exclusive)" + "set programme metadata". | XS | queued | See `121 §7`. |
+| `PROJ-SEMA-WRITE-GATE-1` | `SemanticAnnotationService` enforces SHACL constraints at write time for the three project predicates. | S | queued | See `121 §2`. |

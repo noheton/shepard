@@ -25,6 +25,11 @@
       <!-- Desktop: inline nav links -->
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
+      <!-- PROJ-NAV-1 (2026-06-02) — /projects global list of Project Collections.
+           Sits between Collections and Containers per §4.2 of aidocs/integrations/121.
+           Per CLAUDE.md §top-nav-reachable-before-beta: top-nav entry required for
+           alpha→beta promotion of the Projects feature. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/projects">Projects</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
       <!-- Semantic discovery affordance moved to /me#semantic per
            SEMA-NAV-PLACEMENT-DECISION option (b) on 2026-05-24.
@@ -356,6 +361,8 @@
     <v-list nav>
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
+      <!-- PROJ-NAV-1 (2026-06-02) — mirror of the desktop Projects entry. -->
+      <v-list-item title="Projects" to="/projects" prepend-icon="mdi-folder-star-multiple-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
       <!-- Semantic discovery moved to /me#semantic per SEMA-NAV-PLACEMENT-DECISION (b) 2026-05-24 -->
       <v-list-item
