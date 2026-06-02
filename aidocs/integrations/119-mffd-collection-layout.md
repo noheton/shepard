@@ -114,7 +114,7 @@ publication assembles here.
 **Source:** `cube3-export/mffd-export/ts-export/tapelaying/`
 **Importer:** v15 (shipped, four workers + exponential backoff + n10s PROV-O writeback)
 **Expected DOs:** ~8 251 leaf Execution (Run) DOs, plus the intermediate Step / Layer / Ply-Group / Track grouping DOs that v16 PRESERVE-HIERARCHY creates above them — see §2.2.1 below for the full five-level shape.
-**Primary templates:** `MFFDStepRoot`, `MFFDLayer`, `MFFDPlyGroup`, `MFFDTrack`, `MFFDExecution` (all from TT, V100 — shipped 2026-05-30).
+**Primary templates:** `MFFDStepRoot`, `MFFDLayer`, `MFFDPlyGroup`, `MFFDTrack`, `MFFDExecution` (all from TT, V100 — shipped 2026-05-30). Each carries a per-template `iconKey` (MDI name) per `aidocs/integrations/122 §4` so the tree, breadcrumbs, sidebar, and DO list all render with the right visual at every depth — `mdi-factory` / `mdi-layers` / `mdi-format-list-group` / `mdi-vector-polyline` / `mdi-play-circle-outline` respectively. Bridge-weld, spot-weld, NDT, and cell templates carry their own icons too.
 **Process-type predicate:** `urn:shepard:mffd:process-type = afp-tapelaying`
 **Owning group:** `mffd-afp-team`
 
