@@ -79,21 +79,28 @@ format reverse-engineered and validated in `byte-layout-notes.md`
 * `decodeAll(file, manifest, xmlBomOffset)` → all channels, joining
   per-channel `DataType` from the manifest's acquisition order.
 
-A segment candidate is only accepted when its first samples advance by a
-single **constant tick period** (`SEGMENT_PROBE` = 8 samples). This guard
-rejects the coincidental FILETIME-range matches that wide-DataType
-channels would otherwise produce — the decoder emits clean data or
-nothing, never non-monotonic garbage.
+**Record layout differs by value width.** A `u32` tick travels with every
+sample; on narrow channels (INT16/BIT) the value leads and the tick
+follows, while on wide channels (≥ 4-byte value: INT32/REAL32/REAL64/
+UINT64) the tick leads so the value stays naturally aligned
+(`valueOffsetInRecord`). Segments are located by a **contiguity chain** —
+a header is only accepted when its successor (or the block end) is also a
+valid header — which rejects coincidental FILETIME-range matches. Sample
+timing within a segment is taken from the **FILETIME-derived cadence**
+(next segment's FILETIME − this one, ÷ count), the dtype-agnostic source
+of truth (the stored per-sample tick is plain `u32` on narrow channels
+but a fixed-point value on wide ones).
 
 Validated against the real 50 MB campaign file
-`Scope Project_AutoSave_19_04_29.svdx`: ch1 (`aTemperatureAnalogIntput1`)
-decodes to 20,656 samples spanning a monotonic 20.655 s (t0=0 →
-206,550,000), values matching the companion CSV; **147 of 149 channels
-decode to a fully monotonic series**, the remainder returning empty.
-**Known limitation:** the high-rate INT32/REAL64 channels (e.g. the
-10 MB robot-data channels) use a distinct, denser segmentation that is
-not yet decoded — those channels return empty rather than partial data.
-Decoding them is tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+`Scope Project_AutoSave_19_04_29.svdx`: **all 149 channels decode to a
+fully monotonic series — 5,015,677 samples across all six data types**
+(INT16, INT32, REAL32, REAL64, UINT64, BIT), including the 1 kHz analog
+welding signals (ch1 = 20,656 samples / 20.655 s, matching the CSV) and
+the ~50 kHz `Sound.kanal_*` audio channels (1,032,096 samples each).
+
+**Note:** raw values are returned as stored; applying each channel's
+manifest `<ScaleFactor>`/`<Offset>` to recover engineering units is a
+separate, tracked step on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
 
 ## What the parser does NOT do
 

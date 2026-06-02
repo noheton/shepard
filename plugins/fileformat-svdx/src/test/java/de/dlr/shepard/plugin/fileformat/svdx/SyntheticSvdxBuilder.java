@@ -103,10 +103,16 @@ final class SyntheticSvdxBuilder {
                 blk.putLong(o + 2, segFt);                  // segment FILETIME base
                 blk.putShort(o + 10, (short) segCount);     // sample count
                 int dataOff = o + SvdxBinaryParser.SEGMENT_HEADER_SIZE;
+                // Record layout mirrors the real files: wide values (>=4 bytes)
+                // follow a leading u32 tick; narrow values lead. The decoder
+                // times samples from the segment FILETIMEs, so the stored tick
+                // is filler here, but we place the value at the right offset.
+                int valueOffset = SvdxBinaryParser.valueOffsetInRecord(p.valueWidth());
+                int tickOffset = (valueOffset == 0) ? p.valueWidth() : 0;
                 for (int j = 0; j < segCount; j++) {
                     int rec0 = dataOff + j * rec;
-                    writeValue(blk, rec0, p.dataType(), c * 1000 + g + j);
-                    blk.putInt(rec0 + p.valueWidth(), (int) (j * PERIOD)); // within-segment tick
+                    writeValue(blk, rec0 + valueOffset, p.dataType(), c * 1000 + g + j);
+                    blk.putInt(rec0 + tickOffset, (int) (j * PERIOD)); // within-segment tick (filler)
                 }
                 o = dataOff + segCount * rec;
                 g += segCount;

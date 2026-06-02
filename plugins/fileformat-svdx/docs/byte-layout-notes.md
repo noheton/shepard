@@ -208,25 +208,52 @@ There is also a **coarse FILETIME index table** earlier in the block
 index the decoder ignores (the 0-based constant-period sample-run check
 rejects it).
 
+#### Record layout differs by value width — ALL DTYPES DECODED 2026-06-02 (pass 5)
+
+The per-sample record carries a `u32` tick plus the value, but the **order
+depends on the value width**:
+
+```
+narrow value (< 4 bytes: INT16, BIT):   [ value ][ u32 tick ]
+wide  value (>= 4 bytes: INT32, REAL32,  [ u32 tick ][ value ]
+            REAL64, UINT64):            (tick leads so value stays aligned)
+```
+
+Earlier passes only handled the narrow form, which is why 125 of 149
+channels (every INT32/REAL32/REAL64/UINT64) silently produced nothing.
+`valueOffsetInRecord(width)` now encodes the order.
+
+**Per-sample timing comes from the FILETIMEs, not the stored tick.** The
+stored per-sample tick is a plain `u32` (100 ns) on narrow channels but a
+fixed-point value (≈ real_tick × 65536, with low-bit noise) on wide ones,
+so it is not a reliable cross-dtype clock. Instead each sample is timed by
+the **FILETIME-derived cadence**: `spacing = (nextSegmentFILETIME −
+thisSegmentFILETIME) / count`, and `tick = (segFILETIME − acqStart) +
+round(j · spacing)`. This is dtype-agnostic and also absorbs the
+different sample rates (1 kHz analog vs ~50 kHz `Sound.kanal_*` audio).
+
+**Segments are located by a contiguity chain** — a 12-byte header is
+accepted only when its successor (at `offset + 12 + count·recSize`) is
+also a valid header (FILETIME in range, sane count), or it is the block's
+final segment. This replaced the constant-tick-period guard (which only
+worked for narrow channels) and still rejects coincidental
+FILETIME-range matches by single wide values.
+
+**Result:** all **149/149 channels** of the 50 MB reference file decode to
+a fully monotonic series — **5,015,677 samples** across all six data
+types, including the two ~50 kHz `Sound.kanal_*` audio channels
+(1,032,096 samples each).
+
 #### What still needs to be verified (remaining)
 
-1. **High-rate channel segmentation** (the real open item): the
-   FILETIME-anchored walk now decodes the **1 kHz analog channels**
-   cleanly — **147 of 149 channels** yield a fully monotonic series after
-   adding a *constant-tick-period* guard (`SEGMENT_PROBE` samples must
-   share one period). That guard rejects the coincidental FILETIME-range
-   matches that the wide INT32/REAL64 channels would otherwise produce, so
-   those channels now return **empty rather than garbage**. The high-rate
-   channels (e.g. the 10 MB INT32 robot-data block, acqStart 05.372) carry
-   *far* more samples and a denser segmentation whose header cadence is
-   **not** the 16-sample/16-ms shape — their layout still needs decoding
-   (likely larger or variable `count`, possibly a wider tick). 2 of 149
-   channels still slip a residual false match. Tracked on
+1. **Engineering-unit scaling**: raw values are returned as stored; the
+   manifest's per-channel `<ScaleFactor>`/`<Offset>` must be applied to
+   recover physical units (N, °C, MPa, …). Tracked on
    `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
 2. **Per-channel header length**: fine segments begin well into the block
-   (~16.9 KB on the 50 MB ch1), after the version tag, 3 FILETIMEs and
-   the coarse index table. Pinning this offset would let the scan become a
-   deterministic contiguous walk.
+   (~16.9 KB on the 50 MB ch1), after the version tag, 3 FILETIMEs and the
+   coarse index table; the decoder locates the first segment by scan +
+   contiguity chain rather than a pinned offset.
 3. **Cross-version stability**: diff `0x71` / `0x6d` headers against the
    `0x73` layout above.
 

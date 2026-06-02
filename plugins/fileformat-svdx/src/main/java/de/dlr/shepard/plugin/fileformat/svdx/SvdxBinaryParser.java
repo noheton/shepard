@@ -216,8 +216,7 @@ public final class SvdxBinaryParser {
         int vw = valueWidth(dataType);
         List<Sample> samples = new ArrayList<>();
         if (vw > 0 && acqStart > 0) {
-            int recSize = vw + TICK_WIDTH;
-            samples = decodeSegments(bb, block.length, recSize, vw, dataType, acqStart);
+            samples = decodeSegments(bb, block.length, vw, dataType, acqStart);
         }
         return new DecodedChannel(acqIndex, symbolName, dataType, acqStart, winStart, winEnd, samples);
     }
@@ -225,79 +224,116 @@ public final class SvdxBinaryParser {
     /** Slack before {@code acqStart} a segment FILETIME may legitimately fall. */
     private static final long FT_SLACK_BEFORE = 10_000_000L;        // 1 s in 100 ns units
     private static final long FT_WINDOW_AFTER = 24L * 3600 * 10_000_000L; // 24 h
+    /** Upper bound on a segment's sample count (u16; real files use 16). */
+    private static final int MAX_SEGMENT_COUNT = 4096;
+    /** Max FILETIME gap (100 ns) between two chained segments — 100 s. */
+    private static final long MAX_SEGMENT_GAP = 1_000_000_000L;
+    /** Default per-sample spacing (100 ns) when a channel has a single segment. */
+    private static final long DEFAULT_SPACING = 10_000L;
+
+    /** A located segment: its data offset, absolute FILETIME, and sample count. */
+    private record Seg(int dataOff, long filetime, int count) {}
 
     /**
-     * Walk the channel block segment-by-segment, anchoring on each fine
-     * segment's {@code [_][u64 FILETIME][u16 count]} header (see class doc
-     * and {@code byte-layout-notes.md} §"acquisition = CHANNEL"). For every
-     * 12-byte window whose FILETIME is plausible (within {@code [acqStart−1s,
-     * acqStart+24h]}), whose count is ≥1, and which is followed by {@code
-     * count} samples whose ticks start at 0 and advance by a constant
-     * positive period, the samples are emitted with **absolute** ticks:
-     * {@code (segmentFiletime − acqStart) + withinSegmentTick}. This yields
-     * a globally-monotonic series across all segments, correcting the
-     * per-segment tick reset.
+     * Walk the channel block segment-by-segment. Each fine segment is a
+     * 12-byte {@code [_][u64 FILETIME][u16 count]} header followed by
+     * {@code count} fixed-size sample records (see class doc and
+     * {@code byte-layout-notes.md}). The decoder:
      *
-     * <p>The leading coarse FILETIME index table and the per-channel header
-     * carry FILETIMEs too, but they are not followed by a valid 0-based
-     * constant-period sample run, so the sample-pattern check rejects them.
+     * <ol>
+     *   <li>finds the first segment whose <em>successor</em> is also a valid
+     *       header (a chain of ≥2) — this rejects the coincidental
+     *       FILETIME-range matches that lone wide-DataType values can fake;</li>
+     *   <li>walks segments contiguously from there;</li>
+     *   <li>emits each sample with an <b>absolute</b> tick relative to
+     *       {@code acqStart}, timing the samples within a segment by the
+     *       FILETIME-derived cadence (next segment's FILETIME − this one,
+     *       divided by the count) rather than the stored per-sample tick —
+     *       which is a plain {@code u32} on narrow channels but a
+     *       fixed-point value on wide ones, so FILETIME spacing is the
+     *       dtype-agnostic source of truth.</li>
+     * </ol>
+     *
+     * <p>Record layout: a {@code u32} tick travels with every sample. On
+     * narrow channels (INT16/BIT, value &lt; 4 bytes) the value leads and the
+     * tick follows; on wide channels (≥ 4-byte value) the tick leads so the
+     * value stays naturally aligned. {@link #valueOffsetInRecord} encodes this.
      */
     private static List<Sample> decodeSegments(
-        ByteBuffer bb, int len, int recSize, int valueWidth, String dataType, long acqStart) {
-        long lo = acqStart - FT_SLACK_BEFORE;
-        long hi = acqStart + FT_WINDOW_AFTER;
+        ByteBuffer bb, int len, int valueWidth, String dataType, long acqStart) {
+        final int recSize = valueWidth + TICK_WIDTH;
+        final int valueOffset = valueOffsetInRecord(valueWidth);
+        final long lo = acqStart - FT_SLACK_BEFORE;
+        final long hi = acqStart + FT_WINDOW_AFTER;
+
+        int first = findFirstSegment(bb, len, recSize, lo, hi);
         List<Sample> out = new ArrayList<>();
-        int o = 0;
-        while (o + SEGMENT_HEADER_SIZE <= len) {
-            long ft = bb.getLong(o + SEG_FT_OFFSET);
-            int count = bb.getShort(o + SEG_COUNT_OFFSET) & 0xFFFF;
+        if (first < 0) return out;
+
+        List<Seg> segs = new ArrayList<>();
+        int o = first;
+        while (true) {
+            int count = segmentCountIfValid(bb, o, len, recSize, lo, hi);
+            if (count < 0) break;
             int dataOff = o + SEGMENT_HEADER_SIZE;
-            if (ft >= lo && ft <= hi && count >= 1
-                && dataOff + (long) count * recSize <= len
-                && isValidSegmentRun(bb, dataOff, count, recSize, valueWidth)) {
-                long baseTick = ft - acqStart;
-                for (int r = 0; r < count; r++) {
-                    int rec = dataOff + r * recSize;
-                    double val = readValue(bb, rec, dataType, valueWidth);
-                    long within = bb.getInt(rec + valueWidth) & 0xFFFFFFFFL;
-                    out.add(new Sample(baseTick + within, val));
-                }
-                o = dataOff + count * recSize;
-            } else {
-                o += 1;
+            segs.add(new Seg(dataOff, bb.getLong(o + SEG_FT_OFFSET), count));
+            o = dataOff + count * recSize;
+        }
+
+        double prevSpacing = DEFAULT_SPACING;
+        for (int k = 0; k < segs.size(); k++) {
+            Seg seg = segs.get(k);
+            double spacing = (k + 1 < segs.size())
+                ? (double) (segs.get(k + 1).filetime() - seg.filetime()) / seg.count()
+                : prevSpacing; // last segment reuses the established cadence
+            long base = seg.filetime() - acqStart;
+            for (int j = 0; j < seg.count(); j++) {
+                long tick = base + Math.round(j * spacing);
+                double val = readValue(bb, seg.dataOff() + j * recSize + valueOffset, dataType, valueWidth);
+                out.add(new Sample(tick, val));
             }
+            prevSpacing = spacing;
         }
         return out;
     }
 
-    /** Samples cross-checked for a constant tick period before a candidate
-     *  is accepted as a real segment. 4 is enough to reject the coincidental
-     *  FILETIME-range matches seen on wide-DataType channels (whose
-     *  "ticks" are not a regular cadence) while accepting genuine runs. */
-    private static final int SEGMENT_PROBE = 8;
+    /** Offset of the value within a sample record: wide values (≥ 4 bytes)
+     *  follow a leading {@code u32} tick; narrow values lead. */
+    static int valueOffsetInRecord(int valueWidth) {
+        return valueWidth >= 4 ? TICK_WIDTH : 0;
+    }
 
-    /**
-     * A run is a valid segment body iff sample 0's tick is 0 and the first
-     * few samples advance by a single constant positive period. The
-     * constant-period check is the load-bearing guard: on INT32/REAL64
-     * channels an 8-byte value can land in the FILETIME range and fake a
-     * header, but the bytes that follow are not a regular cadence, so they
-     * are rejected here rather than emitted as non-monotonic garbage.
-     */
-    private static boolean isValidSegmentRun(
-        ByteBuffer bb, int dataOff, int count, int recSize, int valueWidth) {
-        if ((bb.getInt(dataOff + valueWidth) & 0xFFFFFFFFL) != 0L) return false;
-        if (count < 2) return true;
-        int probe = Math.min(count, SEGMENT_PROBE);
-        long period = (bb.getInt(dataOff + recSize + valueWidth) & 0xFFFFFFFFL);
-        if (period <= 0 || period >= 0x4000_0000L) return false;
-        long prev = period;
-        for (int k = 2; k < probe; k++) {
-            long t = bb.getInt(dataOff + k * recSize + valueWidth) & 0xFFFFFFFFL;
-            if (t - prev != period) return false;
-            prev = t;
+    /** First offset whose header is valid AND followed by another valid
+     *  header within {@link #MAX_SEGMENT_GAP} (a chain of ≥2), or the block
+     *  end. Returns -1 if no segment chain exists. */
+    private static int findFirstSegment(ByteBuffer bb, int len, int recSize, long lo, long hi) {
+        for (int o = 0; o + SEGMENT_HEADER_SIZE <= len; o++) {
+            int count = segmentCountIfValid(bb, o, len, recSize, lo, hi);
+            if (count < 0) continue;
+            int next = o + SEGMENT_HEADER_SIZE + count * recSize;
+            if (next + SEGMENT_HEADER_SIZE <= len) {
+                int nextCount = segmentCountIfValid(bb, next, len, recSize, lo, hi);
+                if (nextCount >= 0) {
+                    long gap = bb.getLong(next + SEG_FT_OFFSET) - bb.getLong(o + SEG_FT_OFFSET);
+                    if (gap >= 0 && gap <= MAX_SEGMENT_GAP) return o;
+                }
+            } else if (next >= len - SEGMENT_HEADER_SIZE) {
+                return o; // single trailing segment that runs to the block end
+            }
         }
-        return true;
+        return -1;
+    }
+
+    /** Sample count if the 12-byte window at {@code o} is a plausible segment
+     *  header (FILETIME in range, count sane, body fits the block), else -1. */
+    private static int segmentCountIfValid(ByteBuffer bb, int o, int len, int recSize, long lo, long hi) {
+        if (o + SEGMENT_HEADER_SIZE > len) return -1;
+        long ft = bb.getLong(o + SEG_FT_OFFSET);
+        if (ft < lo || ft > hi) return -1;
+        int count = bb.getShort(o + SEG_COUNT_OFFSET) & 0xFFFF;
+        if (count < 1 || count > MAX_SEGMENT_COUNT) return -1;
+        if (o + SEGMENT_HEADER_SIZE + (long) count * recSize > len) return -1;
+        return count;
     }
 
     /**
