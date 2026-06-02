@@ -1,7 +1,7 @@
 ---
 stage: feature-defined
 last-stage-change: 2026-05-29
-last-content-change: 2026-05-29
+last-content-change: 2026-06-02
 ---
 
 # shepard-plugin-jupyter — User quickstart
@@ -16,6 +16,14 @@ shows an **"Open in Jupyter"** action in its detail view. Clicking it:
 
 1. Redirects you to JupyterHub at
    `https://shepard.<your-domain>/jupyterhub/hub/spawn?file=<encoded-url>`.
+
+   The `<encoded-url>` is the Shepard file-content URL
+   (`/v2/files/{appId}/content`) **percent-encoded with
+   `encodeURIComponent`**.  Every character that is special in a URL
+   query string — `?`, `&`, `=`, `#` — appears as its `%XX` escape so
+   that the JupyterHub server can parse the outer spawn URL without
+   ambiguity.  The round-trip is guaranteed:
+   `decodeURIComponent(encodedParam) === originalShepardDownloadUrl`.
 2. JupyterHub signs you in via the same Keycloak realm as Shepard
    (no second login if you're already in).
 3. **Before the kernel boots**, a pre-spawn hook on the JupyterHub

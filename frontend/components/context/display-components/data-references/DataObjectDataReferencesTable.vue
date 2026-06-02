@@ -5,6 +5,7 @@ import type { DataTableElement } from "./dataTableElement";
 import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
 import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
+import { buildJupyterLaunchUrl, buildShepardFileDownloadUrl } from "~/utils/jupyterLaunchUrl";
 
 interface DataObjectDataReferencesTableProps {
   collectionId: number;
@@ -257,23 +258,27 @@ const jupyterAffordanceVisible = computed(
 
 /**
  * Build the JupyterHub launch URL for a singleton FileReference appId.
- * Follows the `{hubUrl}/hub/spawn?file={downloadUrl}` shape — see
- * docs/admin/runbooks/jupyterhub-config.md for the JupyterHub-side
- * convention map (nbgitpuller / `?fromURL=` / `/user-redirect/`).
+ * Delegates to `buildJupyterLaunchUrl` (utils/jupyterLaunchUrl.ts) which
+ * ensures the `?file=` value is percent-encoded with `encodeURIComponent`.
+ *
+ * The canonical shape is:
+ *   {hubBase}/hub/spawn?file={encodeURIComponent(shepardFileDownloadUrl)}
+ *
+ * See `plugins/jupyter/docs/quickstart.md` for the user-facing description
+ * and `plugins/jupyter/config/jupyterhub_config.py` for the server-side
+ * pre-spawn hook that reads `?file=`.
  *
  * Returns null when the affordance gate is closed.
  */
 function jupyterLaunchUrl(appId: string): string | null {
   const cfg = jupyterConfig.value;
   if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
-  const downloadUrl = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
-  const hubBase = cfg.hubUrl.replace(/\/$/, "");
-  return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
+  return buildJupyterLaunchUrl(cfg.hubUrl, v2BaseUrl(), appId);
 }
 
 /** Build the direct download URL for a FR1b singleton appId. */
 function singletonDownloadUrl(appId: string): string {
-  return `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  return buildShepardFileDownloadUrl(v2BaseUrl(), appId);
 }
 
 /** Format a byte count as B / KB / MB / GB. */
