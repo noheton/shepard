@@ -189,6 +189,67 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
   }
 
 
+  /**
+   * M4I-d-3-followup — walk the multi-hop path
+   * {@code DataObject → TimeseriesReference → TimeseriesContainer}
+   * and for each channel (AnnotatableTimeseries node) that carries a
+   * {@value Constants#TS_UNIT_PREDICATE} annotation, return the channel
+   * label and the QUDT unit IRI.
+   *
+   * <p>The label is derived from the channel's
+   * {@value Constants#TS_PREDICATE_MEASUREMENT} annotation when present;
+   * falls back to the channel's {@code appId} so callers always get a
+   * non-null label. Channels without a unit annotation are silently skipped
+   * — the renderer must not emit an incomplete {@code m4i:NumericalVariable}.
+   *
+   * <p>Returns raw result rows (not typed entities) because the query
+   * aggregates data from two annotation nodes rather than a single entity.
+   * Each row has keys: {@code channelLabel} (String) and {@code unitIri}
+   * (String, the QUDT IRI value from {@link SemanticAnnotation#getValueIRI()}).
+   *
+   * <p>The path uses Neo4j internal IDs for the
+   * {@code AnnotatableTimeseries.containerId} property (a long equal to
+   * {@code id(tc)}) because that is the FK written by
+   * {@link de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries}.
+   *
+   * @param dataObjectAppId the DataObject's UUID v7 appId
+   * @return list of raw result maps; empty when the DataObject has no
+   *         channels with unit annotations or when the hop encounters no
+   *         matching nodes
+   */
+  public List<Map<String, Object>> findChannelUnitsByDataObjectAppId(String dataObjectAppId) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) return List.of();
+    String query =
+      // Step 1: reach all TimeseriesContainers from the DataObject
+      "MATCH (do:DataObject {appId: $doAppId})" +
+      "-[:has_reference]->(tr:TimeseriesReference)" +
+      "-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "WHERE NOT coalesce(tr.deleted, false) " +
+      "WITH DISTINCT id(tc) AS tcNeo4jId " +
+      // Step 2: for each container, find AnnotatableTimeseries nodes with a unit annotation
+      "MATCH (at:AnnotatableTimeseries {containerId: tcNeo4jId})" +
+      "-[:has_annotation]->(ua:SemanticAnnotation {propertyIRI: $unitPredicate}) " +
+      "WHERE ua.valueIRI IS NOT NULL AND ua.valueIRI <> '' " +
+      // Step 3: also grab the measurement-name annotation for the label (optional)
+      "OPTIONAL MATCH (at)-[:has_annotation]->(na:SemanticAnnotation {propertyIRI: $measurementPredicate}) " +
+      "RETURN COALESCE(na.valueName, at.appId) AS channelLabel, ua.valueIRI AS unitIri";
+    Map<String, Object> params = Map.of(
+      "doAppId", dataObjectAppId,
+      "unitPredicate", Constants.TS_UNIT_PREDICATE,
+      "measurementPredicate", Constants.TS_PREDICATE_MEASUREMENT
+    );
+    List<Map<String, Object>> out = new ArrayList<>();
+    for (Map<String, Object> row : session.query(query, params).queryResults()) {
+      if (row.get("unitIri") != null) {
+        out.add(Map.of(
+          "channelLabel", row.getOrDefault("channelLabel", ""),
+          "unitIri", row.get("unitIri")
+        ));
+      }
+    }
+    return out;
+  }
+
   // N1l — paginated load for the snapshot-refresh job
   public List<SemanticAnnotation> findPaginated(int skip, int limit) {
     String query =

@@ -53,24 +53,23 @@ import java.util.Map;
  *   <li><b>Tool</b> — when the most-recent Activity carries a
  *       {@code targetKind}, mint {@code shepard:tool/<kind>} (typed
  *       {@code m4i:Tool}) and emit {@code m4i:hasEmployedTool}.</li>
- *   <li><b>NumericalVariable</b> — for each direct
+ *   <li><b>NumericalVariable (DataObject level)</b> — for each direct
  *       {@link SemanticAnnotation} on the DataObject whose
  *       {@code numericValue} is set, emit a blank-node {@code
  *       m4i:NumericalVariable} carrying {@code m4i:hasValue} (xsd:double)
  *       and a {@code qudt:unit} reference when {@code unitIRI} is
  *       populated. Free-text annotations (no numeric value) fall
  *       through to {@code schema:keywords}.</li>
+ *   <li><b>NumericalVariable (channel level, M4I-d-3-followup)</b> — for each
+ *       timeseries channel reachable via the
+ *       {@code DataObject → TimeseriesReference → TimeseriesContainer →
+ *       AnnotatableTimeseries} multi-hop walk that carries a
+ *       {@code urn:shepard:unit} semantic annotation, emit a blank-node
+ *       {@code m4i:NumericalVariable} with {@code rdfs:label} (channel
+ *       measurement name) and {@code m4i:hasUnit} (QUDT unit IRI). Channels
+ *       without a unit annotation are silently skipped — no incomplete
+ *       {@code NumericalVariable} nodes are emitted.</li>
  * </ul>
- *
- * <h2>Cut: channel-level numeric variables</h2>
- *
- * The 95 channel-level QUDT unit annotations written by the
- * {@code annotate-channel-axes-and-units.py} recovery script live on
- * {@code :AnnotatableTimeseries} nodes addressable from the
- * DataObject only via a multi-hop Cypher walk (DO → reference →
- * container → channel row → annotatable bridge). That walk is out of
- * scope for the v1 M4I-c slice. See backlog row
- * {@code M4I-d-3-followup} in {@code aidocs/16}.
  */
 @ApplicationScoped
 public class M4iDataObjectRenderer {
@@ -201,6 +200,9 @@ public class M4iDataObjectRenderer {
     // ── annotations split: NumericalVariable vs keywords (M4I-d-3) ──
     addAnnotationProjection(node, appId);
 
+    // ── channel-level NumericalVariable (M4I-d-3-followup) ──
+    addChannelNumericalVariables(node, appId);
+
     return node;
   }
 
@@ -323,6 +325,69 @@ public class M4iDataObjectRenderer {
     }
     if (!keywords.isEmpty()) {
       node.put("schema:keywords", keywords);
+    }
+  }
+
+  /**
+   * M4I-d-3-followup — emit one {@code m4i:NumericalVariable} blank node per
+   * timeseries channel that carries a {@code urn:shepard:unit} annotation.
+   *
+   * <p>Walks the multi-hop path
+   * {@code DataObject → TimeseriesReference → TimeseriesContainer → AnnotatableTimeseries}
+   * via {@link de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO#findChannelUnitsByDataObjectAppId}.
+   * Results are merged into the existing {@code m4i:hasNumericalVariable} list produced
+   * by {@link #addAnnotationProjection} so the JSON-LD output contains both
+   * DataObject-level numeric variables (from direct annotations with a
+   * {@code numericValue}) and channel-level ones (from QUDT unit annotations on channels).
+   *
+   * <p>The {@code m4i:hasUnit} predicate (not {@code qudt:unit}) is used here because
+   * this emission is describing a measured variable's unit — the distinction
+   * aligns with the m4i 1.4.0 OWL where {@code m4i:NumericalVariable} carries
+   * {@code m4i:hasUnit} (not the direct {@code qudt:unit} shortcut used for
+   * scalar-value annotations).
+   *
+   * <p>Fail-soft — any DAO exception is caught; the renderer continues and the
+   * caller receives the rest of the node.
+   */
+  private void addChannelNumericalVariables(Map<String, Object> node, String appId) {
+    if (appId == null || appId.isBlank()) return;
+    List<Map<String, Object>> channelRows;
+    try {
+      channelRows = semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(appId);
+    } catch (RuntimeException e) {
+      return; // fail-soft per CLAUDE.md
+    }
+    if (channelRows == null || channelRows.isEmpty()) return;
+
+    // Build the new channel-level NumericalVariable nodes.
+    List<Map<String, Object>> channelNvs = new ArrayList<>(channelRows.size());
+    for (Map<String, Object> row : channelRows) {
+      Object labelObj = row.get("channelLabel");
+      Object unitIriObj = row.get("unitIri");
+      if (unitIriObj == null) continue;
+      String unitIri = unitIriObj.toString();
+      if (unitIri.isBlank()) continue;
+
+      Map<String, Object> nv = new LinkedHashMap<>();
+      nv.put("@type", "m4i:NumericalVariable");
+      String label = (labelObj != null && !labelObj.toString().isBlank())
+        ? labelObj.toString() : "channel";
+      nv.put("rdfs:label", label);
+      nv.put("m4i:hasUnit", Map.of("@id", unitIri));
+      channelNvs.add(nv);
+    }
+    if (channelNvs.isEmpty()) return;
+
+    // Merge with any DataObject-level NumericalVariable nodes already present.
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> existing =
+      (List<Map<String, Object>>) node.get("m4i:hasNumericalVariable");
+    if (existing == null) {
+      node.put("m4i:hasNumericalVariable", channelNvs);
+    } else {
+      List<Map<String, Object>> merged = new ArrayList<>(existing);
+      merged.addAll(channelNvs);
+      node.put("m4i:hasNumericalVariable", merged);
     }
   }
 

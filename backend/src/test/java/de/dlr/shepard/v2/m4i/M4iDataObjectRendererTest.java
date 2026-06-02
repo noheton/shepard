@@ -64,6 +64,7 @@ class M4iDataObjectRendererTest {
     // Default mock responses — no activities, no annotations, no publications.
     when(activityDAO.list(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
     when(semanticAnnotationDAO.findBySubjectAppId(any())).thenReturn(List.of());
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(any())).thenReturn(List.of());
     when(publicationDAO.findByEntityAppId(any())).thenReturn(List.of());
   }
 
@@ -400,5 +401,101 @@ class M4iDataObjectRendererTest {
     a.setNumericValue(12.3);
     var node = M4iDataObjectRenderer.NumericalVariableResolver.toNode(a);
     assertEquals("12.3", node.get("rdfs:label"));
+  }
+
+  // ── M4I-d-3-followup: channel-level NumericalVariable ───────────────
+
+  @Test
+  void channelUnitAnnotationsEmitNumericalVariableWithHasUnit() {
+    Map<String, Object> row = Map.of(
+      "channelLabel", "turbopump_vibration",
+      "unitIri", "http://qudt.org/vocab/unit/G"
+    );
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(eq(DO_APP_ID)))
+      .thenReturn(List.of(row));
+
+    var body = renderer.renderDataObject(makeDataObject(DO_APP_ID, "TR-004", null));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> nvs = (List<Map<String, Object>>) body.get("m4i:hasNumericalVariable");
+    assertNotNull(nvs);
+    assertEquals(1, nvs.size());
+    Map<String, Object> nv = nvs.get(0);
+    assertEquals("m4i:NumericalVariable", nv.get("@type"));
+    assertEquals("turbopump_vibration", nv.get("rdfs:label"));
+    @SuppressWarnings("unchecked")
+    Map<String, Object> unitNode = (Map<String, Object>) nv.get("m4i:hasUnit");
+    assertEquals("http://qudt.org/vocab/unit/G", unitNode.get("@id"));
+    // m4i:hasValue must NOT be present — channel-level NV has no scalar value
+    assertNull(nv.get("m4i:hasValue"));
+  }
+
+  @Test
+  void channelNumericalVariablesMergedWithDataObjectLevelOnes() {
+    // DataObject-level annotation (numeric with unit)
+    SemanticAnnotation a = new SemanticAnnotation();
+    a.setPropertyName("pressure");
+    a.setNumericValue(1.5e5);
+    a.setUnitIRI("http://qudt.org/vocab/unit/PA");
+    when(semanticAnnotationDAO.findBySubjectAppId(eq(DO_APP_ID)))
+      .thenReturn(List.of(a));
+
+    // Channel-level unit annotation
+    Map<String, Object> row = Map.of(
+      "channelLabel", "vibration_axial",
+      "unitIri", "http://qudt.org/vocab/unit/G"
+    );
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(eq(DO_APP_ID)))
+      .thenReturn(List.of(row));
+
+    var body = renderer.renderDataObject(makeDataObject(DO_APP_ID, "TR-004", null));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> nvs = (List<Map<String, Object>>) body.get("m4i:hasNumericalVariable");
+    assertNotNull(nvs);
+    assertEquals(2, nvs.size());
+    // DataObject-level NV uses qudt:unit + m4i:hasValue; channel-level uses m4i:hasUnit only
+    long hasUnit = nvs.stream().filter(nv -> nv.containsKey("m4i:hasUnit")).count();
+    long hasQudtUnit = nvs.stream().filter(nv -> nv.containsKey("qudt:unit")).count();
+    assertEquals(1, hasUnit);
+    assertEquals(1, hasQudtUnit);
+  }
+
+  @Test
+  void channelWithMissingUnitIriSkipped() {
+    // Row with null unitIri — must not produce a NumericalVariable
+    Map<String, Object> row = new java.util.HashMap<>();
+    row.put("channelLabel", "orphan_channel");
+    row.put("unitIri", null);
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(eq(DO_APP_ID)))
+      .thenReturn(List.of(row));
+
+    var body = renderer.renderDataObject(makeDataObject(DO_APP_ID, "TR-004", null));
+    assertNull(body.get("m4i:hasNumericalVariable"));
+  }
+
+  @Test
+  void channelUnitDaoFailureFailsSoft() {
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(any()))
+      .thenThrow(new RuntimeException("Neo4j boom"));
+    var body = renderer.renderDataObject(makeDataObject(DO_APP_ID, "TR-004", null));
+    // Mandatory fields still present; no channel NVs emitted
+    assertNotNull(body.get("dcterms:identifier"));
+    assertNull(body.get("m4i:hasNumericalVariable"));
+  }
+
+  @Test
+  void channelLabelFallsBackToDefaultWhenBlank() {
+    Map<String, Object> row = Map.of(
+      "channelLabel", "",
+      "unitIri", "http://qudt.org/vocab/unit/HZ"
+    );
+    when(semanticAnnotationDAO.findChannelUnitsByDataObjectAppId(eq(DO_APP_ID)))
+      .thenReturn(List.of(row));
+
+    var body = renderer.renderDataObject(makeDataObject(DO_APP_ID, "TR-004", null));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> nvs = (List<Map<String, Object>>) body.get("m4i:hasNumericalVariable");
+    assertNotNull(nvs);
+    assertEquals(1, nvs.size());
+    assertEquals("channel", nvs.get(0).get("rdfs:label"));
   }
 }

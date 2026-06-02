@@ -460,6 +460,23 @@
               <version>${lombok.version}</version>
             </path>
           </annotationProcessorPaths>
+          <!--
+            Exclude plugin-dependent test files from compilation when the
+            plugin JARs are absent (e.g. -DnoPlugins bootstrap pass, or
+            worktree environments without pre-built plugins). These files
+            are already excluded from *execution* by surefire's exclude
+            list; excluding them from compilation avoids "cannot find symbol"
+            errors when the spatial / git plugin classes are not on the test
+            classpath. This mirrors the surefire exclusion policy — tests
+            that need live infrastructure and plugin JARs must not block
+            the unit-test compile phase.
+          -->
+          <testExcludes>
+            <testExclude>**/integrationtests/**/*.java</testExclude>
+            <testExclude>**/*QuarkusTest.java</testExclude>
+            <!-- GeometryBuilderTest references spatiotemporal plugin classes -->
+            <testExclude>**/data/model/GeometryBuilderTest.java</testExclude>
+          </testExcludes>
         </configuration>
       </plugin>
       <plugin>
