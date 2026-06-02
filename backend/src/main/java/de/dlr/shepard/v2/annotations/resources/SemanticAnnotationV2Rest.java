@@ -12,6 +12,7 @@ import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import io.quarkus.logging.Log;
@@ -34,6 +35,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -388,6 +390,175 @@ public class SemanticAnnotationV2Rest {
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
+  }
+
+  // ─── BULK CREATE ───────────────────────────────────────────────────────────
+
+  /** Hard cap on annotations per bulk call (mirrors MCP-COV-05 limit). */
+  static final int MAX_BULK_SIZE = 100;
+
+  static final String PROBLEM_TYPE_BULK_TOO_LARGE = "/problems/annotations.bulk-too-large";
+
+  @POST
+  @Path("/bulk")
+  @Operation(
+    summary = "Bulk-create up to 100 semantic annotations in one call.",
+    description =
+      "SEMANTIC-ANNOTATE-BULK-REST-1 — creates up to " + MAX_BULK_SIZE + " `:SemanticAnnotation` " +
+      "nodes in a single request. Same per-row semantics as `POST /v2/annotations`.\n\n" +
+      "The operation is **best-effort per row**: a failure in one row does NOT abort the batch. " +
+      "Every row is attempted; the response array has the same length as the input array, in " +
+      "input order.\n\n" +
+      "Required fields per row: `subjectAppId`, `subjectKind`, `predicateIri`, and exactly one of " +
+      "`objectLiteral` / `objectIri`.\n\n" +
+      "Auth: caller must be able to Write each row's subject entity. A row whose subject the caller " +
+      "cannot Write will appear as a failure in the result (the other rows are unaffected).\n\n" +
+      "Max 100 rows per call; returns 400 (RFC 7807) when the limit is exceeded, the body is null, " +
+      "or the list is empty.\n\n" +
+      "Provenance: each successful row mints its own `:Activity` via `ProvenanceService.record()` " +
+      "(same as the single-create path). The bulk endpoint sets `PROP_SKIP_CAPTURE` on the request " +
+      "context so the filter does not emit a second generic Activity for the bulk call itself.\n\n" +
+      "Returns 200 OK (not 201) because the response is a mixed-result array that may contain " +
+      "failures — the HTTP-level success only means the batch was processed."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Array of per-row results, same length as input, in input order.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BulkAnnotationResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is null/empty or exceeds 100 rows (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response bulkCreate(
+    List<CreateAnnotationIO> body,
+    @Context SecurityContext sc,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader
+  ) {
+    String caller = callerName(sc);
+    if (caller == null) return unauthorized();
+
+    if (body == null || body.isEmpty()) {
+      return problem(PROBLEM_TYPE_BULK_TOO_LARGE, "Empty or null body", Response.Status.BAD_REQUEST,
+        "Request body must be a non-empty JSON array of annotation objects (max " + MAX_BULK_SIZE + ").");
+    }
+    if (body.size() > MAX_BULK_SIZE) {
+      return problem(PROBLEM_TYPE_BULK_TOO_LARGE, "Batch too large", Response.Status.BAD_REQUEST,
+        "Batch size " + body.size() + " exceeds the maximum of " + MAX_BULK_SIZE +
+        ". Split the request into smaller batches.");
+    }
+
+    List<BulkAnnotationResultIO> results = new ArrayList<>(body.size());
+
+    for (CreateAnnotationIO row : body) {
+      long rowStart = System.currentTimeMillis();
+      String rowSubjectAppId = row != null ? row.getSubjectAppId() : null;
+      try {
+        // ── per-row validation (mirrors single-create) ────────────────────
+        if (row == null) {
+          results.add(BulkAnnotationResultIO.failure(null, "Row is null."));
+          continue;
+        }
+        if (blank(row.getSubjectAppId())) {
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId, "subjectAppId is required."));
+          continue;
+        }
+        if (blank(row.getSubjectKind())) {
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId, "subjectKind is required."));
+          continue;
+        }
+        if (blank(row.getPredicateIri())) {
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId, "predicateIri is required."));
+          continue;
+        }
+        boolean hasLiteral = !blank(row.getObjectLiteral());
+        boolean hasIri     = !blank(row.getObjectIri());
+        if (!hasLiteral && !hasIri) {
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId,
+            "Exactly one of objectLiteral or objectIri must be provided."));
+          continue;
+        }
+        if (hasLiteral && hasIri) {
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId,
+            "Provide exactly one of objectLiteral or objectIri, not both."));
+          continue;
+        }
+
+        // ── permission gate ────────────────────────────────────────────────
+        Response gate = checkWriteAccessForSubject(row.getSubjectAppId(), row.getSubjectKind(), caller);
+        if (gate != null) {
+          // Extract the RFC-7807 detail from the 403 response if possible.
+          Object entity = gate.getEntity();
+          String errMsg = entity instanceof de.dlr.shepard.common.exceptions.ProblemJson pj
+            ? pj.detail()
+            : ("Write permission denied on " + row.getSubjectAppId());
+          results.add(BulkAnnotationResultIO.failure(rowSubjectAppId, errMsg));
+          continue;
+        }
+
+        // ── build & persist ────────────────────────────────────────────────
+        SemanticAnnotation annotation = new SemanticAnnotation();
+        annotation.setAppId(AppIdGenerator.next());
+        annotation.setSubjectKind(row.getSubjectKind());
+        annotation.setSubjectAppId(row.getSubjectAppId());
+        annotation.setPropertyIRI(row.getPredicateIri());
+        annotation.setPropertyName(row.getPredicateLabel());
+        annotation.setVocabularyId(row.getVocabularyId());
+        annotation.setValueIRI(row.getObjectIri());
+        annotation.setValueName(hasLiteral ? row.getObjectLiteral() : null);
+        annotation.setNumericValue(row.getNumericValue());
+        annotation.setUnitIRI(row.getUnitIri());
+        String resolvedSourceMode = row.getSourceMode() != null
+          ? row.getSourceMode()
+          : (aiAgentHeader != null && !aiAgentHeader.isBlank() ? "ai" : "human");
+        annotation.setSourceMode(resolvedSourceMode);
+        annotation.setSourceActivityAppId(row.getSourceActivityAppId());
+        annotation.setAgentUsername(caller);
+        annotation.setValidFromMillis(row.getValidFromMillis());
+        annotation.setValidUntilMillis(row.getValidUntilMillis());
+        annotation.setConfidence(row.getConfidence() != null ? row.getConfidence() : 1.0);
+
+        annotationDAO.createOrUpdate(annotation);
+
+        // ── provenance (best-effort per row) ──────────────────────────────
+        try {
+          Activity activity = provenanceService.record(
+            "CREATE",
+            "SemanticAnnotation",
+            annotation.getAppId(),
+            caller,
+            "POST /v2/annotations/bulk — created annotation " + annotation.getAppId(),
+            "POST",
+            "v2/annotations/bulk",
+            201,
+            rowStart,
+            System.currentTimeMillis()
+          );
+          if (activity != null && activity.getAppId() != null) {
+            annotationDAO.setSourceActivityAppId(annotation.getAppId(), activity.getAppId());
+          }
+        } catch (RuntimeException provEx) {
+          Log.debugf(provEx, "SEMA-V6-007: bulk provenance capture skipped for annotation=%s",
+            annotation.getAppId());
+        }
+
+        results.add(new BulkAnnotationResultIO(annotation.getAppId(), annotation.getSubjectAppId()));
+
+      } catch (RuntimeException e) {
+        Log.debugf(e, "SemanticAnnotationV2Rest: bulk row failure for subjectAppId=%s", rowSubjectAppId);
+        String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        results.add(BulkAnnotationResultIO.failure(rowSubjectAppId, msg));
+      }
+    }
+
+    // ── tell the filter not to emit a second Activity for the bulk call ─────
+    try {
+      if (requestContext != null) {
+        requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+      }
+    } catch (RuntimeException ignored) { /* best-effort */ }
+
+    Log.infof("SemanticAnnotationV2Rest: bulk create %d/%d succeeded by %s",
+      results.stream().filter(BulkAnnotationResultIO::isOk).count(), results.size(), caller);
+    return Response.ok(results).build();
   }
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────

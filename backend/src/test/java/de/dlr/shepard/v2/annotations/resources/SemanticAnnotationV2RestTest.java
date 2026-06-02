@@ -20,12 +20,14 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -630,6 +632,141 @@ class SemanticAnnotationV2RestTest {
     assertThat(io.getSourceMode())
       .as("X-AI-Agent header present without explicit sourceMode → must default to 'ai'")
       .isEqualTo("ai");
+  }
+
+  // ─── SEMANTIC-ANNOTATE-BULK-REST-1: POST /v2/annotations/bulk ────────────
+
+  /**
+   * Happy path: 2 valid rows, both succeed → 200 with two ok=true results.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void bulkCreate_happyPath_twoValidRows_returnsTwoOkResults() {
+    CreateAnnotationIO row1 = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "CF/LMPAEK", null);
+    CreateAnnotationIO row2 = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "LMPAEK/CF", null);
+
+    Response r = resource.bulkCreate(List.of(row1, row2), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    List<BulkAnnotationResultIO> results = (List<BulkAnnotationResultIO>) r.getEntity();
+    assertThat(results).hasSize(2);
+    assertThat(results.get(0).isOk()).isTrue();
+    assertThat(results.get(0).getAppId()).isNotNull();
+    assertThat(results.get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
+    assertThat(results.get(1).isOk()).isTrue();
+    assertThat(results.get(1).getAppId()).isNotNull();
+  }
+
+  /**
+   * Partial failure: 1 valid row + 1 row with a missing predicateIri.
+   * Result: 200, first ok=true, second ok=false with an error message.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void bulkCreate_partialFailure_oneValidOneInvalid_returnsMixedResults() {
+    CreateAnnotationIO validRow = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "good-value", null);
+    CreateAnnotationIO invalidRow = createBody("DataObject", SUBJ_APP_ID, /* no predicate */ "", "v", null);
+
+    Response r = resource.bulkCreate(List.of(validRow, invalidRow), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    List<BulkAnnotationResultIO> results = (List<BulkAnnotationResultIO>) r.getEntity();
+    assertThat(results).hasSize(2);
+    assertThat(results.get(0).isOk()).isTrue();
+    assertThat(results.get(1).isOk()).isFalse();
+    assertThat(results.get(1).getError()).isNotBlank();
+    assertThat(results.get(1).getAppId()).isNull();
+  }
+
+  /**
+   * Empty list → 400 (RFC 7807).
+   */
+  @Test
+  void bulkCreate_emptyList_returns400() {
+    Response r = resource.bulkCreate(List.of(), sc, null);
+    assertThat(r.getStatus()).isEqualTo(400);
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  /**
+   * Null body → 400 (RFC 7807).
+   */
+  @Test
+  void bulkCreate_nullBody_returns400() {
+    Response r = resource.bulkCreate(null, sc, null);
+    assertThat(r.getStatus()).isEqualTo(400);
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  /**
+   * More than 100 entries → 400.
+   */
+  @Test
+  void bulkCreate_moreThan100Entries_returns400() {
+    List<CreateAnnotationIO> bigBatch = new ArrayList<>();
+    for (int i = 0; i <= SemanticAnnotationV2Rest.MAX_BULK_SIZE; i++) {
+      bigBatch.add(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v" + i, null));
+    }
+    Response r = resource.bulkCreate(bigBatch, sc, null);
+    assertThat(r.getStatus()).isEqualTo(400);
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  /**
+   * Unauthenticated caller → 401, nothing persisted.
+   */
+  @Test
+  void bulkCreate_unauthenticated_returns401() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    CreateAnnotationIO row = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+    Response r = resource.bulkCreate(List.of(row), sc, null);
+    assertThat(r.getStatus()).isEqualTo(401);
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  /**
+   * Row where both objectLiteral and objectIri are provided → that row fails,
+   * but the batch still processes and returns 200.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void bulkCreate_rowWithBothLiteralAndIri_failsThatRowOnly() {
+    // Row with both set — ambiguous, should fail.
+    CreateAnnotationIO ambiguous = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "literal", "http://iri");
+    // One valid row alongside it.
+    CreateAnnotationIO valid = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "valid", null);
+
+    Response r = resource.bulkCreate(List.of(ambiguous, valid), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    List<BulkAnnotationResultIO> results = (List<BulkAnnotationResultIO>) r.getEntity();
+    assertThat(results).hasSize(2);
+    assertThat(results.get(0).isOk()).isFalse();
+    assertThat(results.get(1).isOk()).isTrue();
+  }
+
+  /**
+   * Permission denied on a row → that row fails with ok=false, other rows
+   * succeed, overall response is still 200.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void bulkCreate_permissionDeniedOnOneRow_failsThatRowOnly() {
+    String deniedSubject = "do-no-access";
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(deniedSubject), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+
+    CreateAnnotationIO denied = createBody("DataObject", deniedSubject, PREDICATE_IRI, "denied-val", null);
+    CreateAnnotationIO allowed = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "allowed-val", null);
+
+    Response r = resource.bulkCreate(List.of(denied, allowed), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    List<BulkAnnotationResultIO> results = (List<BulkAnnotationResultIO>) r.getEntity();
+    assertThat(results).hasSize(2);
+    assertThat(results.get(0).isOk()).isFalse();
+    assertThat(results.get(0).getSubjectAppId()).isEqualTo(deniedSubject);
+    assertThat(results.get(1).isOk()).isTrue();
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────
