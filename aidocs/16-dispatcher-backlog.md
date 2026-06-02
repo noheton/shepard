@@ -2735,3 +2735,42 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+---
+
+## MCP-COVERAGE — expose all core features through MCP efficiently
+
+Operator observation (2026-05-30): the MCP tool surface lags the v2 REST
+surface. Several core flows are either unreachable from MCP or require
+inefficient multi-call dances (e.g. reach timeseries data from a
+DataObject → list refs → resolve TimeseriesReference → query channel →
+N+1 per channel; or singleton FileReference content fetch via repeated
+file lookups). The goal is **every core feature usable from an MCP
+client in the same shape an efficient REST caller would use**, not a
+thin wrapper that re-invents N+1 over the wire.
+
+**Reviewer test:** a Claude/agent session can drive a complete MFFD
+demonstrator walkthrough — pick a Collection, inspect a DataObject,
+read all its references, plot a multi-channel timeseries window,
+write a semantic annotation, snapshot, export a REP — using **only**
+MCP tools, in a number of tool calls within ~2× the optimal REST
+sequence. Anything worse → file a sub-row.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| MCP-COV-01-AUDIT | Inventory table: every v2 REST endpoint × MCP tool. Columns: REST path, MCP tool name (or `—`), shape parity (bulk/single/missing), efficiency note. Output: `aidocs/agent-findings/mcp-coverage-audit.md`. | S | **✓ done (2026-06-02)** | Drives every sub-row below. 197 REST endpoints scanned; 52 MCP tools; ~23% non-admin coverage. See `aidocs/agent-findings/mcp-coverage-audit.md`. |
+| MCP-COV-02-CORE-CRUD | Coverage for Collection / DataObject / each Reference type (TimeseriesReference, FileReference singleton FR1b, FileBundleReference, StructuredDataReference, URIReference, CollectionReference) CRUD: create, get, list, edit, delete. Returns `appId` consistently. | M | queued | Blocked on -01 (now done). |
+| MCP-COV-03-TS-EFFICIENT | TS access without N+1: `ts_query_multi(containerAppId, shepardIds[], startNanos, endNanos, maxPointsPerChannel?)` returning multi-channel data in one call (TS-OPT2 service path). `ts_describe(containerAppId)` for available channels + valueType (unit/sampleRate reserved). No 5-tuple exposure to the MCP caller. | M | **✓ shipped 2026-05-30** | `TimeseriesMcpTools.tsDescribe` + `tsQueryMulti`. Cap 200 channels/call; default 10 depth deprecated `get_channel_data` flagged in description. 11 unit tests. |
+| MCP-COV-04-FILES | `file_upload(parentDataObjectAppId, name?, filename, contentBase64, mimeType?)` → singleton FR1b appId (per CLAUDE.md singleton rule). `file_content(fileReferenceAppId)` returns bytes as base64. 10 MiB cap; larger uploads/downloads redirect to multipart REST. | S | **✓ shipped 2026-05-30** | `ContentMcpTools.fileUpload` + `fileContent`. Permission gate inherited from parent DataObject via PermissionsService. 13 unit tests. |
+| MCP-COV-05-ANNOTATIONS | All 10 annotation tools present + a bulk write variant (`semantic_annotate_bulk`) for multi-DataObject labelling sweeps. | M | **✓ shipped 2026-05-30 (partial — bulk write done)** | `AnnotationMcpTools.semanticAnnotateBulk` v0 = sequential server-side loop, max 100 entries/call. Per-row error isolation. Spawns `MCP-COV-05-SEMANTIC-BULK-CONCURRENT` + `SEMANTIC-ANNOTATE-BULK-REST-1`. 6 unit tests. |
+| MCP-COV-05-SEMANTIC-BULK-CONCURRENT | Server-side concurrent fan-out for `semantic_annotate_bulk` (Semaphore(10) or equivalent). v0 ships sequential; once labelling batches scale beyond ~25 rows the wall-clock improvement justifies the complexity. | S | queued | Spawned by MCP-COV-05 v0 (2026-05-30). |
+| SEMANTIC-ANNOTATE-BULK-REST-1 | `POST /v2/semantic-annotations/bulk` — bulk-create REST endpoint mirroring the MCP bulk tool. v0's MCP tool fans out to the single DAO; this REST row lets non-MCP callers (UI mass-annotation, CLI sweeps) share the same semantics. | S | queued | Spawned by MCP-COV-05 v0 (2026-05-30). |
+| MCP-COV-06-LJ-SNAP-VER-WATCH | Lab journal, snapshots, versions, watches: read + write coverage. | M | **✓ shipped 2026-05-31 (partial — LJ + versions + watches done)** | `LabJournalMcpTools.labJournal{List,Create,Update,Delete}` + `VersionMcpTools.version{List,Get}` + `WatchMcpTools.watch{List,Add,Remove}`. Snapshots queued as `MCP-COV-06-SNAPSHOTS` follow-up. 28 unit tests. |
+| MCP-COV-07-SEMANTIC-SPARQL | `semantic_browse(prefix)`, `semantic_search(predicate, value)`, `sparql_query(q)` (read-only). | S | queued | MCP-COV-01 done; unblocked. |
+| MCP-COV-08-SCENEGRAPH | `scene_create`, `scene_get`, `scene_add_frame`, `scene_add_joint`, `scene_export_urdf`, `scene_list`, `scene_create_from_urdf`. | S | **✓ shipped 2026-05-31** | `SceneGraphMcpTools` covers full SCENEGRAPH-REST-1 surface. 8 unit tests. |
+| MCP-COV-09-KRL | `krl_interpret(srcFileRefAppId)` → joint trajectory + TS write-back ref. | S | queued | Blocked on KRL-INTERPRETER. |
+| MCP-COV-10-SHAPES-REP | `shape_render(recipeId, params)`, `rep_export(collectionAppId, profile)` returning a poll-handle (REP is async). | S | **✓ shipped 2026-05-31** | `ShapesMcpTools.shape{Render,Validate}` + `repExport`. 15 unit tests. |
+| MCP-COV-11-PROV | `prov_query(entityAppId, depth)`, `activity_list(filter)`, plus closed-form `get_predecessor_chain` + `get_successor_chain` lineage walkers. | S | **✓ shipped 2026-05-30 (partial — chain walkers done)** | `LineageMcpTools.getPredecessorChain` + `getSuccessorChain`. 9 unit tests. `prov_query` + `activity_list` still queued. |
+| MCP-COV-12-AI | `ai_invoke(capability, inputs)` thin wrapper over the AI plugin SPI — local default returns no-op per the local-default rule. | S | **✓ shipped 2026-05-31** | `AiMcpTools.ai{Capabilities,Invoke}`. 14 unit tests. |
+| MCP-COV-13-SEARCH | `search(q, filters)` unified search surface. | S | **✓ shipped 2026-05-31** | `SearchMcpTools.search(query, kind?, limit?, offset?)`. 16 unit tests. |
+| MCP-COV-14-DOCS-TESTS | Three-pane docs update + integration tests against a live MCP client. | M | queued | Lands with the family-completion PR. |
