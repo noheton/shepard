@@ -440,6 +440,17 @@
       <artifactId>imageio-tiff</artifactId>
       <version>3.10.1</version>
     </dependency>
+    <!-- MFFD-PLUGIN-SVDX-CSV-INGEST-1 — pure-Java TwinCAT Scope CSV/SVDX
+         parser, no Quarkus/CDI surface, so it does not contribute to
+         the Jandex hang. The backend invokes the parser directly from
+         the v2 svdx ingestion service; the plugin's SPI shim stays
+         unused until the wire-up row (MFFD-PLUGIN-SVDX-WIRE-1) clears
+         the Jandex regression. -->
+    <dependency>
+      <groupId>de.dlr.shepard.plugins</groupId>
+      <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>${finalName}</finalName>
