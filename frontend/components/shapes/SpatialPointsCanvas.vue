@@ -2,7 +2,7 @@
 /**
  * SpatialPointsCanvas — Three.js renderer for SpatialDataContainer payloads.
  *
- * Two render modes:
+ * Three render modes:
  *
  *   "pointcloud"  — THREE.Points scatter with vertex colours. Decimates to
  *                   ``maxPoints`` via grid-voxel downsampling so the browser
@@ -11,6 +11,12 @@
  *   "trajectory"  — THREE.Line strip with time-as-colour. Renders the TCP
  *                   path as a colour-mapped curve in the same unit cube,
  *                   matching the Trace3DCanvas axis convention.
+ *   "brush-trace" — Line-scan brush rendered as a (X=column, Y=row-time)
+ *                   heatmap-style point grid. Each row-point with a
+ *                   ``measurements.intensities`` vector is expanded into N
+ *                   pixels coloured by intensity (viridis). Voxel-decimates
+ *                   to ``maxPoints`` so the full 964×1292 frame stays under
+ *                   the 500k-point cap. MFFD-SPATIAL-LINESCAN-IMPORTER-1.
  *
  * Shared:
  *   - Normalises XYZ to a unit cube around (0,0,0) so the OrbitControls
@@ -19,6 +25,7 @@
  *     the AFP-cell convention used in Trace3DCanvas.
  *
  * GAP-5 / W7 from aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md.
+ * Brush-trace from W7b (2026-06-02).
  * Companion: ``frontend/components/shapes/Trace3DCanvas.vue`` (the line-trace
  * sibling for VIEW_RECIPE Trace3D output).
  */
@@ -30,9 +37,14 @@ import {
   voxelGridDownsample,
   type SpatialPoint,
 } from "~/utils/spatialDownsample";
+import {
+  expandBrushTraceRows,
+  maxRowIndexOf,
+  type BrushTraceRowPoint,
+} from "~/utils/brushTrace";
 
-export type SpatialRenderMode = "pointcloud" | "trajectory";
-export type { SpatialPoint };
+export type SpatialRenderMode = "pointcloud" | "trajectory" | "brush-trace";
+export type { SpatialPoint, BrushTraceRowPoint };
 
 const props = withDefaults(
   defineProps<{
@@ -52,6 +64,23 @@ const props = withDefaults(
     maxPoints: 500_000,
     pointSize: 0.005,
   },
+);
+
+// Brush-trace time-slider cursor. ``maxRow`` is the highest row_index in the
+// payload; ``cursorRow`` is the current slider position (= maxRow by default,
+// so the full brush is visible on first paint). The renderer filters
+// expandBrushTraceRows() by cursorRow to animate the brush sweeping along
+// the AFP track.
+const brushMaxRow = computed(() =>
+  props.mode === "brush-trace" ? maxRowIndexOf(props.points as BrushTraceRowPoint[]) : 0,
+);
+const cursorRow = ref<number>(0);
+watch(
+  brushMaxRow,
+  v => {
+    cursorRow.value = v;
+  },
+  { immediate: true },
 );
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -89,12 +118,15 @@ function buildScene(canvas: HTMLCanvasElement): () => void {
   scene.add(axisGeo(new THREE.Vector3(0, 0, 1), 0x4444ff));
 
   // ── source pts → decimated normalised pts ───────────────────────────────
-  const sourcePts = props.points;
+  const sourcePts =
+    props.mode === "brush-trace"
+      ? expandBrushTraceRows(props.points as BrushTraceRowPoint[], cursorRow.value)
+      : props.points;
   decimatedCount.value = 0;
 
   if (sourcePts.length >= 1) {
     const decimated =
-      props.mode === "pointcloud"
+      props.mode === "pointcloud" || props.mode === "brush-trace"
         ? voxelGridDownsample(sourcePts, props.maxPoints)
         : sourcePts;
     decimatedCount.value = decimated.length;
@@ -144,7 +176,7 @@ function buildScene(canvas: HTMLCanvasElement): () => void {
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-    if (props.mode === "pointcloud") {
+    if (props.mode === "pointcloud" || props.mode === "brush-trace") {
       const material = new THREE.PointsMaterial({
         size: props.pointSize,
         vertexColors: true,
@@ -196,7 +228,13 @@ onMounted(() => {
 });
 
 watch(
-  [() => props.points, () => props.mode, () => props.colormap, () => props.maxPoints],
+  [
+    () => props.points,
+    () => props.mode,
+    () => props.colormap,
+    () => props.maxPoints,
+    cursorRow,
+  ],
   () => {
     cleanup?.();
     if (canvasRef.value) cleanup = buildScene(canvasRef.value);
@@ -215,9 +253,36 @@ const isDecimated = computed(() => renderedCount.value < sourceCount.value);
 <template>
   <div class="spatial-points-wrap">
     <canvas ref="canvasRef" class="spatial-points-canvas" />
+    <div
+      v-if="mode === 'brush-trace' && brushMaxRow > 0"
+      class="spatial-brush-slider"
+      data-testid="brush-trace-time-slider"
+    >
+      <v-slider
+        v-model="cursorRow"
+        :min="0"
+        :max="brushMaxRow"
+        :step="1"
+        hide-details
+        density="compact"
+        thumb-label
+        color="primary"
+        track-color="grey-darken-3"
+        prepend-icon="mdi-timer-outline"
+      />
+      <div class="text-caption text-medium-emphasis ml-1">
+        Row {{ cursorRow }} / {{ brushMaxRow }}
+      </div>
+    </div>
     <div class="spatial-points-legend text-caption text-medium-emphasis">
       <span class="ml-1">
-        <strong>{{ mode === "pointcloud" ? "Pointcloud" : "Trajectory" }}</strong>
+        <strong>{{
+          mode === "pointcloud"
+            ? "Pointcloud"
+            : mode === "brush-trace"
+              ? "Brush-trace"
+              : "Trajectory"
+        }}</strong>
       </span>
       <span class="ml-3">Colour: {{ label }} ({{ colormap }})</span>
       <span v-if="mode === 'trajectory'" class="ml-3">
@@ -261,5 +326,16 @@ const isDecimated = computed(() => renderedCount.value < sourceCount.value);
   height: 10px;
   border-radius: 50%;
   vertical-align: middle;
+}
+.spatial-brush-slider {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  padding: 4px 12px 4px 8px;
+  display: flex;
+  flex-direction: column;
 }
 </style>

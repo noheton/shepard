@@ -160,7 +160,15 @@ Plus payload kinds (the things References point at):
   `plugins/spatial-importer/`; the SpatialPointsCanvas viewer renders
   them in-browser as colour-mapped point scatters or trajectory tubes;
   the optional `frameAppId` anchors each container in a CST1
-  CoordinateFrame so the pointcloud sits inside the W5 RoboDK scene.)*
+  CoordinateFrame so the pointcloud sits inside the W5 RoboDK scene.
+  MFFD W7b, 2026-06-02: the same plugin now also decodes the TPS
+  raw-data line-scan PNGs (`TPS raw data.N`, 1292×964 8-bit grayscale,
+  37 chunks per Track) as `kind=brush-trace` SpatialDataContainers —
+  each PNG row is one sensor-measurement instant along the AFP track,
+  the row's 1292-element intensity vector lives in the
+  `measurements.intensities` JSONB, and the SpatialPointsCanvas adds a
+  third render mode that voxel-decimates the brush-trace field to a
+  responsive heatmap-style point grid.)*
 - **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
   create/read/delete + opt-in `hdf` compose profile + HTTP Basic
   Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the

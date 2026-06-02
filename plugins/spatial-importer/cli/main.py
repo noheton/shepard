@@ -50,6 +50,13 @@ try:
         iter_track_spatial_files,
         parse_pointcloud_file,
     )
+    from .linescan import (
+        LineScanDecodeError,
+        LineScanFile,
+        iter_row_points,
+        iter_track_linescan_files,
+        open_linescan,
+    )
 except ImportError:  # pragma: no cover — script-mode fallback
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from parser import (  # type: ignore[no-redef]
@@ -58,6 +65,13 @@ except ImportError:  # pragma: no cover — script-mode fallback
         classify_kind,
         iter_track_spatial_files,
         parse_pointcloud_file,
+    )
+    from linescan import (  # type: ignore[no-redef]
+        LineScanDecodeError,
+        LineScanFile,
+        iter_row_points,
+        iter_track_linescan_files,
+        open_linescan,
     )
 
 
@@ -73,6 +87,16 @@ URN_SOURCE_SHA256 = "urn:shepard:spatial:source-sha256"
 URN_SPATIAL_KIND = "urn:shepard:spatial:kind"
 URN_TRACK_FOLDER = "urn:shepard:spatial:source-folder"
 URN_SOURCE_FILENAME = "urn:shepard:spatial:source-filename"
+
+# Line-scan specific (MFFD-SPATIAL-LINESCAN-IMPORTER-1, 2026-06-02)
+URN_CHUNK_INDEX = "urn:shepard:spatial:chunk-index"
+URN_T_AXIS = "urn:shepard:spatial:t-axis"
+URN_X_AXIS = "urn:shepard:spatial:x-axis"
+URN_BIT_DEPTH = "urn:shepard:spatial:bit-depth"
+URN_SOURCE_FORMAT = "urn:shepard:spatial:source-format"
+
+# SpatialDataContainer.kind annotation values
+SPATIAL_KIND_BRUSH_TRACE = "brush-trace"
 
 LOG = logging.getLogger("spatial-importer")
 
@@ -420,6 +444,179 @@ def process_track(
 
 
 # -----------------------------------------------------------------------------
+# Line-scan promotion (MFFD-SPATIAL-LINESCAN-IMPORTER-1)
+# -----------------------------------------------------------------------------
+#
+# Each TPS raw-data PNG chunk becomes one SpatialDataContainer with
+# ``kind=brush-trace`` (annotation). Per-row payload upload streams 964 rows
+# (= 964 SpatialDataPoints) per chunk. Idempotency MERGES on the (do, kind,
+# sha256, chunkIndex) tuple via the same ``existing_promotion`` mechanism the
+# pointcloud pass uses.
+
+
+@dataclass
+class LineScanPromotionResult:
+    track_dir: Path
+    do_app_id: str | None
+    promoted_chunks: int = 0
+    skipped_idempotent: int = 0
+    errors: list[str] = field(default_factory=list)
+    rows_uploaded: int = 0
+
+
+def upload_linescan_rows(
+    sh: Shepard,
+    *,
+    container_id: int,
+    linescan_file: LineScanFile,
+    batch_size: int = 64,
+    intensity_decimation: int = 1,
+    row_period_ns: int = 1,
+) -> int:
+    """Stream the line-scan file's rows into the container's payload endpoint.
+
+    Returns the number of rows (= SpatialDataPoints) uploaded. Each batch
+    posts at most ``batch_size`` rows; default 64 keeps each POST body
+    under ~5 MB even with the full 1292-wide intensity vector.
+    """
+    base_ns = int(time.time() * 1_000_000_000)
+    total = 0
+    batch: list[dict] = []
+
+    def _flush() -> None:
+        nonlocal batch
+        if not batch:
+            return
+        with_backoff(
+            lambda batch_ref=batch: sh.post(
+                f"/shepard/api/spatialDataContainers/{container_id}/payload", batch_ref
+            )
+        )
+        batch = []
+
+    for rp in iter_row_points(
+        linescan_file,
+        base_ns=base_ns,
+        row_period_ns=row_period_ns,
+        intensity_decimation=intensity_decimation,
+    ):
+        batch.append(
+            {
+                "timestamp": rp.t_ns,
+                "x": rp.x,
+                "y": rp.y,
+                "z": rp.z,
+                "measurements": {
+                    "intensities": list(rp.intensities),
+                    "row_index": rp.row_index,
+                    "chunk_index": rp.chunk_index,
+                    "kind": SPATIAL_KIND_BRUSH_TRACE,
+                },
+                "metadata": {},
+            }
+        )
+        total += 1
+        if len(batch) >= batch_size:
+            _flush()
+    _flush()
+    return total
+
+
+def process_track_linescan(
+    sh: Shepard,
+    *,
+    track_dir: Path,
+    collection_id: int,
+    do_id: int,
+    do_app_id: str,
+    frame_app_id: str | None,
+    intensity_decimation: int = 1,
+    row_period_ns: int = 1,
+    batch_size: int = 64,
+) -> LineScanPromotionResult:
+    result = LineScanPromotionResult(track_dir=track_dir, do_app_id=do_app_id)
+
+    for source_path, chunk_index in iter_track_linescan_files(track_dir):
+        try:
+            ls = open_linescan(source_path)
+        except LineScanDecodeError as exc:
+            msg = f"{source_path.name}: decode failed: {exc}"
+            LOG.warning("track=%s %s", track_dir.name, msg)
+            result.errors.append(msg)
+            continue
+
+        existing = existing_promotion(sh, collection_id, do_id, ls.sha256)
+        if existing is not None:
+            LOG.info(
+                "track=%s file=%s already promoted to container %s; skipping",
+                track_dir.name,
+                source_path.name,
+                existing,
+            )
+            result.skipped_idempotent += 1
+            continue
+
+        container_name = f"{track_dir.name}/{source_path.name}"
+        try:
+            container = create_spatial_container(
+                sh, name=container_name, frame_app_id=frame_app_id
+            )
+            container_id = container["id"]
+            container_app_id = container["appId"]
+            rows = upload_linescan_rows(
+                sh,
+                container_id=container_id,
+                linescan_file=ls,
+                batch_size=batch_size,
+                intensity_decimation=intensity_decimation,
+                row_period_ns=row_period_ns,
+            )
+            result.rows_uploaded += rows
+
+            # Bind to DataObject via the SpatialDataReference endpoint.
+            with_backoff(
+                lambda: sh.post(
+                    f"/shepard/api/collections/{collection_id}/dataObjects/{do_id}/spatialDataReferences",
+                    {
+                        "name": container_name,
+                        "spatialDataContainerId": container_id,
+                    },
+                )
+            )
+
+            fileref = find_filereference_for(sh, collection_id, do_id, source_path.name)
+            if fileref is not None:
+                demote_file_reference(
+                    sh,
+                    collection_id=collection_id,
+                    do_id=do_id,
+                    fileref_id=fileref["id"],
+                    promoted_container_app_id=container_app_id,
+                )
+
+            LOG.info(
+                "promoted track=%s file=%s -> container %s (%d rows, %d cols, sha=%s…)",
+                track_dir.name,
+                source_path.name,
+                container_app_id,
+                ls.height,
+                ls.width,
+                ls.sha256[:10],
+            )
+            result.promoted_chunks += 1
+        except requests.HTTPError as exc:
+            msg = f"{source_path.name}: HTTP error: {exc}"
+            LOG.error("track=%s %s", track_dir.name, msg)
+            result.errors.append(msg)
+        except Exception as exc:  # noqa: BLE001
+            msg = f"{source_path.name}: unexpected error: {exc}"
+            LOG.exception("track=%s %s", track_dir.name, msg)
+            result.errors.append(msg)
+
+    return result
+
+
+# -----------------------------------------------------------------------------
 # CLI
 # -----------------------------------------------------------------------------
 
@@ -429,7 +626,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         prog="shepard-plugin-spatial-importer",
         description="Promote TPS/FSD ASCII pointclouds into SpatialDataContainers (MFFD W7).",
     )
-    p.add_argument("--spatial-pass", action="store_true", help="Run the W7 spatial promotion pass.")
+    p.add_argument("--spatial-pass", action="store_true", help="Run the W7 spatial pointcloud+trajectory promotion pass.")
+    p.add_argument(
+        "--linescan-pass",
+        action="store_true",
+        help="Run the W7b TPS-raw-data line-scan promotion pass (MFFD-SPATIAL-LINESCAN-IMPORTER-1).",
+    )
     p.add_argument(
         "--collection-app-id",
         required=True,
@@ -454,6 +656,24 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=None,
         help="Process at most N Track folders (for smoke-tests).",
     )
+    p.add_argument(
+        "--intensity-decimation",
+        type=int,
+        default=1,
+        help="Line-scan only: keep every Nth column of intensities. 1 = preserve all 1292 cols.",
+    )
+    p.add_argument(
+        "--row-period-ns",
+        type=int,
+        default=1,
+        help="Line-scan only: nanoseconds between rows when no source timestamp is available.",
+    )
+    p.add_argument(
+        "--linescan-batch-size",
+        type=int,
+        default=64,
+        help="Line-scan only: rows per /payload POST. Default 64 keeps body ~5 MB.",
+    )
     return p.parse_args(argv)
 
 
@@ -464,8 +684,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parse_args(argv or sys.argv[1:])
 
-    if not args.spatial_pass:
-        LOG.error("only --spatial-pass mode is supported in this build")
+    if not (args.spatial_pass or args.linescan_pass):
+        LOG.error("one of --spatial-pass / --linescan-pass is required")
         return 2
 
     if args.dry_run:
@@ -503,32 +723,51 @@ def main(argv: list[str] | None = None) -> int:
         lambda: sh.get(f"/shepard/api/collections/by-app-id/{args.collection_app_id}")
     )["id"]
 
-    summary = {"promoted": 0, "skipped_idempotent": 0, "errors": 0}
+    summary = {"promoted": 0, "skipped_idempotent": 0, "errors": 0, "rows_uploaded": 0}
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:
         futures = []
         for track_dir, do in track_pairs:
-            futures.append(
-                ex.submit(
-                    process_track,
-                    sh,
-                    track_dir=track_dir,
-                    collection_id=coll_id,
-                    do_id=do["id"],
-                    do_app_id=do.get("appId", ""),
-                    frame_app_id=args.frame_app_id,
+            if args.spatial_pass:
+                futures.append(
+                    ex.submit(
+                        process_track,
+                        sh,
+                        track_dir=track_dir,
+                        collection_id=coll_id,
+                        do_id=do["id"],
+                        do_app_id=do.get("appId", ""),
+                        frame_app_id=args.frame_app_id,
+                    )
                 )
-            )
+            if args.linescan_pass:
+                futures.append(
+                    ex.submit(
+                        process_track_linescan,
+                        sh,
+                        track_dir=track_dir,
+                        collection_id=coll_id,
+                        do_id=do["id"],
+                        do_app_id=do.get("appId", ""),
+                        frame_app_id=args.frame_app_id,
+                        intensity_decimation=args.intensity_decimation,
+                        row_period_ns=args.row_period_ns,
+                        batch_size=args.linescan_batch_size,
+                    )
+                )
         for fut in concurrent.futures.as_completed(futures):
             res = fut.result()
-            summary["promoted"] += res.promoted
+            promoted = getattr(res, "promoted", 0) + getattr(res, "promoted_chunks", 0)
+            summary["promoted"] += promoted
             summary["skipped_idempotent"] += res.skipped_idempotent
             summary["errors"] += len(res.errors)
+            summary["rows_uploaded"] += getattr(res, "rows_uploaded", 0)
 
     LOG.info(
-        "done — promoted=%d skipped_idempotent=%d errors=%d",
+        "done — promoted=%d skipped_idempotent=%d errors=%d rows_uploaded=%d",
         summary["promoted"],
         summary["skipped_idempotent"],
         summary["errors"],
+        summary["rows_uploaded"],
     )
     return 0 if summary["errors"] == 0 else 3
 
@@ -536,18 +775,29 @@ def main(argv: list[str] | None = None) -> int:
 def _dry_run(args: argparse.Namespace) -> int:
     n_tracks = 0
     n_files = 0
+    n_linescans = 0
     for entry in sorted(args.source.iterdir()):
         if not entry.is_dir() or not entry.name.startswith("Track_"):
             continue
         n_tracks += 1
         per_kind: dict[str, int] = {}
-        for path, kind in iter_track_spatial_files(entry):
-            per_kind[kind] = per_kind.get(kind, 0) + 1
-            n_files += 1
+        if args.spatial_pass:
+            for path, kind in iter_track_spatial_files(entry):
+                per_kind[kind] = per_kind.get(kind, 0) + 1
+                n_files += 1
+        if args.linescan_pass:
+            chunks = list(iter_track_linescan_files(entry))
+            per_kind[SPATIAL_KIND_BRUSH_TRACE] = len(chunks)
+            n_linescans += len(chunks)
         LOG.info("track %s: %s", entry.name, per_kind)
         if args.limit is not None and n_tracks >= args.limit:
             break
-    LOG.info("dry-run summary: %d tracks scanned, %d spatial files queued", n_tracks, n_files)
+    LOG.info(
+        "dry-run summary: %d tracks scanned, %d spatial files queued, %d line-scan chunks queued",
+        n_tracks,
+        n_files,
+        n_linescans,
+    )
     return 0
 
 
