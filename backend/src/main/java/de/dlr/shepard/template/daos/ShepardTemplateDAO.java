@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * DAO for {@link ShepardTemplate}. Designed in {@code aidocs/54}.
  *
- * <p>Listings filter out {@code retired = true} rows by default —
+ * <p>Listings filter out {@code retired = true} rows by default --
  * the picker UI never shows superseded templates. Admin endpoints
  * can opt into seeing retired rows via {@link #list(String, boolean)}.
  */
@@ -64,7 +64,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
 
   /**
    * Mint a copy-on-write next version of the given template. Returns
-   * a new {@link ShepardTemplate} (NOT saved — caller saves) with
+   * a new {@link ShepardTemplate} (NOT saved -- caller saves) with
    * {@code version} incremented and the old appId untouched.
    */
   public ShepardTemplate nextVersionOf(ShepardTemplate prior) {
@@ -82,11 +82,11 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
 
   /**
    * Templates the Collection's owner has curated as visible inside
-   * the Collection — the picker UI filters its list down to these
+   * the Collection -- the picker UI filters its list down to these
    * when the user opens the new-DataObject dialog from inside the
    * Collection. Returns empty when no curation is set.
    *
-   * <p>Design: {@code aidocs/54 §3} `:ALLOWS_TEMPLATE` edge.
+   * <p>Design: {@code aidocs/54 §3} {@code :ALLOWS_TEMPLATE} edge.
    */
   public List<ShepardTemplate> listAllowedForCollection(String collectionAppId) {
     String cypher =
@@ -100,7 +100,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
 
   /**
    * Templates the Collection has cited via {@code :USES_TEMPLATE}
-   * (the provenance edge — "this Collection was created from
+   * (the provenance edge -- "this Collection was created from
    * template X"). Includes retired templates because past citations
    * stay valid per the copy-on-write semantics of {@code aidocs/54}.
    */
@@ -117,7 +117,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
    * Replace the {@code :ALLOWS_TEMPLATE} edge set for one Collection.
    * Existing edges are wiped; new edges are minted for every appId in
    * {@code templateAppIds}. Missing templates / missing Collection
-   * are silent — the caller validates first. Idempotent.
+   * are silent -- the caller validates first. Idempotent.
    */
   public void setAllowedForCollection(String collectionAppId, List<String> templateAppIds) {
     session.query(
@@ -160,7 +160,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
   }
 
   /**
-   * Record that a Collection was instantiated from a given template —
+   * Record that a Collection was instantiated from a given template --
    * idempotent {@code :USES_TEMPLATE} edge.
    */
   public void recordUsage(String collectionAppId, String templateAppId) {
@@ -177,7 +177,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
    * endpoint to surface "you've already used this template" vs
    * "first time you're using it" in the response.
    *
-   * <p>Returns {@code false} when either node is missing — caller
+   * <p>Returns {@code false} when either node is missing -- caller
    * should validate first.
    */
   public boolean recordUsageReportingCreation(String collectionAppId, String templateAppId) {
@@ -204,7 +204,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
    * <p>The DataObject is matched by its indexed {@code shepardId} property.
    * The relationship is {@code MERGE}-ed (idempotent on the pair of nodes) so
    * that calling this method twice for the same DataObject + Template is safe
-   * — the second call is a no-op.
+   * -- the second call is a no-op.
    *
    * @param dataObjectShepardId
    *          the {@code shepardId} of the newly-created DataObject

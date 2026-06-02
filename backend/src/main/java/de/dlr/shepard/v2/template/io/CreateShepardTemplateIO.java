@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * POST body for {@code POST /v2/templates}.
  *
  * <p>{@code appId} is server-minted; {@code version} starts at 1.
- * {@code createdBy} comes from the authenticated principal — never
+ * {@code createdBy} comes from the authenticated principal, never
  * from the body.
  */
 @Data
@@ -34,6 +34,6 @@ public class CreateShepardTemplateIO {
   @Schema(required = false, nullable = true, description = "Author-supplied tags for picker filtering.")
   private List<String> tags;
 
-  @Schema(required = false, nullable = true, description = "MDI icon name, e.g. 'mdi-layers'. Null means use the per-kind default.")
+  @Schema(required = false, nullable = true, description = "MDI icon name, e.g. mdi-layers. Null means use the per-kind default.")
   private String iconKey;
 }

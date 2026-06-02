@@ -73,7 +73,7 @@ class ShepardTemplateRestTest {
     when(securityContext.isUserInRole("instance-admin")).thenReturn(false);
     when(dao.list(null, false)).thenReturn(List.of());
     resource.list(null, true, securityContext);
-    verify(dao).list(null, false); // includeRetired=true downgraded to false
+    verify(dao).list(null, false);
     verify(dao, never()).list(null, true);
   }
 
@@ -161,7 +161,6 @@ class ShepardTemplateRestTest {
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
-    // dao.createOrUpdate called twice — once for prior (retire), once for new.
     ArgumentCaptor<ShepardTemplate> captor = ArgumentCaptor.forClass(ShepardTemplate.class);
     verify(dao, times(2)).createOrUpdate(captor.capture());
 

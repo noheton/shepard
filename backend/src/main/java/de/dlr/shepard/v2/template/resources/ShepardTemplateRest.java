@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * a new node is minted with {@code version + 1} and the prior row
  * is retired (soft-delete). Existing
  * {@code (:Collection)-[:USES_TEMPLATE]->(prior)} citations stay
- * valid — reproducibility per {@code aidocs/41} snapshots.
+ * valid -- reproducibility per {@code aidocs/41} snapshots.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

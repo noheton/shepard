@@ -9,7 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * PATCH body for {@code PATCH /v2/templates/{appId}}.
  *
- * <p>Every field is nullable — only supplied fields apply. Editing
+ * <p>Every field is nullable -- only supplied fields apply. Editing
  * triggers a copy-on-write per {@code aidocs/54 §7}: a new
  * {@code :ShepardTemplate} node is minted with {@code version + 1};
  * the prior row is marked {@code retired = true}.
@@ -32,6 +32,6 @@ public class PatchShepardTemplateIO {
   @Schema(required = false, nullable = true, description = "If set, replaces the tag list (full replace, not merge).")
   private List<String> tags;
 
-  @Schema(required = false, nullable = true, description = "If set, replaces the MDI icon name. Supply null explicitly to clear the icon (use the per-kind default).")
+  @Schema(required = false, nullable = true, description = "If set, replaces the MDI icon name.")
   private String iconKey;
 }
