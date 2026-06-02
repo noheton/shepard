@@ -433,11 +433,55 @@ public class DataObjectService {
       );
       newTypedPredecessorsJson = serialiseTypedPredecessors(updateTypedPredecessors);
     } else {
+      // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: resolve predecessorIds (numeric) first,
+      // then union with any appId-keyed predecessors from predecessorAppIds (additive,
+      // nullable). Fail-soft: unresolvable appIds are logged at WARN and skipped.
       newPredecessors = findRelatedDataObjects(
         old.getCollection().getShepardId(),
         dataObject.getPredecessorIds(),
         dataObjectShepardId
       );
+      List<String> predecessorAppIds = dataObject.getPredecessorAppIds();
+      if (predecessorAppIds != null && !predecessorAppIds.isEmpty()) {
+        java.util.Set<Long> seenShepardIds = newPredecessors.stream()
+          .map(DataObject::getShepardId)
+          .collect(Collectors.toSet());
+        for (String appId : predecessorAppIds) {
+          try {
+            DataObject resolvedPred = dataObjectDAO.findByAppId(appId);
+            if (resolvedPred == null || resolvedPred.isDeleted()) {
+              Log.warnf(
+                "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: predecessor appId '%s' not found or deleted — skipped",
+                appId
+              );
+              continue;
+            }
+            if (resolvedPred.getShepardId() != null && dataObjectShepardId == resolvedPred.getShepardId()) {
+              Log.warnf(
+                "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: predecessor appId '%s' is a self-reference — skipped",
+                appId
+              );
+              continue;
+            }
+            if (!resolvedPred.getCollection().getShepardId().equals(old.getCollection().getShepardId())) {
+              Log.warnf(
+                "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: predecessor appId '%s' belongs to a different collection — skipped",
+                appId
+              );
+              continue;
+            }
+            if (seenShepardIds.add(resolvedPred.getShepardId())) {
+              newPredecessors.add(resolvedPred);
+            }
+          } catch (Exception e) {
+            Log.warnf(
+              "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: failed to resolve predecessor appId '%s': %s — skipped",
+              appId,
+              e.getMessage()
+            );
+          }
+        }
+      }
       // On update: if no typed predecessors provided, clear the stored JSON
       // (the untyped list becomes the authoritative source).
       newTypedPredecessorsJson = null;

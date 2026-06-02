@@ -2735,3 +2735,11 @@ shape.
 **Effort sizing:** XL across the 8 sub-rows; -01 (design) is the gate
 for everything else. The hourly dispatcher will NOT pick this up
 autonomously — design first, then sub-row dispatch.
+
+---
+
+## Bug: predecessor appIds in v2 PATCH body
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| **BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH** | `DataObjectIO.predecessorIds: long[]` forces predecessor body writes to use numeric ids. Post-Neo4j-reset DataObjects have UUID v7 only — the predecessor target may have no numeric id, breaking the PATCH body. Right shape: a `predecessorAppIds: string[]` companion field on the v2 IO (additive + nullable per the schema rule), populated in parallel with `predecessorIds` for the back-compat window. **shipped 2026-06-02** — added `predecessorAppIds: List<String>` to `DataObjectIO`; `DataObjectService.updateDataObject` resolves appIds via `DataObjectDAO.findByAppId` (fail-soft: WARN + skip on unresolvable); frontend `useUpdateDataObjectPredecessor.ts` sends `predecessorAppIds` when predecessor id is UUID v7-shaped; 4 backend tests in `DataObjectPatchPredecessorAppIdTest` + 4 Vitest tests in `useUpdateDataObjectPredecessorAppIds.test.ts`. | S | **shipped (2026-06-02)** | Surfaced by BUG-COLL-APPID-ROUTE-003. The route migration is necessary but not sufficient for the rework UI flow until this follow-up lands. |

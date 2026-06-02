@@ -6,7 +6,9 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
+import java.util.List;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +29,41 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private long[] successorIds;
 
   private long[] predecessorIds;
+
+  /**
+   * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — companion to {@code predecessorIds}
+   * that accepts UUID v7 appIds instead of legacy Neo4j numeric long IDs.
+   *
+   * <p>Post-Neo4j-reset DataObjects have only a UUID v7 {@code appId} — no numeric
+   * {@code shepardId} — so callers cannot populate {@code predecessorIds} for them.
+   * This field provides the appId-keyed alternative accepted in the same PATCH body.
+   *
+   * <p>Precedence rule (applied in the service):
+   * <ul>
+   *   <li>When non-null and non-empty, the service resolves each appId to a DataObject
+   *       and unions the result with any DataObjects resolved from {@code predecessorIds}
+   *       as the new predecessor set.</li>
+   *   <li>When null (the default), only {@code predecessorIds} is used — existing
+   *       callers are completely unaffected.</li>
+   * </ul>
+   *
+   * <p>Absent from the wire when null ({@link JsonInclude.Include#NON_NULL}) so the
+   * upstream v5.2.0 wire shape is preserved for any caller that does not set this field.
+   *
+   * <p>Fail-soft: any appId that cannot be resolved in the current collection is logged
+   * at WARN and skipped (never a 4xx) per CLAUDE.md fail-soft rule.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    description =
+      "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — UUID v7 appIds of predecessor DataObjects. " +
+      "Companion to predecessorIds for DataObjects that have only a UUID v7 appId " +
+      "(post-Neo4j-reset). When present, the service resolves each appId and unions the " +
+      "result with predecessorIds. Unresolvable appIds are skipped with a WARN (fail-soft). " +
+      "Absent from the response wire when null."
+  )
+  private List<String> predecessorAppIds;
 
   @Schema(readOnly = true, required = true)
   private long[] childrenIds;
@@ -133,6 +170,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
       HasId.areEqualSets(referenceIds, other.referenceIds) &&
       HasId.areEqualSets(successorIds, other.successorIds) &&
       HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
+      Objects.equals(predecessorAppIds, other.predecessorAppIds) &&
       HasId.areEqualSets(childrenIds, other.childrenIds) &&
       Objects.equals(parentId, other.parentId) &&
       HasId.areEqualSets(incomingIds, other.incomingIds)
@@ -149,6 +187,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(childrenIds);
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + HasId.hashcodeHelper(predecessorIds);
+    result = prime * result + Objects.hashCode(predecessorAppIds);
     result = prime * result + Objects.hashCode(parentId);
 
     return result;
