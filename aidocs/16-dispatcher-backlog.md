@@ -1953,7 +1953,7 @@ Live regression-sweep dispatch results. Full report:
 | UX-WALK-2026-05-29-05 | Collections list at 4K leaves ~1500 px of empty whitespace below 3-row table. Add either a dense view toggle, a "Create another collection" CTA in the void, or skeleton rows scaled to viewport height. Pre-existing pattern but flo's hardware makes it acute. | S | queued | MINOR | Step 2 evidence. UX-PATTERN-D sibling concern. |
 | UX-WALK-2026-05-29-06 | DataObject detail page perpetually shows `v-progress-circular` when `fetchTreeviewItem` fails. Render the parts that loaded (name, attributes, panes) and surface a dismissable "Some data couldn't load" banner instead of blocking the whole page on one failed dependency. | M | queued | MAJOR | Graceful-degradation pattern. Currently makes the entire DO page useless on any single sub-fetch failure. |
 | UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" / Trace3D CTA on the TS container page (one click upstream of the current TimeseriesReference-level entry point per `aidocs/platform/98`). Shortens the path for researchers who land on the container first. NICE — not a regression. | S | queued | NICE | Step 6 evidence: no affordance found via `getByRole("button", { name: /trace3d\|3d\|visualize/i })`. |
-| UX-WALK-2026-05-29-08 | "Access" column on `/collections` shows ambiguous `—` for two of three rows. Replace with a controlled vocabulary chip (Open / Shared / Restricted / Closed) — closes one of the FAIR-A surface gaps surfaced in `research-data-manager.md`. | S | queued | MINOR | Step 2 evidence. |
+| UX-WALK-2026-05-29-08 | "Access" column on `/collections` shows ambiguous `—` for two of three rows. Replace with a controlled vocabulary chip (Open / Shared / Restricted / Closed) — closes one of the FAIR-A surface gaps surfaced in `research-data-manager.md`. | S | **✓ done (2026-06-01, PR #1706, `d0bbaa3`)** | MINOR | `AccessRightsChip.vue` extended to accept `string \| null \| undefined`; null/unset renders "Not set" chip (`mdi-help-circle-outline`, default/grey). `CollectionList.vue` passes `rowAccessRights()` directly — no inline fallback needed. Tests: `AccessRightsChipNullState.test.ts` (8 cases). |
 
 ## TS-INGEST-222GB-CHOKEPOINTS — pre-flight bottleneck review
 
@@ -2501,7 +2501,7 @@ them up immediately.
 | FE-BUILD-03-REGEN | Regenerate `@dlr-shepard/backend-client` from current OpenAPI; retires the `as unknown as` cast in `usePagedDataObjects.ts`. | S | Real fix; cast holdover is shipped. |
 | UX-WALK-2026-05-29-05 | Collections list at 4K leaves ~1500 px whitespace; add density toggle or skeleton rows. | S | UX-PATTERN-D sibling concern. |
 | UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" CTA to TS container page; shortens click-path to Trace3D. | S | NICE — not a regression. |
-| UX-WALK-2026-05-29-08 | Replace `—` in Collections list Access column with controlled-vocab chip (Open / Shared / Restricted / Closed). | S | Closes one FAIR-A surface gap. |
+| UX-WALK-2026-05-29-08 | ~~Replace `—` in Collections list Access column with controlled-vocab chip.~~ **✓ done (2026-06-01, PR #1706)** | S | Closes one FAIR-A surface gap. |
 | FRONTEND-LINT-DEBT-02 | Replace `any` casts with `unknown` + narrowing (~10 instances). | M | Each instance needs a real type. |
 | FRONTEND-LINT-DEBT-04 | Add explanations to `@ts-expect-error` / `@ts-ignore`. | S | Trivial doc-style fix per instance. |
 | TS-INGEST-222GB-DASHBOARD | Lightweight live-ingest watch page polling capacity + chunk counts + Activity row growth. | S | Reuses `shepard.measures.itself` observability primitives. |
