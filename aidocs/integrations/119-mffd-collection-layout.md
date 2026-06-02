@@ -239,6 +239,97 @@ Track DO, giving the NCR reviewer the context for free.
 
 **Tracked as:** `MFFD-RERUN-ANOMALY-DETECT` in `aidocs/16`.
 
+#### 2.2.3 Per-Layer overview — the cross-cutting view (analysts' default landing)
+
+Operator note 2026-06-02: *"people might want to look at the data of a single
+Layer especially with temperature and TPS data."*
+
+This is the natural analytical lens — far more common than "show me one
+Track". When investigating a defect, a stress engineer wants the whole story
+of *Layer 18* at once: every track's temperature profile, every TPS line-scan
+surface stitched together, every TPS / FSD pointcloud overlaid in the cell
+coordinate frame, every NDT thermography frame captured for that layer.
+
+**The data sources, joined by `urn:shepard:mffd:layer = N`:**
+
+| Source Collection | What contributes | Join predicate |
+|---|---|---|
+| `mffd-afp-tapelaying` Layer DO | itself + every descendant Run DO under it | parent-walk + `mffd:layer = N` on annotation |
+| `mffd-afp-tapelaying` Run DOs | TS channels (temperatures), TPS line-scan PNGs, TPS+FSD pointclouds, brush-trace SpatialDataPoints, video | `mffd:layer = N` (inherited from Layer parent) |
+| `mffd-ndt-thermography` OTvis DOs | every frame where `urn:shepard:mffd:layer = N` (the L8/L9/L11/L15/L18/L19/L19+ layers from the OTvis grid line up 1:1 with the AFP layer numbers) | `mffd:layer = N` (direct annotation) |
+| `mffd-bridge-welding` Execution DOs | the AF parts that *included* this Layer in their layup (via the Predecessor chain to the AFP Run DOs) | walk Predecessor edges from Run.mffd:layer=N |
+| `mffd-cell` SceneGraph | the cell coordinate frame for spatial alignment | constant — the Layer view always renders in this frame |
+
+The Layer view is therefore a **cross-Collection roll-up keyed by a single
+annotation value**. The Project layout (B) makes this *cleaner* than a single
+mega-Collection would: each source Collection stays at its honest scale, the
+Layer-overview composes them via SPARQL/Cypher, and the join key
+(`mffd:layer = N`) is uniform.
+
+**What the operator sees (UI surface):**
+
+The view ships as a `VIEW_RECIPE` SHACL template (TPL2, shipped) named
+`MFFDLayerOverview`. It's attached at the Layer DO so the operator gets to
+it by drilling:
+
+```
+/projects  →  mffd-project  →  mffd-afp-tapelaying  →  Step root  →  Layer_L18
+                                                                       ↓ "Overview" tab
+                                                                       │
+                                                                       ▼
+   ┌───────────────────────────────────────────────────────────────────────┐
+   │  Layer 18 — Overview                                                  │
+   ├───────────────────────────────────────────────────────────────────────┤
+   │  ▸ Run summary       126 Runs · 7 ply-groups · 4 re-runs (⟲)          │
+   │  ▸ Temperature        ── cross-track TS chart (AAA3 / GAP-2)          │
+   │     stacked TCP temp + bench-tcs + IR-cam for all 126 Runs            │
+   │  ▸ TPS line-scan      ── stitched layer surface (per-track PNGs       │
+   │     placed in cell coordinates via track origin)                       │
+   │  ▸ Spatial overlay    ── 3D viewer (Trace3D + AAC1 pointcloud)        │
+   │     TPS + FSD pointclouds for all Runs, all NDT frames for L18,       │
+   │     all coloured by selectable channel (temperature, IR amplitude, …) │
+   │  ▸ NDT frames          24 OTvis frames at L18 (S×M grid) — gallery     │
+   │  ▸ Anomalies          4 ⟲ re-runs · 0 NCR-open                        │
+   │     → click an anomaly chip to filter the views above to that Run     │
+   └───────────────────────────────────────────────────────────────────────┘
+```
+
+The same view recipe also gets surfaced from the Project Collection's main
+landing — a "Layers" tab next to the Sub-Collections panel — so the analyst
+doesn't have to drill into `mffd-afp-tapelaying` to start. From the Project,
+`Layers → L18 → Overview` is 3 clicks.
+
+**What's already shipped that this composes:**
+
+| Building block | Shipped as | Role in the Layer view |
+|---|---|---|
+| Cross-track TS chart | **AAA3 / GAP-2** | the temperature panel |
+| Spatial container + viewer | **AAC1 / GAP-5** | the 3D overlay panel |
+| NDT thermography heatmap | **AAC2 / GAP-7** | the NDT frame gallery |
+| Trace3D color-mapped path | **#142** | the path overlay on temperature |
+| VIEW_RECIPE template kind | **TPL2, V100** | the `MFFDLayerOverview` template |
+| Re-run badge + filter chip | **MFFD-RERUN-ANOMALY-DETECT** (§2.2.2) | the anomalies row |
+| Cross-Collection lineage walker | L2d `appId` natively | joins the OTvis frames + bridge-weld executions |
+
+**What's new** (the only thing this row adds):
+
+1. The `MFFDLayerOverview` VIEW_RECIPE template itself — a SHACL recipe that
+   declares which queries feed which panels.
+2. A backend convenience endpoint `GET /v2/projects/{projectAppId}/by-layer/{layer}` that returns the join set in one call (rather than the frontend running 5 separate queries against 5 Collections). The endpoint walks `urn:shepard:partOf = projectAppId` to find candidate child Collections, then filters each by `mffd:layer = N`.
+3. A "Layers" tab on the Project Collection's landing that lists the union of
+   layer values seen across the Project (so the operator doesn't need to know
+   which Collection holds layers — just clicks `L18` and gets the cross-
+   Collection roll-up).
+
+**Tracked as:** `MFFD-LAYER-OVERVIEW-VIEW` in `aidocs/16`.
+
+This is the killer demo for the Project entity (per `121`): a one-click
+cross-Collection analytical view that *only works* because the Project
+ties the source Collections together by `partOf`, and the analytical key
+(`mffd:layer = N`) is a uniform annotation across all of them. The pattern
+generalises: a "per-PlyGroup overview" or a "per-AF overview" works the same
+way — same recipe, different join key.
+
 ### 2.3 `mffd-bridge-welding` — the second pass
 
 **Slug:** `mffd-bridge-welding`
