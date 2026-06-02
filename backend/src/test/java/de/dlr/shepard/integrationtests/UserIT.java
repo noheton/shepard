@@ -45,6 +45,7 @@ public class UserIT extends BaseTestCaseIT {
     assertThat(actual.getLastName()).isEqualTo("Test");
     assertThat(actual.getApiKeyIds()).contains(defaultUser.getApiKey().getUid());
     assertThat(actual.getSubscriptionIds()).isNotNull();
+    assertThat(actual.getEffectiveRoles()).as("effectiveRoles must be non-null on the self-view (BE-USERS-ME-ROLES-1)").isNotNull();
   }
 
   @Test
@@ -58,7 +59,13 @@ public class UserIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(UserIO.class);
-    assertThat(actual).isEqualTo(user);
+    assertThat(actual.getUsername()).isEqualTo(user.getUsername());
+    assertThat(actual.getEmail()).isEqualTo(user.getEmail());
+    assertThat(actual.getFirstName()).isEqualTo(user.getFirstName());
+    assertThat(actual.getLastName()).isEqualTo(user.getLastName());
+    assertThat(actual.getApiKeyIds()).containsExactlyInAnyOrder(user.getApiKeyIds());
+    assertThat(actual.getSubscriptionIds()).containsExactlyInAnyOrder(user.getSubscriptionIds());
+    assertThat(actual.getEffectiveRoles()).as("effectiveRoles is null on third-party lookups — not the caller's roles").isNull();
   }
 
   @Test
