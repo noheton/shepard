@@ -74,22 +74,42 @@ final class SyntheticSvdxBuilder {
      * @param xmlBody the trailing manifest (must declare the same channels)
      */
     static byte[] buildWithBinary(java.util.List<ChannelPlan> plans, String xmlBody) throws IOException {
-        // 1. Lay out each channel block: 43-byte header + sampleCount × (vw+4).
+        // 1. Lay out each channel block: 43-byte header, then 16-sample
+        //    segments — each a 12-byte [_][u64 FILETIME][u16 count] header
+        //    plus count × (vw+4) samples — exactly as the real files do.
+        //    Sample value = channel*1000 + globalIndex; within-segment ticks
+        //    restart at 0; the segment FILETIME advances so the decoder's
+        //    absolute tick recovers globalIndex*10000.
+        final int SEG = 16;
+        final long PERIOD = 10000L; // 100ns units = 1 ms (1 kHz)
         java.util.List<byte[]> blocks = new java.util.ArrayList<>();
         for (int c = 0; c < plans.size(); c++) {
             ChannelPlan p = plans.get(c);
             int rec = p.valueWidth() + 4;
-            int blockLen = 43 + p.sampleCount() * rec;
+            int nSegs = (p.sampleCount() + SEG - 1) / SEG;
+            int blockLen = 43 + nSegs * SvdxBinaryParser.SEGMENT_HEADER_SIZE
+                + p.sampleCount() * rec;
             ByteBuffer blk = ByteBuffer.allocate(blockLen).order(ByteOrder.LITTLE_ENDIAN);
             blk.put("01.00.00.40".getBytes(StandardCharsets.US_ASCII)); // 11 bytes
             blk.putLong(SvdxBinaryParser.FT_ACQ_START, p.acqStartFiletime());
             blk.putLong(SvdxBinaryParser.FT_WINDOW_START, p.acqStartFiletime() + 1_000_000L);
             blk.putLong(SvdxBinaryParser.FT_WINDOW_END, p.acqStartFiletime() + 2_000_000L);
             int o = 43;
-            for (int k = 0; k < p.sampleCount(); k++) {
-                writeValue(blk, o, p.dataType(), c * 1000 + k);
-                blk.putInt(o + p.valueWidth(), k * 10000); // 1 kHz: tick step 10000 (100ns units)
-                o += rec;
+            int g = 0;
+            while (g < p.sampleCount()) {
+                int segCount = Math.min(SEG, p.sampleCount() - g);
+                long segFt = p.acqStartFiletime() + g * PERIOD;
+                blk.putShort(o, (short) 0);                 // leading u16 (prev value; unused)
+                blk.putLong(o + 2, segFt);                  // segment FILETIME base
+                blk.putShort(o + 10, (short) segCount);     // sample count
+                int dataOff = o + SvdxBinaryParser.SEGMENT_HEADER_SIZE;
+                for (int j = 0; j < segCount; j++) {
+                    int rec0 = dataOff + j * rec;
+                    writeValue(blk, rec0, p.dataType(), c * 1000 + g + j);
+                    blk.putInt(rec0 + p.valueWidth(), (int) (j * PERIOD)); // within-segment tick
+                }
+                o = dataOff + segCount * rec;
+                g += segCount;
             }
             blocks.add(blk.array());
         }

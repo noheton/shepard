@@ -181,25 +181,49 @@ Among the 21 campaign files, observed format-version low bytes:
 (`19_04_29.svdx`) are both `0x73` and share the header shape above.
 Still to diff: an `0x71` and a `0x6d` file to confirm version-stability.
 
+#### Segment sub-headers — DECODED 2026-06-02 (pass 4)
+
+Each channel block is a **per-channel header** then a sequence of **fine
+segments**. A segment is a 12-byte header followed by a short sample run:
+
+```
+Segment header (12 bytes):
+  +0   u16  (the PREVIOUS segment's last sample value — NOT a marker;
+            0x7FFF on the railed temp channel, 0x3506 on ch2 — do not key off it)
+  +2   u64  FILETIME      absolute segment start (Windows 100 ns epoch)
+  +10  u16  count         samples in this segment (16 observed)
+  +12  ──   count × [value][u32 tick]   tick restarts at 0 each segment
+```
+
+Verified on two INT16 channels: **1291 segments × 16 = 20,656 samples**,
+segment FILETIMEs stepping a uniform 16 ms, spanning **20.655 s**.
+Absolute sample time = `segmentFILETIME + withinSegmentTick`, so a
+globally-monotonic series is recovered by adding `(segmentFILETIME −
+acqStart)` to each within-segment tick — implemented in
+`SvdxBinaryParser.decodeSegments` and validated end-to-end (ch1: t0=0 →
+tN=206,550,000 = 20.655 s).
+
+There is also a **coarse FILETIME index table** earlier in the block
+(stride 12, stepping 4096 ms ≈ one entry per 4096 samples) — a seek
+index the decoder ignores (the 0-based constant-period sample-run check
+rejects it).
+
 #### What still needs to be verified (remaining)
 
-1. **Multi-byte DataType records**: confirmed only on an INT16 channel.
-   REAL32/REAL64/INT32/UINT64 channels should follow `[value][u32 tick]`
-   with the wider value, but a REAL64 channel (e.g. `rRoboPosX`) must be
-   decoded to confirm the tick stays u32 and isn't promoted to u64.
-2. **Segment sub-headers**: `155956 B payload / 6 ≠ integer` and the
-   minority gap outliers (`10`, `18` bytes) indicate the sample stream
-   is interrupted by intra-block segment headers (re-emitting an 8-byte
-   FILETIME base on each trigger/restart). Need to walk one full block
-   start-to-end and tabulate segment boundaries.
-3. **Cross-version stability**: diff `0x71` / `0x6d` headers against
-   the `0x73` layout above.
-
-These are refinements, not blockers — a working tier-2 binary parser
-can now be written: read the 20-byte index → for each channel slice
-`[cum_off[i-1], cum_off[i])` → skip the ~355 B header → decode
-`[DataType value][u32 tick]` records → emit `(wall_clock, value)` pairs,
-scaled by the manifest's per-channel `<ScaleFactor>`/`<Offset>`.
+1. **Wide-DataType false segments**: the FILETIME-anchored segment walk
+   is clean on INT16 channels (113 of 149 decode to a fully monotonic
+   series). On INT32/REAL64 channels an 8-byte *value* can coincidentally
+   fall in the 2023 FILETIME range and trigger a spurious segment,
+   breaking monotonicity (36/149 channels). The fix is a **contiguous
+   segment walk** (each segment begins exactly where the previous ends)
+   instead of a free scan — which needs the first-segment offset pinned
+   (item 2). Tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+2. **Per-channel header length**: fine segments begin well into the block
+   (~16.9 KB on the 50 MB ch1), after the version tag, 3 FILETIMEs and
+   the coarse index table. Pinning this offset turns the scan into a
+   deterministic contiguous walk and fixes item 1.
+3. **Cross-version stability**: diff `0x71` / `0x6d` headers against the
+   `0x73` layout above.
 
 The closest community tool, [`pytcs`](https://github.com/CagtayFabry/pytcs)
 ([PyPI](https://pypi.org/project/pytcs/)), **explicitly works on

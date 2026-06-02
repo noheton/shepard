@@ -70,19 +70,24 @@ format reverse-engineered and validated in `byte-layout-notes.md`
   acquisition (each acquisition is **one channel's** recording).
 * `decodeChannel(block, idx, symbol, dataType)` → the per-channel
   header timing (three FILETIMEs) plus decoded `Sample(tickNs100,
-  value)` records, where each on-disk record is
-  `[value : DataType width][u32 tick · 100 ns]`.
+  value)` records. Each on-disk record is `[value : DataType width]
+  [u32 tick · 100 ns]`; the stream is split into **fine segments**
+  (a 12-byte `[_][u64 FILETIME][u16 count]` header + a sample run whose
+  tick restarts at 0). `decodeSegments` applies each segment's FILETIME
+  so `tickNs100` is **globally monotonic** relative to `acqStart`
+  (absolute wall-clock = `acqStartFiletime + tickNs100`).
 * `decodeAll(file, manifest, xmlBomOffset)` → all channels, joining
   per-channel `DataType` from the manifest's acquisition order.
 
 Validated against the real 50 MB campaign file
-`Scope Project_AutoSave_19_04_29.svdx`: 149 channels, 5,069,675
-samples, `acqStart` and railed/observed values matching the companion
-CSV. **Known limitation:** intra-block segment sub-headers (which
-re-zero the tick on each trigger/restart) are not yet modelled, so on
-multi-segment captures the decoder returns the union of cleanly-aligned
-runs with per-segment-relative ticks; absolute per-segment timing is
-the tracked refinement on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
+`Scope Project_AutoSave_19_04_29.svdx`: ch1 (`aTemperatureAnalogIntput1`)
+decodes to 20,656 samples spanning a monotonic 20.655 s (t0=0 →
+206,550,000), values matching the companion CSV; 113 of 149 channels
+decode to a fully monotonic series. **Known limitation:** on
+INT32/REAL64 channels an 8-byte value can coincidentally match the 2023
+FILETIME range and trigger a spurious segment (36/149 channels). The fix
+is a contiguous segment walk anchored on a pinned first-segment offset —
+tracked on `MFFD-PLUGIN-SVDX-BINARY-PARSER-1`.
 
 ## What the parser does NOT do
 

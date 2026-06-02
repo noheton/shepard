@@ -68,13 +68,24 @@ public final class SvdxBinaryParser {
     /** Width (bytes) of the per-sample timestamp tick field. */
     public static final int TICK_WIDTH = 4;
 
-    /** Minimum consecutive monotonic records before a run is accepted. */
-    private static final int MIN_RUN = 4;
+    /**
+     * Bytes of a fine-segment header preceding each run of samples:
+     * {@code [u16 (prev segment's last value — not a marker)][u64 FILETIME]
+     * [u16 sampleCount]}. The FILETIME is the segment's absolute start; the
+     * samples that follow carry ticks relative to it (0, period, 2·period…).
+     */
+    public static final int SEGMENT_HEADER_SIZE = 12;
+    private static final int SEG_FT_OFFSET = 2;
+    private static final int SEG_COUNT_OFFSET = 10;
 
     private SvdxBinaryParser() {}
 
     /** One decoded (timestamp, value) sample. {@code tickNs100} is in units
-     *  of 100 ns relative to the channel's acquisition-start FILETIME. */
+     *  of 100 ns relative to the channel's acquisition-start FILETIME
+     *  ({@link DecodedChannel#acqStartFiletime()}), already corrected for the
+     *  per-segment FILETIME base so it is globally monotonic across segments.
+     *  Absolute wall-clock = {@code acqStartFiletime + tickNs100} (FILETIME
+     *  units = 100 ns since 1601-01-01). */
     public record Sample(long tickNs100, double value) {}
 
     /** A single acquisition-index entry, exactly as stored on disk. */
@@ -204,108 +215,69 @@ public final class SvdxBinaryParser {
 
         int vw = valueWidth(dataType);
         List<Sample> samples = new ArrayList<>();
-        if (vw > 0) {
+        if (vw > 0 && acqStart > 0) {
             int recSize = vw + TICK_WIDTH;
-            samples = decodeSampleStream(bb, block.length, recSize, vw, dataType);
+            samples = decodeSegments(bb, block.length, recSize, vw, dataType, acqStart);
         }
         return new DecodedChannel(acqIndex, symbolName, dataType, acqStart, winStart, winEnd, samples);
     }
 
+    /** Slack before {@code acqStart} a segment FILETIME may legitimately fall. */
+    private static final long FT_SLACK_BEFORE = 10_000_000L;        // 1 s in 100 ns units
+    private static final long FT_WINDOW_AFTER = 24L * 3600 * 10_000_000L; // 24 h
+
     /**
-     * Resync-tolerant sample-stream walker. The validated invariant is that
-     * a sample run begins at {@code tick == 0} (acquisition / segment start)
-     * and then advances by a constant positive delta (the channel's sample
-     * period, e.g. 10000 = 1 kHz).
+     * Walk the channel block segment-by-segment, anchoring on each fine
+     * segment's {@code [_][u64 FILETIME][u16 count]} header (see class doc
+     * and {@code byte-layout-notes.md} §"acquisition = CHANNEL"). For every
+     * 12-byte window whose FILETIME is plausible (within {@code [acqStart−1s,
+     * acqStart+24h]}), whose count is ≥1, and which is followed by {@code
+     * count} samples whose ticks start at 0 and advance by a constant
+     * positive period, the samples are emitted with **absolute** ticks:
+     * {@code (segmentFiletime − acqStart) + withinSegmentTick}. This yields
+     * a globally-monotonic series across all segments, correcting the
+     * per-segment tick reset.
      *
-     * <p>The variable-length per-channel header occasionally produces a
-     * short spurious {@code tick == 0} run with an unrelated delta. To reject
-     * those, we run two passes: first find the delta of the single longest
-     * constant-delta-from-0 run (the true sample period, since the real
-     * stream dwarfs any header coincidence), then emit every run that shares
-     * that delta and is at least {@link #MIN_RUN} long. Because all of a
-     * channel's segments share one sample period, this captures every
-     * segment and discards header noise.
+     * <p>The leading coarse FILETIME index table and the per-channel header
+     * carry FILETIMEs too, but they are not followed by a valid 0-based
+     * constant-period sample run, so the sample-pattern check rejects them.
      */
-    private static List<Sample> decodeSampleStream(
-        ByteBuffer bb, int len, int recSize, int valueWidth, String dataType) {
-        long dominantDelta = findDominantDelta(bb, len, recSize, valueWidth);
+    private static List<Sample> decodeSegments(
+        ByteBuffer bb, int len, int recSize, int valueWidth, String dataType, long acqStart) {
+        long lo = acqStart - FT_SLACK_BEFORE;
+        long hi = acqStart + FT_WINDOW_AFTER;
         List<Sample> out = new ArrayList<>();
-        if (dominantDelta <= 0) return out;
         int o = 0;
-        while (o + recSize <= len) {
-            long tick0 = bb.getInt(o + valueWidth) & 0xFFFFFFFFL;
-            int runLen = (tick0 == 0) ? constantDeltaRunLength(bb, len, o, recSize, valueWidth) : 0;
-            long runDelta = (runLen >= 2)
-                ? (bb.getInt(o + recSize + valueWidth) & 0xFFFFFFFFL) - tick0 : -1;
-            if (runLen >= MIN_RUN && runDelta == dominantDelta) {
-                for (int r = 0; r < runLen; r++) {
-                    int rec = o + r * recSize;
+        while (o + SEGMENT_HEADER_SIZE <= len) {
+            long ft = bb.getLong(o + SEG_FT_OFFSET);
+            int count = bb.getShort(o + SEG_COUNT_OFFSET) & 0xFFFF;
+            int dataOff = o + SEGMENT_HEADER_SIZE;
+            if (ft >= lo && ft <= hi && count >= 1
+                && dataOff + (long) count * recSize <= len
+                && isValidSegmentRun(bb, dataOff, count, recSize, valueWidth)) {
+                long baseTick = ft - acqStart;
+                for (int r = 0; r < count; r++) {
+                    int rec = dataOff + r * recSize;
                     double val = readValue(bb, rec, dataType, valueWidth);
-                    long tick = bb.getInt(rec + valueWidth) & 0xFFFFFFFFL;
-                    out.add(new Sample(tick, val));
+                    long within = bb.getInt(rec + valueWidth) & 0xFFFFFFFFL;
+                    out.add(new Sample(baseTick + within, val));
                 }
-                o += runLen * recSize;
+                o = dataOff + count * recSize;
             } else {
-                o += 1; // resync: slide forward one byte
+                o += 1;
             }
         }
         return out;
     }
 
-    /**
-     * Sample period of the true sample run. A pure {@code [value][u32 tick]}
-     * stream can be re-read at a ±1-byte shift and still look like a valid
-     * constant-delta run (the neighbouring header byte cooperates), so run
-     * length alone is ambiguous. The disambiguator: the correctly-aligned
-     * run is the one that fills the block — i.e. ends closest to the block
-     * end. We therefore pick the qualifying run with the largest end offset,
-     * tie-broken by length.
-     */
-    private static long findDominantDelta(ByteBuffer bb, int len, int recSize, int valueWidth) {
-        long bestDelta = -1;
-        int bestEnd = -1;
-        int bestRun = 0;
-        int o = 0;
-        while (o + recSize <= len) {
-            long tick0 = bb.getInt(o + valueWidth) & 0xFFFFFFFFL;
-            if (tick0 == 0) {
-                int runLen = constantDeltaRunLength(bb, len, o, recSize, valueWidth);
-                if (runLen >= MIN_RUN) {
-                    int end = o + runLen * recSize;
-                    if (end > bestEnd || (end == bestEnd && runLen > bestRun)) {
-                        bestEnd = end;
-                        bestRun = runLen;
-                        bestDelta = (bb.getInt(o + recSize + valueWidth) & 0xFFFFFFFFL) - tick0;
-                    }
-                }
-            }
-            o += 1; // advance one byte so a later, better-aligned run is never skipped
-        }
-        return bestDelta;
-    }
-
-    /** Length (in records) of the run at {@code o} whose tick advances by a
-     *  single constant positive delta (the first inter-record gap). */
-    private static int constantDeltaRunLength(ByteBuffer bb, int len, int o, int recSize, int valueWidth) {
-        if (o + 2 * recSize > len) return 1;
-        long t0 = bb.getInt(o + valueWidth) & 0xFFFFFFFFL;
-        long t1 = bb.getInt(o + recSize + valueWidth) & 0xFFFFFFFFL;
-        long delta = t1 - t0;
-        if (delta <= 0 || delta >= 0x4000_0000L) return 1;
-        int run = 2;
-        long prevTick = t1;
-        int j = o + 2 * recSize;
-        while (j + recSize <= len) {
-            long tick = bb.getInt(j + valueWidth) & 0xFFFFFFFFL;
-            if (tick - prevTick == delta) {
-                run++;
-                prevTick = tick;
-                j += recSize;
-            } else {
-                break;
-            }
-        }
-        return run;
+    /** A run is a valid segment body iff sample 0's tick is 0 and (for
+     *  count ≥ 2) sample 1's tick is a positive, sane period. */
+    private static boolean isValidSegmentRun(
+        ByteBuffer bb, int dataOff, int count, int recSize, int valueWidth) {
+        if ((bb.getInt(dataOff + valueWidth) & 0xFFFFFFFFL) != 0L) return false;
+        if (count == 1) return true;
+        long t1 = bb.getInt(dataOff + recSize + valueWidth) & 0xFFFFFFFFL;
+        return t1 > 0 && t1 < 0x4000_0000L;
     }
 
     /**

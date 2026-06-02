@@ -31,8 +31,9 @@ class SvdxBinaryParserTest {
             SvdxBinaryParser.decodeIndex(file, h, env.xmlBomOffset());
         assertThat(index).hasSize(2);
         assertThat(index.get(0).index()).isEqualTo(1);
-        // acq #1 (INT16, 50 samples) = 43-byte header + 50 × 6 = 343 bytes.
-        assertThat(index.get(0).cumulativeEndOffset() - h.dataSectionStart()).isEqualTo(343);
+        // acq #1 (INT16, 50 samples) = 43-byte header + 4 segments × 12-byte
+        // headers + 50 × 6 sample bytes = 43 + 48 + 300 = 391 bytes.
+        assertThat(index.get(0).cumulativeEndOffset() - h.dataSectionStart()).isEqualTo(391);
         // The final acquisition ends exactly at the XML BOM offset.
         assertThat(index.get(1).cumulativeEndOffset()).isEqualTo(env.xmlBomOffset());
     }
@@ -59,6 +60,15 @@ class SvdxBinaryParserTest {
         assertThat(ch0.samples().get(1).tickNs100() - ch0.samples().get(0).tickNs100())
             .isEqualTo(10000);
         assertThat(ch0.samples().get(99).tickNs100()).isEqualTo(99L * 10000);
+        // Globally monotonic ACROSS segment boundaries: sample 20 lives in the
+        // 2nd 16-sample segment, yet its tick is not reset — it is the
+        // continuation 20·10000, proving per-segment FILETIME bases are applied.
+        assertThat(ch0.samples().get(20).tickNs100()).isEqualTo(20L * 10000);
+        assertThat(ch0.samples().get(20).value()).isEqualTo(20.0);
+        for (int i = 1; i < ch0.samples().size(); i++) {
+            assertThat(ch0.samples().get(i).tickNs100())
+                .isGreaterThan(ch0.samples().get(i - 1).tickNs100());
+        }
     }
 
     @Test
