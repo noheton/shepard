@@ -315,19 +315,34 @@ component.
 **The fix:** New `MultiPlayer.vue` linked via a shared time cursor. Out of scope for
 near-horizon; track as `MFFD-MULTIPLAYER-1` (medium-effort).
 
-### GAP-12 — Lineage graph at MFFD scale (task #25)
+### GAP-12 — Lineage graph at MFFD scale (task #25) — ✅ closed 2026-06-02
 
 **The data:** 8,251 tracks × tracks-per-ply × parent-relations = O(20k) edges on the
 Collection lineage view.
 
-**The gap:** Known (task #25). Today the graph is force-directed with no LOD;
-breaks past ~500 nodes.
+**The gap (initial framing, partially wrong):** Reported as "the graph is
+force-directed with no LOD; breaks past ~500 nodes." On inspection the actual
+problem was different — the existing engine was already `@dagrejs/dagre` +
+ECharts Canvas; the silent ceiling was a hard-coded `NODE_CAP = 150` that
+sliced off 99% of an MFFD-scale Collection without telling the user.
 
-**The fix:** Already on backlog; switch to dagre layered + virtualised render
-(`feedback_reuse_trusted_code.md` flags dagre as the right substrate). Reuse the
-TPL11 independence-proof query for filtered subgraphs.
+**The fix shipped 2026-06-02 (LINEAGE-GRAPH-MFFD-SCALE):**
+- `NODE_CAP` removed — full lineage rendered.
+- Three-tier Level-Of-Detail keyed on the ECharts roam zoom event (macro
+  ply / process bubbles below 0.3; meso nodes-only below 0.8; detail
+  labels above).
+- Filter pill row above the canvas (Status, Process-type, "Around DO N
+  depth ≤ K").
+- Minimap toggle (second `vue-echarts` instance, roam off, 2-px markers).
+- Click-through to the DataObject detail page.
+- Pure helpers extracted to `frontend/utils/lineageLayout.ts`; 32 Vitest
+  cases incl. 20k-node perf smoke.
+- Engine choice: ECharts Canvas kept (the substrate that hits the
+  20k-node performance budget; DOM-based vue-flow / cytoscape SVG cap
+  around 5k even with viewport culling).
 
-**Backlog row:** task #25 — covered.
+**Backlog row:** `LINEAGE-GRAPH-MFFD-SCALE` (this PR) + LINEAGE-EDIT-1 /
+LINEAGE-CROSS-1 / LINEAGE-TIMELINE-1 / LINEAGE-AI-GAP-1 (queued follow-ups).
 
 ## 2. Lower-priority gaps catalogued
 

@@ -457,18 +457,24 @@ Five typical entry points:
    expanded channel row — 1-second averages for fast load even on large
    datasets); **container storage stats chip** (point count displayed as
    a coloured chip in the timeseries container header); **Collection
-   Lineage Graph** (interactive force-directed graph on the collection
+   Lineage Graph** (interactive dagre-layered graph on the collection
    page showing parent/child and predecessor/successor edges between
-   datasets — drag, zoom, hover for status, click to highlight
-   neighbours); **Collection Timeline** (process-chain swimlane
+   datasets — drag, zoom, hover for status, click to open the dataset
+   detail page; **2026-06-02 — MFFD-scale rewrite** removes the silent
+   150-DO ceiling, adds three-tier Level-Of-Detail (macro ply / process
+   bubbles below 0.3 zoom, meso nodes-only below 0.8, full labels above),
+   filter pills for status / process-type / "Around DO N", and a
+   minimap; renders the full ~20k-edge MFFD lineage in one pane —
+   LINEAGE-GRAPH-MFFD-SCALE shipped 2026-06-02); **Collection Timeline** (process-chain swimlane
    chronograph on the Collection landing page — one row per
    process-type derived from `urn:shepard:mffd:process-type`
    annotations, day-binned DataObject counts as stacked bars in OK /
    NCR / REJECTED colour; bin-size toggle 1 / 7 / 30 days with
    server-side auto-coarsening so a 2.6-year campaign stays
    renderable; the cardinality-friendly answer to "when did NCRs
-   cluster, when did we re-test?" where the Lineage graph stops
-   scaling — COLL-TIMELINE-1 shipped 2026-06-02); **DataObject Provenance Graph** (force-directed graph on
+   cluster, when did we re-test?" — the temporal projection of the same
+   data that the Lineage graph projects structurally —
+   COLL-TIMELINE-1 shipped 2026-06-02); **DataObject Provenance Graph** (force-directed graph on
    the dataset detail page linking the dataset to related datasets and to
    the users who acted on it, with edge labels for action kinds and
    counts); **personal landing page** (authenticated users land on a
