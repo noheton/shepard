@@ -2,27 +2,74 @@ import { DataObjectApi, ResponseError } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
+import type { DataObject } from "@dlr-shepard/backend-client";
+
+// BUG-COLL-APPID-ROUTE-006: resolve the v2 base URL the same way other
+// composables (useFetchPredecessorChain, useContainerReferencedByCollections)
+// do — strip the /shepard/api suffix and use the host directly.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+/**
+ * BUG-COLL-APPID-ROUTE-006 — fetch a page of DataObjects from the v2 list
+ * endpoint using the appId-based filter.
+ *
+ * The v1 list endpoint declares a primitive-Long path param for the
+ * collectionId, so a UUID-only Collection causes a 400 at the JAX-RS binding
+ * layer before the service ever runs. This helper calls the v2 endpoint
+ * directly, which accepts a string collectionAppId (UUID v7 or numeric string)
+ * and now supports the {@code ?parentAppId=} filter added in this bug fix.
+ *
+ * @param collectionAppId  String form of the collection id (UUID v7 or legacy numeric string).
+ * @param parentAppId      "NONE" for root-level items; a DataObject appId string for children.
+ */
+async function fetchTreeviewItemsV2(
+  collectionAppId: string,
+  parentAppId: string,
+): Promise<DataObject[]> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  if (!accessToken) return [];
+  const url =
+    `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}/data-objects` +
+    `?parentAppId=${encodeURIComponent(parentAppId)}&size=200`;
+  const resp = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!resp.ok) return [];
+  const json: { items?: DataObject[]; data?: DataObject[] } | DataObject[] =
+    await resp.json();
+  // The v2 list endpoint returns a JSON array directly (DataObject[]).
+  return Array.isArray(json)
+    ? json
+    : ((json as { items?: DataObject[] }).items ?? []);
+}
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
-  const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
+  // BUG-COLL-APPID-ROUTE-006: use the v2 endpoint so UUID-only Collections
+  // do not 400 at the JAX-RS primitive-Long binding in v1.
   async function fetchTreeviewItems(collectionId: number) {
-    await dataObjectApi.value
-      .getAllDataObjects({ collectionId, parentId: -1 })
-      .then(response => {
-        // initial load of dataobject from a collection - no parents possible
-        treeviewItems.value = response
-          .map(item => mapToTreeviewItem(item))
-          .sort((itemA, itemB) => itemA.id - itemB.id);
-        // instead of sorting by 'createdAt' we can sort the treeview items by ID
-      })
-      .catch(error => {
-        treeviewItems.value = undefined;
-        handleError(error, "getAllDataObjects");
-      });
+    try {
+      const items = await fetchTreeviewItemsV2(String(collectionId), "NONE");
+      // initial load of dataobjects from a collection — no parents possible
+      treeviewItems.value = items
+        .map(item => mapToTreeviewItem(item))
+        .sort((itemA, itemB) => (itemA.id ?? 0) - (itemB.id ?? 0));
+      // instead of sorting by 'createdAt' we can sort the treeview items by ID
+    } catch (error) {
+      treeviewItems.value = undefined;
+      handleError(error, "fetchTreeviewItemsV2 (root)");
+    }
   }
 
   /**
@@ -216,25 +263,26 @@ async function fetchTreeviewItem(
     });
 }
 
+// BUG-COLL-APPID-ROUTE-006: swap the child-expansion call to v2 so that
+// both the initial tree load and recursive child expansion work for
+// UUID-only Collections (v1 getAllDataObjects 400s on UUID path params).
 async function fetchChildrenOfItem(
   collectionId: number,
   parentId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem[] | undefined> {
-  return useShepardApi(DataObjectApi)
-    .value.getAllDataObjects({
-      parentId,
-      collectionId,
-    })
-    .then(response =>
-      response
-        .map(item => mapToTreeviewItem(item, parentItem))
-        .sort((itemA, itemB) => itemA.id - itemB.id),
-    )
-    .catch(error => {
-      if (error instanceof ResponseError) {
-        handleError(error, "fetchChildrenOfItem");
-      }
-      return undefined;
-    });
+  try {
+    const items = await fetchTreeviewItemsV2(
+      String(collectionId),
+      String(parentId),
+    );
+    return items
+      .map(item => mapToTreeviewItem(item, parentItem))
+      .sort((itemA, itemB) => (itemA.id ?? 0) - (itemB.id ?? 0));
+  } catch (error) {
+    if (error instanceof ResponseError) {
+      handleError(error, "fetchChildrenOfItem");
+    }
+    return undefined;
+  }
 }

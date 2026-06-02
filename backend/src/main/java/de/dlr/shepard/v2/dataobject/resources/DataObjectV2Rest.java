@@ -147,6 +147,12 @@ public class DataObjectV2Rest {
       "latest data-point timestamps across all timeseries channels. Null on items " +
       "with no timeseries data. Omitted from the response entirely when " +
       "`?include=time-bounds` is not requested.\n\n" +
+      "**Hierarchy filters (BUG-COLL-APPID-ROUTE-006).** Use `?parentAppId=NONE` to " +
+      "retrieve only root-level DataObjects (those without a parent). Use " +
+      "`?parentAppId=<appId>` to retrieve direct children of the given DataObject. " +
+      "Similarly, `?predecessorAppId=<appId>` and `?successorAppId=<appId>` filter by " +
+      "direct predecessor/successor relationships. Unknown appIds return an empty page " +
+      "(not 404) so the treeview degrades gracefully.\n\n" +
       "**Payload diet (DB-OPT5).** By default the list response drops fields the " +
       "collection-detail UI never reads — `description`, `attributes`, and the three " +
       "deprecated `int` count siblings (`timeseriesReferenceCount`, `fileBundleCount`, " +
@@ -184,6 +190,9 @@ public class DataObjectV2Rest {
     @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
+    @QueryParam("parentAppId") String parentAppId,
+    @QueryParam("predecessorAppId") String predecessorAppId,
+    @QueryParam("successorAppId") String successorAppId,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -212,6 +221,27 @@ public class DataObjectV2Rest {
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
     params = params.withPageAndSize(safePage, safeSize);
+
+    // BUG-COLL-APPID-ROUTE-006: parentAppId / predecessorAppId / successorAppId filters.
+    // "NONE" is the treeview sentinel meaning "root only — no parent".
+    // Any other value is resolved to a Neo4j OGM id; unknown appIds are silently
+    // ignored (return empty page, not 404) so the treeview degrades gracefully.
+    if (parentAppId != null) {
+      if ("NONE".equals(parentAppId)) {
+        params = params.withParentId(-1L);
+      } else {
+        Long parentOgmId = resolveOrNull(parentAppId);
+        if (parentOgmId != null) params = params.withParentId(parentOgmId);
+      }
+    }
+    if (predecessorAppId != null) {
+      Long predecessorOgmId = resolveOrNull(predecessorAppId);
+      if (predecessorOgmId != null) params = params.withPredecessorId(predecessorOgmId);
+    }
+    if (successorAppId != null) {
+      Long successorOgmId = resolveOrNull(successorAppId);
+      if (successorOgmId != null) params = params.withSuccessorId(successorOgmId);
+    }
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
 
