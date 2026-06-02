@@ -6,6 +6,7 @@ import de.dlr.shepard.cli.commands.FilesCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.InstanceCommand;
 import de.dlr.shepard.cli.commands.JupyterCommand;
+import de.dlr.shepard.cli.commands.KrlCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
@@ -49,6 +50,7 @@ import picocli.CommandLine.Command;
     HealthCommand.class,
     InstanceCommand.class,
     JupyterCommand.class,
+    KrlCommand.class,
     MigrationsCommand.class,
     PluginsCommand.class,
     SemanticCommand.class,
