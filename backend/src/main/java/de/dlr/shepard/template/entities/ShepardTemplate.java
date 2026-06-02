@@ -107,6 +107,14 @@ public class ShepardTemplate implements HasId, HasAppId {
   private String description;
 
   /**
+   * Optional MDI icon name (e.g. {@code "mdi-layers"}). Null means
+   * "use the per-kind default" (see {@code aidocs/integrations/122 §3}).
+   * The UI resolves it via {@code useTemplateIcon(template, kindHint)}.
+   */
+  @Property("iconKey")
+  private String iconKey;
+
+  /**
    * Free-form author-supplied tags — {@code ["lumen", "rocket",
    * "calibration"]} on a hot-fire test recipe, say. Used by the
    * picker for filtering.
