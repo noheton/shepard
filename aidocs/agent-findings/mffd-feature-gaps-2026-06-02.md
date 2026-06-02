@@ -29,22 +29,53 @@ should feel they're walking through the *process*, not browsing a folder tree.
 
 Listed in **highest-value-first** order (effort × user value).
 
-### GAP-1 — `.svdx` parser plugin *(blocks 73 GB of data)*
+### GAP-1 — `.svdx` parser plugin — **PARTIALLY CLOSED 2026-06-02**
 
-**The data:** 166 Beckhoff TwinCAT Scope (`.svdx`) files totaling **72.9 GB** across
-`Punktschweißungen`, `Scope_Sicherung`, `Stringer_schweissungen`. Without a parser they
-land as opaque blobs.
+**The data (corrected):** **21** Beckhoff TwinCAT Scope (`.svdx`) files in one
+folder (`Punktschweißungen`), 7 MB .. 1.4 GB each. Earlier scoping mentioned 166
+files across three folders; the additional `Scope_Sicherung` and
+`Stringer_schweissungen` folders do not exist on the mount. The 73 GB total
+across the campaign holds, but in one folder. Without a parser they land as
+opaque blobs.
 
-**The gap:** No `shepard-plugin-svdx` exists. The format is XML-wrapped + raw blob
-sections; readers exist as Beckhoff TwinCAT or as third-party `pysvdx`.
+**The gap (refined):** The proprietary binary sample section of `.svdx` is
+**not publicly documented by Beckhoff**. The community-standard
+[`pytcs`](https://github.com/CagtayFabry/pytcs) tool explicitly punts on the
+binary and reads only the CSV/TXT exports the operator-driven TwinCAT Scope
+Export Tool produces. Sibling-CSV coverage in the actual dataset is **3/21 ≈
+14%**, too thin to be the primary user-facing path.
 
-**The fix:** New `shepard-plugin-svdx` ships:
-- A `PayloadKind` `BECKHOFF_SCOPE_TRACE` whose payload is a TimeseriesReference.
-- A converter (`pysvdx` wrapper) that streams CSV into TimescaleDB.
-- A casual upload affordance: drop a `.svdx` on a DataObject → it materialises as a
-  TimeseriesReference auto-named from the file.
+**What shipped (tier-1 — `MFFD-PLUGIN-SVDX-1`, this PR):**
+`shepard-plugin-fileformat-svdx`, mirroring `fileformat-thermography` and
+`fileformat-robotics`. The parser decodes the 16-byte envelope, locates and
+StAX-parses the trailing `<ScopeProject>` XML manifest, and emits
+`urn:shepard:svdx:*` semantic annotations on the parent FileReference:
+`formatVersion`, `projectGuid`, `projectName`, `dataPoolGuid`, `mainServer`,
+`recordTimeNs`, `autoSaveMode`, `assemblyName`, `channelCount`,
+`acquisitionCount`, deduped `amsNetId` / `port` / `dataType` lists, every
+`channelName` (rendered chart channel) and `symbolName` (ADS data source),
+plus `companionCsv` when a sibling `<basename>.csv` or `<basename>_parsed.csv`
+sits in the same FileContainer. Real MFFD fixture test confirms the parser
+extracts 46 channels + 149 acquisitions per file with full symbol-name
+fidelity. 22 JUnit tests, all green.
 
-**Backlog row:** `MFFD-PLUGIN-SVDX-1` (CLAUDE.md plugin-first rule applies).
+**What's deferred (filed as concrete follow-up rows):**
+- `MFFD-PLUGIN-SVDX-BINARY-PARSER-1` — reverse-engineer the proprietary binary
+  sample blocks (multi-week research, may never resolve cleanly).
+- `MFFD-PLUGIN-SVDX-CSV-INGEST-1` — backend service that consumes the
+  operator-driven TwinCAT Scope Export Tool CSV output and populates a
+  TimeseriesReference. The realistic ingestion path given binary opacity.
+- `MFFD-PLUGIN-SVDX-SEMANTIC-1` — auto-detect physical-quantity semantics from
+  the `GVL_IO_US_Endeffektor.aTemperature*` Beckhoff naming convention.
+- `MFFD-PLUGIN-SVDX-BULK-1` — folder-spanning bulk import.
+- `MFFD-PLUGIN-SVDX-WIRE-1` — wire the module into `plugins/pom.xml` once the
+  Jandex hang clears.
+
+**Honest scope statement.** The shipped scope unblocks "I want to find every
+file from project Guid X" + "what acquisitions are in this file" + "what AMS
+NetId is this from" — the queries the dataset can support today without
+solving the binary. Sample-level ingest waits for either the binary RE
+follow-up or the operator-driven CSV path.
 
 ### GAP-2 — Cross-track timeseries view
 
