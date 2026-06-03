@@ -383,7 +383,7 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md`](agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md) | BUG-LJ-V1-COLL-ID — fix report | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/otvis-viewer.md`](agent-findings/otvis-viewer.md) | OTvis viewer — findings (OTVIS-VIEWER) | 2026-06-03 | — |
+| [`aidocs/agent-findings/otvis-viewer.md`](agent-findings/otvis-viewer.md) | OTvis viewer — findings (OTVIS-VIEWER) | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/template-inheritance.md`](agent-findings/template-inheritance.md) | Template inheritance (TPL-INHERIT) — findings | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
