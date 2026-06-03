@@ -227,7 +227,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/117-krl-interpreter.md`](integrations/117-krl-interpreter.md) | 117 — KRL interpreter (KRL-INTERPRETER-01) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/integrations/118-mffd-process-chain-mapping.md`](integrations/118-mffd-process-chain-mapping.md) | MFFD process-chain mapping (118) | 2026-06-02 | 2026-06-02 |
-| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-02 |
+| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-03 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
