@@ -149,7 +149,7 @@ public class SqlTimeseriesRest {
   )
   @APIResponse(
     responseCode = "504",
-    description = "Query exceeded the configured `statement_timeout`; retry with tighter time-range or container filters, or raise the duration cap via `PATCH /v2/admin/sql-timeseries/config`."
+    description = "Query exceeded the configured `statement_timeout`; retry with tighter time-range or container filters, or raise the duration cap via `PATCH /v2/admin/config/sql-timeseries`."
   )
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({"text/csv", MediaType.APPLICATION_JSON, NDJSON_TYPE})

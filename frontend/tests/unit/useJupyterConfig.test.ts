@@ -67,7 +67,7 @@ describe("useJupyterConfig — refresh()", () => {
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
     expect(url).toContain("/v2/jupyter/config");
-    expect(url).not.toContain("/v2/admin/jupyter/config");
+    expect(url).not.toContain("/v2/admin/config/jupyter");
   });
 
   it("uses the ADMIN endpoint when adminMode is true", async () => {
@@ -77,7 +77,7 @@ describe("useJupyterConfig — refresh()", () => {
 
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/jupyter/config");
+    expect(url).toContain("/v2/admin/config/jupyter");
   });
 
   it("sets error message on HTTP failure", async () => {
@@ -110,7 +110,7 @@ describe("useJupyterConfig — patch()", () => {
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/jupyter/config");
+    expect(url).toContain("/v2/admin/config/jupyter");
     expect(opts.method).toBe("PATCH");
   });
 

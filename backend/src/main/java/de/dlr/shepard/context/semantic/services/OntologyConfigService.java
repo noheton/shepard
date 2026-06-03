@@ -580,7 +580,7 @@ public class OntologyConfigService {
 
   /**
    * SEMA-V6-003 — persist a merge-patched {@link de.dlr.shepard.context.semantic.entities.SemanticConfig}
-   * entity. The caller (typically {@code SemanticConfigRest}) applies the
+   * entity. The caller (the V2CONV-A4 {@code SemanticConfigDescriptor}) applies the
    * merge-patch fields in-memory before calling this method; this method
    * simply saves the result and returns the persisted entity.
    *

@@ -1,6 +1,7 @@
 /**
- * J1e composable wrapping GET/PATCH /v2/admin/jupyter/config (admin
- * write surface) and GET /v2/jupyter/config (public read surface).
+ * J1e composable wrapping GET/PATCH /v2/admin/config/jupyter (admin
+ * write surface; V2CONV-A4 generic admin-config surface, was
+ * /v2/admin/jupyter/config) and GET /v2/jupyter/config (public read surface).
  *
  * Raw fetch (no generated client for this endpoint yet) — same pattern as
  * useSqlTimeseriesConfig and useInstanceRorConfig.
@@ -39,7 +40,7 @@ function v2BaseUrl(): string {
 
 // Admin (instance-admin-only) endpoint — used for GET when the admin
 // tile is open (so a 403 surfaces for non-admins) and for every PATCH.
-const JUPYTER_ADMIN_CONFIG_URL = "/v2/admin/jupyter/config";
+const JUPYTER_ADMIN_CONFIG_URL = "/v2/admin/config/jupyter";
 
 // Public (any authenticated user) endpoint — used by the unified data-
 // references table to decide whether to render the "Open in JupyterHub"
@@ -48,7 +49,7 @@ const JUPYTER_PUBLIC_CONFIG_URL = "/v2/jupyter/config";
 
 /**
  * @param options.adminMode when true, READS go to the admin endpoint
- *   (`/v2/admin/jupyter/config`) — used by the admin tile. When false
+ *   (`/v2/admin/config/jupyter`) — used by the admin tile. When false
  *   (default), reads go to the public endpoint (`/v2/jupyter/config`)
  *   — used by the unified data-references table for every authenticated
  *   user. PATCH always targets the admin endpoint (instance-admin-gated

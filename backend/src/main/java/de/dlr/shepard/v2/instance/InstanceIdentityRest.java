@@ -21,7 +21,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * INST1 — public read of the instance's organisational identity.
  *
- * <p>Exposes the same wire shape as {@link de.dlr.shepard.v2.admin.ror.resources.InstanceRorConfigRest}
+ * <p>Exposes the same wire shape as the admin {@code GET /v2/admin/config/ror}
+ * surface (V2CONV-A4 — {@code RorConfigDescriptor})
  * (rorId, organizationName, rorUrl) but without the {@code instance-admin}
  * role gate — every authenticated user can read who runs this instance.
  *
@@ -30,7 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * itself does the ror.org fetch client-side; the backend doesn't proxy it).
  *
  * <p>The PATCH/write surface stays on the admin endpoint — operators set
- * the ROR ID once via {@code PATCH /v2/admin/instance/ror} (or the matching
+ * the ROR ID once via {@code PATCH /v2/admin/config/ror} (or the matching
  * {@code shepard-admin instance ror set …} CLI), then everyone can read it.
  */
 @Path("/v2/instance/identity")
@@ -50,7 +51,7 @@ public class InstanceIdentityRest {
     description = "Returns the configured ROR id, organisation name, and computed " +
     "ror.org URL. All three fields are absent when no ROR id has been configured. " +
     "Public read — any authenticated user; the admin write surface lives at " +
-    "PATCH /v2/admin/instance/ror."
+    "PATCH /v2/admin/config/ror."
   )
   @APIResponse(
     responseCode = "200",

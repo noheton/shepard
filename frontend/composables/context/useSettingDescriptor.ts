@@ -25,7 +25,7 @@ export const SETTING_KEYS = {
 //
 // Note (task #240, 2026-05-30): the per-user `editor.preferredJupyter` setting
 // was removed in favour of the admin-configurable `:JupyterConfig` singleton
-// (`/v2/admin/jupyter/config`, composable `useJupyterConfig`). The
+// (`/v2/admin/config/jupyter`, composable `useJupyterConfig`). The
 // "Open in JupyterHub" affordance now reads from the public sister endpoint
 // `/v2/jupyter/config` — a single instance-wide hub URL.
 export const SETTING_DESCRIPTORS: SettingDescriptor[] = [
