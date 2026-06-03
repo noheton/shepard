@@ -278,6 +278,7 @@ watch(showRetired, (val) => {
     <AdminTemplateDialog
       v-model="dialogOpen"
       :template="editingTemplate"
+      :all-templates="templates"
       @saved="onSaved"
     />
 
