@@ -10,17 +10,25 @@
  * The Reluctant Senior Researcher persona wanted a flat "what's on this
  * instance" answer; this pane is that.
  *
- * The "Use" affordance is read-only here: instantiation needs a
- * Collection context (`POST /v2/collections/{collectionAppId}/templates/
- * {templateAppId}/data-object`), so we open a details dialog with the
- * body preview and a hint to create the DataObject from inside a
- * Collection. Follow-up: TPL-ME-USE-FROM-BROWSE (a Collection picker).
+ * TPL-ME-USE-FROM-BROWSE — "Use in Collection…" affordance added.
+ * Opens a Collection picker inside the details dialog; on confirm calls
+ * CollectionTemplateApi.instantiateDataObject and navigates to the new
+ * DataObject.
  */
 import {
+  CollectionTemplateApi,
   ShepardTemplateApi,
   type ShepardTemplateIO,
 } from "@dlr-shepard/backend-client";
+import { useTimeoutFn } from "@vueuse/core";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import {
+  useCollectionSearch,
+  type MyCollectionSearchResult,
+} from "~/composables/context/useCollectionSearch";
+import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
+
+const router = useRouter();
 
 const templates = ref<ShepardTemplateIO[]>([]);
 const isLoading = ref(false);
@@ -79,18 +87,107 @@ function openDetails(t: ShepardTemplateIO) {
   selected.value = t;
   showDetails.value = true;
 }
+
+// ── "Use in Collection…" state (TPL-ME-USE-FROM-BROWSE) ─────────────────────
+
+interface AutoCompleteItem {
+  title: string;
+  value: MyCollectionSearchResult;
+}
+
+const showCollectionPicker = ref(false);
+const collectionSearchString = ref("");
+const hideNoDataMessage = ref(true);
+const selectedCollection = ref<AutoCompleteItem | undefined>(undefined);
+const isInstantiating = ref(false);
+const instantiateError = ref<string | null>(null);
+
+const {
+  collectionSearchResults,
+  startSearch,
+  isLoading: isSearching,
+  resetResultList,
+} = useCollectionSearch(collectionSearchString, () => {
+  hideNoDataMessage.value = false;
+});
+
+const { isPending, start: startDebounce } = useTimeoutFn(() => {
+  if (collectionSearchString.value.trim() === "") {
+    hideNoDataMessage.value = true;
+  }
+  startSearch();
+}, 350);
+
+function mapToItem(r: MyCollectionSearchResult): AutoCompleteItem {
+  return {
+    title: `${r.collectionName} (ID: ${r.collectionId})`,
+    value: r,
+  };
+}
+
+function onCollectionSearch(search: string) {
+  collectionSearchString.value = search;
+  if (!isPending.value) {
+    startDebounce();
+  }
+}
+
+function openCollectionPicker() {
+  showCollectionPicker.value = true;
+  selectedCollection.value = undefined;
+  collectionSearchString.value = "";
+  hideNoDataMessage.value = true;
+  instantiateError.value = null;
+  resetResultList();
+}
+
+async function confirmInstantiate() {
+  if (!selected.value || !selectedCollection.value) return;
+  const collectionResult = selectedCollection.value.value;
+  // The backend CollectionTemplateApi.instantiateDataObject needs collectionAppId.
+  // The search returns numeric id + name; we use String(collectionId) as the
+  // backend resolves both numeric legacy id and UUID v7 appId via its dual-resolver.
+  const collectionAppId = String(collectionResult.collectionId);
+  const templateAppId = selected.value.appId;
+
+  isInstantiating.value = true;
+  instantiateError.value = null;
+  try {
+    const created = await useV2ShepardApi(CollectionTemplateApi)
+      .value.instantiateDataObject({
+        collectionAppId,
+        templateAppId,
+      });
+    emitSuccess(
+      `Created "${created.name}" from template "${selected.value.name}"`,
+    );
+    showCollectionPicker.value = false;
+    showDetails.value = false;
+    router.push(
+      collectionsPath +
+        collectionResult.collectionId +
+        dataObjectsPathFragment +
+        created.id,
+    );
+  } catch (err) {
+    instantiateError.value =
+      (err as { message?: string })?.message ??
+      "Failed to create DataObject from template.";
+  } finally {
+    isInstantiating.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="pa-4">
     <h2 class="text-h5 mb-2">Templates on this instance</h2>
     <p class="text-body-2 text-medium-emphasis mb-4">
-      Read-only catalogue of every <code>ShepardTemplate</code> available
-      on this Shepard. Admins seed templates via the Admin Templates pane
-      or the importer; you can browse them here before opening
-      <strong>Create DataObject</strong> inside a Collection — which is
-      where instantiation happens (templates carry the recipe; the
-      Collection carries the destination).
+      Browse every <code>ShepardTemplate</code> available on this Shepard.
+      Open <strong>Details</strong> to preview the recipe and use
+      <strong>Use in Collection&hellip;</strong> to create a DataObject from
+      it directly. Admins seed templates via the Admin Templates pane or the
+      importer.
     </p>
 
     <v-text-field
@@ -176,7 +273,7 @@ function openDetails(t: ShepardTemplateIO) {
       </v-data-table>
     </v-card>
 
-    <!-- Details dialog — read-only body preview + hint -->
+    <!-- Details dialog — body preview + "Use in Collection…" affordance -->
     <v-dialog v-model="showDetails" max-width="720">
       <v-card v-if="selected">
         <v-card-title>
@@ -213,11 +310,6 @@ function openDetails(t: ShepardTemplateIO) {
               {{ tag }}
             </v-chip>
           </div>
-          <v-alert type="info" variant="tonal" density="compact" class="mb-3">
-            To use this template, open a Collection and click
-            <strong>Create DataObject</strong>. The picker will offer
-            this template (when the Collection allows it).
-          </v-alert>
           <details>
             <summary class="text-caption text-medium-emphasis cursor-pointer">
               Recipe body (JSON)
@@ -226,8 +318,81 @@ function openDetails(t: ShepardTemplateIO) {
           </details>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-folder-open-outline"
+            data-test="use-in-collection-btn"
+            @click="openCollectionPicker"
+          >
+            Use in Collection&hellip;
+          </v-btn>
           <v-spacer />
           <v-btn variant="text" @click="showDetails = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Collection picker dialog — shown on top of details dialog -->
+    <v-dialog
+      v-model="showCollectionPicker"
+      max-width="520"
+      data-test="collection-picker-dialog"
+    >
+      <v-card>
+        <v-card-title>Use in Collection</v-card-title>
+        <v-card-text>
+          <p class="text-body-2 mb-4">
+            Pick a Collection to create a DataObject from
+            <strong>{{ selected?.name }}</strong>.
+          </p>
+          <v-autocomplete
+            :model-value="selectedCollection"
+            :items="collectionSearchResults.map(mapToItem)"
+            :loading="isSearching"
+            :hide-no-data="hideNoDataMessage"
+            label="Search Collection by name or ID…"
+            density="comfortable"
+            variant="outlined"
+            no-data-text="No matching collections"
+            clearable
+            color="primary"
+            return-object
+            hide-details
+            data-test="collection-autocomplete"
+            @update:model-value="selectedCollection = $event ?? undefined"
+            @update:search="onCollectionSearch"
+          />
+          <v-alert
+            v-if="instantiateError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            class="mt-3"
+            data-test="instantiate-error"
+          >
+            {{ instantiateError }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            :disabled="isInstantiating"
+            @click="showCollectionPicker = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :disabled="!selectedCollection || isInstantiating"
+            :loading="isInstantiating"
+            data-test="confirm-instantiate-btn"
+            @click="confirmInstantiate"
+          >
+            Create DataObject
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
