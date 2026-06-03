@@ -60,18 +60,52 @@ async function fetchDataObjectV2(
   return (await resp.json()) as DataObject;
 }
 
-export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
-  // BUG-COLL-APPID-ROUTE-001: route ids are strings; cast at boundary so
-  // the typed-number v1 client signatures still compile. UUID v7 flows
-  // through to the wire intact and 404s cleanly on v1 paths.
-  const cid = () => routeParams.value.collectionId as unknown as number;
+/**
+ * BUG-COLL-APPID-ROUTE-006 (2026-06-03): the v1 list endpoint
+ * (`DataObjectRest.getAllDataObjects(@PathParam Long collectionId, ...)`)
+ * declares a primitive-Long path param, so passing the UUID v7 route param
+ * as the v1 collectionId would 400 at the JAX-RS binding before the service
+ * ever ran — producing the operator-surfaced infinite spinner on
+ * `/collections/{appId}` (LUMEN, 2026-06-03).
+ *
+ * Fix: the caller resolves the NUMERIC id from the loaded v2 Collection's
+ * `.id` (the canonical source) and passes it in as `collectionNumericId`.
+ * The treeview's v1 list calls are gated on that ref being defined — until
+ * the collection finishes loading the treeview shows the loading spinner,
+ * and if the collection fetch errors out it shows an explicit
+ * `loadError` instead of spinning forever.
+ */
+export const useTreeviewItems = (
+  routeParams: Ref<CollectionRouteParams>,
+  collectionNumericId?: MaybeRefOrGetter<number | undefined>,
+) => {
+  // BUG-COLL-APPID-ROUTE-001: route dataObjectId is a string (UUID v7 or
+  // numeric long). Resolution to the numeric id used by the v1 list happens
+  // via the treeview itself (each row carries its numeric `id`).
   const did = () => routeParams.value.dataObjectId as unknown as number | undefined;
+  // Resolve the NUMERIC collection id used by the v1 `getAllDataObjects`
+  // call. Three sources, in priority: explicit caller-supplied
+  // `collectionNumericId` ref (the canonical post-006 path), legacy numeric
+  // route param (covers /collections/123 deep links), undefined (UUID route
+  // with no loaded collection yet → defer the fetch).
+  function resolvedNumericCid(): number | undefined {
+    if (collectionNumericId !== undefined) {
+      const v = toValue(collectionNumericId);
+      if (v != null) return v;
+    }
+    const n = Number(routeParams.value.collectionId);
+    return Number.isInteger(n) && n > 0 ? n : undefined;
+  }
   const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
+  // Distinct from `loading` so the template can render an explicit error
+  // state instead of an infinite spinner when the v1 list call fails.
+  const loadError = ref<boolean>(false);
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
+    loadError.value = false;
     await dataObjectApi.value
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
@@ -82,7 +116,11 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
         // instead of sorting by 'createdAt' we can sort the treeview items by ID
       })
       .catch(error => {
-        treeviewItems.value = undefined;
+        // Render an empty tree with an explicit error sentinel rather than
+        // leaving treeviewItems undefined (which the template reads as
+        // "still loading" and spins indefinitely — the pre-006 shape).
+        treeviewItems.value = [];
+        loadError.value = true;
         handleError(error, "getAllDataObjects");
       });
   }
@@ -99,7 +137,9 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       if (openLoadedItems) addOpen(itemWithPath.pathFromRoot);
       return;
     }
-    const parentIds = await getPathToItem(cid(), itemId);
+    const cid = resolvedNumericCid();
+    if (cid === undefined) return;
+    const parentIds = await getPathToItem(cid, itemId);
     for (const id of parentIds) {
       await loadChildrenOfItem(id);
     }
@@ -107,8 +147,15 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   }
 
   async function initialLoad() {
+    const cid = resolvedNumericCid();
+    if (cid === undefined) {
+      // Collection numeric id not yet resolved (v2 fetch in flight). Keep
+      // `loading=true`; the watcher below kicks the fetch as soon as the
+      // id materialises.
+      return;
+    }
     loading.value = true;
-    await fetchTreeviewItems(cid());
+    await fetchTreeviewItems(cid);
     const d = did();
     if (d !== undefined) {
       await loadAndExpandUpToItem(d);
@@ -118,13 +165,32 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
 
   initialLoad();
 
+  // Re-run the initial load whenever the numeric collection id transitions
+  // from undefined → a real value (i.e. the v2 Collection fetch resolves).
+  // We watch the getter so callers passing a Ref or plain getter both work.
+  watch(
+    () => resolvedNumericCid(),
+    async (newCid, oldCid) => {
+      if (newCid === undefined || newCid === oldCid) return;
+      loading.value = true;
+      await fetchTreeviewItems(newCid);
+      const d = did();
+      if (d !== undefined) {
+        await loadAndExpandUpToItem(d);
+      }
+      loading.value = false;
+    },
+  );
+
   watch(routeParams, async (_, oldParams) => {
+    const cid = resolvedNumericCid();
+    if (cid === undefined) return;
     loading.value = true;
     if (
       routeParams.value.collectionId &&
       oldParams.collectionId !== routeParams.value.collectionId
     ) {
-      await fetchTreeviewItems(cid());
+      await fetchTreeviewItems(cid);
     }
     const d = did();
     if (d !== undefined) {
@@ -134,8 +200,10 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   });
 
   async function refreshItems() {
+    const cid = resolvedNumericCid();
+    if (cid === undefined) return;
     loading.value = true;
-    await fetchTreeviewItems(cid());
+    await fetchTreeviewItems(cid);
     for (const openedItem of openedTreeviewItems.value) {
       await loadAndExpandUpToItem(openedItem, false);
       await loadChildrenOfItem(openedItem);
@@ -192,7 +260,9 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     }
     if (item.children?.length) return;
 
-    const children = await fetchChildrenOfItem(cid(), item.id, item);
+    const cid = resolvedNumericCid();
+    if (cid === undefined) return;
+    const children = await fetchChildrenOfItem(cid, item.id, item);
 
     if (!children) return;
 
@@ -248,6 +318,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     treeviewItems,
     openedTreeviewItems,
     loading,
+    loadError,
     loadChildrenOfItem,
     refreshItems,
     collapseItem,

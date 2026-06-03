@@ -10,18 +10,21 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
+// CollectionContainersApi is a /v2/ client, so the composable resolves it via
+// the v2 helper (basePath = host without /shepard/api). The mock therefore
+// targets useV2ShepardApi — mocking useShepardApi would never be hit.
 // vi.mock is hoisted by Vitest above the imports at runtime.
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: vi.fn(),
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
 }));
 
 const mockListReferencedContainers = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
+  (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
     ref({ listReferencedContainers: mockListReferencedContainers }),
   );
 });

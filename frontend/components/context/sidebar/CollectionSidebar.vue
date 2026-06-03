@@ -13,14 +13,25 @@ const {
   isAllowedToEditPermissions,
   isOwner,
 } = useFetchCollectionOfRouteParams(routeParams);
+// BUG-COLL-APPID-ROUTE-006 (2026-06-03): resolve the NUMERIC collection id
+// from the loaded v2 Collection's `.id` and pass it to `useTreeviewItems`,
+// which uses it for the v1 list call (`getAllDataObjects` requires a
+// numeric path param; the UUID v7 route param would 400 at JAX-RS binding).
+// Until the v2 Collection fetch resolves, the treeview shows its loading
+// spinner; if it never resolves the treeview shows `loadError` instead of
+// spinning forever.
+const collectionNumericId = computed<number | undefined>(() =>
+  collection.value?.id ?? undefined,
+);
 const {
   treeviewItems,
   openedTreeviewItems,
   loading,
+  loadError,
   loadChildrenOfItem,
   refreshItems,
   collapseItem,
-} = useTreeviewItems(routeParams);
+} = useTreeviewItems(routeParams, collectionNumericId);
 const { advancedMode: _advancedMode } = useAdvancedMode();
 
 const collectionAppId = computed<string | undefined>(() => {
@@ -338,10 +349,23 @@ const { mobile } = useDisplay();
           No loaded items match "{{ filterText.trim() }}". Expand more tree branches and search again.
         </div>
 
-        <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
+        <CenteredLoadingSpinner v-if="(loading || !treeviewItems) && !loadError" />
+
+        <!-- BUG-COLL-APPID-ROUTE-006: explicit error state — replaces the
+             pre-006 "permanent loading spinner when the v1 list 400'd"
+             failure mode. Shows on the LUMEN regression case the operator
+             surfaced 2026-06-03. -->
+        <div
+          v-if="loadError"
+          class="px-6 py-4 text-medium-emphasis text-body-2"
+          style="max-width: 240px"
+        >
+          <v-icon size="small" class="mr-1" color="warning">mdi-alert-outline</v-icon>
+          Couldn't load the DataObject tree. Reload the page to retry.
+        </div>
 
         <StartHereIntro
-          v-if="treeviewItems && treeviewItems.length === 0"
+          v-if="!loadError && treeviewItems && treeviewItems.length === 0"
           class="mb-8"
         />
       </div>

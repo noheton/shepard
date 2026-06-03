@@ -36,8 +36,22 @@ Object.assign(globalThis, {
   unref,
 });
 
+// Nuxt `useState` — SSR-friendly shared state keyed by a string. Under plain
+// Vitest there is no Nuxt payload, so back it with a module-level Map of refs
+// so repeated `useState("key")` calls in the same run share one ref (matching
+// Nuxt's cross-call identity contract). Required by composables that pull in
+// `useStaleRoleSession` transitively (e.g. via `useV2ShepardApi`).
+const useStateStore = new Map<string, ReturnType<typeof ref>>();
+function useState<T>(key: string, init?: () => T) {
+  if (!useStateStore.has(key)) {
+    useStateStore.set(key, ref(init ? init() : undefined));
+  }
+  return useStateStore.get(key) as ReturnType<typeof ref>;
+}
+
 // Nuxt built-ins — default stubs, overridden per test as needed
 Object.assign(globalThis, {
+  useState,
   handleError: vi.fn(),
   useAuth: () => ({
     refresh: vi.fn().mockResolvedValue(undefined),
