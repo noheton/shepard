@@ -230,7 +230,14 @@ class Client:
         return resp.json()
 
     def create_user_group(self, name: str):
-        body = {"name": name, "description": f"MFFD {name} (seeded by seed-mffd-collections.py)"}
+        # `usernames` is required by the v1 CreateUserGroup validator (must not
+        # be null). Seed the group empty — operators add members later via the
+        # admin UI / API. The creating user is implicitly the owner.
+        body = {
+            "name": name,
+            "description": f"MFFD {name} (seeded by seed-mffd-collections.py)",
+            "usernames": [],
+        }
         resp = self._request("POST", "/shepard/api/userGroups", data=json.dumps(body))
         if resp is None:
             return None
