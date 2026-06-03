@@ -34,6 +34,11 @@ public class CollectionTest extends BaseTestCase {
       // that doesn't define entity equality.
       // sceneGraphAppId is a COLL-SCENE-1 fork addition (GAP-6, 2026-06-02);
       // a presentation-layer link that doesn't define entity equality.
+      // importedFrom is import-provenance metadata (where the Collection was
+      // imported from); it records origin, not identity, so like heroImageUrl
+      // it is excluded from equals.
+      // promptLogMode is a per-Collection AI interaction mode setting; it is
+      // configuration metadata that doesn't define entity identity.
       .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId", "importedFrom", "promptLogMode")
       .verify();
   }

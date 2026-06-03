@@ -19,8 +19,8 @@ import {
   isClosedCollection,
   isCleanupCollection,
 } from "~/composables/context/useFetchRecentCollections";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { Collection } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 // vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useShepardApi", () => ({

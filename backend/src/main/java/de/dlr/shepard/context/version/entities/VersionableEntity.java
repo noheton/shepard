@@ -37,7 +37,12 @@ public class VersionableEntity extends BasicEntity {
    * Lombok's {@code @Data}) so that callers in sibling packages (e.g.
    * {@code GenericDAO}) can resolve the methods even when annotation-processing
    * order causes Lombok-generated accessors to be invisible during compilation.
+   *
+   * <p>Server-managed metadata — it tracks write-side version count, not entity
+   * identity, so it is excluded from equals/hashCode (two snapshots of the same
+   * entity at different revisions are still the same entity for equality).
    */
+  @EqualsAndHashCode.Exclude
   private long revision = 1L;
 
   public long getRevision() {
