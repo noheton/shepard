@@ -136,19 +136,19 @@ class ShapesRenderRestTest {
 
   @Test
   void returns400OnNullBody() {
-    assertThat(rest.render(null).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,null).getStatus()).isEqualTo(400);
   }
 
   @Test
   void returns400OnMissingTemplateAppId() {
     var body = new ShapesRenderRequestIO(null, "some-focus-id", null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(400);
   }
 
   @Test
   void returns400OnMissingFocusShepardId() {
     var body = new ShapesRenderRequestIO("some-tmpl-id", null, null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(400);
   }
 
   // ─── 404 path ────────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ class ShapesRenderRestTest {
   void returns404WhenTemplateNotFound() {
     when(templateDAO.findByAppId("unknown-id")).thenReturn(Optional.empty());
     var body = new ShapesRenderRequestIO("unknown-id", "focus-id", null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(404);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(404);
   }
 
   // ─── 422 path ────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("tmpl-1", "focus-id", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(422);
   }
@@ -192,7 +192,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-1")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-1", "do-focus-1", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -220,7 +220,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-2")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-2", "do-focus-2", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -235,7 +235,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-3")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-3", "do-focus-3", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -274,7 +274,7 @@ class ShapesRenderRestTest {
     wireRegistry(captor);
 
     var body = new ShapesRenderRequestIO("view-tmpl-spi-1", "do-focus-spi-1", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -318,7 +318,7 @@ class ShapesRenderRestTest {
     );
     wireRegistry(stubRenderer(iri, out));
 
-    Response r = rest.render(new ShapesRenderRequestIO("vt-um-1", "fo-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("vt-um-1", "fo-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -341,7 +341,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("Orphan recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("orphan-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("orphan-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("orphan-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -358,7 +358,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("No-iri recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("noiri-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("noiri-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("noiri-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings().get(0).status()).isEqualTo("DECLARED");
@@ -370,7 +370,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("Blank-iri recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("blank-iri-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("blank-iri-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("blank-iri-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.renderer()).isEqualTo("tresjs");
@@ -389,7 +389,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("No-reg recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("noreg-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("noreg-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("noreg-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -412,7 +412,7 @@ class ShapesRenderRestTest {
       )
     );
 
-    Response r = rest.render(new ShapesRenderRequestIO("throwy-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("throwy-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
     @SuppressWarnings("unchecked")
     Map<String, Object> body = (Map<String, Object>) r.getEntity();
@@ -429,7 +429,7 @@ class ShapesRenderRestTest {
 
     wireRegistry(brokenRenderer(iri));
 
-    Response r = rest.render(new ShapesRenderRequestIO("broken-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("broken-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
     @SuppressWarnings("unchecked")
     Map<String, Object> body = (Map<String, Object>) r.getEntity();
@@ -446,7 +446,7 @@ class ShapesRenderRestTest {
 
     wireRegistry(stubRenderer(iri, null));
 
-    Response r = rest.render(new ShapesRenderRequestIO("null-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("null-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
     @SuppressWarnings("unchecked")
     Map<String, Object> body = (Map<String, Object>) r.getEntity();
@@ -461,7 +461,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("nc-1")).thenReturn(Optional.of(tmpl));
     wireRegistry(throwingRenderer(iri, new RenderException(null, "boom")));
 
-    Response r = rest.render(new ShapesRenderRequestIO("nc-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("nc-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
     @SuppressWarnings("unchecked")
     Map<String, Object> body = (Map<String, Object>) r.getEntity();

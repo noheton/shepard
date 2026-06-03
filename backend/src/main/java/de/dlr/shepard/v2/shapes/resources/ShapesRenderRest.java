@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.spi.view.RenderException;
 import de.dlr.shepard.spi.view.RenderRequest;
 import de.dlr.shepard.spi.view.RenderResponse;
+import de.dlr.shepard.spi.view.RenderedMedia;
 import de.dlr.shepard.spi.view.ViewRecipeRenderer;
 import de.dlr.shepard.spi.view.ViewRecipeRendererRegistry;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
@@ -22,6 +23,8 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -125,6 +128,10 @@ public class ShapesRenderRest {
   @POST
   @Path("/render")
   @RolesAllowed("authenticated")
+  // V2CONV-A1 — wildcard so a non-JSON Accept (image/png, model/gltf+json) reaches
+  // the method instead of 406-ing at JAX-RS negotiation; the concrete content-type
+  // is set on the Response. JSON stays the default view-model.
+  @Produces({ MediaType.APPLICATION_JSON, MediaType.WILDCARD })
   @Operation(
     summary = "Project a VIEW_RECIPE template's channel bindings onto a focus DataObject.",
     description = "Stateless, read-only. Returns the template's channel binding declarations. " +
@@ -144,6 +151,7 @@ public class ShapesRenderRest {
     description = "Template found but templateKind != VIEW_RECIPE. Use GET /v2/templates?kind=view to discover VIEW_RECIPE templates."
   )
   public Response render(
+    @Context HttpHeaders headers,
     @RequestBody(
       required = true,
       description = "VIEW_RECIPE template appId + focus DataObject appId.",
@@ -192,6 +200,14 @@ public class ShapesRenderRest {
     if (shapeIri != null && rendererRegistry != null) {
       Optional<ViewRecipeRenderer> match = rendererRegistry.resolve(shapeIri);
       if (match.isPresent()) {
+        // V2CONV-A1 — content negotiation: if the caller's Accept asks for a
+        // non-JSON media type this renderer produces (e.g. image/png heatmap,
+        // model/gltf+json), return the rendered bytes. Otherwise fall through
+        // to the JSON view-model — the default, byte-compatible with today.
+        Response media = negotiateMedia(match.get(), headers, body, template, shapeIri);
+        if (media != null) {
+          return media;
+        }
         return dispatchToRenderer(match.get(), body, template, shapeIri);
       }
       Log.debugf(
@@ -247,6 +263,61 @@ public class ShapesRenderRest {
    *       surfaced as HTTP 500.</li>
    * </ul>
    */
+  /**
+   * V2CONV-A1 — content negotiation for the renderer SPI. Returns a media
+   * {@link Response} when the caller's {@code Accept} asks for a non-JSON media
+   * type the renderer declares in {@link ViewRecipeRenderer#producibleMedia()}
+   * and actually produces; otherwise null → fall back to the JSON view-model
+   * (the default, byte-compatible with the pre-A1 behaviour).
+   */
+  private Response negotiateMedia(
+    ViewRecipeRenderer renderer,
+    HttpHeaders headers,
+    ShapesRenderRequestIO body,
+    ShepardTemplate template,
+    String shapeIri
+  ) {
+    java.util.Set<String> producible = renderer.producibleMedia();
+    if (producible == null || producible.isEmpty()) {
+      return null;
+    }
+    List<MediaType> accepted = headers == null ? List.of() : headers.getAcceptableMediaTypes();
+    for (MediaType mt : accepted) {
+      if (mt.isWildcardType() || MediaType.APPLICATION_JSON_TYPE.isCompatible(mt)) {
+        return null; // caller accepts JSON / */* — use the default view-model
+      }
+      String concrete = mt.getType() + "/" + mt.getSubtype();
+      if (producible.contains(concrete)) {
+        RenderRequest req = new RenderRequest(
+          body.templateAppId(),
+          body.focusShepardId(),
+          shapeIri,
+          template.getBody()
+        );
+        try {
+          Optional<RenderedMedia> rendered = renderer.renderMedia(req, concrete);
+          if (rendered.isPresent() && rendered.get().bytes() != null) {
+            return Response.ok(rendered.get().bytes(), rendered.get().mediaType()).build();
+          }
+        } catch (RuntimeException ex) {
+          Log.warnf(
+            ex,
+            "V2CONV-A1: renderer '%s' threw producing %s for shape <%s> — surfacing 422",
+            renderer.name(),
+            concrete,
+            shapeIri
+          );
+          return Response
+            .status(422)
+            .entity(Map.of("error", "media render failed for " + concrete, "renderer", renderer.name()))
+            .build();
+        }
+        return null; // renderer declined this media — JSON fallback
+      }
+    }
+    return null;
+  }
+
   private Response dispatchToRenderer(
     ViewRecipeRenderer renderer,
     ShapesRenderRequestIO body,
