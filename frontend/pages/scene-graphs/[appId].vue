@@ -264,8 +264,16 @@ const descendantCountOfPending = computed<number>(() => {
       </v-btn>
     </v-card>
 
-    <!-- Normal state: tree + inspector + joint list -->
-    <div v-else-if="scene" class="scene-content d-flex ga-4">
+    <!-- Normal state: 3D view + tree + inspector + joint list -->
+    <template v-else-if="scene">
+    <!-- 3D viewport — renders the source URDF (SCENEGRAPH-CANVAS-1). -->
+    <SceneGraphCanvasPanel
+      :scene-app-id="sceneAppId"
+      :source-file-app-id="scene.sourceFileAppId"
+      :scene-name="scene.name"
+    />
+
+    <div class="scene-content d-flex ga-4">
       <v-card variant="outlined" class="tree-column pa-3">
         <div class="text-h6 mb-2">
           Frames ({{ frames.length }})
@@ -309,6 +317,7 @@ const descendantCountOfPending = computed<number>(() => {
         </div>
       </div>
     </div>
+    </template>
 
     <SceneGraphJointList
       v-if="scene && frames.length > 0"
