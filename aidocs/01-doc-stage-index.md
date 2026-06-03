@@ -35,12 +35,12 @@ section and the `upgrade-overlay` section.
 | `idea` | 13 |
 | `feature-defined` | 124 |
 | `audited-by-personas` | 74 |
-| `feedback-implemented` | 2 |
+| `feedback-implemented` | 3 |
 | `tests-implemented` | 8 |
 | `deployed` | 109 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **470** |
+| **total docs** | **471** |
 | **UNTAGGED** | **0** |
 
 ## fragment (66)
@@ -370,10 +370,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-28 |
 
-## feedback-implemented (2)
+## feedback-implemented (3)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/mffd-urdf-scene-building.md`](agent-findings/mffd-urdf-scene-building.md) | MFFD URDF scene-building — audit + fixes | 2026-06-03 | — |
 | [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
@@ -383,7 +384,7 @@ section and the `upgrade-overlay` section.
 |---|---|---|---|
 | [`aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md`](agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md) | BUG-LJ-V1-COLL-ID — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/template-inheritance.md`](agent-findings/template-inheritance.md) | Template inheritance (TPL-INHERIT) — findings | 2026-06-03 | — |
+| [`aidocs/agent-findings/template-inheritance.md`](agent-findings/template-inheritance.md) | Template inheritance (TPL-INHERIT) — findings | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/121-project-and-subcollections.md`](integrations/121-project-and-subcollections.md) | 121 — Project entity + sub-Collection registry | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/122-template-icons.md`](integrations/122-template-icons.md) | 122 — ShepardTemplate icons | 2026-06-02 | 2026-06-02 |
