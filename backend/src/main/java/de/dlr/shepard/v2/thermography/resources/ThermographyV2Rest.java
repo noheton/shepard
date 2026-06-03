@@ -3,11 +3,16 @@ package de.dlr.shepard.v2.thermography.resources;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
+import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.v2.thermography.io.AnalyzeRequestIO;
 import de.dlr.shepard.v2.thermography.io.AnalyzeResultIO;
+import de.dlr.shepard.v2.thermography.io.OtvisFramesIO;
 import de.dlr.shepard.v2.thermography.io.PlateHeatmapIO;
+import de.dlr.shepard.v2.thermography.services.OtvisFrameRenderService;
 import de.dlr.shepard.v2.thermography.services.ThermographyAnalysisService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -17,6 +22,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -62,6 +68,12 @@ public class ThermographyV2Rest {
   @Inject
   PermissionsService permissionsService;
 
+  @Inject
+  SingletonFileReferenceService singletonFileReferenceService;
+
+  @Inject
+  OtvisFrameRenderService otvisFrameRenderService;
+
   // ── helpers ────────────────────────────────────────────────────────────
 
   private Response checkAccess(String imageBundleAppId, AccessType type, SecurityContext sc) {
@@ -72,6 +84,26 @@ public class ThermographyV2Rest {
     var parent = bundle.getDataObject();
     if (parent == null) return Response.status(Response.Status.NOT_FOUND).build();
     if (!permissionsService.isAccessAllowedForDataObjectAppId(parent.getAppId(), type, caller)) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+    return null;
+  }
+
+  /**
+   * OTVIS-VIEWER — Read-gate a singleton {@link FileReference} (the
+   * {@code .OTvis} archive) against its parent DataObject. Mirrors
+   * {@link #checkAccess} but resolves through the singleton reference path
+   * (FR1b) rather than the bundle path.
+   */
+  private Response checkFileReferenceAccess(String fileReferenceAppId, SecurityContext sc) {
+    String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    FileReference ref = singletonFileReferenceService.getByAppId(fileReferenceAppId);
+    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    DataObject parent = ref.getDataObject();
+    if (parent == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(
+        parent.getAppId(), AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;
@@ -156,5 +188,74 @@ public class ThermographyV2Rest {
         .build();
     }
     return Response.ok(heatmap).build();
+  }
+
+  // ── OTVIS-VIEWER — decoded Edevis OTvis amplitude/phase frames ───────────
+
+  @GET
+  @Path("/otvis/{fileReferenceAppId}/frames")
+  @Operation(
+    summary = "List decoded frames in an Edevis .OTvis archive.",
+    description =
+      "Resolves the singleton FileReference's bytes (the .OTvis tar) and "
+        + "decodes them via the pure-Java OTvisFrameExtractor (tier-2). "
+        + "Returns the frame index — per-frame kind (lock-in amplitude/phase "
+        + "vs raw temperature), available channels, and the archive "
+        + "dimensions — without shipping pixel data. The viewer fetches each "
+        + "frame's heatmap PNG separately. 404 when the appId is not a "
+        + "singleton FileReference; the response carries a `partialReason` "
+        + "string when the extractor tolerated a malformed/unknown frame."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Frame index for the archive.",
+    content = @Content(schema = @Schema(implementation = OtvisFramesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
+  @APIResponse(responseCode = "422", description = "FileReference is not a decodable OTvis archive.")
+  public Response otvisFrames(@PathParam("fileReferenceAppId") String fileReferenceAppId,
+                              @Context SecurityContext sc) {
+    Response gate = checkFileReferenceAccess(fileReferenceAppId, sc);
+    if (gate != null) return gate;
+    try {
+      return Response.ok(otvisFrameRenderService.listFrames(fileReferenceAppId)).build();
+    } catch (InvalidBodyException ex) {
+      return Response.status(422).entity(ex.getMessage()).build();
+    }
+  }
+
+  @GET
+  @Path("/otvis/{fileReferenceAppId}/frames/{frameIndex}")
+  @Produces("image/png")
+  @Operation(
+    summary = "Render one OTvis frame/channel to a colour-mapped heatmap PNG.",
+    description =
+      "Decodes the .OTvis archive, picks frame `frameIndex`, colour-maps the "
+        + "requested `channel` (amplitude|phase for lock-in frames, "
+        + "temperature for raw frames) and returns a PNG. Phase is the "
+        + "canonical NDT defect channel (least sensitive to emissivity / "
+        + "uneven heating) and is the default for lock-in frames. The colour "
+        + "map lives server-side (inferno for magnitude, a cyclic ramp for "
+        + "phase) so the viewer just blits the image."
+  )
+  @APIResponse(responseCode = "200", description = "PNG heatmap of the frame/channel.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
+  @APIResponse(responseCode = "422", description = "Bad archive, frame index, or channel.")
+  public Response otvisFramePng(@PathParam("fileReferenceAppId") String fileReferenceAppId,
+                                @PathParam("frameIndex") int frameIndex,
+                                @QueryParam("channel") String channel,
+                                @Context SecurityContext sc) {
+    Response gate = checkFileReferenceAccess(fileReferenceAppId, sc);
+    if (gate != null) return gate;
+    try {
+      byte[] png = otvisFrameRenderService.renderPng(fileReferenceAppId, frameIndex, channel);
+      return Response.ok(png).type("image/png").build();
+    } catch (InvalidBodyException ex) {
+      return Response.status(422).entity(ex.getMessage()).build();
+    }
   }
 }

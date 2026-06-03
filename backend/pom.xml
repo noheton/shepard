@@ -451,6 +451,20 @@
       <artifactId>shepard-plugin-fileformat-svdx</artifactId>
       <version>0.1.0-SNAPSHOT</version>
     </dependency>
+    <!-- OTVIS-VIEWER — pure-Java Edevis OTvis tier-2 frame extractor
+         (OTvisFrameExtractor + value objects). No Quarkus/CDI surface, so
+         like the svdx parser it does NOT contribute to the Jandex hang
+         that blocks OTVIS-WIRE-AGGREGATOR-1. The v2 thermography REST
+         invokes OTvisFrameExtractor.extract(InputStream) directly to
+         decode amplitude/phase frames for the viewer; the plugin's
+         FileParserPlugin SPI shim stays unused until the aggregator
+         wire-up row clears. commons-compress (tar reader) is the only
+         transitive — already on the classpath via other plugins. -->
+    <dependency>
+      <groupId>de.dlr.shepard.plugins</groupId>
+      <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>${finalName}</finalName>

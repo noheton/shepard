@@ -24,6 +24,12 @@ import { useFetchSingletonFileReferences } from "~/composables/context/useFetchS
 // imagery. Pane is self-contained (fetches its own cached plate-heatmap +
 // quality summary); we only need to discover the bundle's appId here.
 import DataObjectThermographyPane from "~/components/context/thermography/DataObjectThermographyPane.vue";
+// OTVIS-VIEWER — decoded Edevis OTvis amplitude/phase frame viewer. Mounts
+// when the DO carries a singleton FileReference whose filename ends `.OTvis`.
+// In-context-first entry per the tools rule: the appId is already in hand on
+// this page, so the viewer pulls bytes from the reference (never a path/URL).
+import DataObjectOtvisViewer from "~/components/context/thermography/DataObjectOtvisViewer.vue";
+import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
 // MFFD-MULTIPLAYER-1 — synchronised multi-payload player. Mounts when the
 // DO carries ≥ 2 distinct payload kinds; renders a shared scrubber + a
 // per-kind tile grid all bound to one `useSyncedTimeCursor` instance.
@@ -99,6 +105,10 @@ const refreshFr1bRefs = ref<(() => void | Promise<void>) | null>(null);
 // can react to it.
 const videoReferenceCount = ref<number>(0);
 
+// OTVIS-VIEWER — raw singleton FileReferences, surfaced outside the watcher's
+// closure so the OTvis-viewer gate (otvisReferences) can filter on filename.
+const singletonFileRefs = ref<SingletonFileReferenceIO[]>([]);
+
 watch(
   () => dataObject.value?.appId,
   (appId) => {
@@ -122,9 +132,22 @@ watch(
       ];
       // MFFD-MULTIPLAYER-1: keep the video count in step with the composable.
       videoReferenceCount.value = videoComposable.references.value.length;
+      // OTVIS-VIEWER: surface the raw singletons for the .OTvis filter below.
+      singletonFileRefs.value = fr1bComposable.references.value;
     });
   },
   { immediate: true },
+);
+
+/**
+ * OTVIS-VIEWER — singleton FileReferences whose attached file is an `.OTvis`
+ * archive. Each gets its own viewer panel (multiple NDT scans per process
+ * step are common). Cheap string-suffix check on already-fetched refs.
+ */
+const otvisReferences = computed<SingletonFileReferenceIO[]>(() =>
+  singletonFileRefs.value.filter(r =>
+    (r.file?.filename ?? "").toLowerCase().endsWith(".otvis"),
+  ),
 );
 
 function refreshExtraReferences() {
@@ -899,6 +922,21 @@ async function saveEmbargoEdit() {
                     :data-object-app-id="dataObject.appId"
                     :image-bundle-app-id="thermographyBundleAppId"
                     :can-edit="!!isAllowedToEditCollection"
+                  />
+                </ExpansionPanelItem>
+                <!-- OTVIS-VIEWER: decoded Edevis OTvis amplitude/phase frame
+                     viewer. One panel per .OTvis singleton FileReference on
+                     this DO. In-context-first entry — the appId is already in
+                     hand; the viewer pulls bytes from the reference and shows
+                     server-rendered heatmap PNGs with a frame scrubber. -->
+                <ExpansionPanelItem
+                  v-for="otvisRef in otvisReferences"
+                  :key="`otvis-${otvisRef.appId}`"
+                  title="Thermography Frames (OTvis)"
+                >
+                  <DataObjectOtvisViewer
+                    :file-reference-app-id="otvisRef.appId"
+                    :reference-name="otvisRef.name"
                   />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.

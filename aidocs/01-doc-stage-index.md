@@ -36,11 +36,11 @@ section and the `upgrade-overlay` section.
 | `feature-defined` | 124 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 3 |
-| `tests-implemented` | 8 |
+| `tests-implemented` | 9 |
 | `deployed` | 109 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **471** |
+| **total docs** | **472** |
 | **UNTAGGED** | **0** |
 
 ## fragment (66)
@@ -374,15 +374,16 @@ section and the `upgrade-overlay` section.
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
-| [`aidocs/agent-findings/mffd-urdf-scene-building.md`](agent-findings/mffd-urdf-scene-building.md) | MFFD URDF scene-building — audit + fixes | 2026-06-03 | — |
+| [`aidocs/agent-findings/mffd-urdf-scene-building.md`](agent-findings/mffd-urdf-scene-building.md) | MFFD URDF scene-building — audit + fixes | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
-## tests-implemented (8)
+## tests-implemented (9)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md`](agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md) | BUG-LJ-V1-COLL-ID — fix report | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/otvis-viewer.md`](agent-findings/otvis-viewer.md) | OTvis viewer — findings (OTVIS-VIEWER) | 2026-06-03 | — |
 | [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/template-inheritance.md`](agent-findings/template-inheritance.md) | Template inheritance (TPL-INHERIT) — findings | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
