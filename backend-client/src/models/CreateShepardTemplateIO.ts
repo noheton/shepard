@@ -19,4 +19,10 @@ export interface CreateShepardTemplateIO {
    * per-kind default). Design: aidocs/integrations/122.
    */
   iconKey?: string | null;
+  /**
+   * appId of the parent template to extend (single-parent inheritance). Empty
+   * string clears it (template becomes a root). Must share the templateKind.
+   * Design: aidocs/integrations/123.
+   */
+  parentTemplateAppId?: string | null;
 }

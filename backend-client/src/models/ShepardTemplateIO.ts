@@ -27,4 +27,9 @@ export interface ShepardTemplateIO {
    * the per-kind default. Design: aidocs/integrations/122.
    */
   iconKey?: string | null;
+  /**
+   * appId of the parent template this template extends (single-parent
+   * inheritance). Null means a root template. Design: aidocs/integrations/123.
+   */
+  parentTemplateAppId?: string | null;
 }

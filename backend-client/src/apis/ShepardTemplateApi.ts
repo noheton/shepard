@@ -16,6 +16,8 @@ export interface GetTemplateTagsRequest {
 
 export interface GetTemplateRequest {
   appId: string;
+  /** When true, return the inheritance-flattened body + iconKey. Design: aidocs/integrations/123. */
+  flatten?: boolean;
 }
 
 export interface CreateTemplateRequest {
@@ -92,7 +94,7 @@ export class ShepardTemplateApi extends runtime.BaseAPI {
       path: `/v2/templates/{appId}`.replace(`{${'appId'}}`, encodeURIComponent(String(requestParameters['appId']))),
       method: 'GET',
       headers: headerParameters,
-      query: {},
+      query: requestParameters['flatten'] != null ? { flatten: requestParameters['flatten'] } : {},
     }, initOverrides);
 
     return new runtime.JSONApiResponse<ShepardTemplateIO>(response);
