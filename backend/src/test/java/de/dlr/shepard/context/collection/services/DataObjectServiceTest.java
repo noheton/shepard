@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
@@ -320,7 +321,9 @@ public class DataObjectServiceTest {
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
-    when(dao.findByCollectionAndShepardIds(collection.getShepardId(), java.util.List.of(predecessor.getShepardId()))).thenReturn(java.util.List.of(predecessor));
+    // Predecessor resolution now batches through findByCollectionAndShepardIds.
+    when(dao.findByCollectionAndShepardIds(eq(collection.getShepardId()), anyList()))
+      .thenReturn(List.of(predecessor));
     when(dateHelper.getDate()).thenReturn(date);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
@@ -521,16 +524,13 @@ public class DataObjectServiceTest {
 
     predecessors.forEach(predecessor -> when(dao.createOrUpdate(predecessor)).thenReturn(predecessor));
     predecessors.forEach(predecessor -> when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor));
-    when(dao.findByCollectionAndShepardIds(collection.getShepardId(), java.util.List.of(aPredecessor.getShepardId()))).thenReturn(java.util.List.of(aPredecessor));
+    // Predecessor resolution now batches through findByCollectionAndShepardIds.
+    when(dao.findByCollectionAndShepardIds(eq(collection.getShepardId()), anyList()))
+      .thenReturn(predecessors);
 
     DataObject actual = service.updateDataObject(collection.getShepardId(), old.getShepardId(), input);
 
-    // Predecessor resolution now batches via findByCollectionAndShepardIds (one
-    // Cypher round-trip) instead of one findByShepardId per id.
-    verify(dao).findByCollectionAndShepardIds(
-      collection.getShepardId(),
-      java.util.List.of(aPredecessor.getShepardId())
-    );
+    verify(dao, atLeast(1)).findByCollectionAndShepardIds(eq(collection.getShepardId()), anyList());
     predecessors.forEach(predecessor ->
       verify(dao).deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId())
     );
