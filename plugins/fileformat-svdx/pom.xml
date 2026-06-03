@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shepard-plugin-fileformat-svdx — Beckhoff TwinCAT Scope (.svdx) tier-1 manifest parser
+
+  STANDALONE MODULE. This pom is deliberately NOT wired into the main
+  aggregator build — the Quarkus/Jandex CompositeIndex hang documented
+  in the fileformat-robotics pom still applies. See MFFD-PARSER-01 for
+  the wire-up follow-up row.
+
+  Build:
+    cd plugins/fileformat-svdx && mvn verify
+
+  Scope (MFFD-PLUGIN-SVDX-1 + MFFD-PLUGIN-SVDX-SEMANTIC-1):
+    - Parse the channel-name manifest from a .svdx header (XML prefix
+      that Beckhoff TwinCAT Scope embeds before the binary payload).
+    - Emit urn:shepard:svdx:* annotations on the FileReference:
+      channelName, symbolName, sampleRate, unit, processType, seamId.
+    - Emit urn:shepard:phys:* physical-quantity annotations derived
+      from Beckhoff channel-name conventions (MFFD-PLUGIN-SVDX-SEMANTIC-1):
+      temperature, position, torque, force, ultrasonic-power, pressure,
+      velocity.
+    - NO TimescaleDB ingest (tier-2, gated on MFFD-PARSER-01 +
+      MFFD-NDRIVE-01 being resolved).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — fileformat svdx (Beckhoff TwinCAT Scope tier-1)</name>
+  <description>
+    Tier-1 manifest parser for Beckhoff TwinCAT Scope files (.svdx) from
+    the MFFD stringer continuous resistance welding (CRW) and spot-welding
+    cells at DLR ZLP Augsburg. Reads the XML channel-manifest prefix that
+    precedes the binary payload, emits urn:shepard:svdx:* annotations
+    (channelName, symbolName, sampleRate, unit, processType, seamId) and
+    urn:shepard:phys:* physical-quantity annotations derived from Beckhoff
+    naming conventions (temperature, position, torque, force,
+    ultrasonic-power, pressure, velocity). No TimescaleDB ingest (tier-2).
+  </description>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <compiler-plugin.version>3.13.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.2</surefire-plugin.version>
+    <jacoco-plugin.version>0.8.12</jacoco-plugin.version>
+
+    <junit.version>5.11.4</junit.version>
+    <assertj.version>3.27.3</assertj.version>
+  </properties>
+
+  <dependencies>
+    <!-- No runtime deps beyond the JDK: javax.xml.parsers handles the
+         XML manifest prefix; java.util handles the classifier. -->
+
+    <!-- test scope only -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-fileformat-svdx-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
