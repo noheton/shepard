@@ -40,13 +40,12 @@ import org.apache.jena.riot.RDFParser;
  * <p><b>Stateless / thread-safe.</b> No instance state; {@code @ApplicationScoped}
  * mirrors the validator so CDI can inject one hot instance.
  *
- * <p><b>sh:in literal-vs-IRI encoding (DSL decision, flagged for the operator).</b>
- * Each {@code in} entry that parses as an absolute IRI ({@code scheme:...}) is
- * emitted as an IRI; everything else is emitted as a literal. When the property
- * declares a {@code datatype}, literal entries are typed with it; otherwise they
- * default to {@code xsd:string}. This is the reasonable call for the common case
- * (status enums are strings, controlled-term lists are IRIs); a future explicit
- * {@code {value,type}} object form can override it if needed.
+ * <p><b>sh:in encoding — explicit per-member typing.</b> Each {@code in} entry is
+ * an {@link InMember} that states its own {@link InMember.Kind} (IRI or LITERAL)
+ * and, for literals, an optional datatype (default {@code xsd:string}). There is
+ * no IRI-vs-literal guessing: a status-enum literal that happens to look like a
+ * URN and a controlled-term IRI are encoded by what the author declared, never by
+ * shape of the string (operator decision 2026-06-03).
  */
 @ApplicationScoped
 public class ShaclShapeBuilder {
@@ -165,56 +164,36 @@ public class ShaclShapeBuilder {
       sb.append(" ;\n  sh:node <").append(p.node().strip()).append(">");
     }
     if (p.in() != null && !p.in().isEmpty()) {
-      sb.append(" ;\n  sh:in ").append(renderInList(p.in(), p.datatype()));
+      sb.append(" ;\n  sh:in ").append(renderInList(p.in()));
     }
     sb.append(" .\n");
   }
 
   /** Render {@code sh:in} as an RDF collection: {@code ( a b c )}. */
-  private String renderInList(List<String> values, String datatype) {
+  private String renderInList(List<InMember> members) {
     var sb = new StringBuilder("( ");
-    for (String v : values) {
-      sb.append(renderInMember(v, datatype)).append(" ");
+    for (InMember m : members) {
+      sb.append(renderInMember(m)).append(" ");
     }
     sb.append(")");
     return sb.toString();
   }
 
-  private String renderInMember(String value, String datatype) {
-    if (value == null) {
+  /**
+   * Render one {@code sh:in} member by its explicit {@link InMember.Kind} — no
+   * heuristic. IRI members become {@code <iri>}; literal members become a typed
+   * literal (the member's datatype, else {@code xsd:string}).
+   */
+  private String renderInMember(InMember m) {
+    if (m == null || m.value() == null) {
       // Null member → empty typed string; keeps the list well-formed.
       return "\"\"^^<" + XSD_STRING + ">";
     }
-    if (isAbsoluteIri(value)) {
-      return "<" + value + ">";
+    if (m.kind() == InMember.Kind.IRI) {
+      return "<" + m.value().strip() + ">";
     }
-    String dt = (datatype == null || datatype.isBlank()) ? XSD_STRING : datatype.strip();
-    return "\"" + escapeLiteral(value) + "\"^^<" + dt + ">";
-  }
-
-  /**
-   * An {@code sh:in} entry is treated as an IRI when it looks like an absolute
-   * IRI: a scheme ({@code [a-zA-Z][a-zA-Z0-9+.-]*}) followed by {@code :} and at
-   * least one more character, and containing no whitespace.
-   */
-  static boolean isAbsoluteIri(String s) {
-    if (s == null || s.isBlank() || s.chars().anyMatch(Character::isWhitespace)) {
-      return false;
-    }
-    int colon = s.indexOf(':');
-    if (colon < 1 || colon == s.length() - 1) {
-      return false;
-    }
-    if (!Character.isLetter(s.charAt(0))) {
-      return false;
-    }
-    for (int i = 0; i < colon; i++) {
-      char c = s.charAt(i);
-      if (!(Character.isLetterOrDigit(c) || c == '+' || c == '.' || c == '-')) {
-        return false;
-      }
-    }
-    return true;
+    String dt = (m.datatype() == null || m.datatype().isBlank()) ? XSD_STRING : m.datatype().strip();
+    return "\"" + escapeLiteral(m.value()) + "\"^^<" + dt + ">";
   }
 
   private static String escapeLiteral(String s) {

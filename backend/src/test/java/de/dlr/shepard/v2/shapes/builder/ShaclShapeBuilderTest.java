@@ -39,7 +39,7 @@ class ShaclShapeBuilderTest {
       false,
       List.of(
         new PropertyShapeSpec(
-          UPPER + "status", XSD_STRING, 1, 1, List.of("DRAFT", "READY"), null
+          UPPER + "status", XSD_STRING, 1, 1, List.of(InMember.literal("DRAFT"), InMember.literal("READY")), null
         ),
         new PropertyShapeSpec(
           UPPER + "owner", null, 1, null, null, SHEPARD + "PersonShape"
@@ -100,11 +100,31 @@ class ShaclShapeBuilderTest {
     var spec = new ShapeSpec(SHEPARD + "S", null, false,
       List.of(new PropertyShapeSpec(
         UPPER + "phase", null, null, null,
-        List.of("http://example.org/A", "http://example.org/B"), null)));
+        List.of(InMember.iri("http://example.org/A"), InMember.iri("http://example.org/B")), null)));
     Model m = builder.toModel(spec);
     Resource ps = findPropertyByPath(m, m.getResource(SHEPARD + "S"), UPPER + "phase");
     var members = readRdfListAsResources(ps.getPropertyResourceValue(SHACLM.in));
     assertThat(members).containsExactly("http://example.org/A", "http://example.org/B");
+  }
+
+  @Test
+  void inMemberKindIsExplicit_notHeuristic() {
+    // The SAME colon-bearing string is a literal or an IRI purely by declared kind.
+    var asLiteral = builder.toModel(new ShapeSpec(SHEPARD + "L", null, false,
+      List.of(new PropertyShapeSpec(UPPER + "p", null, null, null,
+        List.of(InMember.literal("urn:looks:like:iri")), null))));
+    var litMembers = readRdfList(
+      findPropertyByPath(asLiteral, asLiteral.getResource(SHEPARD + "L"), UPPER + "p")
+        .getPropertyResourceValue(SHACLM.in));
+    assertThat(litMembers).containsExactly("urn:looks:like:iri"); // a literal lexical form
+
+    var asIri = builder.toModel(new ShapeSpec(SHEPARD + "I", null, false,
+      List.of(new PropertyShapeSpec(UPPER + "p", null, null, null,
+        List.of(InMember.iri("urn:looks:like:iri")), null))));
+    var iriMembers = readRdfListAsResources(
+      findPropertyByPath(asIri, asIri.getResource(SHEPARD + "I"), UPPER + "p")
+        .getPropertyResourceValue(SHACLM.in));
+    assertThat(iriMembers).containsExactly("urn:looks:like:iri"); // an IRI resource
   }
 
   // ─── Determinism ─────────────────────────────────────────────────────
@@ -155,7 +175,7 @@ class ShaclShapeBuilderTest {
   void compiledShapeValidatesConformantData() {
     var spec = new ShapeSpec(SHEPARD + "PersonShape", SHEPARD + "Person", false,
       List.of(new PropertyShapeSpec(
-        UPPER + "status", XSD_STRING, 1, 1, List.of("DRAFT", "READY"), null)));
+        UPPER + "status", XSD_STRING, 1, 1, List.of(InMember.literal("DRAFT"), InMember.literal("READY")), null)));
     String shapeTurtle = builder.toTurtle(spec);
 
     String goodData =
@@ -173,7 +193,7 @@ class ShaclShapeBuilderTest {
   void compiledShapeRejectsViolatingData() {
     var spec = new ShapeSpec(SHEPARD + "PersonShape", SHEPARD + "Person", false,
       List.of(new PropertyShapeSpec(
-        UPPER + "status", XSD_STRING, 1, 1, List.of("DRAFT", "READY"), null)));
+        UPPER + "status", XSD_STRING, 1, 1, List.of(InMember.literal("DRAFT"), InMember.literal("READY")), null)));
     String shapeTurtle = builder.toTurtle(spec);
 
     // status "OBSOLETE" is not in the sh:in enumeration → violation.

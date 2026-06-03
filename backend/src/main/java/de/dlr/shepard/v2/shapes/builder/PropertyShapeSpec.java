@@ -18,11 +18,11 @@ import java.util.List;
  *                 {@code http://www.w3.org/2001/XMLSchema#string}; nullable
  * @param minCount {@code sh:minCount}; nullable
  * @param maxCount {@code sh:maxCount}; nullable
- * @param in       {@code sh:in} membership list — each entry is either a
- *                 literal (encoded as {@code xsd:string} unless {@code datatype}
- *                 is set, in which case the value is typed with it) or an IRI
- *                 (entries that parse as an absolute IRI are emitted as IRIs);
- *                 nullable / empty = no {@code sh:in}
+ * @param in       {@code sh:in} membership list — each entry is an explicit
+ *                 {@link InMember} stating its own {@link InMember.Kind} (IRI or
+ *                 LITERAL) and, for literals, its datatype; nullable / empty = no
+ *                 {@code sh:in}. (Explicit per-member typing — operator decision
+ *                 2026-06-03 — replaces the earlier IRI-vs-literal heuristic.)
  * @param node     a nested {@code sh:NodeShape} IRI ({@code sh:node}); nullable
  */
 public record PropertyShapeSpec(
@@ -30,7 +30,7 @@ public record PropertyShapeSpec(
   String datatype,
   Integer minCount,
   Integer maxCount,
-  List<String> in,
+  List<InMember> in,
   String node
 ) {
   /** Convenience factory for the common path-only constraint. */
