@@ -12,6 +12,7 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.shapes.validator.JenaShaclValidator;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -30,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -52,6 +54,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>409 when the template is retired.</li>
  *   <li>403 when the Collection has a non-empty {@code :ALLOWS_TEMPLATE} allow-list
  *       and the template is not in it (empty list = unrestricted).</li>
+ *   <li>Flatten the inherited body ({@code aidocs/integrations/123}).</li>
+ *   <li>If the flattened body carries a {@code shapeGraph} Turtle string, validate the
+ *       to-be-created DataObject against it. 422 on violation (V2CONV-B2, closes the
+ *       dormant seam at {@code aidocs/platform/191 §3}).</li>
  *   <li>Create the DataObject with attributes extracted from the template body
  *       ({@code dataobjects[0].attributes}).</li>
  *   <li>Record the {@code :CREATED_FROM_TEMPLATE} relationship.</li>
@@ -64,6 +70,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Tag(name = "Collection templates (v2)")
 public class TemplateInstantiationRest {
+
+  /**
+   * Prefix for the synthetic instance node used when building the data Turtle
+   * for SHACL validation. The URI is local to the validation call and never
+   * persisted; it just needs to be stable within one validation invocation.
+   */
+  static final String INSTANCE_URI = "urn:shepard:instance:candidate";
+
+  /**
+   * Predicate namespace for DataObject attributes in the data Turtle graph.
+   * Mirrors the {@code urn:shepard:attribute:} namespace used in the default
+   * organizing ontology so shapes authored against that namespace work here.
+   */
+  static final String ATTR_NS = "urn:shepard:attribute:";
 
   @Inject
   ShepardTemplateDAO templateDAO;
@@ -83,6 +103,9 @@ public class TemplateInstantiationRest {
   @Inject
   TemplateInheritanceResolver inheritanceResolver;
 
+  @Inject
+  JenaShaclValidator shaclValidator;
+
   @POST
   @Path("/{templateAppId}")
   @Operation(
@@ -90,7 +113,10 @@ public class TemplateInstantiationRest {
     description = "Parses the template body's `dataobjects[0].attributes` and applies them to the new " +
     "DataObject. Records a `:CREATED_FROM_TEMPLATE` relationship back to the template. " +
     "Requires Write permission on the Collection. The template must be non-retired; " +
-    "if the Collection has a non-empty allow-list the template must appear in it."
+    "if the Collection has a non-empty allow-list the template must appear in it. " +
+    "When the flattened template body includes a `shapeGraph` (Turtle) field, the " +
+    "candidate DataObject's attributes are validated against it before creation — " +
+    "422 is returned on violation (V2CONV-B2 / aidocs/platform/191 §3)."
   )
   @APIResponse(
     responseCode = "201",
@@ -101,6 +127,7 @@ public class TemplateInstantiationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection, or the template is not in the Collection's allow-list.")
   @APIResponse(responseCode = "404", description = "Collection or template not found.")
   @APIResponse(responseCode = "409", description = "Template is retired and cannot be used for new instantiations.")
+  @APIResponse(responseCode = "422", description = "The candidate DataObject violates the template's SHACL shape graph.")
   public Response instantiateDataObject(
     @PathParam("collectionAppId") String collectionAppId,
     @PathParam("templateAppId") String templateAppId,
@@ -159,25 +186,127 @@ public class TemplateInstantiationRest {
 
     // Flatten the inheritance chain (aidocs/integrations/123): a child template's
     // effective body is the parent's fields merged with the child's overrides.
+    // The merger in TemplateInheritanceResolver.deepMerge() concatenates parent + child
+    // shapeGraph strings (parent ahead), so the result is the full inherited shape.
     String effectiveBody = inheritanceResolver.flattenBody(template);
 
-    // Step 7: resolve DataObject name from: request body → (flattened) template body → fallback
-    String dataObjectName = resolveDataObjectName(body, template, effectiveBody);
-
-    // Step 8: extract attributes from the flattened template body dataobjects[0].attributes
+    // Step 7: extract attributes from the flattened template body dataobjects[0].attributes
     Map<String, String> attributes = extractAttributes(effectiveBody);
 
-    // Step 9: create the DataObject
+    // Step 8: SHACL shape validation — V2CONV-B2 / aidocs/platform/191 §3.
+    // If the flattened body carries a top-level "shapeGraph" Turtle string, validate the
+    // candidate DataObject's attributes against it.  A missing or blank shapeGraph means
+    // the template carries no constraints → pass through.  A parse error in either graph
+    // is logged as WARN and skipped (defensive: a malformed shape must not break creation).
+    String shapeGraph = extractShapeGraph(effectiveBody);
+    if (shapeGraph != null && !shapeGraph.isBlank()) {
+      String dataTurtle = buildDataTurtle(attributes);
+      JenaShaclValidator.Report report = shaclValidator.validate(dataTurtle, shapeGraph);
+
+      if (report.parseError() != null || report.engineError() != null) {
+        // Malformed shape or engine error: log and skip validation rather than blocking
+        Log.warnf(
+          "SHACL validation skipped for template %s due to error: %s%s",
+          templateAppId,
+          report.parseError() != null ? "parseError=" + report.parseError() : "",
+          report.engineError() != null ? "engineError=" + report.engineError() : ""
+        );
+      } else if (!report.conforms()) {
+        // Shape violation: return 422 with violation details
+        String violations = report.findings().stream()
+          .map(f -> {
+            StringBuilder sb = new StringBuilder();
+            if (f.resultPath() != null) sb.append("path=").append(f.resultPath()).append(" ");
+            if (f.value() != null) sb.append("value=").append(f.value()).append(" ");
+            if (f.message() != null && !f.message().isBlank()) sb.append(f.message());
+            return sb.toString().trim();
+          })
+          .collect(Collectors.joining("; "));
+        return Response.status(422)
+          .entity("DataObject violates the template's SHACL shape. Violations: " + violations)
+          .build();
+      }
+    }
+
+    // Step 9: resolve DataObject name from: request body → (flattened) template body → fallback
+    String dataObjectName = resolveDataObjectName(body, template, effectiveBody);
+
+    // Step 10: create the DataObject
     DataObjectIO doIO = new DataObjectIO();
     doIO.setName(dataObjectName);
     doIO.setAttributes(attributes.isEmpty() ? null : attributes);
 
     DataObject created = dataObjectService.createDataObject(ogmId.get(), doIO);
 
-    // Step 10: record :CREATED_FROM_TEMPLATE edge
+    // Step 11: record :CREATED_FROM_TEMPLATE edge
     templateDAO.recordCreatedFrom(created.getShepardId(), template);
 
     return Response.status(Response.Status.CREATED).entity(new DataObjectIO(created)).build();
+  }
+
+  /**
+   * Extract the top-level {@code shapeGraph} Turtle string from the flattened
+   * template body. The field is optional; returns {@code null} when absent.
+   *
+   * <p>The {@code shapeGraph} convention is described in
+   * {@link de.dlr.shepard.v2.template.io.ShepardTemplateIO} (SHAPES-V-PREFILL-3-EXTRACT-SHACL)
+   * and used by {@code TemplateInheritanceResolver.deepMerge()} to concatenate parent +
+   * child graphs (parent ahead) during inheritance flattening.
+   */
+  String extractShapeGraph(String body) {
+    if (body == null || body.isBlank()) return null;
+    try {
+      JsonNode root = objectMapper.readTree(body);
+      JsonNode sg = root.path("shapeGraph");
+      if (!sg.isMissingNode() && !sg.isNull() && sg.isTextual()) {
+        return sg.textValue();
+      }
+    } catch (JsonProcessingException e) {
+      Log.warnf("Could not parse template body when extracting shapeGraph: %s", e.getMessage());
+    }
+    return null;
+  }
+
+  /**
+   * Build a minimal Turtle data graph representing the candidate DataObject's
+   * attributes. The instance is given a stable local URI ({@value #INSTANCE_URI})
+   * and each attribute is expressed as a property in the {@value #ATTR_NS} namespace.
+   *
+   * <p>Example for {@code {color: "red", count: "3"}}:
+   * <pre>{@code
+   * <urn:shepard:instance:candidate>
+   *   <urn:shepard:attribute:color> "red" ;
+   *   <urn:shepard:attribute:count> "3" .
+   * }</pre>
+   *
+   * <p>Shapes authored against {@code urn:shepard:attribute:*} predicates can therefore
+   * constrain DataObject attributes at instantiation time.
+   *
+   * <p>An empty attribute map produces a minimal valid Turtle (the node with no properties).
+   */
+  String buildDataTurtle(Map<String, String> attributes) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("<").append(INSTANCE_URI).append(">");
+    if (attributes.isEmpty()) {
+      sb.append(" .\n");
+    } else {
+      Iterator<Map.Entry<String, String>> it = attributes.entrySet().iterator();
+      boolean first = true;
+      while (it.hasNext()) {
+        Map.Entry<String, String> entry = it.next();
+        String pred = "<" + ATTR_NS + entry.getKey() + ">";
+        // Escape the value as a Turtle string literal
+        String lit = "\"" + entry.getValue().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+        if (first) {
+          sb.append("\n  ").append(pred).append(" ").append(lit);
+          first = false;
+        } else {
+          sb.append(" ;\n  ").append(pred).append(" ").append(lit);
+        }
+      }
+      sb.append(" .\n");
+    }
+    return sb.toString();
   }
 
   /**
