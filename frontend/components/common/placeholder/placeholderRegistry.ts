@@ -51,7 +51,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     title: "SQL-over-HTTP for timeseries",
     subtitle:
       "Runtime caps for the bulk-read SQL endpoint (POST /v2/sql/timeseries). Flip max-rows and max-duration without a restart.",
-    endpoint: "/v2/admin/sql-timeseries/config",
+    endpoint: "/v2/admin/config/sql-timeseries",
     backlogRow: "P10c",
     designDoc: "aidocs/platform/29-p10-implementation-design.md",
     backend: "shipped",

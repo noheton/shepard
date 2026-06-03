@@ -213,6 +213,22 @@ plugin `TransformExecutor`. It absorbs both verticals (operator's design):
   `@RolesAllowed("instance-admin")` survive unchanged. Old
   `/v2/admin/<feature>/config` paths deleted (pre-prod); admin panes repoint.
 
+**Shipped 2026-06-03 (V2CONV-A4).** `ConfigDescriptor<T>` SPI +
+`@ApplicationScoped ConfigRegistry` (CDI-bean discovery at `StartupEvent`,
+fail-soft) + `ConfigPatchException` under
+`de.dlr.shepard.v2.admin.config.spi`; generic `AdminConfigRest` adds
+`GET /v2/admin/config` (feature listing) alongside the `{feature}` GET/PATCH.
+Four descriptors landed — `ror`, `sql-timeseries`, `jupyter`, `semantic`. The
+bespoke `SemanticConfigRest` / `SqlTimeseriesConfigRest` / `InstanceRorConfigRest`
+/ `JupyterConfigRest` (shim) / `JupyterConfigPluginRest` (canonical) are deleted;
+the `:*Config` entities/services and the public `GET /v2/jupyter/config` are
+unchanged. Patch body is taken as a raw `JsonNode` (preserves RFC-7396
+absent/null/value tri-state without a typed DTO; the built-in Quarkus
+merge-patch filter is avoided per quarkus#33186/#37980). 43 JUnit tests;
+new classes 75–100 % line coverage. A new configurable feature now needs only a
+descriptor bean — no new REST class. See
+`aidocs/agent-findings/v2conv-a4.md`.
+
 ## 7. Core → plugin extractions
 
 | Core today | Move to | New shape |
@@ -237,7 +253,7 @@ untouched. Each PR keeps `aidocs/34` (upgrade ledger), `aidocs/44` (matrix), and
 - A1 render media contract (content negotiation + `producibleMedia()`).
 - A2 unified `/v2/references?kind=` + `fileKind` discriminator (delete per-kind paths).
 - A3 unified `/v2/containers?kind=`.
-- A4 admin `ConfigRegistry` + `/v2/admin/config/{feature}`.
+- A4 admin `ConfigRegistry` + `/v2/admin/config/{feature}`. **✓ shipped 2026-06-03.**
 - A5 `RestNamespaceContributor` + plugin-gated registration + `OASFilter` (Jupyter + AAS).
 - A6… core→plugin extractions (svdx → thermography → urdf+krl).
 

@@ -27,12 +27,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * which means every authenticated user needs to discover the
  * {@code enabled} + {@code hubUrl} pair, but only an
  * {@code instance-admin} can mutate it. This resource exposes the
- * read view to non-admins; {@link JupyterConfigRest} keeps the
- * full GET/PATCH surface for admins.
+ * read view to non-admins; the generic
+ * {@code GET|PATCH /v2/admin/config/jupyter} surface (V2CONV-A4) keeps
+ * the full admin GET/PATCH for admins.
  *
  * <p>The two endpoints return byte-identical JSON shapes
  * ({@link JupyterConfigIO}). The split is purely an authorisation
- * concern: {@code /v2/admin/jupyter/config} requires the
+ * concern: {@code /v2/admin/config/jupyter} requires the
  * {@code instance-admin} role; {@code /v2/jupyter/config} requires
  * only an authenticated principal.
  *
@@ -54,7 +55,7 @@ public class JupyterConfigPublicRest {
   @Operation(
     summary = "Read the public JupyterHub link-out config (any authenticated user).",
     description =
-      "Returns the same `{enabled, hubUrl}` shape as `GET /v2/admin/jupyter/config` " +
+      "Returns the same `{enabled, hubUrl}` shape as `GET /v2/admin/config/jupyter` " +
       "without the instance-admin role gate. Used by the unified data-references " +
       "frontend table to decide whether to render the 'Open in JupyterHub' action " +
       "on `.ipynb` rows.\n\n" +

@@ -163,9 +163,11 @@ cursor.
 
 ---
 
-## Admin config — `GET/PATCH /v2/admin/sql-timeseries/config`
+## Admin config — `GET/PATCH /v2/admin/config/sql-timeseries`
 
-Added in **P10c**. Instance-admin gated (`instance-admin` role). Lets operators
+Added in **P10c**; the path moved to the generic admin-config surface in
+**V2CONV-A4** (2026-06-03, was `/v2/admin/sql-timeseries/config`). Instance-admin
+gated (`instance-admin` role). Lets operators
 tune the `max-rows` and `max-duration` caps at runtime without a restart.
 The runtime value wins over the `application.properties` deploy-time default;
 setting a field to `null` via PATCH reverts it to the deploy-time default.
@@ -173,7 +175,7 @@ setting a field to `null` via PATCH reverts it to the deploy-time default.
 ### GET current config
 
 ```
-GET /v2/admin/sql-timeseries/config
+GET /v2/admin/config/sql-timeseries
 Authorization: Bearer <instance-admin token>
 ```
 
@@ -195,7 +197,7 @@ RFC 7396 merge-patch semantics: absent = leave alone, `null` = revert to
 deploy-time default, value = replace.
 
 ```
-PATCH /v2/admin/sql-timeseries/config
+PATCH /v2/admin/config/sql-timeseries
 Authorization: Bearer <instance-admin token>
 Content-Type: application/json
 

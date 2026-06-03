@@ -70,7 +70,7 @@ describe("useSqlTimeseriesConfig — refresh()", () => {
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/sql-timeseries/config");
+    expect(url).toContain("/v2/admin/config/sql-timeseries");
     expect((opts.headers as Record<string, string>)["Authorization"]).toBe(
       `Bearer ${ACCESS_TOKEN}`,
     );
@@ -89,7 +89,7 @@ describe("useSqlTimeseriesConfig — patch()", () => {
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/sql-timeseries/config");
+    expect(url).toContain("/v2/admin/config/sql-timeseries");
     expect(opts.method).toBe("PATCH");
     expect(JSON.parse(opts.body as string)).toEqual({
       maxRows: 500000,

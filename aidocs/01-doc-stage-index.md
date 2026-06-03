@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 44 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 126 |
+| `feature-defined` | 127 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 3 |
 | `tests-implemented` | 9 |
 | `deployed` | 73 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **416** |
+| **total docs** | **417** |
 | **UNTAGGED** | **0** |
 
 ## fragment (44)
@@ -140,7 +140,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (126)
+## feature-defined (127)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -181,6 +181,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-05-31 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-31.md`](agent-findings/ui-scrutinizer-2026-05-31.md) | UI Scrutinizer — 2nd pass 2026-05-31 | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/v2conv-a4.md`](agent-findings/v2conv-a4.md) | V2CONV-A4 — generic `/v2/admin/config/{feature}` + ConfigRegistry — findings | 2026-06-03 | — |
 | [`aidocs/agent-findings/v2conv-b3.md`](agent-findings/v2conv-b3.md) | V2CONV-B3 — MAPPING_RECIPE kind + TransformExecutor SPI + materialization path | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/video-s3-chunked-encoding-2026-05-28.md`](agent-findings/video-s3-chunked-encoding-2026-05-28.md) | Video upload via S3FileStorage → Garage — chunked-encoding signature mismatch | 2026-05-28 | 2026-05-28 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |

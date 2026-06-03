@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>No Quarkus boot required — {@link MirroredUserDAO} is mocked.
  * The 401/403 cases are validated via annotation-gate assertions (same
- * pattern as {@link de.dlr.shepard.v2.admin.ror.resources.InstanceRorConfigRestTest}).
+ * pattern as {@code AdminConfigRestTest}).
  */
 class MirroredUserRestTest {
 
