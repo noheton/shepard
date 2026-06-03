@@ -291,12 +291,20 @@ in terms of the generalised **Project REST surface** specified in
    Generic; Layer is just one caller.
 2. The `MFFDLayerOverview` VIEW_RECIPE template — an MFFD content artefact
    shipped under the existing TT MFFD process-type templates. Not new
-   infrastructure; just a recipe document.
+   infrastructure; just a recipe document. **Shipped 2026-06-03 as
+   `V109__Mffd_layer_overview_view_recipe.cypher`** — a `:ShepardTemplate`
+   row of `templateKind = 'VIEW_RECIPE'`, version 1, source
+   `'V109-builtin'`, iconKey `mdi-view-dashboard-variant`, body
+   declaring the 5 panels (`run-summary`, `temperature`,
+   `tps-line-scan`, `spatial-overlay`, `ndt-frames`) each carrying its
+   building-block reference (AAA3 / AAC1 / AAC2 / #142) and the
+   generic Project by-annotation source endpoint shape.
 
-**Tracked as:** `PROJ-REST-2` (generic by-annotation route) + `MFFD-LAYER-RECIPE`
-(the VIEW_RECIPE itself) in `aidocs/16`. The previous `MFFD-LAYER-OVERVIEW-VIEW`
-row (which introduced an MFFD-namespaced endpoint and an MFFD-specific
-nav card) is superseded and removed.
+**Tracked as:** `PROJ-REST-2` (generic by-annotation route, shipped
+2026-06-02 as `1956054f4`) + `MFFD-LAYER-RECIPE` (the VIEW_RECIPE
+itself, shipped 2026-06-03 as V109) in `aidocs/16`. The previous
+`MFFD-LAYER-OVERVIEW-VIEW` row (which introduced an MFFD-namespaced
+endpoint and an MFFD-specific nav card) is superseded and removed.
 
 ### 2.3 `mffd-bridge-welding` — the second pass
 
