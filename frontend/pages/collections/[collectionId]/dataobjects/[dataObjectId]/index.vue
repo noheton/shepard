@@ -6,9 +6,13 @@ import DataObjectFileUpload from "~/components/context/data-object/upload-data/D
 // now appear as rows in the unified data-references table with a notebook icon
 // and a per-row "Open in JupyterHub" action (J1e).
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
+// MFFD-IMAGEBUNDLE-PANE-MOUNT-1: image bundle scrubber pane, shown when the
+// DataObject has a FileBundleReference whose name contains .png/.jpg (and is
+// not a thermography/NDT bundle).
+import DataObjectImageBundlePane from "~/components/common/DataObjectImageBundlePane.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
-import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { DataObjectApi, instanceOfFileReference } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
@@ -247,6 +251,35 @@ const dataObjectEmbargoEndDate = computed<string | null>(() => {
   const raw = (dataObject.value as unknown as { embargoEndDate?: string | null })
     .embargoEndDate;
   return raw ?? null;
+});
+
+// MFFD-IMAGEBUNDLE-PANE-MOUNT-1: detect the first FileBundleReference whose
+// name (lowercased) contains ".png" or ".jpg" but is NOT a thermography/NDT
+// bundle (name contains "thermo", "ndt", or ".tif").
+/**
+ * Returns true when a FileReference (FileBundleReference) name signals it is
+ * an image bundle intended for the ImageBundleViewer scrubber.
+ * The detection logic is also re-implemented in
+ * `tests/unit/DataObjectImageBundlePane.test.ts` for isolated unit testing.
+ */
+function isImageBundleRef(name: string | undefined | null): boolean {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  // Skip thermography/NDT bundles.
+  if (lower.includes("thermo") || lower.includes("ndt") || lower.includes(".tif")) {
+    return false;
+  }
+  return lower.includes(".png") || lower.includes(".jpg");
+}
+
+const imageBundleAppId = computed<string | null>(() => {
+  if (!dataReferences.value) return null;
+  for (const ref of dataReferences.value) {
+    if (instanceOfFileReference(ref) && isImageBundleRef(ref.name)) {
+      return ref.appId ?? null;
+    }
+  }
+  return null;
 });
 
 // FAIR3: inline editing state for embargoEndDate.
@@ -726,6 +759,22 @@ async function saveEmbargoEdit() {
                   <AncestorChainPanel
                     :collection-id="collectionId"
                     :collection-app-id="collection.appId"
+                    :data-object-app-id="dataObject.appId"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-IMAGEBUNDLE-PANE-MOUNT-1: image bundle scrubber.
+                     Shown when the DataObject has a FileBundleReference whose
+                     name contains .png/.jpg (and is not a thermography/NDT
+                     bundle). The pane fetches group metadata from
+                     GET /v2/bundles/{appId}/groups and renders the
+                     ImageBundleViewer frame scrubber. -->
+                <ExpansionPanelItem
+                  v-if="imageBundleAppId && dataObject.appId"
+                  title="Image Bundle"
+                  data-testid="image-bundle-expansion-panel"
+                >
+                  <DataObjectImageBundlePane
+                    :image-bundle-app-id="imageBundleAppId"
                     :data-object-app-id="dataObject.appId"
                   />
                 </ExpansionPanelItem>
