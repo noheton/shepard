@@ -92,7 +92,7 @@ const doCount = computed<number>(
 
 // ── Navigation ───────────────────────────────────────────────────────
 function browse() {
-  void router.push(collectionsPath + props.collection.id);
+  void router.push(collectionsPath + (props.collection.appId ?? props.collection.id));
 }
 </script>
 

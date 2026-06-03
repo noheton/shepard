@@ -34,7 +34,9 @@ const showDialog = defineModel<boolean>("showDialog", {
   default: false,
 });
 const emit = defineEmits<{
-  (e: "collection-created", value: number): void;
+  // value is the new Collection's appId when available (preferred for v2 routes),
+  // falling back to the stringified numeric id when appId is missing.
+  (e: "collection-created", value: string): void;
 }>();
 
 // ── Template picker ──────────────────────────────────────────────────────────
@@ -154,7 +156,8 @@ async function saveChanges() {
   }
 
   emitSuccess(`Successfully created collection "${collectionToCreate.value.name}"`);
-  emit("collection-created", collectionId);
+  const createdAppId = (created as unknown as { appId?: string | null }).appId;
+  emit("collection-created", createdAppId ?? String(collectionId));
   showDialog.value = false;
 }
 </script>

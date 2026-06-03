@@ -85,9 +85,9 @@ const isEmpty = computed(() => !loading.value && allCollections.value.length ===
 // Collection dialog
 const showCreateDialog = ref(false);
 
-function onCollectionCreated(id: number) {
+function onCollectionCreated(appIdOrId: string) {
   showCreateDialog.value = false;
-  router.push(collectionsPath + id);
+  router.push(collectionsPath + appIdOrId);
 }
 
 // Deterministic avatar color from username (one of 6 muted Vuetify colours) —

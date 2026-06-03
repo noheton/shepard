@@ -159,7 +159,7 @@ function onPageChange(page: number) {
     <template #item="rowProps">
       <v-data-table-row
         v-bind="rowProps"
-        @click="router.push(collectionsPath + rowProps.item.id)"
+        @click="router.push(collectionsPath + (rowProps.item.appId ?? rowProps.item.id))"
       >
         <template v-if="advancedMode" #[`item.id`]>
           <span data-testid="collection-row-id">{{ rowProps.item.id }}</span>
