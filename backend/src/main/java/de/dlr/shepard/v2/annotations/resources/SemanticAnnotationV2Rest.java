@@ -364,6 +364,16 @@ public class SemanticAnnotationV2Rest {
       return Response.status(422).type("application/problem+json").entity(violationBody).build();
     }
 
+    // PROJ-SEMA-DUAL-OWNERSHIP-1 — for partOf writes, require Write on the
+    // parent Project too (subject-Write was already checked above).
+    String parentDeny = projectAnnotationConstraints.checkParentWritePermission(
+      body.getPredicateIri(), body.getObjectLiteral(), caller,
+      sc != null && sc.isUserInRole(de.dlr.shepard.common.util.Constants.INSTANCE_ADMIN_ROLE));
+    if (parentDeny != null) {
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Parent Write required",
+        Response.Status.FORBIDDEN, parentDeny);
+    }
+
     SemanticAnnotation annotation = new SemanticAnnotation();
     annotation.setAppId(AppIdGenerator.next());
     annotation.setSubjectKind(body.getSubjectKind());
@@ -460,6 +470,21 @@ public class SemanticAnnotationV2Rest {
     if (updateLiteral && updateIri) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Ambiguous object value", Response.Status.BAD_REQUEST,
         "Provide at most one of objectLiteral or objectIri in an update");
+    }
+
+    // PROJ-SEMA-DUAL-OWNERSHIP-1 — for partOf annotations whose target is
+    // being mutated, require Write on the new parent Project too. The
+    // predicate itself is immutable per the @Operation contract, so the
+    // existing annotation's predicate is authoritative; we only check when
+    // the literal value is being changed.
+    if (updateLiteral) {
+      String parentDeny = projectAnnotationConstraints.checkParentWritePermission(
+        annotation.getPropertyIRI(), body.getObjectLiteral(), caller,
+        sc != null && sc.isUserInRole(de.dlr.shepard.common.util.Constants.INSTANCE_ADMIN_ROLE));
+      if (parentDeny != null) {
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Parent Write required",
+          Response.Status.FORBIDDEN, parentDeny);
+      }
     }
 
     // Apply merge-patch
