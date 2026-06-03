@@ -6,11 +6,35 @@
  * real Vue reactive primitives as globals and stub the Nuxt-specific
  * composables with minimal implementations that individual tests can override.
  */
-import { ref, computed, reactive, watch, watchEffect, nextTick, isRef } from "vue";
+import {
+  ref,
+  computed,
+  reactive,
+  watch,
+  watchEffect,
+  nextTick,
+  isRef,
+  toValue,
+  toRef,
+  unref,
+} from "vue";
 import { vi } from "vitest";
 
-// Vue reactive primitives
-Object.assign(globalThis, { ref, computed, reactive, watch, watchEffect, nextTick, isRef });
+// Vue reactive primitives. `toValue` is required by composables that accept a
+// `MaybeRefOrGetter` id (BUG-COLL-APPID-ROUTE-007-PAGE) — without it the
+// auto-imported global is undefined under plain Vitest.
+Object.assign(globalThis, {
+  ref,
+  computed,
+  reactive,
+  watch,
+  watchEffect,
+  nextTick,
+  isRef,
+  toValue,
+  toRef,
+  unref,
+});
 
 // Nuxt built-ins — default stubs, overridden per test as needed
 Object.assign(globalThis, {
