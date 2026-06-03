@@ -21,13 +21,29 @@ import type {
 } from "~/components/context/display-components/data-references/dataReference";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+// BUG-COLL-APPID-ROUTE-007-PAGE: accept the numeric ids as a plain number, a
+// Ref, or a getter and resolve them at fetch time. The DataObject detail page's
+// route params are now the v2 appId (UUID), so the NUMERIC ids these v1
+// `/shepard/api/...` endpoints require only become available once the loaded v2
+// entities resolve. The composable defers its first fetch until both ids are
+// present and re-fetches when they appear.
 export function useDataReferencesByDataObject(
-  collectionId: number,
-  dataObjectId: number,
+  collectionIdInput: MaybeRefOrGetter<number | undefined>,
+  dataObjectIdInput: MaybeRefOrGetter<number | undefined>,
 ) {
   const dataReferences = ref<Array<DataReference> | undefined>(undefined);
 
-  async function fetchTimeseriesReferences(): Promise<TimeseriesReference[]> {
+  function ids(): { collectionId: number; dataObjectId: number } | undefined {
+    const collectionId = toValue(collectionIdInput);
+    const dataObjectId = toValue(dataObjectIdInput);
+    if (collectionId == null || dataObjectId == null) return undefined;
+    return { collectionId, dataObjectId };
+  }
+
+  async function fetchTimeseriesReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<TimeseriesReference[]> {
     return useShepardApi(TimeseriesReferenceApi)
       .value.getAllTimeseriesReferences({
         collectionId,
@@ -39,7 +55,10 @@ export function useDataReferencesByDataObject(
       });
   }
 
-  async function fetchFileReferences(): Promise<FileReference[]> {
+  async function fetchFileReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<FileReference[]> {
     return useShepardApi(FileReferenceApi)
       .value.getAllFileReferences({
         collectionId,
@@ -51,9 +70,10 @@ export function useDataReferencesByDataObject(
       });
   }
 
-  async function fetchStructuredDataReferences(): Promise<
-    StructuredDataReference[]
-  > {
+  async function fetchStructuredDataReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<StructuredDataReference[]> {
     return useShepardApi(StructuredDataReferenceApi)
       .value.getAllStructuredDataReferences({
         collectionId,
@@ -151,11 +171,14 @@ export function useDataReferencesByDataObject(
   }
 
   async function fetchAndMergeReferences() {
+    const resolved = ids();
+    if (!resolved) return;
+    const { collectionId, dataObjectId } = resolved;
     const [timeseriesReferences, fileReferences, structuredDataReferences] =
       await Promise.all([
-        fetchTimeseriesReferences(),
-        fetchFileReferences(),
-        fetchStructuredDataReferences(),
+        fetchTimeseriesReferences(collectionId, dataObjectId),
+        fetchFileReferences(collectionId, dataObjectId),
+        fetchStructuredDataReferences(collectionId, dataObjectId),
       ]);
     const references = [
       ...timeseriesReferences,
@@ -165,7 +188,11 @@ export function useDataReferencesByDataObject(
     dataReferences.value = await Promise.all(references.map(addContainerName));
   }
 
-  fetchAndMergeReferences();
+  // Fetch once both ids are resolvable; re-fetch when they first appear (the
+  // route-param-is-appId case where the numeric ids arrive after the v2 load).
+  watch(ids, resolved => {
+    if (resolved) fetchAndMergeReferences();
+  }, { immediate: true });
 
   onDataObjectUpdated(fetchAndMergeReferences);
 

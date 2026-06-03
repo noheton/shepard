@@ -45,6 +45,39 @@ function parseIdLike(raw: unknown): string | undefined {
 }
 
 /**
+ * BUG-COLL-APPID-ROUTE-007-PAGE — resolve the v1 NUMERIC id for an
+ * appId-routed detail page.
+ *
+ * The `[collectionId]` / `[dataObjectId]` route params are now the v2 appId
+ * (a UUID). v1 `/shepard/api/...` endpoints (getAllDataObjects, collection
+ * roles, semantic-annotation CRUD, lineage, createDataObject, …) still take
+ * the NUMERIC id, which only the loaded v2 entity payload carries. This helper
+ * encodes the resolution order used by the page's `collectionNumericId`
+ * computed so it is unit-testable in isolation:
+ *
+ *   1. the loaded entity's numeric `id` wins (the canonical source);
+ *   2. otherwise fall back to the route param IF it is itself a positive
+ *      integer — covers legacy `/collections/123` deep links that pre-date
+ *      the appId routing;
+ *   3. otherwise `undefined` — a UUID route param with no loaded entity must
+ *      NEVER coerce into a numeric-id endpoint (that was the original bug:
+ *      `Number("019e…")` is NaN, and casting the UUID string straight into a
+ *      v1 call 404s).
+ *
+ * @param loadedId - the loaded entity's numeric `id` (or null/undefined while
+ *   the fetch is in flight).
+ * @param routeParam - the raw route param (UUID, numeric string, or undefined).
+ */
+export function resolveNumericId(
+  loadedId: number | null | undefined,
+  routeParam: unknown,
+): number | undefined {
+  if (loadedId != null) return loadedId;
+  const n = Number(routeParam);
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+}
+
+/**
  * A helper function to parse the router parameter to create an instance of `CollectionRouteParams`.
  * @param routeParams - RouteParamsGeneric
  * @returns A partial of `CollectionRouteParams`; `collectionId` is `undefined`

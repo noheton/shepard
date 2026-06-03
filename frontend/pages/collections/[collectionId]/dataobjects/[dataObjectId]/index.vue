@@ -11,6 +11,7 @@ import PublicationStatusBadge from "~/components/context/publish/PublicationStat
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
@@ -40,18 +41,20 @@ definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
 
-// BUG-COLL-APPID-ROUTE-002 (2026-05-31): useFetchCollection +
-// useFetchDataObject now hit the v2 appId-keyed endpoints with the route
-// param strings directly. Legacy numeric-id consumers below
-// (useDataReferencesByDataObject, useRelatedEntities, the dataObjectApi
-// PATCH, …) still take a `number` until BUG-COLL-APPID-ROUTE-003 migrates
-// each composable family — they keep the existing as-number cast.
+// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE: useFetchCollection +
+// useFetchDataObject hit the v2 appId-keyed endpoints with the route param
+// strings (the route params are now UUIDs). Legacy numeric-id consumers
+// (useDataReferencesByDataObject, useRelatedEntities,
+// useSpatialDataReferencesForDataObject, the dataObjectApi PATCH, the
+// AnnotatedDataObject CRUD, and every v1 child panel) need the NUMERIC ids
+// which only the loaded v2 entities carry. We resolve them reactively
+// (loaded id wins, numeric-route-param fallback for legacy /collections/123
+// deep links) and feed the composables getters so they defer their fetch
+// until the numeric ids are available. The page body only renders once both
+// entities load, so within the template `collection.id` / `dataObject.id`
+// are the canonical numeric source.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId } = routeParams.value as unknown as {
-  collectionId: number;
-  dataObjectId: number;
-};
 
 const {
   collection,
@@ -62,11 +65,22 @@ const { dataObject, notFound: isDataObjectNotFound } = useFetchDataObject(
   collectionIdStr,
   dataObjectIdStr,
 );
-const { dataReferences } = useDataReferencesByDataObject(
-  collectionId,
-  dataObjectId,
+
+const collectionNumericId = computed<number | undefined>(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
 );
-const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
+const dataObjectNumericId = computed<number | undefined>(() =>
+  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
+);
+
+const { dataReferences } = useDataReferencesByDataObject(
+  collectionNumericId,
+  dataObjectNumericId,
+);
+const { relatedEntities } = useRelatedEntities(
+  collectionNumericId,
+  dataObjectNumericId,
+);
 
 // REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.
 // These composables are set up once dataObject.appId is available, since
@@ -142,7 +156,7 @@ const totalReferenceCount = computed(
  * multi-player gate falls back to "no spatial tile".
  */
 const { references: spatialDataReferences } =
-  useSpatialDataReferencesForDataObject(collectionId, dataObjectId);
+  useSpatialDataReferencesForDataObject(collectionNumericId, dataObjectNumericId);
 
 const thermographyBundleAppId = computed<string | null>(() => {
   const refs = dataReferences.value ?? [];
@@ -270,12 +284,17 @@ function cancelDescEdit() {
 }
 
 async function saveDescEdit() {
-  if (!dataObject.value) return;
+  if (
+    !dataObject.value ||
+    collectionNumericId.value === undefined ||
+    dataObjectNumericId.value === undefined
+  )
+    return;
   descSaving.value = true;
   try {
     await dataObjectApi.value.updateDataObject({
-      collectionId,
-      dataObjectId,
+      collectionId: collectionNumericId.value,
+      dataObjectId: dataObjectNumericId.value,
       dataObject: {
         name: dataObject.value.name,
         description: descDraft.value,
@@ -365,12 +384,17 @@ function cancelEmbargoEdit() {
 }
 
 async function saveEmbargoEdit() {
-  if (!dataObject.value) return;
+  if (
+    !dataObject.value ||
+    collectionNumericId.value === undefined ||
+    dataObjectNumericId.value === undefined
+  )
+    return;
   embargoSaving.value = true;
   try {
     await dataObjectApi.value.updateDataObject({
-      collectionId,
-      dataObjectId,
+      collectionId: collectionNumericId.value,
+      dataObjectId: dataObjectNumericId.value,
       dataObject: {
         name: dataObject.value.name,
         description: dataObject.value.description,
@@ -419,9 +443,9 @@ async function saveEmbargoEdit() {
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  collectionIdStr +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  dataObjectIdStr,
               },
             ]"
           />
@@ -686,7 +710,7 @@ async function saveEmbargoEdit() {
                 v-model:show-dialog="showAnnotationDialog"
                 :subject-app-id="dataObject?.appId ?? undefined"
                 subject-kind="DataObject"
-                :annotated="new AnnotatedDataObject(collectionId, dataObjectId)"
+                :annotated="new AnnotatedDataObject(collection.id, dataObject.id)"
                 @annotation-created="handleAnnotationListUpdate"
               />
 
@@ -715,8 +739,8 @@ async function saveEmbargoEdit() {
                     <EditDataObjectAttributesDialog
                       v-if="showAttributeEditDialog"
                       v-model:show-dialog="showAttributeEditDialog"
-                      :collection-id="collectionId"
-                      :data-object-id="dataObjectId"
+                      :collection-id="collection.id"
+                      :data-object-id="dataObject.id"
                     />
                   </template>
                 </ExpansionPanelItem>
@@ -726,7 +750,7 @@ async function saveEmbargoEdit() {
                 >
                   <div class="pt-4">
                     <DataObjectLabJournalEntryList
-                      :collection-id="collectionId"
+                      :collection-id="collection.id"
                       :data-object-id="dataObject.id"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
@@ -758,12 +782,12 @@ async function saveEmbargoEdit() {
                   </template>
                   <DataObjectFileUpload
                     v-if="isAllowedToEditCollection"
-                    :collection-id="collectionId"
-                    :dataobject-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :dataobject-id="dataObject.id"
                   />
                   <DataObjectDataReferencesTable
-                    :collection-id="collectionId"
-                    :data-object-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :data-object-id="dataObject.id"
                     :data-references="dataReferences"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
@@ -778,8 +802,8 @@ async function saveEmbargoEdit() {
                   title="Relationships"
                 >
                   <DataObjectRelationshipsTable
-                    :collection-id="collectionId"
-                    :data-object-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :data-object-id="dataObject.id"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
@@ -795,8 +819,8 @@ async function saveEmbargoEdit() {
                     <AddRelationshipDialog
                       v-if="showAddRelationshipDialog"
                       v-model:show-dialog="showAddRelationshipDialog"
-                      :collection-id="collectionId"
-                      :data-object-id="dataObjectId"
+                      :collection-id="collection.id"
+                      :data-object-id="dataObject.id"
                     />
                   </template>
                 </ExpansionPanelItem>
@@ -811,8 +835,8 @@ async function saveEmbargoEdit() {
                      viewer at /containers/spatialdata/{containerId}. -->
                 <ExpansionPanelItem title="Spatial data">
                   <DataObjectSpatialContainersPane
-                    :collection-id="collectionId"
-                    :data-object-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :data-object-id="dataObject.id"
                   />
                 </ExpansionPanelItem>
                 <!-- MFFD-MULTIPLAYER-1: synchronised multi-payload player.
@@ -857,7 +881,7 @@ async function saveEmbargoEdit() {
                     <DataObjectProvGraph
                       v-else-if="provView === 'graph'"
                       :data-object="dataObject"
-                      :collection-id="collectionId"
+                      :collection-id="collection.id"
                     />
                   </div>
                 </ExpansionPanelItem>
@@ -887,7 +911,7 @@ async function saveEmbargoEdit() {
                   title="Ancestor Chain"
                 >
                   <AncestorChainPanel
-                    :collection-id="collectionId"
+                    :collection-id="collection.id"
                     :collection-app-id="collection.appId"
                     :data-object-app-id="dataObject.appId"
                   />

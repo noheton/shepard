@@ -59,10 +59,28 @@ async function fetchCollectionByAnyIdV2(
   return (await resp.json()) as Collection;
 }
 
-export function useRelatedEntities(collectionId: number, dataObjectId: number) {
+// BUG-COLL-APPID-ROUTE-007-PAGE: numeric ids accepted as number / Ref / getter
+// and resolved at fetch time, so the appId-routed DataObject detail page can
+// hand a getter that only resolves once the v2 entity loads. The v1
+// `/shepard/api/...` reference + predecessor endpoints below require the
+// NUMERIC ids the route param (a UUID) no longer carries.
+export function useRelatedEntities(
+  collectionIdInput: MaybeRefOrGetter<number | undefined>,
+  dataObjectIdInput: MaybeRefOrGetter<number | undefined>,
+) {
   const relatedEntities = ref<RelatedEntity[] | undefined>(undefined);
 
-  async function fetchURIReferences(): Promise<URIReference[]> {
+  function ids(): { collectionId: number; dataObjectId: number } | undefined {
+    const collectionId = toValue(collectionIdInput);
+    const dataObjectId = toValue(dataObjectIdInput);
+    if (collectionId == null || dataObjectId == null) return undefined;
+    return { collectionId, dataObjectId };
+  }
+
+  async function fetchURIReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<URIReference[]> {
     return useShepardApi(UriReferenceApi)
       .value.getAllUriReferences({ collectionId, dataObjectId })
       .catch(error => {
@@ -71,9 +89,10 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
       });
   }
 
-  async function fetchDataObjectReferences(): Promise<
-    DataObjectReferenceWithPayload[]
-  > {
+  async function fetchDataObjectReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<DataObjectReferenceWithPayload[]> {
     const dataObjectReferences = await useShepardApi(DataObjectReferenceApi)
       .value.getAllDataObjectReferences({ collectionId, dataObjectId })
       .catch(error => handleError(error, "fetchDataObjectReferences"));
@@ -82,7 +101,11 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     const dataObjectReferencesWithPayloads = await Promise.all(
       dataObjectReferences.map(async ref => ({
         ...ref,
-        payload: await fetchDataObjectReferencePayload(ref),
+        payload: await fetchDataObjectReferencePayload(
+          collectionId,
+          dataObjectId,
+          ref,
+        ),
       })),
     );
 
@@ -94,7 +117,10 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     return dataObjectReferencesWithPayloads;
   }
 
-  async function fetchCollectionReferences(): Promise<CollectionReference[]> {
+  async function fetchCollectionReferences(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<CollectionReference[]> {
     return useShepardApi(CollectionReferenceApi)
       .value.getAllCollectionReferences({ collectionId, dataObjectId })
       .catch(error => {
@@ -104,6 +130,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   }
 
   async function fetchDataObjectReferencePayload(
+    collectionId: number,
+    dataObjectId: number,
     reference: DataObjectReference,
   ): Promise<DataObjectReferencePayload | undefined> {
     if (isDeleted(reference.id)) return;
@@ -134,7 +162,10 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     return { ...dataObject, collection };
   }
 
-  async function fetchPredecessors(): Promise<Predecessor[]> {
+  async function fetchPredecessors(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<Predecessor[]> {
     const predecessors: DataObject[] = await useShepardApi(DataObjectApi)
       .value.getAllDataObjects({
         collectionId,
@@ -148,7 +179,10 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     return predecessors.map(pred => ({ ...pred, type: "Predecessor" }));
   }
 
-  async function fetchSuccessors(): Promise<Successor[]> {
+  async function fetchSuccessors(
+    collectionId: number,
+    dataObjectId: number,
+  ): Promise<Successor[]> {
     const successors: DataObject[] = await useShepardApi(DataObjectApi)
       .value.getAllDataObjects({
         collectionId,
@@ -163,6 +197,9 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   }
 
   async function fetchAndMergeRelatedEntities() {
+    const resolved = ids();
+    if (!resolved) return;
+    const { collectionId, dataObjectId } = resolved;
     const [
       uRIReferences,
       dataObjectReferences,
@@ -170,11 +207,11 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
       predecessors,
       successors,
     ] = await Promise.all([
-      fetchURIReferences(),
-      fetchDataObjectReferences(),
-      fetchCollectionReferences(),
-      fetchPredecessors(),
-      fetchSuccessors(),
+      fetchURIReferences(collectionId, dataObjectId),
+      fetchDataObjectReferences(collectionId, dataObjectId),
+      fetchCollectionReferences(collectionId, dataObjectId),
+      fetchPredecessors(collectionId, dataObjectId),
+      fetchSuccessors(collectionId, dataObjectId),
     ]);
 
     const relationships = [
@@ -187,7 +224,10 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     relatedEntities.value = relationships;
   }
 
-  fetchAndMergeRelatedEntities();
+  // Defer until both ids resolve; re-run on first resolution (appId-route case).
+  watch(ids, resolved => {
+    if (resolved) fetchAndMergeRelatedEntities();
+  }, { immediate: true });
 
   onDataObjectUpdated(fetchAndMergeRelatedEntities);
 

@@ -5,8 +5,8 @@ import PublicationStatusBadge from "~/components/context/publish/PublicationStat
 import CollectionArchiveControl from "~/components/context/collection/CollectionArchiveControl.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
-import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
 import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
@@ -21,32 +21,28 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection now hits the v2 appId-keyed
-// endpoint directly, taking a string. Legacy numeric-id consumers below
-// (dataObjectsMap v1, MFFD probe, child panels expecting `number`) keep the
-// pre-existing string-cast-to-number until BUG-COLL-APPID-ROUTE-003 migrates
-// each composable family. The two ids reference the same entity on the wire
-// — `collectionIdStr` is the appId-shaped route param, `collectionId` is the
-// `as number` cast the v1 generated client still wants.
+// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE: the `[collectionId]` route param
+// is now the v2 appId (UUID). `useFetchCollection` consumes that string against
+// the appId-keyed v2 endpoint. Every other consumer on this page falls into one
+// of two buckets and there is no raw `collectionId` cast any more:
+//   • v2 / appId-keyed callers bind `collectionIdStr` (the route param) or
+//     `collectionAppId` (the loaded collection's appId field).
+//   • v1 `/shepard/api/...` callers (getAllDataObjects, collection roles,
+//     semantic-annotation CRUD, lineage, createDataObject) bind
+//     `collectionNumericId` — the NUMERIC id which only the loaded v2 collection
+//     payload carries, with a numeric-route-param fallback for legacy
+//     /collections/123 deep links. v1 child mounts are gated `v-if` on it so the
+//     UUID can never leak into a numeric-id endpoint.
 const collectionIdStr = routeParams.value.collectionId;
-const collectionId = routeParams.value.collectionId as unknown as number;
 const {
   collection,
   isAllowedToEditCollection,
   isError: isCollectionError,
   notFound: isCollectionNotFound,
 } = useFetchCollection(collectionIdStr);
-// BUG-COLL-APPID-ROUTE-007-PAGE: the route param is now the appId (UUID), but
-// v1 endpoints (roles, getAllDataObjects, lineage) need the NUMERIC id, which
-// only the loaded v2 collection payload carries. Resolve it reactively from
-// the loaded collection, with a numeric-route-param fallback for legacy
-// /collections/123 deep links. Child mounts that hit v1 bind this instead of
-// the raw route param.
-const collectionNumericId = computed<number | undefined>(() => {
-  if (collection.value?.id != null) return collection.value.id;
-  const n = Number(routeParams.value.collectionId);
-  return Number.isInteger(n) && n > 0 ? n : undefined;
-});
+const collectionNumericId = computed<number | undefined>(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
+);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionNumericId);
 const collectionApi = useShepardApi(CollectionApi);
@@ -72,11 +68,11 @@ function cancelDescEdit() {
 }
 
 async function saveDescEdit() {
-  if (!collection.value) return;
+  if (!collection.value || collectionNumericId.value === undefined) return;
   descSaving.value = true;
   try {
     await collectionApi.value.updateCollection({
-      collectionId: collectionNumericId.value ?? collectionId,
+      collectionId: collectionNumericId.value,
       collection: {
         name: collection.value.name,
         description: descDraft.value,
@@ -95,16 +91,16 @@ async function saveDescEdit() {
 }
 
 async function downloadRoCrate() {
-  if (isExporting.value) return;
+  if (isExporting.value || collectionNumericId.value === undefined) return;
   isExporting.value = true;
   try {
     const blob = await useShepardApi(CollectionApi).value.exportCollection({
-      collectionId: collectionNumericId.value ?? collectionId,
+      collectionId: collectionNumericId.value,
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${collection.value?.name ?? collectionId}-export.zip`;
+    a.download = `${collection.value?.name ?? collectionNumericId.value}-export.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -519,8 +515,8 @@ useHead({
                  widget's own fetch (full per-DO annotation pull) only
                  fires once it's mounted. -->
             <MffdNdtGridCard
-              v-if="mffdNdtHasData === true"
-              :collection-id="collectionId"
+              v-if="mffdNdtHasData === true && collectionNumericId"
+              :collection-id="collectionNumericId"
             />
 
             <!-- Always-visible: Semantic Annotation chips. Out of the
@@ -532,8 +528,8 @@ useHead({
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
-                  v-if="isAllowedToEditCollection"
-                  :annotated="new AnnotatedCollection(collectionId)"
+                  v-if="isAllowedToEditCollection && collection.id"
+                  :annotated="new AnnotatedCollection(collection.id)"
                 />
               </div>
               <SemanticAnnotationList
@@ -571,15 +567,19 @@ useHead({
                   New DataObject
                 </v-btn>
               </div>
-              <CollectionDataObjectsPanel :collection-id="collectionId" :collection-app-id="collectionAppId" />
+              <CollectionDataObjectsPanel
+                v-if="collectionNumericId"
+                :collection-id="collectionNumericId"
+                :collection-app-id="collectionAppId"
+              />
               <!-- Re-uses the existing CreateDataObjectDialog which already
                    includes the template picker when allowed templates exist
                    for the Collection — passing `collectionAppId` flips it
                    into picker-first mode (was sidebar-only before). -->
               <CreateDataObjectDialog
-                v-if="showCreateDataObjectDialog && collectionAppId"
+                v-if="showCreateDataObjectDialog && collectionAppId && collectionNumericId"
                 v-model:show-dialog="showCreateDataObjectDialog"
-                :collection-id="collectionId"
+                :collection-id="collectionNumericId"
                 :collection-app-id="collectionAppId"
               />
             </section>
@@ -650,7 +650,7 @@ useHead({
                      no matching channel (e.g. non-AFP DOs in the Collection). -->
                 <ExpansionPanelItem title="Cross-track view">
                   <div class="pt-2 pb-2">
-                    <CollectionCrossTrackViewPane :collection-id="collectionId" :collection-app-id="collectionAppId ?? undefined" />
+                    <CollectionCrossTrackViewPane v-if="collectionNumericId" :collection-id="collectionNumericId" :collection-app-id="collectionAppId ?? undefined" />
                   </div>
                 </ExpansionPanelItem>
                 <!-- COLL-TIMELINE-1 — process-chain swimlane chronograph.
