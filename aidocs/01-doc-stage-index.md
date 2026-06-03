@@ -30,55 +30,25 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 66 |
+| `fragment` | 44 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 125 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 3 |
 | `tests-implemented` | 9 |
-| `deployed` | 110 |
+| `deployed` | 73 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **475** |
-| **UNTAGGED** | **1** |
+| **total docs** | **415** |
+| **UNTAGGED** | **0** |
 
-## UNTAGGED (needs `stage:` front-matter)
-
-These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-stages.md`.
-
-| doc | title | last-touched |
-|---|---|---|
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-16.md`](agent-findings/dispatcher-runs/2026-06-03-16.md) | Dispatcher run — 2026-06-03 16:47 UTC | 2026-06-03 |
-
-## fragment (66)
+## fragment (44)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/00-synergy-index.md`](agent-findings/00-synergy-index.md) | 00 — Synergy index | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-15.md`](agent-findings/dispatcher-runs/2026-05-29-15.md) | Dispatcher run — 2026-05-29 15:18 UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-16.md`](agent-findings/dispatcher-runs/2026-05-29-16.md) | Dispatcher run — 2026-05-29 16:xx UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-17.md`](agent-findings/dispatcher-runs/2026-05-29-17.md) | Dispatcher run — 2026-05-29 17:xx UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-18.md`](agent-findings/dispatcher-runs/2026-05-29-18.md) | Dispatcher run — 2026-05-29 18:xx UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-19.md`](agent-findings/dispatcher-runs/2026-05-29-19.md) | Dispatcher run — 2026-05-29 19:xx UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-20.md`](agent-findings/dispatcher-runs/2026-05-29-20.md) | Dispatcher run — 2026-05-29 20:xx UTC | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-01.md`](agent-findings/dispatcher-runs/2026-05-30-01.md) | Dispatcher run — 2026-05-30 01:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-20.md`](agent-findings/dispatcher-runs/2026-05-30-20.md) | Dispatcher run — 2026-05-30 20:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-21.md`](agent-findings/dispatcher-runs/2026-05-30-21.md) | Dispatcher run — 2026-05-30 21:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-22.md`](agent-findings/dispatcher-runs/2026-05-30-22.md) | Dispatcher run — 2026-05-30 22:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-23.md`](agent-findings/dispatcher-runs/2026-05-30-23.md) | Dispatcher run — 2026-05-30 23:17 UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-21.md`](agent-findings/dispatcher-runs/2026-06-01-21.md) | Dispatcher run 2026-06-01-21 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-22.md`](agent-findings/dispatcher-runs/2026-06-01-22.md) | Dispatcher run 2026-06-01-22 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-23.md`](agent-findings/dispatcher-runs/2026-06-01-23.md) | Dispatcher fire 2026-06-01-23 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-00.md`](agent-findings/dispatcher-runs/2026-06-02-00.md) | Dispatcher fire 2026-06-02-00 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-01.md`](agent-findings/dispatcher-runs/2026-06-02-01.md) | Dispatcher fire 2026-06-02-01 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-02.md`](agent-findings/dispatcher-runs/2026-06-02-02.md) | Dispatcher fire 2026-06-02-02 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-03.md`](agent-findings/dispatcher-runs/2026-06-02-03.md) | Dispatcher fire 2026-06-02-03 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-04.md`](agent-findings/dispatcher-runs/2026-06-02-04.md) | Dispatcher run 2026-06-02-04 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-15.md`](agent-findings/dispatcher-runs/2026-06-02-15.md) | Dispatcher run — 2026-06-02 15:xx UTC | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-01.md`](agent-findings/dispatcher-runs/2026-06-03-01.md) | Dispatcher run — 2026-06-03-01 | 2026-06-03 | 2026-06-03 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-02.md`](agent-findings/dispatcher-runs/2026-06-03-02.md) | Dispatcher run — 2026-06-03-02 | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -401,7 +371,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-06-03 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (110)
+## deployed (73)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -420,43 +390,6 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/db-opt3-timescaledb-tuning.md`](agent-findings/db-opt3-timescaledb-tuning.md) | DB-OPT3 — TimescaleDB Chunk + Compression Analysis | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-21.md`](agent-findings/dispatcher-runs/2026-05-29-21.md) | Dispatcher run 2026-05-29-21 | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-22.md`](agent-findings/dispatcher-runs/2026-05-29-22.md) | Dispatcher run 2026-05-29-22 | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-29-23.md`](agent-findings/dispatcher-runs/2026-05-29-23.md) | Dispatcher run 2026-05-29-23 | 2026-05-29 | 2026-05-29 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-00.md`](agent-findings/dispatcher-runs/2026-05-30-00.md) | Dispatcher run 2026-05-30-00 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-02.md`](agent-findings/dispatcher-runs/2026-05-30-02.md) | Dispatcher run — 2026-05-30 02:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-03.md`](agent-findings/dispatcher-runs/2026-05-30-03.md) | Dispatcher run — 2026-05-30-03 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-04.md`](agent-findings/dispatcher-runs/2026-05-30-04.md) | Dispatcher run — 2026-05-30-04 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-14.md`](agent-findings/dispatcher-runs/2026-05-30-14.md) | Dispatcher run: 2026-05-30 14:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-15.md`](agent-findings/dispatcher-runs/2026-05-30-15.md) | Dispatcher run: 2026-05-30 15:xx UTC | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-16.md`](agent-findings/dispatcher-runs/2026-05-30-16.md) | Dispatcher run — 2026-05-30-16 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-18.md`](agent-findings/dispatcher-runs/2026-05-30-18.md) | Dispatcher run — 2026-05-30-18 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-30-19.md`](agent-findings/dispatcher-runs/2026-05-30-19.md) | Dispatcher fire 2026-05-30-19 | 2026-05-30 | 2026-05-30 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-00.md`](agent-findings/dispatcher-runs/2026-05-31-00.md) | Dispatcher run 2026-05-31-00 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-01.md`](agent-findings/dispatcher-runs/2026-05-31-01.md) | Dispatcher run 2026-05-31-01 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-02.md`](agent-findings/dispatcher-runs/2026-05-31-02.md) | Dispatcher run 2026-05-31-02 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-03.md`](agent-findings/dispatcher-runs/2026-05-31-03.md) | Dispatcher run 2026-05-31-03 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-04.md`](agent-findings/dispatcher-runs/2026-05-31-04.md) | Dispatcher fire 2026-05-31-04 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-14.md`](agent-findings/dispatcher-runs/2026-05-31-14.md) | Dispatcher fire 2026-05-31-14 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-15.md`](agent-findings/dispatcher-runs/2026-05-31-15.md) | Dispatcher fire 2026-05-31-15 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-16.md`](agent-findings/dispatcher-runs/2026-05-31-16.md) | Dispatcher fire 2026-05-31-16 | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-17.md`](agent-findings/dispatcher-runs/2026-05-31-17.md) | Dispatcher run — 2026-05-31-17 UTC | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-05-31-18.md`](agent-findings/dispatcher-runs/2026-05-31-18.md) | Dispatcher run — 2026-05-31-18 UTC | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-18.md`](agent-findings/dispatcher-runs/2026-06-01-18.md) | Dispatcher run — 2026-06-01-18 UTC | 2026-06-01 | 2026-06-01 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-19.md`](agent-findings/dispatcher-runs/2026-06-01-19.md) | Dispatcher run — 2026-06-01-19 UTC | 2026-06-01 | 2026-06-01 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-01-20.md`](agent-findings/dispatcher-runs/2026-06-01-20.md) | Dispatcher run — 2026-06-01-20 UTC | 2026-06-01 | 2026-06-01 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-16.md`](agent-findings/dispatcher-runs/2026-06-02-16.md) | Dispatcher run 2026-06-02-16 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-17.md`](agent-findings/dispatcher-runs/2026-06-02-17.md) | Dispatcher run 2026-06-02-17 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-18.md`](agent-findings/dispatcher-runs/2026-06-02-18.md) | Dispatcher run 2026-06-02-18 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-19.md`](agent-findings/dispatcher-runs/2026-06-02-19.md) | Dispatcher run — 2026-06-02 19:00 UTC | — | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-20.md`](agent-findings/dispatcher-runs/2026-06-02-20.md) | Dispatcher run — 2026-06-02 20:00 UTC | — | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-21.md`](agent-findings/dispatcher-runs/2026-06-02-21.md) | Dispatcher fire 2026-06-02-21 | — | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-22.md`](agent-findings/dispatcher-runs/2026-06-02-22.md) | Dispatcher fire 2026-06-02-22 | — | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-02-23.md`](agent-findings/dispatcher-runs/2026-06-02-23.md) | Dispatcher fire 2026-06-02-23 | 2026-06-02 | 2026-06-02 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-00.md`](agent-findings/dispatcher-runs/2026-06-03-00.md) | Dispatcher fire 2026-06-03-00 | 2026-06-03 | 2026-06-03 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-04.md`](agent-findings/dispatcher-runs/2026-06-03-04.md) | Dispatcher run 2026-06-03-04 | — | 2026-06-03 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-05.md`](agent-findings/dispatcher-runs/2026-06-03-05.md) | Dispatcher run 2026-06-03-05 | — | 2026-06-03 |
-| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-17.md`](agent-findings/dispatcher-runs/2026-06-03-17.md) | Dispatcher run — 2026-06-03-17 | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |

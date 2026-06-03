@@ -99,6 +99,11 @@ def collect_docs() -> list[dict]:
     for path in sorted(AIDOCS_DIR.rglob("*.md")):
         if path == INDEX_PATH:
             continue
+        # Auto-generated dispatcher-run logs are operational records, not
+        # lifecycle-staged design docs — exclude them so a routine that forgets
+        # the `stage:` frontmatter never drifts the index (DISPATCHER-REGEN-INDEX-1).
+        if "agent-findings/dispatcher-runs/" in path.as_posix():
+            continue
         text = path.read_text(encoding="utf-8")
         fm = parse_front_matter(text)
         stage_raw = fm.get("stage", "").strip()
