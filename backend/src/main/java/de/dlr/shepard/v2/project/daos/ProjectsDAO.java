@@ -217,8 +217,7 @@ public class ProjectsDAO {
       io.setDoCount(asLongOrZero(row.get("doCount")));
       Long la = asLong(row.get("lastActivityMillis"));
       if (la != null && la > 0L) io.setLastActivityMillis(la);
-      @SuppressWarnings("unchecked")
-      List<String> also = (List<String>) row.get("alsoMemberOf");
+      List<String> also = asStringList(row.get("alsoMemberOf"));
       if (also != null) io.setAlsoMemberOf(also);
       items.add(io);
     }
@@ -244,11 +243,31 @@ public class ProjectsDAO {
       "predProgramme", PRED_PROGRAMME
     ));
     for (var row : result) {
-      @SuppressWarnings("unchecked")
-      List<String> programmes = (List<String>) row.get("programmes");
+      List<String> programmes = asStringList(row.get("programmes"));
       return programmes != null ? programmes : List.of();
     }
     return List.of();
+  }
+
+  /**
+   * Neo4j-OGM's {@code session.query()} returns Cypher {@code collect(...)}
+   * results as a Java {@code String[]} (not {@code List}), at least under
+   * the OGM driver in use here. Direct casts to {@code List<String>} throw
+   * {@code ClassCastException} at runtime; this helper accepts either
+   * shape and normalises to a {@code List<String>}.
+   */
+  @SuppressWarnings("unchecked")
+  private static List<String> asStringList(Object value) {
+    if (value == null) return null;
+    if (value instanceof List<?>) return (List<String>) value;
+    if (value instanceof Object[] arr) {
+      List<String> out = new ArrayList<>(arr.length);
+      for (Object o : arr) {
+        if (o != null) out.add(o.toString());
+      }
+      return out;
+    }
+    return null;
   }
 
   /**
