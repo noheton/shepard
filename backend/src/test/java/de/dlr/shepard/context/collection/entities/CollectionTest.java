@@ -36,8 +36,9 @@ public class CollectionTest extends BaseTestCase {
       // a presentation-layer link that doesn't define entity equality.
       // importedFrom is import-provenance metadata (where the Collection was
       // imported from); it records origin, not identity, so like heroImageUrl
-      // it is excluded from equals.
-      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId", "importedFrom")
+      // it is excluded from equals. promptLogMode is a presentation/behaviour
+      // toggle, likewise not identity-defining.
+      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId", "importedFrom", "promptLogMode")
       .verify();
   }
 

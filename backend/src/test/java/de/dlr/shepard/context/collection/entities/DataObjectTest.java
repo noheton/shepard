@@ -30,7 +30,10 @@ public class DataObjectTest extends BaseTestCase {
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
       // provenanceMode is creation-time provenance metadata (human/ai/
       // collaborative); a descriptive tag that doesn't define entity identity.
-      .withIgnoredFields("appId", "provenanceMode")
+      // attachedTemplateAppId records which template this DataObject was created
+      // from — a provenance link, not part of identity. typedPredecessorsJson is
+      // a denormalised cache of typed-predecessor metadata, not identity.
+      .withIgnoredFields("appId", "provenanceMode", "attachedTemplateAppId", "typedPredecessorsJson")
       .verify();
   }
 

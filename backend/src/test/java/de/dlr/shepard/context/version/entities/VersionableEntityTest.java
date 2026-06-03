@@ -19,8 +19,10 @@ public class VersionableEntityTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
-      // appId and revision are server-managed metadata; not part of identity equals.
-      .withIgnoredFields("appId", "revision")
+      // appId is L2a-additive metadata; not part of identity equals. revision IS
+      // part of equals (Lombok @Data includes it) — a re-saved entity at a new
+      // revision is a distinct value object for snapshot/optimistic-locking.
+      .withIgnoredFields("appId")
       .verify();
   }
 
