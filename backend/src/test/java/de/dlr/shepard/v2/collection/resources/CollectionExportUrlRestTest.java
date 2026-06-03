@@ -47,6 +47,7 @@ class CollectionExportUrlRestTest {
   @Mock FileStorage fileStorage;
   @Mock SecurityContext securityContext;
   @Mock Principal principal;
+  @Mock de.dlr.shepard.storage.PresignTtlValidator ttlValidator;
 
   CollectionExportUrlRest resource;
 
@@ -58,6 +59,8 @@ class CollectionExportUrlRestTest {
     resource.permissionsService = permissionsService;
     resource.exportService = exportService;
     resource.fileStorageRegistry = fileStorageRegistry;
+    resource.ttlValidator = ttlValidator;
+    when(ttlValidator.effectiveExportTtl()).thenReturn(java.time.Duration.ofMinutes(15));
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -76,7 +79,7 @@ class CollectionExportUrlRestTest {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
     Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(any(), any(), any(), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
   }
 
   @Test
