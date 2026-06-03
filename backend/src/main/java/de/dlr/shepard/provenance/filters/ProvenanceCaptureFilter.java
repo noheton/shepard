@@ -141,6 +141,12 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     long startedAtMillis = startedObj instanceof Long s ? s : endedAtMillis;
 
     String path = request.getUriInfo().getPath();
+
+    // v2-only read capture gate: limit READ Activity rows to the fork's /v2/ surface.
+    // v1 /shepard/api/... reads are not captured (upstream-compat ops-cost rule,
+    // PROV-CAPTURE-READS-FLIP operator decision 2026-06-03).
+    if (!isMutation && (path == null || !path.startsWith("v2/"))) return;
+
     String summary = method + " /" + (path == null ? "" : path);
     String actionKind = actionKindFor(method);
 
