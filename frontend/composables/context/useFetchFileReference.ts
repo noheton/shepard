@@ -22,6 +22,12 @@ export function useFetchFileReference(
   const files = ref<FileMeta[]>([]);
   // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
   const notFound = ref<boolean>(false);
+  /**
+   * UI7 — UUID v7 appId of the referenced FileContainer.
+   * Null for pre-L2a containers that have no appId yet.
+   * Used by PayloadVersionHistoryPanel to call the v2 versions endpoint.
+   */
+  const fileContainerAppId = ref<string | null>(null);
 
   async function fetchFileReference() {
     notFound.value = false;
@@ -35,6 +41,7 @@ export function useFetchFileReference(
         const fileRefMeta = await fetchFileContainerMeta(
           response.fileContainerId,
         );
+        fileContainerAppId.value = fileRefMeta.referencedContainerAppId ?? null;
         fileReference.value = {
           ...response,
           ...fileRefMeta,
@@ -61,6 +68,9 @@ export function useFetchFileReference(
         return {
           referencedContainerName: response.name,
           referencedContainerAvailability: "available",
+          // UI7: expose the UUID v7 appId so the version-history panel can
+          // call GET /v2/file-containers/{containerAppId}/files/{name}/versions
+          referencedContainerAppId: response.appId ?? undefined,
         };
       })
       .catch((error: ResponseError) => {
@@ -121,5 +131,5 @@ export function useFetchFileReference(
 
   fetchFileReference();
 
-  return { fileReference, files, notFound };
+  return { fileReference, files, notFound, fileContainerAppId };
 }
