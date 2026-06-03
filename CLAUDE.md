@@ -115,6 +115,68 @@ policy above (v2 is the development surface) and the
 `appId → shepardId` rename rule (single coordinated pass; until
 that lands, all new frontend code reads `appId` consistently).
 
+## Always: plugin backends build on the /v2/ surface + appId
+
+**Every `shepard-plugin-*` module's backend builds on the `/v2/`
+surface and addresses entities only by `appId`.** This is the
+backend sibling of the frontend-v2-only rule above. The
+`/shepard/api/...` v1 surface is frozen for *third-party*
+upstream-byte-compatibility — a plugin we author is not a
+third-party client and MUST NOT build on it.
+
+This mirrors how mature plugin hosts version their contract:
+Grafana plugins declare a host-version floor
+(`grafanaDependency: ">=9.0.0"`) and build only on GA host
+surfaces, never experimental ones; a Shepard plugin declares
+`shepardCompatibility` (e.g. `">=6.0.0-SNAPSHOT,<7"`) and builds
+only on the stable fork (`/v2/`) surface.
+
+Concrete consequences:
+
+1. **New plugin REST lands under `/v2/<plugin-or-resource>/...`.**
+   Never a new method on a `/shepard/api/` resource, never a fresh
+   `@Path(Constants.SHEPARD_API + ...)`. Admin surfaces go under
+   `/v2/admin/<plugin>/...` (the established A3b/N1c2/UH1a shape).
+2. **Path params and identifiers are `appId` (UUID v7) strings.**
+   No numeric Neo4j `Long` in a plugin endpoint's `@PathParam` or
+   `@QueryParam`. If a still-v1-only operation needs the numeric
+   id, resolve it from the loaded v2 entity's `.id` at call time —
+   never expose it on the wire.
+3. **Plugins compile against the shared SPI/core layer, not the
+   frozen v1 REST surface.** `de.dlr.shepard.spi.*`,
+   `de.dlr.shepard.storage.*`, `de.dlr.shepard.auth.permission.*`,
+   `de.dlr.shepard.context.collection.*` are the in-tree SPI/shared
+   contracts every plugin compiles against — they are *not* the v1
+   REST surface and are fine to import. The interfaces themselves
+   expose appId-/UUID-keyed contracts (`FileStorage` keys on UUID,
+   `PayloadKind` on string names). **If an SPI interface forces a
+   v1/numeric dependency, that is a finding to flag — don't silently
+   rewrite core SPI, since it affects every plugin.**
+4. **The exception: a frozen upstream-byte-compat REST surface that
+   the plugin inherited.** A payload kind whose v1 paths predate the
+   fork and appear in `openapi-5.4.0.json` (currently the
+   `spatiotemporal` plugin's `spatialDataContainers` +
+   `spatialDataReferences` numeric-id resources) keeps those v1
+   resources *unchanged* — rewriting them breaks third-party
+   upstream clients. Instead, ship a `/v2/<resource>/{appId}`
+   sibling shelf (SPATIAL-V6-003 + `PLUGIN-V2-001`) and migrate this
+   fork's own callers to it. The frozen resource is a compat
+   carrier, not a surface we extend.
+5. **The named carrier exception: `shepard-plugin-v1-compat`.** This
+   plugin's *job* is to gate, meter, and deprecate the v1 surface —
+   it is the only module allowed to know about v1 wholesale, and even
+   its own admin REST is `/v2/admin/legacy/v1/...`.
+6. **Reviewers reject** a plugin PR that adds a new
+   `@Path(Constants.SHEPARD_API + ...)`, exposes a numeric id in a
+   plugin endpoint, or resolves entities by Neo4j numeric id when an
+   appId is in hand.
+
+The audit `findings` doc is
+`aidocs/agent-findings/plugin-v2-only-audit.md`; the parity backlog
+is `PLUGIN-V2-*` in `aidocs/16`. Pairs with the API-version policy,
+the frontend-v2-only rule, the `appId → shepardId` rename rule, and
+the "evolve in a new namespace" principle below.
+
 ## Always: keep `aidocs/42-vision.md` current
 
 `aidocs/42-vision.md` is the **live researcher-facing vision** of
