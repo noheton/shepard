@@ -399,7 +399,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-06-02 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-02 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-03 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |
@@ -461,7 +461,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/screenshots/signout-loop-fix/README.md`](agent-findings/screenshots/signout-loop-fix/README.md) | BUG-SIGNOUT-LOOP-1 — sign-out infinite loop fix | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/sema-v6-preseed-status.md`](agent-findings/sema-v6-preseed-status.md) | SEMA-V6 Preseed Status (2026-05-26) | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/singleton-file-audit-2026-06-03.md`](agent-findings/singleton-file-audit-2026-06-03.md) | Single-file FileBundleReference audit — 2026-06-03 | 2026-06-03 | — |
+| [`aidocs/agent-findings/singleton-file-audit-2026-06-03.md`](agent-findings/singleton-file-audit-2026-06-03.md) | Single-file FileBundleReference audit — 2026-06-03 | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/ts-axis-verify-2026-05-29.md`](agent-findings/ts-axis-verify-2026-05-29.md) | TS-AXIS-VERIFY — MFFD spatial-roles annotations verified live (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-005-watches-me-silenced-2026-05-24.md`](agent-findings/ui-005-watches-me-silenced-2026-05-24.md) | UI-005 — silence `/watches/me` 404 spam on collection landing | 2026-05-24 | 2026-05-24 |
