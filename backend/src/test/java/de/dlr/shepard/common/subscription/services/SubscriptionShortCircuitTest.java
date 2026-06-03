@@ -134,10 +134,11 @@ public class SubscriptionShortCircuitTest {
   void staleCache_daoIsCalledAgain() {
     when(dao.findMatching(any(Filter.class))).thenReturn(List.of());
 
-    // Manually set lastCheckAt to a time well beyond the TTL.
+    // Prime the cache, then force it well beyond the TTL. The field write must
+    // go through a method (setLastCheckAtForTest) — a direct field assignment
+    // would hit the @ApplicationScoped client proxy, not the real bean.
     cache.update(false);
-    // Force cache to appear stale by setting the timestamp to the distant past.
-    cache.lastCheckAt = System.currentTimeMillis() - SubscriptionExistenceCache.TTL_MS - 1_000L;
+    cache.setLastCheckAtForTest(System.currentTimeMillis() - SubscriptionExistenceCache.TTL_MS - 1_000L);
 
     assertEquals(false, cache.isValid(), "cache should appear stale");
 

@@ -552,6 +552,10 @@ public class CollectionDAOTest extends BaseTestCase {
     var col = new Collection(1L);
     var existing = "0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506";
     col.setAppId(existing);
+    // Pre-set shepardId so createOrUpdate's NULL-shepardId backfill (the second
+    // session.save in GenericDAO) does not fire — this test asserts appId
+    // preservation, a single save.
+    col.setShepardId(1L);
 
     var actual = dao.createOrUpdate(col);
 
