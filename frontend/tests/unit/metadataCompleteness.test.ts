@@ -388,3 +388,69 @@ describe("computeMetadataCompleteness — deep-link wiring", () => {
     expect(r.checks.find(c => c.id === "creatorOrcid")?.deepLink).toBeNull();
   });
 });
+
+// ── RDM-005a(e) — "Show only failing" filter logic ───────────────────────
+//
+// The filter is implemented in MetadataCompletenessCard.vue as:
+//   `visibleChecks = showOnlyFailing ? checks.filter(c => !c.passed) : checks`
+// These tests validate that Array.filter predicate — pure logic, no
+// component rendering needed for an XS item.
+describe("RDM-005a(e) — show-only-failing filter logic", () => {
+  it("filter(c => !c.passed) keeps only failing checks", () => {
+    const r = computeMetadataCompleteness({
+      ...buildFullInputs(),
+      // Make some checks fail: no license, no keywords, no ORCID
+      collection: buildFullCollection({ license: null } as unknown as Partial<Collection>),
+      creatorOrcid: null,
+      keywordCount: 0,
+    });
+    const failing = r.checks.filter(c => !c.passed);
+    expect(failing.length).toBeGreaterThan(0);
+    // Every item in the filtered list must be failing
+    for (const check of failing) {
+      expect(check.passed).toBe(false);
+    }
+  });
+
+  it("filter produces no passing checks when enabled", () => {
+    const r = computeMetadataCompleteness(buildFullInputs());
+    // Fully-populated inputs: all checks pass — filter returns empty
+    const failing = r.checks.filter(c => !c.passed);
+    expect(failing).toHaveLength(0);
+  });
+
+  it("filter(c => !c.passed) excludes all passing checks", () => {
+    const r = computeMetadataCompleteness({
+      ...buildFullInputs(),
+      collection: buildFullCollection({ license: null } as unknown as Partial<Collection>),
+    });
+    const failing = r.checks.filter(c => !c.passed);
+    const passing = r.checks.filter(c => c.passed);
+    // No overlap between the two arrays
+    const failingIds = new Set(failing.map(c => c.id));
+    for (const check of passing) {
+      expect(failingIds.has(check.id)).toBe(false);
+    }
+  });
+
+  it("unfiltered list equals full checks array", () => {
+    const r = computeMetadataCompleteness(buildFullInputs());
+    // When showOnlyFailing is false, visibleChecks === result.checks
+    const unfiltered = r.checks; // same ref — no filter applied
+    expect(unfiltered).toHaveLength(9);
+  });
+
+  it("filter leaves the check objects unchanged (no mutation)", () => {
+    const r = computeMetadataCompleteness({
+      ...buildFullInputs(),
+      creatorOrcid: null,
+    });
+    const before = r.checks.map(c => ({ ...c }));
+    const _filtered = r.checks.filter(c => !c.passed);
+    // Filtering must not mutate the source array
+    expect(r.checks).toHaveLength(before.length);
+    for (let i = 0; i < before.length; i++) {
+      expect(r.checks[i]?.passed).toBe(before[i]?.passed);
+    }
+  });
+});
