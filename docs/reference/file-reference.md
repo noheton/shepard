@@ -26,14 +26,29 @@ two-extra-levels in every response).
 | Drop 1 000 camera-capture frames on a DataObject. | [`FileBundleReference`](/reference/file-bundle/) | Multi-file with sub-`FileGroup` structure for "frames 0–249 are sub-run 1, 250–499 are sub-run 2, ...". |
 | Drop a single MP4 video. | `FileReference` (today) or `VideoStreamReference` (when VID1 ships) | Singleton until video lands as its own kind. |
 
-The casual upload UI (FR1b-ui, queued) dispatches by **drag count**:
-- 1 file → `POST /v2/files` (creates a singleton).
-- ≥ 2 files → `POST /v2/bundles` (creates a bundle with one default group).
+The casual upload UI (SINGLETON-FILE-04, **shipped 2026-06-03**)
+defaults to the singleton shape:
 
-A "wrap as bundle" toggle lets a user pre-declare bundle intent for
-the first single file. Conversion direction is **singleton →
-bundle, never bundle → singleton** (the reverse would orphan groups,
-attributes, and dependent annotations).
+- **"One Reference per file"** mode (default) — every selected file
+  lands as its own `FileReference` via `POST /v2/files`. Each Reference
+  name is auto-derived as `<yyyy-mm-dd>-<filename>`.
+- **"Bundle as one Reference"** mode (opt-in toggle) — all selected
+  files share one `FileBundleReference` via the legacy
+  `POST /shepard/api/.../fileReferences` path. Use only when the files
+  genuinely belong together (an image series, a mesh set, the contents
+  of an archive).
+
+Conversion direction is **singleton → bundle, never bundle →
+singleton** (the reverse would orphan groups, attributes, and
+dependent annotations). If a single-file bundle slips through anyway
+(legacy data, an external script), `scripts/audit-single-file-bundles.py`
+flags it and the in-tree migration
+`V23__Split_singleton_bundles_to_FileReferences.java` relabels the row
+in place (preserving its appId so any incoming reference keeps
+resolving). The companion `scripts/backfill-single-file-bundles-to-singletons.py`
+emits a PROV-O `:Activity {kind: 'SINGLETON_FILE_MIGRATION'}` per
+converted row — see the operator runbook at
+[`docs/admin/runbooks/single-file-singletons.md`](/admin/runbooks/single-file-singletons/).
 
 ## Shape
 

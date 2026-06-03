@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 6 |
-| `deployed` | 106 |
+| `deployed` | 107 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **463** |
+| **total docs** | **464** |
 | **UNTAGGED** | **0** |
 
 ## fragment (65)
@@ -386,7 +386,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/122-template-icons.md`](integrations/122-template-icons.md) | 122 — ShepardTemplate icons | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (106)
+## deployed (107)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
