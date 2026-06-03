@@ -34,6 +34,13 @@ function rowAccessRights(item: Collection): string | null {
   return (item as unknown as { accessRights?: string | null }).accessRights ?? null;
 }
 
+// UX-WALK-2026-05-29-08: defensive accessor for permissionType, which is always
+// populated (Public / PublicReadable / Private). Used as the fallback chip when
+// accessRights (FAIR metadata) is absent.
+function rowPermissionType(item: Collection): string | null {
+  return (item as unknown as { permissionType?: string | null }).permissionType ?? null;
+}
+
 // Headers are computed so we can hide the numeric ID column when the user
 // is not in advanced mode. accessRights is always shown (LIC1).
 const headers = computed(() => {
@@ -176,11 +183,19 @@ function onPageChange(page: number) {
           >({{ (rowProps.item as any).importedFrom }})</span>
         </template>
         <template #[`item.accessRights`]>
+          <!-- UX-WALK-2026-05-29-08: prefer the FAIR accessRights chip; fall back to
+               a PermissionType chip (Open / Shared / Restricted) when FAIR metadata
+               is not yet set. The column is never a bare `—`. -->
           <AccessRightsChip
             v-if="rowAccessRights(rowProps.item)"
             :access-rights="rowAccessRights(rowProps.item)!"
           />
-          <span v-else class="text-disabled">—</span>
+          <PermissionTypeChip
+            v-else-if="rowPermissionType(rowProps.item)"
+            :permission-type="rowPermissionType(rowProps.item)"
+            data-testid="collection-row-permission-type-chip"
+          />
+          <span v-else class="text-disabled" aria-hidden="true">—</span>
         </template>
         <template #[`item.description`]>
           <span
