@@ -37,6 +37,7 @@ const emit = defineEmits<{
     unknownReferenceState: BasicContainer[];
   }): void;
   (e: "refs-resolved", payload: { id: number; refs: number[] | null }): void;
+  (e: "cardinality-resolved", payload: { id: number; count: number | null }): void;
 }>();
 
 const router = useRouter();
@@ -101,25 +102,42 @@ function onRefsResolved(payload: { id: number; refs: number[] | null }) {
   emit("refs-resolved", payload);
 }
 
-// ── Sizebar column (d) ──────────────────────────────────────────────────────
-// Relative-scale indicator. Baseline is the max reference count across
-// the current page; rows whose count we don't know yet render a
-// neutral bar. (Real channel/file counts would need a per-row CC1b-
-// style lazy lookup — same pattern, different endpoint — and are
-// queued as a follow-up under UI21-SIZEBAR-DATA.)
-const maxRefCount = computed(() => {
+// ── Sizebar column (d) — UI21-SIZEBAR-DATA ─────────────────────────────────
+// Relative-scale indicator using per-kind domain cardinality:
+//   TIMESERIES  → channel count (GET /v2/timeseries-containers/{id}/stats)
+//   FILE        → file count    (GET /v2/file-containers/{id}/stats)
+//   STRUCTUREDDATA → entry count (GET /v2/structured-data-containers/{id}/stats)
+//   Other types → null (bar stays empty)
+//
+// Populated lazily by <ContainerCardinalityCell> which fires once per row.
+const cardinalitiesById = reactive(new Map<number, number | null>());
+
+watchEffect(() => {
+  // Drop stale entries when the page changes.
+  const currentIds = new Set(props.serverItems.map(c => c.id));
+  for (const id of cardinalitiesById.keys()) {
+    if (!currentIds.has(id)) cardinalitiesById.delete(id);
+  }
+});
+
+function onCardinalityResolved(payload: { id: number; count: number | null }) {
+  cardinalitiesById.set(payload.id, payload.count);
+  emit("cardinality-resolved", payload);
+}
+
+const maxCardinality = computed(() => {
   let max = 0;
   for (const c of props.serverItems) {
-    const refs = refsById.get(c.id);
-    if (refs && refs.length > max) max = refs.length;
+    const count = cardinalitiesById.get(c.id);
+    if (count != null && count > max) max = count;
   }
   return Math.max(max, 1);
 });
 
 function sizeBarFor(item: BasicContainer): number {
-  const refs = refsById.get(item.id);
-  if (!refs) return 0;
-  return sizeBarFraction(refs.length, maxRefCount.value);
+  const count = cardinalitiesById.get(item.id);
+  if (count == null) return 0;
+  return sizeBarFraction(count, maxCardinality.value);
 }
 
 // ── Table headers ───────────────────────────────────────────────────────────
@@ -165,7 +183,7 @@ const headers = [
   {
     title: "Scale",
     key: "sizebar",
-    width: "8%",
+    width: "12%",
     sortable: false,
     cellProps: { class: "text-body-2" },
   },
@@ -372,19 +390,33 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
             >{{ toShortDateString(rowProps.item.createdAt) }}</NuxtLink>
           </template>
           <template #[`item.sizebar`]>
-            <div
-              class="size-bar"
-              :title="`Relative reference count (max on this page = ${maxRefCount})`"
-              :aria-label="`Reference scale ${Math.round(sizeBarFor(rowProps.item) * 100)} percent`"
-            >
+            <!-- UI21-SIZEBAR-DATA: bar width driven by per-kind domain cardinality
+                 (channel count for TS, file count for FC, entry count for SDC).
+                 The cardinality is fetched lazily by ContainerCardinalityCell below. -->
+            <div class="size-bar-wrapper">
               <div
-                class="size-bar-fill"
-                :style="{
-                  width: `${Math.max(2, sizeBarFor(rowProps.item) * 100)}%`,
-                  background: describeContainerType(rowProps.item.type).color
-                    ? `rgb(var(--v-theme-${describeContainerType(rowProps.item.type).color}))`
-                    : 'rgb(var(--v-theme-primary))',
-                }"
+                class="size-bar"
+                :title="
+                  cardinalitiesById.get(rowProps.item.id) != null
+                    ? `Scale relative to page max (${maxCardinality})`
+                    : 'Cardinality not available for this container type'
+                "
+                :aria-label="`Scale ${Math.round(sizeBarFor(rowProps.item) * 100)} percent`"
+              >
+                <div
+                  class="size-bar-fill"
+                  :style="{
+                    width: `${Math.max(sizeBarFor(rowProps.item) > 0 ? 2 : 0, sizeBarFor(rowProps.item) * 100)}%`,
+                    background: describeContainerType(rowProps.item.type).color
+                      ? `rgb(var(--v-theme-${describeContainerType(rowProps.item.type).color}))`
+                      : 'rgb(var(--v-theme-primary))',
+                  }"
+                />
+              </div>
+              <ContainerCardinalityCell
+                :container-id="rowProps.item.id"
+                :container-type="rowProps.item.type"
+                @cardinality-resolved="onCardinalityResolved"
               />
             </div>
           </template>
@@ -468,6 +500,13 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
   flex: 1;
   min-width: 140px;
   max-width: 240px;
+}
+
+.size-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 60px;
 }
 
 .size-bar {
