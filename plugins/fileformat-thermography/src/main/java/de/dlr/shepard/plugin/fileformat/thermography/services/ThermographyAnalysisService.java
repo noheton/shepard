@@ -12,6 +12,8 @@ import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
 import de.dlr.shepard.plugin.fileformat.thermography.io.AnalyzeResultIO;
 import de.dlr.shepard.plugin.fileformat.thermography.io.PlateHeatmapIO;
+import de.dlr.shepard.v2.admin.thermography.io.ThermographyConfigIO;
+import de.dlr.shepard.v2.admin.thermography.services.ThermographyConfigService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -97,10 +99,21 @@ public class ThermographyAnalysisService {
   FileService fileService;
 
   /**
+   * MFFD-NDT-ADMIN-CONFIG-1: runtime-mutable config singleton service.
+   * Resolves effective threshold / grid dimensions at analysis time, with
+   * per-request overrides winning over the singleton which wins over the
+   * deploy-time @ConfigProperty defaults below.
+   */
+  @Inject
+  ThermographyConfigService thermographyConfigService;
+
+  /**
    * Deploy default for the quality-score denominator (degrees Celsius).
    * Caller can override per-analysis via the {@code analyze(...)} thresholdC arg;
    * admin can flip globally via the {@code :ThermographyConfig} singleton
-   * once that admin-knob lands (deferred — current PR uses application.properties).
+   * (MFFD-NDT-ADMIN-CONFIG-1 — wired into {@link ThermographyConfigService}).
+   * These @ConfigProperty values are the ultimate fallback when both the
+   * per-request override and the singleton are absent.
    */
   @Inject
   @ConfigProperty(name = "shepard.v2.thermography.threshold-c", defaultValue = "80.0")
@@ -130,12 +143,16 @@ public class ThermographyAnalysisService {
       throw new InvalidBodyException("FileBundleReference not found for appId=" + imageBundleAppId);
     }
 
+    // Resolve effective config: per-request override > runtime singleton > deploy-time default.
+    // ThermographyConfigService.getConfig() already resolves singleton-vs-deploy-time-default;
+    // we layer the per-request override on top here.
+    ThermographyConfigIO cfg = resolveConfig();
     double thresholdC = (thresholdCOverride != null && thresholdCOverride > 0)
-      ? thresholdCOverride : defaultThresholdC;
+      ? thresholdCOverride : cfg.thresholdC();
     int gridW = (gridWidthOverride != null && gridWidthOverride > 0)
-      ? gridWidthOverride : defaultGridWidth;
+      ? gridWidthOverride : cfg.gridWidth();
     int gridH = (gridHeightOverride != null && gridHeightOverride > 0)
-      ? gridHeightOverride : defaultGridHeight;
+      ? gridHeightOverride : cfg.gridHeight();
 
     ThermographyMetrics.BundleStats stats = new ThermographyMetrics.BundleStats(gridW, gridH);
 
@@ -224,6 +241,26 @@ public class ThermographyAnalysisService {
   }
 
   // ── internal helpers ────────────────────────────────────────────────────
+
+  /**
+   * Resolve the effective ThermographyConfigIO. Fail-soft: if the
+   * ThermographyConfigService is unavailable (e.g. startup-race on first call),
+   * fall back to a synthesised IO built from the deploy-time @ConfigProperty
+   * defaults so analysis still runs.
+   */
+  ThermographyConfigIO resolveConfig() {
+    try {
+      return thermographyConfigService.getConfig();
+    } catch (RuntimeException e) {
+      Log.warnf(e,
+        "MFFD-NDT-ADMIN-CONFIG-1: ThermographyConfigService unavailable; " +
+        "falling back to deploy-time defaults (threshold=%.1f, grid=%dx%d)",
+        defaultThresholdC, defaultGridWidth, defaultGridHeight);
+      // Synthesise an IO from the deploy-time defaults — appId can be null
+      // since callers only read the numeric fields.
+      return new ThermographyConfigIO(null, defaultThresholdC, defaultGridWidth, defaultGridHeight);
+    }
+  }
 
   /** Visible for test — pure name-suffix check, no I/O. */
   public static boolean looksLikeTiff(String filename) {
