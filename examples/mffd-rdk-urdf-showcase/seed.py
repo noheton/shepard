@@ -364,7 +364,14 @@ def _content_type_for(path: Path) -> str:
 def upload_file_reference(apis: Apis, coll: Collection, do: DataObject,
                           fc: FileContainer, file_path: Path,
                           ref_name: str) -> FileReference | None:
-    """Upload a single file under one FileReference (FR1b: one FileRef per file)."""
+    """Upload a single file under one FR1a FileBundleReference (legacy bundle path).
+
+    DEPRECATED for one-file uploads — call `upload_singleton_file_reference()`
+    instead per CLAUDE.md "Always: singleton FileReference for one-file uploads;
+    FileBundleReference only when bundling >1". This helper stays for the
+    genuinely multi-file bundle case (none in this seed today) and so a future
+    audit can grep for the legacy call site cleanly.
+    """
     existing_refs = apis.file_reference.get_all_file_references(coll.id, do.id) or []
     for r in existing_refs:
         if r.name == ref_name:
@@ -392,6 +399,92 @@ def upload_file_reference(apis: Apis, coll: Collection, do: DataObject,
     fr = apis.file_reference.create_file_reference(coll.id, do.id, fr)
     _log("OK", ref_name, "FileReference", fr.id)
     return fr
+
+
+# ---------------------------------------------------------------------------
+# SINGLETON-FILE-02: one-file uploads land as FR1b singletons via
+# POST /v2/files?parentDataObjectAppId=...&name=...  (no FileContainer detour).
+#
+# The singleton appId resolves directly to the bytes via
+# GET /v2/files/{appId}/content and feeds every appId-keyed backend resolver
+# (URDF resolver, KRL interpret's SingletonFileReferenceService, etc.). The
+# FR1a bundle path would force those resolvers to do a second dereference and
+# silently miss any single-file bundle.
+
+def _get_do_app_id(host: str, api_key: str, coll_id: int, do_id: int) -> str:
+    """Resolve the v1 numeric (coll, do) pair to the DataObject's UUID v7 appId.
+
+    The v1 GET endpoint returns the appId in the response body even on the
+    upstream-byte-compat surface (one of the few fields where upstream
+    forwarded the OGM appId verbatim)."""
+    resp = _http.get(
+        f"{host}/collections/{coll_id}/dataObjects/{do_id}",
+        headers={"X-API-KEY": api_key},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["appId"]
+
+
+def _list_singleton_files_by_do(v2_base: str, api_key: str, do_app_id: str) -> list[dict]:
+    """List FR1b singletons attached to a DataObject. Empty list on 404/403."""
+    resp = _http.get(
+        f"{v2_base}/files/by-data-object/{do_app_id}",
+        headers={"X-API-KEY": api_key, "Accept": "application/json"},
+        timeout=30,
+    )
+    if resp.status_code in (403, 404):
+        return []
+    resp.raise_for_status()
+    return resp.json() or []
+
+
+def upload_singleton_file_reference(apis: Apis, coll: Collection, do: DataObject,
+                                    file_path: Path, ref_name: str) -> dict | None:
+    """Upload one file as an FR1b singleton FileReference via POST /v2/files.
+
+    Idempotent: existing singletons on the same DataObject are looked up by
+    name and skipped (the singleton list endpoint
+    `GET /v2/files/by-data-object/{appId}` is the source of truth here, not
+    the v1 FR1a `get_all_file_references` — the two return disjoint sets).
+
+    Returns the FileReferenceV2IO dict on success, or None when the local
+    file is missing.
+    """
+    host    = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    v2      = _v2_base(host)
+    do_app  = _get_do_app_id(host, api_key, coll.id, do.id)
+
+    existing = _list_singleton_files_by_do(v2, api_key, do_app)
+    for r in existing:
+        if r.get("name") == ref_name:
+            _log("SKIP", ref_name, "SingletonFileRef", r.get("appId"))
+            return r
+
+    if not file_path.exists():
+        _log("SKIP", ref_name, f"SingletonFileRef (missing local file: {file_path})")
+        return None
+
+    fname = file_path.name
+    ctype = _content_type_for(file_path)
+
+    # POST /v2/files?parentDataObjectAppId=...&name=...  multipart `file=...`.
+    # The endpoint mints a new :SingletonFileReference, writes bytes into the
+    # shared `_shepard_files` Mongo namespace, and returns 201 + the appId.
+    params = {"parentDataObjectAppId": do_app, "name": ref_name}
+    files = {"file": (fname, file_path.read_bytes(), ctype)}
+    resp = _http.post(
+        f"{v2}/files",
+        params=params,
+        files=files,
+        headers={"X-API-KEY": api_key, "Accept": "application/json"},
+        timeout=180,
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+    _log("OK", ref_name, "SingletonFileRef", payload.get("appId"))
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -720,7 +813,10 @@ def seed(apis: Apis) -> None:
         print(f"WARN: MFZ.rdk not found at {MFZ_RDK_PATH}", file=sys.stderr)
         print("      The RDK upload step is skipped. Mount the MFFD raw-data tree "
               "under examples/mffd-showcase/raw-data/ to enable it.", file=sys.stderr)
-    upload_file_reference(apis, coll, do_rdk, fc, MFZ_RDK_PATH, "mfz-rdk-source")
+    # SINGLETON-FILE-02: one-file shape → FR1b singleton via POST /v2/files.
+    # Lets the RDK-PARSE-1 plugin's tier-1 scrape land on the singleton appId
+    # directly (no FR1a bundle dereference dance).
+    upload_singleton_file_reference(apis, coll, do_rdk, MFZ_RDK_PATH, "mfz-rdk-source")
 
     # 2) URDF DataObject + URDF + meshes
     do_urdf = ensure_data_object(
@@ -740,10 +836,17 @@ def seed(apis: Apis) -> None:
         },
     )
     print("\n--- Uploading URDF + STL meshes (provenance copies) ---", flush=True)
-    upload_file_reference(apis, coll, do_urdf, fc, URDF_DIR / "kr210_r2700_2.urdf", "kr210-r2700-urdf")
+    # SINGLETON-FILE-02: every one of these is a one-file shape → singleton.
+    # The canonical violator from 2026-05-30 (the URDF + 7 meshes uploaded as
+    # 9 single-file FileBundleReferences that couldn't be resolved by
+    # `POST /v2/krl/interpret`) lands here as 9 singletons instead. Every
+    # appId-keyed downstream resolver (UrdfResolver, KRL interpret's
+    # `SingletonFileReferenceService.findByAppId`, etc.) finds them
+    # without any bundle dereference.
+    upload_singleton_file_reference(apis, coll, do_urdf, URDF_DIR / "kr210_r2700_2.urdf", "kr210-r2700-urdf")
     for mesh in MESH_NAMES:
-        upload_file_reference(
-            apis, coll, do_urdf, fc, FE_MESH_DIR / mesh, f"kr210-r2700-mesh-{mesh}",
+        upload_singleton_file_reference(
+            apis, coll, do_urdf, FE_MESH_DIR / mesh, f"kr210-r2700-mesh-{mesh}",
         )
 
     # 3) KRL program DataObject + .src FileReference
@@ -772,7 +875,12 @@ def seed(apis: Apis) -> None:
         },
     )
     print("\n--- Uploading KRL .src program ---", flush=True)
-    upload_file_reference(apis, coll, do_krl, fc, KRL_SRC_PATH, "ply5-layup-krl")
+    # SINGLETON-FILE-02: KRL .src is a one-file shape → singleton. The
+    # downstream `POST /v2/krl/interpret` resolves the .src by its singleton
+    # appId via `SingletonFileReferenceService.findByAppId(...)`. Bundles
+    # holding a single .src would silently 404 — exactly the failure mode
+    # operator-surfaced 2026-05-30.
+    upload_singleton_file_reference(apis, coll, do_krl, KRL_SRC_PATH, "ply5-layup-krl")
 
     # 4) Trajectory DataObject + TS channels
     do_traj = ensure_data_object(

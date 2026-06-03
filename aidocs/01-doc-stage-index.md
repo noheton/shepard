@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 6 |
-| `deployed` | 107 |
+| `deployed` | 108 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **465** |
+| **total docs** | **466** |
 | **UNTAGGED** | **0** |
 
 ## fragment (66)
@@ -74,7 +74,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
-| [`aidocs/agent-findings/screenshots/proj-nav-1-4k-2026-06-03-unauth/README.md`](agent-findings/screenshots/proj-nav-1-4k-2026-06-03-unauth/README.md) | PROJ-PLAYWRIGHT-1 — unauth baselines (2026-06-03) | 2026-06-03 | — |
+| [`aidocs/agent-findings/screenshots/proj-nav-1-4k-2026-06-03-unauth/README.md`](agent-findings/screenshots/proj-nav-1-4k-2026-06-03-unauth/README.md) | PROJ-PLAYWRIGHT-1 — unauth baselines (2026-06-03) | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/synergy-2026-05-23-ai-accountability.md`](agent-findings/synergy-2026-05-23-ai-accountability.md) | S-08 — AI accountability dashboard: MCP × Permission audit log × F(AI)²R | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/synergy-2026-05-23-channel-as-individual.md`](agent-findings/synergy-2026-05-23-channel-as-individual.md) | S-01 — Channel-as-individual: HSDS HDF5 × AAS TimeSeriesData × sTC | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/synergy-2026-05-23-openlineage-fair2r.md`](agent-findings/synergy-2026-05-23-openlineage-fair2r.md) | S-02 — OpenLineage RunEvent × F(AI)²R × PROV-O: EASA evidence for free | 2026-05-23 | 2026-05-27 |
@@ -227,7 +227,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/115-otvis-tier2-frame-extraction.md`](integrations/115-otvis-tier2-frame-extraction.md) | 115 — OTvis tier-2 design | 2026-05-28 | 2026-05-28 |
 | [`aidocs/integrations/117-krl-interpreter.md`](integrations/117-krl-interpreter.md) | 117 — KRL interpreter (KRL-INTERPRETER-01) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/integrations/118-mffd-process-chain-mapping.md`](integrations/118-mffd-process-chain-mapping.md) | MFFD process-chain mapping (118) | 2026-06-02 | 2026-06-02 |
-| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-02 |
+| [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-03 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
@@ -387,7 +387,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/122-template-icons.md`](integrations/122-template-icons.md) | 122 — ShepardTemplate icons | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (107)
+## deployed (108)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -395,7 +395,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-03 |
-| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-02 |
+| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-03 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-06-02 |
@@ -461,6 +461,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/screenshots/signout-loop-fix/README.md`](agent-findings/screenshots/signout-loop-fix/README.md) | BUG-SIGNOUT-LOOP-1 — sign-out infinite loop fix | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/sema-v6-preseed-status.md`](agent-findings/sema-v6-preseed-status.md) | SEMA-V6 Preseed Status (2026-05-26) | 2026-05-26 | 2026-05-26 |
+| [`aidocs/agent-findings/singleton-file-audit-2026-06-03.md`](agent-findings/singleton-file-audit-2026-06-03.md) | Single-file FileBundleReference audit — 2026-06-03 | 2026-06-03 | — |
 | [`aidocs/agent-findings/ts-axis-verify-2026-05-29.md`](agent-findings/ts-axis-verify-2026-05-29.md) | TS-AXIS-VERIFY — MFFD spatial-roles annotations verified live (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-005-watches-me-silenced-2026-05-24.md`](agent-findings/ui-005-watches-me-silenced-2026-05-24.md) | UI-005 — silence `/watches/me` 404 spam on collection landing | 2026-05-24 | 2026-05-24 |
