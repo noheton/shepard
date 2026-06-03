@@ -82,9 +82,34 @@ acquisition annotations still emit.
   (DO-sprawl containment rule, see
   `aidocs/integrations/114-process-monitoring-parser-plugin.md §0`).
 
+## How do I view a thermography scan? (OTVIS-VIEWER)
+
+Once an `.OTvis` file is uploaded as a **single-file FileReference**
+(the default for one-file uploads), Shepard decodes its amplitude and
+phase frames and shows them on the DataObject detail page:
+
+1. Open the DataObject that carries the `.OTvis` scan.
+2. Scroll to the **"Thermography Frames (OTvis)"** panel (one panel per
+   `.OTvis` reference) and expand it.
+3. The heatmap renders straight away. For a lock-in result frame, use
+   the **amplitude / phase** toggle:
+   - **Phase** (default) — the channel that reveals subsurface defects
+     (delamination, porosity) with the least sensitivity to surface
+     emissivity and uneven heating. This is the channel you read for
+     CFRP NDT.
+   - **Amplitude** — the magnitude of the thermal response.
+4. Drag the **frame scrubber** to step through frames (single-frame
+   archives show no scrubber).
+
+You never type a path or URL — the viewer pulls the bytes from the
+reference by its appId. If the panel shows a warning banner, some
+frames were tolerated with issues (e.g. an unsupported frame format);
+the rest still render.
+
 ## Where to learn more
 
-- `docs/reference.md` — every annotation key and how it is derived.
+- `docs/reference.md` — every annotation key and how it is derived;
+  §6.5 documents the decoded-frame viewer REST endpoints.
 - `aidocs/integrations/114-process-monitoring-parser-plugin.md` —
   the full design doc, including the planned tier-2 frame extraction
   and the cross-modal correlation with AFP layup timeseries.

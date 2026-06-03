@@ -212,6 +212,80 @@ public interface FileParserPlugin {
 Implementation: `OTvisParser.accepts(...)` matches on extension
 `.OTvis` (case-insensitive) or MIME type `application/x-tar`.
 
+## 6.5 REST surface — decoded-frame viewer (OTVIS-VIEWER)
+
+Tier-2 frame extraction (`OTvisFrameExtractor` → amplitude / phase /
+raw-calibrated) is surfaced over REST so the frontend renders the
+**actual decoded heatmap frames** (distinct from the §4.5
+plate-heatmap, which works on a `FileBundleReference` of pre-rendered
+TIFFs). The endpoints live on the existing
+`de.dlr.shepard.v2.thermography.resources.ThermographyV2Rest`
+(`/v2/thermography`).
+
+The backend depends on this plugin as a **plain-Java jar** (the
+extractor has no Quarkus/CDI surface, so — like
+`shepard-plugin-fileformat-svdx` — it does **not** worsen the Jandex
+`CompositeIndex` hang that blocks `OTVIS-WIRE-AGGREGATOR-1`). The
+extractor is invoked directly; the `FileParserPlugin` SPI shim stays
+unused until the aggregator wire-up lands.
+
+Both endpoints take a **singleton `FileReference` appId** (FR1b) of
+the `.OTvis` archive. The backend resolves the bytes via
+`SingletonFileReferenceService.getPayload(appId)` and decodes with
+`OTvisFrameExtractor`. Read is enforced against the reference's parent
+DataObject. The viewer never sees a path/URL (per the
+"UI never asks for paths/URLs" rule).
+
+### `GET /v2/thermography/otvis/{fileReferenceAppId}/frames`
+
+Frame index, no pixel data:
+
+```jsonc
+// 200 OK
+{
+  "fileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
+  "width": 1024, "height": 768, "frameCount": 2,
+  "frames": [
+    { "index": 0, "kind": "lockin", "channels": ["amplitude","phase"], "defaultChannel": "phase" },
+    { "index": 1, "kind": "raw",    "channels": ["temperature"],        "defaultChannel": "temperature" }
+  ],
+  "partialReason": null   // non-null → fail-soft tolerance notes (unknown DataFormat, truncation, …)
+}
+```
+
+`200` ok · `401` unauth · `403` no Read on parent DO · `404` no
+singleton FileReference with that appId · `422` not a decodable OTvis
+archive.
+
+### `GET /v2/thermography/otvis/{fileReferenceAppId}/frames/{n}?channel=...`
+
+Colour-mapped heatmap **PNG** (`image/png`) for frame `n`:
+
+| Frame kind | valid `channel` | default |
+|---|---|---|
+| `lockin` | `amplitude`, `phase` | `phase` |
+| `raw`    | `temperature`        | `temperature` |
+
+Colour map is applied server-side: **inferno** for magnitude /
+temperature; a **cyclic** blue→white→red→blue ramp for `phase` (phase
+wraps at ±π, so a discontinuous ramp misleads). Phase is the canonical
+NDT defect channel — least sensitive to surface emissivity and uneven
+heating.
+
+`200` PNG · `401` · `403` · `404` · `422` (bad archive / frame index /
+channel).
+
+**Serving-shape note.** v1 re-decodes the bounded archive per request
+and renders one PNG. Full OME-Zarr (chunked, multiscale, napari-pannable)
+is deferred as `OTVIS-TIER2-OMEZARR-ZARR` — overkill for a "see the
+inspection" viewer; the MFFD fixtures are single-frame-per-archive. A
+decoded-frame cache keyed by FileReference appId is the follow-up if a
+multi-frame archive makes per-request decode expensive.
+
+Frontend: `frontend/components/context/thermography/DataObjectOtvisViewer.vue`
+mounts on the DataObject detail page for every `.OTvis` singleton
+FileReference (in-context-first entry).
+
 ## 7. Compose / install footprint
 
 No sidecars, no external services, no compose changes required for
