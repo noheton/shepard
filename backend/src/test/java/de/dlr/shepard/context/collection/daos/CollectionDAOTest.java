@@ -556,7 +556,9 @@ public class CollectionDAOTest extends BaseTestCase {
     var actual = dao.createOrUpdate(col);
 
     assertEquals(existing, actual.getAppId());
-    verify(session).save(col, 1);
+    // Two saves: the primary persist, then the shepardId-backfill re-save for a
+    // node that has an OGM id but no shepardId yet (GenericDAO auto-assign seam).
+    verify(session, org.mockito.Mockito.times(2)).save(col, 1);
   }
 
   @Test

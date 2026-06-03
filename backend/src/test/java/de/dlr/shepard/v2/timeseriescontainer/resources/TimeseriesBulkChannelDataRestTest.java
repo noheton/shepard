@@ -95,10 +95,11 @@ public class TimeseriesBulkChannelDataRestTest {
   @Test
   void mixedIds_unknownSkipped_knownFetched() {
     Timeseries ta = tuple("vibration");
-    when(resolverMock.resolveTuple(KNOWN_A)).thenReturn(Optional.of(ta));
-    when(resolverMock.resolveTuple(UNKNOWN)).thenReturn(Optional.empty());
+    // Bulk resolution returns only the known channels (unknown ids silently absent);
+    // the service maps resolved entities to data-point bundles.
+    when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
     TimeseriesWithDataPoints expected = new TimeseriesWithDataPoints(ta, List.of());
-    when(serviceMock.getManyTimeseriesWithDataPoints(anyLong(), any(), any()))
+    when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
       .thenReturn(List.of(expected));
 
     Response resp = resource.getBulkChannelData(CONTAINER_ID,
@@ -116,9 +117,8 @@ public class TimeseriesBulkChannelDataRestTest {
   void twoKnownIds_delegatesCorrectTuplesToService() {
     Timeseries ta = tuple("channel_a");
     Timeseries tb = tuple("channel_b");
-    when(resolverMock.resolveTuple(KNOWN_A)).thenReturn(Optional.of(ta));
-    when(resolverMock.resolveTuple(KNOWN_B)).thenReturn(Optional.of(tb));
-    when(serviceMock.getManyTimeseriesWithDataPoints(
+    when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
+    when(serviceMock.getManyDataPointsByEntities(
         anyLong(), any(), any(TimeseriesDataPointsQueryParams.class)))
       .thenReturn(List.of(
         new TimeseriesWithDataPoints(ta, List.of()),
@@ -131,7 +131,7 @@ public class TimeseriesBulkChannelDataRestTest {
     @SuppressWarnings("unchecked")
     List<TimeseriesWithDataPoints> body = (List<TimeseriesWithDataPoints>) resp.getEntity();
     assertEquals(2, body.size());
-    verify(serviceMock).getManyTimeseriesWithDataPoints(
+    verify(serviceMock).getManyDataPointsByEntities(
       anyLong(), any(), any(TimeseriesDataPointsQueryParams.class));
   }
 
@@ -139,14 +139,13 @@ public class TimeseriesBulkChannelDataRestTest {
 
   @Test
   void timeWindow_forwardedToService() {
-    Timeseries ta = tuple("sensor");
-    when(resolverMock.resolveTuple(KNOWN_A)).thenReturn(Optional.of(ta));
-    when(serviceMock.getManyTimeseriesWithDataPoints(anyLong(), any(), any())).thenReturn(List.of());
+    when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
+    when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
     resource.getBulkChannelData(CONTAINER_ID,
       new BulkChannelDataRequestIO(List.of(KNOWN_A), START_NS, END_NS));
 
-    verify(serviceMock).getManyTimeseriesWithDataPoints(
+    verify(serviceMock).getManyDataPointsByEntities(
       anyLong(),
       any(),
       org.mockito.ArgumentMatchers.eq(

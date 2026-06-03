@@ -320,6 +320,7 @@ public class DataObjectServiceTest {
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
+    when(dao.findByCollectionAndShepardIds(collection.getShepardId(), java.util.List.of(predecessor.getShepardId()))).thenReturn(java.util.List.of(predecessor));
     when(dateHelper.getDate()).thenReturn(date);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
@@ -520,10 +521,16 @@ public class DataObjectServiceTest {
 
     predecessors.forEach(predecessor -> when(dao.createOrUpdate(predecessor)).thenReturn(predecessor));
     predecessors.forEach(predecessor -> when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor));
+    when(dao.findByCollectionAndShepardIds(collection.getShepardId(), java.util.List.of(aPredecessor.getShepardId()))).thenReturn(java.util.List.of(aPredecessor));
 
     DataObject actual = service.updateDataObject(collection.getShepardId(), old.getShepardId(), input);
 
-    predecessors.forEach(predecessor -> verify(dao, atLeast(1)).findByShepardId(predecessor.getShepardId()));
+    // Predecessor resolution now batches via findByCollectionAndShepardIds (one
+    // Cypher round-trip) instead of one findByShepardId per id.
+    verify(dao).findByCollectionAndShepardIds(
+      collection.getShepardId(),
+      java.util.List.of(aPredecessor.getShepardId())
+    );
     predecessors.forEach(predecessor ->
       verify(dao).deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId())
     );
