@@ -121,6 +121,39 @@ public class SemanticAnnotationV2DAO extends GenericDAO<SemanticAnnotation> {
       .toList();
   }
 
+  // ─── counts ────────────────────────────────────────────────────────────────
+
+  /**
+   * RDM-005a(d) — count of v6-style semantic annotations whose
+   * {@code subjectAppId} matches the given value.
+   *
+   * <p>Uses a raw {@code MATCH … RETURN count(a)} query (not the
+   * typed {@code findByQuery} path) so the OGM does not hydrate every
+   * annotation node — counting is O(index-scan) rather than O(N × depth).
+   *
+   * <p>Only counts v6 annotations (those with a non-null {@code subjectAppId}
+   * field, written by the SEMA-V6 path). Legacy annotations wired via the
+   * {@code HAS_ANNOTATION} graph edge and served by
+   * {@link de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO}
+   * are NOT counted here — consistent with the v6 filter semantics of
+   * every other method in this DAO.
+   *
+   * @param subjectAppId the {@code appId} of the subject entity
+   * @return number of v6 annotations whose subjectAppId equals the argument;
+   *         0 when the argument is null/blank or no such annotations exist
+   */
+  public long countBySubjectAppId(String subjectAppId) {
+    if (subjectAppId == null || subjectAppId.isBlank()) return 0L;
+    String query =
+      "MATCH (a:SemanticAnnotation) WHERE a.subjectAppId = $subjectAppId RETURN count(a) AS n";
+    org.neo4j.ogm.model.Result result = session.query(query, Map.of("subjectAppId", subjectAppId));
+    for (Map<String, Object> row : result.queryResults()) {
+      Object n = row.get("n");
+      if (n instanceof Number num) return num.longValue();
+    }
+    return 0L;
+  }
+
   // ─── back-pointer stamp ────────────────────────────────────────────────────
 
   /**

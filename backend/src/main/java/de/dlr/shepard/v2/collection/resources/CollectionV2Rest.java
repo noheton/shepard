@@ -12,6 +12,10 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
+import de.dlr.shepard.v2.collection.io.CollectionCompletenessIO;
+import de.dlr.shepard.v2.collection.io.CompletenessCheckIO;
+import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -38,6 +42,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -120,6 +125,12 @@ public class CollectionV2Rest {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  SemanticAnnotationV2DAO semanticAnnotationV2DAO;
+
+  @Inject
+  CollectionLabJournalEntriesDAO collectionLabJournalEntriesDAO;
 
   @GET
   @Operation(
@@ -369,6 +380,151 @@ public class CollectionV2Rest {
 
     collectionService.deleteCollection(ogmId);
     return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  // ── completeness ─────────────────────────────────────────────────────────
+
+  /**
+   * Minimum number of characters in {@code description} to count as "rich".
+   *
+   * <p>Mirrors {@code DESCRIPTION_MIN_CHARS = 50} in
+   * {@code frontend/utils/metadataCompleteness.ts} — DataCite Description
+   * field guidance and Zenodo's completeness gauge both use 50 chars as the
+   * threshold that distinguishes a stub from a real abstract.
+   */
+  private static final int DESCRIPTION_MIN_CHARS = 50;
+
+  @GET
+  @Path("/{collectionAppId}/completeness")
+  @Operation(
+    summary = "Metadata completeness score for a Collection.",
+    description =
+      "Returns a 0–100 metadata completeness score with a per-check breakdown. " +
+      "Mirrors the client-side `computeMetadataCompleteness()` function in " +
+      "`frontend/utils/metadataCompleteness.ts` with the same 9 checks and the same " +
+      "100-point ceiling.\n\n" +
+      "**Score bands** (matching the Vuetify colour tokens on the Collection landing card):\n" +
+      "  - `error` — score < 50 (collection is not publication-ready)\n" +
+      "  - `warning` — 50 ≤ score < 80 (missing key FAIR fields)\n" +
+      "  - `success` — score ≥ 80 (DMP-grade)\n\n" +
+      "**Checks and point weights** (9 checks, 100 points total):\n" +
+      "  - `name` (10 pts) — Collection.name is non-blank\n" +
+      "  - `description` (15 pts) — Collection.description ≥ 50 chars (DataCite §17)\n" +
+      "  - `license` (20 pts) — SPDX license set (FAIR R1.1)\n" +
+      "  - `accessRights` (10 pts) — access-rights enum set (FAIR A1)\n" +
+      "  - `creatorOrcid` (10 pts) — creator has ORCID stamped at creation (FAIR F2)\n" +
+      "  - `semanticAnnotation` (10 pts) — at least one v6 semantic annotation (FAIR I2)\n" +
+      "  - `labJournal` (5 pts) — at least one lab-journal entry (FAIR R1.2)\n" +
+      "  - `keywords` (5 pts) — conservatively 0 until keyword-annotation endpoint " +
+      "    ships (FAIR8 follow-up); this check always fails server-side today\n" +
+      "  - `dataObjects` (15 pts) — Collection has at least one DataObject (FAIR F3)\n\n" +
+      "**Note on `semanticAnnotation` count:** only v6-style annotations " +
+      "(those with a `subjectAppId` property written by the SEMA-V6 write path) are " +
+      "counted. Legacy annotations wired only via the `HAS_ANNOTATION` graph edge " +
+      "and not yet migrated to the v6 shape are not counted here. This may cause " +
+      "the server-side score to diverge from the client-side score on instances " +
+      "with pre-SEMA-V6 annotations until the v6 migration runs.\n\n" +
+      "Auth: Read permission on the Collection."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Completeness score and per-check breakdown.",
+    content = @Content(schema = @Schema(implementation = CollectionCompletenessIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on this Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response getCompleteness(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Context SecurityContext sc
+  ) {
+    Long ogmId = resolveOrNull(collectionAppId);
+    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceAccess(ogmId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    // Load the collection with its DataObjects so we can check `dataObjects` check.
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(ogmId);
+
+    // ── 1. name ────────────────────────────────────────────────────────────
+    String name = collection.getName() != null ? collection.getName().trim() : "";
+    boolean namePassed = !name.isEmpty();
+
+    // ── 2. description ─────────────────────────────────────────────────────
+    String description = collection.getDescription() != null ? collection.getDescription().trim() : "";
+    boolean descriptionPassed = description.length() >= DESCRIPTION_MIN_CHARS;
+
+    // ── 3. license ─────────────────────────────────────────────────────────
+    String license = collection.getLicense();
+    boolean licensePassed = license != null && !license.trim().isEmpty();
+
+    // ── 4. accessRights ────────────────────────────────────────────────────
+    String accessRights = collection.getAccessRights();
+    boolean accessRightsPassed = accessRights != null && !accessRights.trim().isEmpty();
+
+    // ── 5. creatorOrcid ────────────────────────────────────────────────────
+    // FAIR2 stamps the creator's ORCID directly on the entity at creation time.
+    // This is the same value the frontend reads via UserApi.getUser({ username }).orcid,
+    // but without the extra round-trip: the entity already carries it.
+    String creatorOrcid = collection.getCreatedByOrcid();
+    boolean creatorOrcidPassed = creatorOrcid != null && !creatorOrcid.trim().isEmpty();
+
+    // ── 6. semanticAnnotation ──────────────────────────────────────────────
+    // Count v6-style annotations whose subjectAppId = collection.appId.
+    long annotationCount = 0L;
+    try {
+      annotationCount = semanticAnnotationV2DAO.countBySubjectAppId(collection.getAppId());
+    } catch (Exception e) {
+      // Conservative: treat as 0 — the check fails rather than producing a 500.
+      io.quarkus.logging.Log.warnf(
+        "RDM-005a(d): failed to count semantic annotations for collection %s: %s",
+        collectionAppId, e.getMessage()
+      );
+    }
+    boolean semanticAnnotationPassed = annotationCount > 0;
+
+    // ── 7. labJournal ──────────────────────────────────────────────────────
+    long labJournalCount = 0L;
+    try {
+      labJournalCount = collectionLabJournalEntriesDAO.findByCollectionAppId(collection.getAppId()).size();
+    } catch (Exception e) {
+      io.quarkus.logging.Log.warnf(
+        "RDM-005a(d): failed to count lab journal entries for collection %s: %s",
+        collectionAppId, e.getMessage()
+      );
+    }
+    boolean labJournalPassed = labJournalCount > 0;
+
+    // ── 8. keywords ────────────────────────────────────────────────────────
+    // Conservatively 0 — mirrors the client-side widget which also hard-codes
+    // keywordCount=0 until a keyword-predicate annotation endpoint ships
+    // (FAIR8 follow-up in aidocs/16). The check always fails server-side today.
+    boolean keywordsPassed = false;
+
+    // ── 9. dataObjects ─────────────────────────────────────────────────────
+    int dataObjectCount = collection.getDataObjects() != null ? collection.getDataObjects().size() : 0;
+    boolean dataObjectsPassed = dataObjectCount > 0;
+
+    // ── Assemble checks list ───────────────────────────────────────────────
+    List<CompletenessCheckIO> checks = List.of(
+      new CompletenessCheckIO("name",               "Collection has a name",             namePassed,              10),
+      new CompletenessCheckIO("description",        "Description ≥ " + DESCRIPTION_MIN_CHARS + " characters", descriptionPassed, 15),
+      new CompletenessCheckIO("license",            "License (SPDX) set",                licensePassed,           20),
+      new CompletenessCheckIO("accessRights",       "Access rights set",                 accessRightsPassed,      10),
+      new CompletenessCheckIO("creatorOrcid",       "Creator has ORCID",                 creatorOrcidPassed,      10),
+      new CompletenessCheckIO("semanticAnnotation", "At least one semantic annotation",  semanticAnnotationPassed, 10),
+      new CompletenessCheckIO("labJournal",         "At least one lab journal entry",    labJournalPassed,         5),
+      new CompletenessCheckIO("keywords",           "At least one keyword annotation",   keywordsPassed,           5),
+      new CompletenessCheckIO("dataObjects",        "Has at least one DataObject",       dataObjectsPassed,       15)
+    );
+
+    int maxScore = checks.stream().mapToInt(CompletenessCheckIO::getPoints).sum();
+    int earned   = checks.stream().filter(CompletenessCheckIO::isPassed).mapToInt(CompletenessCheckIO::getPoints).sum();
+    int score    = Math.max(0, Math.min(earned, 100));
+    String band  = score < 50 ? "error" : score < 80 ? "warning" : "success";
+
+    return Response.ok(new CollectionCompletenessIO(score, maxScore, band, checks)).build();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
