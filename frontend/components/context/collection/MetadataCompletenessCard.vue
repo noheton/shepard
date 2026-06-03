@@ -181,6 +181,15 @@ const bandTitle = computed(() => {
 // ── Per-check expansion (default collapsed below the score chip) ─────────
 const showChecks = ref(false);
 
+// ── "Show only failing" filter — RDM-005a(e) ─────────────────────────────
+const showOnlyFailing = ref(false);
+
+const visibleChecks = computed(() =>
+  showOnlyFailing.value
+    ? result.value.checks.filter((c) => !c.passed)
+    : result.value.checks,
+);
+
 // ── Deep-link handler — scroll the page to the relevant anchor ───────────
 function jumpToCheck(check: MetadataCheck) {
   if (check.id === "creatorOrcid") {
@@ -231,6 +240,18 @@ function jumpToCheck(check: MetadataCheck) {
       >
         {{ showChecks ? "Hide checks" : "Show checks" }}
       </v-btn>
+      <v-btn
+        v-if="showChecks"
+        variant="text"
+        size="small"
+        density="comfortable"
+        :color="showOnlyFailing ? 'error' : undefined"
+        :prepend-icon="showOnlyFailing ? 'mdi-filter' : 'mdi-filter-outline'"
+        data-testid="metadata-completeness-only-failing"
+        @click="showOnlyFailing = !showOnlyFailing"
+      >
+        {{ showOnlyFailing ? "Failing only" : "All checks" }}
+      </v-btn>
     </v-card-title>
     <v-card-text v-if="!showChecks" class="pt-0 text-caption text-medium-emphasis">
       <span data-testid="metadata-completeness-summary">
@@ -248,7 +269,7 @@ function jumpToCheck(check: MetadataCheck) {
         data-testid="metadata-completeness-list"
       >
         <v-list-item
-          v-for="check in result.checks"
+          v-for="check in visibleChecks"
           :key="check.id"
           :data-testid="`metadata-check-${check.id}`"
         >
