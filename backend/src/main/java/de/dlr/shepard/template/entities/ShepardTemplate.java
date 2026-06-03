@@ -153,6 +153,15 @@ public class ShepardTemplate implements HasId, HasAppId {
   @Property("iconKey")
   private String iconKey;
 
+  /**
+   * Optional appId of the parent template this template extends (single-parent
+   * inheritance per {@code aidocs/integrations/123 §2}). Nullable: a null parent
+   * means the template is a root. Migration:
+   * {@code V110__Template_parent_inheritance.cypher}.
+   */
+  @Property("parentTemplateAppId")
+  private String parentTemplateAppId;
+
   public ShepardTemplate(String name, String templateKind, String body) {
     this.name = name;
     this.templateKind = templateKind;

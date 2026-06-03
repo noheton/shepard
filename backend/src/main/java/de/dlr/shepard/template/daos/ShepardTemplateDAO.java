@@ -76,6 +76,8 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     next.setDescription(prior.getDescription());
     next.setTags(prior.getTags() == null ? new ArrayList<>() : new ArrayList<>(prior.getTags()));
     next.setIconKey(prior.getIconKey());
+    // Carry the inheritance edge through copy-on-write (aidocs/integrations/123).
+    next.setParentTemplateAppId(prior.getParentTemplateAppId());
     next.setRetired(false);
     return next;
   }

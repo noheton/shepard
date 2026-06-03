@@ -5,6 +5,7 @@ import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
 import de.dlr.shepard.template.services.TemplateBodyValidator.InvalidTemplateBodyException;
+import de.dlr.shepard.template.services.TemplateInheritanceResolver;
 import de.dlr.shepard.v2.template.io.CreateShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.PatchShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
@@ -61,6 +62,9 @@ public class ShepardTemplateRest {
   @Inject
   TemplateBodyValidator bodyValidator;
 
+  @Inject
+  TemplateInheritanceResolver inheritanceResolver;
+
   @GET
   @Operation(
     summary = "List templates (latest non-retired version per name).",
@@ -95,11 +99,22 @@ public class ShepardTemplateRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No template with that appId.")
-  public Response get(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
+  public Response get(
+    @PathParam("appId") String appId,
+    @Parameter(description = "When true, return the inheritance-flattened body + iconKey (parent fields merged, child overrides). Design: aidocs/integrations/123.")
+    @DefaultValue("false") @QueryParam("flatten") boolean flatten,
+    @Context SecurityContext securityContext
+  ) {
     if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     Optional<ShepardTemplate> t = dao.findByAppId(appId);
-    return t.map(template -> Response.ok(ShepardTemplateIO.from(template)).build())
-      .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
+    if (t.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    ShepardTemplate template = t.get();
+    ShepardTemplateIO io = ShepardTemplateIO.from(template);
+    if (flatten && template.getParentTemplateAppId() != null && !template.getParentTemplateAppId().isBlank()) {
+      io.setBody(inheritanceResolver.flattenBody(template));
+      io.setIconKey(inheritanceResolver.flattenIconKey(template));
+    }
+    return Response.ok(io).build();
   }
 
   @POST
@@ -125,12 +140,26 @@ public class ShepardTemplateRest {
     } catch (InvalidTemplateBodyException e) {
       return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
     }
+    // Inheritance guard (aidocs/integrations/123 §2): parent must exist and share the kind.
+    String parentAppId = body.getParentTemplateAppId();
+    if (parentAppId != null && !parentAppId.isBlank()) {
+      Optional<ShepardTemplate> parent = dao.findByAppId(parentAppId);
+      if (parent.isEmpty()) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("parentTemplateAppId not found: " + parentAppId).build();
+      }
+      if (!body.getTemplateKind().equals(parent.get().getTemplateKind())) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + body.getTemplateKind() + ")")
+          .build();
+      }
+    }
     String caller = securityContext.getUserPrincipal().getName();
     long now = System.currentTimeMillis();
     ShepardTemplate t = new ShepardTemplate(body.getName(), body.getTemplateKind(), body.getBody());
     t.setDescription(body.getDescription());
     if (body.getTags() != null) t.setTags(body.getTags());
     if (body.getIconKey() != null) t.setIconKey(body.getIconKey());
+    if (parentAppId != null && !parentAppId.isBlank()) t.setParentTemplateAppId(parentAppId);
     t.setCreatedBy(caller);
     t.setCreatedAt(now);
     t.setUpdatedAt(now);
@@ -165,6 +194,24 @@ public class ShepardTemplateRest {
         return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
       }
     }
+    // Inheritance guard (aidocs/integrations/123 §2): validate parent change before mutating.
+    if (body != null && body.getParentTemplateAppId() != null && !body.getParentTemplateAppId().isBlank()) {
+      String newParent = body.getParentTemplateAppId();
+      Optional<ShepardTemplate> parent = dao.findByAppId(newParent);
+      if (parent.isEmpty()) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("parentTemplateAppId not found: " + newParent).build();
+      }
+      if (!prior.getTemplateKind().equals(parent.get().getTemplateKind())) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + prior.getTemplateKind() + ")")
+          .build();
+      }
+      if (inheritanceResolver.wouldCreateCycle(appId, newParent)) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("parentTemplateAppId would create an inheritance cycle")
+          .build();
+      }
+    }
     String caller = securityContext.getUserPrincipal().getName();
     long now = System.currentTimeMillis();
 
@@ -183,6 +230,10 @@ public class ShepardTemplateRest {
       // iconKey: empty string clears (sets to null) so admins can revert to per-kind default.
       if (body.getIconKey() != null) {
         next.setIconKey(body.getIconKey().isEmpty() ? null : body.getIconKey());
+      }
+      // parentTemplateAppId: empty string clears (template becomes a root); null = no change.
+      if (body.getParentTemplateAppId() != null) {
+        next.setParentTemplateAppId(body.getParentTemplateAppId().isEmpty() ? null : body.getParentTemplateAppId());
       }
     }
     next.setCreatedBy(caller);

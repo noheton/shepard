@@ -70,6 +70,14 @@ public class ShepardTemplateIO {
   )
   private String iconKey;
 
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "appId of the parent template this template extends (single-parent inheritance). " +
+    "Null means a root template. Child fields override parent on collision. Design: aidocs/integrations/123."
+  )
+  private String parentTemplateAppId;
+
   public static ShepardTemplateIO from(ShepardTemplate t) {
     return new ShepardTemplateIO(
       t.getAppId(),
@@ -83,7 +91,8 @@ public class ShepardTemplateIO {
       t.getCreatedAt(),
       t.getUpdatedAt(),
       t.isRetired(),
-      t.getIconKey()
+      t.getIconKey(),
+      t.getParentTemplateAppId()
     );
   }
 }

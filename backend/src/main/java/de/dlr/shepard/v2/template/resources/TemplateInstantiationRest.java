@@ -11,6 +11,7 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.template.services.TemplateInheritanceResolver;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -78,6 +79,9 @@ public class TemplateInstantiationRest {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  TemplateInheritanceResolver inheritanceResolver;
 
   @POST
   @Path("/{templateAppId}")
@@ -153,11 +157,15 @@ public class TemplateInstantiationRest {
       }
     }
 
-    // Step 7: resolve DataObject name from: request body → template body → fallback
-    String dataObjectName = resolveDataObjectName(body, template);
+    // Flatten the inheritance chain (aidocs/integrations/123): a child template's
+    // effective body is the parent's fields merged with the child's overrides.
+    String effectiveBody = inheritanceResolver.flattenBody(template);
 
-    // Step 8: extract attributes from template body dataobjects[0].attributes
-    Map<String, String> attributes = extractAttributes(template.getBody());
+    // Step 7: resolve DataObject name from: request body → (flattened) template body → fallback
+    String dataObjectName = resolveDataObjectName(body, template, effectiveBody);
+
+    // Step 8: extract attributes from the flattened template body dataobjects[0].attributes
+    Map<String, String> attributes = extractAttributes(effectiveBody);
 
     // Step 9: create the DataObject
     DataObjectIO doIO = new DataObjectIO();
@@ -180,14 +188,14 @@ public class TemplateInstantiationRest {
    *   <li>Template {@code name} + {@code "-"} + current millis.</li>
    * </ol>
    */
-  private String resolveDataObjectName(TemplateInstantiateRequestIO body, ShepardTemplate template) {
+  private String resolveDataObjectName(TemplateInstantiateRequestIO body, ShepardTemplate template, String effectiveBody) {
     if (body != null && body.getName() != null && !body.getName().isBlank()) {
       return body.getName();
     }
-    // Try template body dataobjects[0].name
-    if (template.getBody() != null) {
+    // Try (flattened) template body dataobjects[0].name
+    if (effectiveBody != null) {
       try {
-        JsonNode root = objectMapper.readTree(template.getBody());
+        JsonNode root = objectMapper.readTree(effectiveBody);
         JsonNode firstDo = root.path("dataobjects").path(0);
         JsonNode nameNode = firstDo.path("name");
         if (!nameNode.isMissingNode() && !nameNode.isNull() && nameNode.isTextual() && !nameNode.textValue().isBlank()) {

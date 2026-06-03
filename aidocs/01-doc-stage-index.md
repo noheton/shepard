@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 66 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 123 |
+| `feature-defined` | 125 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 6 |
 | `deployed` | 109 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **467** |
+| **total docs** | **469** |
 | **UNTAGGED** | **0** |
 
 ## fragment (66)
@@ -162,7 +162,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (123)
+## feature-defined (125)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -188,6 +188,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`](agent-findings/no-ui-gap-survey-2026-05-24.md) | No-UI gap survey + placeholder roll-out — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/plugin-design-audit-2026-05-24.md`](agent-findings/plugin-design-audit-2026-05-24.md) | Plugin design audit — Spatial + Tables + HDF5, 2026-05-24 | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/plugin-v2-only-audit.md`](agent-findings/plugin-v2-only-audit.md) | Plugin backends build on /v2/ — audit | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md`](agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md) | Postgres + PgBouncer substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md`](agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md) | RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md`](agent-findings/rdm-scrutinizer-2026-05-24.md) | RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -229,6 +230,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/118-mffd-process-chain-mapping.md`](integrations/118-mffd-process-chain-mapping.md) | MFFD process-chain mapping (118) | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-03 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
+| [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
@@ -445,7 +447,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/frontend-v2-only-sweep.md`](agent-findings/frontend-v2-only-sweep.md) | Frontend v2-only sweep — findings | 2026-06-03 | — |
+| [`aidocs/agent-findings/frontend-v2-only-sweep.md`](agent-findings/frontend-v2-only-sweep.md) | Frontend v2-only sweep — findings | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](agent-findings/gh-pm-backfill-plan-2026-05-23.md) | GH-PM5 backfill — plan + execution log (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/lic1-shipped-2026-05-24.md`](agent-findings/lic1-shipped-2026-05-24.md) | LIC1 shipped — license + accessRights end-to-end (2026-05-24) | 2026-05-24 | 2026-05-24 |

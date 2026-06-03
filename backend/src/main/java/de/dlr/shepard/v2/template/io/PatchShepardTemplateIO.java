@@ -38,4 +38,11 @@ public class PatchShepardTemplateIO {
     description = "If set, replaces the MDI icon name (e.g. 'mdi-layers'). The empty string clears it (UI falls back to per-kind default). Design: aidocs/integrations/122."
   )
   private String iconKey;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "If set, replaces the parent template appId (single-parent inheritance). The empty string clears it (template becomes a root). Must share this template's templateKind; cycles are rejected. Design: aidocs/integrations/123."
+  )
+  private String parentTemplateAppId;
 }

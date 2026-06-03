@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
+import de.dlr.shepard.template.services.TemplateInheritanceResolver;
 import de.dlr.shepard.v2.template.io.CreateShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.PatchShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
@@ -47,6 +48,7 @@ class ShepardTemplateRestTest {
     resource = new ShepardTemplateRest();
     resource.dao = dao;
     resource.bodyValidator = new TemplateBodyValidator();
+    resource.inheritanceResolver = new TemplateInheritanceResolver(dao);
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
   }
@@ -88,7 +90,7 @@ class ShepardTemplateRestTest {
   @Test
   void getReturns404WhenMissing() {
     when(dao.findByAppId("ghost")).thenReturn(Optional.empty());
-    Response r = resource.get("ghost", securityContext);
+    Response r = resource.get("ghost", false, securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -97,7 +99,7 @@ class ShepardTemplateRestTest {
     var t = new ShepardTemplate("Hot fire recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("app-id-1");
     when(dao.findByAppId("app-id-1")).thenReturn(Optional.of(t));
-    Response r = resource.get("app-id-1", securityContext);
+    Response r = resource.get("app-id-1", false, securityContext);
     assertEquals(200, r.getStatus());
     var io = (ShepardTemplateIO) r.getEntity();
     assertEquals("Hot fire recipe", io.getName());
@@ -105,7 +107,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400WhenBodyMissingRequiredFields() {
-    Response r = resource.create(new CreateShepardTemplateIO(null, "EXPERIMENT_RECIPE", "{}", null, null, null), securityContext);
+    Response r = resource.create(new CreateShepardTemplateIO(null, "EXPERIMENT_RECIPE", "{}", null, null, null, null), securityContext);
     assertEquals(400, r.getStatus());
   }
 
@@ -122,7 +124,7 @@ class ShepardTemplateRestTest {
       t.setAppId("server-minted-appid");
       return t;
     });
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{\"steps\":[]}}", "desc", List.of("lumen"), null);
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{\"steps\":[]}}", "desc", List.of("lumen"), null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(201, r.getStatus());
     var io = (ShepardTemplateIO) r.getEntity();
@@ -136,7 +138,7 @@ class ShepardTemplateRestTest {
   @Test
   void patchReturns404WhenMissing() {
     when(dao.findByAppId("ghost")).thenReturn(Optional.empty());
-    Response r = resource.patch("ghost", new PatchShepardTemplateIO("new", null, null, null, null), securityContext);
+    Response r = resource.patch("ghost", new PatchShepardTemplateIO("new", null, null, null, null, null), securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -157,7 +159,7 @@ class ShepardTemplateRestTest {
       return t;
     });
 
-    var body = new PatchShepardTemplateIO(null, "{\"experiment\":{\"v\":2}}", null, null, null);
+    var body = new PatchShepardTemplateIO(null, "{\"experiment\":{\"v\":2}}", null, null, null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -227,7 +229,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400OnMalformedJson() {
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null, null);
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -239,7 +241,7 @@ class ShepardTemplateRestTest {
 
   @Test
   void createReturns400OnWrongShapeBodyForKind() {
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null, null);
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -267,7 +269,8 @@ class ShepardTemplateRestTest {
       "{\"experiment\":{\"steps\":[]}}",
       null,
       null,
-      "mdi-layers"
+      "mdi-layers",
+      null
     );
     Response r = resource.create(body, securityContext);
     assertEquals(201, r.getStatus());
@@ -292,7 +295,7 @@ class ShepardTemplateRestTest {
     });
     when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var body = new PatchShepardTemplateIO(null, null, null, null, "mdi-layers");
+    var body = new PatchShepardTemplateIO(null, null, null, null, "mdi-layers", null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -317,7 +320,7 @@ class ShepardTemplateRestTest {
     });
     when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var body = new PatchShepardTemplateIO(null, null, null, null, "");
+    var body = new PatchShepardTemplateIO(null, null, null, null, "", null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -343,7 +346,7 @@ class ShepardTemplateRestTest {
     when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> inv.getArgument(0));
 
     // Only name patched; iconKey omitted ⇒ COW preserves "mdi-layers".
-    var body = new PatchShepardTemplateIO("Renamed Recipe", null, null, null, null);
+    var body = new PatchShepardTemplateIO("Renamed Recipe", null, null, null, null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -359,10 +362,78 @@ class ShepardTemplateRestTest {
     prior.setAppId("prior-appid");
     when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
 
-    var body = new PatchShepardTemplateIO(null, "[]", null, null, null);
+    var body = new PatchShepardTemplateIO(null, "[]", null, null, null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(400, r.getStatus());
     verify(dao, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void createRejectsMissingParent() {
+    when(dao.findByAppId("missing-parent")).thenReturn(Optional.empty());
+    var body = new CreateShepardTemplateIO("Child", "EXPERIMENT_RECIPE", "{\"experiment\":{}}", null, null, null, "missing-parent");
+    Response r = resource.create(body, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void createRejectsParentOfDifferentKind() {
+    var parent = new ShepardTemplate("Parent", "DATAOBJECT_RECIPE", "{}");
+    parent.setAppId("parent-appid");
+    when(dao.findByAppId("parent-appid")).thenReturn(Optional.of(parent));
+    var body = new CreateShepardTemplateIO("Child", "EXPERIMENT_RECIPE", "{\"experiment\":{}}", null, null, null, "parent-appid");
+    Response r = resource.create(body, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void createSetsParentWhenValid() {
+    var parent = new ShepardTemplate("Parent", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    parent.setAppId("parent-appid");
+    when(dao.findByAppId("parent-appid")).thenReturn(Optional.of(parent));
+    when(dao.createOrUpdate(any(ShepardTemplate.class))).thenAnswer(inv -> {
+      ShepardTemplate t = inv.getArgument(0);
+      t.setAppId("child-appid");
+      return t;
+    });
+    var body = new CreateShepardTemplateIO("Child", "EXPERIMENT_RECIPE", "{\"experiment\":{}}", null, null, null, "parent-appid");
+    Response r = resource.create(body, securityContext);
+    assertEquals(201, r.getStatus());
+    var io = (ShepardTemplateIO) r.getEntity();
+    assertEquals("parent-appid", io.getParentTemplateAppId());
+  }
+
+  @Test
+  void patchRejectsSelfParentCycle() {
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    prior.setAppId("self-appid");
+    prior.setVersion(1);
+    when(dao.findByAppId("self-appid")).thenReturn(Optional.of(prior));
+    var body = new PatchShepardTemplateIO(null, null, null, null, null, "self-appid");
+    Response r = resource.patch("self-appid", body, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void getFlattenMergesParentBodyChildWins() {
+    var parent = new ShepardTemplate("Parent", "DATAOBJECT_RECIPE",
+      "{\"dataobjects\":[{\"attributes\":{\"bench\":\"P1\",\"shift\":\"A\"}}]}");
+    parent.setAppId("parent-appid");
+    parent.setIconKey("mdi-layers");
+    var child = new ShepardTemplate("Child", "DATAOBJECT_RECIPE",
+      "{\"dataobjects\":[{\"attributes\":{\"shift\":\"B\"}}]}");
+    child.setAppId("child-appid");
+    child.setParentTemplateAppId("parent-appid");
+    when(dao.findByAppId("child-appid")).thenReturn(Optional.of(child));
+    when(dao.findByAppId("parent-appid")).thenReturn(Optional.of(parent));
+
+    Response r = resource.get("child-appid", true, securityContext);
+    assertEquals(200, r.getStatus());
+    var io = (ShepardTemplateIO) r.getEntity();
+    // child overrides shift=B; bench inherited from parent; iconKey inherited.
+    assertTrue(io.getBody().contains("\"shift\":\"B\""));
+    assertTrue(io.getBody().contains("\"bench\":\"P1\""));
+    assertEquals("mdi-layers", io.getIconKey());
   }
 }
