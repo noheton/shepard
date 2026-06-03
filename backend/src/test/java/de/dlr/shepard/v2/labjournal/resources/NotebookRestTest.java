@@ -71,7 +71,8 @@ class NotebookRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(true);
+    // Production gates listing on the appId-based read check.
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
 
     // Default: no files attached
     when(singletonService.listByDataObject(DO_APP_ID)).thenReturn(List.of());
@@ -142,7 +143,7 @@ class NotebookRestTest {
 
   @Test
   void returns403WhenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
     assertThat(resource.listNotebooks(DO_APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
