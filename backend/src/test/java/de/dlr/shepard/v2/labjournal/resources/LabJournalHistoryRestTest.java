@@ -76,7 +76,7 @@ class LabJournalHistoryRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(ENTRY_APP_ID)).thenReturn(entry);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
     when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of());
   }
 
@@ -139,7 +139,7 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_returns403_whenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
 
     assertThat(resource.history(ENTRY_APP_ID, sc).getStatus()).isEqualTo(403);
   }

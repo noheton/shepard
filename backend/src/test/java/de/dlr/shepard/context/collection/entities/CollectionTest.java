@@ -34,7 +34,7 @@ public class CollectionTest extends BaseTestCase {
       // that doesn't define entity equality.
       // sceneGraphAppId is a COLL-SCENE-1 fork addition (GAP-6, 2026-06-02);
       // a presentation-layer link that doesn't define entity equality.
-      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId")
+      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId", "importedFrom", "promptLogMode")
       .verify();
   }
 

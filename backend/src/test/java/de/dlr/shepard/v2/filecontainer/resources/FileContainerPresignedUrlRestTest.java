@@ -40,6 +40,9 @@ class FileContainerPresignedUrlRestTest {
   @Mock
   FileContainerService service;
 
+  @Mock
+  de.dlr.shepard.storage.PresignTtlValidator ttlValidator;
+
   FileContainerPresignedUrlRest resource;
 
   @BeforeEach
@@ -47,6 +50,9 @@ class FileContainerPresignedUrlRestTest {
     MockitoAnnotations.openMocks(this);
     resource = new FileContainerPresignedUrlRest();
     resource.fileContainerService = service;
+    resource.ttlValidator = ttlValidator;
+    when(ttlValidator.effectiveUploadTtl()).thenReturn(Duration.ofMinutes(15));
+    when(ttlValidator.effectiveDownloadTtl()).thenReturn(Duration.ofMinutes(15));
   }
 
   private FileContainer container() {

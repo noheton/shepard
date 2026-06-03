@@ -78,6 +78,8 @@ public class DataObjectServiceFair2Test {
     service.dataObjectReferenceDAO = referenceDAO;
     service.permissionsService = permissionsService;
     service.authenticationContext = authenticationContext;
+    service.archiveStateGuard = mock(de.dlr.shepard.context.collection.services.ArchiveStateGuard.class);
+    service.featureToggleRegistry = mock(de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry.class);
 
     collection = new Collection();
     collection.setShepardId(1L);

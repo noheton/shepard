@@ -1,97 +1,95 @@
+/**
+ * Unit coverage for `useFetchRecentCollections()`.
+ *
+ * The auto-triggered `fetch()` is SSR-gated under Vitest
+ * (`import.meta.client === false` in the `node` environment), so — exactly
+ * like `useBookmarkedCollections.test.ts` — we cannot observe a real API
+ * round-trip here. What we CAN assert without the network path is:
+ *   - the exported pure helpers (`isClosedCollection` / `isCleanupCollection`),
+ *   - the initial reactive state (loading=true, empty collections, no error),
+ *   - the `showClosed` toggle + the `filteredCollections` / `hasClosedCollections`
+ *     computeds, driven by seeding `allCollections` directly.
+ *
+ * The networked happy/refetch/error paths are exercised at the integration
+ * layer (deployed UI + Playwright), not in this SSR-gated unit slice.
+ */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useFetchRecentCollections } from "~/composables/context/useFetchRecentCollections";
+import {
+  useFetchRecentCollections,
+  isClosedCollection,
+  isCleanupCollection,
+} from "~/composables/context/useFetchRecentCollections";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { BasicCollectionAttributes } from "@dlr-shepard/backend-client";
+import type { Collection } from "@dlr-shepard/backend-client";
 
 // vi.mock is hoisted by Vitest above the imports at runtime.
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
 
-const mockSearchCollections = vi.fn();
+const mockGetAllCollections = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
   (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ searchCollections: mockSearchCollections }),
+    ref({ getAllCollections: mockGetAllCollections }),
   );
 });
 
-/** Flush the microtask queue so the auto-triggered fetch completes. */
-const flush = () => new Promise<void>(r => setTimeout(r, 0));
+const coll = (id: number, status?: string): Collection =>
+  ({ id, name: `C${id}`, status }) as unknown as Collection;
 
-describe("useFetchRecentCollections", () => {
-  it("starts with loading=true and empty collections", () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
-    const { loading, collections } = useFetchRecentCollections();
+describe("useFetchRecentCollections — pure helpers", () => {
+  it("isClosedCollection is true only for CLOSED status (case-insensitive)", () => {
+    expect(isClosedCollection(coll(1, "CLOSED"))).toBe(true);
+    expect(isClosedCollection(coll(2, "closed"))).toBe(true);
+    expect(isClosedCollection(coll(3, "OPEN"))).toBe(false);
+    expect(isClosedCollection(coll(4))).toBe(false);
+  });
+
+  it("isCleanupCollection is true only for PENDING_CLEANUP status", () => {
+    expect(isCleanupCollection(coll(1, "PENDING_CLEANUP"))).toBe(true);
+    expect(isCleanupCollection(coll(2, "pending_cleanup"))).toBe(true);
+    expect(isCleanupCollection(coll(3, "CLOSED"))).toBe(false);
+  });
+});
+
+describe("useFetchRecentCollections — reactive surface", () => {
+  it("starts with loading=true, empty collections, and no error", () => {
+    const { loading, collections, allCollections, error, showClosed } =
+      useFetchRecentCollections();
     expect(loading.value).toBe(true);
     expect(collections.value).toEqual([]);
-  });
-
-  it("populates collections and clears loading on success", async () => {
-    const data = [
-      { id: 1, name: "A", dataObjectIds: [] },
-      { id: 2, name: "B", dataObjectIds: [] },
-    ];
-    mockSearchCollections.mockResolvedValue({ results: data });
-
-    const { loading, collections, error } = useFetchRecentCollections();
-    await flush();
-
-    expect(collections.value).toEqual(data);
-    expect(loading.value).toBe(false);
+    expect(allCollections.value).toEqual([]);
     expect(error.value).toBeNull();
+    expect(showClosed.value).toBe(false);
   });
 
-  it("passes correct query params (page=0, size=6, orderDesc=true, orderBy=updatedAt)", async () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
-    useFetchRecentCollections();
-    await flush();
+  it("filteredCollections hides CLOSED entries until showClosed is toggled", () => {
+    const { collections, allCollections, showClosed, hasClosedCollections } =
+      useFetchRecentCollections();
 
-    expect(mockSearchCollections).toHaveBeenCalledWith(
-      expect.objectContaining({
-        page: 0,
-        size: 6,
-        orderDesc: true,
-        orderBy: BasicCollectionAttributes.UpdatedAt,
-      }),
-    );
+    // Seed allCollections directly — the SSR-gated fetch never runs in Vitest.
+    allCollections.value = [coll(1, "OPEN"), coll(2, "CLOSED")];
+
+    // Default view excludes CLOSED.
+    expect(collections.value.map(c => c.id)).toEqual([1]);
+    expect(hasClosedCollections.value).toBe(true);
+
+    // Toggling showClosed surfaces every collection.
+    showClosed.value = true;
+    expect(collections.value.map(c => c.id)).toEqual([1, 2]);
   });
 
-  it("sets error message and calls handleError when fetch throws", async () => {
-    const err = new Error("Network error");
-    mockSearchCollections.mockRejectedValue(err);
-
-    const { loading, error } = useFetchRecentCollections();
-    await flush();
-
-    expect(error.value).toBe("Could not load collections.");
-    expect(loading.value).toBe(false);
-    expect((globalThis as unknown as { handleError: ReturnType<typeof vi.fn> }).handleError)
-      .toHaveBeenCalledWith(err, "fetching recent collections");
+  it("hasClosedCollections is false when no CLOSED collection is present", () => {
+    const { allCollections, hasClosedCollections } =
+      useFetchRecentCollections();
+    allCollections.value = [coll(1, "OPEN"), coll(2, "READY")];
+    expect(hasClosedCollections.value).toBe(false);
   });
 
-  it("refetch triggers a second API call and updates collections", async () => {
-    mockSearchCollections.mockResolvedValue({ results: [] });
-    const { collections, refetch } = useFetchRecentCollections();
-    await flush();
-
-    const fresh = [{ id: 3, name: "C" }];
-    mockSearchCollections.mockResolvedValue({ results: fresh });
-    await refetch();
-
-    expect(collections.value).toEqual(fresh);
-    expect(mockSearchCollections).toHaveBeenCalledTimes(2);
-  });
-
-  it("refetch resets error from a previous failure", async () => {
-    mockSearchCollections.mockRejectedValue(new Error("fail"));
-    const { error, refetch } = useFetchRecentCollections();
-    await flush();
-    expect(error.value).not.toBeNull();
-
-    mockSearchCollections.mockResolvedValue({ results: [] });
-    await refetch();
-    expect(error.value).toBeNull();
+  it("exposes a refetch handle", () => {
+    const { refetch } = useFetchRecentCollections();
+    expect(typeof refetch).toBe("function");
   });
 });

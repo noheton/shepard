@@ -3,6 +3,7 @@ package de.dlr.shepard.data.file.daos;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -16,6 +17,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 public class FileContainerDAOTest extends BaseTestCase {
@@ -250,30 +252,32 @@ public class FileContainerDAOTest extends BaseTestCase {
 
   @Test
   public void findLinkedDataObjects_returnsEmptyListWhenNoneLinked() {
-    String containerAppId = "01900000-0000-7000-8000-000000000001";
+    String containerAppId = "01900000-0000-7000-8000-000000000099";
     String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:FileContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN DISTINCT do";
+      "RETURN DISTINCT id(do) AS neo4jId";
     Map<String, Object> params = Map.of("containerAppId", containerAppId);
 
-    when(session.query(DataObject.class, query, params)).thenReturn(List.of());
+    Result result = mock(Result.class);
+    when(result.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
+    when(session.query(query, params)).thenReturn(result);
 
-    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+    List<DataObject> dataObjects = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
 
-    verify(session).query(DataObject.class, query, params);
-    assertTrue(result.isEmpty());
+    verify(session).query(query, params);
+    assertTrue(dataObjects.isEmpty());
   }
 
   @Test
   public void findLinkedDataObjects_returnsTwoDataObjects() {
     String containerAppId = "01900000-0000-7000-8000-000000000002";
     String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:FileContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN DISTINCT do";
+      "RETURN DISTINCT id(do) AS neo4jId";
     Map<String, Object> params = Map.of("containerAppId", containerAppId);
 
     DataObject do1 = new DataObject();
@@ -281,13 +285,18 @@ public class FileContainerDAOTest extends BaseTestCase {
     DataObject do2 = new DataObject();
     do2.setName("Dataset B");
 
-    when(session.query(DataObject.class, query, params)).thenReturn(List.of(do1, do2));
+    Result result = mock(Result.class);
+    when(result.iterator())
+      .thenReturn(List.<Map<String, Object>>of(Map.of("neo4jId", 1L), Map.of("neo4jId", 2L)).iterator());
+    when(session.query(query, params)).thenReturn(result);
+    when(session.load(DataObject.class, 1L, 1)).thenReturn(do1);
+    when(session.load(DataObject.class, 2L, 1)).thenReturn(do2);
 
-    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+    List<DataObject> dataObjects = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
 
-    verify(session).query(DataObject.class, query, params);
-    assertEquals(2, result.size());
-    assertEquals("Dataset A", result.get(0).getName());
-    assertEquals("Dataset B", result.get(1).getName());
+    verify(session).query(query, params);
+    assertEquals(2, dataObjects.size());
+    assertEquals("Dataset A", dataObjects.get(0).getName());
+    assertEquals("Dataset B", dataObjects.get(1).getName());
   }
 }
