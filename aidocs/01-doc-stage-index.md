@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 64 |
+| `fragment` | 65 |
 | `concept` | 25 |
 | `idea` | 13 |
 | `feature-defined` | 123 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 105 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **461** |
+| **total docs** | **462** |
 | **UNTAGGED** | **0** |
 
-## fragment (64)
+## fragment (65)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -70,6 +70,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-04.md`](agent-findings/dispatcher-runs/2026-06-02-04.md) | Dispatcher run 2026-06-02-04 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-15.md`](agent-findings/dispatcher-runs/2026-06-02-15.md) | Dispatcher run — 2026-06-02 15:xx UTC | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-03-01.md`](agent-findings/dispatcher-runs/2026-06-03-01.md) | Dispatcher run — 2026-06-03-01 | 2026-06-03 | 2026-06-03 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-02.md`](agent-findings/dispatcher-runs/2026-06-03-02.md) | Dispatcher run — 2026-06-03-02 | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
