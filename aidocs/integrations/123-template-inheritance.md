@@ -93,9 +93,13 @@ the *only* inheritance mechanism, which is what keeps it minimal.
   child last). This is `allOf`-with-override / XSD restriction-on-extension.
 - **What is inherited:**
   - **Body field/property definitions** — `dataobjects[0].attributes`,
-    `dataObject`, `collection`, `experiment.*`, etc. Deep object-merge per key;
-    arrays are replaced wholesale by the child when the child supplies them
-    (predictable, matches `allOf` array semantics; documented for authors).
+    `dataObject`, `collection`, `experiment.*`, etc. Deep object-merge per key.
+    Arrays merge **positionally**: at each index, two objects deep-merge (overlay
+    wins per key), scalars/mixed replace, and base indices the child does not
+    cover are retained. This is the rule that lets the canonical
+    `dataobjects[0].attributes` shape inherit a parent's attributes while the
+    child overrides individual keys — a wholesale array replacement would silently
+    drop the parent's other attributes (the failure the resolver test guards).
   - **Reference-creation hints (T1e)** — channel keys, default windows, clip
     bounds, bundle layouts, URI relationship types, schema skeletons. These live
     in the body, so they flatten with the body. A child adds a hint without

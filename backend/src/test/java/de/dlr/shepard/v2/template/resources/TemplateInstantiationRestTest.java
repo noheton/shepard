@@ -21,6 +21,7 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.template.services.TemplateInheritanceResolver;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -70,6 +71,7 @@ class TemplateInstantiationRestTest {
     resource.permissionsService = permissionsService;
     resource.dataObjectService = dataObjectService;
     resource.objectMapper = new ObjectMapper();
+    resource.inheritanceResolver = new TemplateInheritanceResolver(templateDAO);
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);

@@ -2,6 +2,7 @@ package de.dlr.shepard.template.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -152,9 +153,39 @@ public class TemplateInheritanceResolver {
         base.put(key, baseVal.textValue() + "\n" + overlayVal.textValue());
       } else if (baseVal != null && baseVal.isObject() && overlayVal.isObject()) {
         deepMerge((ObjectNode) baseVal, (ObjectNode) overlayVal);
+      } else if (baseVal != null && baseVal.isArray() && overlayVal.isArray()) {
+        base.set(key, mergeArrays((ArrayNode) baseVal, (ArrayNode) overlayVal));
       } else {
         base.set(key, overlayVal.deepCopy());
       }
     }
+  }
+
+  /**
+   * Merge two arrays positionally. For each index, if both elements are objects
+   * they are deep-merged (overlay wins per key); otherwise the overlay element
+   * replaces the base element. Extra base elements (indices the overlay does not
+   * cover) are retained. This makes the common {@code dataobjects[0].attributes}
+   * template shape inherit parent attributes while letting the child override
+   * individual keys — without losing the parent's other attributes the way a
+   * wholesale array replacement would. Design: {@code aidocs/integrations/123 §2}.
+   */
+  private ArrayNode mergeArrays(ArrayNode base, ArrayNode overlay) {
+    ArrayNode out = mapper.createArrayNode();
+    int max = Math.max(base.size(), overlay.size());
+    for (int i = 0; i < max; i++) {
+      JsonNode b = i < base.size() ? base.get(i) : null;
+      JsonNode o = i < overlay.size() ? overlay.get(i) : null;
+      if (o == null) {
+        out.add(b.deepCopy());
+      } else if (b != null && b.isObject() && o.isObject()) {
+        ObjectNode merged = (ObjectNode) b.deepCopy();
+        deepMerge(merged, (ObjectNode) o);
+        out.add(merged);
+      } else {
+        out.add(o.deepCopy());
+      }
+    }
+    return out;
   }
 }

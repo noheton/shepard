@@ -66,6 +66,18 @@ class TemplateInheritanceResolverTest {
   }
 
   @Test
+  void arrayOfObjectsMergesPositionally() throws Exception {
+    // The canonical dataobjects[0].attributes shape — array, not object.
+    var parent = tmpl("p", null, "{\"dataobjects\":[{\"attributes\":{\"bench\":\"P1\",\"shift\":\"A\"}}]}");
+    var child = tmpl("c", "p", "{\"dataobjects\":[{\"attributes\":{\"shift\":\"B\"}}]}");
+    when(dao.findByAppId("p")).thenReturn(Optional.of(parent));
+    JsonNode attrs = mapper.readTree(resolver.flattenBody(child))
+      .get("dataobjects").get(0).get("attributes");
+    assertEquals("P1", attrs.get("bench").asText()); // inherited from parent index 0
+    assertEquals("B", attrs.get("shift").asText()); // child overrides
+  }
+
+  @Test
   void grandparentChainFlattensRootFirst() throws Exception {
     var gp = tmpl("gp", null, "{\"a\":1}");
     var p = tmpl("p", "gp", "{\"b\":2}");
