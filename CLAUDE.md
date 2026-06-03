@@ -67,6 +67,54 @@ Document each new endpoint's path in the same PR's `aidocs/34`
 tracker row, calling out whether it's `/shepard/api/` (compat
 surface, additive only) or `/v2/` (this fork's development surface).
 
+## Always: this fork's frontend builds on /v2/ exclusively
+
+**The Shepard frontend (`frontend/`) consumes only `/v2/` endpoints
+and addresses entities only by `appId`.** The `/shepard/api/` v1
+surface exists for upstream-byte-compatibility for *third-party*
+clients — it is **not** something our own frontend reaches for.
+
+Concrete consequences:
+
+1. **Composables import only the v2 helper.** `useV2ShepardApi(...)`
+   for every generated client. `useShepardApi(...)` (basePath
+   `/shepard/api`) is a legacy carrier and is being phased out — new
+   code MUST NOT call it, and existing call sites get migrated
+   opportunistically.
+2. **Generated v2 clients must go through `useV2ShepardApi`.**
+   Pairing a v2 client with the v1 helper builds the wrong URL
+   (`/shepard/api/v2/...` → 404). This is the failure shape that
+   produced the operator-surfaced `listReferencedContainers 404`
+   on 2026-06-03. The audit `findings` row in `aidocs/44` tracks
+   the remaining migration.
+3. **Route params and identifiers are `appId` (UUID v7) strings,
+   not numeric Neo4j IDs.** Routes, links, props, payload keys,
+   query params all carry the appId. The numeric `id` is an
+   implementation detail of v1; if a still-v1-only operation needs
+   it, resolve it from the loaded v2 entity's `.id` property at
+   call time — never let a numeric id appear in a route, a router
+   `push`, an emit, or a stored preference.
+4. **The exception: a small, named v1 fallback set.** Endpoints
+   that genuinely do not yet have a v2 counterpart (currently:
+   `getCollectionRoles`, parts of timeseries channel content,
+   the import wizard's v15 endpoints) keep their v1 calls, but:
+   a) the call site documents *why* with a one-line comment
+   citing the missing v2 endpoint, b) a backlog row in
+   `aidocs/16` exists to add the v2 counterpart, c) the v1 call
+   uses the numeric id resolved from the v2 entity — never the
+   route param directly.
+5. **Reviewers reject** new frontend code that imports
+   `useShepardApi` for a fresh feature, that exposes a numeric
+   id in a route or link, or that resolves entities by Neo4j
+   numeric id when an appId is in hand.
+
+This is the structural fix for the recurring "/shepard/api/v2/..."
+404 class of bugs and the numeric-vs-appId route confusion that
+caused the 007-PAGE cluster. Pairs with the existing API-version
+policy above (v2 is the development surface) and the
+`appId → shepardId` rename rule (single coordinated pass; until
+that lands, all new frontend code reads `appId` consistently).
+
 ## Always: keep `aidocs/42-vision.md` current
 
 `aidocs/42-vision.md` is the **live researcher-facing vision** of
