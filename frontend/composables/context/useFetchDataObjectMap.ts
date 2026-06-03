@@ -13,19 +13,38 @@ interface CacheEntry {
 
 const cache = new Map<number, CacheEntry>();
 
-export function useFetchDataObjectMapByCollection(collectionId: number) {
-  if (!cache.has(collectionId)) {
-    cache.set(collectionId, {
-      map: ref<Map<number, string>>(new Map<number, string>()),
-      fetchedAt: 0,
-      promise: null,
-    });
+// Accepts a plain number, a Ref, or a getter. The numeric id is resolved at
+// fetch time so callers driven by an async-loaded v2 collection (where the
+// route param is the appId UUID, not the numeric id) work correctly —
+// BUG-COLL-APPID-ROUTE-007-PAGE.
+export function useFetchDataObjectMapByCollection(
+  collectionIdInput: MaybeRefOrGetter<number | undefined>,
+) {
+  // Stable proxy map that always mirrors the currently-resolved collection's
+  // cache entry, so the returned ref identity never changes across id updates.
+  const dataObjectsMap = ref<Map<number, string>>(new Map<number, string>());
+
+  function resolvedId(): number | undefined {
+    return toValue(collectionIdInput);
   }
 
-  const entry = cache.get(collectionId)!;
-  const dataObjectsMap = entry.map;
+  function entryFor(id: number): CacheEntry {
+    if (!cache.has(id)) {
+      cache.set(id, {
+        map: ref<Map<number, string>>(new Map<number, string>()),
+        fetchedAt: 0,
+        promise: null,
+      });
+    }
+    return cache.get(id)!;
+  }
 
   function fetchMap(): Promise<void> {
+    const collectionId = resolvedId();
+    if (collectionId == null) return Promise.resolve();
+    const entry = entryFor(collectionId);
+    // Mirror this entry's map into the stable proxy on every fetch.
+    dataObjectsMap.value = entry.map.value;
     const now = Date.now();
     // Return in-flight promise if one is running
     if (entry.promise !== null) {
@@ -41,6 +60,8 @@ export function useFetchDataObjectMapByCollection(collectionId: number) {
       .then(response => {
         entry.map.value = new Map(response.map(d => [d.id, d.name]));
         entry.fetchedAt = Date.now();
+        // Re-mirror into the proxy now that the fresh map exists.
+        if (resolvedId() === collectionId) dataObjectsMap.value = entry.map.value;
       })
       .catch(e => {
         handleError(e as ResponseError, "fetching dataobjects");

@@ -36,8 +36,19 @@ const {
   isError: isCollectionError,
   notFound: isCollectionNotFound,
 } = useFetchCollection(collectionIdStr);
+// BUG-COLL-APPID-ROUTE-007-PAGE: the route param is now the appId (UUID), but
+// v1 endpoints (roles, getAllDataObjects, lineage) need the NUMERIC id, which
+// only the loaded v2 collection payload carries. Resolve it reactively from
+// the loaded collection, with a numeric-route-param fallback for legacy
+// /collections/123 deep links. Child mounts that hit v1 bind this instead of
+// the raw route param.
+const collectionNumericId = computed<number | undefined>(() => {
+  if (collection.value?.id != null) return collection.value.id;
+  const n = Number(routeParams.value.collectionId);
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+});
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
-const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
+const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionNumericId);
 const collectionApi = useShepardApi(CollectionApi);
 
 const showAttributeEditDialog = ref(false);
@@ -65,7 +76,7 @@ async function saveDescEdit() {
   descSaving.value = true;
   try {
     await collectionApi.value.updateCollection({
-      collectionId,
+      collectionId: collectionNumericId.value ?? collectionId,
       collection: {
         name: collection.value.name,
         description: descDraft.value,
@@ -88,7 +99,7 @@ async function downloadRoCrate() {
   isExporting.value = true;
   try {
     const blob = await useShepardApi(CollectionApi).value.exportCollection({
-      collectionId,
+      collectionId: collectionNumericId.value ?? collectionId,
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -219,7 +230,7 @@ const collectionSceneGraphAppId = computed<string | null>(() => {
 // `urn:shepard:mffd:section` predicate. The widget renders only when the
 // probe flips `hasData` to true, so collections without OTvis data
 // pay only the probe cost (1 list + 5 small annotation fetches).
-const mffdNdtCollectionIdRef = computed<number | null>(() => collectionId as unknown as number);
+const mffdNdtCollectionIdRef = computed<number | null>(() => collectionNumericId.value ?? null);
 const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
@@ -601,7 +612,8 @@ useHead({
                 >
                   <div id="metadata-labjournal-section" class="pt-4">
                     <CollectionLabJournalEntryList
-                      :collection-id="(routeParams.collectionId as unknown as number)"
+                      v-if="collectionNumericId"
+                      :collection-id="collectionNumericId"
                       :collection-app-id="collectionAppId"
                       :data-object-map="dataObjectsMap"
                       :fetch-data-object-map="fetchDataObjectMap"
@@ -629,7 +641,7 @@ useHead({
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Dataset Lineage">
                   <div class="pt-2 pb-2">
-                    <CollectionLineageGraph :collection-id="collectionId" />
+                    <CollectionLineageGraph v-if="collectionNumericId" :collection-id="collectionNumericId" />
                   </div>
                 </ExpansionPanelItem>
                 <!-- TS-CROSS-DO-VIEW-2-FE — cross-DataObject small-multiples view.
