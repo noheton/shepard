@@ -44,6 +44,16 @@ services:
       SHEPARD_MINTERS_DATACITE_HANDLE_PREFIX: "demo"
       SHEPARD_MINTERS_DATACITE_PUBLISHER: "Demo Instance"
       SHEPARD_MINTERS_DATACITE_LANDING_PAGE_BASE: "http://localhost"
+      # KIP1c ePIC minter (disabled on demo). Same no-op-placeholder rule as the
+      # datacite block above: EpicMinterConfigService reads these two String
+      # @ConfigProperty values at boot via Quarkus ConfigInstantiator, which under
+      # Quarkus 3.27 rejects an empty/absent value for a non-Optional String ->
+      # ConfigurationException -> CDI DeploymentException -> silent startup abort.
+      # These were missing when the epic plugin was first bundled, which is why the
+      # backend failed to start. Placeholders only; operators set real values via
+      # the admin REST/CLI before enabling the minter.
+      SHEPARD_MINTERS_EPIC_API_BASE_URL: "http://localhost"
+      SHEPARD_MINTERS_EPIC_HANDLE_PREFIX: "demo"
       SHEPARD_HDF_HSDS_USERNAME: "admin"
       SHEPARD_HDF_HSDS_PASSWORD: "admin"
       SHEPARD_UNHIDE_CONTACT_EMAIL: "admin@localhost"
