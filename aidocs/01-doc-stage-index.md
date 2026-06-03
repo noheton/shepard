@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 2 |
 | `tests-implemented` | 6 |
-| `deployed` | 105 |
+| `deployed` | 106 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **462** |
+| **total docs** | **463** |
 | **UNTAGGED** | **0** |
 
 ## fragment (65)
@@ -386,7 +386,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/122-template-icons.md`](integrations/122-template-icons.md) | 122 — ShepardTemplate icons | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (105)
+## deployed (106)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -439,6 +439,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-22.md`](agent-findings/dispatcher-runs/2026-06-02-22.md) | Dispatcher fire 2026-06-02-22 | — | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-02-23.md`](agent-findings/dispatcher-runs/2026-06-02-23.md) | Dispatcher fire 2026-06-02-23 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/dispatcher-runs/2026-06-03-00.md`](agent-findings/dispatcher-runs/2026-06-03-00.md) | Dispatcher fire 2026-06-03-00 | 2026-06-03 | 2026-06-03 |
+| [`aidocs/agent-findings/dispatcher-runs/2026-06-03-04.md`](agent-findings/dispatcher-runs/2026-06-03-04.md) | Dispatcher run 2026-06-03-04 | — | 2026-06-03 |
 | [`aidocs/agent-findings/doc-alignment-2026-05-28.md`](agent-findings/doc-alignment-2026-05-28.md) | Doc Alignment — 2026-05-28 | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
