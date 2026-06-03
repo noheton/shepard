@@ -30,8 +30,8 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 39 |
-| `concept` | 14 |
+| `fragment` | 38 |
+| `concept` | 15 |
 | `idea` | 10 |
 | `feature-defined` | 82 |
 | `audited-by-personas` | 58 |
@@ -57,7 +57,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 |
 
-## fragment (39)
+## fragment (38)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -73,7 +73,6 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/data/12-timescaledb-performance-analysis.md`](data/12-timescaledb-performance-analysis.md) | TimescaleDB Timeseries Integration — Performance Analysis & Mitigations | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/69-timeseries-upstream-migration.md`](data/69-timeseries-upstream-migration.md) | Timeseries Schema — Migration from Upstream | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/88-thumbnail-spi.md`](data/88-thumbnail-spi.md) | TH1 — File Thumbnail SPI | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/91-db-best-practices.md`](data/91-db-best-practices.md) | DB Best-Practices Catalogue — All Six Substrates | 2026-05-29 | — |
 | [`aidocs/input/input_raw.md`](input/input_raw.md) | Set up configuration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/22-admin-cli-draft.md`](ops/22-admin-cli-draft.md) | Admin CLI — Candidate-Function Draft | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ops/27-convenience-clients-design.md`](ops/27-convenience-clients-design.md) | Convenience Clients — `shepard-py` and `shepard-ts` (P16) | 2026-05-23 | 2026-05-23 |
@@ -101,13 +100,14 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (14)
+## concept (15)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/data/45-gridfs-to-s3-evaluation.md`](data/45-gridfs-to-s3-evaluation.md) | GridFS → S3 — Evaluation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/50-experiment-orchestration.md`](data/50-experiment-orchestration.md) | Experiment Orchestration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/91-db-best-practices.md`](data/91-db-best-practices.md) | Database Best Practices Catalogue | 2026-06-03 | 2026-05-29 |
 | [`aidocs/integrations/52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | AAS Backend Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/60-shepard-edge.md`](integrations/60-shepard-edge.md) | shepard Edge — Concept Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/61-shepard-mount-as-network-drive.md`](integrations/61-shepard-mount-as-network-drive.md) | shepard Mount as a Network Drive — Concept Design | 2026-05-23 | 2026-05-23 |
@@ -307,12 +307,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-23 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-24 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-29 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-24 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-22 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-24 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-29 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |

@@ -1,197 +1,830 @@
 ---
-stage: fragment
-last-stage-change: 2026-05-29
+id: DB-BP1
+title: "Database Best Practices Catalogue"
+stage: concept
+last-stage-change: 2026-06-03
 ---
 
-# DB Best-Practices Catalogue — All Six Substrates
+# Database Best Practices Catalogue
 
-**Audience.** Authors of new backend code in this fork. Copy patterns
-from here; do not invent a new pattern when a proven one exists.
-
-**Living document.** Add a row whenever a new practice is established,
-a pattern is refined, or a known anti-pattern is retired. The "example"
-column must cite a real file path and line range (or a commit hash when
-the practice spans a whole file).
-
-**Six substrates covered:**
-
-1. Neo4j (primary graph store)
-2. TimescaleDB / PostgreSQL (timeseries data)
-3. PostgreSQL via JPA / Panache (structured plugin tables)
-4. MongoDB (structured data payloads)
-5. PostGIS (spatial data — `plugins/spatial`)
-6. Garage / MinIO S3 (file storage — `plugins/file-s3`)
+> Living reference. Each entry cites the canonical implementation with file path
+> and line numbers. Add new examples by appending — never delete existing entries.
+> When a pattern changes, add an amended entry and note the predecessor.
 
 ---
 
-## 1. Neo4j
+## 1. Neo4j (OGM + Cypher)
 
-**Package root:** `backend/src/main/java/de/dlr/shepard/common/neo4j/`
-**Migrations:** `backend/src/main/resources/neo4j/migrations/V*.cypher`
+### 1.1 Parametrised Cypher queries — never interpolate user data
 
-### 1.1 Best-practices table
+**Pattern.** All variable data is passed through a `Map<String, Object>` parameter
+map; the query string contains only `$paramName` placeholders. String formatting
+(`%s`, `+` concatenation) is used only for structural query *fragments* (clause
+assembly, label names, relationship types) that are produced entirely from
+server-controlled enum values — never from user-supplied strings.
 
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **Parametrised Cypher via `Map<String, Object>` params** — never concatenate user-supplied strings into a Cypher string. Call `session.query(type, query, paramsMap)` and bind every variable with `$paramName`. | Prevents Cypher injection (C5 / C5b security findings). The OGM session driver handles quoting and type coercion; concatenation bypasses both. | `GenericDAO.getSearchForReachableReferencesByNeo4jIdQuery` — `Map.of("startAppId", ..., "collectionAppId", ...)` passed to `new Neo4jQuery(ret, params)`. `GenericDAO.java` lines 221–229, commit `c707e56` (C5b). |
-| **`IF NOT EXISTS` on every constraint and index** — all `CREATE CONSTRAINT` and `CREATE INDEX` statements in migration files must carry `IF NOT EXISTS`. | Migration files can be re-applied on a dev stack that was partially migrated. Without the guard, a re-run aborts at the first duplicate-constraint error and leaves the graph in an inconsistent state. | `V11__Add_appId_unique_constraints.cypher` — every `CREATE CONSTRAINT … IF NOT EXISTS` line. `V58__AiCapabilityConfig_constraint.cypher` single-statement example. |
-| **`HasAppId` on every new Neo4j entity** — implement `de.dlr.shepard.common.identifier.HasAppId` and let `GenericDAO.createOrUpdate()` mint a UUID v7 `appId` automatically on first save. | Every entity needs a stable, substrate-independent identifier that crosses substrate boundaries (annotations, provenance edges, REST paths). The `appId` is minted by `AppIdGenerator.next()` at the write seam — callers never set it manually. | `HasAppId.java` (interface contract), `GenericDAO.createOrUpdate()` lines 125–156 (mint-on-null guard). Constraint registered by migration `V11`. |
-| **Query by `appId` property, not by `id()`** — use `WHERE e.appId = $appId` in new Cypher queries. The deprecated `id()` function (Neo4j internal node ID) is being retired by the L2 migration chain. | Internal Neo4j IDs are reused after node deletion. `id()` is not stable across restores and was the root cause of the `C5b` injection surface. `appId` (UUID v7, unique-constrained) is the safe replacement. | `GenericDAO.getSearchForReachableReferencesQuery(long, String)` — `WHERE col.appId = $collectionAppId` at line 250. `EntityIdResolver` bridges legacy `long` call-sites to appId at the DAO boundary. |
-| **`@NodeEntity` label = class name** — OGM maps each concrete entity class to a Neo4j label matching `ClassName`. Do not override the label unless migrating legacy data. Constraints in migration files reference the exact class-name label. | OGM's class-per-label registry assumes this mapping. A mismatch between the Java class name and the migration's `FOR (n:Label)` target means the constraint lands on a label no node ever carries — silent no-op that creates a false sense of security. | `V11__Add_appId_unique_constraints.cypher` — e.g. `CREATE CONSTRAINT appId_unique_Collection IF NOT EXISTS FOR (n:Collection) …` matches `Collection.java` OGM entity. |
-| **Uniqueness-only constraint during additive migration; no `IS NOT NULL` until backfill is complete** — phase new columns in as nullable; add the uniqueness constraint first; run backfill; then optionally add the not-null assertion. | Neo4j 5 uniqueness constraints ignore `null` values, so adding the constraint before backfill is safe. Adding a `IS NOT NULL` assertion before every row has a value would fail immediately on any graph with pre-migration nodes. | `V11__Add_appId_unique_constraints.cypher` comment header (L2a phase description): "Uniqueness only — NO non-null assertion, because rows pre-dating L2a keep appId = null until L2b's backfill". |
-| **One migration file per logical change, numbered sequentially** — each `V<N>__<Description>.cypher` file is immutable after it has been applied to any production instance. Never edit an applied migration; instead, add a new `V<N+1>__` file. | Neo4j Migrations (the library) hashes each applied file. If the file changes after application, the checksum mismatch causes `Migrations.validate()` to fail and `neo4j-migration-chain-readiness` to report unhealthy on the next startup. | `V50__Fix_fulltext_index_Resource_labels.cypher`, `V51__Extend_fulltext_index_Resource_labels.cypher` — two sequential files for two phases of the same index refactor, rather than mutating V50 after the fact. |
-| **Rollback file for data-mutating migrations** — when a migration writes or deletes data (not just schema), ship a paired `V<N>_R__rollback.cypher` alongside the forward migration. | Data-mutating migrations are irreversible at the schema level. A rollback file gives an operator a known-good path to undo the change from `cypher-shell` without reconstructing the reverse logic under pressure. | `V61_R__rollback.cypher` paired with `V61__v15_prov_predicates.cypher`. |
-| **No raw string interpolation in `deleteRelation()`** — the one remaining string-concat site in `GenericDAO.deleteRelation()` uses `shepardId` (a server-controlled integer) not a user string. Even so, treat it as a debt item and migrate to a params map at the next touch. | String format with a server-generated integer is not injection-vulnerable, but the pattern must not be copied. Every new Cypher-executing method must use the named-parameter map form. | `GenericDAO.deleteRelation()` lines 308–317 — acceptable for now (integer-only interpolation); do not replicate for string fields. |
+```java
+// CollectionDAO.java — findByAppId
+public Collection findByAppId(String appId, String username) {
+    String query =
+      "MATCH (c:Collection {deleted: FALSE}) WHERE c.appId = $appId AND " +
+      CypherQueryHelper.getReadableByQuery("c", username) +
+      " WITH c " +
+      CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+}
+```
 
-### 1.2 Session management
+File: `backend/src/main/java/de/dlr/shepard/context/collection/daos/CollectionDAO.java`, lines 149–157.
 
-- The OGM `Session` is obtained once per `GenericDAO` constructor via `NeoConnector.getInstance().getNeo4jSession()`. Do not hold sessions across request boundaries; the Quarkus CDI scope ensures a fresh session per injection site.
-- `session.clear()` is available as `GenericDAO.clearSession()` for tests that need to detach the session-level cache before re-fetching.
+The `getReadableByQuery` helper in `CypherQueryHelper` inlines the `username`
+into the Cypher literal — this is safe because `username` comes from the verified
+JWT subject, not from a request body. The data-layer `appId` (also untrusted) goes
+through `$appId` bound parameters, not string interpolation.
 
-### 1.3 Error-handling pattern
-
-- `session.load()` returns `null` for a missing node — callers throw `jakarta.ws.rs.NotFoundException` (mapped to HTTP 404 by the standard Quarkus exception mapper).
-- `resolveAppIdOrEmpty()` in `GenericDAO` converts a missing-OGM-Long lookup to an empty-string sentinel that never matches any real appId, preserving the pre-L2c "unknown id → no match" semantic without throwing.
-
----
-
-## 2. TimescaleDB / PostgreSQL (timeseries)
-
-**Package root:** `backend/src/main/java/de/dlr/shepard/data/timeseries/`
-**Migrations:** `backend/src/main/resources/db/migration/V1.*.sql`
-
-### 2.1 Best-practices table
-
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **Batch insert at `INSERT_BATCH_SIZE = 20 000` rows** — build one `INSERT … VALUES (…), (…), …` statement per 20 000 data points; do not issue one statement per row. | A single-row insert-per-point degrades PostgreSQL throughput by ~100×. The 20 000 row ceiling keeps the prepared-statement size below the `max_wal_size` threshold and avoids OOM from unbounded statement growth. | `TimeseriesDataPointRepository.insertManyDataPoints()` — `INSERT_BATCH_SIZE = 20000` constant at line 35; batch loop at lines 56–70. |
-| **`COPY`-based bulk ingest for migration workloads** — use `CopyManager.copyIn()` with a CSV stream instead of `INSERT` when ingesting large historical datasets. | `COPY` bypasses the query planner and WAL constraint checks, giving 5–10× higher ingest rates for sequential bulk loads (as measured in `aidocs/data/12-timescaledb-performance-analysis.md`). | `TimeseriesDataPointRepository.insertManyDataPointsWithCopyCommand()` lines 81–128; batched variant with per-batch progress callback at lines 139–159. |
-| **Named bind parameters via `Query.setParameter()`** — every SQL string uses `:paramName` placeholders, never string concatenation for user-supplied values. | SQL injection prevention. JPA `createNativeQuery()` + `setParameter()` is the safe equivalent of JDBC `PreparedStatement`. | `TimeseriesDataPointRepository.buildSelectQueryObject()` — `query.setParameter("timeseriesId", timeseriesId)` etc., lines 307–314. |
-| **`CREATE INDEX IF NOT EXISTS` for every new index** — SQL migration files use the idempotent form so re-runs are no-ops. | Same rationale as Neo4j: partial migration is a real scenario on dev stacks and during disaster recovery. | `V1.8.0__optimize_timeseries_performance.sql` line 1: `CREATE INDEX IF NOT EXISTS timeseries_data_points_id_time_idx …`. |
-| **`ALTER TABLE … ADD COLUMN IF NOT EXISTS` for new columns** — new Postgres columns are added nullable first; no `NOT NULL` without a preceding backfill step. | Prevents table-lock backfill on tables with millions of rows. Nullable columns can be added instantly even on hypertables with hundreds of compressed chunks. | `V1.11.0__add_shepard_id_to_timeseries.sql` — four-step pattern: nullable `ADD COLUMN IF NOT EXISTS`, `UPDATE … WHERE NULL`, `SET NOT NULL`, `SET DEFAULT`. |
-| **Rollback file paired with data-mutating SQL migrations** — every migration that writes or removes data ships a `V<N>_R__<description>.sql` sibling. | Operators must be able to undo a migration from `psql` without reconstructing the logic. | `V1.11.0_R__drop_shepard_id.sql` rollback file for the `shepard_id` column addition. |
-| **7-day hot window before compression** — the TimescaleDB compression policy is set to 7 days (not 1 day), keeping recent data in uncompressed chunks. | Out-of-order point insertions and `INSERT … ON CONFLICT DO UPDATE` against compressed chunks force segment decompression — a 10–50× write-latency penalty. A 7-day hot window covers all realistic out-of-order backfill scenarios while still compressing 90%+ of data at rest. | `V1.8.0__optimize_timeseries_performance.sql` lines 28–33: `add_compression_policy(…, BIGINT '604800000000000')` (7 days in nanoseconds). |
-| **Composite `(timeseries_id, time DESC)` index on the hypertable** — maintain this index in addition to TimescaleDB's default time-only index. | Without this composite index, a `WHERE timeseries_id = ? AND time BETWEEN ? AND ?` query degenerates into a full chunk scan on uncompressed chunks. The index is 20–50× faster for the single-series time-range query that every chart renders. | `V1.8.0__optimize_timeseries_performance.sql` lines 14–16: `CREATE INDEX IF NOT EXISTS timeseries_data_points_id_time_idx ON timeseries_data_points (timeseries_id, time DESC)`. |
-| **Chunk-skipping on `timeseries_id`** — enable `enable_chunk_skipping('timeseries_data_points', 'timeseries_id')` so the planner can skip chunks that don't contain the requested series. | Avoids opening every chunk in a year-range query. Per-chunk min/max statistics let the planner jump directly to relevant chunks. | `V1.8.0__optimize_timeseries_performance.sql` lines 36–39. |
-| **`@Timed` annotation on every repository method** — wrap every public data-access method with `@Timed(value = "shepard.<domain>.<operation>")` for automatic Micrometer instrumentation. | Provides out-of-the-box latency percentile tracking per operation in Prometheus/Grafana without bespoke instrumentation code. | `TimeseriesDataPointRepository` — `@Timed(value = "shepard.timeseries-data-point.batch-insert")` at line 54, `@Timed(value = "shepard.timeseries-data-point.query")` at line 168. |
-
-### 2.2 Session / connection management
-
-- Use `@PersistenceContext EntityManager entityManager` (request-scoped by Quarkus) for JPA queries. Never cache the `EntityManager` in an instance field.
-- For raw JDBC (COPY operations): obtain and close within a single try-with-resources `AgroalDataSource.getConnection()` block — see `insertManyDataPointsWithCopyCommand()` lines 85–127.
+**Why.** Cypher injection is the Neo4j equivalent of SQL injection. Binding parameters
+means the query planner can also cache the execution plan, removing per-call parse
+overhead.
 
 ---
 
-## 3. PostgreSQL via JPA / Panache (plugin structured tables)
+### 1.2 `IF NOT EXISTS` guards on all constraints and indexes
 
-**Primary example:** `plugins/importer/src/main/java/de/dlr/shepard/plugins/importer/runs/`
-**Migrations:** `plugins/importer/src/main/resources/db/migration/V1.11.1__add_importer_run_table.sql`
+**Pattern.** Every `CREATE CONSTRAINT` and `CREATE INDEX` in a migration file is
+written with `IF NOT EXISTS`, making re-runs and dev-stack replay completely safe.
+Rollback twins follow the `V<N>_R__*.cypher` naming convention.
 
-### 3.1 Best-practices table
+```cypher
+// V11__Add_appId_unique_constraints.cypher (abridged)
+// Idempotent: IF NOT EXISTS is a no-op when the constraint already exists.
 
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **`@Entity` + `PanacheRepositoryBase<E, ID>` pattern** — define the entity as a plain `@Entity @Table(name = "snake_case_table")` class and the repository as `@ApplicationScoped class XxxRepository implements PanacheRepositoryBase<Xxx, UUID>`. | Panache's fluent API (`find()`, `page()`, `list()`) generates safe, parameterised HQL queries. It eliminates hand-written query strings for common CRUD operations, removing an entire injection surface class. | `ImporterRun.java` (`@Entity @Table(name = "importer_run")`); `ImporterRunRepository.java` (`implements PanacheRepositoryBase<ImporterRun, UUID>`). |
-| **UUID v7 PK minted at the service layer, not by Hibernate** — set `@Id @Column(nullable = false, updatable = false) private UUID id;` and mint the value in the service before calling `persist()`. | UUID v7 is time-sortable, which keeps B-tree index inserts sequential. Minting at the service layer means the caller knows the ID before the row commits — useful for async job submission where the ID is returned to the client immediately. | `ImporterRun.java` line 62 (`@Id … private UUID id`); comment at lines 54–60 explaining the service-layer mint rationale. `ImporterRunService` mints via `UUID.randomUUID()` (v4 today; upgrade to v7 is tracked). |
-| **`EnumType.STRING` for enum columns** — persist Java enums as their string name (`@Enumerated(EnumType.STRING)`), never as their ordinal. | Ordinal enums break silently if enum members are reordered. String enums are self-documenting and survive any reordering; a `CHECK (status IN (…))` constraint on the SQL side double-guards the allowed set. | `ImporterRun.java` line 69 (`@Enumerated(EnumType.STRING) … ImporterRunStatus status`) and line 95. |
-| **SQL `text` for Java `String` enum discriminators** — use `text` in the DDL rather than `varchar(N)` so adding new enum values is a no-DDL change. | `varchar(N)` truncates silently if a future value is longer than N. `text` in Postgres has no length limit and no storage penalty over `varchar`. | `V1.11.1__add_importer_run_table.sql` — `source_kind text NOT NULL`. |
-| **`jsonb` columns for structured blobs** — use `jsonb` (not `json` or `text`) when a column stores structured JSON that may be queried from SQL. | `jsonb` stores the parsed representation so `result_metadata->>'collectionAppId'` is a direct key lookup rather than a text scan. Used by ops tooling to introspect job state without application-layer decoding. | `ImporterRun.java` — `@Column(name = "result_metadata", columnDefinition = "jsonb")` at line 172; `request_payload jsonb` in the migration DDL. |
-| **Partial indexes for filtered table scans** — create partial indexes with `WHERE status = 'X'` for all pattern-specific queries (e.g. "find all RUNNING stale jobs"). | Partial indexes are smaller and faster than covering indexes over the full table. For a job table that is 95% terminal rows, scanning only RUNNING rows for the stale-job reaper is dramatically cheaper with a partial index. | `V1.11.1__add_importer_run_table.sql` lines 97–104: `CREATE INDEX … WHERE status = 'RUNNING'`; lines 106–109: `… WHERE status IN ('SUCCEEDED','FAILED','CANCELLED')`. |
-| **`CREATE TABLE IF NOT EXISTS` + `CREATE INDEX IF NOT EXISTS` in all plugin SQL migrations** — same idempotency guarantee as the core timeseries migrations. | Plugin migrations run via the same Flyway classpath scanner as core. A plugin that is upgraded then downgraded then upgraded again must not fail on the re-run. | `V1.11.1__add_importer_run_table.sql` line 31: `CREATE TABLE IF NOT EXISTS importer_run`. All four `CREATE INDEX` statements carry `IF NOT EXISTS`. |
-| **`@Column(name = "snake_case")` explicit mapping on every field** — never rely on Hibernate's implicit `camelCase → snake_case` transformation. | Quarkus Hibernate has changed this default across versions. Explicit `@Column(name = …)` makes the SQL column name visible in the Java class and independent of the Hibernate naming strategy. | `ImporterRun.java` — every field carries `@Column(name = "…")` explicitly. |
-| **Sensitive fields redacted before `requestPayload` insert** — strip `apiKey`, `password`, and similar credential fields from the request body JSON before writing to `request_payload`; persist credentials only in the encrypted `source_config` column. | `request_payload` is meant to be readable by ops tooling for debugging. Credentials in a plaintext jsonb column are a secret-in-cleartext finding. | `ImporterRun.java` comment on `requestPayload` at lines 177–185: "sensitive fields redacted by the service layer before insert". |
+CREATE CONSTRAINT appId_unique_Collection IF NOT EXISTS
+  FOR (n:Collection) REQUIRE n.appId IS UNIQUE;
 
-### 3.2 Error-handling pattern
+CREATE CONSTRAINT appId_unique_DataObject IF NOT EXISTS
+  FOR (n:DataObject) REQUIRE n.appId IS UNIQUE;
+```
 
-- Panache `findById()` returns `null` for a missing row; wrap with `Optional.ofNullable()` in the repository and throw `NotFoundException` at the service layer.
-- Do not swallow `PersistenceException` from plugin repositories. Let Quarkus map them to 500 responses with a traceId.
+File: `backend/src/main/resources/neo4j/migrations/V11__Add_appId_unique_constraints.cypher`, lines 22–43.
 
----
+Second example — additive index migration for `ImportPlan`:
 
-## 4. MongoDB (structured data payloads)
+```cypher
+// V83__ImportPlan_manifestJson.cypher
+// Idempotent: CREATE INDEX IF NOT EXISTS is safe to re-run.
+CREATE INDEX import_plan_commit_id IF NOT EXISTS
+FOR (p:ImportPlan)
+ON (p.commitId);
+```
 
-**Package root:** `backend/src/main/java/de/dlr/shepard/`
-**Key files:** `common/mongoDB/MongoClientWrapper.java`, `data/structureddata/services/StructuredDataService.java`
+File: `backend/src/main/resources/neo4j/migrations/V83__ImportPlan_manifestJson.cypher`, lines 13–16.
 
-### 4.1 Best-practices table
+Third example — uniqueness-only constraint (no NOT NULL) so pre-migration rows
+with `appId = null` pass the constraint (Neo4j 5 ignores nulls on uniqueness):
 
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **Inject `MongoDatabase` via `@Named("mongoDatabase")` producer** — never construct a `MongoClient` directly inside a service; always inject `MongoDatabase` from `MongoClientWrapper`'s `@Produces @Named("mongoDatabase")` method. | `MongoClientWrapper` parses the database name from the connection string (including handling the blank-name fallback) and initialises exactly once per application lifecycle. Direct construction bypasses this and creates multiple connections. | `MongoClientWrapper.java` — `@Produces @Named("mongoDatabase") public MongoDatabase getMongoDatabase()` at line 63. `StructuredDataService.java` — `@Inject @Named("mongoDatabase") MongoDatabase mongoDatabase;` lines 28–31. |
-| **Collection names follow `TypeNameUUID` convention** — when creating a new MongoDB collection to hold payload data for a Neo4j container, name it `"<EntityTypeName>" + UUID.randomUUID().toString()`. | The name must be unique (UUIDs guarantee this), human-interpretable (the type prefix helps `mongosh` inspections), and stable for the lifetime of the container Neo4j node. Do not use sequential integers, which create race conditions when two containers are created concurrently. | `StructuredDataService.createStructuredDataContainer()` lines 35–38: `String mongoId = "StructuredDataContainer" + UUID.randomUUID().toString()`. |
-| **Use MongoDB driver `Filters.*` DSL instead of raw JSON strings for programmatic queries** — build filter predicates with `Filters.and()`, `Filters.eq()`, `Filters.in()` etc. rather than assembling a `Document.parse(...)` string. | `Document.parse(string)` is injection-vulnerable when any part of the string comes from user input. The `Filters.*` DSL is type-safe and driver-encoded. | `StructuredDataService.java` — `import static com.mongodb.client.model.Filters.eq;` at line 3 (initial adoption); the legacy `Document.parse(mongoQuery)` path in `StructuredDataSearchService.findMatchingReferences()` lines 83–93 is retained for backward-compat but carries a TODO deprecation notice. Do not add new callers of the parse path. |
-| **Strip underscore-prefixed keys from user payloads before insert** — filter out any JSON key whose name starts with `_` before inserting a user-supplied `Document`. | MongoDB's `_id` is the identity key; other `_`-prefixed keys are reserved for internal metadata. A user sending `{"_id": "x"}` would silently override the document's ObjectId. | `StructuredDataService.createStructuredData()` lines 54–59: remove keys starting with `"_"` from `toInsert` before insert. |
-| **One collection per logical data container, not one per tenant** — do not multiplex multiple tenants or data objects into a single MongoDB collection. Each `StructuredDataContainer` Neo4j node owns exactly one MongoDB collection. | Mixing tenants in one collection forces client-side permission filtering of every query result and makes it impossible to drop a container cleanly (you'd need a filtered `deleteMany`). One collection per container means a container drop is `drop()`. | `StructuredDataService.createStructuredDataContainer()` and `StructuredDataContainerService.delete()` — one-to-one relationship between Neo4j node and MongoDB collection. |
-| **`MongoDatabase` name from connection string, not hardcoded** — parse the database name from `quarkus.mongodb.connection-string` at startup; fall back to `"database"` only with a `WARN` log. | Operators must be able to rename the database in the connection string without requiring code changes. Hardcoded `"database"` would silently ignore the operator's chosen name. | `MongoClientWrapper.determineDatabaseName()` lines 42–50; `Log.warn()` fallback at line 45. |
+```cypher
+// V96__Ntf1_NotificationTransport_scaffold.cypher
+// Idempotent: CREATE CONSTRAINT ... IF NOT EXISTS is a no-op when the
+// constraint already exists. Safe to re-run.
+CREATE CONSTRAINT appId_unique_NotificationTransport IF NOT EXISTS
+  FOR (n:NotificationTransport)
+  REQUIRE n.appId IS UNIQUE;
+```
 
-### 4.2 Error-handling pattern
+File: `backend/src/main/resources/neo4j/migrations/V96__Ntf1_NotificationTransport_scaffold.cypher`, lines 15–29.
 
-- Wrap every MongoDB operation that may throw `MongoException` in a try/catch at the service layer; convert to the appropriate HTTP status (404 for missing collection, 500 for driver-level errors) using the Shepard RFC 7807 mapper.
-- `IllegalArgumentException` from `mongoDatabase.getCollection(invalidName)` must be caught at the call site; see `StructuredDataService.createStructuredData()` lines 42–48.
-
----
-
-## 5. PostGIS / PostgreSQL (spatial data)
-
-**Package root:** `plugins/spatial/src/main/java/de/dlr/shepard/data/spatialdata/`
-**Migrations:** `plugins/spatial/src/main/resources/db/spatial/migration/V1.0.0__setup_spatial_data_tables.sql`
-
-### 5.1 Best-practices table
-
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **GIST index on `GEOMETRY` column, created in the migration** — every `GEOMETRY`-typed column gets a `CREATE INDEX … USING GIST (column gist_geometry_ops_nd)` in the same migration that creates the table. | A GIST index is mandatory for acceptable performance on any bounding-box or proximity query. Without it, `&&& ST_3DMakeBox(…)` and `<<->>` KNN queries degrade to full-table scans. `gist_geometry_ops_nd` handles 3D geometries (POINT Z) correctly. | `V1.0.0__setup_spatial_data_tables.sql` — `CREATE INDEX spatial_data_point_position_idx ON spatial_data_points USING GIST (position gist_geometry_ops_nd)`. |
-| **Hash-partition by `container_id` with 100 partitions** — partition the spatial points table by `HASH (container_id)` into 100 child tables at migration time. | Spatial operations on one container never lock or scan data for a different container. 100 partitions keeps the planner's pruning cost low while providing sufficient isolation for tens of thousands of containers. | `V1.0.0__setup_spatial_data_tables.sql` — `CREATE TABLE spatial_data_points … PARTITION BY HASH (container_id);` followed by the 100-iteration `DO $$ … END $$` loop. |
-| **GIN index on `JSONB metadata` column** — index the `metadata jsonb` column with `USING GIN(metadata)` to support `@>` containment queries. | The metadata filter in `getByContainerId(…, metadataFilter, …)` uses the `@>` JSONB containment operator. Without the GIN index, this degenerates into a full table scan. | `V1.0.0__setup_spatial_data_tables.sql` — `CREATE INDEX spatial_data_points_metadata_idx ON spatial_data_points USING GIN(metadata)`. |
-| **`NativeQueryStringBuilder` + named params for all geometry queries** — build spatial queries via the fluent `NativeQueryStringBuilder` and populate the `queryParameters` map, then call `query.setParameter()` from the map. Never inline coordinate values into the SQL string. | Direct coordinate injection is a SQL injection vector when coordinates come from user input. The builder uses `:x1`, `:y1`, `:z1` named placeholders bound by the JPA `setParameter()` call chain. | `NativeQueryStringBuilder.addKNNGeometryCondition()` — `queryParameters.put("x1", x1)` etc.; `SpatialDataPointRepository.getByKNN()` — `queryBuilder.getQueryParameters().forEach(query::setParameter)` lines 241–243. |
-| **`@PersistenceUnit("spatial")` for the spatial DB, not the default unit** — inject the spatial `EntityManager` with the named persistence unit to isolate it from the timeseries / default Postgres connection. | PostGIS requires its own database schema or at minimum its own connection pool configuration. The named persistence unit allows independent Flyway migration history (`db/spatial/migration/`) and independent connection pool sizing. | `SpatialDataPointRepository.java` — `@PersistenceUnit("spatial") EntityManager entityManager` at line 28. |
-| **Batch insert at `INSERT_BATCH_SIZE = 20 000`** — same constant as the timeseries substrate. Build one multi-row INSERT per batch. | Same rationale as §2: single-row inserts are prohibitively slow for bulk spatial ingest. | `SpatialDataPointRepository.java` — `private final int INSERT_BATCH_SIZE = 20000` at line 18; batch loop at lines 80–98. |
-| **`ST_MakePoint(x, y, z)` for 3D geometry construction** — always use the PostGIS constructor function, never insert WKT or WKB strings directly. | `ST_MakePoint` validates the coordinate types at the Postgres function boundary. Inline WKT strings bypass type validation and can produce silent geometry malformation when user-supplied coordinates have swapped axes. | `SpatialDataPointRepository.insert()` — `"ST_MakePoint(%f, %f, %f)"` using `String.format(Locale.US, ...)` at line 47 (note: `Locale.US` prevents decimal-comma localisation bugs in European locales). |
-| **`Locale.US` for `String.format` with floating-point geometry** — every `String.format` call that embeds `%f` coordinates must pass `Locale.US`. | The default `Locale.getDefault()` on a German-locale host formats `3.14` as `3,14`. PostGIS rejects comma-decimal WKT, causing every geometry insert to fail in production environments. | `SpatialDataPointRepository.insert()` and `insert(long, SpatialDataPoint[])` — both use `String.format(Locale.US, …)`. |
-| **`@Timed` on every public repository method** — same policy as §2 timeseries. | Consistent instrumentation for all spatial operations in Micrometer. | `SpatialDataPointRepository` — `@Timed(value = "shepard.spatial-data.insert")` at line 31, `@Timed(value = "shepard.spatial-data.query-by-bounding-box")` at line 161. |
-
-### 5.2 Error-handling pattern
-
-- `entityManager.createNativeQuery(sql).executeUpdate()` returns a row count; throw `RuntimeException("SpatialData was not stored in database.")` if count ≤ 0 rather than silently swallowing a failed insert.
-- `@RequiresDatabase("spatial")` on the REST layer signals graceful 503 degradation when the PostGIS extension is unavailable (A1c pattern).
+**Why.** A `CREATE CONSTRAINT` without `IF NOT EXISTS` fails on a DB where that
+migration has already run (dev box, CI re-run, partial rollout). `IF NOT EXISTS`
+makes every migration script idempotent and operator-runnable from `cypher-shell`
+without state inspection.
 
 ---
 
-## 6. Garage / MinIO S3 (file storage)
+### 1.3 Fresh OGM session per DAO call (`@RequestScoped`)
 
-**Package root:** `plugins/file-s3/src/main/java/de/dlr/shepard/plugins/files3/`
-**SPI definition:** `backend/src/main/java/de/dlr/shepard/storage/FileStorage.java`
+**Pattern.** Every DAO that extends `GenericDAO` is annotated `@RequestScoped`.
+`GenericDAO`'s constructor calls `NeoConnector.getInstance().getNeo4jSession()`,
+which calls `sessionFactory.openSession()` — opening a *new* OGM session for each
+CDI request scope. Sessions are never shared across requests.
 
-### 6.1 Best-practices table
+```java
+// GenericDAO.java — constructor opens session
+protected GenericDAO() {
+    session = NeoConnector.getInstance().getNeo4jSession();
+}
 
-| Practice | Rationale | Representative example |
-|---|---|---|
-| **Implement `FileStorage` SPI, not a bespoke service** — all file storage adapters implement `de.dlr.shepard.storage.FileStorage` and register via CDI `@ApplicationScoped`. The `FileStorageRegistry` resolves the active adapter by `id()`. | The SPI boundary ensures the rest of Shepard never imports `S3FileStorage` directly. Callers are insulated from the choice of storage backend. Changing from GridFS to S3 is a config key change, not a code change. | `S3FileStorage.java` — `@ApplicationScoped public class S3FileStorage implements FileStorage`. `FileStorage.java` — full SPI contract with Javadoc explaining the design. |
-| **`isEnabled()` guards on every public method** — call `requireEnabled()` (which throws `StorageProviderUnavailableException`) at the top of every `put()`, `get()`, `delete()`, and presign method. | If the bucket config is absent, the adapter self-disables. A misconfigured adapter that silently no-ops on writes would produce corrupt data (metadata written but no bytes stored). The explicit guard converts the misconfiguration into a clear 503. | `S3FileStorage.requireEnabled()` at lines 401–407; called at the top of `put()`, `get()`, `delete()`, `presignedUploadUrl()`, `presignedExportUrl()`, `presignedDownloadUrl()`. |
-| **Locator format `"<containerMongoId>/<uuid>"`** — the opaque string returned by `put()` encodes the MongoDB container ID and a fresh UUID, separated by `/`. The bucket name is NOT in the locator. | The locator is stored in Neo4j and must survive a bucket rename or migration. Encoding the bucket in the locator would couple the persisted data to a deploy-time topology decision. | `S3FileStorage.put()` — `String key = request.container() + "/" + uuid;` at line 209; Javadoc on `id()` explaining the locator shape. |
-| **`providerId` routing check in `get()` and `delete()`** — verify `locator.providerId().equals(ID)` before dispatching; throw `StorageException` if there is a mismatch. | A locator minted by GridFS (e.g. `"gridfs:containerMongoId:fileOid"`) must never be passed to the S3 adapter. The routing check catches `FileStorageRegistry` bugs before they cause data corruption or silent 404s. | `S3FileStorage.requireS3Locator()` at lines 409–415; called in `get()` and `delete()`. |
-| **Idempotent `delete()` — swallow `NoSuchKeyException`** — `delete()` must succeed (return normally) when the key does not exist. `NoSuchKeyException` is a no-op, not an error. | The `FileStorage.delete()` contract requires idempotency so that a retry after a partial failure (e.g. Neo4j updated but S3 delete timed out) succeeds cleanly. | `S3FileStorage.delete()` lines 276–281: `catch (NoSuchKeyException e) { // Idempotent contract: missing key is a no-op. }`. |
-| **Bucket auto-creation via `headBucket → createBucket` race-safe pattern** — `ensureBucketExists()` calls `headBucket()`; if it throws `S3Exception`, attempts `createBucket()`; swallows `BucketAlreadyOwnedByYouException` and `BucketAlreadyExistsException`. | Multiple Shepard instances may start simultaneously. Without the race-safe swallow, the second instance to start would fail with `BucketAlreadyExistsException` and mark itself disabled. | `S3FileStorage.ensureBucketExists()` lines 174–191. |
-| **Deploy-time-only config keys for storage topology** — `shepard.files.s3.endpoint`, `shepard.files.s3.bucket`, etc. are deploy-time-only config keys (not runtime-mutable `:*Config` entities) per the `CLAUDE.md` "cluster identity / topology" exception. | Switching the storage backend mid-runtime would orphan any in-flight write whose bytes were directed to the old endpoint. This is the one class of knobs that must not be runtime-mutable. | `S3FileStorage.java` — `@ConfigProperty(name = "shepard.files.s3.endpoint", defaultValue = "")` etc. at lines 87–103; Javadoc citing the `CLAUDE.md` exception. |
-| **Presigned URL for direct client upload/download (FS1c)** — implement `presignedUploadUrl()` and `presignedDownloadUrl()` to return `Optional<URI>`, letting clients bypass the JVM for byte transfer. Return `Optional.empty()` when the adapter does not support presigning (GridFS). | Routing file bytes through the Quarkus JVM adds latency and memory pressure proportional to file size. Large files (NDT scans, HDF5, video) should never transit the application tier. The `Optional.empty()` fallback lets the REST layer degrade gracefully to direct upload for adapters that don't support presigning. | `S3FileStorage.presignedUploadUrl()` lines 303–327; `FileStorage.presignedUploadUrl()` default returning `Optional.empty()` at lines 131–135. |
-| **`exports/` prefix for transient export blobs** — when uploading a temporary export artifact (RO-Crate ZIP, NDJSON dump), key it as `"exports/" + uuid`. Advise operators to set a 24-hour lifecycle rule on the `exports/` prefix. | Export objects accumulate indefinitely without a lifecycle rule. The prefix convention makes it trivial to write a single S3 lifecycle policy (`exports/*` → expire after 24h) without affecting payload objects. | `S3FileStorage.presignedExportUrl()` — `String objectKey = "exports/" + key;` at line 342; Javadoc and `docs/reference/file-storage.md` reference. |
+// NeoConnector.java — always opens a fresh session
+public Session getNeo4jSession() {
+    if (sessionFactory == null) {
+        return null;
+    }
+    return sessionFactory.openSession();   // new Session per call
+}
+```
 
-### 6.2 Error-handling pattern
+File: `backend/src/main/java/de/dlr/shepard/common/neo4j/daos/GenericDAO.java`, lines 32–34.
+File: `backend/src/main/java/de/dlr/shepard/common/neo4j/NeoConnector.java`, lines 201–207.
 
-- Map `NoSuchKeyException` → `StorageNotFoundException` (caller maps to 404).
-- Map `S3Exception` with `RESOURCE_NOT_FOUND` error code → `StorageProviderUnavailableException` (caller maps to 503 with `Retry-After`).
-- Every method that may fail storage-tier I/O must propagate `StorageException`; callers must not swallow it — the REST layer converts to RFC 7807 problem JSON.
-- Do not let storage failures propagate through the `ProvenanceCaptureFilter` (secondary writes are fire-and-forget per `CLAUDE.md`).
+Representative DAO annotation:
+
+```java
+// CollectionDAO.java
+@RequestScoped
+public class CollectionDAO extends VersionableEntityDAO<Collection> { ... }
+```
+
+File: `backend/src/main/java/de/dlr/shepard/context/collection/daos/CollectionDAO.java`, lines 16–17.
+
+**Why.** The OGM session carries an identity map (first-level cache). Sharing a
+session across requests can serve stale cached objects to different users. `@RequestScoped`
+guarantees every HTTP request gets a clean session, eliminating cross-request
+cache pollution without the overhead of opening a session per DAO method.
 
 ---
 
-## Cross-cutting patterns
+### 1.4 Parameterised delete query with `CALL {}` subqueries to avoid Cartesian explosion
 
-These patterns apply to all six substrates.
+**Pattern.** When deleting a parent node and cascading soft-deletes to children of
+multiple types, use independent `CALL {}` subqueries rather than chained
+`OPTIONAL MATCH` clauses. Chained `OPTIONAL MATCH` causes row-count multiplication
+(Cartesian product) when a parent has many children of each type.
 
-| Pattern | Rationale | Where enforced |
-|---|---|---|
-| **`appId` as the universal cross-substrate identity** — every new persisted entity in any substrate gets a UUID v7 `appId` field. Never expose database-internal IDs (Neo4j node IDs, MongoDB ObjectIds, TimescaleDB PKs, Postgres serials) across substrate boundaries. | Internal IDs are implementation details. Cross-substrate queries (e.g. "find all annotations for this S3 file") must use a shared, stable identifier that every substrate can carry. | `HasAppId` interface (Neo4j); `appId UUID NOT NULL` column in SQL migrations (`V1.11.0`, `V1.11.1`); `oid` field in `AbstractMongoObject`; `StorageLocator` carrying the container mongoId as the cross-substrate pointer for files. |
-| **Additive schema evolution — new columns/properties are nullable first** — never add a `NOT NULL` column without a default or a preceding backfill step. Never add a `NOT NULL` constraint on an existing column before backfilling every row. | Non-nullable columns without a default require a full-table-lock backfill, which is incompatible with zero-downtime deploys. | Neo4j: constraint-only (no NOT NULL on new properties). PostgreSQL: `ADD COLUMN IF NOT EXISTS` + nullable → backfill → `SET NOT NULL` (see `V1.11.0`). MongoDB: document-level null-check at read time. |
-| **`@Timed` on every repository/data-access method** — use Micrometer's `@Timed` with a dot-separated `"shepard.<substrate>.<operation>"` name. | Enables latency tracking per operation, per substrate, in Prometheus without custom instrumentation. The naming convention (`shepard.timeseries-data-point.batch-insert`, `shepard.spatial-data.insert`) follows the Micrometer hierarchy pattern. | `TimeseriesDataPointRepository`, `SpatialDataPointRepository`. Adopt in all new repository classes. |
-| **Migrations are idempotent and fail-fast** — all migration files use `IF NOT EXISTS` (or `IF EXISTS` for drops); any non-idempotent statement is wrapped in a guard. Any error aborts startup via `MigrationsException` propagation. | Idempotency allows safe re-runs after partial failure. Fail-fast prevents silent partial migrations from leaving the database in an inconsistent state that causes runtime errors hours later. | `MigrationsRunner.apply()` propagates `MigrationsException` (A1e). Every cypher and SQL migration in this fork carries `IF NOT EXISTS`. |
+```java
+// CollectionDAO.java — deleteCollectionByShepardId
+// NEO-AUDIT-008: the old chained OPTIONAL MATCH created c × d × r row triples.
+// Replaced with CALL{} subqueries that each execute independently.
+String query =
+  """
+  MATCH (c:Collection {shepardId:%d})
+  SET c.deleted = true
+  WITH c
+  CALL {
+    WITH c
+    MATCH (c)-[:has_dataobject]->(d:DataObject)
+    SET d.deleted = true
+    RETURN count(d) AS doCount
+  }
+  CALL {
+    WITH c
+    MATCH (c)-[:has_dataobject]->(d:DataObject)-[:has_reference]->(r:BasicReference)
+    SET r.deleted = true
+    RETURN count(r) AS refCount
+  }
+  RETURN doCount, refCount""".formatted(shepardId);
+```
+
+File: `backend/src/main/java/de/dlr/shepard/context/collection/daos/CollectionDAO.java`, lines 118–142.
+
+**Why.** `MATCH (a)-[:r1]->(b), (a)-[:r2]->(c)` produces `|b| × |c|` rows before
+any `SET`. `CALL {}` subqueries execute independently, keeping cardinality bounded.
+
+---
+
+## 2. PostgreSQL / TimescaleDB
+
+### 2.1 JPA entity with Panache `PanacheRepositoryBase`
+
+**Pattern.** Repositories that need custom queries extend Quarkus's
+`PanacheRepositoryBase<Entity, IdType>`. JPQL queries are written as Panache
+fragment expressions (everything after `WHERE`) with positional or named parameters,
+never via string concatenation.
+
+```java
+// TsChannelResolver.java
+@ApplicationScoped
+public class TsChannelResolver implements PanacheRepositoryBase<TimeseriesEntity, Integer> {
+
+  public Optional<TimeseriesEntity> findByShepardId(UUID shepardId) {
+    if (shepardId == null) return Optional.empty();
+    return this.find("shepardId = ?1", shepardId).firstResultOptional();
+  }
+
+  public List<TimeseriesEntity> bulkFindByShepardIds(List<UUID> ids) {
+    if (ids == null || ids.isEmpty()) return List.of();
+    return this.find("shepardId IN ?1", ids).list();
+  }
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TsChannelResolver.java`, lines 29–42, 176–179.
+
+**Why.** Panache fragment expressions compile to JPQL prepared statements,
+preventing SQL injection and enabling Hibernate's plan cache.
+
+---
+
+### 2.2 Additive-only migrations: `ADD COLUMN IF NOT EXISTS`
+
+**Pattern.** New columns are always added as nullable using
+`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`. The column is first added nullable,
+then backfilled, then tightened to `NOT NULL` — three separate statements to
+avoid a full-table lock on existing rows.
+
+```sql
+-- V1.11.0__add_shepard_id_to_timeseries.sql
+-- Idempotent: ADD COLUMN IF NOT EXISTS + CREATE UNIQUE INDEX IF NOT EXISTS.
+
+-- Step 1: add nullable first.
+ALTER TABLE timeseries
+    ADD COLUMN IF NOT EXISTS shepard_id UUID;
+
+-- Step 2: backfill all NULLs (idempotent — only updates rows without one).
+UPDATE timeseries
+    SET shepard_id = gen_random_uuid()
+    WHERE shepard_id IS NULL;
+
+-- Step 3: tighten to NOT NULL now that every row has a value.
+ALTER TABLE timeseries
+    ALTER COLUMN shepard_id SET NOT NULL;
+
+-- Step 4: ensure new rows auto-mint a shepard_id on insert.
+ALTER TABLE timeseries
+    ALTER COLUMN shepard_id SET DEFAULT gen_random_uuid();
+```
+
+File: `backend/src/main/resources/db/migration/V1.11.0__add_shepard_id_to_timeseries.sql`, lines 27–43.
+
+Second example — rollback twin uses `ADD COLUMN IF NOT EXISTS`:
+
+```sql
+-- V1.14.0_R__restore_5tuple_to_timeseries.sql (rollback)
+ALTER TABLE timeseries
+    ADD COLUMN IF NOT EXISTS measurement   TEXT,
+    ADD COLUMN IF NOT EXISTS field         TEXT,
+    ADD COLUMN IF NOT EXISTS device        TEXT,
+    ADD COLUMN IF NOT EXISTS location      TEXT,
+    ADD COLUMN IF NOT EXISTS symbolic_name TEXT;
+```
+
+File: `backend/src/main/resources/db/migration/V1.14.0_R__restore_5tuple_to_timeseries.sql`, lines 5–10.
+
+**Why.** Adding a `NOT NULL` column without a `DEFAULT` on a large table requires
+a full-table lock — incompatible with zero-downtime deploys. The three-step pattern
+keeps the table online throughout.
+
+---
+
+### 2.3 Idempotent index and table creation with `IF NOT EXISTS`
+
+**Pattern.** Every `CREATE INDEX` and `CREATE TABLE` in a Flyway migration carries
+`IF NOT EXISTS`, making the migration safe to re-run.
+
+```sql
+-- V1.10.0__add_permission_audit_log_table.sql
+CREATE TABLE IF NOT EXISTS permission_audit_log (
+    id             BIGSERIAL    PRIMARY KEY,
+    occurred_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    entity_app_id  TEXT         NOT NULL,
+    entity_kind    TEXT,
+    actor_username TEXT,
+    action         TEXT         NOT NULL,
+    detail_json    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS perm_audit_entity_app_id_idx
+    ON permission_audit_log (entity_app_id);
+
+CREATE INDEX IF NOT EXISTS perm_audit_occurred_at_idx
+    ON permission_audit_log (occurred_at DESC);
+```
+
+File: `backend/src/main/resources/db/migration/V1.10.0__add_permission_audit_log_table.sql`, lines 12–26.
+
+Second example — predicate vocabulary table:
+
+```sql
+-- V1.16.0__Add_predicate_vocabulary.sql
+CREATE TABLE IF NOT EXISTS predicate_vocabulary (
+    predicate_uri   TEXT        PRIMARY KEY,
+    substrate       TEXT        NOT NULL
+        CHECK (substrate IN ('neo4j', 'timescaledb', 'postgres', 'garage')),
+    ...
+);
+CREATE INDEX IF NOT EXISTS predicate_vocab_substrate_idx
+    ON predicate_vocabulary (substrate);
+```
+
+File: `backend/src/main/resources/db/migration/V1.16.0__Add_predicate_vocabulary.sql`, lines 29–44.
+
+**Why.** A migration that fails on re-run blocks every Flyway-managed startup.
+`IF NOT EXISTS` makes every DDL statement a no-op when the object already exists.
+
+---
+
+### 2.4 `@SecondaryTable` to isolate hot-path columns from identity metadata
+
+**Pattern.** When a JPA entity has a high-write "hot" subset of columns and a
+lower-frequency identity/metadata subset, the identity columns are placed in a
+`@SecondaryTable` joined by primary key.
+
+```java
+// TimeseriesEntity.java
+@Entity
+@Table(name = "timeseries")
+@SecondaryTable(
+  name = "channel_metadata",
+  pkJoinColumns = @PrimaryKeyJoinColumn(name = "timeseries_id")
+)
+public class TimeseriesEntity {
+
+  // 5-tuple fields stored in channel_metadata, not timeseries (hot table)
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+  private String measurement;
+
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+  private String field;
+
+  // Single-field identity column on the hot table
+  @Column(name = "shepard_id", columnDefinition = "UUID",
+          nullable = false, unique = true, updatable = false)
+  private UUID shepardId;
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/timeseries/model/TimeseriesEntity.java`, lines 42–95.
+
+**Why.** The 5-tuple is written once at channel creation and never changes.
+Separating it into a secondary table keeps the hot row narrow, reducing buffer pool
+pressure on every data-point insert.
+
+---
+
+## 3. MongoDB
+
+### 3.1 Collection naming convention: `PascalCase` type prefix + UUID for dynamic collections; camelCase for singleton collections
+
+**Pattern.** Per-entity-instance collections use a type-name prefix followed by a
+UUID (e.g. `FileContainer<uuid>`, `StructuredDataContainer<uuid>`). Singleton
+collections use camelCase with an underscore prefix for system collections
+(e.g. `userAvatars`, `_shepard_files`, `_shepard_videos`).
+
+```java
+// FileService.java — dynamic per-container collection
+public String createFileContainer() {
+    String oid = "FileContainer" + uuidHelper.getUUID().toString();
+    // e.g. "FileContainer550e8400-e29b-41d4-a716-446655440000"
+    ...
+}
+
+// StructuredDataService.java — dynamic per-container collection
+public String createStructuredDataContainer() {
+    String mongoId = "StructuredDataContainer" + UUID.randomUUID().toString();
+    mongoDatabase.createCollection(mongoId);
+    return mongoId;
+}
+
+// MongoSchemaInitializer.java — singleton collection name constants
+static final String USER_AVATARS   = "userAvatars";
+static final String SHEPARD_FILES  = "_shepard_files";
+static final String SHEPARD_VIDEOS = "_shepard_videos";
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/file/services/FileService.java`, lines 75–76.
+File: `backend/src/main/java/de/dlr/shepard/data/structureddata/services/StructuredDataService.java`, lines 37–39.
+File: `backend/src/main/java/de/dlr/shepard/common/mongoDB/MongoSchemaInitializer.java`, lines 81–94.
+
+**Why.** Namespace collisions between entity types are impossible when the type name
+is part of the collection key. The UUID suffix ensures per-instance isolation.
+
+---
+
+### 3.2 `$jsonSchema` validators applied at startup (fail-soft, `warn` action)
+
+**Pattern.** Fixed-name singleton collections have a `$jsonSchema` validator
+applied via `collMod` at every startup, using `validationAction: "warn"` so that
+pre-validator rows do not break. Failures on any collection are logged as `WARN`
+and swallowed so that a validator failure never aborts startup.
+
+```java
+// MongoSchemaInitializer.java — schema validator applied idempotently
+static Document buildUserAvatarsValidator() {
+    return new Document(
+      "$jsonSchema",
+      new Document()
+        .append("bsonType", "object")
+        .append("required", List.of("_id", "data", "mimeType", "sizeBytes", "uploadedAt"))
+        .append("properties", new Document()
+            .append("_id",       new Document("bsonType", "string"))
+            .append("data",      new Document("bsonType", "binData"))
+            .append("mimeType",  new Document("bsonType", "string")
+                .append("enum", List.of("image/jpeg","image/png","image/gif","image/webp")))
+            .append("sizeBytes", new Document("bsonType", "int").append("minimum", 0))
+            .append("uploadedAt",new Document("bsonType", "date"))
+        )
+    );
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/common/mongoDB/MongoSchemaInitializer.java`, lines 135–158.
+
+Fail-soft error handling:
+
+```java
+} catch (Exception e) {
+    Log.warnf(
+      "MongoSchemaInitializer: failed to apply $jsonSchema validator to '%s' — %s (non-fatal)",
+      collectionName, e.getMessage()
+    );
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/common/mongoDB/MongoSchemaInitializer.java`, lines 279–285.
+
+**Why.** MongoDB has no migration framework like Flyway. Applying validators at
+startup is the closest equivalent. Using `warn` (not `error`) means existing
+pre-validator data continues to function.
+
+---
+
+### 3.3 appId as document `_id` for user-owned singleton documents
+
+**Pattern.** For documents with at most one per user, use the user's `appId` (UUID v7)
+as the MongoDB `_id`. This eliminates a secondary index and makes lookups a
+primary-key scan.
+
+```java
+// UserAvatarService.java
+Document doc = new Document()
+    .append("_id", userAppId)          // appId IS the document _id
+    .append("data", new Binary(bytes))
+    .append("mimeType", mimeType)
+    .append("sizeBytes", bytes.length)
+    .append("uploadedAt", new Date());
+
+collection().replaceOne(eq("_id", userAppId), doc, new ReplaceOptions().upsert(true));
+
+// Lookup is primary-key O(log n):
+public Document find(String userAppId) {
+    return collection().find(eq("_id", userAppId)).first();
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/auth/users/services/UserAvatarService.java`, lines 61–80.
+
+**Why.** When there is a 1:1 relationship between the domain entity and the document,
+using the entity's stable identifier as `_id` eliminates the secondary index.
+
+---
+
+## 4. PostGIS
+
+### 4.1 Extension bootstrap with `CREATE EXTENSION IF NOT EXISTS`
+
+**Pattern.** The PostGIS (and TimescaleDB) extension bootstrap in every relevant
+migration uses `CREATE EXTENSION IF NOT EXISTS`, making the migration idempotent.
+
+```sql
+-- V2.0.0__green_field_schema.sql (spatiotemporal plugin)
+-- Ensure both extensions exist on the target instance.
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+File: `plugins/spatiotemporal/src/main/resources/db/spatial/migration/V2.0.0__green_field_schema.sql`, lines 20–23.
+
+Second example — `pgcrypto` in core migrations:
+
+```sql
+-- V1.11.0__add_shepard_id_to_timeseries.sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+```
+
+File: `backend/src/main/resources/db/migration/V1.11.0__add_shepard_id_to_timeseries.sql`, line 24.
+
+**Why.** `CREATE EXTENSION` without `IF NOT EXISTS` throws `ERROR: extension already
+exists` on any database that pre-installs the extension. `IF NOT EXISTS` is a no-op
+in that case.
+
+---
+
+### 4.2 Spatial index on create, with discriminator-geometry consistency constraint
+
+**Pattern.** Every table storing `GEOMETRY` columns ships a GiST spatial index in
+the same migration. Discriminator columns that select among geometry types are
+enforced by `CHECK` constraints that verify both the discriminator value and the
+actual `ST_GeometryType()` match.
+
+```sql
+-- V2.0.0__green_field_schema.sql (spatiotemporal plugin)
+CREATE TABLE shepard_spatial.profile (
+    anchor           GEOMETRY NOT NULL,       -- always POINTZ
+    profile          GEOMETRY,                -- type varies with profile_kind
+    profile_kind     TEXT     NOT NULL,
+
+    -- Anchor must always be POINTZ (3D origin point).
+    CONSTRAINT chk_anchor_is_point CHECK (
+        ST_GeometryType(anchor) = 'ST_Point' AND ST_NDims(anchor) >= 3
+    ),
+
+    -- Discriminator-vs-geometry agreement (closes TS-AUDIT-003).
+    CONSTRAINT chk_profile_kind_matches_geom CHECK (
+        profile_kind IN ('point','line','polygon','tin','multipoint','tube_centerline')
+        AND (
+            (profile_kind = 'point'           AND profile IS NULL)
+         OR (profile_kind = 'tube_centerline' AND ST_GeometryType(profile) IN ('ST_LineString'))
+         OR (profile_kind = 'polygon'         AND ST_GeometryType(profile) IN ('ST_Polygon'))
+         ...
+        )
+    )
+);
+```
+
+File: `plugins/spatiotemporal/src/main/resources/db/spatial/migration/V2.0.0__green_field_schema.sql`, lines 81–117.
+
+Legacy V1 schema also created spatial index at table creation:
+
+```sql
+-- V1.0.0__setup_spatial_data_tables.sql
+CREATE INDEX spatial_data_point_position_idx
+  ON spatial_data_points
+  USING GIST (position gist_geometry_ops_nd);
+```
+
+File: `plugins/spatiotemporal/src/main/resources/db/spatial/migration/V1.0.0__setup_spatial_data_tables.sql`, lines 23–26.
+
+**Why.** Spatial queries without a GiST index degrade to sequential scans — O(n)
+per query. The `CHECK` constraint enforcing discriminator/geometry agreement prevents
+the TS-AUDIT-003 anti-pattern of storing heterogeneous types without enforcement.
+
+---
+
+## 5. Garage / S3
+
+### 5.1 Presigned URL TTL discipline — capped at permissions-cache TTL
+
+**Pattern.** Presigned URLs are never issued with a TTL longer than the permissions
+cache TTL. A dedicated validator bean (`PresignTtlValidator`) enforces the cap at
+startup and every URL issuance, with a `WARN` log when the configured presign TTL
+would have exceeded the cache TTL.
+
+```java
+// PresignTtlValidator.java
+@ApplicationScoped
+public class PresignTtlValidator {
+
+  @ConfigProperty(name = "shepard.storage.presign.upload-ttl",   defaultValue = "PT15M")
+  Duration configuredUploadTtl;
+
+  @ConfigProperty(name = "shepard.storage.presign.download-ttl", defaultValue = "PT5M")
+  Duration configuredDownloadTtl;
+
+  @ConfigProperty(name = "shepard.permissions.cache.ttl",        defaultValue = "PT5M")
+  Duration permissionsCacheTtl;
+
+  Duration cap(Duration ttl) {
+    return ttl.compareTo(permissionsCacheTtl) <= 0 ? ttl : permissionsCacheTtl;
+  }
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/storage/PresignTtlValidator.java`, lines 34–83.
+
+The REST resource injects `PresignTtlValidator` and calls the effective-TTL method:
+
+```java
+// FileContainerPresignedUrlRest.java
+result = fileContainerService.presignedUploadUrl(
+    container.getId(), request.getFileName(),
+    ttlValidator.effectiveUploadTtl()
+);
+```
+
+File: `backend/src/main/java/de/dlr/shepard/v2/filecontainer/resources/FileContainerPresignedUrlRest.java`, lines 105–106.
+
+**Why.** A permission revoked in shepard takes effect within one permissions-cache
+TTL window. If a presigned URL lives longer than that window, a caller whose access
+was revoked can still complete the download — bypassing the revocation because S3
+authenticates the URL, not shepard.
+
+---
+
+### 5.2 Object key format: `<containerMongoId>/<uuid>` — bucket not in the locator
+
+**Pattern.** The S3 object key is `<containerMongoId>/<uuid>`. The bucket name is
+NOT stored in the locator — it is read from deploy-time config. This allows the
+operator to rename the bucket without a data migration.
+
+```java
+// S3FileStorage.java — put
+String uuid = request.assignedObjectKey() != null && !request.assignedObjectKey().isBlank()
+  ? request.assignedObjectKey()
+  : UUID.randomUUID().toString();
+String key = request.container() + "/" + uuid;
+// e.g. "FileContainer550e8400.../8a2dfe20-..."
+
+return new StorageLocator(ID, key);  // bucket excluded from locator
+```
+
+File: `plugins/file-s3/src/main/java/de/dlr/shepard/plugins/files3/S3FileStorage.java`, lines 215–247.
+
+**Why.** Including the bucket name in the stored locator would require a data
+migration sweep whenever the operator renames or migrates the bucket.
+
+---
+
+### 5.3 Fail-soft adapter with `isEnabled()` guard
+
+**Pattern.** The S3 adapter is self-disabled when its bucket config is blank.
+`FileStorageRegistry` refuses to activate a `!isEnabled()` adapter.
+
+```java
+// S3FileStorage.java — @PostConstruct init
+if (bucket == null || bucket.isBlank()) {
+    enabled = false;
+    Log.infof(
+      "S3FileStorage: shepard.files.s3.bucket is unset — adapter disabled. " +
+      "Set shepard.storage.provider=s3 only after configuring the bucket."
+    );
+    return;
+}
+```
+
+File: `plugins/file-s3/src/main/java/de/dlr/shepard/plugins/files3/S3FileStorage.java`, lines 111–118.
+
+**Why.** A startup-time misconfiguration should surface with a clean log message,
+not a cryptic S3 error mid-upload. The `isEnabled()` guard routes callers to a
+clean 503 with a problem-detail description.
+
+---
+
+## 6. Timeseries channel identity
+
+### 6.1 Current 5-tuple pattern — `(measurement, device, location, symbolicName, field)`
+
+**Pattern.** A timeseries channel is currently identified by a 5-part tuple stored
+in the `channel_metadata` secondary table. The UNIQUE constraint enforces that each
+`(container_id, measurement, field, symbolic_name, device, location)` combination
+is distinct within a container.
+
+```java
+// TimeseriesEntity.java — 5-tuple fields on secondary table
+@Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+private String measurement;
+
+@Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+private String field;
+
+@Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+private String device;
+
+@Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
+private String location;
+
+@Column(table = "channel_metadata", name = "symbolic_name", columnDefinition = "TEXT", nullable = false)
+private String symbolicName;
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/timeseries/model/TimeseriesEntity.java`, lines 59–72.
+
+Legacy 5-tuple lookup (still used on the `/shepard/api/` v5-compatible surface):
+
+```java
+// TsChannelResolver.java — legacy path
+public Optional<TimeseriesEntity> findByContainerAndTuple(long containerId, Timeseries ts) {
+    return this.find(
+        "containerId = ?1 and measurement = ?2 and field = ?3 " +
+        "and symbolicName = ?4 and device = ?5 and location = ?6",
+        containerId, ts.getMeasurement(), ts.getField(),
+        ts.getSymbolicName(), ts.getDevice(), ts.getLocation()
+    ).firstResultOptional();
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TsChannelResolver.java`, lines 90–101.
+
+**Why the 5-tuple is a known friction point.** Every endpoint that addresses a
+channel by identity requires 5 query parameters instead of 1. MCP tools must supply
+the complete 5-tuple — a leaky abstraction that breaks the "one stable identifier
+per entity" principle.
+
+---
+
+### 6.2 Migration direction — `shepardId` single-field identity
+
+**Pattern.** Flyway migration V1.11.0 added a `shepard_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()` column to the `timeseries` table. `TsChannelResolver` exposes
+both a single-key path (`findByShepardId`) and the legacy 5-tuple path. The `/v2/`
+surface exposes `shepardId` as the canonical channel identifier.
+
+```java
+// TsChannelResolver.java — canonical single-key path
+public Optional<TimeseriesEntity> findByShepardId(UUID shepardId) {
+    if (shepardId == null) return Optional.empty();
+    return this.find("shepardId = ?1", shepardId).firstResultOptional();
+}
+
+// Container-scoped variant (canonical path on /v2/ surface)
+public Optional<TimeseriesEntity> findByContainerAndShepardId(long containerId, UUID shepardId) {
+    return findByShepardId(shepardId).filter(row -> row.getContainerId() == containerId);
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TsChannelResolver.java`, lines 40–75.
+
+The migration follows the additive 3-step pattern (see §2.2):
+
+```sql
+-- V1.11.0__add_shepard_id_to_timeseries.sql
+ALTER TABLE timeseries
+    ADD COLUMN IF NOT EXISTS shepard_id UUID;           -- step 1: nullable
+UPDATE timeseries SET shepard_id = gen_random_uuid()
+    WHERE shepard_id IS NULL;                           -- step 2: backfill
+ALTER TABLE timeseries
+    ALTER COLUMN shepard_id SET NOT NULL;               -- step 3: tighten
+CREATE UNIQUE INDEX IF NOT EXISTS idx_timeseries_shepard_id
+    ON timeseries(shepard_id);
+```
+
+File: `backend/src/main/resources/db/migration/V1.11.0__add_shepard_id_to_timeseries.sql`, lines 27–46.
+
+Design reference: `aidocs/platform/87-timeseries-appid-migration.md` — full migration trajectory.
+
+**Why.** The `shepardId` UUID is cursor-pageable, addressable without container
+context, embeddable in MCP tool arguments, and compatible with the cross-substrate
+`appId` addressing principle.
+
+---
+
+## 7. Cross-cutting
+
+### 7.1 UUID v7 (`AppIdGenerator`) across all substrates
+
+**Pattern.** Every new entity across every substrate gets a UUID v7 identifier
+called `appId`. In Neo4j entities, this is minted automatically by
+`GenericDAO.createOrUpdate()` when the field is still `null`.
+
+```java
+// AppIdGenerator.java — UUID v7 mint
+public final class AppIdGenerator {
+  public static String next() {
+    return UuidCreator.getTimeOrderedEpoch().toString();
+    // e.g. "0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506"
+  }
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/common/identifier/AppIdGenerator.java`, lines 31–33.
+
+Auto-mint on Neo4j entity save:
+
+```java
+// GenericDAO.createOrUpdate — mint appId on first save
+public T createOrUpdate(T entity) {
+    if (entity instanceof HasAppId hasAppId && hasAppId.getAppId() == null) {
+        hasAppId.setAppId(AppIdGenerator.next());
+    }
+    session.save(entity, DEPTH_ENTITY);
+    ...
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/common/neo4j/daos/GenericDAO.java`, lines 125–147.
+
+`HasAppId` marker interface that every Neo4j entity must implement:
+
+```java
+// HasAppId.java
+public interface HasAppId {
+  String getAppId();
+  void setAppId(String appId);
+}
+```
+
+File: `backend/src/main/java/de/dlr/shepard/common/identifier/HasAppId.java`, lines 17–31.
+
+**Why.** UUID v7 embeds a millisecond Unix timestamp, making identifiers monotonic
+and suitable for B-tree cursor pagination without a round-trip to any database.
+A single identifier shape across all six storage substrates means provenance edges,
+semantic annotations, MCP tool arguments, and REST paths all use the same addressing
+scheme.
+
+---
+
+### 7.2 Additive schema changes only — no mutation of applied migrations
+
+**Pattern.** Once a migration file has been applied to any production instance, it
+is immutable. New functionality is always a new file (`V(N+1)__`). Rollback twins
+(`V(N)_R__*`) are separate files. This applies to Neo4j (`V*.cypher`),
+PostgreSQL/Flyway (`V*.sql`), and the spatiotemporal plugin's Flyway baseline.
+
+Canonical example — the timeseries 5-tuple removal (forward + rollback pair):
+
+```
+V1.14.0__drop_5tuple_from_core_timeseries.sql     ← forward
+V1.14.0_R__restore_5tuple_to_timeseries.sql       ← rollback (ADD COLUMN IF NOT EXISTS)
+```
+
+Files: `backend/src/main/resources/db/migration/V1.14.0__drop_5tuple_from_core_timeseries.sql`
+and `backend/src/main/resources/db/migration/V1.14.0_R__restore_5tuple_to_timeseries.sql`.
+
+Neo4j rollback naming:
+
+```
+V96__Ntf1_NotificationTransport_scaffold.cypher
+V96_R__Ntf1_NotificationTransport_scaffold.cypher
+```
+
+**Why.** Editing an applied migration file causes its checksum to diverge from what
+Flyway or `neo4j-migrations` recorded. The migration runner rejects the mismatch and
+aborts startup — a hard outage. Immutable forward migration files make the migration
+history an accurate audit log of every schema change that touched production.
