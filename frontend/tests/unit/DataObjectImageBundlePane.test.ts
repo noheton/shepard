@@ -229,6 +229,23 @@ describe("firstGroupHasImageFile — pane detection predicate", () => {
 // Section 4: Full async detection loop — fetch stub
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface TestFileBundleIO {
+  appId?: string | null;
+  containerMongoId?: string | null;
+  groups?: Array<{
+    appId?: string | null;
+    name?: string | null;
+    files?: Array<{ filename?: string | null }>;
+  }>;
+}
+
+interface TestResolvedBundle {
+  bundleAppId: string;
+  groupAppId: string;
+  containerMongoId: string | null;
+  groupName: string | null;
+}
+
 /**
  * Minimal re-implementation of the async detection loop from
  * DataObjectImageBundlePane.vue, used to test fetch-mock scenarios without
@@ -238,23 +255,10 @@ async function detectImageBundle(
   candidateBundleAppIds: string[],
   baseUrl: string,
   token: string | null,
-): Promise<{
-  bundleAppId: string;
-  groupAppId: string;
-  containerMongoId: string | null;
-  groupName: string | null;
-} | null> {
+): Promise<TestResolvedBundle | null> {
   for (const bundleAppId of candidateBundleAppIds) {
     const url = `${baseUrl}/v2/bundles/${encodeURIComponent(bundleAppId)}`;
-    let bundle: {
-      appId?: string | null;
-      containerMongoId?: string | null;
-      groups?: Array<{
-        appId?: string | null;
-        name?: string | null;
-        files?: Array<{ filename?: string | null }>;
-      }>;
-    } | null = null;
+    let bundle: TestFileBundleIO | null = null;
     try {
       const r = await fetch(url, {
         headers: {
@@ -263,7 +267,7 @@ async function detectImageBundle(
         },
       });
       if (!r.ok) continue;
-      bundle = (await r.json()) as typeof bundle;
+      bundle = (await r.json()) as TestFileBundleIO;
     } catch {
       continue;
     }
