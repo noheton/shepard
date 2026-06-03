@@ -18,14 +18,11 @@
  * AI Exchange collection has `<p>Collection to exchange data</p>` literal HTML.
  */
 import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
-
-const USER = process.env.DEMO_USER || "flodemo";
-const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 
 test.describe("Home + file-row polish (UI-006/007/009/015)", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, USER, PASSWORD);
+    await loginAs(page, DEMO_USER, DEMO_PASSWORD);
   });
 
   test("UI-006: LUMEN card description renders markdown — no literal **", async ({

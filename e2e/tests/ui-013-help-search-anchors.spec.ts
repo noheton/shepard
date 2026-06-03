@@ -12,10 +12,7 @@
  * heading/anchor generation in `frontend/utils/helpMarkdown.ts`.
  */
 import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
-
-const USER = process.env.DEMO_USER || "flodemo";
-const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 
 // The shared loginAs() helper defaults KEYCLOAK_HOST to a stale internal IP.
 // Newer specs override via env at run time; document the convention here.
@@ -25,7 +22,7 @@ if (!process.env.KEYCLOAK_HOST) {
 
 test.describe("Help page search + anchors (UI-013)", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, USER, PASSWORD);
+    await loginAs(page, DEMO_USER, DEMO_PASSWORD);
   });
 
   test("search box filters sections on the current help page", async ({ page }) => {
