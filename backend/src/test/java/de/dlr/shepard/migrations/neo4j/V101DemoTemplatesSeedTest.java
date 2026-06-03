@@ -94,7 +94,7 @@ class V101DemoTemplatesSeedTest {
 
   @Test
   void rollbackFileExistsAndOnlyDeletesV99BuiltinRows() throws IOException {
-    String rollbackPath = "neo4j/migrations/V99_R__Demo_templates_seed.cypher";
+    String rollbackPath = "neo4j/migrations/V101_R__Demo_templates_seed.cypher";
     try (InputStream in = getClass().getClassLoader().getResourceAsStream(rollbackPath)) {
       assertNotNull(in, "Rollback twin missing on classpath: " + rollbackPath);
       String rollback = new String(in.readAllBytes(), StandardCharsets.UTF_8);
