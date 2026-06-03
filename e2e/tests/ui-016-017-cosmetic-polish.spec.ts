@@ -19,14 +19,11 @@
  * known LUMEN data object.
  */
 import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
-
-const USER = process.env.DEMO_USER || "flodemo";
-const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 
 test.describe("UI-016 + UI-017 cosmetic polish", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, USER, PASSWORD);
+    await loginAs(page, DEMO_USER, DEMO_PASSWORD);
   });
 
   test("UI-016: SD container Referenced-by rows expose +N more when >3 annotations", async ({
