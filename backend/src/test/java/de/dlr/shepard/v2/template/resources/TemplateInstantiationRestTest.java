@@ -22,6 +22,7 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.shapes.validator.JenaShaclValidator;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -41,6 +42,22 @@ class TemplateInstantiationRestTest {
   static final long COLL_OGM_ID = 42L;
   static final String TMPL_APP_ID = "tmpl-bbb";
   static final String CALLER = "alice";
+
+  /**
+   * A SHACL shape that requires the candidate node to carry at least one
+   * {@code urn:shepard:attribute:propellant} triple.
+   */
+  static final String SHAPE_REQUIRES_PROPELLANT =
+    "@prefix sh: <http://www.w3.org/ns/shacl#> .\n" +
+    "@prefix attr: <urn:shepard:attribute:> .\n" +
+    "<urn:shepard:shape:testShape>\n" +
+    "  a sh:NodeShape ;\n" +
+    "  sh:targetNode <" + TemplateInstantiationRest.INSTANCE_URI + "> ;\n" +
+    "  sh:property [\n" +
+    "    sh:path attr:propellant ;\n" +
+    "    sh:minCount 1 ;\n" +
+    "    sh:message \"propellant is required\" ;\n" +
+    "  ] .\n";
 
   @Mock
   ShepardTemplateDAO templateDAO;
@@ -72,6 +89,7 @@ class TemplateInstantiationRestTest {
     resource.dataObjectService = dataObjectService;
     resource.objectMapper = new ObjectMapper();
     resource.inheritanceResolver = new TemplateInheritanceResolver(templateDAO);
+    resource.shaclValidator = new JenaShaclValidator();
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -246,6 +264,132 @@ class TemplateInstantiationRestTest {
     assertTrue(captor.getValue().getAttributes() == null || captor.getValue().getAttributes().isEmpty());
   }
 
+  // ---------- SHACL shape validation ----------
+
+  @Test
+  void returns201WhenShapeIsPresent_andInstanceConforms() {
+    allowWrite();
+    // Template body has a shapeGraph requiring 'propellant', and the attributes include it
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX/LH2\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(200L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+    verify(dataObjectService).createDataObject(eq(COLL_OGM_ID), any());
+  }
+
+  @Test
+  void returns422WhenShapeIsPresent_andInstanceViolates() {
+    allowWrite();
+    // Template body has a shapeGraph requiring 'propellant', but NO attributes provided
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(422, r.getStatus());
+    String entity = (String) r.getEntity();
+    assertTrue(entity.contains("violates"), "Response body should mention violation: " + entity);
+    // DataObject must NOT be created on validation failure
+    verify(dataObjectService, never()).createDataObject(anyLong(), any());
+  }
+
+  @Test
+  void returns201WhenNoShapeGraph() {
+    allowWrite();
+    // Template body has NO shapeGraph field — validation is skipped
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE",
+      "{\"dataobjects\":[{\"attributes\":{}}]}");
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(300L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  @Test
+  void returns201WhenShapeGraphIsMalformedTurtle() {
+    allowWrite();
+    // Malformed Turtle → fail-soft: validation is skipped, DataObject is created anyway
+    String body =
+      "{\"shapeGraph\":\"this is not valid turtle @#$%\"," +
+      "\"dataobjects\":[{\"attributes\":{}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(400L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  // ---------- extractShapeGraph unit tests ----------
+
+  @Test
+  void extractShapeGraph_returnsNullWhenBodyIsNull() {
+    assertEquals(null, resource.extractShapeGraph(null));
+  }
+
+  @Test
+  void extractShapeGraph_returnsNullWhenFieldAbsent() {
+    assertEquals(null, resource.extractShapeGraph("{\"dataobjects\":[]}"));
+  }
+
+  @Test
+  void extractShapeGraph_returnsTurtleWhenPresent() {
+    String turtle = "@prefix sh: <http://www.w3.org/ns/shacl#> . <S> a sh:NodeShape .";
+    String body = "{\"shapeGraph\":" + escapeJson(turtle) + "}";
+    assertEquals(turtle, resource.extractShapeGraph(body));
+  }
+
+  // ---------- buildDataTurtle unit tests ----------
+
+  @Test
+  void buildDataTurtle_emptyAttributes_producesValidTurtle() {
+    String turtle = resource.buildDataTurtle(Map.of());
+    assertTrue(turtle.startsWith("<" + TemplateInstantiationRest.INSTANCE_URI + ">"),
+      "Turtle must start with instance URI");
+    assertTrue(turtle.contains("."), "Turtle must end with a period");
+  }
+
+  @Test
+  void buildDataTurtle_withAttributes_containsPredicatesAndValues() {
+    String turtle = resource.buildDataTurtle(Map.of("color", "red"));
+    assertTrue(turtle.contains(TemplateInstantiationRest.ATTR_NS + "color"),
+      "Turtle must contain attribute predicate");
+    assertTrue(turtle.contains("\"red\""), "Turtle must contain quoted value");
+  }
+
+  @Test
+  void buildDataTurtle_escapesDoubleQuotesInValues() {
+    String turtle = resource.buildDataTurtle(Map.of("notes", "say \"hello\""));
+    assertTrue(turtle.contains("\\\"hello\\\""), "Double quotes must be escaped in Turtle literals");
+  }
+
   // ---------- helpers ----------
 
   private void allowWrite() {
@@ -274,5 +418,13 @@ class TemplateInstantiationRestTest {
     d.setName("generated");
     d.setCollection(col);
     return d;
+  }
+
+  /**
+   * Escape a string for embedding as a JSON string value (surrounded by
+   * double-quotes in the caller). Escapes backslashes and double-quotes.
+   */
+  private static String escapeJson(String s) {
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
   }
 }
