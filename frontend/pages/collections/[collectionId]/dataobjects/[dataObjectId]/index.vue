@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
+import { useSidebarNavError } from "~/composables/context/useSidebarNavError";
 // REF-UNIFIED-TABLE: GitReferencesPane, VideoStreamReferencesPane, HdfReferencesPane removed
 // from this page; they now live in frontend/components/context/dataobject/legacy/ for reuse.
 // J1c retirement (2026-05-29): DataObjectNotebooksPane is gone too — notebooks
@@ -158,6 +159,12 @@ const showAddRelationshipDialog = ref(false);
 // Advanced mode additionally shows the legacy "Add raw attribute" button with deprecation note.
 const showAnnotationDialog = ref(false);
 const { advancedMode } = useAdvancedMode();
+
+// UX-WALK-2026-05-29-06: graceful degradation — track sidebar treeview navigation
+// failures independently of main page content. The warning is dismissable so the
+// user can acknowledge the partial load and continue working with the data.
+const { treeviewError } = useSidebarNavError();
+const treeviewErrorDismissed = ref(false);
 
 // Provenance sub-view: structured log (default) vs force-directed graph.
 const provView = ref<"log" | "graph">("log");
@@ -324,6 +331,26 @@ async function saveEmbargoEdit() {
               },
             ]"
           />
+        </v-col>
+        <!-- UX-WALK-2026-05-29-06: dismissable warning banner shown when the
+             sidebar treeview navigation fetch failed. The banner is separate
+             from the page's own loading state so a partial failure in the
+             navigation layer never blocks the main content. -->
+        <v-col
+          v-if="treeviewError && !treeviewErrorDismissed"
+          cols="12"
+          class="pb-2"
+          data-testid="treeview-error-banner"
+        >
+          <v-alert
+            type="warning"
+            variant="tonal"
+            closable
+            density="compact"
+            @click:close="treeviewErrorDismissed = true"
+          >
+            Some navigation data couldn't load. The data object is still accessible.
+          </v-alert>
         </v-col>
         <v-col cols="12">
           <v-container class="pa-0" fluid>

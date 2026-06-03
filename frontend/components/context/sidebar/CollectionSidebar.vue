@@ -17,6 +17,7 @@ const {
   treeviewItems,
   openedTreeviewItems,
   loading,
+  treeviewFetchError,
   loadChildrenOfItem,
   refreshItems,
   collapseItem,
@@ -336,7 +337,29 @@ const { mobile } = useDisplay();
           No loaded items match "{{ filterText.trim() }}". Expand more tree branches and search again.
         </div>
 
-        <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
+        <CenteredLoadingSpinner v-if="loading" />
+
+        <!-- UX-WALK-2026-05-29-06: graceful error state — instead of a
+             perpetual spinner when the root data-object fetch fails, show a
+             small inline message so the user knows navigation is unavailable
+             while the rest of the page still renders normally. -->
+        <div
+          v-if="!loading && treeviewFetchError"
+          class="px-6 py-4 text-medium-emphasis text-body-2"
+          style="max-width: 240px"
+          data-testid="sidebar-treeview-error"
+        >
+          <v-icon size="small" class="mr-1 text-warning">mdi-alert-outline</v-icon>
+          Navigation data couldn't load.
+          <v-btn
+            variant="text"
+            size="x-small"
+            color="primary"
+            class="ml-1 pa-0"
+            style="min-width: unset"
+            @click="refreshItems"
+          >Retry</v-btn>
+        </div>
 
         <StartHereIntro
           v-if="treeviewItems && treeviewItems.length === 0"
