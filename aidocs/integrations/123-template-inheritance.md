@@ -2,7 +2,7 @@
 name: ShepardTemplate inheritance — child extends parent, fields flatten with child-override
 description: Every ShepardTemplate gains an optional parentTemplateAppId edge; a child template inherits its parent's body fields, reference-creation hints (T1e), iconKey and semantic-annotation defaults, with child entries overriding parent on key collision. Single-parent for v1; cycle-guarded; copy-on-write-versioned.
 type: design
-stage: feature-defined
+stage: tests-implemented
 last-stage-change: 2026-06-03
 ---
 

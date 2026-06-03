@@ -572,8 +572,14 @@ The four things on the near horizon, in priority order:
    step** when creating a DataObject or Collection — the blank form is
    the secondary "Start from blank" path. DataObject creation calls the
    T1e server-side instantiation endpoint; Collection creation pre-fills
-   the form and records the `:USES_TEMPLATE` edge. Next: process design +
-   runtime (PR1).
+   the form and records the `:USES_TEMPLATE` edge. **TPL-INHERIT shipped**:
+   an admin template can now **extend a parent template** — the child inherits
+   the parent's fields, reference-creation hints, icon, and annotation defaults,
+   overriding any of them with its own. The admin editor shows the inherited
+   fields read-only alongside the child's own, and DataObject-from-template
+   creation pre-fills from the merged set, so a campaign's process steps can
+   share a common base recipe without copy-pasting it into each. Next: process
+   design + runtime (PR1).
 4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
    **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
    edit dialog in-flight. RO-Crate exports now cite authors when the
