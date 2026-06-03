@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.timeseries.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -29,6 +28,7 @@ class TimeseriesAnnotationRestTest {
   static final String REF_APP_ID = "ref-appid-1";
   static final String ANN_APP_ID = "ann-appid-1";
   static final long DO_OGM_ID = 99L;
+  static final String DO_APP_ID = "do-appid-1";
   static final String CALLER = "alice";
 
   @Mock
@@ -60,6 +60,7 @@ class TimeseriesAnnotationRestTest {
 
     dataObject = new DataObject();
     dataObject.setId(DO_OGM_ID);
+    dataObject.setAppId(DO_APP_ID);
 
     ref = new TimeseriesReference();
     ref.setAppId(REF_APP_ID);
@@ -68,8 +69,9 @@ class TimeseriesAnnotationRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
+    // Production gates on the appId-based check; stub it positively by default.
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), any(AccessType.class), eq(CALLER)))
+      .thenReturn(true);
   }
 
   // ── list ────────────────────────────────────────────────────────────────
@@ -100,7 +102,7 @@ class TimeseriesAnnotationRestTest {
 
   @Test
   void list_returns403WhenNoReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(false);
     assertThat(resource.list(REF_APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
@@ -144,7 +146,7 @@ class TimeseriesAnnotationRestTest {
 
   @Test
   void create_returns403WhenNoWritePermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
     var body = new TimeseriesAnnotationIO();
     body.setStartNs(1_000_000L);
     body.setLabel("anomaly");

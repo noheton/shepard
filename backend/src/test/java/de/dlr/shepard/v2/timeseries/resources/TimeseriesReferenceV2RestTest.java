@@ -65,7 +65,7 @@ class TimeseriesReferenceV2RestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, 0L)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(true);
   }
 
   // ── 401 / 403 / 404 gates ───────────────────────────────────────────────
@@ -88,7 +88,7 @@ class TimeseriesReferenceV2RestTest {
 
   @Test
   void patch_returns403WhenNoWritePermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
     var body = patchBody("WALL_CLOCK", null, null);
     assertThat(resource.patch(REF_APP_ID, body, sc).getStatus()).isEqualTo(403);
     verify(timeseriesReferenceService, never()).updateTimeReference(any(), any());
