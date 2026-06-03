@@ -75,8 +75,9 @@ jobs:
       # in the local Maven repo before `mvn package` can resolve them. Mirror
       # the install dance from `ci.yml` so the CodeQL autobuild compiles the
       # full backend surface instead of failing at dependency resolution.
-      # (CI-BASELINE-4: without these steps the autobuild fails before CodeQL
-      # can extract the database, surfacing as a red "Analyze java-kotlin".)
+      # Without these steps the build fails before CodeQL can extract the
+      # database, surfacing as a red "Analyze java-kotlin" (a build failure,
+      # not a security finding). See aidocs/16 CI-BASELINE.
       - name: Stub-install backend (java-kotlin only)
         if: matrix.language == 'java-kotlin'
         working-directory: backend
