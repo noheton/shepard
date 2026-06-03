@@ -51,6 +51,12 @@ public class TemplateBodyValidator {
       //               + POST /v2/shapes/render. First concrete consumer: Trace3D (X/Y/Z + scalar).
       case "PROCESS_RECIPE" -> Set.of("process", "steps", "stages");
       case "VIEW_RECIPE" -> Set.of("view", "shape", "renderer");
+      // V2CONV-B3 — MAPPING_RECIPE: binds existing input reference appIds to a
+      // derived output (a new reference, or a played/rendered view). Body root
+      // must declare its target shape (`mappingRecipeShape`) and/or the input
+      // bindings (`inputs` / `mapping`) so POST /v2/mappings/{appId}/materialize
+      // can resolve the TransformExecutor + bound references. See aidocs/platform/191 §4.
+      case "MAPPING_RECIPE" -> Set.of("mappingRecipeShape", "inputs", "mapping", "transform");
       // QM1c — STRUCTURED_RECIPE: skeleton for structured-data payloads (e.g. EN 9100
       // disposition records). Body root must declare the record schema under
       // `structuredData` or `record` (a list of attribute descriptors), or carry

@@ -415,6 +415,22 @@ These work the same way across every primitive:
   Phase 2 — `RdkToUrdfExporter` sidecar, Foxglove iframe fallback,
   in-browser trajectory record button, Trace3D+URDF scene
   composition — queued under URDF-WEBVIEW-1.
+- **Derive new data from existing references with a mapping recipe**
+  *(V2CONV-B3 shipped 2026-06-03)*. A `MAPPING_RECIPE` template binds
+  references a researcher already has — a CAD/URDF file, a joint-angle
+  timeseries, a robot program — and **materialises a derived output**:
+  a new reference, or a played/rendered view. The researcher never
+  types a path or URL; they pick the input references by name, and
+  `POST /v2/mappings/{templateAppId}/materialize` resolves everything
+  server-side. This is the generic seam that the 3D scene-graph and
+  KRL animation flows fold onto next (V2CONV-B4/B5): instead of a
+  bespoke endpoint per transform, any plugin can register a
+  `TransformExecutor` against its recipe's shape and light up a new
+  "derive this" action with zero new API surface. A built-in identity
+  transform ships so the flow is exercisable out of the box before any
+  plugin is installed. Every materialise run is recorded as a typed
+  provenance Activity, so a derived dataset always carries the recipe
+  + inputs that produced it.
 - **Click a KRL program, see it animate** *(KRL-INTERPRETER-01..06
   shipped; -07 MFFD end-to-end showcase next)*. The MFFD AFP cell,
   the bridge welding cell, and every other ZLP robotic cell at DLR

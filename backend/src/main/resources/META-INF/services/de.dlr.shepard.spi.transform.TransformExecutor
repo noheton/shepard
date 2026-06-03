@@ -1,0 +1,4 @@
+# V2CONV-B3 — built-in local-default TransformExecutor (identity transform).
+# Plugins add their own entries (KRL sidecar, scene-graph play, …) via their
+# own META-INF/services file on the classpath; ServiceLoader unions them.
+de.dlr.shepard.spi.transform.NoOpTransformExecutor

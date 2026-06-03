@@ -73,6 +73,12 @@ public class ShepardTemplate implements HasId, HasAppId {
    *       + {@code POST /v2/shapes/render}. See {@code aidocs/semantics/98 §1.1}
    *       and the meta-shape at
    *       {@code backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl}.</li>
+   *   <li>{@code MAPPING_RECIPE} — binds existing input reference appIds to a
+   *       derived output (a new reference, or a played/rendered view). Consumed
+   *       by {@code POST /v2/mappings/{appId}/materialize} via the
+   *       {@link de.dlr.shepard.spi.transform.TransformExecutor} SPI (V2CONV-B3).
+   *       The generic enabler that later dissolves the scene-graph + KRL
+   *       namespaces. See {@code aidocs/platform/191 §4}.</li>
    * </ul>
    * Free-form to allow plugins to register their own kinds. Validation
    * happens in {@link de.dlr.shepard.template.services.TemplateBodyValidator}.
