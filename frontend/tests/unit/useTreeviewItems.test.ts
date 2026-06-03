@@ -47,8 +47,12 @@ vi.mock("~/composables/common/api/useShepardApi", () => ({
       getAllDataObjects: v1GetAllDataObjects,
     }),
 }));
+// Module-path mocks — paths resolve relative to the test's tsconfig `~` alias
+// pointing at /opt/shepard/frontend/, NOT a worktree-specific absolute path
+// (the pre-006 form used a stale worktree path that silently no-op'd once
+// the source moved off main, leaking real implementations into the test).
 vi.mock(
-  "/opt/shepard/.claude/worktrees/agent-aee408f027ac8f0b7/frontend/components/context/sidebar/useOpenedItems",
+  "~/components/context/sidebar/useOpenedItems",
   () => ({
     useOpenedItems: () => ({
       openedTreeviewItems: ref<number[]>([]),
@@ -58,7 +62,7 @@ vi.mock(
   }),
 );
 vi.mock(
-  "/opt/shepard/.claude/worktrees/agent-aee408f027ac8f0b7/frontend/components/context/sidebar/treeviewItem",
+  "~/components/context/sidebar/treeviewItem",
   () => ({
     mapToTreeviewItem: (item: { id: number; name: string; parentId?: number }) => ({
       id: item.id,
@@ -106,8 +110,13 @@ describe("useTreeviewItems — BUG-COLL-APPID-ROUTE-005", () => {
       collectionId: "019e6ffc-aaaa-7bcd-9eef-000000000042" as unknown as number,
       dataObjectId: 4242 as unknown as number | undefined,
     });
+    // BUG-COLL-APPID-ROUTE-006 (2026-06-03): the composable now takes a
+    // resolved numeric collection id and gates v1 list calls on it being
+    // defined. We supply it here so the initialLoad path runs through to
+    // `fetchTreeviewItem` (the single-item v2 lookup under test).
     mod.useTreeviewItems(
       params as unknown as Parameters<typeof mod.useTreeviewItems>[0],
+      ref(2107),
     );
     await flush();
     await flush();
@@ -144,6 +153,7 @@ describe("useTreeviewItems — BUG-COLL-APPID-ROUTE-005", () => {
     });
     mod.useTreeviewItems(
       params as unknown as Parameters<typeof mod.useTreeviewItems>[0],
+      ref(2107),
     );
     await flush();
     await flush();

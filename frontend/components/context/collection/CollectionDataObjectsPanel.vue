@@ -50,11 +50,11 @@
           :key="row.id"
           class="do-row"
           tabindex="0"
-          @keydown.enter="navigateTo(row.id)"
-          @click="navigateTo(row.id)"
+          @keydown.enter="navigateTo(row)"
+          @click="navigateTo(row)"
         >
           <td>
-            <NuxtLink :to="`/collections/${props.collectionId}/dataobjects/${row.id}`" class="reference-link">
+            <NuxtLink :to="rowHref(row)" class="reference-link">
               {{ row.name }}
             </NuxtLink>
           </td>
@@ -238,6 +238,14 @@ function onJumpToPage() {
 
 interface Row {
   id: number;
+  /**
+   * v2 appId (UUID v7) for route construction. The v2 list endpoint
+   * always emits `appId` as identity (DB-OPT5 default fields). When the
+   * v1 fallback path emits a row without an `appId` we fall back to the
+   * numeric id for the link, which the route param parser still accepts
+   * via the legacy /collections/123 deep-link path.
+   */
+  appId: string | null;
   name: string;
   status: string | null;
   refCount: number;
@@ -255,6 +263,7 @@ interface Row {
 const rows = computed<Row[]>(() =>
   rawItems.value.map(d => ({
     id: d.id,
+    appId: (d as unknown as { appId?: string | null }).appId ?? null,
     name: d.name ?? `#${d.id}`,
     status: (d.status as string) ?? null,
     refCount: (d.referenceIds ?? []).length,
@@ -307,8 +316,24 @@ function timeBoundsTooltip(startNs: number, endNs: number): string {
 // Alias for template compatibility.
 const pagedItems = rows;
 
-function navigateTo(dataObjectId: number) {
-  router.push(`/collections/${props.collectionId}/dataobjects/${dataObjectId}`);
+/**
+ * Build a route href for a DataObject row.
+ *
+ * Per CLAUDE.md "frontend builds on /v2/ exclusively + appId routes":
+ * routes carry the v2 appId (UUID v7), never the numeric Neo4j id. We
+ * prefer the parent collection's appId + the row's appId; if either is
+ * absent (legacy v1-only fallback path) we fall back to the numeric id —
+ * the route param parser (`parseIdLike`) accepts both shapes so the link
+ * still resolves on the destination page.
+ */
+function rowHref(row: { id: number; appId: string | null }): string {
+  const colSegment = props.collectionAppId ?? props.collectionId;
+  const doSegment = row.appId ?? row.id;
+  return `/collections/${colSegment}/dataobjects/${doSegment}`;
+}
+
+function navigateTo(row: { id: number; appId: string | null }) {
+  router.push(rowHref(row));
 }
 
 function statusColor(status: string): string {

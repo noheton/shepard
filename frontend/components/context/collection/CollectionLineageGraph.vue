@@ -386,7 +386,17 @@ function onChartClick(rawParams: unknown): void {
   }
   const doId = params.data?.value;
   if (typeof doId !== "number") return;
-  void router.push(`/collections/${props.collectionId}/dataobjects/${doId}`);
+  // Per CLAUDE.md "appId routes": prefer the v2 appId (UUID v7) over the
+  // numeric Neo4j id. The dataObjects payload (DataObjectListItemV2) carries
+  // both — look up by numeric id and emit the appId when present. Falls back
+  // to the numeric id on the rare row that lacks an appId (legacy v1 path).
+  const colSegment = props.collectionAppId ?? props.collectionId;
+  const matched = dataObjects.value.find(
+    d => (d as unknown as { id?: number }).id === doId,
+  );
+  const doAppId = (matched as unknown as { appId?: string | null } | undefined)?.appId;
+  const doSegment = doAppId ?? doId;
+  void router.push(`/collections/${colSegment}/dataobjects/${doSegment}`);
 }
 
 // ---------------------------------------------------------------------------

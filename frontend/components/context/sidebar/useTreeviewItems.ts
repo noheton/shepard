@@ -37,14 +37,14 @@ function v2BaseUrl(): string {
 }
 
 async function fetchDataObjectV2(
-  collectionId: number,
+  collectionId: string,
   dataObjectId: number,
 ): Promise<DataObject> {
   const { data: session } = useAuth();
   const accessToken = session.value?.accessToken;
   const url =
     `${v2BaseUrl()}/v2/collections/` +
-    `${encodeURIComponent(String(collectionId))}/data-objects/` +
+    `${encodeURIComponent(collectionId)}/data-objects/` +
     `${encodeURIComponent(String(dataObjectId))}`;
   const headers: Record<string, string> = { Accept: "application/json" };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
@@ -137,9 +137,13 @@ export const useTreeviewItems = (
       if (openLoadedItems) addOpen(itemWithPath.pathFromRoot);
       return;
     }
-    const cid = resolvedNumericCid();
-    if (cid === undefined) return;
-    const parentIds = await getPathToItem(cid, itemId);
+    // getPathToItem uses the v2 single-item endpoint, which accepts either
+    // a UUID v7 or a numeric string for the collection segment (resolved by
+    // `EntityIdResolver` on the backend). Pass the raw route param string
+    // so deep-links into a UUID-only Collection still resolve the parent
+    // walk even before the numeric id is known.
+    const routeCid = routeParams.value.collectionId;
+    const parentIds = await getPathToItem(routeCid, itemId);
     for (const id of parentIds) {
       await loadChildrenOfItem(id);
     }
@@ -271,10 +275,14 @@ export const useTreeviewItems = (
   }
 
   /**
-   * @returns List of numbers representing the path to the item (excluding the id of the item itself)
+   * Walk parents from `itemId` up to the root, returning the list of
+   * intermediate ids (excluding the item itself). The `collectionId`
+   * parameter is the v2 collection identifier string (UUID v7 or numeric)
+   * passed straight to the v2 single-item endpoint, which accepts both
+   * shapes via `EntityIdResolver`.
    */
   async function getPathToItem(
-    collectionId: number,
+    collectionId: string,
     itemId: number,
   ): Promise<number[]> {
     async function getPathFromRootTo(currentPath: number[]): Promise<number[]> {
@@ -326,12 +334,14 @@ export const useTreeviewItems = (
 };
 
 async function fetchTreeviewItem(
-  collectionId: number,
+  collectionId: string,
   dataObjectId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem | undefined> {
   // BUG-COLL-APPID-ROUTE-005: route through v2 raw fetch — the v1 generated
   // client 404s on UUID-shaped collection/dataObject ids post-reset.
+  // The collectionId here is the v2 collection identifier string (UUID v7
+  // or numeric); the backend's `EntityIdResolver` accepts both.
   return fetchDataObjectV2(collectionId, dataObjectId)
     .then(response => mapToTreeviewItem(response, parentItem))
     .catch(error => {
