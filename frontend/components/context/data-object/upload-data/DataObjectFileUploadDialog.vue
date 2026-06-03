@@ -56,13 +56,19 @@ const { addFileReference } = useCreateFileReference(
 // SINGLETON-FILE-04 — POST /v2/files wrapper. Used when uploadMode === "singleton".
 const { createSingleton } = useCreateSingletonFileReference();
 
-// SINGLETON-FILE-04 — default mode is FR1b singleton-per-file.
+// SINGLETON-FILE-04 — default mode is FR1b singleton-per-file when
+// `createReference === true`. When the parent only wants bytes uploaded
+// (lab-journal markdown embed: `:create-reference="false"`), the
+// singleton path is wrong — POST /v2/files *always* mints a
+// :SingletonFileReference. Force bundle mode in that case so the dialog
+// falls back to the bytes-only FileContainer upload path.
+//
 //   "singleton" → one POST /v2/files per file (one :SingletonFileReference each).
-//   "bundle"    → legacy FR1a path (one :FileBundleReference holding N files).
-// The bundle path stays available for genuinely multi-file shapes (image series,
-// mesh sets, archive contents) per CLAUDE.md "Always: singleton FileReference
-// for one-file uploads; FileBundleReference only when bundling >1".
-const uploadMode = ref<"singleton" | "bundle">("singleton");
+//   "bundle"    → legacy FR1a path (one :FileBundleReference holding N files,
+//                 OR — when createReference is false — bytes only, no reference).
+const uploadMode = ref<"singleton" | "bundle">(
+  props.createReference ? "singleton" : "bundle",
+);
 
 // Resolve the parent DataObject's appId for the singleton POST path. The v1
 // endpoint includes appId on the wire even on the upstream-byte-compat
@@ -429,8 +435,11 @@ watch(containerMode, (mode: "link" | "create") => {
       </template>
       <template #text>
         <div class="d-flex flex-column ga-4">
-          <!-- CC1c: first-time explanation of the Collection / Container duality -->
+          <!-- CC1c: first-time explanation of the Collection / Container duality
+               — but only true in bundle mode (singletons live in the shared
+               `_shepard_files` namespace, not in a per-bundle FileContainer). -->
           <v-alert
+            v-if="uploadMode === 'bundle'"
             type="info"
             variant="tonal"
             density="compact"
@@ -466,8 +475,10 @@ watch(containerMode, (mode: "link" | "create") => {
 
           <!-- SINGLETON-FILE-04: upload-mode toggle. Default is "singleton".
                Operator opts in to "bundle" only when files genuinely belong
-               together (image series, mesh sets, archive contents). -->
-          <div v-if="!uploading" class="d-flex flex-column ga-1">
+               together (image series, mesh sets, archive contents). Hidden
+               entirely when createReference === false (lab-journal markdown
+               embeds, which want bytes only, never a Reference). -->
+          <div v-if="!uploading && createReference" class="d-flex flex-column ga-1">
             <div class="d-flex justify-space-between align-center">
               <span class="text-textbody1 text-subtitle-2">
                 Upload Shape
