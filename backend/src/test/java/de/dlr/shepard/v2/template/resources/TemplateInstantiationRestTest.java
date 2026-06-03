@@ -290,10 +290,11 @@ class TemplateInstantiationRestTest {
   @Test
   void returns422WhenShapeIsPresent_andInstanceViolates() {
     allowWrite();
-    // Template body has a shapeGraph requiring 'propellant', but NO attributes provided
+    // Template body has a shapeGraph requiring 'propellant'; the attributes provided
+    // do NOT include 'propellant' so the shape constraint is violated.
     String body =
       "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
-      "\"dataobjects\":[{\"attributes\":{}}]}";
+      "\"dataobjects\":[{\"attributes\":{\"color\":\"red\"}}]}";
     ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
     tmpl.setAppId(TMPL_APP_ID);
     tmpl.setVersion(1);
@@ -312,9 +313,9 @@ class TemplateInstantiationRestTest {
   @Test
   void returns201WhenNoShapeGraph() {
     allowWrite();
-    // Template body has NO shapeGraph field — validation is skipped
+    // Template body has NO shapeGraph field — validation is skipped regardless of attributes
     ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE",
-      "{\"dataobjects\":[{\"attributes\":{}}]}");
+      "{\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX\"}}]}");
     tmpl.setAppId(TMPL_APP_ID);
     tmpl.setVersion(1);
     when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
@@ -333,7 +334,7 @@ class TemplateInstantiationRestTest {
     // Malformed Turtle → fail-soft: validation is skipped, DataObject is created anyway
     String body =
       "{\"shapeGraph\":\"this is not valid turtle @#$%\"," +
-      "\"dataobjects\":[{\"attributes\":{}}]}";
+      "\"dataobjects\":[{\"attributes\":{\"color\":\"blue\"}}]}";
     ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
     tmpl.setAppId(TMPL_APP_ID);
     tmpl.setVersion(1);
