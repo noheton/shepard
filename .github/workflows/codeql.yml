@@ -70,6 +70,38 @@ jobs:
           # `security-and-quality` set; trade-off is longer analysis (acceptable).
           queries: security-extended
 
+      # The backend's `with-plugins` profile (active by default) and its two
+      # always-on file-format plugin deps (svdx, thermography) must be present
+      # in the local Maven repo before `mvn package` can resolve them. Mirror
+      # the install dance from `ci.yml` so the CodeQL autobuild compiles the
+      # full backend surface instead of failing at dependency resolution.
+      # (CI-BASELINE-4: without these steps the autobuild fails before CodeQL
+      # can extract the database, surfacing as a red "Analyze java-kotlin".)
+      - name: Stub-install backend (java-kotlin only)
+        if: matrix.language == 'java-kotlin'
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI (java-kotlin only)
+        if: matrix.language == 'java-kotlin'
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
+
+      - name: Install plugins (java-kotlin only)
+        if: matrix.language == 'java-kotlin'
+        run: |
+          set -e
+          for p in minter-local minter-datacite minter-epic unhide kip \
+                   spatiotemporal hdf5 git file-s3 \
+                   fileformat-svdx fileformat-thermography \
+                   aas video ai; do
+            if [ -f "plugins/$p/pom.xml" ]; then
+              echo "::group::install plugin $p"
+              (cd "plugins/$p" && mvn -B -DskipTests install)
+              echo "::endgroup::"
+            fi
+          done
+
       - name: Build Java (manual mode)
         if: matrix.language == 'java-kotlin'
         run: cd ${{ matrix.working-dir }} && mvn -B -DskipTests package

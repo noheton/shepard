@@ -395,7 +395,9 @@ class S3FileStorageTest {
   }
 
   private static S3Exception buildS3Exception(String errorCode) {
-    return S3Exception.builder()
+    // S3Exception.builder().build() is declared to return AwsServiceException in
+    // AWS SDK v2 (≥2.31); the concrete instance is an S3Exception, so cast.
+    return (S3Exception) S3Exception.builder()
       .message(errorCode)
       .awsErrorDetails(AwsErrorDetails.builder()
         .errorCode(errorCode)

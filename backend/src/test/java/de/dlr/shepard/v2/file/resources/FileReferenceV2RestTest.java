@@ -73,7 +73,11 @@ class FileReferenceV2RestTest {
     resource.objectMapper = new ObjectMapper();
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), any(AccessType.class), eq(CALLER), anyLong()))
+    // Production resolves access via the 3-arg overload (no jwtIat) and the
+    // appId-based check; stub both positively so happy-path tests pass the gate.
+    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), any(AccessType.class), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), any(AccessType.class), eq(CALLER)))
       .thenReturn(true);
   }
 
@@ -120,7 +124,7 @@ class FileReferenceV2RestTest {
   @Test
   void getSingleton_returns403WhenNoRead() {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(false);
     assertEquals(403, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
   }
 
@@ -287,7 +291,7 @@ class FileReferenceV2RestTest {
 
       when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
       var created = existing();
-      when(singletonService.createSingleton(eq(PARENT_DO_APP_ID), anyString(), eq("doc.pdf"), any()))
+      when(singletonService.createSingleton(eq(PARENT_DO_APP_ID), anyString(), eq("doc.pdf"), any(), anyLong()))
         .thenReturn(created);
 
       var r = resource.createSingleton(PARENT_DO_APP_ID, "custom name", fileUpload, securityContext);
@@ -324,7 +328,7 @@ class FileReferenceV2RestTest {
       when(fileUpload.uploadedFile()).thenReturn(tmp);
       when(fileUpload.fileName()).thenReturn("doc.pdf");
       when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+      when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
 
       var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
       assertEquals(403, r.getStatus());
@@ -342,7 +346,7 @@ class FileReferenceV2RestTest {
       when(fileUpload.uploadedFile()).thenReturn(tmp);
       when(fileUpload.fileName()).thenReturn("doc.pdf");
       when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any()))
+      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any(), anyLong()))
         .thenThrow(new BadRequestException("bad"));
 
       var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
@@ -361,7 +365,7 @@ class FileReferenceV2RestTest {
       when(fileUpload.uploadedFile()).thenReturn(tmp);
       when(fileUpload.fileName()).thenReturn("doc.pdf");
       when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any()))
+      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any(), anyLong()))
         .thenThrow(new NotFoundException("race"));
 
       var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
@@ -410,7 +414,7 @@ class FileReferenceV2RestTest {
   @Test
   void patchSingleton_returns403WhenNoWrite() throws Exception {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
     JsonNode body = new ObjectMapper().readTree("{\"name\":\"x\"}");
     assertEquals(403, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
   }
@@ -443,7 +447,7 @@ class FileReferenceV2RestTest {
   @Test
   void deleteSingleton_returns403WhenNoWrite() {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
     assertEquals(403, resource.deleteSingleton(SINGLETON_APP_ID, securityContext).getStatus());
   }
 
