@@ -126,7 +126,10 @@ public class AiRegistry {
       }
     }
 
-    this.byId = Map.copyOf(idMap);
+    // Preserve discovery (insertion) order — idMap is a LinkedHashMap built in
+    // ServiceLoader order. Map.copyOf would drop that ordering, making allIds()
+    // and the log line non-deterministic.
+    this.byId = Collections.unmodifiableMap(new LinkedHashMap<>(idMap));
     Map<AiCapability, Set<String>> sealed = new EnumMap<>(AiCapability.class);
     capMap.forEach((k, v) -> sealed.put(k, Collections.unmodifiableSet(new LinkedHashSet<>(v))));
     this.byCapability = Collections.unmodifiableMap(sealed);
