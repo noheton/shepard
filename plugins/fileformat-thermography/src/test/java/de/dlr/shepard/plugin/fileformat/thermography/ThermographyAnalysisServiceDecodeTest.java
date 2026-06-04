@@ -1,13 +1,12 @@
-package de.dlr.shepard.v2.thermography;
+package de.dlr.shepard.plugin.fileformat.thermography;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.v2.thermography.services.ThermographyAnalysisService;
+import de.dlr.shepard.plugin.fileformat.thermography.services.ThermographyAnalysisService;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -109,7 +108,7 @@ class ThermographyAnalysisServiceDecodeTest {
     ThermographyAnalysisService.FrameDecode out =
       ThermographyAnalysisService.decodeTiffFrame(new ByteArrayInputStream(bytes));
     assertNotNull(out);
-    var bundle = new de.dlr.shepard.v2.thermography.services.ThermographyMetrics.BundleStats(2, 2);
+    var bundle = new de.dlr.shepard.plugin.fileformat.thermography.services.ThermographyMetrics.BundleStats(2, 2);
     bundle.addFrame(0, "hot.tif", out.pixels(), out.width(), out.height());
     // 1 hot pixel + 15 background → median ≈ 50, max ≈ 250, peak-delta ≈ 200.
     assertEquals(200.0, bundle.maxPeakDeltaC(), 5.0,

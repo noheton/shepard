@@ -185,6 +185,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-fileformat-cad</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
 </exclusions>
     </dependency>
 

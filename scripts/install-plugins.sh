@@ -66,12 +66,11 @@ backend_testjar_stub() {
 }
 
 # ── Tier 0 — standalone pure-Java parsers, NO backend dependency ──────────────
-# fileformat-thermography is still always-on (non-profile) compile dep of the
-# backend core (ThermographyAnalysisService calls ThermalImageParser directly)
-# and MUST be in ~/.m2 before the backend stub-install.
+# fileformat-thermography has been upgraded from Tier-0 to Tier-1 (V2CONV-A6):
+# it now carries ThermographyV2Rest + services + IOs and depends on the backend
+# provided dep. It now lives in the Tier-1 block below.
 # fileformat-svdx has been upgraded to Tier-1 (with-plugins profile dep) per
 # V2CONV-A6 — it now lives in the Tier-1 block below.
-install_plugin fileformat-thermography
 
 # ── Backend (with test-jar) + CLI stubs so the remaining plugins can compile ──
 backend_testjar_stub
@@ -82,6 +81,7 @@ cli_testjar_stub
 # SvdxIngestRest + SvdxCsvIngestionService and depends on the backend provided dep.
 for p in \
   fileformat-svdx \
+  fileformat-thermography \
   fileformat-cad \
   minter-local minter-datacite minter-epic \
   unhide kip hdf5 git file-s3 aas importer \

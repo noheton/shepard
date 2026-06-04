@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.thermography.resources;
+package de.dlr.shepard.plugin.fileformat.thermography.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
@@ -8,12 +8,12 @@ import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
-import de.dlr.shepard.v2.thermography.io.AnalyzeRequestIO;
-import de.dlr.shepard.v2.thermography.io.AnalyzeResultIO;
-import de.dlr.shepard.v2.thermography.io.OtvisFramesIO;
-import de.dlr.shepard.v2.thermography.io.PlateHeatmapIO;
-import de.dlr.shepard.v2.thermography.services.OtvisFrameRenderService;
-import de.dlr.shepard.v2.thermography.services.ThermographyAnalysisService;
+import de.dlr.shepard.plugin.fileformat.thermography.io.AnalyzeRequestIO;
+import de.dlr.shepard.plugin.fileformat.thermography.io.AnalyzeResultIO;
+import de.dlr.shepard.plugin.fileformat.thermography.io.OtvisFramesIO;
+import de.dlr.shepard.plugin.fileformat.thermography.io.PlateHeatmapIO;
+import de.dlr.shepard.plugin.fileformat.thermography.services.OtvisFrameRenderService;
+import de.dlr.shepard.plugin.fileformat.thermography.services.ThermographyAnalysisService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;

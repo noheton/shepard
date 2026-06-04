@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.thermography.io;
+package de.dlr.shepard.plugin.fileformat.thermography.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

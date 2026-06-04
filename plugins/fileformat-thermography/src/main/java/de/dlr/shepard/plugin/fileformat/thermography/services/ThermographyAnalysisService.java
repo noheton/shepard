@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.thermography.services;
+package de.dlr.shepard.plugin.fileformat.thermography.services;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
@@ -10,8 +10,8 @@ import de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
-import de.dlr.shepard.v2.thermography.io.AnalyzeResultIO;
-import de.dlr.shepard.v2.thermography.io.PlateHeatmapIO;
+import de.dlr.shepard.plugin.fileformat.thermography.io.AnalyzeResultIO;
+import de.dlr.shepard.plugin.fileformat.thermography.io.PlateHeatmapIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
