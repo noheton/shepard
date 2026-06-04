@@ -222,6 +222,18 @@ class ContainersV2RestTest {
     assertEquals(401, r.getStatus());
   }
 
+  @Test
+  void getPermissions_returns404WhenPermsEmpty() {
+    // resolve + gate succeed, but the permissions node is absent in the DB
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.empty());
+    var r = resource.getPermissions(APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
   // ─── patchPermissions ──────────────────────────────────────────────────────
 
   @Test
@@ -257,6 +269,18 @@ class ContainersV2RestTest {
       .thenReturn(false);
     var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
     assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns404WhenPermsEmpty() throws Exception {
+    // resolve + gate succeed, but the permissions node is absent in the DB
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.empty());
+    var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
+    assertEquals(404, r.getStatus());
   }
 
   // ─── list ──────────────────────────────────────────────────────────────────
