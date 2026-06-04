@@ -119,6 +119,21 @@ export const COLLECTION_CONTEXT_TOOLS: ContextToolItem[] = [
       scope: "collection",
     }),
   },
+  {
+    // V2CONV-B6-POLISH Item 4 — in-context "create template" affordance.
+    // Routes to the admin templates page with a prefill hint so the dialog
+    // opens pre-populated with this Collection's scope.
+    id: "coll-create-template",
+    title: "Create template for this Collection",
+    subtitle: "Open the template editor pre-scoped to this Collection kind.",
+    icon: "mdi-file-code-outline",
+    path: "/admin/templates",
+    buildQuery: (appId) => ({
+      newTemplate: "1",
+      targetEntityAppId: appId,
+      scope: "collection",
+    }),
+  },
 ];
 
 /**
@@ -189,6 +204,21 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
     },
     // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
     enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
+  },
+  {
+    // V2CONV-B6-POLISH Item 4 — in-context "create template" affordance.
+    // Routes to the admin templates page with a prefill hint so the dialog
+    // opens pre-populated with this DataObject's kind/scope as the target class.
+    id: "do-create-template",
+    title: "Create template for this DataObject",
+    subtitle: "Open the template editor pre-scoped to this DataObject kind.",
+    icon: "mdi-file-code-outline",
+    path: "/admin/templates",
+    buildQuery: (appId) => ({
+      newTemplate: "1",
+      targetEntityAppId: appId,
+      scope: "data-object",
+    }),
   },
 ];
 

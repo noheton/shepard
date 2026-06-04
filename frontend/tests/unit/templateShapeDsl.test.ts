@@ -26,6 +26,9 @@ import {
   filterPalette,
   mergePaletteSources,
   vocabCardinalityHint,
+  substrateToDatatype,
+  groupPaletteByNamespace,
+  paletteGroupLabel,
   type PalettePredicate,
 } from "../../composables/semantic/useShapePalette";
 
@@ -167,8 +170,8 @@ describe("template body round-trip", () => {
 
 describe("palette pure helpers", () => {
   const items: PalettePredicate[] = [
-    { uri: SHEPARD + "status", label: "Status", description: "process status", cardinality: "0..1", datatype: null, source: "vocabulary" },
-    { uri: SHEPARD + "mass", label: "Mass", description: null, cardinality: "0..1", datatype: null, source: "vocabulary" },
+    { uri: SHEPARD + "status", label: "Status", description: "process status", cardinality: "0..1", datatype: null, source: "vocabulary", substrate: "neo4j" },
+    { uri: SHEPARD + "mass", label: "Mass", description: null, cardinality: "0..1", datatype: null, source: "vocabulary", substrate: "timescaledb" },
   ];
 
   it("filterPalette is case-insensitive over uri/label/description", () => {
@@ -181,8 +184,8 @@ describe("palette pure helpers", () => {
 
   it("mergePaletteSources de-dupes by uri, curated wins", () => {
     const search: PalettePredicate[] = [
-      { uri: SHEPARD + "status", label: "dup", description: null, cardinality: null, datatype: null, source: "search" },
-      { uri: SHEPARD + "owner", label: "Owner", description: null, cardinality: null, datatype: null, source: "search" },
+      { uri: SHEPARD + "status", label: "dup", description: null, cardinality: null, datatype: null, source: "search", substrate: null },
+      { uri: SHEPARD + "owner", label: "Owner", description: null, cardinality: null, datatype: null, source: "search", substrate: null },
     ];
     const merged = mergePaletteSources(items, search);
     expect(merged).toHaveLength(3);
@@ -195,5 +198,78 @@ describe("palette pure helpers", () => {
     expect(vocabCardinalityHint("many")).toBe("0..*");
     expect(vocabCardinalityHint(null)).toBeNull();
     expect(vocabCardinalityHint("weird")).toBeNull();
+  });
+});
+
+describe("substrateToDatatype", () => {
+  it("maps timescaledb → xsd:decimal", () => {
+    expect(substrateToDatatype("timescaledb")).toBe(XSD + "decimal");
+  });
+  it("maps postgres → xsd:string", () => {
+    expect(substrateToDatatype("postgres")).toBe(XSD + "string");
+  });
+  it("maps neo4j → xsd:string", () => {
+    expect(substrateToDatatype("neo4j")).toBe(XSD + "string");
+  });
+  it("returns null for garage (binary blob, no literal datatype)", () => {
+    expect(substrateToDatatype("garage")).toBeNull();
+  });
+  it("returns null for unknown substrates and null input", () => {
+    expect(substrateToDatatype(null)).toBeNull();
+    expect(substrateToDatatype("unknown")).toBeNull();
+  });
+});
+
+describe("paletteGroupLabel", () => {
+  it("splits on last #", () => {
+    expect(paletteGroupLabel("http://semantics.dlr.de/shepard#status")).toBe(
+      "http://semantics.dlr.de/shepard",
+    );
+  });
+  it("splits on last / when no # present", () => {
+    expect(paletteGroupLabel("http://purl.org/dc/terms/title")).toBe(
+      "http://purl.org/dc/terms",
+    );
+  });
+  it("returns the full uri when no # or / are present", () => {
+    expect(paletteGroupLabel("urn:noslash")).toBe("urn:noslash");
+  });
+});
+
+describe("groupPaletteByNamespace", () => {
+  it("groups items by namespace, preserving insertion order", () => {
+    const PROV = "http://www.w3.org/ns/prov#";
+    const DC = "http://purl.org/dc/terms/";
+    const palItems: PalettePredicate[] = [
+      { uri: SHEPARD + "status", label: null, description: null, cardinality: null, datatype: null, source: "vocabulary", substrate: null },
+      { uri: SHEPARD + "mass", label: null, description: null, cardinality: null, datatype: null, source: "vocabulary", substrate: null },
+      { uri: PROV + "wasGeneratedBy", label: null, description: null, cardinality: null, datatype: null, source: "search", substrate: null },
+      { uri: DC + "title", label: null, description: null, cardinality: null, datatype: null, source: "search", substrate: null },
+    ];
+    const groups = groupPaletteByNamespace(palItems);
+    expect(groups).toHaveLength(3);
+    // First group: shepard namespace
+    expect(groups[0]!.namespace).toBe("http://semantics.dlr.de/shepard");
+    expect(groups[0]!.items).toHaveLength(2);
+    // Second group: prov
+    expect(groups[1]!.namespace).toBe("http://www.w3.org/ns/prov");
+    expect(groups[1]!.items).toHaveLength(1);
+    // Third group: dc terms
+    expect(groups[2]!.namespace).toBe("http://purl.org/dc/terms");
+    expect(groups[2]!.items).toHaveLength(1);
+  });
+
+  it("returns a single group when all items share a namespace", () => {
+    const palItems: PalettePredicate[] = [
+      { uri: SHEPARD + "a", label: null, description: null, cardinality: null, datatype: null, source: "vocabulary", substrate: null },
+      { uri: SHEPARD + "b", label: null, description: null, cardinality: null, datatype: null, source: "vocabulary", substrate: null },
+    ];
+    const groups = groupPaletteByNamespace(palItems);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.items).toHaveLength(2);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(groupPaletteByNamespace([])).toEqual([]);
   });
 });

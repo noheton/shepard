@@ -32,6 +32,11 @@ export interface PalettePredicate {
   datatype: string | null;
   /** Where this entry came from — drives a small badge in the UI. */
   source: "vocabulary" | "search";
+  /**
+   * Storage substrate from the routing table (`neo4j | timescaledb | postgres | garage`).
+   * Null for autocomplete-only search hits. Used for palette grouping.
+   */
+  substrate: string | null;
 }
 
 function v2Base(): string {
@@ -73,6 +78,82 @@ export function vocabCardinalityHint(cardinality?: string | null): string | null
   return null;
 }
 
+const XSD = "http://www.w3.org/2001/XMLSchema#";
+
+/**
+ * Heuristic: map a storage substrate to a suggested literal datatype.
+ *
+ * The backend `PredicateVocabularyEntryIO` does not carry an explicit
+ * `rdfs:range` / datatype field — only a `substrate` routing hint.  This
+ * mapping encodes the reasonable default per substrate:
+ *
+ * - `timescaledb` → numeric measurement (decimal is the widest safe pick)
+ * - `postgres`    → plain string (Postgres text columns)
+ * - `neo4j`       → no single canonical type; most properties are strings
+ * - `garage`      → IRI / blob reference (no literal datatype)
+ *
+ * Returns `null` (= "no suggestion") when the substrate is unknown or when
+ * the safest bet is to leave it unset (IRI objects, garage references).
+ * Exported + pure for the editor and for unit tests.
+ */
+export function substrateToDatatype(substrate?: string | null): string | null {
+  if (!substrate) return null;
+  const s = substrate.trim().toLowerCase();
+  if (s === "timescaledb") return XSD + "decimal";
+  if (s === "postgres") return XSD + "string";
+  if (s === "neo4j") return XSD + "string";
+  // garage = binary blob / IRI — no literal datatype makes sense
+  return null;
+}
+
+/**
+ * Derive a human-readable group label from a predicate URI.
+ * Splits on the last `#` or `/` to extract the namespace prefix.
+ *
+ * Examples:
+ *   http://semantics.dlr.de/shepard#status → "http://semantics.dlr.de/shepard"
+ *   http://www.w3.org/ns/prov#wasDerivedFrom → "http://www.w3.org/ns/prov"
+ *   http://purl.org/dc/terms/title → "http://purl.org/dc/terms"
+ */
+export function paletteGroupLabel(uri: string): string {
+  const hashIdx = uri.lastIndexOf("#");
+  if (hashIdx > 0) return uri.slice(0, hashIdx);
+  const slashIdx = uri.lastIndexOf("/");
+  if (slashIdx > 0) return uri.slice(0, slashIdx);
+  return uri;
+}
+
+/**
+ * One section produced by `groupPaletteByNamespace`.
+ */
+export interface PaletteGroup {
+  /** Namespace prefix used as the section header. */
+  namespace: string;
+  /** Ordered items within this namespace group. */
+  items: PalettePredicate[];
+}
+
+/**
+ * Group a flat predicate list into namespace sections for the palette.
+ *
+ * Preserves the original ordering within each group. Groups are ordered
+ * by first occurrence (so the vocabulary section that appears earliest in
+ * the flat list comes first).  Exported + pure for unit tests.
+ */
+export function groupPaletteByNamespace(items: PalettePredicate[]): PaletteGroup[] {
+  const order: string[] = [];
+  const map = new Map<string, PalettePredicate[]>();
+  for (const item of items) {
+    const ns = paletteGroupLabel(item.uri);
+    if (!map.has(ns)) {
+      order.push(ns);
+      map.set(ns, []);
+    }
+    map.get(ns)!.push(item);
+  }
+  return order.map((ns) => ({ namespace: ns, items: map.get(ns)! }));
+}
+
 export function useShapePalette() {
   const vocabulary = ref<PalettePredicate[]>([]);
   const searchResults = ref<PalettePredicate[]>([]);
@@ -97,8 +178,9 @@ export function useShapePalette() {
         label: null,
         description: r.description ?? null,
         cardinality: vocabCardinalityHint(r.cardinality),
-        datatype: null,
+        datatype: substrateToDatatype(r.substrate),
         source: "vocabulary" as const,
+        substrate: r.substrate ?? null,
       }));
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
@@ -131,6 +213,7 @@ export function useShapePalette() {
         cardinality: null,
         datatype: null,
         source: "search" as const,
+        substrate: null,
       }));
     } catch {
       searchResults.value = [];
