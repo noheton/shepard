@@ -25,6 +25,9 @@ on:
       - "cli/**"
       - "infrastructure/docker-compose.yml"
       - ".github/workflows/ci.yml"
+      # The plugin installer drives every job's "Install in-tree plugins" step;
+      # a change to it can break the build, so it must trigger CI.
+      - "scripts/install-plugins.sh"
     tags:
       - "v*.*.*"
   pull_request:
@@ -34,6 +37,7 @@ on:
       - "frontend/**"
       - "cli/**"
       - ".github/workflows/ci.yml"
+      - "scripts/install-plugins.sh"
   workflow_dispatch:
 
 permissions:
