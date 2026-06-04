@@ -19,8 +19,9 @@ const SAMPLE_APP_ID = "0197b6a2-7b4c-7000-8a3b-1234567890ab";
 // ── COLLECTION_CONTEXT_TOOLS ───────────────────────────────────────────────
 
 describe("COLLECTION_CONTEXT_TOOLS", () => {
-  it("exposes the two Collection-scope tool entries (SPARQL + Vocab)", () => {
+  it("exposes the three Collection-scope tool entries (SPARQL + Vocab + Create Template)", () => {
     expect(COLLECTION_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
+      "coll-create-template",
       "coll-sparql",
       "coll-vocab",
     ]);
@@ -54,13 +55,23 @@ describe("COLLECTION_CONTEXT_TOOLS", () => {
     expect(q.usedBy).toBe(SAMPLE_APP_ID);
     expect(q.scope).toBe("collection");
   });
+
+  it("coll-create-template routes to /admin/templates with newTemplate=1 + scope", () => {
+    const t = COLLECTION_CONTEXT_TOOLS.find(x => x.id === "coll-create-template")!;
+    expect(t.path).toBe("/admin/templates");
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.newTemplate).toBe("1");
+    expect(q.targetEntityAppId).toBe(SAMPLE_APP_ID);
+    expect(q.scope).toBe("collection");
+  });
 });
 
 // ── DATA_OBJECT_CONTEXT_TOOLS ──────────────────────────────────────────────
 
 describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
-  it("exposes the four DataObject-scope tool entries", () => {
+  it("exposes the five DataObject-scope tool entries", () => {
     expect(DATA_OBJECT_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
+      "do-create-template",
       "do-render",
       "do-shacl",
       "do-sparql",
@@ -144,6 +155,20 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     const vocab  = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-vocab")!;
     expect(sparql.enabledWhen).toBeUndefined();
     expect(vocab.enabledWhen).toBeUndefined();
+  });
+
+  it("do-create-template routes to /admin/templates with newTemplate=1 + scope", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-create-template")!;
+    expect(t.path).toBe("/admin/templates");
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.newTemplate).toBe("1");
+    expect(q.targetEntityAppId).toBe(SAMPLE_APP_ID);
+    expect(q.scope).toBe("data-object");
+  });
+
+  it("do-create-template has no enabledWhen gate (always visible)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-create-template")!;
+    expect(t.enabledWhen).toBeUndefined();
   });
 });
 

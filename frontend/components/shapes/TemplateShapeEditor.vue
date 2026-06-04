@@ -26,7 +26,9 @@ import {
   useShapePalette,
   filterPalette,
   mergePaletteSources,
+  groupPaletteByNamespace,
   type PalettePredicate,
+  type PaletteGroup,
 } from "~/composables/semantic/useShapePalette";
 import { useShapeBuilder } from "~/composables/semantic/useShapeBuilder";
 import {
@@ -60,6 +62,21 @@ const paletteQuery = ref("");
 
 const combinedPalette = computed<PalettePredicate[]>(() =>
   mergePaletteSources(filterPalette(vocabulary.value, paletteQuery.value), searchResults.value),
+);
+
+/**
+ * Grouped view: only used when no search query is active (grouping while
+ * searching makes it harder to scan results). When a query is present we
+ * fall back to the flat list so the user sees all matches without hunting
+ * through collapsed namespace sections.
+ */
+const groupedPalette = computed<PaletteGroup[]>(() =>
+  groupPaletteByNamespace(combinedPalette.value),
+);
+
+/** Show the grouped view when the palette isn't being searched and has items. */
+const showGrouped = computed(
+  () => paletteQuery.value.trim().length === 0 && groupedPalette.value.length > 0,
 );
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -132,9 +149,59 @@ async function runValidate() {
   if (compiledTurtle.value) await validate(dataGraph.value, compiledTurtle.value);
 }
 
+// ─── sh:node shape picker (Item 3 — V2CONV-B6-POLISH) ───────────────────────
+/**
+ * Suggestions for the sh:node combobox.  Loaded once from GET /v2/templates.
+ * Only templates whose stored body carries a visual editorState with a non-blank
+ * shapeIri are surfaced — others are pure Turtle / have no addressable IRI.
+ */
+interface NodeShapeOption {
+  label: string;
+  shapeIri: string;
+}
+const nodeShapeOptions = ref<NodeShapeOption[]>([]);
+const loadingNodeShapes = ref(false);
+
+function v2BaseLocal(): string {
+  const { public: publicConfig } = useRuntimeConfig();
+  const explicit = (publicConfig as { backendV2ApiUrl?: string }).backendV2ApiUrl;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (publicConfig.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "").replace(/\/$/, "");
+}
+
+function authHeadersLocal(): Record<string, string> {
+  const { data: session } = useAuth();
+  const token = session.value?.accessToken;
+  return token ? { Authorization: `Bearer ${token}`, Accept: "application/json" } : { Accept: "application/json" };
+}
+
+async function loadNodeShapeOptions(): Promise<void> {
+  loadingNodeShapes.value = true;
+  try {
+    const res = await fetch(`${v2BaseLocal()}/v2/templates?kind=SHAPE_CONSTRAINT`, {
+      headers: authHeadersLocal(),
+    });
+    if (!res.ok) return;
+    const rows = (await res.json()) as { name?: string; body?: string }[];
+    const opts: NodeShapeOption[] = [];
+    for (const row of rows) {
+      const es = editorStateFromTemplateBody(row.body ?? null);
+      const iri = es?.shapeIri?.trim();
+      if (iri) {
+        opts.push({ label: row.name ? `${row.name} (${iri})` : iri, shapeIri: iri });
+      }
+    }
+    nodeShapeOptions.value = opts;
+  } catch {
+    // fail-soft — combobox still allows free-text IRI input
+  } finally {
+    loadingNodeShapes.value = false;
+  }
+}
+
 // ─── lifecycle ───────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await loadVocabulary();
+  await Promise.all([loadVocabulary(), loadNodeShapeOptions()]);
   const reopened = editorStateFromTemplateBody(props.body);
   if (reopened) {
     state.value = reopened;
@@ -179,32 +246,71 @@ defineExpose({ recompile, state });
           />
           <div class="palette-list">
             <centered-loading-spinner v-if="loadingVocabulary && vocabulary.length === 0" />
-            <v-list v-else density="compact" lines="two">
-              <v-list-item
-                v-for="p in combinedPalette"
-                :key="p.uri"
-                :title="p.label || p.uri"
-                :subtitle="p.uri"
-                data-test="palette-item"
-                @click="addPredicate(p)"
-              >
-                <template #append>
-                  <v-chip
-                    size="x-small"
-                    :color="p.source === 'vocabulary' ? 'primary' : 'secondary'"
-                    variant="tonal"
-                  >
-                    {{ p.source === "vocabulary" ? "vocab" : "search" }}
-                  </v-chip>
-                  <v-icon icon="mdi-plus" size="small" class="ml-2" />
-                </template>
-              </v-list-item>
-              <v-list-item
-                v-if="combinedPalette.length === 0"
-                title="No predicates found"
-                subtitle="Type to search the ontology, or add a blank row."
-              />
-            </v-list>
+            <template v-else>
+              <!-- ── Grouped view (no active search) ── -->
+              <template v-if="showGrouped">
+                <v-list density="compact" lines="two">
+                  <template v-for="group in groupedPalette" :key="group.namespace">
+                    <v-list-subheader class="palette-ns-header" :title="group.namespace">
+                      <span class="text-caption text-medium-emphasis font-weight-medium palette-ns-text">
+                        {{ group.namespace }}
+                      </span>
+                    </v-list-subheader>
+                    <v-list-item
+                      v-for="p in group.items"
+                      :key="p.uri"
+                      :title="p.label || p.uri.slice(p.uri.lastIndexOf('#') + 1) || p.uri"
+                      :subtitle="p.substrate ? p.substrate : p.uri"
+                      data-test="palette-item"
+                      @click="addPredicate(p)"
+                    >
+                      <template #append>
+                        <v-chip
+                          size="x-small"
+                          :color="p.source === 'vocabulary' ? 'primary' : 'secondary'"
+                          variant="tonal"
+                        >
+                          {{ p.source === "vocabulary" ? "vocab" : "search" }}
+                        </v-chip>
+                        <v-icon icon="mdi-plus" size="small" class="ml-2" />
+                      </template>
+                    </v-list-item>
+                  </template>
+                  <v-list-item
+                    v-if="combinedPalette.length === 0"
+                    title="No predicates found"
+                    subtitle="Type to search the ontology, or add a blank row."
+                  />
+                </v-list>
+              </template>
+              <!-- ── Flat view (search active) ── -->
+              <v-list v-else density="compact" lines="two">
+                <v-list-item
+                  v-for="p in combinedPalette"
+                  :key="p.uri"
+                  :title="p.label || p.uri"
+                  :subtitle="p.uri"
+                  data-test="palette-item"
+                  @click="addPredicate(p)"
+                >
+                  <template #append>
+                    <v-chip
+                      size="x-small"
+                      :color="p.source === 'vocabulary' ? 'primary' : 'secondary'"
+                      variant="tonal"
+                    >
+                      {{ p.source === "vocabulary" ? "vocab" : "search" }}
+                    </v-chip>
+                    <v-icon icon="mdi-plus" size="small" class="ml-2" />
+                  </template>
+                </v-list-item>
+                <v-list-item
+                  v-if="combinedPalette.length === 0"
+                  title="No predicates found"
+                  subtitle="Type to search the ontology, or add a blank row."
+                />
+              </v-list>
+            </template>
           </div>
           <v-btn size="small" variant="tonal" prepend-icon="mdi-plus" data-test="add-blank-row" @click="addBlankRow">
             Add blank property
@@ -333,12 +439,26 @@ defineExpose({ recompile, state });
                 />
               </v-col>
               <v-col cols="12">
-                <v-text-field
+                <!--
+                  Item 3 (V2CONV-B6-POLISH): sh:node — combobox that suggests shape IRIs
+                  loaded from the template list. The user can still type a raw IRI.
+                  Templates whose editorState carries a shapeIri are surfaced as suggestions;
+                  the display label shows the template name; the stored value is the shapeIri.
+                -->
+                <v-combobox
                   v-model="row.node"
+                  :items="nodeShapeOptions"
+                  item-title="label"
+                  item-value="shapeIri"
+                  :return-object="false"
                   label="Nested node shape IRI (sh:node, optional)"
                   density="compact"
                   variant="outlined"
                   hide-details
+                  clearable
+                  no-filter
+                  :loading="loadingNodeShapes"
+                  placeholder="Pick a template or paste a shape IRI"
                   data-test="row-node"
                 />
               </v-col>
@@ -470,6 +590,24 @@ defineExpose({ recompile, state });
 .palette-list {
   max-height: 360px;
   overflow-y: auto;
+}
+.palette-ns-header {
+  // Make namespace headers visually sticky and distinct from list items.
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  padding: 2px 8px;
+  min-height: 28px;
+}
+.palette-ns-text {
+  // Show the namespace truncated from the right (most-specific part is the suffix).
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .ttl-preview {
   max-height: 340px;
