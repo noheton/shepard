@@ -27,16 +27,28 @@ group()   { if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::group::$1"; else echo 
 endgroup(){ if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::endgroup::"; fi; }
 
 install_plugin() {
+  # -DnoPlugins is LOAD-BEARING here. The backend's `with-plugins` profile is
+  # activated by `!noPlugins`, and Maven RE-EVALUATES that activation when it
+  # resolves the backend dependency POM in *this plugin's* build context. Without
+  # -DnoPlugins, every plugin's `provided` backend dep + `test` backend:jar:tests
+  # dep transitively drag in ALL sibling plugins (wiki-writer via provided,
+  # the rest via test) — an unbootstrappable web from an empty ~/.m2. With
+  # -DnoPlugins the profile stays inactive during resolution, so each plugin
+  # needs only the two always-on Tier-0 fileformat parsers + the backend stub.
+  # Verified: no plugin imports sibling-plugin classes, so this is safe (the
+  # earlier "Tier-2 depends on siblings" notion was the leak, not a real dep).
   group "install plugin $1"
-  ( cd "plugins/$1" && "$MVN" -B -Dmaven.test.skip=true install -q )
+  ( cd "plugins/$1" && "$MVN" -B -DnoPlugins -Dmaven.test.skip=true install -q )
   endgroup
 }
 
-stub_install() {
-  # -Dmaven.test.skip=true (NOT -DskipTests): for modules whose test sources may
-  # reference packages absent under -DnoPlugins, test COMPILATION must be skipped.
-  group "stub-install $1 (-DnoPlugins)"
-  ( cd "$1" && "$MVN" -B -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q )
+cli_testjar_stub() {
+  # minter-epic, minter-datacite and unhide test-depend on
+  # shepard-admin:jar:tests (the CLI test-jar). -Dmaven.test.skip would skip test
+  # COMPILATION and never emit it; use -DskipTests so the test-jar is produced
+  # (CLI test sources don't reference plugin packages, so -DnoPlugins is fine).
+  group "stub-install cli + test-jar (-DnoPlugins -DskipTests)"
+  ( cd cli && "$MVN" -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install -q )
   endgroup
 }
 
@@ -63,7 +75,7 @@ install_plugin fileformat-thermography
 
 # ── Backend (with test-jar) + CLI stubs so the remaining plugins can compile ──
 backend_testjar_stub
-stub_install cli
+cli_testjar_stub
 
 # ── Tier 1 — plugins that depend only on the backend stub ─────────────────────
 for p in \
@@ -74,10 +86,13 @@ do
   install_plugin "$p"
 done
 
-# ── Tier 2 — plugins that depend on tier-1 siblings ───────────────────────────
-install_plugin ai           # provided dep on wiki-writer
+# ── Tier 2 — historically thought to depend on tier-1 siblings, but with
+#    -DnoPlugins each resolves against only the backend stub + Tier-0 parsers
+#    (verified: none import sibling-plugin classes). Kept in a separate group
+#    only for readability; install order among plugins is no longer load-bearing.
+install_plugin ai
 install_plugin video
-install_plugin v1-compat    # dep on wiki-writer
-install_plugin vis-trace3d  # dep on analytics-ts, v1-compat, video, wiki-writer
+install_plugin v1-compat
+install_plugin vis-trace3d
 
 echo "All shepard plugins installed."
