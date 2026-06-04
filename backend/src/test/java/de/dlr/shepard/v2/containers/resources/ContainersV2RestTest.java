@@ -7,8 +7,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
@@ -174,6 +178,85 @@ class ContainersV2RestTest {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
     var r = resource.delete(APP_ID, securityContext);
     assertEquals(404, r.getStatus());
+  }
+
+  // ─── permissions helpers ───────────────────────────────────────────────────
+
+  private Permissions permissions() {
+    return new Permissions(container(), new User(CALLER), PermissionType.Private);
+  }
+
+  // ─── getPermissions ────────────────────────────────────────────────────────
+
+  @Test
+  void getPermissions_returns200WhenManageAllowed() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    var r = resource.getPermissions(APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void getPermissions_returns404WhenUnknownAppId() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.getPermissions(APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void getPermissions_returns403WhenNoManage() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.getPermissions(APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void getPermissions_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.getPermissions(APP_ID, securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  // ─── patchPermissions ──────────────────────────────────────────────────────
+
+  @Test
+  void patchPermissions_returns200WhenManageAllowed() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    when(permissionsService.updatePermissionsByNeo4jId(any(PermissionsIO.class), eq(CONTAINER_NEO_ID)))
+      .thenReturn(permissions());
+    var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns400WhenBodyNotObject() throws Exception {
+    var r = resource.patchPermissions(APP_ID, om.readTree("[1,2,3]"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns404WhenUnknownAppId() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns403WhenNoManage() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
+    assertEquals(403, r.getStatus());
   }
 
   // ─── list ──────────────────────────────────────────────────────────────────

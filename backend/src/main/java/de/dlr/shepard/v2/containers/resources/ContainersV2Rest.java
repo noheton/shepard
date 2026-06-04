@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.containers.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
@@ -256,6 +257,104 @@ public class ContainersV2Rest {
     } catch (BadRequestException bre) {
       return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
     }
+  }
+
+  // ─── permissions ───────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/permissions")
+  @Operation(
+    summary = "Get permissions for a container by appId.",
+    description =
+      "Returns the current permissions for the container at `appId`.\n\n" +
+      "Auth: Manage on the container (CONTAINER-PERMS-V2)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Current permissions.",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Manage on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response getPermissions(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Manage, caller);
+    if (gate != null) return gate;
+    Long id = resolved.get().container().getId();
+    var perms = permissionsService.getPermissionsOfEntityOptional(id);
+    if (perms.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    return Response.ok(new PermissionsIO(perms.get())).build();
+  }
+
+  @PATCH
+  @Path("/{appId}/permissions")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "Merge-patch permissions for a container by appId.",
+    description =
+      "RFC 7396 merge-patch the permissions for the container at `appId`. " +
+      "Only fields present in the body are applied; absent fields are left unchanged.\n\n" +
+      "Auth: Manage on the container (CONTAINER-PERMS-V2)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Post-patch permissions.",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Manage on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response patchPermissions(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+    }
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Manage, caller);
+    if (gate != null) return gate;
+    Long id = resolved.get().container().getId();
+    var existing = permissionsService.getPermissionsOfEntityOptional(id);
+    if (existing.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    // Merge-patch: apply only the fields present in the body onto the current PermissionsIO
+    PermissionsIO current = new PermissionsIO(existing.get());
+    Map<String, Object> patch = JsonNodeMaps.toMap(body);
+    if (patch.containsKey("permissionType")) {
+      var pt = patch.get("permissionType");
+      if (pt instanceof String ptStr) {
+        current.setPermissionType(de.dlr.shepard.common.util.PermissionType.valueOf(ptStr));
+      }
+    }
+    if (patch.containsKey("owner") && patch.get("owner") instanceof String ownerStr) {
+      current.setOwner(ownerStr);
+    }
+    if (patch.containsKey("reader") && patch.get("reader") instanceof java.util.List<?> readerList) {
+      current.setReader(readerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("writer") && patch.get("writer") instanceof java.util.List<?> writerList) {
+      current.setWriter(writerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("manager") && patch.get("manager") instanceof java.util.List<?> managerList) {
+      current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
+      current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    }
+    if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
+      current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    }
+    var updated = permissionsService.updatePermissionsByNeo4jId(current, id);
+    return Response.ok(new PermissionsIO(updated)).build();
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────
