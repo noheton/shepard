@@ -1199,6 +1199,26 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          V2CONV-A6 — `shepard-plugin-krl-interpreter`. Extracts the
+          KRL trajectory interpret subsystem from backend core into a
+          drop-in Tier-1 plugin JAR. The plugin carries:
+            * `KrlInterpreterPluginManifest` SPI entry → surfaces
+              `krl-interpreter` in `GET /v2/admin/plugins`.
+            * `KrlTrajectoryTransformExecutor` ServiceLoader SPI entry
+              → routes MAPPING_RECIPE materializations for the
+              KrlTrajectoryShape IRI.
+            * `KrlInterpreterConfig`, `KrlSidecarClient`,
+              `KrlTrajectoryService` CDI beans → discovered via
+              `quarkus.index-dependency.shepard-plugin-krl-interpreter.*`
+              in `application.properties`.
+          See aidocs/16 V2CONV-A6 + aidocs/platform/191 §3.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
           is added at **default (compile) scope** so Quarkus' Jandex
           composite index can resolve the `AdminCliCommandProvider`
