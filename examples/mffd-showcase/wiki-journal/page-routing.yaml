@@ -1,0 +1,59 @@
+# page-routing.yaml — routes Confluence journal pages to MFFD Collection targets.
+# Per aidocs/integrations/120-mffd-wiki-transformation.md §4.
+#
+# Keys are matched against the dump filename (case-insensitive substring) so the
+# routing survives the dump's `<slug>_<pageid>.html` / `<pageid>.html` naming.
+# `target` is a step-Collection slug (resolved to appId/v1Id at run time) or the
+# literal `mffd-project` for the umbrella. `role` is recorded as the entry's
+# urn:shepard:wiki:journal-role. `resolver` picks the per-entry target DO:
+#
+#   daily-log     — one daily-log-<date> DO under the target Collection
+#                   (fallback shape when W2 tracks aren't ingested yet, §4.1).
+#   fixed         — every entry lands on a single `fixed_do` DO.
+#
+# `fixed_do` names the DO under the target Collection (created idempotently).
+# `annotations` injects step-specific tags onto every emitted entry.
+# `lang` sets urn:shepard:lang on every emitted entry (most pages are German).
+
+routes:
+  - match: "Legetagebuch"
+    target: mffd-afp-tapelaying
+    role: shift-protocol
+    resolver: daily-log
+    lang: de
+
+  - match: "Legeplan"
+    target: mffd-afp-tapelaying
+    role: step-log
+    resolver: daily-log
+    lang: de
+
+  - match: "Materialinfo"
+    target: mffd-afp-tapelaying
+    role: material-withdrawal
+    resolver: fixed
+    fixed_do: "material-batch-226368"
+    annotations:
+      "urn:shepard:material:batch": "226368"
+    lang: de
+
+  - match: "Laser-Integration"
+    target: mffd-cell
+    role: integration-trial
+    resolver: fixed
+    fixed_do: "cell-overview"
+    lang: de
+
+  - match: "Schichtplan"
+    target: mffd-project
+    role: shift-schedule
+    resolver: fixed
+    fixed_do: "programme-overview"
+    lang: de
+
+  - match: "Versuchlog"
+    target: mffd-project
+    role: test-plate-experiment
+    resolver: fixed
+    fixed_do: "programme-overview"
+    lang: de
