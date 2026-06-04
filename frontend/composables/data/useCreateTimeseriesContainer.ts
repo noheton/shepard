@@ -3,25 +3,27 @@ import {
   type PermissionType,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { createV2Container } from "../container/createV2Container";
 
+/**
+ * V2CONV-A3: container creation now goes through the unified
+ * `POST /v2/containers?kind=timeseries` surface (hand-written fetch via
+ * {@link createV2Container}; the generated client has no ContainersV2Api yet).
+ * The permission setup still uses the v1 TimeseriesContainerApi keyed by the
+ * numeric `id` resolved from the created v2 container — there is no `/v2/`
+ * container-permission endpoint yet (CONTAINER-PERMS-V2 in aidocs/16).
+ */
 export async function useCreateTimeseriesContainer(
   timeseriesContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = useShepardApi(TimeseriesContainerApi);
-
-  const newTimeseriesContainer = await api.value
-    .createTimeseriesContainer({
-      timeseriesContainer: { name: timeseriesContainerName },
-    })
-    .then(response => {
-      return response;
-    })
-    .catch(error => {
-      handleError(error, "createTimeseriesContainer");
-      return undefined;
-    });
+  const newTimeseriesContainer = await createV2Container(
+    "timeseries",
+    timeseriesContainerName,
+  );
   if (!newTimeseriesContainer) return;
+
+  const api = useShepardApi(TimeseriesContainerApi);
 
   const currentPermissions = await api.value
     .getTimeseriesPermissions({
