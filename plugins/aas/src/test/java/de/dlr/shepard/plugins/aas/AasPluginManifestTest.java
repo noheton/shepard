@@ -3,6 +3,7 @@ package de.dlr.shepard.plugins.aas;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.plugin.AbstractPluginManifestTest;
+import de.dlr.shepard.plugin.RestNamespaceContributor;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -48,5 +49,12 @@ class AasPluginManifestTest extends AbstractPluginManifestTest<AasPluginManifest
   void onRegisterAndUnregister_areNoOps() {
     manifest().onRegister(null);
     manifest().onUnregister(null);
+  }
+
+  @Test
+  void isRestNamespaceContributor_owningV2Aas() {
+    AasPluginManifest m = manifest();
+    assertThat(m).isInstanceOf(RestNamespaceContributor.class);
+    assertThat(m.ownedRestPathPrefixes()).containsExactly("/v2/aas");
   }
 }
