@@ -38,10 +38,11 @@ public final class AasPluginManifest implements PluginManifest, RestNamespaceCon
   private static final String ID = "aas";
 
   /**
-   * The owned REST namespace prefix — covers {@code /v2/aas/shells/...} and the
-   * {@code /v2/aas/.well-known/aas-server} self-description endpoint.
+   * The owned REST namespace prefixes — covers {@code /v2/aas/shells/...},
+   * {@code /v2/aas/.well-known/aas-server}, and the admin paths under
+   * {@code /v2/admin/aas/...} (IDTA template import + registry sync).
    */
-  private static final Set<String> OWNED_PREFIXES = Set.of("/v2/aas");
+  private static final Set<String> OWNED_PREFIXES = Set.of("/v2/aas", "/v2/admin/aas");
   private static final String VERSION = "6.0.0-SNAPSHOT";
   private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
   private static final String TITLE = "Asset Administration Shell (IDTA)";

@@ -1,12 +1,8 @@
 package de.dlr.shepard.plugin;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,28 +23,28 @@ import java.util.function.BooleanSupplier;
  *       strips the disabled prefix's paths from the served OpenAPI v2 shelf.</li>
  * </ul>
  *
- * <p>The registry holds <em>entries</em>, each pairing an owner id with the prefixes
- * it owns and a {@link BooleanSupplier} that answers "is this owner enabled right
- * now?". Entries come from two sources, both gathered at startup:
+ * <p>The registry has two namespace sources, both consulted at every call to
+ * {@link #disabledPrefixes()} / {@link #disabledPrefixFor(String)}:
  *
  * <ol>
  *   <li><b>Plugin manifests implementing {@link RestNamespaceContributor}.</b>
- *       Enabled-state reads {@link PluginRegistry#isEnabled(String)} keyed on the
- *       manifest id — so a runtime {@code PATCH /v2/admin/plugins/{id}} flip is
- *       reflected immediately. This is the AAS shape.</li>
+ *       Queried live from {@link PluginRegistry#list()} on every call — no startup
+ *       caching — so there is no dependency on CDI observer priority ordering.
+ *       Enabled-state is read via {@link PluginRegistry#isEnabled(String)}.</li>
  *   <li><b>Core-registered contributors</b> bound to a feature toggle's own runtime
  *       flag via {@link #registerCoreContributor(String, Set, BooleanSupplier)} — the
  *       Jupyter shape, where the REST lives in core and is gated by
- *       {@code :JupyterConfig}.</li>
+ *       {@code :JupyterConfig.enabled}.</li>
  * </ol>
  *
  * <p><strong>Fail-soft</strong> (matches the repo's "registries are fail-soft" rule):
- * if an enabled-state supplier throws, the registry treats the namespace as ENABLED
- * (allow) and logs a WARN — a registry hiccup must never 404 a working endpoint.
+ * if an enabled-state supplier or prefix declaration throws, the registry treats the
+ * namespace as ENABLED (allow) and logs a WARN — a registry hiccup must never 404 a
+ * working endpoint.
  *
- * <p>The filter logic never hard-codes "aas"/"jupyter" — the allowlist is exactly the
- * set of registered contributors, which is determined by which modules implement the
- * marker / call {@link #registerCoreContributor}.
+ * <p>The filter logic never hard-codes "aas"/"jupyter" — the allowlist is entirely
+ * data-driven: plugin contributors discovered via the {@link PluginRegistry} plus core
+ * contributors registered at startup via {@link #registerCoreContributor}.
  */
 @ApplicationScoped
 public class RestNamespaceRegistry {
@@ -57,8 +53,12 @@ public class RestNamespaceRegistry {
   static final String FORBIDDEN_ROOT = "/v2";
 
   /**
-   * One owned-namespace declaration: an owner id, the prefixes it owns, and a way to
-   * read whether the owner is enabled at call time. Package-private for tests.
+   * One core-owned-namespace declaration: an owner id, the prefixes it owns, and a way
+   * to read whether the owner is enabled at call time. Package-private for tests.
+   *
+   * <p>Used only for core contributors (Jupyter etc. registered via
+   * {@link #registerCoreContributor}). Plugin contributors are queried live from the
+   * {@link PluginRegistry} instead of being pre-registered in this map.
    */
   static final class Entry {
 
@@ -90,49 +90,8 @@ public class RestNamespaceRegistry {
   @Inject
   PluginRegistry pluginRegistry;
 
-  /** Keyed by owner id; insertion-ordered for stable iteration / logging. */
-  private final Map<String, Entry> entries = new LinkedHashMap<>();
-
-  /**
-   * Gather plugin-manifest contributors at startup. Priority APPLICATION+100 so this
-   * fires after {@link PluginRegistry#onStart} (default APPLICATION priority) has
-   * completed discovery — same ordering trick as {@link PluginPublicPathRegistrar}.
-   *
-   * <p>Core-registered contributors (Jupyter) are added by their own startup hook
-   * calling {@link #registerCoreContributor}; order between the two sources is
-   * irrelevant since each entry is keyed by a distinct owner id.
-   */
-  void onStart(@Observes @Priority(Interceptor.Priority.APPLICATION + 100) StartupEvent event) {
-    registerPluginContributors();
-  }
-
-  /**
-   * Discover every {@link PluginManifest} that also implements
-   * {@link RestNamespaceContributor} and register an entry whose enabled-state reads
-   * the plugin registry. Package-private so tests can drive it after staging a
-   * registry state.
-   */
-  void registerPluginContributors() {
-    for (PluginEntry entry : pluginRegistry.list()) {
-      PluginManifest manifest = entry.manifest();
-      if (!(manifest instanceof RestNamespaceContributor contributor)) {
-        continue;
-      }
-      Set<String> prefixes;
-      try {
-        prefixes = sanitise(entry.id(), contributor.ownedRestPathPrefixes());
-      } catch (RuntimeException ex) {
-        Log.warnf(ex, "V2CONV-A5: plugin '%s' ownedRestPathPrefixes() threw — skipping", entry.id());
-        continue;
-      }
-      if (prefixes.isEmpty()) {
-        continue;
-      }
-      String id = entry.id();
-      register(new Entry(id, prefixes, () -> pluginRegistry.isEnabled(id)));
-      Log.infof("V2CONV-A5: plugin '%s' owns REST namespace(s) %s (gated by plugin enabled-state)", id, prefixes);
-    }
-  }
+  /** Core contributors only — keyed by owner id; insertion-ordered for stable iteration. */
+  private final Map<String, Entry> coreEntries = new LinkedHashMap<>();
 
   /**
    * Register a core-owned namespace contributor whose enabled-state is read from a
@@ -156,12 +115,8 @@ public class RestNamespaceRegistry {
       Log.warnf("V2CONV-A5: core contributor '%s' declared no valid prefixes — ignored", ownerId);
       return;
     }
-    register(new Entry(ownerId, prefixes, enabled));
+    coreEntries.put(ownerId, new Entry(ownerId, prefixes, enabled));
     Log.infof("V2CONV-A5: core surface '%s' owns REST namespace(s) %s (gated by feature toggle)", ownerId, prefixes);
-  }
-
-  private void register(Entry entry) {
-    entries.put(entry.ownerId, entry);
   }
 
   /**
@@ -198,12 +153,37 @@ public class RestNamespaceRegistry {
    * The set of owned prefixes whose owner is currently <em>disabled</em>. Computed on
    * each call so a runtime toggle flip is reflected without a restart. Empty when every
    * owned namespace is enabled (the common case).
+   *
+   * <p>Consults both core contributors (registered via {@link #registerCoreContributor})
+   * and plugin contributors (queried live from the {@link PluginRegistry}) on every call.
    */
   public List<String> disabledPrefixes() {
     List<String> out = new ArrayList<>();
-    for (Entry e : entries.values()) {
+    // Core contributors
+    for (Entry e : coreEntries.values()) {
       if (!e.isEnabled()) {
         out.addAll(e.prefixes);
+      }
+    }
+    // Plugin contributors — queried live to avoid startup-ordering issues
+    for (PluginEntry pe : pluginRegistry.list()) {
+      if (!(pe.manifest() instanceof RestNamespaceContributor c)) {
+        continue;
+      }
+      boolean enabled;
+      try {
+        enabled = pluginRegistry.isEnabled(pe.id());
+      } catch (RuntimeException ex) {
+        Log.warnf(ex, "V2CONV-A5: isEnabled('%s') threw — treating as ENABLED (fail-soft allow)", pe.id());
+        continue;
+      }
+      if (enabled) {
+        continue;
+      }
+      try {
+        out.addAll(sanitise(pe.id(), c.ownedRestPathPrefixes()));
+      } catch (RuntimeException ex) {
+        Log.warnf(ex, "V2CONV-A5: plugin '%s' ownedRestPathPrefixes() threw — treating as enabled (fail-soft)", pe.id());
       }
     }
     return out;
@@ -220,11 +200,40 @@ public class RestNamespaceRegistry {
     if (appPath == null || appPath.isEmpty()) {
       return Optional.empty();
     }
-    for (Entry e : entries.values()) {
+    // Core contributors
+    for (Entry e : coreEntries.values()) {
       if (e.isEnabled()) {
         continue;
       }
       for (String prefix : e.prefixes) {
+        if (matchesPrefix(appPath, prefix)) {
+          return Optional.of(prefix);
+        }
+      }
+    }
+    // Plugin contributors — queried live
+    for (PluginEntry pe : pluginRegistry.list()) {
+      if (!(pe.manifest() instanceof RestNamespaceContributor c)) {
+        continue;
+      }
+      boolean enabled;
+      try {
+        enabled = pluginRegistry.isEnabled(pe.id());
+      } catch (RuntimeException ex) {
+        Log.warnf(ex, "V2CONV-A5: isEnabled('%s') threw — treating as ENABLED (fail-soft allow)", pe.id());
+        continue;
+      }
+      if (enabled) {
+        continue;
+      }
+      Set<String> prefixes;
+      try {
+        prefixes = sanitise(pe.id(), c.ownedRestPathPrefixes());
+      } catch (RuntimeException ex) {
+        Log.warnf(ex, "V2CONV-A5: plugin '%s' ownedRestPathPrefixes() threw — treating as enabled (fail-soft)", pe.id());
+        continue;
+      }
+      for (String prefix : prefixes) {
         if (matchesPrefix(appPath, prefix)) {
           return Optional.of(prefix);
         }
@@ -252,8 +261,8 @@ public class RestNamespaceRegistry {
     return path.charAt(prefix.length()) == '/';
   }
 
-  /** Test-only: clear all registrations. */
+  /** Test-only: clear all core registrations. Plugin registrations are always live from PluginRegistry. */
   void reset() {
-    entries.clear();
+    coreEntries.clear();
   }
 }
