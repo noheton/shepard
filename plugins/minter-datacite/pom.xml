@@ -166,6 +166,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-fileformat-svdx</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
 </exclusions>
     </dependency>
 
@@ -234,6 +238,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-fileformat-svdx</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
 </exclusions>
     </dependency>
     <dependency>
@@ -295,6 +303,10 @@
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
         </exclusion>
 </exclusions>
     </dependency>

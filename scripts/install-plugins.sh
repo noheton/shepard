@@ -82,6 +82,7 @@ cli_testjar_stub
 # SvdxIngestRest + SvdxCsvIngestionService and depends on the backend provided dep.
 for p in \
   fileformat-svdx \
+  fileformat-cad \
   minter-local minter-datacite minter-epic \
   unhide kip hdf5 git file-s3 aas importer \
   spatiotemporal wiki-writer analytics-ts

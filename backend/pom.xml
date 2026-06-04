@@ -1228,6 +1228,18 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          CAD file format metadata parser — STEP ISO 10303-21, Dassault 3DXML,
+          JT (ISO 14306) detection, OBJ mesh statistics. Emits
+          urn:shepard:cad:* + urn:shepard:mffd:cad:* annotations on upload.
+          No REST endpoints in phase 1; PluginManifest SPI entry surfaces the
+          plugin in GET /v2/admin/plugins. See plugins/fileformat-cad/docs/.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
           is added at **default (compile) scope** so Quarkus' Jandex
           composite index can resolve the `AdminCliCommandProvider`
