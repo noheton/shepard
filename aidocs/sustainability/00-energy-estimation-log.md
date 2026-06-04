@@ -397,6 +397,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `1e609f7ef` | 2026-05-26 | code | 22k | 7k | 2.39 | 0 | 2 | 4.39 | 1.59 | LOW | fix(frontend): UX-ERR-STATE-COLLECTION-MISSING + UX-PAGE-SHELL-RESPONSIVE-WIDTH — NotFoundPanel, PageShell, isError on useFetchCollection, 6 pages updated |
 | `791a10209` | 2026-05-26 | code | 30k | 8k | 7.98 | 10 | 2 | 19.98 | 7.25 | LOW | feat(ux): UX-DOPANEL-TOTAL-COUNT — Content-Range + X-Total-Count headers, countByCollectionByShepardIds DAO, listDataObjectsWithCount client, "Showing X–Y of Z" + jump-to-page in CollectionDataObjectsPanel |
 | `41ec17f99` | 2026-05-26 | code | 18k | 5k | 2.20 | 0 | 2 | 4.20 | 1.52 | LOW | fix(ux): UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK — lazy DataObject map with 5-min TTL, three honest lineage empty states, NuxtLink row wrappers, 2 new Vitest test files |
+| V2CONV-B6 | 2026-06-04 | code | 40k | 14k | 4.6 | 25 | 4 | 33.6 | 12.2 | MEDIUM | feat(V2CONV-B6): visual template editor — `POST /v2/shapes/build` wrapping B1 `ShaclShapeBuilder`; `TemplateShapeEditor.vue` (palette→compose→live-preview→validate) + `useShapePalette`/`useShapeBuilder` + `utils/templateShapeDsl.ts`; 9 backend + Vitest helper tests; one full `mvn verify` run |
 
 ---
 

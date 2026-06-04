@@ -56,7 +56,7 @@ public class ShaclShapeBuilder {
   static final String XSD_STRING = XSD + "string";
 
   /** Default IRI minted for an anonymous shape so output stays blank-node-free. */
-  static final String DEFAULT_SHAPE_IRI = "urn:shepard:shape:anonymous";
+  public static final String DEFAULT_SHAPE_IRI = "urn:shepard:shape:anonymous";
 
   /**
    * Compile a {@link ShapeSpec} to canonical SHACL Turtle.
