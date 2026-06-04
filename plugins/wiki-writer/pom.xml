@@ -143,7 +143,15 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-ai</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <!-- Quarkus runtime types used in plugin source. -->

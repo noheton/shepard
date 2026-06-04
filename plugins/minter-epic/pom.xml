@@ -157,7 +157,15 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-importer</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <dependency>
@@ -217,7 +225,15 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-minter-epic</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
     <dependency>
       <groupId>info.picocli</groupId>
@@ -271,7 +287,15 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-minter-epic</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
   </dependencies>
 

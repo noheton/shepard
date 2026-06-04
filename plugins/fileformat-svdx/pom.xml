@@ -1,39 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  shepard-plugin-fileformat-svdx — Beckhoff TwinCAT Scope (.svdx) tier-1 parser
+  shepard-plugin-fileformat-svdx — Beckhoff TwinCAT Scope (.svdx) ingest plugin
 
-  STANDALONE MODULE. This pom is deliberately NOT wired into
-  /opt/shepard/plugins/pom.xml or /opt/shepard/backend/pom.xml — the
-  main aggregator build is currently wedged on a Quarkus/Jandex
-  CompositeIndex.getClassByName infinite-loop hang, and pulling this
-  module into the aggregator would make that worse. See the sibling
-  fileformat-thermography and fileformat-robotics poms for the same
-  constraint.
+  V2CONV-A6 — upgraded from Tier-0 (standalone pure-Java parser) to Tier-1
+  (backend dep) by moving SvdxIngestRest + SvdxCsvIngestionService + IOs
+  into this plugin, dissolving the bespoke in-core /v2/svdx/ surface.
 
-  Build:
-    cd plugins/fileformat-svdx && mvn package
+  The plugin carries:
+    * Pure-Java format-detection + parsing tier (Tier-0 heritage):
+        SvdxBinaryParser, SvdxManifestParser, SvdxManifestExtractor,
+        TcScopeCsvParser, SvdxEnvelope, SvdxManifest, SvdxAnnotations.
+    * SvdxPluginManifest — PluginManifest SPI entry; surfaces
+        `fileformat-svdx` in `GET /v2/admin/plugins`.
+    * META-INF/services/de.dlr.shepard.plugin.PluginManifest pointing
+        at the manifest class.
+    * SvdxIngestRest — JAX-RS @Path /v2/svdx resource; picked up by
+        Quarkus build-time CDI scanner via quarkus.index-dependency entry
+        in application.properties.
+    * SvdxCsvIngestionService — @ApplicationScoped service; same CDI discovery.
+    * SvdxIngestRequest/ResponseIO — Lombok @Data Jackson IO records.
 
-  Aggregator wire-up is a follow-up row (MFFD-PLUGIN-SVDX-WIRE-1)
-  deferred until the Jandex hang in backend is resolved.
+  Build order (Tier-1 two-pass — same as every plugin that has backend dep):
 
-  Tier-1 scope (MFFD-PLUGIN-SVDX-1, this commit):
-    - Detect .svdx magic envelope (bytes 8-15 carry the TwinCAT Scope
-      format-version stamp 0xXX 0x96 0x0c 0x00…)
-    - Decode bytes 0-7 as uint64 LE pointing 3 bytes before the
-      embedded XML manifest (verified across 21 real DLR MFFD AFP
-      ultrasonic-spot-welding files from 2023-03-20)
-    - Parse the trailing XML <ScopeProject> manifest using javax.xml.stream
-      (StAX streaming, no DOM, no schema validation)
-    - Emit SemanticAnnotations under urn:shepard:svdx:* on the parent
-      FileReference (projectGuid, dataPoolGuid, mainServer, recordTime,
-      autoSaveMode, channelCount, channelNames[], symbolNames[],
-      dataTypes[], amsNetId, port, companionCsv when a sibling .csv
-      is detected in the same FileContainer)
-    - NO sample-block parsing (binary layout proprietary and
-      undocumented by Beckhoff; deferred to MFFD-PLUGIN-SVDX-BINARY-PARSER-1)
-    - NO TimeseriesReference creation (the canonical ingestion path
-      is the operator-driven CSV export from TwinCAT Scope Export
-      Tool; deferred to MFFD-PLUGIN-SVDX-CSV-INGEST-1)
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/fileformat-svdx && mvn -DnoPlugins -DskipTests install
+    $ cd backend && mvn package
+
+  See plugins/fileformat-svdx/docs/reference.md for the operator runbook
+  and aidocs/platform/191-v2-surface-convergence.md §3 for the extraction
+  rationale.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -42,24 +37,19 @@
 
   <groupId>de.dlr.shepard.plugins</groupId>
   <artifactId>shepard-plugin-fileformat-svdx</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — fileformat svdx (Beckhoff TwinCAT Scope tier-1)</name>
+  <name>shepard plugin — fileformat svdx (Beckhoff TwinCAT Scope ingest)</name>
   <description>
-    Tier-1 manifest-extraction parser for Beckhoff TwinCAT Scope project
-    files (.svdx) from the MFFD upper-shell ultrasonic spot-welding
-    campaign at DLR ZLP Augsburg. Decodes the 16-byte envelope header,
-    locates the trailing XML manifest via a uint64 LE pointer, and
-    parses the manifest with StAX to emit urn:shepard:svdx:*
-    SemanticAnnotations (projectGuid, channelCount, symbolNames, etc.)
-    on the parent FileReference. The proprietary binary sample layout
-    is NOT decoded — Beckhoff publishes no spec for it; the existing
-    pytcs community project explicitly works on CSV/TXT exports only.
-    Sample-level ingestion is the operator-driven CSV path
-    (MFFD-PLUGIN-SVDX-CSV-INGEST-1) or future binary RE
-    (MFFD-PLUGIN-SVDX-BINARY-PARSER-1).
+    Beckhoff TwinCAT Scope project file (.svdx) parser and ingest plugin.
+    Decodes the 16-byte binary envelope, extracts the trailing XML manifest,
+    and emits urn:shepard:svdx:* SemanticAnnotations on upload. The paired
+    CSV sibling (TwinCAT Scope Export Tool output) is ingested into
+    TimescaleDB via POST /v2/svdx/ingest. Extracted from backend core per
+    V2CONV-A6 (aidocs/platform/191 §3 — core→plugin extractions).
   </description>
+  <url>https://github.com/noheton/shepard</url>
 
   <organization>
     <name>DLR e.V.</name>
@@ -74,24 +64,264 @@
   </licenses>
 
   <properties>
+    <revision>6.0.0-SNAPSHOT</revision>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <compiler-plugin.version>3.13.0</compiler-plugin.version>
-    <surefire-plugin.version>3.5.2</surefire-plugin.version>
-
-    <junit.version>5.11.4</junit.version>
-    <assertj.version>3.27.3</assertj.version>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <lombok.version>1.18.44</lombok.version>
+    <junit.version>5.10.5</junit.version>
+    <assertj.version>3.27.7</assertj.version>
   </properties>
 
-  <dependencies>
-    <!-- No runtime deps beyond the JDK: javax.xml.stream (StAX) is
-         built into the JDK; java.nio.ByteBuffer handles the envelope
-         decode; java.nio.channels.SeekableByteChannel handles the
-         trailing-tail read without buffering the front section. -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
-    <!-- test scope only -->
+  <dependencies>
+    <!--
+      backend as provided — the plugin needs the backend's core types
+      (PluginManifest SPI, SingletonFileReferenceService, DataObjectDAO,
+      PermissionsService, TimeseriesService, TimeseriesContainerService,
+      TimeseriesReferenceService, common exceptions, etc.)
+      at compile time. `provided` means the plugin JAR does NOT bundle
+      backend.jar — at runtime the backend image carries its own classes.
+
+      Exclusions: prevent circular deps through the backend's `with-plugins`
+      profile. All plugins in that profile must be excluded here so Maven
+      does not pull them in transitively (via the test-jar dep, scope=test).
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-trace3d</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <!--
+          Self-exclusion: prevents the circular reference where backend's
+          with-plugins profile pulls shepard-plugin-fileformat-svdx back in,
+          causing a "Could not find artifact" during plugin build.
+        -->
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Quarkus runtime types used in SvdxIngestRest + SvdxCsvIngestionService. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- JAX-RS API — @Path, @POST, @Context, etc. in SvdxIngestRest. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Jackson REST integration — serialize/deserialize IO records. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- MicroProfile OpenAPI — @Operation, @APIResponse, @RequestBody, @Tag, @Schema. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — @Data, @NoArgsConstructor, @AllArgsConstructor on IO classes. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Jackson — @JsonInclude on IO fields. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-trace3d</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -107,7 +337,7 @@
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-fileformat-svdx-${project.version}</finalName>
+    <finalName>shepard-plugin-fileformat-svdx-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -116,6 +346,13 @@
           <compilerArgs>
             <arg>-parameters</arg>
           </compilerArgs>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>

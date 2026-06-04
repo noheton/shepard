@@ -481,17 +481,6 @@
       <artifactId>imageio-tiff</artifactId>
       <version>3.10.1</version>
     </dependency>
-    <!-- MFFD-PLUGIN-SVDX-CSV-INGEST-1 — pure-Java TwinCAT Scope CSV/SVDX
-         parser, no Quarkus/CDI surface, so it does not contribute to
-         the Jandex hang. The backend invokes the parser directly from
-         the v2 svdx ingestion service; the plugin's SPI shim stays
-         unused until the wire-up row (MFFD-PLUGIN-SVDX-WIRE-1) clears
-         the Jandex regression. -->
-    <dependency>
-      <groupId>de.dlr.shepard.plugins</groupId>
-      <artifactId>shepard-plugin-fileformat-svdx</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
-    </dependency>
     <!-- OTVIS-VIEWER — pure-Java Edevis OTvis tier-2 frame extractor
          (OTvisFrameExtractor + value objects). No Quarkus/CDI surface, so
          like the svdx parser it does NOT contribute to the Jandex hang
@@ -1216,6 +1205,26 @@
         <dependency>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-krl-interpreter</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          V2CONV-A6 — `shepard-plugin-fileformat-svdx`. Upgraded from Tier-0
+          (standalone pure-Java parser, always-on backend compile dep) to
+          Tier-1 (backend dep, with-plugins profile). The plugin now carries:
+            * SvdxIngestRest    — @Path /v2/svdx REST resource
+            * SvdxCsvIngestionService — @ApplicationScoped CDI bean
+            * SvdxIngestRequest/ResponseIO — Lombok IO records
+            * SvdxPluginManifest — surfaces `fileformat-svdx` in
+                `GET /v2/admin/plugins`.
+          CDI beans discovered via
+          `quarkus.index-dependency.shepard-plugin-fileformat-svdx.*`
+          in `application.properties`. Dissolves the bespoke in-core
+          `de.dlr.shepard.v2.svdx.*` surface (V2CONV-A6).
+          See aidocs/16 V2CONV-A6 + aidocs/platform/191 §3.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
           <version>${revision}</version>
         </dependency>
         <!--

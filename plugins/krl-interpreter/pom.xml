@@ -179,6 +179,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-vis-trace3d</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
         <!--
           Self-exclusion: prevents the circular reference where backend's
           with-plugins profile pulls shepard-plugin-krl-interpreter back in,
@@ -188,7 +192,11 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-krl-interpreter</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <!-- Quarkus runtime types used in plugin source. -->
@@ -287,6 +295,10 @@
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-vis-trace3d</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>

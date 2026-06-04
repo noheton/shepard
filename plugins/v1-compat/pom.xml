@@ -174,7 +174,15 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-v1-compat</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <!-- Quarkus runtime — REST, CDI, validation. -->
