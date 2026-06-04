@@ -40,4 +40,66 @@ if (!fs.existsSync(distDest) && fs.existsSync(distSrc)) {
   console.info("[patch-output] copied vue/dist/vue.cjs.js");
 }
 
+// ── SECURITY: pin Nitro-traced runtime deps to CVE-fixed versions ────────────
+//
+// Trivy flags HIGH `node-pkg` CVEs in two production deps Nitro traces into
+// `.output/server/node_modules`:
+//   - uuid 8.3.2   (pulled by next-auth)    → CVE-2026-41907  fixed in 11.1.1
+//   - devalue 5.6.3 (pulled by Nuxt/Nitro)  → CVE-2026-42570  fixed in 5.8.1
+//
+// We patch these in the built output rather than via a workspace `overrides`
+// block because npm 9 cannot apply a new override to the existing committed
+// lockfile without a full re-resolve, and that re-resolve drifts the dependency
+// hoisting enough to break Nuxt's auto-import type generation (vue-tsc then
+// reports ~95 spurious auto-import errors). Patching the output keeps the
+// committed lockfile byte-identical (zero typecheck drift) while shipping the
+// fixed bytes. Both packages keep a backward-compatible public API for the call
+// sites in use (next-auth's `uuid.v4()`, Nitro's devalue `stringify`/`parse`),
+// so the drop-in swap is safe. Revisit and migrate to `overrides` on the next
+// npm / Nuxt major that re-resolves the lockfile anyway (FRONTEND-IMAGE-CVE).
+const { execFileSync } = await import("node:child_process");
+const os = await import("node:os");
+
+const SECURITY_PINS = [
+  { name: "uuid", version: "11.1.1" },
+  { name: "devalue", version: "5.8.1" },
+];
+
+const outputNodeModules = path.resolve(__dirname, "../.output/server/node_modules");
+
+for (const { name, version } of SECURITY_PINS) {
+  const dest = path.join(outputNodeModules, name);
+  if (!fs.existsSync(dest)) {
+    // Nitro did not trace this package into the bundle — nothing to patch.
+    console.info(`[patch-output] ${name} not in output bundle — skipping security pin`);
+    continue;
+  }
+
+  const current = JSON.parse(fs.readFileSync(path.join(dest, "package.json"), "utf8")).version;
+  if (current === version) {
+    console.info(`[patch-output] ${name}@${version} already pinned`);
+    continue;
+  }
+
+  // Fetch the fixed tarball from the same registry npm install uses, extract it,
+  // and replace the traced copy in-place.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `pin-${name}-`));
+  try {
+    const packed = execFileSync("npm", ["pack", `${name}@${version}`, "--silent", "--pack-destination", tmp], {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .pop();
+    execFileSync("tar", ["-xzf", path.join(tmp, packed), "-C", tmp]);
+    const extracted = path.join(tmp, "package");
+    fs.rmSync(dest, { recursive: true, force: true });
+    fs.cpSync(extracted, dest, { recursive: true });
+    console.info(`[patch-output] pinned ${name} ${current} → ${version} (CVE fix)`);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 console.info("[patch-output] done");
