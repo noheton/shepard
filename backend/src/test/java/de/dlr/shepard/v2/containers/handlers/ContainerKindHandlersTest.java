@@ -14,6 +14,9 @@ import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.services.FileContainerService;
+import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
+import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
+import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
@@ -48,6 +51,12 @@ class ContainerKindHandlersTest {
   TimeseriesContainerDAO tsDao;
 
   @Mock
+  StructuredDataContainerService sdService;
+
+  @Mock
+  StructuredDataContainerDAO sdDao;
+
+  @Mock
   UserService userService;
 
   @Mock
@@ -55,6 +64,7 @@ class ContainerKindHandlersTest {
 
   FileContainerKindHandler fileHandler;
   TimeseriesContainerKindHandler tsHandler;
+  StructuredDataContainerKindHandler sdHandler;
 
   @BeforeEach
   void setUp() {
@@ -71,8 +81,22 @@ class ContainerKindHandlersTest {
     tsHandler.userService = userService;
     tsHandler.dateHelper = dateHelper;
 
+    sdHandler = new StructuredDataContainerKindHandler();
+    sdHandler.service = sdService;
+    sdHandler.dao = sdDao;
+    sdHandler.userService = userService;
+    sdHandler.dateHelper = dateHelper;
+
     when(userService.getCurrentUser()).thenReturn(new User());
     when(dateHelper.getDate()).thenReturn(new Date());
+  }
+
+  private StructuredDataContainer sdContainer(String appId) {
+    var c = new StructuredDataContainer(8L);
+    c.setAppId(appId);
+    c.setName("records");
+    c.setMongoId("mongo-sd");
+    return c;
   }
 
   private FileContainer fileContainer(String appId) {
@@ -84,7 +108,7 @@ class ContainerKindHandlersTest {
   }
 
   private TimeseriesContainer tsContainer(String appId) {
-    var c = new TimeseriesContainer();
+    var c = new TimeseriesContainer(7L);
     c.setAppId(appId);
     c.setName("telemetry");
     return c;
@@ -192,6 +216,114 @@ class ContainerKindHandlersTest {
     verify(tsService).createContainer(any());
   }
 
+  @Test
+  void ts_patch_rename_persists() {
+    var existing = tsContainer("ts-1");
+    when(tsDao.findByAppId("ts-1")).thenReturn(Optional.of(existing));
+    when(tsDao.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    var io = tsHandler.patch("ts-1", Map.of("name", "telemetry-v2"));
+    assertEquals("telemetry-v2", io.getName());
+    verify(tsDao).createOrUpdate(any());
+  }
+
+  @Test
+  void ts_delete_delegates() {
+    var existing = tsContainer("ts-1");
+    when(tsDao.findByAppId("ts-1")).thenReturn(Optional.of(existing));
+    tsHandler.delete("ts-1");
+    verify(tsService).deleteContainer(existing.getId());
+  }
+
+  @Test
+  void ts_delete_unknown_throwsNotFound() {
+    when(tsDao.findByAppId("missing")).thenReturn(Optional.empty());
+    assertThrows(NotFoundException.class, () -> tsHandler.delete("missing"));
+  }
+
+  @Test
+  void ts_list_returnsEnvelopes() {
+    when(tsService.getAllContainers(any())).thenReturn(List.of(tsContainer("ts-1")));
+    var out = tsHandler.list(null);
+    assertEquals(1, out.size());
+    assertEquals("timeseries", out.get(0).getKind());
+  }
+
+  @Test
+  void ts_findByAppId_skipsDeleted() {
+    var deleted = tsContainer("ts-del");
+    deleted.setDeleted(true);
+    when(tsDao.findByAppId("ts-del")).thenReturn(Optional.of(deleted));
+    org.junit.jupiter.api.Assertions.assertNull(tsHandler.findByAppId("ts-del"));
+  }
+
+  // ─── structured-data handler ────────────────────────────────────────────────
+
+  @Test
+  void sd_kindAndOwns() {
+    assertEquals("structured-data", sdHandler.kind());
+    assertTrue(sdHandler.owns(sdContainer("a")));
+    assertFalse(sdHandler.owns(fileContainer("b")));
+  }
+
+  @Test
+  void sd_toIO_projectsOid() {
+    var io = sdHandler.toIO(sdContainer("sd-1"));
+    assertEquals("structured-data", io.getKind());
+    assertEquals("mongo-sd", io.getPayload().get("oid"));
+  }
+
+  @Test
+  void sd_create_delegates() {
+    when(sdService.createContainer(any())).thenReturn(sdContainer("sd-new"));
+    var io = sdHandler.create(Map.of("name", "records"));
+    assertEquals("structured-data", io.getKind());
+    verify(sdService).createContainer(any());
+  }
+
+  @Test
+  void sd_patch_rename_persists() {
+    var existing = sdContainer("sd-1");
+    when(sdDao.findByAppId("sd-1")).thenReturn(Optional.of(existing));
+    when(sdDao.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    var io = sdHandler.patch("sd-1", Map.of("name", "records-v2"));
+    assertEquals("records-v2", io.getName());
+  }
+
+  @Test
+  void sd_patch_unknown_throwsNotFound() {
+    when(sdDao.findByAppId("missing")).thenReturn(Optional.empty());
+    assertThrows(NotFoundException.class, () -> sdHandler.patch("missing", Map.of("name", "x")));
+  }
+
+  @Test
+  void sd_delete_delegates() {
+    var existing = sdContainer("sd-1");
+    when(sdDao.findByAppId("sd-1")).thenReturn(Optional.of(existing));
+    sdHandler.delete("sd-1");
+    verify(sdService).deleteContainer(existing.getId());
+  }
+
+  @Test
+  void sd_delete_unknown_throwsNotFound() {
+    when(sdDao.findByAppId("missing")).thenReturn(Optional.empty());
+    assertThrows(NotFoundException.class, () -> sdHandler.delete("missing"));
+  }
+
+  @Test
+  void sd_list_filtersByName() {
+    when(sdService.getAllContainers(any())).thenReturn(List.of(sdContainer("sd-1")));
+    var out = sdHandler.list("rec");
+    assertEquals(1, out.size());
+    assertEquals("structured-data", out.get(0).getKind());
+  }
+
+  @Test
+  void sd_findByAppId_resolves() {
+    var existing = sdContainer("sd-1");
+    when(sdDao.findByAppId("sd-1")).thenReturn(Optional.of(existing));
+    org.junit.jupiter.api.Assertions.assertEquals(existing, sdHandler.findByAppId("sd-1"));
+  }
+
   // ─── patch support validation ──────────────────────────────────────────────
 
   @Test
@@ -211,5 +343,56 @@ class ContainerKindHandlersTest {
     when(fileDao.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
     var io = fileHandler.patch("file-1", Map.of("status", "ARCHIVED"));
     assertEquals("ARCHIVED", io.getStatus());
+  }
+
+  @Test
+  void patchSupport_blankNameInPatch_throws() {
+    var existing = fileContainer("file-1");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(existing));
+    var patch = new java.util.HashMap<String, Object>();
+    patch.put("name", "   ");
+    assertThrows(BadRequestException.class, () -> fileHandler.patch("file-1", patch));
+  }
+
+  @Test
+  void patchSupport_explicitNullName_throws() {
+    var existing = fileContainer("file-1");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(existing));
+    var patch = new java.util.HashMap<String, Object>();
+    patch.put("name", null);
+    assertThrows(BadRequestException.class, () -> fileHandler.patch("file-1", patch));
+  }
+
+  @Test
+  void patchSupport_clearStatusWithNull_persists() {
+    var existing = fileContainer("file-1");
+    existing.setStatus("READY");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(existing));
+    when(fileDao.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    var patch = new java.util.HashMap<String, Object>();
+    patch.put("status", null);
+    var io = fileHandler.patch("file-1", patch);
+    org.junit.jupiter.api.Assertions.assertNull(io.getStatus());
+  }
+
+  @Test
+  void patchSupport_emptyPatch_noPersist() {
+    var existing = fileContainer("file-1");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(existing));
+    var io = fileHandler.patch("file-1", Map.of());
+    assertEquals("scans", io.getName());
+    verify(fileDao, org.mockito.Mockito.never()).createOrUpdate(any());
+  }
+
+  @Test
+  void file_findByAppId_resolvesAndSkipsDeleted() {
+    var existing = fileContainer("file-1");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(existing));
+    assertEquals(existing, fileHandler.findByAppId("file-1"));
+
+    var deleted = fileContainer("file-del");
+    deleted.setDeleted(true);
+    when(fileDao.findByAppId("file-del")).thenReturn(Optional.of(deleted));
+    org.junit.jupiter.api.Assertions.assertNull(fileHandler.findByAppId("file-del"));
   }
 }
