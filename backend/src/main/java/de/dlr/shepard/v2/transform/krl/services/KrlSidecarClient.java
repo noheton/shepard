@@ -1,7 +1,7 @@
-package de.dlr.shepard.v2.krl.services;
+package de.dlr.shepard.v2.transform.krl.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.v2.krl.config.KrlInterpreterConfig;
+import de.dlr.shepard.v2.transform.krl.config.KrlInterpreterConfig;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;

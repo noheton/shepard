@@ -5,8 +5,14 @@ KRL the parser handles, how the IR is shaped, and how warnings /
 unsupported constructs surface.
 
 **Status.** KRL-INTERPRETER-02 (parser), KRL-INTERPRETER-03 (IK), and
-KRL-INTERPRETER-04 (sidecar) are shipped; the backend REST wiring
-(`/v2/krl/interpret`) lands in `-05`. See
+KRL-INTERPRETER-04 (sidecar) are shipped. The backend wiring has
+**converged into the generic MAPPING_RECIPE mechanism (V2CONV-B5, 2026-06-04)**:
+the bespoke `POST /v2/krl/interpret` endpoint was removed and KRL interpret is
+now a `KrlTrajectoryShape` MAPPING_RECIPE materialized via
+`POST /v2/mappings/{templateAppId}/materialize` (the in-tree
+`KrlTrajectoryTransformExecutor` reuses this sidecar unchanged). See
+[`docs/reference/krl-interpreter.md`](../../../docs/reference/krl-interpreter.md)
+for the converged surface and
 [`aidocs/integrations/117-krl-interpreter.md`](../../../aidocs/integrations/117-krl-interpreter.md)
 for the full system design.
 

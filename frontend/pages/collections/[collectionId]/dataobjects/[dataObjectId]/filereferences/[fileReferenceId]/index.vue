@@ -191,7 +191,7 @@ watch(fileReference, () => {
             </v-row>
             <v-row v-if="fileReference?.appId && dataObject?.appId">
               <v-col cols="12" class="d-flex flex-wrap ga-2">
-                <RunKrlPreviewButton
+                <InterpretAsTrajectoryButton
                   :file-reference="fileReference"
                   :collection-id="collectionId"
                   :data-object-id="dataObjectId"

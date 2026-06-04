@@ -1,4 +1,9 @@
 # V2CONV-B3 — built-in local-default TransformExecutor (identity transform).
-# Plugins add their own entries (KRL sidecar, scene-graph play, …) via their
-# own META-INF/services file on the classpath; ServiceLoader unions them.
+# Plugins add their own entries (e.g. scene-graph play) via their own
+# META-INF/services file on the classpath; ServiceLoader unions them.
 de.dlr.shepard.spi.transform.NoOpTransformExecutor
+# V2CONV-B5 — KRL interpret as a MAPPING_RECIPE transform (in-tree for now;
+# the full plugin extraction to plugins/krl-interpreter is deferred to
+# V2CONV-A6). Resolves .src + URDF FileReferences, invokes the KRL sidecar,
+# mints a derived joint-trajectory TimeseriesReference (REFERENCE result).
+de.dlr.shepard.v2.transform.krl.KrlTrajectoryTransformExecutor

@@ -2,7 +2,7 @@
  * DMP-DOWNLOAD-NAV-01 — unit tests for the DownloadDmpButton helpers.
  *
  * Mirrors the inline-helper test pattern used by EditFileReferenceDialog
- * and RunKrlPreviewButton. Tests the pure URL builder + filename
+ * (the inline-helper pattern). Tests the pure URL builder + filename
  * sanitiser without mounting Vue.
  */
 import { describe, it, expect } from "vitest";

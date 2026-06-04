@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.krl.config;
+package de.dlr.shepard.v2.transform.krl.config;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -12,10 +12,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * (admin REST + CLI parity, per the "Always: surface operator knobs in
  * the admin config" rule) is deferred to {@code KRL-CONFIG-1}.
  *
- * <p>The endpoint stays callable while the sidecar is down: requests
- * return {@code 502 Bad Gateway}; that's the documented expected
- * behaviour and is verified by {@link
- * de.dlr.shepard.v2.krl.services.KrlInterpretServiceTest}.
+ * <p>V2CONV-B5: KRL interpret is now a MAPPING_RECIPE transform — the sidecar
+ * client is reused by {@code KrlTrajectoryTransformExecutor}. Materialize stays
+ * callable while the sidecar is down: the executor surfaces a recoverable 4xx
+ * transform error rather than failing the whole instance.
  *
  * <h2>Keys</h2>
  * <ul>
