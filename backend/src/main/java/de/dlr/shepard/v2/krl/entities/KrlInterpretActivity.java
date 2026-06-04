@@ -55,9 +55,10 @@ public class KrlInterpretActivity extends Activity {
   private String urdfFileAppId;
 
   /**
-   * Optional appId of the {@code :DigitalTwinScene} the interpret was
-   * driven against. {@code null} when the caller supplied frames
-   * directly.
+   * Optional appId of a scene context the interpret was driven against
+   * (historically a {@code :DigitalTwinScene}; post V2CONV-B4 a MAPPING_RECIPE
+   * scene-graph-play template appId — KRL's own scene binding converges in
+   * V2CONV-B5). {@code null} when the caller supplied frames directly.
    */
   @Property("sceneAppId")
   private String sceneAppId;

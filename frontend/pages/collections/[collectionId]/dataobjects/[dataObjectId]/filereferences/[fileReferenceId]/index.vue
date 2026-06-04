@@ -199,7 +199,7 @@ watch(fileReference, () => {
                   :data-object-path="collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId"
                   :can-edit="!!isAllowedToEditCollection"
                 />
-                <OpenInSceneGraphButton
+                <OpenIn3dViewButton
                   :file-reference-name="fileReference.name"
                   :collection-id="collectionId"
                   :data-object-id="dataObjectId"

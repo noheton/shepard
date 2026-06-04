@@ -755,4 +755,67 @@ public class TestNeo4jMigrations {
     assertEquals(8, totalAfterRerun.intValue(),
       "V100 re-run must remain idempotent — no duplicate templates");
   }
+
+  /**
+   * V2CONV-B4 — V111 dissolves the bespoke scene-graph stored graph. Seeds a
+   * :DigitalTwinScene + :CoordinateFrame + :Joint plus two :Collection hero
+   * links (one at the scene, one at a non-scene template appId), runs V111, and
+   * asserts the nodes + constraints are gone, the scene-pointing link is
+   * cleared, the template-pointing link survives, and a re-run is a no-op.
+   */
+  @Test
+  public void testV111_B4DissolveScenegraph() {
+    runMigrations("V110");
+
+    String sceneAppId = "b4-scene-" + randomElement;
+    String templateAppId = "b4-template-" + randomElement;
+    String collWithScene = "b4-coll-scene-" + randomElement;
+    String collWithTemplate = "b4-coll-template-" + randomElement;
+
+    session.query(
+      "CREATE (s:DigitalTwinScene {appId: $s, name: 'sc'})"
+        + " CREATE (f:CoordinateFrame {appId: $s + '-f', name: 'base'})"
+        + " CREATE (j:Joint {appId: $s + '-j', name: 'j1'})"
+        + " CREATE (s)-[:HAS_FRAME]->(f)"
+        + " CREATE (s)-[:HAS_JOINT]->(j)"
+        + " CREATE (c1:Collection {appId: $c1, name: 'with-scene', sceneGraphAppId: $s})"
+        + " CREATE (c2:Collection {appId: $c2, name: 'with-template', sceneGraphAppId: $t})",
+      Map.of("s", sceneAppId, "t", templateAppId, "c1", collWithScene, "c2", collWithTemplate)
+    );
+
+    runMigrations("V111");
+
+    for (String label : new String[] { "DigitalTwinScene", "CoordinateFrame", "Joint" }) {
+      var count = (Number) session
+        .query("MATCH (n:" + label + ") RETURN count(n) AS c", Map.of())
+        .iterator().next().get("c");
+      assertEquals(0, count.intValue(), "V111 must DETACH DELETE all :" + label + " nodes");
+    }
+
+    for (String cn : new String[] {
+      "appId_unique_DigitalTwinScene", "appId_unique_CoordinateFrame", "appId_unique_Joint"
+    }) {
+      var count = (Number) session
+        .query("SHOW CONSTRAINTS YIELD name WHERE name = $cn RETURN count(*) AS c", Map.of("cn", cn))
+        .iterator().next().get("c");
+      assertEquals(0, count.intValue(), "V111 must drop the " + cn + " constraint");
+    }
+
+    var clearedSg = session
+      .query("MATCH (c:Collection {appId: $c1}) RETURN c.sceneGraphAppId AS sg", Map.of("c1", collWithScene))
+      .iterator().next().get("sg");
+    assertEquals(null, clearedSg, "V111 must clear sceneGraphAppId pointing at a deleted scene");
+
+    var keptSg = session
+      .query("MATCH (c:Collection {appId: $c2}) RETURN c.sceneGraphAppId AS sg", Map.of("c2", collWithTemplate))
+      .iterator().next().get("sg");
+    assertEquals(templateAppId, keptSg,
+      "V111 must NOT clear a hero link pointing at a MAPPING_RECIPE template appId");
+
+    runMigrations("V111");
+    var rerunCount = (Number) session
+      .query("MATCH (n:DigitalTwinScene) RETURN count(n) AS c", Map.of())
+      .iterator().next().get("c");
+    assertEquals(0, rerunCount.intValue(), "V111 re-run must stay a no-op");
+  }
 }
