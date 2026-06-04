@@ -78,7 +78,7 @@ export interface ShapeBuildRequest {
     datatype?: string | null;
     minCount?: number | null;
     maxCount?: number | null;
-    in?: { value: string; kind: "IRI" | "LITERAL"; datatype?: string | null }[];
+    in?: { value: string; kind: "IRI" | "LITERAL"; datatype?: string | null }[] | null;
     node?: string | null;
   }[];
 }

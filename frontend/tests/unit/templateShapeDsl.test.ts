@@ -48,11 +48,11 @@ describe("editorStateToBuildRequest", () => {
     expect(dsl.shapeIri).toBeNull();
     expect(dsl.targetClass).toBe(SHEPARD + "DataObject");
     expect(dsl.properties).toHaveLength(1);
-    expect(dsl.properties[0].path).toBe(SHEPARD + "name");
-    expect(dsl.properties[0].datatype).toBeNull();
-    expect(dsl.properties[0].node).toBeNull();
-    expect(dsl.properties[0].in).toBeNull();
-    expect(dsl.properties[0].minCount).toBe(1);
+    expect(dsl.properties[0]!.path).toBe(SHEPARD + "name");
+    expect(dsl.properties[0]!.datatype).toBeNull();
+    expect(dsl.properties[0]!.node).toBeNull();
+    expect(dsl.properties[0]!.in).toBeNull();
+    expect(dsl.properties[0]!.minCount).toBe(1);
   });
 
   it("encodes sh:in members, dropping the datatype for IRI kind", () => {
@@ -78,7 +78,7 @@ describe("editorStateToBuildRequest", () => {
     const dsl = editorStateToBuildRequest(state);
 
     expect(dsl.closed).toBe(true);
-    const members = dsl.properties[0].in!;
+    const members = dsl.properties[0]!.in!;
     expect(members).toHaveLength(2); // blank dropped
     expect(members[0]).toEqual({ value: "DRAFT", kind: "LITERAL", datatype: XSD + "string" });
     expect(members[1]).toEqual({ value: SHEPARD + "Term", kind: "IRI", datatype: null });
