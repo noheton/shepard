@@ -33,13 +33,23 @@ install_plugin() {
 }
 
 stub_install() {
-  # -Dmaven.test.skip=true (NOT -DskipTests): the backend's *test* sources
-  # reference plugin packages (git adapters, spatialdata model, …) that are
-  # absent under -DnoPlugins, so test COMPILATION — not just execution — must be
-  # skipped or the stub-install fails to compile. -DskipTests only skips
-  # execution, which is the bug that previously lurked in ci.yml's stub step.
+  # -Dmaven.test.skip=true (NOT -DskipTests): for modules whose test sources may
+  # reference packages absent under -DnoPlugins, test COMPILATION must be skipped.
   group "stub-install $1 (-DnoPlugins)"
   ( cd "$1" && "$MVN" -B -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q )
+  endgroup
+}
+
+backend_testjar_stub() {
+  # The 17 plugins test-depend on backend:jar:tests, so the test-jar must exist
+  # in ~/.m2 before they install. Building it needs test COMPILATION (-DskipTests,
+  # not -Dmaven.test.skip), but 4 backend test files reference in-plugin packages
+  # (git adapters / spatialdata) that aren't present under -DnoPlugins — a
+  # bootstrap cycle. The bootstrap-testjar profile (-DbootstrapTestjar, see
+  # backend/pom.xml) excludes those 4 from THIS compile; the real CI test run
+  # rebuilds + runs them with the plugins present.
+  group "stub-install backend + test-jar (-DnoPlugins -DbootstrapTestjar)"
+  ( cd backend && "$MVN" -B -DnoPlugins -DbootstrapTestjar -DskipTests -Dquarkus.build.skip=true install -q )
   endgroup
 }
 
@@ -51,8 +61,8 @@ stub_install() {
 install_plugin fileformat-svdx
 install_plugin fileformat-thermography
 
-# ── Backend + CLI stubs (no plugins) so the remaining plugins can compile ─────
-stub_install backend
+# ── Backend (with test-jar) + CLI stubs so the remaining plugins can compile ──
+backend_testjar_stub
 stub_install cli
 
 # ── Tier 1 — plugins that depend only on the backend stub ─────────────────────

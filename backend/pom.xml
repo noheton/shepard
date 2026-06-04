@@ -1200,5 +1200,38 @@
         </dependency>
       </dependencies>
     </profile>
+
+    <!--
+      bootstrap-testjar — produces backend:jar:tests WITHOUT the handful of test
+      sources that reference in-plugin packages (git adapters, spatialdata).
+      Those 4 tests can only compile once their plugins are on the classpath, but
+      the plugins themselves test-depend on backend:jar:tests — a bootstrap cycle.
+      scripts/install-plugins.sh activates this profile (-DbootstrapTestjar) to
+      build the test-jar first (excluding the 4), so the plugins can resolve it;
+      the real CI test run (no -DbootstrapTestjar, all plugins present) compiles
+      and runs all of them normally. Activated only when -DbootstrapTestjar is set.
+    -->
+    <profile>
+      <id>bootstrap-testjar</id>
+      <activation>
+        <property><name>bootstrapTestjar</name></property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>${compiler-plugin.version}</version>
+            <configuration>
+              <testExcludes>
+                <exclude>**/context/references/git/services/GitArtifactCacheQuarkusTest.java</exclude>
+                <exclude>**/data/model/GeometryBuilderTest.java</exclude>
+                <exclude>**/integrationtests/SpatialDataIT.java</exclude>
+                <exclude>**/integrationtests/SpatialDataReferenceIT.java</exclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
