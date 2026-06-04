@@ -34,7 +34,7 @@ describe("createV2Container", () => {
     const result = await createV2Container("file", "scans");
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toContain("/v2/containers?kind=file");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body)).toEqual({ name: "scans" });
@@ -51,7 +51,7 @@ describe("createV2Container", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await createV2Container("structured-data", "n");
-    const [url] = fetchMock.mock.calls[0];
+    const [url] = fetchMock.mock.calls[0]!;
     expect(url).toContain("kind=structured-data");
   });
 
@@ -83,7 +83,7 @@ describe("listV2Containers", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const out = await listV2Containers("file", "a");
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toContain("kind=file");
     expect(url).toContain("name=a");
     expect(init.method).toBe("GET");
@@ -98,7 +98,7 @@ describe("listV2Containers", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await listV2Containers("timeseries");
-    const [url] = fetchMock.mock.calls[0];
+    const [url] = fetchMock.mock.calls[0]!;
     expect(url).toContain("kind=timeseries");
     expect(url).not.toContain("name=");
   });
