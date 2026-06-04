@@ -244,7 +244,8 @@ public class SingletonFileReferenceService {
    * <p>Recognised mappings (case-insensitive on the extension):
    * {@code .krl|.src → "krl"}, {@code .svdx → "svdx"},
    * {@code .otvis → "otvis"}, {@code .urdf → "urdf"},
-   * {@code .xit → "xit"}, {@code .pdf → "pdf"}. Anything else (or a
+   * {@code .xit → "xit"}, {@code .pdf → "pdf"},
+   * {@code .urscript|.script → "urscript"}. Anything else (or a
    * blank/extension-less name) yields {@code null} — the schema-additive
    * "absent means unknown" contract.
    *
@@ -271,6 +272,9 @@ public class SingletonFileReferenceService {
         return "xit";
       case "pdf":
         return "pdf";
+      case "urscript":
+      case "script":
+        return "urscript";
       default:
         return null;
     }

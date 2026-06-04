@@ -13,6 +13,13 @@ export function isKrlSrcFile(name: string | undefined | null): boolean {
   return lower.endsWith(".src") || lower.endsWith(".krl");
 }
 
+/** `.urscript` / `.script` (Universal Robots) source-file extension test. Case-insensitive. */
+export function isUrScriptFile(name: string | undefined | null): boolean {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  return lower.endsWith(".urscript") || lower.endsWith(".script");
+}
+
 export function isTrajectoryFormValid(state: {
   urdfFileAppId: string | null;
   targetDataObjectAppId: string;

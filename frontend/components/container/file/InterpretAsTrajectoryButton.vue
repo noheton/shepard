@@ -1,20 +1,22 @@
 <script setup lang="ts">
 /**
- * V2CONV-B5-FE — "Interpret as joint trajectory" affordance on a KRL .src/.krl
- * FileReference detail page. Replaces the bespoke RunKrlPreviewButton +
- * RunKrlPreviewDialog, which posted to the now-removed `/v2/krl/interpret`.
+ * V2CONV-B5-FE / URSCRIPT-TRAJECTORY-1-FE — "Interpret as joint trajectory"
+ * affordance on a KRL .src/.krl OR URScript .urscript/.script FileReference detail
+ * page.
  *
  * The bespoke KRL interpret subsystem dissolved into the generic MAPPING_RECIPE
- * mechanism (aidocs/platform/191 decision #2). This button gathers the bindings
- * (URDF + target DataObject + TimeseriesContainer), creates a MAPPING_RECIPE
- * template (targeting KrlTrajectoryShape) via `POST /v2/templates`, then
- * materializes it via `POST /v2/mappings/{templateAppId}/materialize` — minting
- * a derived joint-trajectory TimeseriesReference and surfacing a link to it.
+ * mechanism (aidocs/platform/191 decision #2). This button detects the file kind
+ * (KRL or URScript), gathers the bindings (URDF + target DataObject +
+ * TimeseriesContainer), creates a MAPPING_RECIPE template (targeting the
+ * appropriate shape IRI) via `POST /v2/templates`, then materializes it via
+ * `POST /v2/mappings/{templateAppId}/materialize` — minting a derived joint-
+ * trajectory TimeseriesReference and surfacing a link to it.
  *
- * Reachability: keeps the KRL affordance in-context on the FileReference detail
- * page (CLAUDE.md "tool entry points are in-context first" + "every shipped
- * feature reachable from top-nav before beta"). Per the v2-only + appId rules it
- * addresses entities by appId, targets /v2/, and never asks for a path/URL.
+ * KRL additionally shows a .dat companion-file picker (URScript has no .dat files).
+ *
+ * Reachability: in-context on the FileReference detail page. Per the v2-only +
+ * appId rules it addresses entities by appId, targets /v2/, and never asks for a
+ * path/URL.
  */
 import {
   FileReferenceApi,
@@ -23,10 +25,15 @@ import {
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   useKrlTrajectory,
-  defaultTrajectoryNameFor,
+  defaultTrajectoryNameFor as krlDefaultName,
 } from "~/composables/useKrlTrajectory";
 import {
+  useUrScriptTrajectory,
+  defaultTrajectoryNameFor as urScriptDefaultName,
+} from "~/composables/useUrScriptTrajectory";
+import {
   isKrlSrcFile,
+  isUrScriptFile,
   isTrajectoryFormValid,
   urdfPickerOptions,
   datPickerOptions,
@@ -46,7 +53,17 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const isSrc = computed(() => isKrlSrcFile(props.fileReference?.name ?? ""));
+/**
+ * Detected file kind: "krl" | "urscript" | null (not a robot program source file).
+ */
+const fileKind = computed<"krl" | "urscript" | null>(() => {
+  const name = props.fileReference?.name ?? "";
+  if (isKrlSrcFile(name)) return "krl";
+  if (isUrScriptFile(name)) return "urscript";
+  return null;
+});
+
+const isRobotSrc = computed(() => fileKind.value !== null);
 
 const showDialog = ref(false);
 const collectionFileReferences = ref<FileReference[]>([]);
@@ -60,7 +77,11 @@ const datFileAppIds = ref<string[]>([]);
 const submitError = ref<string | null>(null);
 const derivedReferenceAppId = ref<string | null>(null);
 
-const { loading: submitting, createTemplate, materialize } = useKrlTrajectory();
+const krl = useKrlTrajectory();
+const urscript = useUrScriptTrajectory();
+
+/** True while either composable is loading. */
+const submitting = computed(() => krl.loading.value || urscript.loading.value);
 
 const urdfCandidates = computed(() => urdfPickerOptions(collectionFileReferences.value));
 const datCandidates = computed(() => datPickerOptions(collectionFileReferences.value));
@@ -71,6 +92,30 @@ const formValid = computed(() =>
     targetDataObjectAppId: targetDataObjectAppId.value,
     timeseriesContainerAppId: timeseriesContainerAppId.value,
   }),
+);
+
+const dialogTitle = computed(() =>
+  fileKind.value === "urscript"
+    ? "Interpret URScript as joint trajectory"
+    : "Interpret as joint trajectory",
+);
+
+const tooltipText = computed(() =>
+  fileKind.value === "urscript"
+    ? "You need write access on this collection to interpret the URScript program."
+    : "You need write access on this collection to interpret the KRL program.",
+);
+
+const sidecarLabel = computed(() =>
+  fileKind.value === "urscript"
+    ? "Creating the recipe + calling the URScript interpreter sidecar…"
+    : "Creating the recipe + calling the KRL interpreter sidecar…",
+);
+
+const targetHintText = computed(() =>
+  fileKind.value === "urscript"
+    ? "Defaults to the parent of the .urscript file. Change to attach the trajectory elsewhere."
+    : "Defaults to the parent of the .src file. Change to attach the trajectory elsewhere.",
 );
 
 async function fetchFileReferencesForDataObject() {
@@ -113,11 +158,19 @@ async function submit() {
   submitError.value = null;
   derivedReferenceAppId.value = null;
 
-  const created = await createTemplate({
-    name: defaultTrajectoryNameFor(props.fileReference?.name),
+  if (fileKind.value === "urscript") {
+    await submitUrScript(srcAppId);
+  } else {
+    await submitKrl(srcAppId);
+  }
+}
+
+async function submitKrl(srcAppId: string) {
+  const created = await krl.createTemplate({
+    name: krlDefaultName(props.fileReference?.name),
     description: null,
     srcFileReferenceAppId: srcAppId,
-    urdfFileReferenceAppId: urdfFileAppId.value,
+    urdfFileReferenceAppId: urdfFileAppId.value!,
     targetDataObjectAppId: targetDataObjectAppId.value.trim(),
     timeseriesContainerAppId: timeseriesContainerAppId.value.trim(),
     datFileReferenceAppIds: datFileAppIds.value.length > 0 ? [...datFileAppIds.value] : null,
@@ -129,8 +182,35 @@ async function submit() {
         : `Could not create the trajectory recipe (HTTP ${created.status}): ${created.detail}`;
     return;
   }
+  const result = await krl.materialize(created.templateAppId, srcAppId, urdfFileAppId.value!);
+  if (!result.ok) {
+    submitError.value = `Interpretation failed (HTTP ${result.status}): ${result.detail}`;
+    return;
+  }
+  derivedReferenceAppId.value = result.derivedReferenceAppId;
+}
 
-  const result = await materialize(created.templateAppId, srcAppId, urdfFileAppId.value);
+async function submitUrScript(srcAppId: string) {
+  const created = await urscript.createTemplate({
+    name: urScriptDefaultName(props.fileReference?.name),
+    description: null,
+    urscriptFileReferenceAppId: srcAppId,
+    urdfFileReferenceAppId: urdfFileAppId.value!,
+    targetDataObjectAppId: targetDataObjectAppId.value.trim(),
+    timeseriesContainerAppId: timeseriesContainerAppId.value.trim(),
+  });
+  if (!created.ok) {
+    submitError.value =
+      created.status === 403
+        ? "You don't have permission to create a trajectory recipe here."
+        : `Could not create the trajectory recipe (HTTP ${created.status}): ${created.detail}`;
+    return;
+  }
+  const result = await urscript.materialize(
+    created.templateAppId,
+    srcAppId,
+    urdfFileAppId.value!,
+  );
   if (!result.ok) {
     submitError.value = `Interpretation failed (HTTP ${result.status}): ${result.detail}`;
     return;
@@ -144,7 +224,7 @@ function close() {
 </script>
 
 <template>
-  <span v-if="isSrc" class="interpret-trajectory-wrap">
+  <span v-if="isRobotSrc" class="interpret-trajectory-wrap">
     <v-tooltip :disabled="canEdit" location="bottom">
       <template #activator="{ props: tooltipProps }">
         <span v-bind="tooltipProps">
@@ -160,7 +240,7 @@ function close() {
           </v-btn>
         </span>
       </template>
-      You need write access on this collection to interpret the KRL program.
+      {{ tooltipText }}
     </v-tooltip>
 
     <v-dialog
@@ -173,7 +253,7 @@ function close() {
       <v-card class="bg-canvas">
         <v-card-title class="d-flex align-center ga-2">
           <v-icon color="primary">mdi-play-box-multiple-outline</v-icon>
-          <span class="text-h5">Interpret as joint trajectory</span>
+          <span class="text-h5">{{ dialogTitle }}</span>
         </v-card-title>
 
         <v-card-subtitle>
@@ -206,7 +286,7 @@ function close() {
             variant="outlined"
             density="comfortable"
             class="mb-2"
-            hint="Defaults to the parent of the .src file. Change to attach the trajectory elsewhere."
+            :hint="targetHintText"
             persistent-hint
             data-test="trajectory-target-dataobject"
           />
@@ -222,7 +302,9 @@ function close() {
             data-test="trajectory-ts-container"
           />
 
+          <!-- .dat companion files: KRL-only -->
           <v-autocomplete
+            v-if="fileKind === 'krl'"
             v-model="datFileAppIds"
             :items="datCandidates"
             label=".dat companion files (optional)"
@@ -238,7 +320,7 @@ function close() {
           <div v-if="submitting" class="mt-4">
             <v-progress-linear indeterminate color="primary" />
             <div class="text-caption text-medium-emphasis mt-1">
-              Creating the recipe + calling the KRL interpreter sidecar…
+              {{ sidecarLabel }}
             </div>
           </div>
 

@@ -7,3 +7,7 @@ de.dlr.shepard.spi.transform.NoOpTransformExecutor
 # V2CONV-A6). Resolves .src + URDF FileReferences, invokes the KRL sidecar,
 # mints a derived joint-trajectory TimeseriesReference (REFERENCE result).
 de.dlr.shepard.v2.transform.krl.KrlTrajectoryTransformExecutor
+# URSCRIPT-TRAJECTORY-1 — URScript (.urscript/.script) interpret as a MAPPING_RECIPE
+# transform (in-tree). Resolves .urscript + URDF FileReferences, invokes the URScript
+# sidecar, mints a derived joint-trajectory TimeseriesReference (REFERENCE result).
+de.dlr.shepard.v2.transform.urscript.UrScriptTrajectoryTransformExecutor
