@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.thermography.services;
+package de.dlr.shepard.plugin.fileformat.thermography.services;
 
 import java.util.Arrays;
 

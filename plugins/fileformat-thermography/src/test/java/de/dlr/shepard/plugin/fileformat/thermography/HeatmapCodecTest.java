@@ -1,12 +1,12 @@
-package de.dlr.shepard.v2.thermography;
+package de.dlr.shepard.plugin.fileformat.thermography;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import de.dlr.shepard.v2.thermography.io.PlateHeatmapIO;
-import de.dlr.shepard.v2.thermography.services.ThermographyAnalysisService;
-import de.dlr.shepard.v2.thermography.services.ThermographyMetrics;
+import de.dlr.shepard.plugin.fileformat.thermography.io.PlateHeatmapIO;
+import de.dlr.shepard.plugin.fileformat.thermography.services.ThermographyAnalysisService;
+import de.dlr.shepard.plugin.fileformat.thermography.services.ThermographyMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
