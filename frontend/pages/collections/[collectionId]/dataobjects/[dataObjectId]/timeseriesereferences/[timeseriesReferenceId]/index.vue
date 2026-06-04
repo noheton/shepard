@@ -17,6 +17,7 @@ import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTime
 import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
 import { useFetchTimeseriesAnnotations } from "~/composables/context/useFetchTimeseriesAnnotations";
 import { channelMatchesSearch, filterChannelsBySelection } from "~/utils/timeseriesChannelFilter";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 
 definePageMeta({ layout: "collection" });
 
@@ -33,33 +34,36 @@ interface TimeseriesDataTableItem extends Timeseries {
 const MaxSelectableItems = 7;
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
-// string ids and hit v2 directly. The remaining numeric-typed composables
-// (useFetchTimeseriesReference, etc.) keep the existing as-number cast
-// pending BUG-COLL-APPID-ROUTE-003.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId, timeseriesReferenceId } =
-  routeParams.value as unknown as {
-    collectionId: number;
-    dataObjectId: number;
-    timeseriesReferenceId: number;
-  };
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 
-const { timeseriesReference, fetchTimeseriesReference } = useFetchTimeseriesReference(
-  collectionId,
-  dataObjectId,
-  timeseriesReferenceId,
+// BUG-COLL-APPID-ROUTE-007-REFPAGE: resolve numeric ids from the loaded v2
+// entities; defer all v1 calls until both are available. UUID route params
+// must never be cast directly to numbers for v1 endpoints.
+const collectionNumericId = computed(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
+);
+const dataObjectNumericId = computed(() =>
+  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
+);
+const timeseriesReferenceNumericId = computed(() =>
+  resolveNumericId(undefined, routeParams.value.timeseriesReferenceId),
+);
+
+const { timeseriesReference, refresh: refreshTimeseriesReference } = useFetchTimeseriesReference(
+  collectionNumericId,
+  dataObjectNumericId,
+  timeseriesReferenceNumericId,
 );
 
 // TM1a — refresh the reference after a time-reference patch so the panel
 // shows the updated mode / offset immediately.
 async function onTimeReferenceUpdated() {
-  await fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
+  refreshTimeseriesReference();
 }
 
 // TA1a + AI1b — appId is now typed in the model (TM1a added it to the
@@ -100,7 +104,7 @@ const canVisualize3D = computed(
 // useFetchTimeseriesPayload calls useShepardApi → useAuth → inject(), which
 // is only valid in the synchronous setup phase.
 const { timeseriesWithDataPoints: chartPayload, isLoading: chartPayloadLoading } =
-  useFetchTimeseriesPayload(collectionId, dataObjectId, timeseriesReferenceId);
+  useFetchTimeseriesPayload(collectionNumericId, dataObjectNumericId, timeseriesReferenceNumericId);
 const chartPayloadFetched = computed(() => chartPayload.value !== undefined);
 
 // Channel Overview series — shows all channels when none are selected;
@@ -196,12 +200,22 @@ async function fetchMetricsForRow(item: TimeseriesDataTableItem) {
   item.metricsLoading = true;
   item.annotationsLoading = true;
   const containerId = timeseriesReference.value?.timeseriesContainerId;
+  // These resolved ids are available by the time this function is called
+  // (it runs inside watch(timeseriesReference) which fires after v2 load).
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  const r = timeseriesReferenceNumericId.value;
+  if (!c || !d || !r) {
+    item.metricsLoading = false;
+    item.annotationsLoading = false;
+    return;
+  }
   try {
     const [m, ts] = await Promise.all([
       useFetchTimeseriesReferenceMetrics(
-        collectionId,
-        dataObjectId,
-        timeseriesReferenceId,
+        c,
+        d,
+        r,
         item.measurement,
         item.device,
         item.location,
@@ -251,11 +265,15 @@ const getSelectedTimeseries = () => {
 };
 
 const downloadTimeseries = (filename: string) => {
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  const r = timeseriesReferenceNumericId.value;
+  if (!c || !d || !r) return;
   useShepardApi(TimeseriesReferenceApi)
     .value.exportTimeseriesPayload({
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
+      collectionId: c,
+      dataObjectId: d,
+      timeseriesReferenceId: r,
     })
     .then(response => {
       downloadFile(response, filename + ".csv");
@@ -266,18 +284,25 @@ const downloadTimeseries = (filename: string) => {
 };
 
 async function deleteTimeseriesReference() {
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  const r = timeseriesReferenceNumericId.value;
+  if (!c || !d || !r) return;
   await useShepardApi(TimeseriesReferenceApi)
     .value.deleteTimeseriesReference({
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
+      collectionId: c,
+      dataObjectId: d,
+      timeseriesReferenceId: r,
     })
     .then(() => {
       emitSuccess(
         `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
       );
       navigateTo(
-        collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId,
+        collectionsPath +
+          routeParams.value.collectionId +
+          dataObjectsPathFragment +
+          routeParams.value.dataObjectId,
       );
     })
     .catch(e => {
@@ -355,17 +380,17 @@ watch(
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  routeParams.dataObjectId,
               },
               {
                 title: timeseriesReference.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId +
+                  routeParams.dataObjectId +
                   timeseriesReferencePathFragment +
                   timeseriesReference.id,
               },
@@ -378,7 +403,7 @@ watch(
               <TitleAndMetadataDisplay
                 :entity="{
                   ...timeseriesReference,
-                  name: `Timeseries Reference “${timeseriesReference.name}”`,
+                  name: `Timeseries Reference '${timeseriesReference.name}'`,
                   type: 'Timeseries',
                   container: {
                     title:
@@ -566,7 +591,7 @@ watch(
                     :annotation="ann"
                     :can-delete="false"
                     :annotated-type="
-                      new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)
+                      new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)
                     "
                   />
                 </div>
@@ -587,11 +612,11 @@ watch(
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
                   v-if="isAllowedToEditCollection"
-                  :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                  :annotated="new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)"
                 />
               </div>
               <SemanticAnnotationList
-                :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                :annotated="new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)"
                 :can-delete="!!isAllowedToEditCollection"
               />
             </section>

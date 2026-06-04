@@ -8,22 +8,13 @@ import type {
 import { mapShepardFilesToDataTableItems } from "~/components/context/display-components/file-references/shepardFileMappingUtil";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchFileReference } from "~/composables/context/useFetchFileReference";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
-// string ids and hit v2 directly. The remaining numeric-typed composables
-// (useFetchFileReference, etc.) keep the existing as-number cast pending
-// BUG-COLL-APPID-ROUTE-003.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId, fileReferenceId } =
-  routeParams.value as unknown as {
-    collectionId: number;
-    dataObjectId: number;
-    fileReferenceId: number;
-  };
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
@@ -37,10 +28,24 @@ const selectedFileName = ref<string>("");
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
+
+// BUG-COLL-APPID-ROUTE-007-REFPAGE: resolve numeric ids from the loaded v2
+// entities; defer all v1 calls until both are available. UUID route params
+// must never be cast directly to numbers for v1 endpoints.
+const collectionNumericId = computed(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
+);
+const dataObjectNumericId = computed(() =>
+  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
+);
+const fileReferenceNumericId = computed(() =>
+  resolveNumericId(undefined, routeParams.value.fileReferenceId),
+);
+
 const { fileReference, files } = useFetchFileReference(
-  collectionId,
-  dataObjectId,
-  fileReferenceId,
+  collectionNumericId,
+  dataObjectNumericId,
+  fileReferenceNumericId,
 );
 
 const headers = ref([
@@ -69,19 +74,21 @@ function onDelete() {
 }
 
 function deleteFileReference() {
-  if (fileReference.value) {
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  if (fileReference.value && c && d) {
     useShepardApi(FileReferenceApi)
       .value.deleteFileReference({
-        collectionId,
-        dataObjectId,
+        collectionId: c,
+        dataObjectId: d,
         fileReferenceId: fileReference.value.id,
       })
       .then(() => {
         navigateTo(
           collectionsPath +
-            collectionId +
+            routeParams.value.collectionId +
             dataObjectsPathFragment +
-            dataObjectId,
+            routeParams.value.dataObjectId,
         );
       })
       .catch(error => {
@@ -107,13 +114,17 @@ const fileReferenceDisplayName = computed(() =>
 );
 
 function onDownloadFile(params: { filename: string; oid: string }) {
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  const r = fileReferenceNumericId.value;
+  if (!c || !d || !r) return;
   const filename = sanitizeFilename(params.filename);
 
   useShepardApi(FileReferenceApi)
     .value.getFilePayload({
-      collectionId,
-      dataObjectId,
-      fileReferenceId,
+      collectionId: c,
+      dataObjectId: d,
+      fileReferenceId: r,
       oid: params.oid,
     })
     .then(response => {
@@ -150,19 +161,19 @@ watch(fileReference, () => {
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  routeParams.dataObjectId,
               },
               {
                 title: `${fileReference?.name}`,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId +
+                  routeParams.dataObjectId +
                   fileReferencesPathFragment +
-                  fileReferenceId,
+                  routeParams.fileReferenceId,
               },
             ]"
           />
@@ -193,17 +204,17 @@ watch(fileReference, () => {
               <v-col cols="12" class="d-flex flex-wrap ga-2">
                 <InterpretAsTrajectoryButton
                   :file-reference="fileReference"
-                  :collection-id="collectionId"
-                  :data-object-id="dataObjectId"
+                  :collection-id="collectionNumericId ?? 0"
+                  :data-object-id="dataObjectNumericId ?? 0"
                   :data-object-app-id="dataObject.appId"
-                  :data-object-path="collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId"
+                  :data-object-path="collectionsPath + routeParams.collectionId + dataObjectsPathFragment + routeParams.dataObjectId"
                   :can-edit="!!isAllowedToEditCollection"
                 />
                 <OpenIn3dViewButton
                   :file-reference-name="fileReference.name"
-                  :collection-id="collectionId"
-                  :data-object-id="dataObjectId"
-                  :file-reference-id="fileReferenceId"
+                  :collection-id="collectionNumericId ?? 0"
+                  :data-object-id="dataObjectNumericId ?? 0"
+                  :file-reference-id="fileReferenceNumericId ?? 0"
                   :file-reference-app-id="fileReference.appId"
                 />
               </v-col>
@@ -213,9 +224,9 @@ watch(fileReference, () => {
                 <SemanticAnnotationList
                   :annotated="
                     new AnnotatedReference(
-                      collection.id,
-                      dataObjectId,
-                      fileReferenceId,
+                      collectionNumericId ?? 0,
+                      dataObjectNumericId ?? 0,
+                      fileReferenceNumericId ?? 0,
                     )
                   "
                   :can-delete="!!isAllowedToEditCollection"
@@ -311,15 +322,15 @@ watch(fileReference, () => {
       v-if="showAddAnnotationDialog"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
-        new AnnotatedReference(collectionId, dataObjectId, fileReferenceId)
+        new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, fileReferenceNumericId ?? 0)
       "
     />
     <FileContentViewerDialog
       v-if="showFileContentViewerDialog"
       v-model:show-dialog="showFileContentViewerDialog"
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
-      :file-reference-id="fileReferenceId"
+      :collection-id="collectionNumericId ?? 0"
+      :data-object-id="dataObjectNumericId ?? 0"
+      :file-reference-id="fileReferenceNumericId ?? 0"
       :file-type="selectedFileType"
       :file-name="selectedFileName"
       :oid="selectedOid"
