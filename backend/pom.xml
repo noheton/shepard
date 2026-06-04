@@ -111,6 +111,21 @@
         <artifactId>libthrift</artifactId>
         <version>0.23.0</version>
       </dependency>
+      <!-- QUARKUS-PLATFORM-BUMP: Netty 4.1.130 (shipped by Quarkus 3.27.2) has
+           CRITICAL/HIGH CVEs (CVE-2025-24970, CVE-2025-25193 and related
+           netty-codec-* advisories) flagged by Trivy image scans. Quarkus 3.27.2
+           itself has no self-CVE on quarkus-vertx-http — all findings are in the
+           transitive Netty stack. Pinning netty-bom 4.1.133.Final here (ahead of
+           the Quarkus BOM) overrides all io.netty:* versions to the fixed release
+           without a full Quarkus platform bump and the attendant JUnit 6 migration.
+           See aidocs/34 row QUARKUS-PLATFORM-BUMP and aidocs/16 for context. -->
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>4.1.133.Final</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -418,7 +433,7 @@
       <version>0.24.0</version>
     </dependency>
     <!-- DX1 — ShepardTestStack testcontainer support (aidocs/16 DX1).
-         All versions managed by the Quarkus BOM (3.27.2 → testcontainers 1.21.4).
+         Versions managed by the Quarkus BOM (quarkus.platform.version).
          No explicit <version> needed here. -->
     <dependency>
       <groupId>io.quarkus</groupId>
