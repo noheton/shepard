@@ -12,6 +12,15 @@ the existing upstream `/shepard/api/` endpoints (preserved byte-for-
 byte from upstream 5.2.0). This page focuses on the **bulk-read
 query endpoint** added by this fork (P10a + P10b).
 
+> **Create / get / patch / delete / list** a TimeseriesReference via
+> the unified [`/v2/references`](/reference/references/) surface
+> (V2CONV-A2) with `kind=timeseries`. The time-alignment merge-patch
+> (`timeReference` / `wallClockOffset` / `wallClockOffsetSource`) that
+> previously lived at `PATCH /v2/timeseries-references/{appId}` is now
+> `PATCH /v2/references/{appId}` with the same body. The
+> `/v2/timeseries-references/{appId}/annotations` and `/detect-anomalies`
+> endpoints are unchanged.
+
 ---
 
 ## Bulk-read DSL — `POST /v2/sql/timeseries`
