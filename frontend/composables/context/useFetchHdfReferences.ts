@@ -1,11 +1,23 @@
 /**
- * REF-UNIFIED-TABLE — fetch HdfReferences for a DataObject.
+ * A5 (aidocs/16) — fetch HdfReferences for a DataObject via the unified
+ * `/v2/references?kind=hdf` surface.
  *
- * HdfReference is served at `/v2/data-objects/{dataObjectAppId}/hdf-references`.
- * Not yet in `@dlr-shepard/backend-client`, so raw fetch() is used with a
- * manually-typed response shape — same pattern as useFetchVideoStreamReferences.ts.
+ * PLUGIN-REF-HANDLER-FE-REPOINT: migrated from the plugin-specific
+ * `/v2/data-objects/{appId}/hdf-references` path to the unified
+ * `GET /v2/references?kind=hdf&dataObjectAppId={appId}` endpoint now that
+ * the `hdf` ReferenceKindHandler is installed (merged in bfab5f04b).
  *
- * Handles 404 gracefully (returns empty list) for when shepard.hdf.enabled=false.
+ * The per-kind `payload` map carries: hdfContainerAppId, datasetPath,
+ * description — mapped back to the typed `HdfReferenceIO` interface.
+ *
+ * Graceful degradation: treats HTTP 404 (DataObject not found) and HTTP 400
+ * (kind handler not installed / plugin disabled) as an empty list so the pane
+ * renders cleanly on instances without the HDF plugin.
+ *
+ * Note: `HdfReferencesPane.vue` manages its own inline fetch for create/delete
+ * operations and does not import this composable. Updating this composable
+ * does not change that pane's runtime behaviour — it is included here for API
+ * consistency and future consumers.
  */
 
 export interface HdfReferenceIO {
@@ -15,6 +27,12 @@ export interface HdfReferenceIO {
   description?: string;
 }
 
+interface ReferenceV2IO {
+  appId: string;
+  kind: string;
+  payload: Record<string, unknown>;
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -22,6 +40,16 @@ function v2BaseUrl(): string {
   return (config.backendApiUrl as string)
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
+}
+
+function toHdfReferenceIO(r: ReferenceV2IO): HdfReferenceIO {
+  const p = r.payload;
+  return {
+    appId: r.appId,
+    hdfContainerAppId: (p.hdfContainerAppId as string | undefined) ?? undefined,
+    datasetPath: (p.datasetPath as string | undefined) ?? undefined,
+    description: (p.description as string | undefined) ?? undefined,
+  };
 }
 
 export function useFetchHdfReferences(dataObjectAppId: string) {
@@ -41,7 +69,9 @@ export function useFetchHdfReferences(dataObjectAppId: string) {
       return;
     }
 
-    const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/hdf-references`;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=hdf&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
 
     try {
       const response = await fetch(url, {
@@ -50,8 +80,9 @@ export function useFetchHdfReferences(dataObjectAppId: string) {
           Accept: "application/json",
         },
       });
-      if (response.status === 404) {
-        // HDF feature off or DataObject not found; treat as empty list.
+      if (response.status === 404 || response.status === 400) {
+        // 404 = DataObject not found; 400 = HDF kind handler not installed
+        // (shepard.hdf.enabled=false). Treat both as empty list.
         references.value = [];
         return;
       }
@@ -61,7 +92,8 @@ export function useFetchHdfReferences(dataObjectAppId: string) {
         handleError(fetchError.value, "listHdfReferences");
         return;
       }
-      references.value = (await response.json()) as HdfReferenceIO[];
+      const raw = (await response.json()) as ReferenceV2IO[];
+      references.value = raw.map(toHdfReferenceIO);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";
       fetchError.value = message;
