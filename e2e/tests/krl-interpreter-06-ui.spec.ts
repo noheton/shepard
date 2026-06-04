@@ -1,21 +1,19 @@
 /**
- * KRL-INTERPRETER-06 — Playwright spec validating the "Run / preview" UI
- * at the user's actual 4K viewport (3840 x 2160).
+ * V2CONV-B5 — Playwright spec for the "Interpret as trajectory" UI at the
+ * user's actual 4K viewport (3840 x 2160).
  *
- * The spec doesn't require the krl-interpreter sidecar to be running — that
- * is the whole point of the operator-opt-in story. When the backend returns
- * 502, the result panel surfaces the operator hint, which is the explicit
- * acceptance for the headline "honest 502 handling" requirement in the row
- * KRL-INTERPRETER-06.
+ * History: KRL interpret was dissolved (V2CONV-B5) from a bespoke
+ * `/v2/krl/interpret` "Run / preview" dialog into a MAPPING_RECIPE transform —
+ * a `.src`/`.krl` FileReference + a URDF FileReference materialise (via
+ * `POST /v2/mappings/{templateAppId}/materialize`) into a derived joint-
+ * trajectory TimeseriesReference. The in-context affordance is now the
+ * "Interpret as trajectory" button on a `.src`/`.krl` FileReference detail page.
+ * This spec replaces the old `krl-run-preview-*` selectors with the new
+ * `interpret-as-trajectory-*` / `trajectory-*` ones.
  *
- * Per `feedback_validate_user_viewport.md`, the modal must render entirely
- * within the 3840 x 2160 viewport — no horizontal overflow, all sections
- * reachable without scrolling beyond the viewport bounds.
- *
- * The spec is allowed to be skipped when the deployment doesn't have a
- * `.src` FileReference in the demo Collection — the env-driven
- * `KRL_SRC_REF_URL` carries the canonical detail-page URL. Without it we
- * fall back to a unit-style render assertion on the auth landing.
+ * Per `feedback_validate_user_viewport.md`, the dialog must render entirely
+ * within the 3840 x 2160 viewport. The spec skips when the deployment has no
+ * `.src`/`.krl` FileReference (env-driven `KRL_SRC_REF_URL`).
  */
 import { expect, test } from "@playwright/test";
 
@@ -45,19 +43,19 @@ async function loginAs(
   });
 }
 
-test.describe("KRL-INTERPRETER-06 — Run / preview UI at 4K", () => {
+test.describe("V2CONV-B5 — Interpret-as-trajectory UI at 4K", () => {
   test.use({ viewport: { width: 3840, height: 2160 } });
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, USER, PASSWORD);
   });
 
-  test("button is visible on a .src FileReference detail page", async ({
+  test("button is visible on a .src/.krl FileReference detail page", async ({
     page,
   }) => {
     test.skip(!SRC_REF_URL, "KRL_SRC_REF_URL not set");
     await page.goto(SRC_REF_URL);
-    const button = page.locator('[data-test="krl-run-preview-button"]');
+    const button = page.locator('[data-test="interpret-as-trajectory-button"]');
     await expect(button).toBeVisible({ timeout: 15_000 });
   });
 
@@ -66,10 +64,9 @@ test.describe("KRL-INTERPRETER-06 — Run / preview UI at 4K", () => {
   }) => {
     test.skip(!SRC_REF_URL, "KRL_SRC_REF_URL not set");
     await page.goto(SRC_REF_URL);
-    const button = page.locator('[data-test="krl-run-preview-button"]');
-    await button.click();
+    await page.locator('[data-test="interpret-as-trajectory-button"]').click();
 
-    const dialog = page.locator('[data-test="krl-run-preview-dialog"]');
+    const dialog = page.locator('[data-test="interpret-as-trajectory-dialog"]');
     await expect(dialog).toBeVisible();
 
     // Dialog must not exceed the 3840 x 2160 viewport bounds.
@@ -82,44 +79,52 @@ test.describe("KRL-INTERPRETER-06 — Run / preview UI at 4K", () => {
       expect(box.y + box.height).toBeLessThanOrEqual(2160);
     }
 
-    // Required pickers + submit button all render.
-    await expect(page.locator('[data-test="krl-urdf-picker"]')).toBeVisible();
+    // The URDF picker + the trajectory-target pickers + submit all render.
     await expect(
-      page.locator('[data-test="krl-target-dataobject"]'),
+      page.locator('[data-test="trajectory-urdf-picker"]'),
     ).toBeVisible();
-    await expect(page.locator('[data-test="krl-ts-container"]')).toBeVisible();
-    await expect(page.locator('[data-test="krl-submit"]')).toBeVisible();
+    await expect(
+      page.locator('[data-test="trajectory-target-dataobject"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-test="trajectory-ts-container"]'),
+    ).toBeVisible();
+    await expect(page.locator('[data-test="trajectory-submit"]')).toBeVisible();
   });
 
-  test("submitting against a 502 sidecar surfaces the operator hint", async ({
+  test("submitting without the sidecar surfaces an error (no crash)", async ({
     page,
   }) => {
     test.skip(
-      !SRC_REF_URL || !process.env.KRL_URDF_APP_ID || !process.env.KRL_TS_CONTAINER_APP_ID,
-      "URL + URDF appId + TS container appId required for the 502 happy-path check",
+      !SRC_REF_URL ||
+        !process.env.KRL_URDF_APP_ID ||
+        !process.env.KRL_TS_CONTAINER_APP_ID,
+      "URL + URDF appId + TS container appId required for the submit-path check",
     );
     await page.goto(SRC_REF_URL);
-    await page.locator('[data-test="krl-run-preview-button"]').click();
+    await page.locator('[data-test="interpret-as-trajectory-button"]').click();
 
-    // Pre-fill the URDF picker.
-    const urdf = page.locator('[data-test="krl-urdf-picker"] input').first();
+    const urdf = page
+      .locator('[data-test="trajectory-urdf-picker"] input')
+      .first();
     await urdf.fill(String(process.env.KRL_URDF_APP_ID));
     await page.keyboard.press("Enter");
 
-    // TS container picker (free-text field at tier-1).
     await page
-      .locator('[data-test="krl-ts-container"] input')
+      .locator('[data-test="trajectory-ts-container"] input')
       .first()
       .fill(String(process.env.KRL_TS_CONTAINER_APP_ID));
 
-    await page.locator('[data-test="krl-submit"]').click();
+    await page.locator('[data-test="trajectory-submit"]').click();
 
-    // Sidecar isn't up → backend returns 502 → the result panel shows the
-    // operator hint pointing at the compose-profile command.
-    const errorPanel = page.locator('[data-test="krl-error-message"]');
-    await expect(errorPanel).toBeVisible({ timeout: 30_000 });
-    await expect(errorPanel).toContainText(
-      /COMPOSE_PROFILES=krl-interpreter/i,
+    // With the krl-interpreter sidecar absent the materialize fails; the dialog
+    // must surface the error inline (data-test="trajectory-error") rather than
+    // crash. Success (data-test="trajectory-success") is also acceptable when a
+    // sidecar IS configured — either way the flow resolves without an unhandled
+    // exception.
+    const outcome = page.locator(
+      '[data-test="trajectory-error"], [data-test="trajectory-success"]',
     );
+    await expect(outcome.first()).toBeVisible({ timeout: 30_000 });
   });
 });
