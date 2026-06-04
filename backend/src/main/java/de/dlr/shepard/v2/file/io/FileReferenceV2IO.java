@@ -50,6 +50,16 @@ public class FileReferenceV2IO extends BasicReferenceIO {
   )
   private ShepardFile file;
 
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "V2CONV-A2 file-kind discriminator derived from the original filename extension + mime " +
+      "(e.g. \"krl\", \"svdx\", \"otvis\", \"urdf\", \"xit\", \"pdf\"). Null when the kind is " +
+      "unrecognised or the singleton predates this field."
+  )
+  private String fileKind;
+
   /**
    * Construct from the persisted entity. The {@link
    * BasicReferenceIO#getType()} field flows through as
@@ -64,6 +74,7 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     super(src);
     this.appId = src.getAppId();
     this.file = src.getFile();
+    this.fileKind = src.getFileKind();
   }
 
   @Override
@@ -73,7 +84,9 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     if (!super.equals(o)) return false;
     if (this.getClass() != o.getClass()) return false;
     FileReferenceV2IO other = (FileReferenceV2IO) o;
-    return Objects.equals(appId, other.appId) && Objects.equals(file, other.file);
+    return Objects.equals(appId, other.appId)
+      && Objects.equals(file, other.file)
+      && Objects.equals(fileKind, other.fileKind);
   }
 
   @Override
@@ -82,6 +95,7 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     int result = super.hashCode();
     result = prime * result + Objects.hashCode(appId);
     result = prime * result + Objects.hashCode(file);
+    result = prime * result + Objects.hashCode(fileKind);
     return result;
   }
 }

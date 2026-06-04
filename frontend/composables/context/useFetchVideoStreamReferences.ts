@@ -11,6 +11,17 @@
  * When the backend-client is regenerated (post-VID1a), swap the raw fetch for
  * `useV2ShepardApi(VideoStreamReferenceApi).value.list(...)` and delete this
  * file.
+ *
+ * V2CONV-A2 NOTE: the list still targets the video plugin's own
+ * `/v2/data-objects/{appId}/video-stream-references` path rather than the
+ * unified `GET /v2/references?kind=video`. The unified surface dispatches
+ * through a `ReferenceKindHandler`, and the `video` handler ships in a
+ * follow-up that lands inside the video plugin module (core cannot register a
+ * handler for a plugin kind). Until that handler is installed,
+ * `?kind=video` returns 400 (uninstalled kind), so this composable keeps the
+ * plugin path. The `/download` URL builder is unaffected either way — it stays
+ * a kind-specific binary op outside the unified surface (PLUGIN-REF-HANDLER-* in
+ * aidocs/16).
  */
 
 export interface VideoStreamReferenceIO {

@@ -3,28 +3,17 @@
  * attached to a DataObject so the unified data-references table can
  * render them alongside FR1a bundles + timeseries + structured-data.
  *
- * Backed by the additive v2 endpoint
- * `GET /v2/files/by-data-object/{dataObjectAppId}` (J1e +
- * REF-UNIFIED-TABLE-FR1B). The upstream v1 list endpoint
+ * V2CONV-A2: now backed by the unified list endpoint
+ * `GET /v2/references?kind=file&dataObjectAppId={appId}` (was the per-kind
+ * `GET /v2/files/by-data-object/{dataObjectAppId}`). The unified response is
+ * `ReferenceV2IO[]`: the embedded `ShepardFile` lives under `payload.file`,
+ * the FR1b discriminator is `referenceShape === "singleton"`, and the
+ * file-kind is `fileKind`. This composable normalises that envelope back to
+ * the flat `SingletonFileReferenceIO` shape its callers already consume. The
+ * upstream v1 list endpoint
  * `GET /shepard/api/collections/{collectionId}/dataObjects/{dataObjectId}/fileReferences`
  * stays byte-frozen and returns only FR1a bundle shapes; this composable's
  * additive read complements it.
- *
- * Wire shape mirrors `FileReferenceV2IO`:
- *   {
- *     appId: string;          // UUID v7 of the singleton FileReference
- *     name: string;           // human-readable display name
- *     dataObjectId: number;   // numeric id of the parent DO (OGM)
- *     createdAt: string;      // ISO timestamp
- *     createdBy: string;
- *     type: "FileReference";  // shared with FR1a per upstream convention
- *     file: {                 // embedded ShepardFile metadata
- *       filename: string;     // original upload filename (used for .ipynb detection)
- *       fileSize: number | null;
- *       md5: string;
- *       oid: string;
- *     } | null;
- *   }
  */
 
 import type { ShepardFile } from "@dlr-shepard/backend-client";
@@ -37,6 +26,22 @@ export interface SingletonFileReferenceIO {
   createdBy: string;
   type?: string;
   file: ShepardFile | null;
+  /** V2CONV-A2 file-kind discriminator (krl, urdf, pdf, …) or null. */
+  fileKind?: string | null;
+}
+
+/** V2CONV-A2 unified envelope shape (subset consumed here). */
+interface ReferenceV2IO {
+  appId: string;
+  name: string;
+  dataObjectId?: number;
+  createdAt: string;
+  createdBy: string;
+  type?: string;
+  kind?: string;
+  referenceShape?: string | null;
+  fileKind?: string | null;
+  payload?: { file?: ShepardFile | null } | null;
 }
 
 function v2BaseUrl(): string {
@@ -66,7 +71,7 @@ export function useFetchSingletonFileReferences(
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const url = `${v2BaseUrl()}/v2/files/by-data-object/${encodeURIComponent(appId)}`;
+      const url = `${v2BaseUrl()}/v2/references?kind=file&dataObjectAppId=${encodeURIComponent(appId)}`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -81,7 +86,20 @@ export function useFetchSingletonFileReferences(
         }
         throw new Error(`HTTP ${response.status}`);
       }
-      references.value = (await response.json()) as SingletonFileReferenceIO[];
+      const unified = (await response.json()) as ReferenceV2IO[];
+      // Normalise the unified envelope back to the flat shape callers expect.
+      references.value = unified
+        .filter((r) => r.referenceShape === "singleton" || r.payload?.file !== undefined)
+        .map((r) => ({
+          appId: r.appId,
+          name: r.name,
+          dataObjectId: r.dataObjectId,
+          createdAt: r.createdAt,
+          createdBy: r.createdBy,
+          type: r.type,
+          file: r.payload?.file ?? null,
+          fileKind: r.fileKind ?? null,
+        }));
     } catch (e) {
       error.value = "Failed to load singleton file references";
       handleError(e, "fetching singleton file references");

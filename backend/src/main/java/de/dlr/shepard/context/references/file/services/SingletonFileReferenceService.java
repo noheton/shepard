@@ -148,6 +148,7 @@ public class SingletonFileReferenceService {
     singleton.setName(name);
     singleton.setDataObject(parent);
     singleton.setFile(saved);
+    singleton.setFileKind(detectFileKind(filename, saved));
     singleton.setCreatedAt(dateHelper.getDate());
     singleton.setCreatedBy(user);
 
@@ -216,6 +217,7 @@ public class SingletonFileReferenceService {
     singleton.setName(name);
     singleton.setDataObject(parent);
     singleton.setFile(saved);
+    singleton.setFileKind(detectFileKind(filename, saved));
     singleton.setCreatedAt(dateHelper.getDate());
     singleton.setCreatedBy(user);
 
@@ -230,6 +232,59 @@ public class SingletonFileReferenceService {
       saved.getOid()
     );
     return created;
+  }
+
+  /**
+   * V2CONV-A2 — derive the {@code fileKind} discriminator from the
+   * original filename extension (and, where ambiguous, the stored
+   * mime type). A small private helper for now; a pluggable
+   * {@code FileKindDetector} SPI is deferred (FILEKIND-DETECTOR-SPI in
+   * {@code aidocs/16}).
+   *
+   * <p>Recognised mappings (case-insensitive on the extension):
+   * {@code .krl|.src → "krl"}, {@code .svdx → "svdx"},
+   * {@code .otvis → "otvis"}, {@code .urdf → "urdf"},
+   * {@code .xit → "xit"}, {@code .pdf → "pdf"}. Anything else (or a
+   * blank/extension-less name) yields {@code null} — the schema-additive
+   * "absent means unknown" contract.
+   *
+   * @param filename the original upload filename (may be blank/null).
+   * @param file the persisted {@link ShepardFile} (reserved for a future
+   *   mime-based tie-breaker; unused today since {@link ShepardFile}
+   *   carries no mime type).
+   * @return the detected kind token, or {@code null} when unrecognised.
+   */
+  String detectFileKind(String filename, ShepardFile file) {
+    String ext = extensionOf(filename);
+    if (ext == null) return null;
+    switch (ext) {
+      case "krl":
+      case "src":
+        return "krl";
+      case "svdx":
+        return "svdx";
+      case "otvis":
+        return "otvis";
+      case "urdf":
+        return "urdf";
+      case "xit":
+        return "xit";
+      case "pdf":
+        return "pdf";
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Lower-cased extension of a filename, or {@code null} when the name
+   * is blank or carries no {@code .ext} suffix.
+   */
+  private String extensionOf(String filename) {
+    if (filename == null || filename.isBlank()) return null;
+    int dot = filename.lastIndexOf('.');
+    if (dot < 0 || dot == filename.length() - 1) return null;
+    return filename.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
   }
 
   /**

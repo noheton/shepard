@@ -83,11 +83,28 @@ compatibility — see the [API version policy](/architecture/#api-version-policy
 
 | Method | Path | Behaviour |
 |---|---|---|
-| `POST` | `/v2/files?parentDataObjectAppId={do}[&name={n}]` | Upload one file. Multipart body with a single `file` part. If `name` is omitted, the uploaded filename is used as the Reference's name. Returns `201` + the singleton's JSON. |
-| `GET` | `/v2/files/{appId}` | Singleton metadata: `{ appId, name, type: "FileReference", file: { oid, filename, fileSize, md5, createdAt } }`. |
+| `POST` | `/v2/files?parentDataObjectAppId={do}[&name={n}]` | Upload one file. Multipart body with a single `file` part. If `name` is omitted, the uploaded filename is used as the Reference's name. Returns `201` + the singleton's JSON (now including the detected `fileKind`). This is the **binary upload entry** — it is NOT routed through `/v2/references`. |
 | `GET` | `/v2/files/{appId}/content` | The byte stream. Supports HTTP range requests (`Range: bytes=START-END` or `bytes=START-`). Returns `200` with full body when no `Range` header is present; `206 Partial Content` when a satisfiable range is requested; `416 Requested Range Not Satisfiable` for an out-of-bounds range. Multi-range / suffix-range are not supported in FR1b (refused with 416). |
-| `PATCH` | `/v2/files/{appId}` | RFC 7396 merge-patch on the `name` field. Other fields are immutable in FR1b. Body: `{"name": "new name"}`. |
-| `DELETE` | `/v2/files/{appId}` | Hard-delete the Reference and its underlying bytes (Neo4j node soft-deleted; Mongo doc + GridFS blob removed). |
+
+The metadata, rename, delete, and list operations are served by the
+unified [`/v2/references`](/reference/references/) surface (V2CONV-A2):
+
+| Method | Unified path | Behaviour |
+|---|---|---|
+| `GET` | `/v2/references/{appId}` | Metadata as a `ReferenceV2IO`: `kind: "file"`, `referenceShape: "singleton"`, `fileKind` (e.g. `urdf`/`krl`/`pdf`, or null), and `payload.file` = the embedded `ShepardFile`. |
+| `PATCH` | `/v2/references/{appId}` | RFC 7396 merge-patch on the `name` field. Other fields are immutable in FR1b. Body: `{"name": "new name"}`. |
+| `DELETE` | `/v2/references/{appId}` | Hard-delete the Reference and its underlying bytes (Neo4j node soft-deleted; Mongo doc + GridFS blob removed). |
+| `GET` | `/v2/references?kind=file&dataObjectAppId={do}[&fileKind={k}]` | List the singleton FileReferences on a DataObject, optionally filtered by `fileKind`. |
+
+The legacy per-kind `GET\|PATCH\|DELETE /v2/files/{appId}` still work
+(the upload entry's host resource is unchanged), but new callers
+should use the unified surface above.
+
+`fileKind` (V2CONV-A2) is detected at upload time from the original
+filename extension: `.krl`/`.src` → `krl`, `.svdx`, `.otvis`,
+`.urdf`, `.xit`, `.pdf`. Unrecognised extensions yield `null`. It is
+additive and nullable — singletons uploaded before V2CONV-A2 carry
+`fileKind: null`.
 
 Permissions: every endpoint resolves the parent DataObject from the
 singleton and asks the same `PermissionsService` the upstream API
