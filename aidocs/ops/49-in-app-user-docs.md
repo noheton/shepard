@@ -133,6 +133,8 @@ deep-dives:
 |---|---|
 | Collection | `docs/reference/collection.md` |
 | DataObject | `docs/reference/data-object.md` |
+| References *(unified `/v2/references`, V2CONV-A2)* | `docs/reference/references.md` |
+| Containers *(unified `/v2/containers`, V2CONV-A3)* | `docs/reference/containers.md` |
 | FileReference | `docs/reference/file-reference.md` |
 | StructuredDataReference | `docs/reference/structured-data-reference.md` |
 | TimeseriesReference | `docs/reference/timeseries-reference.md` |
