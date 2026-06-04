@@ -86,6 +86,31 @@
         <artifactId>postgresql</artifactId>
         <version>42.7.11</version>
       </dependency>
+      <!-- SECURITY (Trivy image scan, HIGH): the Eclipse Angus Mail RI
+           (org.eclipse.angus:jakarta.mail) bundles the SMTP provider
+           org.eclipse.angus:smtp. Version 2.0.3 carries CVE-2025-7962
+           (SMTP injection via CR/LF), fixed in 2.0.4. Pin the whole RI
+           (jakarta.mail + smtp) to 2.0.4 so the embedded smtp artifact
+           Trivy reads from the jar metadata reports the fixed version. -->
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>jakarta.mail</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>smtp</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <!-- SECURITY (Trivy image scan, HIGH): org.apache.thrift:libthrift
+           0.21.0 is pulled transitively (via the Angus activation chain).
+           0.21.0 carries CVE-2026-43869 (TSSLTransportFactory hostname
+           verification bypass / cert host mismatch), fixed in 0.23.0. -->
+      <dependency>
+        <groupId>org.apache.thrift</groupId>
+        <artifactId>libthrift</artifactId>
+        <version>0.23.0</version>
+      </dependency>
       <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -127,7 +152,8 @@
     <dependency>
       <groupId>org.eclipse.angus</groupId>
       <artifactId>jakarta.mail</artifactId>
-      <version>2.0.3</version>
+      <!-- 2.0.4: CVE-2025-7962 (SMTP injection) fix; see dependencyManagement note. -->
+      <version>2.0.4</version>
     </dependency>
     <!-- T1f — YAML import/export for ShepardTemplate portability (aidocs/16 T1f).
          Version managed by the Quarkus BOM. -->

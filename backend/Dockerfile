@@ -28,6 +28,12 @@ COPY --chown=185 target/classes/neo4j/ /deployments/neo4j/
 # COPY below is a no-op and the directory just stays empty —
 # operators can drop in vendor plugins post-deploy.
 USER 0
+# SECURITY (Trivy image scan, HIGH): the UBI9 base ships openssl-libs
+# 3.5.5-2.el9_8 which carries CVE-2026-28390. Pull the latest published
+# el9 patch for it (and any other security-relevant base-layer updates) so
+# the gate stays green. `microdnf update` is idempotent and only fetches
+# what has a newer build; `clean all` keeps the layer small.
+RUN microdnf -y update openssl openssl-libs && microdnf clean all
 RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # ffmpeg — required by shepard-plugin-video (ffprobe) and shepard-plugin-imagebundle
 # (movie generation). RPM Fusion ffmpeg on UBI9 requires SDL2 which is not in

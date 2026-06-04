@@ -17,6 +17,17 @@ FROM node:20-slim AS runtime
 
 WORKDIR /app
 
+# SECURITY (Trivy image scan, CRITICAL/HIGH): the debian 12 base ships
+# libgnutls30 3.7.9-2+deb12u6 (CVE-2026-33845, CVE-2026-42010 CRITICAL;
+# CVE-2026-33846, CVE-2026-3833, CVE-2026-42009 HIGH) and a libcap2 with
+# CVE-2026-4878 (HIGH). Pull the latest published debian12 security patches
+# for these packages. `apt-get upgrade -y` covers any other base-layer
+# security updates too; the apt lists are removed afterwards to keep the
+# layer small.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Strip the package managers the runtime never uses (npm bundles the
 # tar/glob/minimatch/cross-spawn CVE copies; corepack is unneeded too).
 RUN rm -rf /usr/local/lib/node_modules/npm \
