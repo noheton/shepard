@@ -70,6 +70,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <lombok.version>1.18.44</lombok.version>
     <surefire-plugin.version>3.5.5</surefire-plugin.version>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
@@ -284,6 +285,21 @@
           <compilerArgs>
             <arg>-parameters</arg>
           </compilerArgs>
+          <!--
+            Lombok annotation processor path — required so the compiler plugin
+            generates @Getter/@Setter at compile time. Maven compiler 3.15
+            no longer auto-activates classpath annotation processors, so without
+            this explicit path the @Getter/@Setter on EpicMinterConfig silently
+            generate nothing → "cannot find symbol getApiBaseUrl()". Same fix as
+            plugins/spatiotemporal + plugins/unhide.
+          -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>

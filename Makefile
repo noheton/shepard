@@ -36,12 +36,12 @@ HEALTH_TIMEOUT ?= 120
 # ADR-0023 two-pass dance: backend install (no plugins) → plugins install → backend package.
 # Required whenever a plugin module changes; safe to run even when only backend changed.
 build-plugins:
-	cd backend && $(MVN) -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q
-	# wiki-writer must install before ai (ai has a provided dep on wiki-writer).
-	# Both must install before video (backend now depends on all three transitively).
-	cd plugins/wiki-writer && $(MVN) -Dmaven.test.skip=true install -q
-	cd plugins/ai && $(MVN) -Dmaven.test.skip=true install -q
-	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
+	# Single source of truth for the full ordered plugin install — also used by
+	# .github/workflows/ci.yml + codeql.yml. Installs the backend's always-on
+	# fileformat-svdx/-thermography deps, the backend+cli stubs, then every
+	# with-plugins plugin. Previously this list was duplicated here and in each
+	# CI workflow and drifted (svdx/thermography missing from CI → red main).
+	MVN="$(MVN)" bash scripts/install-plugins.sh
 
 build-backend: build-plugins
 	# `clean` removes stale class files from previously killed builds.
