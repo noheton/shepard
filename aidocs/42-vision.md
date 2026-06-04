@@ -422,38 +422,40 @@ These work the same way across every primitive:
   a new reference, or a played/rendered view. The researcher never
   types a path or URL; they pick the input references by name, and
   `POST /v2/mappings/{templateAppId}/materialize` resolves everything
-  server-side. This is the generic seam that the 3D scene-graph and
-  KRL animation flows fold onto next (V2CONV-B4/B5): instead of a
-  bespoke endpoint per transform, any plugin can register a
-  `TransformExecutor` against its recipe's shape and light up a new
+  server-side. This is the generic seam that dissolved the bespoke
+  scene-graph and KRL namespaces — both shipped on this mechanism
+  (**V2CONV-B4** scene-graph converged 2026-06-04; **V2CONV-B5+A6**
+  KRL animation converged 2026-06-04). Any plugin registers a
+  `TransformExecutor` against its recipe's shape and lights up a new
   "derive this" action with zero new API surface. A built-in identity
   transform ships so the flow is exercisable out of the box before any
   plugin is installed. Every materialise run is recorded as a typed
   provenance Activity, so a derived dataset always carries the recipe
   + inputs that produced it.
 - **Click a KRL program, see it animate** *(KRL-INTERPRETER-01..06
-  shipped; -07 MFFD end-to-end showcase next)*. The MFFD AFP cell,
-  the bridge welding cell, and every other ZLP robotic cell at DLR
-  Augsburg ship motion programs as KUKA KRL (`.src` + `.dat`). Today,
-  to see what one of those programs will do, a researcher fires up a
-  Windows VM with RoboDK. Shepard cuts that out: open the `.src`
-  FileReference, click the primary "**Run / preview**" button at the
-  top of the page, pick a URDF FileReference (preselected when only
-  one is present), and the backend resolves it offline via the
-  `shepard-plugin-krl-interpreter` sidecar (pykrlparser + ikpy,
-  pure-Python, MIT/Apache-2.0). The resulting 6-channel joint
-  trajectory lands as a `TimeseriesReference` annotated with
-  `urn:shepard:urdf:joint:joint_<n>` — the URDF viewer auto-binds
-  and plays it back without a manual channel-pick step. Every
-  interpret call records a `:KrlInterpretActivity` carrying the
-  interpreter version + IK convergence stats so the EN 9100 audit
-  trail can reproduce the trajectory months later. The result panel
-  marks every trajectory as **interpreter-resolved offline replay**
-  (per the §13.1 IME/AQE audit-label guidance) — and when the sidecar
-  isn't running, the panel surfaces the operator hint
-  `COMPOSE_PROFILES=krl-interpreter docker compose up -d` verbatim so
-  no support ticket is required. The MFFD end-to-end showcase (-07)
-  is the next bullet in this family.
+  shipped; V2CONV-B5+A6 converged 2026-06-04; -07 MFFD end-to-end
+  showcase next)*. The MFFD AFP cell, the bridge welding cell, and
+  every other ZLP robotic cell at DLR Augsburg ship motion programs as
+  KUKA KRL (`.src` + `.dat`). Shepard animates them without a Windows
+  VM or RoboDK: open the `.src` FileReference, click **"Run / preview"**,
+  pick a URDF FileReference (preselected when only one is present), and
+  `POST /v2/mappings/{templateAppId}/materialize` resolves it via the
+  `krl-interpreter` plugin (`pykrlparser + ikpy`, pure-Python,
+  MIT/Apache-2.0). The resulting 6-channel joint trajectory lands as a
+  `TimeseriesReference` annotated with `urn:shepard:urdf:joint:joint_<n>`
+  — the URDF viewer auto-binds and plays it back without a manual
+  channel-pick step. Every materialise run records a `:MappingActivity`
+  carrying the interpreter version + IK convergence stats so the EN 9100
+  audit trail can reproduce the trajectory months later. The result panel
+  marks every trajectory as **interpreter-resolved offline replay** (per
+  the §13.1 IME/AQE audit-label guidance). **V2CONV-B5+A6 (2026-06-04)**:
+  the bespoke `/v2/krl/*` namespace is gone; KRL is now a
+  `MAPPING_RECIPE` transform-shape routed through the generic
+  materialisation path — the same minimalist-core convergence as
+  scene-graph. The `krl-interpreter` plugin is opt-in (enable via
+  `COMPOSE_PROFILES=krl-interpreter docker compose up -d`; when absent
+  the panel surfaces this hint verbatim). The MFFD end-to-end showcase
+  (-07) is next in this family.
 
 ## How you actually use it
 
