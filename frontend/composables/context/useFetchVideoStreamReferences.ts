@@ -1,27 +1,22 @@
 /**
  * UI3a (aidocs/85 §2.2) / UI6 (aidocs/16) — fetch VideoStreamReferences for
- * a DataObject.
+ * a DataObject via the unified `/v2/references?kind=video` surface.
  *
- * `VideoStreamReference` is a VID1a entity served at
- * `/v2/data-objects/{dataObjectAppId}/video-stream-references`.
- * It is **not yet regenerated into `@dlr-shepard/backend-client`**, so this
- * composable uses a raw `fetch` call with a manually-typed response shape that
- * mirrors `VideoStreamReferenceIO` exactly.
+ * PLUGIN-REF-HANDLER-FE-REPOINT: migrated from the plugin-specific
+ * `/v2/data-objects/{appId}/video-stream-references` path to the unified
+ * `GET /v2/references?kind=video&dataObjectAppId={appId}` endpoint now that
+ * the `video` ReferenceKindHandler is installed (merged in bfab5f04b).
  *
- * When the backend-client is regenerated (post-VID1a), swap the raw fetch for
- * `useV2ShepardApi(VideoStreamReferenceApi).value.list(...)` and delete this
- * file.
+ * The per-kind `payload` map carries:
+ *   storageLocator, mimeType, fileSizeBytes, durationSeconds, width, height,
+ *   frameRate, videoCodec, audioCodec, wallClockTimestamp
+ * which are mapped back to the typed `VideoStreamReferenceIO` interface so
+ * consumers (`VideoStreamReferencesPane.vue`, `dataTableElementMappingUtil.ts`)
+ * require no changes.
  *
- * V2CONV-A2 NOTE: the list still targets the video plugin's own
- * `/v2/data-objects/{appId}/video-stream-references` path rather than the
- * unified `GET /v2/references?kind=video`. The unified surface dispatches
- * through a `ReferenceKindHandler`, and the `video` handler ships in a
- * follow-up that lands inside the video plugin module (core cannot register a
- * handler for a plugin kind). Until that handler is installed,
- * `?kind=video` returns 400 (uninstalled kind), so this composable keeps the
- * plugin path. The `/download` URL builder is unaffected either way — it stays
- * a kind-specific binary op outside the unified surface (PLUGIN-REF-HANDLER-* in
- * aidocs/16).
+ * The `/download` URL builder stays on the plugin-specific path — it is a
+ * kind-specific binary op outside the unified surface (PLUGIN-REF-HANDLER-*
+ * in aidocs/16).
  */
 
 export interface VideoStreamReferenceIO {
@@ -41,6 +36,16 @@ export interface VideoStreamReferenceIO {
   wallClockTimestamp?: number | null;
 }
 
+interface ReferenceV2IO {
+  appId: string;
+  id?: number;
+  name?: string | null;
+  createdAt?: string | null;
+  createdBy?: string | null;
+  kind: string;
+  payload: Record<string, unknown>;
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -48,6 +53,26 @@ function v2BaseUrl(): string {
   return (config.backendApiUrl as string)
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
+}
+
+function toVideoStreamReferenceIO(r: ReferenceV2IO): VideoStreamReferenceIO {
+  const p = r.payload;
+  return {
+    appId: r.appId,
+    id: r.id,
+    name: r.name,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    mimeType: (p.mimeType as string | null | undefined) ?? null,
+    fileSizeBytes: (p.fileSizeBytes as number | null | undefined) ?? null,
+    durationSeconds: (p.durationSeconds as number | null | undefined) ?? null,
+    width: (p.width as number | null | undefined) ?? null,
+    height: (p.height as number | null | undefined) ?? null,
+    frameRate: (p.frameRate as number | null | undefined) ?? null,
+    videoCodec: (p.videoCodec as string | null | undefined) ?? null,
+    audioCodec: (p.audioCodec as string | null | undefined) ?? null,
+    wallClockTimestamp: (p.wallClockTimestamp as number | null | undefined) ?? null,
+  };
 }
 
 export function useFetchVideoStreamReferences(dataObjectAppId: string) {
@@ -67,7 +92,9 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
       return;
     }
 
-    const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/video-stream-references`;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=video&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
 
     try {
       const response = await fetch(url, {
@@ -82,7 +109,8 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
         handleError(fetchError.value, "listVideoStreamReferences");
         return;
       }
-      references.value = (await response.json()) as VideoStreamReferenceIO[];
+      const raw = (await response.json()) as ReferenceV2IO[];
+      references.value = raw.map(toVideoStreamReferenceIO);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Network error";
@@ -95,7 +123,8 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
 
   /**
    * Builds the direct-download URL for a VideoStreamReference.
-   * VID1a provides a raw file download; VID1b+ will add HLS segmented delivery.
+   * Stays on the plugin-specific path — `/download` is a binary op outside
+   * the unified `/v2/references` surface (PLUGIN-REF-HANDLER-* in aidocs/16).
    */
   function downloadUrl(appId: string): string {
     return `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/video-stream-references/${encodeURIComponent(appId)}/download`;
