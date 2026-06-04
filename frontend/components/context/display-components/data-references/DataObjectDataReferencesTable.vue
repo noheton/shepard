@@ -91,11 +91,13 @@ async function confirmDelete() {
     return;
   }
 
-  // FR1b singletons: DELETE /v2/files/{appId}
+  // FR1b singletons: V2CONV-A2 DELETE /v2/references/{appId} (unified surface;
+  // was the per-kind DELETE /v2/files/{appId}). The kind is resolved from the
+  // entity server-side.
   if (item.type === "File" || item.type === "Notebook") {
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
-    const url = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}`;
+    const url = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}`;
     try {
       const response = await fetch(url, {
         method: "DELETE",
