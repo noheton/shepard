@@ -16,15 +16,15 @@ import { isPlausibleAppId } from "../../utils/idShape";
 // ── TOOLS_TILES — tile inventory ───────────────────────────────────────────
 
 describe("TOOLS_TILES", () => {
-  it("exposes the six tiles called out by the reachability reconciler", () => {
-    // The reconciler's six routes (CLAUDE.md "every shipped feature
-    // reachable from the top-nav before beta", 2026-05-30 finding).
+  it("exposes the reachability-reconciler tiles", () => {
+    // CLAUDE.md "every shipped feature reachable from the top-nav before beta".
+    // V2CONV-B4 removed the `/scene-graphs` tile — the 3D view is now reached
+    // in-context from a URDF FileReference detail page.
     const expectedRoutes = [
       "/semantic/vocabularies",
       "/semantic/sparql",
       "/shapes/validate",
       "/snapshots/diff",
-      "/scene-graphs",
       "/shapes/render",
     ];
     expect(TOOLS_TILES.map(t => t.to).sort()).toEqual(expectedRoutes.sort());
@@ -44,10 +44,8 @@ describe("TOOLS_TILES", () => {
     expect(new Set(routes).size).toBe(routes.length);
   });
 
-  it("includes the new Scene graphs tile (SCENEGRAPH-NAV-01)", () => {
-    const scene = TOOLS_TILES.find(t => t.to === "/scene-graphs");
-    expect(scene).toBeDefined();
-    expect(scene!.title).toBe("Scene graphs");
+  it("no longer exposes a Scene graphs tile (V2CONV-B4 — now in-context only)", () => {
+    expect(TOOLS_TILES.find(t => t.to === "/scene-graphs")).toBeUndefined();
   });
 });
 

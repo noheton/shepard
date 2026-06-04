@@ -2,11 +2,10 @@ package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
-import de.dlr.shepard.v2.collection.daos.CollectionSceneGraphLinkDAO;
-import de.dlr.shepard.v2.collection.io.CollectionSceneGraphLinkIO;
-import de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene;
-import de.dlr.shepard.v2.scenegraph.services.SceneGraphPermissionService;
-import de.dlr.shepard.v2.scenegraph.services.SceneGraphService;
+import de.dlr.shepard.template.daos.ShepardTemplateDAO;
+import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.v2.collection.daos.CollectionHeroViewLinkDAO;
+import de.dlr.shepard.v2.collection.io.CollectionHeroViewLinkIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -29,89 +28,69 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * COLL-SCENE-1 — {@code /v2/collections/{appId}/scene-graph} REST surface
- * for the Collection ↔ {@code :DigitalTwinScene} hero-scene link.
+ * V2CONV-B4 — {@code /v2/collections/{appId}/scene-graph} REST surface for the
+ * Collection ↔ hero-view link.
  *
- * <p>The Collection landing page renders a single primary scene-graph
- * (the MFFD robot cell, the LUMEN test bench, etc.) when this link is
- * set; otherwise it surfaces a "Link scene-graph" action to writers.
- * See {@code aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md} GAP-6
- * for the originating motivation.
+ * <p>The bespoke scene-graph subsystem dissolved into the generic
+ * MAPPING_RECIPE mechanism (aidocs/platform/191 decision #2). This endpoint
+ * keeps its path (so existing frontend callers don't break) but now stores and
+ * returns a MAPPING_RECIPE {@code ShepardTemplate} appId — a "hero view" — in
+ * place of a {@code :DigitalTwinScene}. The {@code :Collection.sceneGraphAppId}
+ * scalar property is reused unchanged; only what it points <em>at</em> changes.
  *
  * <h2>Endpoints</h2>
  * <pre>
- *   GET    /v2/collections/{appId}/scene-graph — resolve the linked scene
+ *   GET    /v2/collections/{appId}/scene-graph — resolve the linked hero view
  *   PUT    /v2/collections/{appId}/scene-graph — link / replace
- *   DELETE /v2/collections/{appId}/scene-graph — unlink (does NOT delete the scene)
+ *   DELETE /v2/collections/{appId}/scene-graph — unlink (does NOT delete the template)
  * </pre>
  *
  * <h2>Permission gate</h2>
  *
  * <p>{@code GET} requires {@link AccessType#Read} on the Collection.
- * {@code PUT} requires {@link AccessType#Write} on the Collection AND
- * {@link SceneGraphPermissionService#isAllowed} {@link AccessType#Read}
- * on the target scene — a writer on Collection A must not be able to
- * blind-link a private scene B they cannot themselves read (advisor
- * note 2026-06-02). {@code DELETE} requires {@link AccessType#Write}
- * on the Collection.
- *
- * <h2>Independence from scene permissions</h2>
- *
- * <p>The Collection→Scene back-pointer is a weak render affordance, NOT
- * a new permission edge. {@link SceneGraphPermissionService} continues
- * to walk scene → FileReference → DataObject → Collection (the scene's
- * intrinsic anchor) regardless of what Collections have linked it as
- * their hero. Hand-built scenes pinned by admins stay admin-only.
+ * {@code PUT} requires {@link AccessType#Write} on the Collection AND the target
+ * to be an existing MAPPING_RECIPE template. {@code DELETE} requires
+ * {@link AccessType#Write} on the Collection.
  *
  * <h2>Provenance</h2>
  *
  * <p>PUT and DELETE are cross-cutting mutations; the
  * {@code ProvenanceCaptureFilter} writes the {@code :Activity} row
- * automatically (no handler-side {@code ProvenanceService.record()}
- * call — this resource has no domain-specific Activity enrichment to
- * justify bypassing the filter).
+ * automatically.
  */
 @Path("/v2/collections/{appId}/scene-graph")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection scene-graph (v2)")
+@Tag(name = "Collection hero-view (v2)")
 public class CollectionSceneGraphRest {
 
-  @Inject CollectionSceneGraphLinkDAO linkDAO;
+  static final String MAPPING_RECIPE_KIND = "MAPPING_RECIPE";
+
+  @Inject CollectionHeroViewLinkDAO linkDAO;
   @Inject PermissionsService permissionsService;
-  @Inject SceneGraphService sceneGraphService;
-  @Inject SceneGraphPermissionService scenePermissions;
+  @Inject ShepardTemplateDAO templateDAO;
 
   // ── GET ────────────────────────────────────────────────────────────────────
 
   @GET
   @Operation(
-    summary = "Resolve the Collection's hero scene-graph link.",
+    summary = "Resolve the Collection's hero-view link.",
     description =
-      "Returns the linked {@code :DigitalTwinScene}'s identity tuple "
-      + "(appId + name + description + root/source pointers + frame and "
-      + "joint counts) for the Collection identified by `appId` (UUID "
-      + "v7).\n\n"
-      + "Auth: Read permission on the Collection. Returns 401 when "
-      + "unauthenticated, 403 when the caller lacks Read access on the "
-      + "Collection, 404 when the Collection does not exist OR when no "
-      + "scene is currently linked.\n\n"
-      + "Note: the response does NOT re-check the caller's permission on "
-      + "the linked scene itself. The Collection's Read gate is the "
-      + "policy boundary for this endpoint; the scene-side permission "
-      + "walk applies on the dedicated `/v2/scene-graphs/{appId}` "
-      + "surface."
+      "Returns the linked MAPPING_RECIPE template's identity tuple for the "
+      + "Collection identified by `appId` (UUID v7). Auth: Read on the "
+      + "Collection. 401 unauthenticated, 403 when the caller lacks Read, 404 "
+      + "when the Collection does not exist OR no hero view is linked."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Linked scene identity tuple.",
-    content = @Content(schema = @Schema(implementation = CollectionSceneGraphLinkIO.class))
+    description = "Linked hero-view identity tuple.",
+    content = @Content(schema = @Schema(implementation = CollectionHeroViewLinkIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
-  @APIResponse(responseCode = "404", description = "Collection not found or no scene linked.")
+  @APIResponse(responseCode = "404", description = "Collection not found or no hero view linked.")
   public Response get(@PathParam("appId") String collectionAppId, @Context SecurityContext sc) {
     String caller = callerOf(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -122,30 +101,18 @@ public class CollectionSceneGraphRest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
-    Optional<String> linkedSceneAppId = linkDAO.findLinkedSceneAppId(collectionAppId);
-    if (linkedSceneAppId.isEmpty()) {
+    Optional<String> linkedTemplateAppId = linkDAO.findLinkedTemplateAppId(collectionAppId);
+    if (linkedTemplateAppId.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    DigitalTwinScene scene = sceneGraphService.findScene(linkedSceneAppId.get());
-    CollectionSceneGraphLinkIO body = new CollectionSceneGraphLinkIO();
-    body.setSceneGraphAppId(linkedSceneAppId.get());
-    if (scene != null) {
-      body.setName(scene.getName());
-      body.setDescription(scene.getDescription());
-      body.setRootFrameAppId(scene.getRootFrameAppId());
-      body.setSourceFileAppId(scene.getSourceFileAppId());
-      // Count walks reuse SceneGraphService — null-safe when the scene was
-      // hard-deleted out from under us (the link is a scalar pointer, not
-      // an OGM cascade edge; a dangling pointer renders as "name+counts
-      // absent" rather than an outright 500).
-      try {
-        body.setFrameCount((long) sceneGraphService.findFramesForScene(linkedSceneAppId.get()).size());
-        body.setJointCount((long) sceneGraphService.findJointsForScene(linkedSceneAppId.get()).size());
-      } catch (RuntimeException ignored) {
-        // Fire-and-forget: counts are decorative. Render the appId either way.
-      }
-    }
+    CollectionHeroViewLinkIO body = new CollectionHeroViewLinkIO();
+    body.setSceneGraphAppId(linkedTemplateAppId.get());
+    templateDAO.findByAppId(linkedTemplateAppId.get()).ifPresent(t -> {
+      body.setTemplateName(t.getName());
+      body.setTemplateDescription(t.getDescription());
+      body.setTemplateKind(t.getTemplateKind());
+    });
     return Response.ok(body).build();
   }
 
@@ -153,39 +120,36 @@ public class CollectionSceneGraphRest {
 
   @PUT
   @Operation(
-    summary = "Link / replace the Collection's hero scene-graph.",
+    summary = "Link / replace the Collection's hero view.",
     description =
-      "Sets `:Collection.sceneGraphAppId` to the supplied scene appId. "
-      + "Idempotent: calling PUT with the same scene as already linked "
-      + "is a no-op write that returns 200.\n\n"
-      + "Auth: Write permission on the Collection AND Read permission "
-      + "on the target scene (the two-sided gate prevents a writer on "
-      + "Collection A from blind-linking a private scene B they could "
-      + "not themselves read). Returns 401 unauthenticated, 403 when "
-      + "either gate denies, 404 when the Collection or scene does not "
-      + "exist."
+      "Sets `:Collection.sceneGraphAppId` to the supplied MAPPING_RECIPE "
+      + "template appId. Idempotent. Auth: Write on the Collection; the target "
+      + "must be an existing MAPPING_RECIPE template. 400 missing appId, 401 "
+      + "unauthenticated, 403 lacks Write, 404 Collection not found, 422 the "
+      + "target is not a MAPPING_RECIPE template."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Scene linked.",
-    content = @Content(schema = @Schema(implementation = CollectionSceneGraphLinkIO.class))
+    description = "Hero view linked.",
+    content = @Content(schema = @Schema(implementation = CollectionHeroViewLinkIO.class))
   )
   @APIResponse(responseCode = "400", description = "Body missing required sceneGraphAppId.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write on Collection or Read on the scene.")
-  @APIResponse(responseCode = "404", description = "Collection or scene not found.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
+  @APIResponse(responseCode = "404", description = "Collection or template not found.")
+  @APIResponse(responseCode = "422", description = "Target template is not a MAPPING_RECIPE.")
   public Response link(
     @PathParam("appId") String collectionAppId,
-    CollectionSceneGraphLinkIO body,
+    CollectionHeroViewLinkIO body,
     @Context SecurityContext sc
   ) {
     String caller = callerOf(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
 
-    String sceneAppId = body == null ? null : body.getSceneGraphAppId();
-    if (sceneAppId == null || sceneAppId.isBlank()) {
+    String templateAppId = body == null ? null : body.getSceneGraphAppId();
+    if (templateAppId == null || templateAppId.isBlank()) {
       return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"detail\":\"sceneGraphAppId is required\"}")
+        .entity("{\"detail\":\"sceneGraphAppId (the MAPPING_RECIPE template appId) is required\"}")
         .build();
     }
 
@@ -195,29 +159,22 @@ public class CollectionSceneGraphRest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
-    // Target scene must exist.
-    DigitalTwinScene scene = sceneGraphService.findScene(sceneAppId);
-    if (scene == null) {
+    Optional<ShepardTemplate> template = templateDAO.findByAppId(templateAppId);
+    if (template.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-        .entity("{\"detail\":\"no scene with that appId\"}")
+        .entity("{\"detail\":\"no template with that appId\"}")
+        .build();
+    }
+    if (!MAPPING_RECIPE_KIND.equals(template.get().getTemplateKind())) {
+      return Response.status(422)
+        .entity("{\"detail\":\"hero view must be a MAPPING_RECIPE template; kind="
+          + template.get().getTemplateKind() + "\"}")
         .build();
     }
 
-    // Two-sided gate — caller must be able to read the target scene (per
-    // SceneGraphPermissionService's own walk). Prevents blind-link of
-    // private scenes.
-    boolean isAdmin = sc != null && sc.isUserInRole(SceneGraphPermissionService.INSTANCE_ADMIN_ROLE);
-    if (!scenePermissions.isAllowed(sceneAppId, AccessType.Read, caller, isAdmin)) {
-      return Response.status(Response.Status.FORBIDDEN)
-        .entity("{\"detail\":\"caller lacks Read on the target scene\"}")
-        .build();
-    }
-
-    boolean ok = linkDAO.link(collectionAppId, sceneAppId);
+    boolean ok = linkDAO.link(collectionAppId, templateAppId);
     if (!ok) return Response.status(Response.Status.NOT_FOUND).build();
 
-    // Return the GET shape with the freshly-linked scene's identity tuple
-    // so the frontend doesn't need a follow-up round-trip.
     return get(collectionAppId, sc);
   }
 
@@ -225,15 +182,12 @@ public class CollectionSceneGraphRest {
 
   @DELETE
   @Operation(
-    summary = "Unlink the Collection's hero scene-graph.",
+    summary = "Unlink the Collection's hero view.",
     description =
-      "Clears `:Collection.sceneGraphAppId`. Does NOT delete the "
-      + "`:DigitalTwinScene` entity — it remains addressable via "
-      + "`/v2/scene-graphs/{appId}`.\n\n"
-      + "Idempotent: a DELETE on an unlinked Collection returns 204.\n\n"
-      + "Auth: Write permission on the Collection."
+      "Clears `:Collection.sceneGraphAppId`. Does NOT delete the MAPPING_RECIPE "
+      + "template. Idempotent. Auth: Write on the Collection."
   )
-  @APIResponse(responseCode = "204", description = "Scene unlinked (or was not linked).")
+  @APIResponse(responseCode = "204", description = "Hero view unlinked (or was not linked).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
   @APIResponse(responseCode = "404", description = "Collection not found.")

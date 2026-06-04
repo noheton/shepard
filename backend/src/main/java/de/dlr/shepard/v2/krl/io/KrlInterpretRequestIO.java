@@ -29,9 +29,10 @@ public class KrlInterpretRequestIO {
   private String urdfFileAppId;
 
   /**
-   * Optional appId of a {@code :DigitalTwinScene} — provides default
-   * base / tool frame when not overridden. {@code null} when the caller
-   * supplies frames explicitly.
+   * Optional appId of a scene context — provides default base / tool frame when
+   * not overridden (historically a {@code :DigitalTwinScene}; post V2CONV-B4 a
+   * MAPPING_RECIPE scene-graph-play template appId, converging in V2CONV-B5).
+   * {@code null} when the caller supplies frames explicitly.
    */
   private String sceneAppId;
 

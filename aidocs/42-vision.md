@@ -657,6 +657,21 @@ Mid-horizon:
   the Collection's DataObject list. The MFFD AFP cell now surfaces
   directly on the Collection landing page that contains its tracks
   rather than living one click away in `/scene-graphs/{appId}`.
+  **Scene-graph converged into the generic MAPPING_RECIPE mechanism
+  (V2CONV-B4, 2026-06-04)** — a scene-graph is no longer a stored
+  frames/joints graph but a `MAPPING_RECIPE` template binding a URDF
+  FileReference (parsed on demand) + an optional joint TimeseriesReference,
+  played back by the Trace3D renderer via
+  `POST /v2/mappings/{templateAppId}/materialize` against the
+  `SceneGraphPlayShape`. The bespoke `/v2/scene-graphs/*` namespace, the
+  stored `:DigitalTwinScene` graph, and the `scene_graph_*` MCP tools were
+  removed; the URDF FileReference is the single source of truth. The 3D
+  view is reached in-context from a URDF FileReference's detail page
+  ("Create / Open 3D view"), and a Collection's hero view now pins a
+  MAPPING_RECIPE template. This is the same minimalist-core convergence
+  that the v2-surface-convergence design (`aidocs/platform/191`) applies
+  across the fork: domain verticals become template shapes routed through
+  generic SPIs, not bespoke namespaces.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.

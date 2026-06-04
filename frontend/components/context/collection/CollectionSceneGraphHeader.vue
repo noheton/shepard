@@ -1,36 +1,29 @@
 <script setup lang="ts">
 /**
- * COLL-SCENE-2-UI — hero scene-graph band rendered at the top of the
- * Collection detail page when the Collection carries a
- * `sceneGraphAppId` link.
+ * V2CONV-B4-FE — hero-view band at the top of the Collection detail page when
+ * the Collection carries a `sceneGraphAppId` link.
  *
- * Behaviour:
- *  - `sceneGraphAppId` non-null on the Collection prop:
- *    fetch `GET /v2/collections/{appId}/scene-graph` for the scene
- *    identity tuple, then `GET /v2/scene-graphs/{appId}/export.urdf`
- *    for renderable URDF XML. Pass the result as a blob:URL to
- *    `UrdfCanvas`. ~360px tall full-bleed band.
- *  - `sceneGraphAppId` null AND `canLink` true (writer on Collection):
- *    render a small "Link scene-graph" affordance that pops a v-select
- *    picker pulling from `GET /v2/scene-graphs`.
- *  - `sceneGraphAppId` null AND `canLink` false: render nothing.
- *  - Link resolves to 404/403 (scene was wiped or revoked): render
- *    `EntityNotFound` for the band instead of crashing.
- *
- * GAP-6 in `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md`. The
- * MFFD `MFZ.rdk` URDF flat-lays a real industrial robot cell, the LUMEN
- * showcase carries a bench scene — once linked, the Collection landing
- * page becomes a digital-twin entry point instead of a folder tree.
+ * The bespoke scene-graph subsystem dissolved into the generic MAPPING_RECIPE
+ * mechanism (aidocs/platform/191 decision #2). The Collection hero link now
+ * points at a MAPPING_RECIPE `ShepardTemplate` appId. This band:
+ *  - resolves the linked template via `GET /v2/collections/{appId}/scene-graph`;
+ *  - materializes it (`POST /v2/mappings/{templateAppId}/materialize`) to get
+ *    the play envelope + the bound URDF FileReference appId;
+ *  - resolves the URDF bytes (appId only — never a path/URL) and renders
+ *    `UrdfCanvas`.
+ *  - writer link picker pulls from `GET /v2/templates?kind=MAPPING_RECIPE`.
  */
 import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import EntityNotFound from "~/components/common/EntityNotFound.vue";
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
+import { materializeMapping } from "~/composables/useMaterializeMapping";
+import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
 import {
   fetchCollectionSceneGraphLink,
-  fetchSceneUrdfBlobUrl,
   linkCollectionSceneGraph,
   unlinkCollectionSceneGraph,
-  type CollectionSceneGraphLinkIO,
+  listHeroViewTemplates,
+  type CollectionHeroViewLinkIO,
 } from "~/composables/context/useCollectionSceneGraphLink";
 
 const props = defineProps<{
@@ -42,31 +35,28 @@ const props = defineProps<{
   canLink: boolean;
 }>();
 
-const emit = defineEmits<{
-  /** Emitted after a successful link/unlink so the parent refetches Collection. */
-  changed: [];
-}>();
+const emit = defineEmits<{ changed: [] }>();
 
-const linkInfo = ref<CollectionSceneGraphLinkIO | null>(null);
-const urdfBlobUrl = ref<string | null>(null);
+const linkInfo = ref<CollectionHeroViewLinkIO | null>(null);
 const loading = ref(false);
 const notFound = ref(false);
+const frameCount = ref(0);
+const jointCount = ref(0);
+
+const {
+  objectUrl: urdfBlobUrl,
+  error: blobError,
+  resolve: resolveBlob,
+  revoke: revokeBlob,
+} = useUrdfReferenceBlob();
 
 // ── Link picker dialog state ────────────────────────────────────────────────
 
 const showPicker = ref(false);
-const pickerSceneId = ref<string>("");
+const pickerTemplateId = ref<string>("");
 const pickerOptions = ref<Array<{ value: string; title: string }>>([]);
 const pickerLoading = ref(false);
 const pickerSaving = ref(false);
-
-interface SceneListItemLike {
-  appId: string;
-  name?: string | null;
-}
-interface SceneListPageLike {
-  items?: SceneListItemLike[];
-}
 
 async function loadPickerOptions(): Promise<void> {
   pickerLoading.value = true;
@@ -74,28 +64,8 @@ async function loadPickerOptions(): Promise<void> {
     const { data: session } = useAuth();
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
-    const config = useRuntimeConfig().public;
-    const explicit = config.backendV2ApiUrl as string | undefined;
-    const base = (
-      explicit && explicit.length > 0
-        ? explicit
-        : (config.backendApiUrl as string)
-            .replace(/\/shepard\/api\/?$/, "")
-            .replace(/\/$/, "")
-    ).replace(/\/$/, "");
-    const resp = await fetch(`${base}/v2/scene-graphs?size=200`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
-    });
-    if (!resp.ok) {
-      pickerOptions.value = [];
-      return;
-    }
-    const page = (await resp.json()) as SceneListPageLike;
-    const items = page.items ?? [];
-    pickerOptions.value = items.map(it => ({
+    const items = await listHeroViewTemplates(accessToken);
+    pickerOptions.value = items.map((it) => ({
       value: it.appId,
       title: it.name ? `${it.name} (${it.appId.slice(0, 8)}…)` : it.appId,
     }));
@@ -107,13 +77,13 @@ async function loadPickerOptions(): Promise<void> {
 }
 
 async function openPicker(): Promise<void> {
-  pickerSceneId.value = props.sceneGraphAppId ?? "";
+  pickerTemplateId.value = props.sceneGraphAppId ?? "";
   showPicker.value = true;
   await loadPickerOptions();
 }
 
 async function savePicker(): Promise<void> {
-  if (!pickerSceneId.value) return;
+  if (!pickerTemplateId.value) return;
   pickerSaving.value = true;
   try {
     const { data: session } = useAuth();
@@ -121,7 +91,7 @@ async function savePicker(): Promise<void> {
     if (!accessToken) return;
     const result = await linkCollectionSceneGraph(
       props.collectionAppId,
-      pickerSceneId.value,
+      pickerTemplateId.value,
       accessToken,
     );
     if (result) {
@@ -143,14 +113,18 @@ async function doUnlink(): Promise<void> {
 
 // ── Loader ─────────────────────────────────────────────────────────────────
 
-async function loadScene(): Promise<void> {
-  // Revoke a prior blob URL before fetching the next one.
-  if (urdfBlobUrl.value) {
-    URL.revokeObjectURL(urdfBlobUrl.value);
-    urdfBlobUrl.value = null;
-  }
+interface PlayEnvelope {
+  urdfFileReferenceAppId?: string;
+  frames?: unknown[];
+  joints?: unknown[];
+}
+
+async function loadHeroView(): Promise<void> {
+  revokeBlob();
   linkInfo.value = null;
   notFound.value = false;
+  frameCount.value = 0;
+  jointCount.value = 0;
   if (!props.sceneGraphAppId) return;
 
   loading.value = true;
@@ -162,52 +136,46 @@ async function loadScene(): Promise<void> {
       return;
     }
 
-    const info = await fetchCollectionSceneGraphLink(
-      props.collectionAppId,
-      accessToken,
-    );
+    const info = await fetchCollectionSceneGraphLink(props.collectionAppId, accessToken);
     if (!info) {
-      // 404 / 403 — render EntityNotFound for the band.
       notFound.value = true;
       return;
     }
     linkInfo.value = info;
 
-    const blobUrl = await fetchSceneUrdfBlobUrl(
-      info.sceneGraphAppId,
-      accessToken,
-    );
-    if (!blobUrl) {
+    const result = await materializeMapping(info.sceneGraphAppId, {});
+    if (result.outputKind !== "VIEW" || !result.viewModel) {
       notFound.value = true;
       return;
     }
-    urdfBlobUrl.value = blobUrl;
+    const env = result.viewModel as unknown as PlayEnvelope;
+    frameCount.value = env.frames?.length ?? 0;
+    jointCount.value = env.joints?.length ?? 0;
+    if (!env.urdfFileReferenceAppId) {
+      notFound.value = true;
+      return;
+    }
+    await resolveBlob(env.urdfFileReferenceAppId);
+    if (blobError.value) notFound.value = true;
+  } catch {
+    notFound.value = true;
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(loadScene);
-watch(
-  () => props.sceneGraphAppId,
-  () => loadScene(),
-);
-
-onBeforeUnmount(() => {
-  if (urdfBlobUrl.value) {
-    URL.revokeObjectURL(urdfBlobUrl.value);
-    urdfBlobUrl.value = null;
-  }
-});
+onMounted(loadHeroView);
+watch(() => props.sceneGraphAppId, () => loadHeroView());
+onBeforeUnmount(revokeBlob);
 </script>
 
 <template>
   <div class="collection-scenegraph-header">
-    <!-- Branch 1: scene linked + resolves cleanly → render the URDF viewer. -->
+    <!-- Branch 1: hero view linked + resolves cleanly → render the URDF viewer. -->
     <template v-if="sceneGraphAppId && !notFound">
       <div v-if="loading" class="scene-loading">
         <v-progress-circular indeterminate size="32" />
-        <span class="ml-3 text-caption">Loading scene…</span>
+        <span class="ml-3 text-caption">Loading 3D view…</span>
       </div>
       <div v-else-if="urdfBlobUrl" class="scene-viewer-wrap">
         <ClientOnly>
@@ -219,15 +187,19 @@ onBeforeUnmount(() => {
           />
         </ClientOnly>
         <div class="scene-caption">
-          <strong v-if="linkInfo?.name">{{ linkInfo.name }}</strong>
-          <span v-else class="text-medium-emphasis">{{
-            sceneGraphAppId.slice(0, 8)
-          }}…</span>
+          <strong v-if="linkInfo?.templateName">{{ linkInfo.templateName }}</strong>
+          <span v-else class="text-medium-emphasis">{{ sceneGraphAppId.slice(0, 8) }}…</span>
           <span class="text-caption text-medium-emphasis">
-            {{ linkInfo?.frameCount ?? 0 }} frames ·
-            {{ linkInfo?.jointCount ?? 0 }} joints
+            {{ frameCount }} frames · {{ jointCount }} joints
           </span>
           <v-spacer />
+          <v-btn
+            variant="text"
+            size="small"
+            data-testid="scene-open-btn"
+            :to="`/scene-graphs/play/${encodeURIComponent(sceneGraphAppId)}`"
+            >Open</v-btn
+          >
           <v-btn
             v-if="canLink"
             variant="text"
@@ -250,25 +222,20 @@ onBeforeUnmount(() => {
 
     <!-- Branch 2: linked but dangling → EntityNotFound. -->
     <template v-else-if="sceneGraphAppId && notFound">
-      <EntityNotFound
-        entity-kind="Collection"
-        :requested-id="sceneGraphAppId"
-      />
+      <EntityNotFound entity-kind="Collection" :requested-id="sceneGraphAppId" />
     </template>
 
     <!-- Branch 3: no link + writer → CTA. -->
     <template v-else-if="canLink">
       <div class="scene-link-cta" data-testid="scene-link-empty">
-        <span class="text-medium-emphasis text-caption">
-          No scene-graph linked yet.
-        </span>
+        <span class="text-medium-emphasis text-caption"> No 3D view linked yet. </span>
         <v-btn
           variant="tonal"
           size="small"
           prepend-icon="mdi-link-variant"
           data-testid="scene-link-btn"
           @click="openPicker"
-          >Link scene-graph</v-btn
+          >Link 3D view</v-btn
         >
       </div>
     </template>
@@ -278,21 +245,20 @@ onBeforeUnmount(() => {
     <!-- Picker dialog (shared by link + replace). -->
     <v-dialog v-model="showPicker" max-width="640">
       <v-card>
-        <v-card-title>Link a scene-graph</v-card-title>
+        <v-card-title>Link a 3D view</v-card-title>
         <v-card-text>
           <v-select
-            v-model="pickerSceneId"
+            v-model="pickerTemplateId"
             :items="pickerOptions"
             :loading="pickerLoading"
             item-title="title"
             item-value="value"
-            label="Scene-graph"
+            label="MAPPING_RECIPE template (3D view)"
             data-testid="scene-picker-select"
           />
           <p class="text-caption text-medium-emphasis">
-            Pick from scenes you can read. The link only surfaces a render
-            affordance on this Collection; the scene's own permissions stay
-            the source-of-truth for who can edit it.
+            Pick a scene-graph-play MAPPING_RECIPE template. Create one from a URDF
+            FileReference's "Create 3D view from this URDF" button.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -302,7 +268,7 @@ onBeforeUnmount(() => {
             color="primary"
             variant="flat"
             :loading="pickerSaving"
-            :disabled="!pickerSceneId"
+            :disabled="!pickerTemplateId"
             data-testid="scene-picker-save"
             @click="savePicker"
             >Link</v-btn

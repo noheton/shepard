@@ -133,13 +133,14 @@ public class NeoConnector implements IConnector {
           // registration, session.loadAll(NotificationTransport.class) returns empty
           // and createOrUpdate throws "not a valid entity class".
           de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport.class.getPackageName(),
-          // DT1-PHASE-0 — :DigitalTwinScene + :CoordinateFrame + :Joint entity
-          // scaffold (SCENEGRAPH-REST-1 consumes these via raw Cypher for
-          // edges, but the entities themselves must be registered or
-          // GenericDAO.createOrUpdate throws "not a valid entity class" on
-          // POST /v2/scene-graphs (B agent surfaced 2026-05-30 on first live
-          // write attempt; JUnit didn't catch it because tests mock Session).
-          de.dlr.shepard.v2.scenegraph.entities.DigitalTwinScene.class.getPackageName(),
+          // V2CONV-B4 — the :DigitalTwinScene / :CoordinateFrame / :Joint OGM
+          // package registration was removed when the bespoke scene-graph
+          // subsystem dissolved into the generic MAPPING_RECIPE mechanism
+          // (aidocs/platform/191 decision #2). A scene-graph is now a
+          // MAPPING_RECIPE ShepardTemplate binding a URDF FileReference; the
+          // kinematic tree is parsed on demand by the SceneGraphPlay executor
+          // (vis-trace3d plugin), never stored as a graph. Migration V111
+          // DETACH DELETEs the legacy nodes + drops their appId constraints.
           // /v2/timeseries-references annotation entity.
           TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),

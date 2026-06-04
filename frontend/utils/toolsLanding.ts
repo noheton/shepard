@@ -6,8 +6,11 @@
  * not hash-fragment-based, because `/tools` aggregates standalone routes
  * rather than fragments of one big page).
  *
- * Also exports a tiny appId-shape validator used by `/scene-graphs/index.vue`
- * (SCENEGRAPH-NAV-01) so a typo doesn't fire a backend request.
+ * V2CONV-B4: the `/scene-graphs` Tools tile was removed when the bespoke
+ * scene-graph subsystem dissolved into the MAPPING_RECIPE mechanism — the 3D
+ * view is now reached in-context from a URDF FileReference detail page
+ * ("Create / Open 3D view"), per the "tool entry points are in-context first"
+ * rule.
  */
 
 export interface ToolTile {
@@ -47,12 +50,6 @@ export const TOOLS_TILES: ToolTile[] = [
     title: "Snapshot diff",
     description: "Compare collection snapshots across time.",
     icon: "mdi-vector-difference",
-  },
-  {
-    to: "/scene-graphs",
-    title: "Scene graphs",
-    description: "Coordinate-frame trees + joints for digital twins.",
-    icon: "mdi-graph-outline",
   },
   {
     to: "/shapes/render",

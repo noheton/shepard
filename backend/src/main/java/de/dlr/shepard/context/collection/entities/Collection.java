@@ -55,25 +55,22 @@ public class Collection extends AbstractDataObject implements HasPermissions {
   private String importedFrom;
 
   /**
-   * COLL-SCENE-1 — appId of a {@code :DigitalTwinScene} that renders as
-   * the Collection's hero scene-graph (e.g. the MFFD robot cell). Nullable;
-   * when null, the landing page shows no scene-graph viewer. The link is
-   * intentionally a scalar app-level pointer rather than an OGM relationship
-   * so this field stays loose-coupled with the v2 scene-graph package — the
-   * permission walk on the scene side (SCENEGRAPH-PERMS-1) remains the
-   * source-of-truth for who can read the scene; the link merely surfaces
-   * a render affordance on the Collection's detail page.
+   * V2CONV-B4 — appId of a MAPPING_RECIPE {@code ShepardTemplate} (a "hero
+   * view") that renders as the Collection's hero 3D view (e.g. the MFFD robot
+   * cell). Nullable; when null the landing page shows no hero view. The link is
+   * a scalar app-level pointer rather than an OGM relationship so it stays
+   * loose-coupled with the template subsystem.
    *
-   * <p>Additive nullable field; no Neo4j migration is needed. Existing
-   * {@code :Collection} nodes without this property are read as {@code null}
-   * by Spring Data Neo4j OGM. See {@code V104__Collection_scene_graph_link.cypher}
-   * for the operator-runbook NOOP migration note.
+   * <p>Originally (COLL-SCENE-1) this pointed at a {@code :DigitalTwinScene};
+   * the bespoke scene-graph subsystem dissolved into the generic MAPPING_RECIPE
+   * mechanism (aidocs/platform/191 decision #2), so the property now points at a
+   * MAPPING_RECIPE template appId. The property <em>name</em> is kept unchanged
+   * to avoid a Collection-property rename migration — only the referent changed.
+   * Migration V111 clears this property on Collections whose value pointed at a
+   * now-deleted scene.
    *
-   * <p>Exposed only on the {@code /v2/} surface — the legacy
-   * {@code /shepard/api/} endpoints are unaffected (see
-   * {@code CollectionIO} {@code @JsonInclude(NON_NULL)} note).
-   *
-   * <p>See {@code aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md} GAP-6.
+   * <p>Additive nullable field; existing {@code :Collection} nodes without this
+   * property read as {@code null}. Exposed only on the {@code /v2/} surface.
    */
   private String sceneGraphAppId;
 

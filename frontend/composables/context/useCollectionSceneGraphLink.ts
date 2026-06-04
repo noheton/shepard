@@ -1,35 +1,27 @@
 /**
- * COLL-SCENE-1-UI — typed wrapper around
- * `/v2/collections/{appId}/scene-graph` (GET/PUT/DELETE).
+ * V2CONV-B4-FE — typed wrapper around `/v2/collections/{appId}/scene-graph`
+ * (GET/PUT/DELETE).
  *
- * Mirrors the shape of `useSceneGraph.ts` — raw fetch (the v2 surface is
- * not in the generated `@dlr-shepard/backend-client` yet), v2 base URL
- * derived from runtime config, bearer-token auth, and an inline error
- * shape readable by the parent component for empty-state rendering.
+ * The bespoke scene-graph subsystem dissolved into the generic MAPPING_RECIPE
+ * mechanism (aidocs/platform/191 decision #2). The Collection's hero link now
+ * points at a MAPPING_RECIPE `ShepardTemplate` appId (a "hero view") rather than
+ * a `:DigitalTwinScene`. The endpoint path + the JSON field `sceneGraphAppId`
+ * are kept unchanged so existing callers don't break — only the referent
+ * changed.
  *
  * Status code semantics (per `CollectionSceneGraphRest` Javadoc):
- *  - 200 → linked, returns `CollectionSceneGraphLinkIO`.
- *  - 404 → either no scene linked OR Collection not found. The parent
- *          page already knows whether the Collection exists, so a 404
- *          here is treated as "no scene linked → render link button".
- *  - 401 → re-auth needed.
- *  - 403 → caller cannot read this Collection.
+ *  - 200 → linked, returns `CollectionHeroViewLinkIO`.
+ *  - 404 → no hero view linked OR Collection not found → render link button.
+ *  - 401 → re-auth needed; 403 → caller cannot read this Collection;
+ *  - 422 → target is not a MAPPING_RECIPE template (PUT only).
  */
 
-export interface CollectionSceneGraphLinkIO {
+export interface CollectionHeroViewLinkIO {
+  /** appId of the linked MAPPING_RECIPE template (the hero view). */
   sceneGraphAppId: string;
-  name?: string | null;
-  description?: string | null;
-  rootFrameAppId?: string | null;
-  sourceFileAppId?: string | null;
-  frameCount?: number | null;
-  jointCount?: number | null;
-}
-
-export interface CollectionSceneGraphLinkError {
-  status: number;
-  message: string;
-  detail: string;
+  templateName?: string | null;
+  templateDescription?: string | null;
+  templateKind?: string | null;
 }
 
 function v2BaseUrl(): string {
@@ -41,30 +33,27 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-/** Resolve the linked scene for a Collection. Returns `null` on 404 / error. */
+/** Resolve the linked hero-view template for a Collection. Returns `null` on 404 / error. */
 export async function fetchCollectionSceneGraphLink(
   collectionAppId: string,
   accessToken: string,
-): Promise<CollectionSceneGraphLinkIO | null> {
+): Promise<CollectionHeroViewLinkIO | null> {
   if (!collectionAppId || !accessToken) return null;
   const url = `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}/scene-graph`;
   const resp = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json",
-    },
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
   });
   if (!resp.ok) return null;
-  return (await resp.json()) as CollectionSceneGraphLinkIO;
+  return (await resp.json()) as CollectionHeroViewLinkIO;
 }
 
-/** Link / replace the Collection's hero scene. Returns the new link on 200, null on error. */
+/** Link / replace the Collection's hero view. Returns the new link on 200, null on error. */
 export async function linkCollectionSceneGraph(
   collectionAppId: string,
-  sceneGraphAppId: string,
+  templateAppId: string,
   accessToken: string,
-): Promise<CollectionSceneGraphLinkIO | null> {
-  if (!collectionAppId || !sceneGraphAppId || !accessToken) return null;
+): Promise<CollectionHeroViewLinkIO | null> {
+  if (!collectionAppId || !templateAppId || !accessToken) return null;
   const url = `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}/scene-graph`;
   const resp = await fetch(url, {
     method: "PUT",
@@ -73,13 +62,13 @@ export async function linkCollectionSceneGraph(
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ sceneGraphAppId }),
+    body: JSON.stringify({ sceneGraphAppId: templateAppId }),
   });
   if (!resp.ok) return null;
-  return (await resp.json()) as CollectionSceneGraphLinkIO;
+  return (await resp.json()) as CollectionHeroViewLinkIO;
 }
 
-/** Unlink the Collection's hero scene. Returns `true` on 204. */
+/** Unlink the Collection's hero view. Returns `true` on 204. */
 export async function unlinkCollectionSceneGraph(
   collectionAppId: string,
   accessToken: string,
@@ -93,26 +82,27 @@ export async function unlinkCollectionSceneGraph(
   return resp.status === 204 || resp.ok;
 }
 
+export interface HeroViewTemplateOption {
+  appId: string;
+  name?: string | null;
+}
+
 /**
- * Fetch the URDF XML for a scene via `GET /v2/scene-graphs/{appId}/export.urdf`
- * and return a blob:URL that `UrdfCanvas` can consume. The caller is
- * responsible for revoking the URL when the component unmounts (parent
- * uses `URL.revokeObjectURL`).
+ * List MAPPING_RECIPE templates the caller can link as a hero view. Pulls from
+ * `GET /v2/templates?kind=MAPPING_RECIPE`. Returns [] on error.
  */
-export async function fetchSceneUrdfBlobUrl(
-  sceneAppId: string,
+export async function listHeroViewTemplates(
   accessToken: string,
-): Promise<string | null> {
-  if (!sceneAppId || !accessToken) return null;
-  const url = `${v2BaseUrl()}/v2/scene-graphs/${encodeURIComponent(sceneAppId)}/export.urdf`;
+): Promise<HeroViewTemplateOption[]> {
+  if (!accessToken) return [];
+  const url = `${v2BaseUrl()}/v2/templates?kind=MAPPING_RECIPE`;
   const resp = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/xml",
-    },
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
   });
-  if (!resp.ok) return null;
-  const xml = await resp.text();
-  const blob = new Blob([xml], { type: "application/xml" });
-  return URL.createObjectURL(blob);
+  if (!resp.ok) return [];
+  const body = (await resp.json()) as
+    | { items?: HeroViewTemplateOption[] }
+    | HeroViewTemplateOption[];
+  const items = Array.isArray(body) ? body : (body.items ?? []);
+  return items.map((t) => ({ appId: t.appId, name: t.name }));
 }

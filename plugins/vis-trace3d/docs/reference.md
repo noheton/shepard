@@ -1,7 +1,7 @@
 ---
 title: vis-trace3d — Reference
 stage: feature-defined
-last-stage-change: 2026-05-28
+last-stage-change: 2026-06-04
 audience: plugin-author
 ---
 
@@ -199,3 +199,41 @@ plugin gains:
    the VIS-T1 backlog row).
 4. The Phase-1 → Phase-2 cutover is recorded as a new tracker row
    in `aidocs/34` referencing this Phase-1 row.
+
+---
+
+## SceneGraphPlay — the MAPPING_RECIPE transform (V2CONV-B4)
+
+As of **V2CONV-B4** this plugin also ships the **scene-graph play
+transform** — the consumer that dissolved the bespoke `/v2/scene-graphs/*`
+namespace into the generic MAPPING_RECIPE mechanism
+(`aidocs/platform/191` §decision-2).
+
+- **Shape:** `scenegraph:SceneGraphPlayShape`, IRI
+  `http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape`
+  (`src/main/resources/shapes/scene-graph-play.shacl.ttl`).
+- **Executor:** `SceneGraphPlayTransformExecutor` (a `TransformExecutor`
+  ServiceLoader SPI POJO registered via
+  `META-INF/services/de.dlr.shepard.spi.transform.TransformExecutor`).
+
+A `MAPPING_RECIPE` template targeting this shape binds:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `urdfFileReferenceAppId` | yes | singleton FileReference (FR1b) carrying URDF XML — the kinematic tree, parsed on demand |
+| `jointTimeseriesReferenceAppId` | no | TimeseriesReference of joint values over time |
+| `jointChannelBindings` | no | JSON array `[{joint, channelSelector}]` |
+
+Materializing it via `POST /v2/mappings/{templateAppId}/materialize`
+resolves + parses the URDF (a self-contained `UrdfKinematics` parser,
+OWASP-secure XML defaults — no new dependency), reads the binding plan,
+and returns a `TransformResult.view` **play envelope**
+(`{ kind, robotName, rootLink, frames[], joints[], jointChannelBindings,
+urdfFileReferenceAppId, playbackStatus }`). `playbackStatus` is
+`STATIC_POSE` (no joint TS bound) or `DECLARED` (joint TS bound; live
+channel resolution lands with VIS-S1).
+
+The frontend reaches this in-context from a URDF FileReference detail
+page ("Create / Open 3D view") and renders the URDF with the existing
+`UrdfCanvas` (Three.js urdf-loader). See `docs/reference/scene-graph.md`
+in the main docs tree for the full worked example.
