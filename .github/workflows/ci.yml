@@ -211,7 +211,7 @@ jobs:
           cp plugins/minter-local/target/shepard-plugin-minter-local-*.jar backend/plugins-stage/
           cp plugins/minter-datacite/target/shepard-plugin-minter-datacite-*.jar backend/plugins-stage/
           cp plugins/minter-epic/target/shepard-plugin-minter-epic-*.jar backend/plugins-stage/
-          cp plugins/spatial/target/shepard-plugin-spatial-*.jar backend/plugins-stage/
+          cp plugins/spatiotemporal/target/shepard-plugin-spatiotemporal-*.jar backend/plugins-stage/
           cp plugins/hdf5/target/shepard-plugin-hdf5-*.jar backend/plugins-stage/
           cp plugins/git/target/shepard-plugin-git-*.jar backend/plugins-stage/
           cp plugins/file-s3/target/shepard-plugin-file-s3-*.jar backend/plugins-stage/
