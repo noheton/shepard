@@ -97,12 +97,19 @@ const { compiledTurtle, compiledShapeIri, compileError, compiling, report, valid
 
 const hasRows = computed(() => state.value.properties.some((p) => (p.path ?? "").trim().length > 0));
 
+// Track the body we last emitted so the props.body watch can ignore the
+// echo of our own emit (otherwise reopening it would re-trigger the deep
+// state watch → recompile → emit → … feedback loop).
+let lastEmittedBody: string | null = null;
+
 let compileTimer: ReturnType<typeof setTimeout> | null = null;
 async function recompile() {
   const dsl = editorStateToBuildRequest(state.value);
   const result = await compile(dsl);
   if (result.shapeGraph) {
-    emit("update:body", buildTemplateBody(state.value, result.shapeGraph, props.body));
+    const newBody = buildTemplateBody(state.value, result.shapeGraph, props.body);
+    lastEmittedBody = newBody;
+    emit("update:body", newBody);
   }
 }
 
@@ -135,10 +142,12 @@ onMounted(async () => {
   }
 });
 
-// Reopen when the body prop changes (e.g. switching templates in the dialog).
+// Reopen when the body prop changes from the OUTSIDE (e.g. switching
+// templates in the dialog) — but ignore the echo of our own emit.
 watch(
   () => props.body,
   (b) => {
+    if (b === lastEmittedBody) return;
     const reopened = editorStateFromTemplateBody(b);
     if (reopened) state.value = reopened;
   },
