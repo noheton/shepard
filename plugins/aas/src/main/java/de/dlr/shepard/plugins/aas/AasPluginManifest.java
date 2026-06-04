@@ -2,9 +2,11 @@ package de.dlr.shepard.plugins.aas;
 
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
+import de.dlr.shepard.plugin.RestNamespaceContributor;
 import io.quarkus.logging.Log;
 import java.net.URI;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * AAS1-plugin — Asset Administration Shell plugin manifest.
@@ -23,10 +25,23 @@ import java.util.Optional;
  * <p>V46 Neo4j migration stays in {@code backend/src/main/resources/neo4j/migrations/}
  * because the Docker runner reads from the fixed path {@code /deployments/neo4j/migrations/}
  * which is only populated from backend resources.
+ *
+ * <p>V2CONV-A5 — AAS is an allowlisted {@link RestNamespaceContributor}: it owns the
+ * {@code /v2/aas} prefix because that path shape mirrors the external IDTA AAS REST
+ * standard and cannot be re-expressed as a shepard payload kind. When the plugin is
+ * disabled (the default, {@code shepard.plugins.aas.enabled=false}), the
+ * {@code DisabledNamespaceRequestFilter} 404s every {@code /v2/aas/*} request and the
+ * {@code OpenApiPerShelfRest} strips those paths from the served v2 OpenAPI shelf.
  */
-public final class AasPluginManifest implements PluginManifest {
+public final class AasPluginManifest implements PluginManifest, RestNamespaceContributor {
 
   private static final String ID = "aas";
+
+  /**
+   * The owned REST namespace prefix — covers {@code /v2/aas/shells/...} and the
+   * {@code /v2/aas/.well-known/aas-server} self-description endpoint.
+   */
+  private static final Set<String> OWNED_PREFIXES = Set.of("/v2/aas");
   private static final String VERSION = "6.0.0-SNAPSHOT";
   private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
   private static final String TITLE = "Asset Administration Shell (IDTA)";
@@ -87,5 +102,14 @@ public final class AasPluginManifest implements PluginManifest {
   @Override
   public void onUnregister(PluginContext ctx) {
     Log.debugf("AAS1-plugin: AAS plugin onUnregister invoked");
+  }
+
+  /**
+   * V2CONV-A5 — declares {@code /v2/aas} as the owned REST namespace so the gate
+   * (404 + OpenAPI strip) follows the plugin's enabled-state.
+   */
+  @Override
+  public Set<String> ownedRestPathPrefixes() {
+    return OWNED_PREFIXES;
   }
 }

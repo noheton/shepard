@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import de.dlr.shepard.plugin.RestNamespaceRegistry;
+import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.Path;
@@ -16,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -81,20 +85,53 @@ public class OpenApiPerShelfRest {
   private static final ObjectMapper JSON = new ObjectMapper();
   private static final YAMLMapper YAML = new YAMLMapper();
 
+  /**
+   * V2CONV-A5 — source of truth for which owned {@code /v2/<prefix>} namespaces are
+   * currently disabled. The v2 shelf strips those prefixes so the served spec reflects
+   * only enabled plugins/features. Read fresh on every fetch so a runtime toggle flip
+   * is reflected without a restart.
+   */
+  @Inject
+  RestNamespaceRegistry namespaceRegistry;
+
   @GET
   @Path("/v1.json")
   @Tag(name = "openapi-per-shelf")
   @Operation(description = "OpenAPI document for the upstream-compatible /shepard/api/... shelf only.")
   public Response getV1Shelf(@QueryParam("format") String format) {
+    // v1 is the frozen upstream-compat shelf — owned namespaces are all /v2/, so no strip.
     return serialise(OpenApiShelfMembership::isV1Path, format);
   }
 
   @GET
   @Path("/v2.json")
   @Tag(name = "openapi-per-shelf")
-  @Operation(description = "OpenAPI document for the /v2/... development shelf only.")
+  @Operation(
+    description = "OpenAPI document for the /v2/... development shelf only. " +
+    "Paths under a disabled plugin/feature namespace (V2CONV-A5: e.g. /v2/aas/* when the " +
+    "AAS plugin is disabled) are stripped so the spec reflects only enabled surfaces."
+  )
   public Response getV2Shelf(@QueryParam("format") String format) {
-    return serialise(OpenApiShelfMembership::isV2Path, format);
+    return serialise(v2ShelfPredicate(), format);
+  }
+
+  /**
+   * The v2-shelf membership predicate, narrowed to exclude any path under a
+   * currently-disabled owned namespace. Composes {@link OpenApiShelfMembership#isV2Path}
+   * with the {@link DisabledNamespaceOasFilter}'s prefix matcher fed from the live
+   * {@link RestNamespaceRegistry#disabledPrefixes()} list.
+   */
+  private Predicate<String> v2ShelfPredicate() {
+    List<String> disabled;
+    try {
+      disabled = namespaceRegistry == null ? List.of() : namespaceRegistry.disabledPrefixes();
+    } catch (RuntimeException ex) {
+      // Fail-soft: a registry hiccup must not strip endpoints from the spec wholesale.
+      Log.warnf(ex, "V2CONV-A5: could not resolve disabled namespaces — serving full v2 shelf");
+      disabled = List.of();
+    }
+    DisabledNamespaceOasFilter strip = new DisabledNamespaceOasFilter(disabled);
+    return path -> OpenApiShelfMembership.isV2Path(path) && !strip.isUnderDisabledPrefix(path);
   }
 
   private Response serialise(Predicate<String> pathPredicate, String format) {
