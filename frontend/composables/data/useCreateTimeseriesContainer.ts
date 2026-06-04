@@ -1,17 +1,18 @@
+import type { PermissionType } from "@dlr-shepard/backend-client";
 import {
-  TimeseriesContainerApi,
-  type PermissionType,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
-import { createV2Container } from "../container/createV2Container";
+  createV2Container,
+  v2BaseUrl,
+} from "../container/createV2Container";
 
 /**
- * V2CONV-A3: container creation now goes through the unified
- * `POST /v2/containers?kind=timeseries` surface (hand-written fetch via
- * {@link createV2Container}; the generated client has no ContainersV2Api yet).
- * The permission setup still uses the v1 TimeseriesContainerApi keyed by the
- * numeric `id` resolved from the created v2 container — there is no `/v2/`
- * container-permission endpoint yet (CONTAINER-PERMS-V2 in aidocs/16).
+ * CONTAINER-PERMS-V2: container creation and permission setup now both go
+ * through the `/v2/` surface exclusively:
+ *
+ *  - Container creation: `POST /v2/containers?kind=timeseries` via {@link createV2Container}.
+ *  - Permission setup: `PATCH /v2/containers/{appId}/permissions` via a
+ *    hand-written fetch, keyed by the `appId` of the created v2 container.
+ *
+ * The v1 `TimeseriesContainerApi` is no longer called from this composable.
  */
 export async function useCreateTimeseriesContainer(
   timeseriesContainerName: string,
@@ -23,30 +24,27 @@ export async function useCreateTimeseriesContainer(
   );
   if (!newTimeseriesContainer) return;
 
-  const api = useShepardApi(TimeseriesContainerApi);
+  const appId = newTimeseriesContainer.appId;
+  if (!appId) return;
 
-  const currentPermissions = await api.value
-    .getTimeseriesPermissions({
-      timeseriesContainerId: newTimeseriesContainer.id,
-    })
-    .then(response => {
-      return response;
-    })
-    .catch(error => {
-      handleError(error, "getPermissions");
-      return undefined;
-    });
-  if (!currentPermissions) return;
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/merge-patch+json",
+    Accept: "application/json",
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  const permissionsUpdateSuccess = await api.value
-    .editTimeseriesPermissions({
-      timeseriesContainerId: newTimeseriesContainer.id,
-      permissions: {
-        ...currentPermissions,
-        permissionType: permissionType,
-      },
-    })
-    .then(_ => {
+  const permissionsUpdateSuccess = await fetch(
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(appId)}/permissions`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ permissionType }),
+    },
+  )
+    .then(resp => {
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       return true;
     })
     .catch(error => {

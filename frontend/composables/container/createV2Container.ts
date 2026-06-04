@@ -25,7 +25,7 @@ export interface V2Container {
   payload?: Record<string, unknown>;
 }
 
-function v2BaseUrl(): string {
+export function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
   if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
