@@ -5,6 +5,8 @@ import {
   type CreateShepardTemplateIO,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { editorStateFromTemplateBody } from "~/utils/templateShapeDsl";
+import TemplateShapeEditor from "~/components/shapes/TemplateShapeEditor.vue";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -45,6 +47,10 @@ const parentTemplateAppId = ref<string | null>(null);
 // The flattened (inherited+own) body, fetched when a parent is selected.
 const inheritedBody = ref<string | null>(null);
 const inheritedLoading = ref(false);
+// V2CONV-B6 — body authoring mode. "visual" = the SHACL shape editor;
+// "raw" = the JSON DSL textarea (the original surface, kept for power users
+// and for bodies the visual editor can't reopen).
+const bodyMode = ref<"visual" | "raw">("visual");
 
 const isEdit = computed(() => !!props.template);
 const dialogTitle = computed(() =>
@@ -121,6 +127,9 @@ watch(
         body.value = props.template.body;
         iconKey.value = props.template.iconKey ?? "";
         parentTemplateAppId.value = props.template.parentTemplateAppId ?? null;
+        // V2CONV-B6 — reopen in the visual editor only if the stored body
+        // carries an `editorState` it produced; otherwise drop to raw JSON.
+        bodyMode.value = editorStateFromTemplateBody(props.template.body) ? "visual" : "raw";
         if (parentTemplateAppId.value) void refreshInherited();
       } else {
         name.value = "";
@@ -130,6 +139,7 @@ watch(
         body.value = "{}";
         iconKey.value = "";
         parentTemplateAppId.value = null;
+        bodyMode.value = "visual";
       }
     }
   },
@@ -212,7 +222,8 @@ async function save() {
 <template>
   <v-dialog
     :model-value="modelValue"
-    max-width="700"
+    max-width="1100"
+    scrollable
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <v-card>
@@ -369,18 +380,44 @@ async function save() {
             />
           </v-col>
 
+          <!-- V2CONV-B6 — body authoring: visual SHACL shape editor or raw JSON. -->
           <v-col cols="12">
+            <div class="d-flex align-center mb-2">
+              <span class="text-subtitle-2">Body (template shape)</span>
+              <v-spacer />
+              <v-btn-toggle
+                v-model="bodyMode"
+                mandatory
+                density="compact"
+                variant="outlined"
+                color="primary"
+                data-test="template-body-mode"
+              >
+                <v-btn value="visual" size="small" prepend-icon="mdi-palette-outline">Visual</v-btn>
+                <v-btn value="raw" size="small" prepend-icon="mdi-code-json">Raw JSON</v-btn>
+              </v-btn-toggle>
+            </div>
+
+            <TemplateShapeEditor
+              v-if="bodyMode === 'visual'"
+              :body="body"
+              data-test="template-visual-editor"
+              @update:body="(b) => (body = b)"
+            />
+
             <v-textarea
+              v-else
               v-model="body"
               label="Body (JSON DSL — your own fields; override inherited keys here)"
               required
               :rules="[(v) => !!v || 'Body is required']"
-              rows="8"
+              rows="10"
               variant="outlined"
               density="compact"
               font-family="monospace"
-              hint="JSON DSL per aidocs/54 §7. Fields here override the inherited fields above."
+              hint="JSON DSL per aidocs/54 §7. Fields here override the inherited fields above. The visual editor stores its state under `editorState` + the compiled `shapeGraph`."
               persistent-hint
+              data-test="template-raw-body"
             />
           </v-col>
         </v-row>
@@ -396,6 +433,7 @@ async function save() {
           variant="tonal"
           :loading="isSaving"
           :disabled="!name.trim() || !body.trim()"
+          data-test="template-save"
           @click="save"
         >
           {{ isEdit ? "Save (new version)" : "Create" }}
