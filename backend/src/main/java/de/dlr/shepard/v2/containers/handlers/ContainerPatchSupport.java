@@ -10,7 +10,7 @@ import java.util.Map;
  * (today {@code name} and {@code status}) in one place so file / timeseries /
  * structured-data handlers stay byte-identical.
  */
-final class ContainerPatchSupport {
+public final class ContainerPatchSupport {
 
   private ContainerPatchSupport() {}
 
@@ -19,7 +19,7 @@ final class ContainerPatchSupport {
    *
    * @throws BadRequestException when {@code name} is absent or blank.
    */
-  static String requireName(Map<String, Object> body) {
+  public static String requireName(Map<String, Object> body) {
     Object n = body == null ? null : body.get("name");
     if (!(n instanceof String s) || s.isBlank()) {
       throw new BadRequestException("create body must carry a non-blank 'name'");
@@ -35,7 +35,7 @@ final class ContainerPatchSupport {
    *
    * @return true when a field actually changed (so the caller persists + audits).
    */
-  static boolean applyMutableFields(BasicContainer c, Map<String, Object> patch) {
+  public static boolean applyMutableFields(BasicContainer c, Map<String, Object> patch) {
     if (patch == null || patch.isEmpty()) return false;
     boolean changed = false;
     if (patch.containsKey("name")) {
