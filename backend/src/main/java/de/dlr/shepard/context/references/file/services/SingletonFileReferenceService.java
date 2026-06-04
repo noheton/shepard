@@ -11,6 +11,7 @@ import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -83,6 +84,9 @@ public class SingletonFileReferenceService {
 
   @Inject
   EntityIdResolver entityIdResolver;
+
+  @Inject
+  FileKindDetectorRegistry detectorRegistry;
 
   /**
    * Get a singleton by appId.
@@ -235,13 +239,13 @@ public class SingletonFileReferenceService {
   }
 
   /**
-   * V2CONV-A2 — derive the {@code fileKind} discriminator from the
-   * original filename extension (and, where ambiguous, the stored
-   * mime type). A small private helper for now; a pluggable
-   * {@code FileKindDetector} SPI is deferred (FILEKIND-DETECTOR-SPI in
-   * {@code aidocs/16}).
+   * V2CONV-A2 / FILEKIND-DETECTOR-SPI — derive the {@code fileKind}
+   * discriminator from the original filename extension by delegating to
+   * the pluggable {@link FileKindDetectorRegistry}.
    *
-   * <p>Recognised mappings (case-insensitive on the extension):
+   * <p>The registry iterates all {@link de.dlr.shepard.spi.payload.FileKindDetector}
+   * beans (core + plugins) and returns the first match. The built-in mappings
+   * are provided by {@link de.dlr.shepard.spi.payload.BuiltinFileKindDetector}:
    * {@code .krl|.src → "krl"}, {@code .svdx → "svdx"},
    * {@code .otvis → "otvis"}, {@code .urdf → "urdf"},
    * {@code .xit → "xit"}, {@code .pdf → "pdf"},
@@ -258,26 +262,7 @@ public class SingletonFileReferenceService {
   String detectFileKind(String filename, ShepardFile file) {
     String ext = extensionOf(filename);
     if (ext == null) return null;
-    switch (ext) {
-      case "krl":
-      case "src":
-        return "krl";
-      case "svdx":
-        return "svdx";
-      case "otvis":
-        return "otvis";
-      case "urdf":
-        return "urdf";
-      case "xit":
-        return "xit";
-      case "pdf":
-        return "pdf";
-      case "urscript":
-      case "script":
-        return "urscript";
-      default:
-        return null;
-    }
+    return detectorRegistry.resolveFileKind(ext);
   }
 
   /**

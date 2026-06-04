@@ -24,13 +24,21 @@ import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.spi.payload.BuiltinFileKindDetector;
+import de.dlr.shepard.spi.payload.FileKindDetector;
+import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.util.TypeLiteral;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -47,6 +55,31 @@ class SingletonFileReferenceServiceTest {
   private static final String DO_APP_ID = "do-app-7";
   private static final long DO_OGM_ID = 7L;
   private static final String SINGLETON_APP_ID = "singleton-app-1";
+
+  // ─── minimal Instance<T> wrapper needed to inject FileKindDetectorRegistry ─
+
+  static class FixedInstance<T> implements Instance<T> {
+    private final List<T> items;
+    FixedInstance(List<T> items) { this.items = items; }
+    @Override public Iterator<T> iterator() { return items.iterator(); }
+    @Override public Stream<T> stream() { return items.stream(); }
+    @Override public boolean isUnsatisfied() { return items.isEmpty(); }
+    @Override public boolean isAmbiguous() { return items.size() > 1; }
+    @Override public boolean isResolvable() { return !items.isEmpty(); }
+    @Override public T get() { throw new UnsupportedOperationException(); }
+    @Override public Instance<T> select(Annotation... q) { throw new UnsupportedOperationException(); }
+    @Override public <U extends T> Instance<U> select(Class<U> s, Annotation... q) { throw new UnsupportedOperationException(); }
+    @Override public <U extends T> Instance<U> select(TypeLiteral<U> s, Annotation... q) { throw new UnsupportedOperationException(); }
+    @Override public void destroy(T i) { throw new UnsupportedOperationException(); }
+    @Override public Handle<T> getHandle() { throw new UnsupportedOperationException(); }
+    @Override public Iterable<? extends Handle<T>> handles() { throw new UnsupportedOperationException(); }
+    @Override public Stream<? extends Handle<T>> handlesStream() { throw new UnsupportedOperationException(); }
+  }
+
+  private static FileKindDetectorRegistry builtinRegistry() {
+    return new FileKindDetectorRegistry(
+      new FixedInstance<>(List.of(new BuiltinFileKindDetector())));
+  }
 
   @Mock
   SingletonFileReferenceDAO singletonDao;
@@ -78,6 +111,7 @@ class SingletonFileReferenceServiceTest {
     service.userService = userService;
     service.dateHelper = dateHelper;
     service.entityIdResolver = entityIdResolver;
+    service.detectorRegistry = builtinRegistry();
     when(dateHelper.getDate()).thenReturn(new Date(1_700_000_000L));
     when(userService.getCurrentUser()).thenReturn(new User("alice", "Alice", "Tester", "alice@example.org"));
   }
