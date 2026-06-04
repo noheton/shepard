@@ -260,7 +260,17 @@ jobs:
           upload-artifact: true
           upload-release-assets: true
 
+      # Image CVE scan is INFORMATIONAL, not blocking (operator decision
+      # 2026-06-04). Rationale: the GHCR images inherit a continuous churn of
+      # fixable CRITICAL/HIGH CVEs from the Quarkus/netty/base-image transitive
+      # stack as Trivy's DB updates daily; the only real fix is a coordinated
+      # Quarkus-platform bump (tracked as QUARKUS-PLATFORM-BUMP in aidocs/16),
+      # not a per-commit scramble. continue-on-error keeps the finding RED-but-
+      # tolerated and still uploads the SARIF to the Security tab (below), so
+      # nothing is hidden; the weekly security.yml schedule re-checks. See
+      # aidocs/34 for the operator-facing note.
       - name: Trivy scan — backend image
+        continue-on-error: true
         uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
@@ -364,7 +374,10 @@ jobs:
           upload-artifact: true
           upload-release-assets: true
 
+      # Informational, not blocking — see the backend Trivy step above for the
+      # operator rationale (QUARKUS-PLATFORM-BUMP / continuous transitive churn).
       - name: Trivy scan — frontend image
+        continue-on-error: true
         uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
