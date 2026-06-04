@@ -395,7 +395,10 @@ class S3FileStorageTest {
   }
 
   private static S3Exception buildS3Exception(String errorCode) {
-    return S3Exception.builder()
+    // awsErrorDetails(...) is declared on AwsServiceException.Builder, so the
+    // chained build() is statically typed as AwsServiceException; the runtime
+    // instance is an S3Exception, so the cast is safe.
+    return (S3Exception) S3Exception.builder()
       .message(errorCode)
       .awsErrorDetails(AwsErrorDetails.builder()
         .errorCode(errorCode)
