@@ -131,7 +131,7 @@ jobs:
 
       - name: Post coverage summary to PR
         if: github.event_name == 'pull_request'
-        uses: madrapps/jacoco-report@v1.7.1
+        uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: backend/target/jacoco-report/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -271,7 +271,7 @@ jobs:
       # aidocs/34 for the operator-facing note.
       - name: Trivy scan — backend image
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
           format: sarif
@@ -378,7 +378,7 @@ jobs:
       # operator rationale (QUARKUS-PLATFORM-BUMP / continuous transitive churn).
       - name: Trivy scan — frontend image
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
           format: sarif
