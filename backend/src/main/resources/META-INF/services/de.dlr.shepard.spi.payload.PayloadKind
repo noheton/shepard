@@ -5,3 +5,4 @@
 de.dlr.shepard.v2.shapes.seeder.UrdfKindShapeExample
 de.dlr.shepard.v2.shapes.mffd.MffdMaterialBatchKind
 de.dlr.shepard.v2.shapes.mffd.MffdAfpCourseKind
+de.dlr.shepard.v2.shapes.mffd.MffdWeldStepKind
