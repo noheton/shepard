@@ -121,19 +121,45 @@ class FileMigrationAutoSweepTest {
   // ─── happy path ───────────────────────────────────────────────────────────
 
   @Test
-  void autoSweep_enabledAndValid_transitionsToRunning() {
+  void autoSweep_enabledAndValid_transitionsToRunning() throws Exception {
     service.autoSweepEnabled = true;
     service.autoSweepSource = "gridfs";
     service.autoSweepTarget = "s3";
+    // Replace the background executor with a no-op so the synchronous RUNNING
+    // transition is observed deterministically. Without this, the real
+    // single-thread executor can run runMigration() — which fails fast (no
+    // Neo4j session) and flips the state to FAILED — before the assertion
+    // below reads it, making this test flaky under CI load.
+    installNoOpExecutor(service);
     service.autoSweep();
     // triggerMigration() sets state to RUNNING synchronously before dispatching
-    // to the executor. The background thread will fail (no Neo4j session), but
-    // the synchronous transition has already happened — matches the pattern in
-    // FileMigrationServiceTest#triggerTransitionsToRunning.
+    // to the executor; the no-op executor never runs the failing background work.
     FileMigrationState state = service.getState();
     assertEquals(FileMigrationStatus.RUNNING, state.status());
     assertEquals("gridfs", state.sourceProviderId());
     assertEquals("s3", state.targetProviderId());
     assertNotNull(state.startedAt());
+  }
+
+  /**
+   * Reflectively swap the service's private-final single-thread executor for a
+   * no-op so submitted background migrations never run — lets a test observe the
+   * synchronous RUNNING transition without racing the async FAILED.
+   */
+  private static void installNoOpExecutor(FileMigrationService svc) throws Exception {
+    java.util.concurrent.ExecutorService noop =
+        new java.util.concurrent.AbstractExecutorService() {
+          @Override public void execute(Runnable command) { /* swallow — never run */ }
+          @Override public void shutdown() {}
+          @Override public List<Runnable> shutdownNow() { return List.of(); }
+          @Override public boolean isShutdown() { return false; }
+          @Override public boolean isTerminated() { return false; }
+          @Override public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) {
+            return true;
+          }
+        };
+    Field f = FileMigrationService.class.getDeclaredField("executor");
+    f.setAccessible(true);
+    f.set(svc, noop);
   }
 }
