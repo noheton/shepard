@@ -11,12 +11,15 @@ import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.spi.fileparser.FileParserRegistry;
 import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +91,9 @@ public class SingletonFileReferenceService {
   @Inject
   FileKindDetectorRegistry detectorRegistry;
 
+  @Inject
+  FileParserRegistry parserRegistry;
+
   /**
    * Get a singleton by appId.
    *
@@ -143,8 +149,30 @@ public class SingletonFileReferenceService {
 
     ensureSharedNamespace();
 
-    // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
-    ShepardFile saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
+    // this file before buffering bytes. Only if a parser wants it do we read all bytes
+    // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
+    boolean anyAccepts = parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        // Could not buffer — fall back to streaming (no parse annotations).
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+        parseBuf = null;
+      }
+      if (parseBuf != null) {
+        // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+      } else {
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      }
+    } else {
+      // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
+      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    }
 
     User user = userService.getCurrentUser();
 
@@ -166,6 +194,19 @@ public class SingletonFileReferenceService {
       dataObjectAppId,
       saved.getOid()
     );
+
+    // PARSER-SPI: secondary write — fire all matching file-format parsers.
+    // Fire-and-forget: exceptions are caught inside runAll and logged as WARN.
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      final String refAppId = created.getAppId();
+      try {
+        parserRegistry.runAll(buf, filename, refAppId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, refAppId);
+      }
+    }
+
     return created;
   }
 
@@ -211,9 +252,31 @@ public class SingletonFileReferenceService {
 
     ensureSharedNamespace();
 
-    // Persist the file bytes first; the resulting ShepardFile carries
-    // its own oid, md5, fileSize from the GridFS upload.
-    ShepardFile saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+    // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
+    // this file before buffering bytes. Only if a parser wants it do we read all bytes
+    // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
+    boolean anyAccepts = parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+        parseBuf = null;
+      }
+      if (parseBuf != null) {
+        // Persist the file bytes first; the resulting ShepardFile carries
+        // its own oid, md5, fileSize from the GridFS upload.
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf));
+      } else {
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+      }
+    } else {
+      // Persist the file bytes first; the resulting ShepardFile carries
+      // its own oid, md5, fileSize from the GridFS upload.
+      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+    }
 
     User user = userService.getCurrentUser();
 
@@ -235,6 +298,19 @@ public class SingletonFileReferenceService {
       dataObjectAppId,
       saved.getOid()
     );
+
+    // PARSER-SPI: secondary write — fire all matching file-format parsers.
+    // Fire-and-forget: exceptions are caught inside runAll and logged as WARN.
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      final String refAppId = created.getAppId();
+      try {
+        parserRegistry.runAll(buf, filename, refAppId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, refAppId);
+      }
+    }
+
     return created;
   }
 

@@ -1,5 +1,8 @@
 package de.dlr.shepard.plugin.fileformat.cad;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.ParseContext;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
 /**
@@ -17,6 +20,7 @@ import java.util.Map;
  * anchored to whichever entity appId the {@link FileParserPlugin.ParseContext} provides
  * (fileReference first, parent DataObject as fallback).
  */
+@ApplicationScoped
 public class CadFileParserPlugin implements FileParserPlugin {
 
   private static final byte[] JT_MAGIC = {'#', '!', 'J', 'T'};
