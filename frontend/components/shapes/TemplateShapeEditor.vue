@@ -41,10 +41,17 @@ import {
   type ShapeEditorState,
   type PropertyRow,
 } from "~/utils/templateShapeDsl";
+import { shouldFetchDataObjectRdf, buildDataObjectRdfUrl } from "~/utils/shaclPrefill";
 
 const props = defineProps<{
   /** The current template body JSON (reopened into editor state if it carries one). */
   body?: string | null;
+  /**
+   * V2CONV-B6-SHACLPREFILL — when set, the editor auto-fetches
+   * `GET /v2/data-objects/{focusAppId}/rdf` on mount and pre-fills the
+   * validate data-graph textarea. Validation is NEVER auto-run.
+   */
+  focusAppId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -144,6 +151,36 @@ watch(
 const dataGraph = ref<string>(`@prefix ex: <http://example.org/> .
 ex:sample a ex:Thing .`);
 
+// V2CONV-B6-SHACLPREFILL — auto-load the DataObject's RDF when focusAppId is set.
+const rdfPrefilled = ref(false);
+const rdfLoadError = ref<string | null>(null);
+const isRdfLoading = ref(false);
+
+async function prefillDataGraph(): Promise<void> {
+  if (!shouldFetchDataObjectRdf(props.focusAppId, "data-object")) return;
+  const id = props.focusAppId!;
+  isRdfLoading.value = true;
+  rdfLoadError.value = null;
+  try {
+    const res = await fetch(buildDataObjectRdfUrl(v2BaseLocal(), id), {
+      headers: { ...authHeadersLocal(), Accept: "text/turtle" },
+    });
+    if (!res.ok) {
+      rdfLoadError.value = `${res.status} ${res.statusText}`;
+      return;
+    }
+    const turtle = await res.text();
+    if (turtle && turtle.length > 0) {
+      dataGraph.value = turtle;
+      rdfPrefilled.value = true;
+    }
+  } catch (e) {
+    rdfLoadError.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    isRdfLoading.value = false;
+  }
+}
+
 async function runValidate() {
   if (!compiledTurtle.value) await recompile();
   if (compiledTurtle.value) await validate(dataGraph.value, compiledTurtle.value);
@@ -202,6 +239,7 @@ async function loadNodeShapeOptions(): Promise<void> {
 // ─── lifecycle ───────────────────────────────────────────────────────────────
 onMounted(async () => {
   await Promise.all([loadVocabulary(), loadNodeShapeOptions()]);
+  void prefillDataGraph();
   const reopened = editorStateFromTemplateBody(props.body);
   if (reopened) {
     state.value = reopened;
@@ -535,7 +573,28 @@ defineExpose({ recompile, state });
           <div class="text-subtitle-2 d-flex align-center mb-2">
             <v-icon icon="mdi-check-decagram-outline" size="small" class="mr-2" />
             Round-trip validate
+            <v-chip
+              v-if="rdfPrefilled"
+              size="x-small"
+              color="success"
+              variant="tonal"
+              class="ml-2"
+              prepend-icon="mdi-database-check-outline"
+              data-test="rdf-prefilled-chip"
+            >
+              Prefilled from DataObject
+            </v-chip>
           </div>
+          <v-alert
+            v-if="rdfLoadError"
+            type="warning"
+            density="compact"
+            variant="tonal"
+            class="mb-2"
+            data-test="rdf-load-error"
+          >
+            Could not load DataObject RDF: {{ rdfLoadError }}
+          </v-alert>
           <v-textarea
             v-model="dataGraph"
             label="Candidate data graph (Turtle)"
@@ -543,6 +602,7 @@ defineExpose({ recompile, state });
             density="compact"
             variant="outlined"
             hide-details
+            :loading="isRdfLoading"
             class="mb-2"
             data-test="validate-data-graph"
           />
