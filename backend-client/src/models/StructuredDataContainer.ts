@@ -69,11 +69,19 @@ export interface StructuredDataContainer {
      */
     readonly type: ContainerType;
     /**
-     * 
+     *
      * @type {string}
      * @memberof StructuredDataContainer
      */
     readonly oid: string;
+    /**
+     * Application-level UUID v7 identifier. Present in v1 JSON responses because
+     * AbstractEntity always carries appId; added here to unblock V2-SWEEP-003-2
+     * permissions migration. Will be formally regenerated in V2-SWEEP-001-CLIENT-REGEN.
+     * @type {string}
+     * @memberof StructuredDataContainer
+     */
+    readonly appId?: string | null;
 }
 
 
@@ -111,6 +119,7 @@ export function StructuredDataContainerFromJSONTyped(json: any, ignoreDiscrimina
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
     };
 }
 

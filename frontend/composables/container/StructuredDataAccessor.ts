@@ -8,6 +8,7 @@ import {
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 import { safeDeleteContainer } from "./safeDeleteContainer";
+import { v2BaseUrl } from "./createV2Container";
 
 export class StructuredDataContainerAccessor extends ContainerAccessor {
   api = useShepardApi(StructuredDataContainerApi);
@@ -91,11 +92,20 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   }
 
   override async fetchPermissions(): Promise<void> {
+    const containerAppId = this.container.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      this.permissions.value =
-        await this.api.value.getStructuredDataPermissions({
-          structuredDataContainerId: this.id,
-        });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 getStructuredDataPermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.permissions.value = (await resp.json()) as Permissions;
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
       throw e;
@@ -105,11 +115,22 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   override async updatePermissions(
     updatedPermissions: Permissions,
   ): Promise<void> {
+    const containerAppId = this.container.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      await this.api.value.editStructuredDataPermissions({
-        structuredDataContainerId: this.id,
-        permissions: updatedPermissions,
-      });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 editStructuredDataPermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "PATCH", headers, body: JSON.stringify(updatedPermissions) },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       emitSuccess(
         `Successfully updated permissions for structured data container: ${this.id}`,
       );

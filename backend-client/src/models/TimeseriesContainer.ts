@@ -63,11 +63,19 @@ export interface TimeseriesContainer {
      */
     name: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof TimeseriesContainer
      */
     readonly type: ContainerType;
+    /**
+     * Application-level UUID v7 identifier. Present in v1 JSON responses because
+     * AbstractEntity always carries appId; added here to unblock V2-SWEEP-003-2
+     * permissions migration. Will be formally regenerated in V2-SWEEP-001-CLIENT-REGEN.
+     * @type {string}
+     * @memberof TimeseriesContainer
+     */
+    readonly appId?: string | null;
 }
 
 
@@ -103,6 +111,7 @@ export function TimeseriesContainerFromJSONTyped(json: any, ignoreDiscriminator:
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
+        'appId': json['appId'] == null ? undefined : json['appId'],
     };
 }
 
