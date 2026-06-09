@@ -5,13 +5,19 @@
  * `BookmarkEntry.collectionId` shape is widened to `number | string` to
  * carry UUID v7 handles for post-Neo4j-reset Collections.
  *
- * The composable holds a module-singleton `_loaded` flag, so this test only
- * asserts the gated unauthenticated-skip path and the toggle's handle
- * resolution (appId preferred over numeric id). The full v2 round-trip is
- * SSR-gated under Vitest (`import.meta.client === false`), so we cannot
- * observe a real fetch — only the load-gate.
+ * The composable holds a module-singleton `_loaded` flag and runs an initial
+ * `load()` on first use. Under Vitest the client path is simulated
+ * (`import.meta.client === true`, set in vitest.config), so `load()` resolves
+ * against the mocked `getPreferences` ({} → empty bookmark list). The toggle
+ * tests await a microtask flush so that initial load settles (and overwrites
+ * `_rawEntries` to []) BEFORE the toggle mutates state — otherwise the async
+ * load would clobber the toggle's optimistic update. This test asserts the
+ * toggle's handle resolution (appId preferred over numeric id).
  */
 import { describe, it, expect, vi } from "vitest";
+
+/** Flush the microtask queue so the auto-triggered initial load() settles. */
+const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 const mockGetPreferences = vi.fn().mockResolvedValue({});
 const mockPatchPreferences = vi.fn().mockResolvedValue(undefined);
@@ -59,6 +65,9 @@ describe("useBookmarkedCollections — BUG-COLL-APPID-ROUTE-003", () => {
       "~/composables/context/useBookmarkedCollections"
     );
     const { isBookmarked, toggle } = useBookmarkedCollections();
+    // Let the initial load() settle before mutating, so it doesn't clobber the
+    // toggle's optimistic update.
+    await flush();
     const APP_ID = "019e6ffc-1234-7abc-9def-000000000042";
     const collection = { id: 42, appId: APP_ID, name: "LUMEN Showcase" };
     await toggle(collection as never);
@@ -75,6 +84,7 @@ describe("useBookmarkedCollections — BUG-COLL-APPID-ROUTE-003", () => {
       "~/composables/context/useBookmarkedCollections"
     );
     const { isBookmarked, toggle } = useBookmarkedCollections();
+    await flush();
     const collection = { id: 99, name: "Legacy Collection" };
     await toggle(collection as never);
     // Stored handle is the numeric id (no appId available); membership

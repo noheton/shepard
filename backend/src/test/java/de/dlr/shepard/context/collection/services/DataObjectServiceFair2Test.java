@@ -4,11 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
+import de.dlr.shepard.context.collection.services.ArchiveStateGuard;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
@@ -65,6 +68,10 @@ public class DataObjectServiceFair2Test {
 
     PermissionsService permissionsService = mock(PermissionsService.class);
     AuthenticationContext authenticationContext = mock(AuthenticationContext.class);
+    ArchiveStateGuard archiveStateGuard = mock(ArchiveStateGuard.class);
+    FeatureToggleRegistry featureToggleRegistry = mock(FeatureToggleRegistry.class);
+    // MFG2 quality gates default off in these FAIR-focused tests.
+    when(featureToggleRegistry.get(anyString())).thenReturn(java.util.Optional.empty());
 
     service = new DataObjectService();
     service.dataObjectDAO = dataObjectDAO;
@@ -78,8 +85,8 @@ public class DataObjectServiceFair2Test {
     service.dataObjectReferenceDAO = referenceDAO;
     service.permissionsService = permissionsService;
     service.authenticationContext = authenticationContext;
-    service.archiveStateGuard = mock(de.dlr.shepard.context.collection.services.ArchiveStateGuard.class);
-    service.featureToggleRegistry = mock(de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry.class);
+    service.archiveStateGuard = archiveStateGuard;
+    service.featureToggleRegistry = featureToggleRegistry;
 
     collection = new Collection();
     collection.setShepardId(1L);

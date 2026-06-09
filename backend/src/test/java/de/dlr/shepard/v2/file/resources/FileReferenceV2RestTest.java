@@ -73,9 +73,12 @@ class FileReferenceV2RestTest {
     resource.objectMapper = new ObjectMapper();
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
+    // Production resolves access via the 3-arg overload (no jwtIat) and the
+    // appId-based check; stub both positively so happy-path tests pass the gate.
     when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), any(AccessType.class), eq(CALLER)))
       .thenReturn(true);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), any(AccessType.class), eq(CALLER))).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), any(AccessType.class), eq(CALLER)))
+      .thenReturn(true);
   }
 
   private FileReference existing() {

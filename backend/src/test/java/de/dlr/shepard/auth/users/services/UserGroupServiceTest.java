@@ -220,14 +220,12 @@ public class UserGroupServiceTest {
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(false);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
       permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(
       permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Manage), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));
@@ -261,14 +259,12 @@ public class UserGroupServiceTest {
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(false);
     when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(true);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
       permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(
       permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Manage), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));

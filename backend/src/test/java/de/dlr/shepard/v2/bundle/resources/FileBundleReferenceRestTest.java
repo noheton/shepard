@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -88,7 +88,12 @@ class FileBundleReferenceRestTest {
     resource.objectMapper = new ObjectMapper();
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq("do-app-id"), any(AccessType.class), eq(CALLER))).thenReturn(true);
+    // Production resolves access via the 3-arg overload (no jwtIat) and the
+    // appId-based check; stub both positively so happy-path tests pass the gate.
+    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), any(AccessType.class), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(anyString(), any(AccessType.class), eq(CALLER)))
+      .thenReturn(true);
   }
 
   private FileBundleReference existingBundle() {
