@@ -3,3 +3,4 @@
 # Neo4j-OGM entities. Its shapeDescriptor() declares the URDF DataObject
 # SHACL shape so the seeder round-trip is testable without plugin modules.
 de.dlr.shepard.v2.shapes.seeder.UrdfKindShapeExample
+de.dlr.shepard.v2.shapes.mffd.MffdMaterialBatchKind
