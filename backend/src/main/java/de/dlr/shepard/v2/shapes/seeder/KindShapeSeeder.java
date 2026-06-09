@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.spi.payload.PayloadKind;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.v2.shapes.builder.ChannelBindingSpec;
 import de.dlr.shepard.v2.shapes.builder.InMember;
 import de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -57,6 +59,7 @@ public class KindShapeSeeder {
   static final String SYSTEM_TAG = "system:kind-shape-seeder";
 
   static final String TEMPLATE_KIND = "DATAOBJECT_RECIPE";
+  static final String VIEW_TEMPLATE_KIND = "VIEW_RECIPE";
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -76,21 +79,40 @@ public class KindShapeSeeder {
       Thread.currentThread().getContextClassLoader()
     );
     for (PayloadKind kind : kinds) {
-      ShapeSpec spec;
+      // DATAOBJECT_RECIPE — data shape
+      ShapeSpec dataSpec;
       try {
-        spec = kind.shapeDescriptor();
+        dataSpec = kind.shapeDescriptor();
       } catch (Exception e) {
         Log.warnf(e, "KindShapeSeeder: shapeDescriptor() threw for kind '%s' — skipping", kind.name());
-        continue;
+        dataSpec = null;
       }
-      if (spec == null) {
-        Log.debugf("KindShapeSeeder: kind '%s' returned null shapeDescriptor — skipping", kind.name());
-        continue;
+      if (dataSpec != null) {
+        try {
+          seedKind(kind.name(), dataSpec);
+        } catch (Exception e) {
+          Log.warnf(e, "KindShapeSeeder: failed to seed DATAOBJECT_RECIPE for kind '%s' — startup continues", kind.name());
+        }
+      } else {
+        Log.debugf("KindShapeSeeder: kind '%s' returned null shapeDescriptor — skipping DATAOBJECT_RECIPE", kind.name());
       }
+
+      // V2CONV-B8 — VIEW_RECIPE — view shape
+      ViewRecipeSpec viewSpec;
       try {
-        seedKind(kind.name(), spec);
+        viewSpec = kind.viewShapeDescriptor();
       } catch (Exception e) {
-        Log.warnf(e, "KindShapeSeeder: failed to seed template for kind '%s' — startup continues", kind.name());
+        Log.warnf(e, "KindShapeSeeder: viewShapeDescriptor() threw for kind '%s' — skipping", kind.name());
+        viewSpec = null;
+      }
+      if (viewSpec != null) {
+        try {
+          seedViewKind(kind.name(), viewSpec);
+        } catch (Exception e) {
+          Log.warnf(e, "KindShapeSeeder: failed to seed VIEW_RECIPE for kind '%s' — startup continues", kind.name());
+        }
+      } else {
+        Log.debugf("KindShapeSeeder: kind '%s' returned null viewShapeDescriptor — skipping VIEW_RECIPE", kind.name());
       }
     }
   }
@@ -149,6 +171,64 @@ public class KindShapeSeeder {
           requestContextController.deactivate();
         } catch (Exception e) {
           Log.debugf(e, "KindShapeSeeder: failed to deactivate request context for '%s'", kindName);
+        }
+      }
+    }
+  }
+
+  /**
+   * V2CONV-B8 — seeds or idempotently updates the VIEW_RECIPE template for one kind.
+   * Mirrors {@link #seedKind} but uses {@value #VIEW_TEMPLATE_KIND} and the
+   * {@code "<kindName>-view-shape"} naming convention.
+   * Package-visible for testing.
+   */
+  void seedViewKind(String kindName, ViewRecipeSpec spec) {
+    String templateName = kindName + "-view-shape";
+    String newSpecJson = serializeViewRecipeSpec(spec);
+
+    boolean ctxActivated = false;
+    try {
+      ctxActivated = requestContextController.activate();
+    } catch (Exception e) {
+      Log.debugf(e, "KindShapeSeeder: could not activate request context for view kind '%s'", kindName);
+    }
+    try {
+      var existing = templateDAO.findLatestByName(templateName, VIEW_TEMPLATE_KIND);
+      if (existing.isEmpty()) {
+        ShepardTemplate t = buildViewTemplate(templateName, kindName, newSpecJson);
+        templateDAO.createOrUpdate(t);
+        Log.infof("KindShapeSeeder: seeded new VIEW_RECIPE template '%s' (kind=%s)", templateName, kindName);
+      } else {
+        ShepardTemplate prior = existing.get();
+        String priorSpecJson = extractViewSpecJson(prior.getBody());
+        if (newSpecJson.equals(priorSpecJson)) {
+          Log.debugf("KindShapeSeeder: VIEW_RECIPE template '%s' is up-to-date — no write", templateName);
+          return;
+        }
+        if (prior.getTags() == null || !prior.getTags().contains(SYSTEM_TAG)) {
+          Log.warnf(
+            "KindShapeSeeder: VIEW_RECIPE template '%s' has been admin-customised (system tag absent) — skipping update",
+            templateName
+          );
+          return;
+        }
+        prior.setRetired(true);
+        templateDAO.createOrUpdate(prior);
+
+        ShepardTemplate next = templateDAO.nextVersionOf(prior);
+        next.setBody(buildViewBody(newSpecJson));
+        templateDAO.createOrUpdate(next);
+        Log.infof(
+          "KindShapeSeeder: updated VIEW_RECIPE template '%s' to v%d (kind=%s)",
+          templateName, next.getVersion(), kindName
+        );
+      }
+    } finally {
+      if (ctxActivated) {
+        try {
+          requestContextController.deactivate();
+        } catch (Exception e) {
+          Log.debugf(e, "KindShapeSeeder: failed to deactivate request context for view kind '%s'", kindName);
         }
       }
     }
@@ -236,5 +316,70 @@ public class KindShapeSeeder {
       return templateName.substring(0, templateName.length() - "-data-shape".length());
     }
     return templateName;
+  }
+
+  private ShepardTemplate buildViewTemplate(String name, String kindName, String specJson) {
+    ShepardTemplate t = new ShepardTemplate(name, VIEW_TEMPLATE_KIND, buildViewBody(specJson));
+    t.setTags(new ArrayList<>());
+    t.getTags().add(SYSTEM_TAG);
+    t.setDescription("Auto-seeded VIEW_RECIPE for payload kind '" + kindName + "'.");
+    return t;
+  }
+
+  /**
+   * Builds the VIEW_RECIPE body JSON from the canonical spec JSON string.
+   * The top-level object IS the spec (no wrapper key) — VIEW_RECIPE body
+   * passes {@code TemplateBodyValidator} when it contains {@code "renderer"}.
+   */
+  static String buildViewBody(String specJson) {
+    // specJson already encodes the full body: {"renderer":..., ...}
+    return specJson;
+  }
+
+  /**
+   * Serialises a {@link ViewRecipeSpec} to the canonical VIEW_RECIPE body JSON.
+   * The result contains at minimum {@code "renderer"} so it satisfies
+   * {@code TemplateBodyValidator}.
+   */
+  static String serializeViewRecipeSpec(ViewRecipeSpec spec) {
+    try {
+      ObjectNode node = MAPPER.createObjectNode();
+      if (spec.renderer() != null) {
+        node.put("renderer", spec.renderer());
+      } else {
+        node.putNull("renderer");
+      }
+      if (spec.viewRecipeShape() != null) {
+        node.put("viewRecipeShape", spec.viewRecipeShape());
+      }
+      ArrayNode bindings = node.putArray("channelBindings");
+      if (spec.channelBindings() != null) {
+        for (ChannelBindingSpec b : spec.channelBindings()) {
+          ObjectNode bn = bindings.addObject();
+          bn.put("role", b.role());
+          bn.put("channelSelector", b.channelSelector() != null ? b.channelSelector() : "");
+          if (b.unit() != null) bn.put("unit", b.unit());
+          bn.put("required", b.required());
+        }
+      }
+      return MAPPER.writeValueAsString(node);
+    } catch (Exception e) {
+      throw new IllegalStateException("KindShapeSeeder: failed to serialize ViewRecipeSpec to JSON", e);
+    }
+  }
+
+  /**
+   * Extracts the canonical spec JSON from a VIEW_RECIPE body for idempotency comparison.
+   * Since VIEW_RECIPE bodies ARE the spec (no wrapper key), the body itself is the
+   * comparison token. Returns {@code "{}"} on parse failure or blank input.
+   */
+  static String extractViewSpecJson(String body) {
+    if (body == null || body.isBlank()) return "{}";
+    try {
+      // Normalise: re-serialise to strip whitespace differences.
+      return MAPPER.writeValueAsString(MAPPER.readTree(body));
+    } catch (Exception e) {
+      return "{}";
+    }
   }
 }

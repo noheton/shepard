@@ -11,8 +11,10 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.v2.shapes.builder.ChannelBindingSpec;
 import de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import jakarta.enterprise.context.control.RequestContextController;
 import java.util.ArrayList;
 import java.util.List;
@@ -163,6 +165,122 @@ class KindShapeSeederTest {
 
     // Must NOT update the template: admin owns it.
     verify(templateDAO, never()).createOrUpdate(any());
+  }
+
+  // ─── V2CONV-B8: VIEW_RECIPE seeding tests ────────────────────────────────
+
+  @Test
+  void newViewKindWithDescriptor_triggersCreateAndSave() {
+    var spec = new ViewRecipeSpec(
+      "http://semantics.dlr.de/shepard/view#TestShape",
+      "tresjs",
+      List.of(ChannelBindingSpec.required("x", "{\"measurement\":\"AFP\"}"))
+    );
+
+    when(templateDAO.findLatestByName("test-kind-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND))
+      .thenReturn(Optional.empty());
+    when(templateDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    seeder.seedViewKind("test-kind", spec);
+
+    verify(templateDAO, times(1)).createOrUpdate(any(ShepardTemplate.class));
+    verify(templateDAO, times(1)).findLatestByName("test-kind-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND);
+  }
+
+  @Test
+  void newViewKindWithDescriptor_savedTemplateHasCorrectKindAndBody() {
+    var spec = new ViewRecipeSpec(
+      "http://semantics.dlr.de/shepard/view#AfpShape",
+      "tresjs",
+      List.of(
+        ChannelBindingSpec.required("x", "{\"measurement\":\"AFP\",\"field\":\"tcp_x\"}"),
+        ChannelBindingSpec.optional("temp", "{\"measurement\":\"AFP\",\"field\":\"temperature\"}")
+      )
+    );
+
+    when(templateDAO.findLatestByName(any(), any())).thenReturn(Optional.empty());
+
+    ShepardTemplate[] saved = new ShepardTemplate[1];
+    when(templateDAO.createOrUpdate(any())).thenAnswer(inv -> {
+      saved[0] = inv.getArgument(0);
+      return saved[0];
+    });
+
+    seeder.seedViewKind("afp-kind", spec);
+
+    assertThat(saved[0]).isNotNull();
+    assertThat(saved[0].getTags()).contains(KindShapeSeeder.SYSTEM_TAG);
+    assertThat(saved[0].getName()).isEqualTo("afp-kind-view-shape");
+    assertThat(saved[0].getTemplateKind()).isEqualTo(KindShapeSeeder.VIEW_TEMPLATE_KIND);
+    // Body must pass TemplateBodyValidator: must contain "renderer" key.
+    assertThat(saved[0].getBody()).contains("\"renderer\"");
+    assertThat(saved[0].getBody()).contains("tresjs");
+    assertThat(saved[0].getBody()).contains("viewRecipeShape");
+    assertThat(saved[0].getBody()).contains("channelBindings");
+    assertThat(saved[0].getBody()).contains("\"x\"");
+    assertThat(saved[0].getBody()).contains("\"temp\"");
+  }
+
+  @Test
+  void sameViewRecipeSpec_producesNoUpdate() {
+    var spec = new ViewRecipeSpec(null, "echarts", List.of());
+
+    String existingBody = KindShapeSeeder.serializeViewRecipeSpec(spec);
+
+    ShepardTemplate existing = new ShepardTemplate("same-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND, existingBody);
+    existing.setTags(new ArrayList<>(List.of(KindShapeSeeder.SYSTEM_TAG)));
+
+    when(templateDAO.findLatestByName("same-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND))
+      .thenReturn(Optional.of(existing));
+
+    seeder.seedViewKind("same", spec);
+
+    verify(templateDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void viewKindWithAdminCustomisedTemplate_seederSkipsUpdate() {
+    var spec = new ViewRecipeSpec(null, "plotly", List.of());
+
+    String differentBody = "{\"renderer\":\"echarts\",\"channelBindings\":[]}";
+    ShepardTemplate existing = new ShepardTemplate(
+      "custom-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND, differentBody);
+    existing.setTags(new ArrayList<>(List.of("admin-custom-tag")));
+
+    when(templateDAO.findLatestByName("custom-view-shape", KindShapeSeeder.VIEW_TEMPLATE_KIND))
+      .thenReturn(Optional.of(existing));
+
+    seeder.seedViewKind("custom", spec);
+
+    verify(templateDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void serializeViewRecipeSpec_rendererAndShapeIriAndBindings() {
+    var spec = new ViewRecipeSpec(
+      "http://example.org/shape#TestView",
+      "tresjs",
+      List.of(new ChannelBindingSpec("x", "{\"measurement\":\"M\"}", "http://qudt.org/vocab/unit/MilliM", true))
+    );
+    String json = KindShapeSeeder.serializeViewRecipeSpec(spec);
+    assertThat(json).contains("\"renderer\"");
+    assertThat(json).contains("tresjs");
+    assertThat(json).contains("\"viewRecipeShape\"");
+    assertThat(json).contains("http://example.org/shape#TestView");
+    assertThat(json).contains("\"channelBindings\"");
+    assertThat(json).contains("\"x\"");
+    assertThat(json).contains("http://qudt.org/vocab/unit/MilliM");
+    // Calling again must produce identical output (determinism).
+    assertThat(KindShapeSeeder.serializeViewRecipeSpec(spec)).isEqualTo(json);
+  }
+
+  @Test
+  void serializeViewRecipeSpec_nullShapeIri_notIncluded() {
+    var spec = new ViewRecipeSpec(null, "echarts", List.of());
+    String json = KindShapeSeeder.serializeViewRecipeSpec(spec);
+    assertThat(json).doesNotContain("viewRecipeShape");
+    assertThat(json).contains("\"renderer\"");
+    assertThat(json).contains("\"channelBindings\"");
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────
