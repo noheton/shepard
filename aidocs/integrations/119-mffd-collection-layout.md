@@ -390,14 +390,52 @@ change tracked as `OTVIS-PLUS-VARIANT-REGEX` in `aidocs/16`.
 **Coordinate-frame relation:** per-step DOs reference this Collection via `urn:shepard:mffd:cell-frame-ref = <mffd-cell.scenegraph.appId>`. This is the coordinate-frame substrate the W4 process-chain mapping uses for spatial alignment.
 **Owning group:** `mffd-cell-admins`
 
-### 2.7 Future steps (W9 + downstream)
+### 2.7 `mffd-stringer-welding` and downstream steps
 
-When the 288 GB `Stringer_schweissungen/` corpus transfers from the DLR source
-share (per `IMPORT_README.md §"Source-vs-dump completeness"`):
+#### 2.7.1 `mffd-stringer-welding` — stringer resistance welding
 
-- `mffd-stringer-placement` — Stringer placement step
-- `mffd-stringer-verbindung` — Stringerverbindung (stringer joining)
-- `mffd-cleats-lbr` — Cleats with LBR robot
+**Slug:** `mffd-stringer-welding`
+**Display name:** *MFFD — Stringer Welding*
+**Source:** `Stringer_schweissungen/` (~288 GB extracted; zip at `/mnt/pve/unas/dump/dataset/Stringer_schweissungen.zip` — extraction gated on `MFFD-STRINGER-EXTRACT-1`)
+**Importer:** `shepard-plugin-fileformat-thermography` with `StringerWeldingDirParser` (shipped 2026-06-09, `MFFD-STRINGER-FILENAME-PARSER-1`)
+**Process-type predicate:** `urn:shepard:mffd:process-type = stringer-welding`
+**Owning group:** `mffd-welding-team`
+
+Process chain position:
+
+```
+mffd-ndt-thermography
+    ↓ Successor
+mffd-stringer-welding        ← this Collection
+    ↓ Successor
+mffd-stringer-verbindung     (W9 — pending source-side export)
+    ↓ Successor
+mffd-cleats-lbr              (downstream — pending)
+```
+
+**Directory-name grammar** (`StringerWeldingDirParser`, shipped 2026-06-09):
+
+| Token | Meaning | Annotation predicate |
+|---|---|---|
+| `P<pos>` | Stringer position number (integer) | `urn:shepard:mffd:stringer-position = <pos>` |
+| `Strich` | "Strich" variant flag (optional) | `urn:shepard:mffd:stringer-strich = true` |
+| `_S` | Secondary variant flag (optional) | `urn:shepard:mffd:stringer-variant = S` |
+| `{1\|2}teBahn` | Path ordinal — 1st or 2nd welding pass | `urn:shepard:mffd:stringer-path-ordinal = <1\|2>` |
+| `_Fehler` | Non-conformance candidate (optional) | `urn:shepard:mffd:stringer-fehler = true` |
+
+`_Fehler` directories are NCR candidates — the importer emits
+`urn:shepard:mffd:stringer-fehler = true` at ingest time; the operator
+confirms via AAA2 disposition whether to open a formal NCR.
+
+**Ingest gate:** `MFFD-STRINGER-EXTRACT-1` (extraction of
+`Stringer_schweissungen.zip` from dump drive to NFS staging) must complete
+before this Collection can be populated.
+
+#### 2.7.2 Downstream steps (pending source-side export)
+
+- `mffd-stringer-verbindung` — Stringerverbindung (stringer joining); source-side
+  export run required (W9 in `aidocs/integrations/113`).
+- `mffd-cleats-lbr` — LBR robot cleats step; downstream of Stringerverbindung.
 
 Same shape as the existing six: per-step Collection, `urn:shepard:mffd:process-type`
 annotation, owning group, Predecessor edges back to upstream steps.
@@ -506,6 +544,8 @@ importers do the actual writes.
 6. **W5, W6, W8a, W8b, W8c, W7, W7b** run in any order after W2 (they only
    need the relevant per-step Collection to exist; the Project + sub-Collection
    bootstrap of step 1 covers that).
+7. **W-stringer (post `MFFD-STRINGER-EXTRACT-1`):** create `mffd-stringer-welding`
+   Collection + run `StringerWeldingDirParser`-wired importer (per §2.7.1).
 
 ## 9. References
 
