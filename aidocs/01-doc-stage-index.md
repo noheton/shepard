@@ -425,7 +425,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-021-sd-list-fix-2026-05-24.md`](agent-findings/ui-021-sd-list-fix-2026-05-24.md) | UI-021 — `/containers/structureddata` "shows 0 rows" — close as WAI/misreport | 2026-05-24 | 2026-06-04 |
 | [`aidocs/agent-findings/ux-pattern-d-count-badges-2026-05-24.md`](agent-findings/ux-pattern-d-count-badges-2026-05-24.md) | UX Pattern D — count badges on DataObject reference panels | 2026-05-24 | 2026-06-04 |
 | [`aidocs/agent-findings/ux-polish-bundle-2026-05-24.md`](agent-findings/ux-polish-bundle-2026-05-24.md) | UX polish bundle — 2026-05-24 | 2026-05-24 | 2026-06-04 |
-| [`aidocs/agent-findings/v2-conformance-sweep-2026-06-09.md`](agent-findings/v2-conformance-sweep-2026-06-09.md) | V2 conformance sweep — 2026-06-09 | 2026-06-09 | — |
+| [`aidocs/agent-findings/v2-conformance-sweep-2026-06-09.md`](agent-findings/v2-conformance-sweep-2026-06-09.md) | V2 conformance sweep — 2026-06-09 | 2026-06-09 | 2026-06-09 |
 | [`aidocs/case-study-2026-05-19.md`](case-study-2026-05-19.md) | Case Study: One Month of AI-Assisted Fork Development | 2026-05-23 | 2026-06-04 |
 | [`aidocs/data/00-model-inventory.md`](data/00-model-inventory.md) | 00 — Model inventory (SSOT) | 2026-05-23 | 2026-06-04 |
 | [`aidocs/data/37-lab-journal-and-jupyter-design.md`](data/37-lab-journal-and-jupyter-design.md) | Lab Journal Reassessment + Jupyter Feasibility — Design | 2026-05-23 | 2026-06-04 |
