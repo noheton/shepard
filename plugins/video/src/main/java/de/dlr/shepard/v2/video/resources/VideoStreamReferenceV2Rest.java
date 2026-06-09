@@ -14,7 +14,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
@@ -31,7 +30,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -42,18 +40,21 @@ import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 /**
- * VID1a — {@code /v2/data-objects/{dataObjectAppId}/video-stream-references}
- * CRUD endpoints.
+ * Special-ops surface for VideoStreamReferences.
  *
- * <p>Auth: every endpoint resolves the parent {@code DataObject} appId from
- * the path, then asks {@link PermissionsService} — same pattern as
- * {@link de.dlr.shepard.v2.file.resources.FileReferenceV2Rest}.
- * Read permission required for {@code GET}; Write permission required for
- * {@code POST} and {@code DELETE}.
+ * <p>CRUD (list / get-one / delete) was removed by PLUGIN-PERKIND-CRUD-CLEANUP;
+ * those operations are now served by the unified
+ * {@code /v2/references?kind=video} surface
+ * ({@code ReferencesV2Rest} + {@code VideoStreamReferenceKindHandler}).
  *
- * <p>Note: This feature lands in-tree for VID1a to lean on the existing
- * FileStorage SPI + permission gate. Plugin extraction is post-VID1-series
- * work (per CLAUDE.md plugin-first rule §"New payload kinds").
+ * <p>This class retains only the two domain-specific operations that have no
+ * equivalent on the generic reference surface:
+ * <ul>
+ *   <li>Binary upload (VID1a) — multipart POST; the kind handler refuses
+ *       binary creates with 400 and directs callers here.</li>
+ *   <li>Range-aware download (VID1a + MFFD-VIDEOREF-SCALE-1) — GET with
+ *       HTTP 206 partial-content support for browser-native video scrubbing.</li>
+ * </ul>
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -70,46 +71,6 @@ public class VideoStreamReferenceV2Rest {
 
   @Inject
   PermissionsService permissionsService;
-
-  // ─── list ────────────────────────────────────────────────────────────────
-
-  @GET
-  @Operation(summary = "List all VideoStreamReferences for a DataObject (VID1a).")
-  @APIResponse(
-    responseCode = "200",
-    content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = VideoStreamReferenceIO.class)
-    )
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
-  public Response list(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
-    @Context SecurityContext sc
-  ) {
-    String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
-
-    Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
-    if (doOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-    // DataObjects have no own :Permissions node — walk up to the parent
-    // Collection via the perm-walk helper. Gating on doOgmId directly
-    // always 403'd because PermissionsDAO.findByEntityNeo4jId returns
-    // null for DOs.
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
-    }
-
-    List<VideoStreamReferenceIO> result = videoStreamReferenceService
-      .listByDataObject(dataObjectAppId)
-      .stream()
-      .map(VideoStreamReferenceIO::new)
-      .toList();
-
-    return Response.ok(result).build();
-  }
 
   // ─── upload ──────────────────────────────────────────────────────────────
 
@@ -146,7 +107,6 @@ public class VideoStreamReferenceV2Rest {
     Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
     if (doOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
 
-    // Walk DO → parent Collection for the perm check (see GET above).
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
@@ -173,62 +133,6 @@ public class VideoStreamReferenceV2Rest {
     } catch (IOException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
     }
-  }
-
-  // ─── get one ─────────────────────────────────────────────────────────────
-
-  @GET
-  @Path("/{appId}")
-  @Operation(summary = "Get one VideoStreamReference by appId (VID1a).")
-  @APIResponse(
-    responseCode = "200",
-    content = @Content(schema = @Schema(implementation = VideoStreamReferenceIO.class))
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No VideoStreamReference with that appId, or DataObject mismatch.")
-  public Response getOne(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
-    @PathParam("appId") String appId,
-    @Context SecurityContext sc
-  ) {
-    String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
-
-    VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-    Response gate = checkParentAndAccess(ref, dataObjectAppId, AccessType.Read, caller);
-    if (gate != null) return gate;
-
-    return Response.ok(new VideoStreamReferenceIO(ref)).build();
-  }
-
-  // ─── delete ──────────────────────────────────────────────────────────────
-
-  @DELETE
-  @Path("/{appId}")
-  @Operation(summary = "Delete a VideoStreamReference and its stored bytes (VID1a).")
-  @APIResponse(responseCode = "204", description = "Deleted.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No VideoStreamReference with that appId, or DataObject mismatch.")
-  public Response delete(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
-    @PathParam("appId") String appId,
-    @Context SecurityContext sc
-  ) {
-    String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
-
-    VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-    Response gate = checkParentAndAccess(ref, dataObjectAppId, AccessType.Write, caller);
-    if (gate != null) return gate;
-
-    videoStreamReferenceService.delete(ref);
-    return Response.noContent().build();
   }
 
   // ─── download ────────────────────────────────────────────────────────────
@@ -299,7 +203,6 @@ public class VideoStreamReferenceV2Rest {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
     }
 
-    // Determine filename for Content-Disposition.
     String filename = payload.fileName();
     if (filename == null || filename.isBlank()) {
       filename = ref.getName();
@@ -312,8 +215,6 @@ public class VideoStreamReferenceV2Rest {
       ? payload.sizeBytes()
       : (ref.getFileSizeBytes() != null ? ref.getFileSizeBytes() : null);
 
-    // No range header → full body. Always advertise Accept-Ranges so HTML5
-    // <video> can probe for range support and scrub natively.
     if (rangeHeader == null || rangeHeader.isBlank()) {
       Response.ResponseBuilder rb = Response.ok(payload.stream(), contentType)
         .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
@@ -339,8 +240,6 @@ public class VideoStreamReferenceV2Rest {
 
     long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
     if (range == null) {
-      // Close the source stream so the underlying GridFS / S3 handle is
-      // released — we are not going to consume it.
       try {
         if (payload.stream() != null) payload.stream().close();
       } catch (IOException ioe) {
@@ -386,14 +285,10 @@ public class VideoStreamReferenceV2Rest {
     if (ref.getDataObject() == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    // Verify the reference belongs to the DataObject in the URL.
     String refParentAppId = ref.getDataObject().getAppId();
     if (refParentAppId != null && !refParentAppId.equals(dataObjectAppId)) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    // DataObjects have no own :Permissions node — walk up to the parent
-    // Collection via the perm-walk helper. The 4-arg isAccessTypeAllowedForUser
-    // always 403s for DOs because PermissionsDAO.findByEntityNeo4jId returns null.
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
