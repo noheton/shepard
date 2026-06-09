@@ -7,3 +7,4 @@ de.dlr.shepard.v2.shapes.mffd.MffdMaterialBatchKind
 de.dlr.shepard.v2.shapes.mffd.MffdAfpCourseKind
 de.dlr.shepard.v2.shapes.mffd.MffdWeldStepKind
 de.dlr.shepard.v2.shapes.mffd.MffdNdtOtvisMeasurementKind
+de.dlr.shepard.v2.shapes.mffd.MffdApprovalGateKind
