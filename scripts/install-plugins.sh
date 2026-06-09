@@ -99,6 +99,7 @@ install_plugin ai
 install_plugin video
 install_plugin v1-compat
 install_plugin vis-trace3d
+install_plugin vis-ndt-grid
 install_plugin krl-interpreter
 
 echo "All shepard plugins installed."
