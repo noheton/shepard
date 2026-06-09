@@ -9,6 +9,21 @@ import { AdminFragments } from "./adminMenuItems";
 
 const { templates, isLoading, refresh } = useFetchTemplates();
 
+// V2CONV-B6-SHACLPREFILL — read ?newTemplate + ?targetEntityAppId from the URL
+// so the Tools-context "New template for this DataObject" action can open
+// the dialog pre-populated. toolsContext.ts routes here with these params.
+const route = useRoute();
+const contextFocusAppId = computed<string | null>(() => {
+  const v = route.query.targetEntityAppId;
+  return typeof v === "string" && v.length > 0 ? v : null;
+});
+
+onMounted(() => {
+  if (route.query.newTemplate === "1") {
+    openCreate();
+  }
+});
+
 // Show retired templates toggle
 const showRetired = ref(false);
 
@@ -279,6 +294,7 @@ watch(showRetired, (val) => {
       v-model="dialogOpen"
       :template="editingTemplate"
       :all-templates="templates"
+      :focus-app-id="editingTemplate ? null : contextFocusAppId"
       @saved="onSaved"
     />
 

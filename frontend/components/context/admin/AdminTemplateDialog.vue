@@ -18,6 +18,12 @@ const props = defineProps<{
    * in the UI). Design: aidocs/integrations/123.
    */
   allTemplates?: ShepardTemplateIO[];
+  /**
+   * V2CONV-B6-SHACLPREFILL — when set (from ?targetEntityAppId query param),
+   * the visual editor auto-fetches the DataObject's RDF and pre-fills the
+   * validate data-graph textarea.
+   */
+  focusAppId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -401,6 +407,7 @@ async function save() {
             <TemplateShapeEditor
               v-if="bodyMode === 'visual'"
               :body="body"
+              :focus-app-id="focusAppId"
               data-test="template-visual-editor"
               @update:body="(b) => (body = b)"
             />
