@@ -1,6 +1,7 @@
 package de.dlr.shepard.spi.payload;
 
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import java.util.List;
 
 /**
@@ -73,6 +74,26 @@ public interface PayloadKind {
    *         DataObjects of this kind, or {@code null} to opt out
    */
   default ShapeSpec shapeDescriptor() {
+    return null;
+  }
+
+  /**
+   * V2CONV-B8 — optional VIEW_RECIPE descriptor for this payload kind.
+   *
+   * <p>When non-null, {@code KindShapeSeeder} seeds (or idempotently
+   * updates) a {@code ShepardTemplate} of kind {@code VIEW_RECIPE}
+   * whose name is {@code "<name()>-view-shape"}. The seeded template
+   * body is immediately consumable by {@code POST /v2/shapes/render}
+   * and drives the renderer SPI dispatch via
+   * {@link de.dlr.shepard.spi.view.ViewRecipeRendererRegistry}.
+   *
+   * <p>The default implementation returns {@code null} — existing
+   * payload kinds are unaffected.
+   *
+   * @return a {@link ViewRecipeSpec} describing the default view recipe
+   *         for DataObjects of this kind, or {@code null} to opt out
+   */
+  default ViewRecipeSpec viewShapeDescriptor() {
     return null;
   }
 }
