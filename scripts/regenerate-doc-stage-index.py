@@ -81,7 +81,7 @@ def git_last_touched(path: Path) -> str:
     """Return `YYYY-MM-DD` of the last commit that touched the file, or `—`."""
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(path)],
+            ["git", "log", "-1", "--first-parent", "--format=%ad", "--date=short", "--", str(path)],
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
