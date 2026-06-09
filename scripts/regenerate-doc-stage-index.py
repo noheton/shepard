@@ -301,7 +301,7 @@ def main() -> int:
         existing = INDEX_PATH.read_text(encoding="utf-8") if INDEX_PATH.exists() else ""
         # CI-BASELINE-5: normalize last-touched date columns before comparing so
         # git-version-sensitive `git log` output on GitHub's synthetic merge commits
-        # doesn't cause spurious DRIFT failures.  Structural drift (new docs, stage
+        # doesn't cause spurious DRIFT failures. Structural drift (new docs, stage
         # changes, title changes) is still caught; only the cosmetic date column is
         # exempted from the comparison.
         drift = _normalize_dates(existing) != _normalize_dates(rendered)
