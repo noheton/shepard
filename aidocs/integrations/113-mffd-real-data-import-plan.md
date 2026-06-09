@@ -99,6 +99,7 @@ Re-running this plan must be **safe**, **fast**, and **lossless**:
 | W8b  | process video sweep | bucket 3 | VideoReference under DOs | existing VID1 + MFFD-VIDEOREF-SCALE-1 | 139 MP4s / 133 GB | UI scale-test passes | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
 | W8c  | ThermoCam TIFF stream | bucket 3 | ImageBundleReference | existing IB + MFFD-IMAGEBUNDLE-PAGINATE-1 | 6,273 TIFFs / 0.95 GB | UI scale-test passes | **scale fix shipped 2026-06-02 — ready, awaiting W2** |
 | W7b  | **TPS raw-data line-scan → brush-trace** (operator correction 2026-06-02: each PNG row = one sensor measurement instant along the track, NOT process video) | `Track_NN__Run_NN_/files/TPS raw data.0…37` | one `SpatialDataContainer` of `kind=brush-trace` per chunk (plugin `spatiotemporal` v6) | `shepard-plugin-spatial-importer --linescan-pass` shipped 2026-06-02 (PNG decoder + row-as-time mapping + intensity-vector JSONB projection) | 8,251 tracks × 38 chunks × 964 rows = **313 M measurement points** (one SpatialDataPoint per row carrying the 1292-wide intensity vector) | **importer shipped 2026-06-02; awaiting W2 + W7** | gap-blocked on W2 ingest drain, then W7 pointcloud pass, then runs alongside W7b on same Tracks |
+| W-stringer | stringer resistance welding | `Stringer_schweissungen/` (~288 GB extracted; zip at `/mnt/pve/unas/dump/dataset/Stringer_schweissungen.zip`) | new Collection `mffd-stringer-welding` (per `aidocs/integrations/119 §2.7.1`) | `shepard-plugin-fileformat-thermography` with `StringerWeldingDirParser` (shipped 2026-06-09, `MFFD-STRINGER-FILENAME-PARSER-1`; grammar: `P<pos>[Strich][_S]_{1\|2}teBahn[_Fehler]`) | est. ~N DOs (directory count pending extraction; 5 annotation predicates per DO via parser) | `MFFD-STRINGER-EXTRACT-1` (zip extraction from dump drive to NFS staging) must complete | **code ready** (parser shipped 2026-06-09); **blocked on `MFFD-STRINGER-EXTRACT-1`** |
 | W9   | source-side Stringerverbindung export | source N: drive | bucket 1+2 shape | requires new `mffd-export` run on Stringerverbindung Collection | est. 280 GB | source-side cooperation | gap-blocked |
 
 ## 5. Per-wave detail
@@ -332,6 +333,7 @@ sustained file upload, ~3,000 rows/s per worker timeseries insert.
 | W8a  | gated   |
 | W8b  | ~12 h (mostly upload) |
 | W8c  | ~30 min  |
+| W-stringer | ~2 h (post extraction; est. based on W6 rate) |
 
 ## 7. Pre-flight checklist (extend kickoff script)
 
@@ -387,6 +389,11 @@ The plan generates new `aidocs/16` rows tracked separately:
   page (bundle-detection panel) tracked as a follow-up below.
 - `MFFD-RDK-URDF-CONVERTER` — RDK→URDF tooling (fast path is good enough; right path is the gap)
 - `MFFD-SD-DEDUPE-1` — dedupe shared-payload StructuredDataReferences in bridgewelding
+- `MFFD-STRINGER-COLLECTION-1` — ✅ **doc-ready 2026-06-09**: `mffd-stringer-welding`
+  Collection layout documented in `aidocs/integrations/119 §2.7.1` (grammar table,
+  process-chain position, ingest gates). Code: `StringerWeldingDirParser` shipped
+  2026-06-09 (`MFFD-STRINGER-FILENAME-PARSER-1`). W-stringer wave added to wave map
+  above. Blocked on `MFFD-STRINGER-EXTRACT-1` for live ingest.
 - See feature-gap doc for the rest.
 
 ## 9. Definition of done
