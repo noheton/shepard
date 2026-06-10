@@ -4,6 +4,7 @@ import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * V2CONV-A3 — the dispatch seam behind the unified {@code /v2/containers}
@@ -127,4 +128,30 @@ public interface ContainerKindHandler {
    * @return the unified IOs (possibly empty, never null).
    */
   List<ContainerV2IO> list(String nameFilter);
+
+  /**
+   * V2CONV-A7-HDF — optionally resolve a single downloadable file payload for
+   * the container at {@code appId}. This is the converged home for kind-specific
+   * raw-file downloads (the migrated {@code /v2/hdf-containers/{appId}/file}
+   * surface) behind the generic {@code GET /v2/containers/{appId}/file} route.
+   *
+   * <p>Default returns {@link Optional#empty()} — a kind with no single-file
+   * payload (timeseries, structured-data) leaves the resolver to answer 415. The
+   * hdf handler overrides this to stream the raw HDF5 from HSDS; a future
+   * file-container convergence would override it too.
+   *
+   * <p>The dispatching resource has already gated Read on the container before
+   * calling this; the handler must still defensively load the entity by
+   * {@code appId} (it may be deleted/absent — return {@link Optional#empty()}
+   * or throw the kind's not-found shape).
+   *
+   * @param appId       UUID v7 of the container.
+   * @param rangeHeader optional HTTP {@code Range} header passed through to the
+   *                    underlying store; may be null.
+   * @return the streaming download (caller closes it), or empty when this kind
+   *         has no single-file payload.
+   */
+  default Optional<ContainerFileDownload> downloadFile(String appId, String rangeHeader) {
+    return Optional.empty();
+  }
 }
