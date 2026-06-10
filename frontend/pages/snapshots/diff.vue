@@ -11,7 +11,6 @@
 // Backed by GET /v2/snapshots[?collectionAppId=…] for the picker and
 // GET /v2/snapshots/{a}/diff/{b} for the comparison.
 
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import {
   useSnapshotList,
   type SnapshotListItem,
@@ -20,8 +19,10 @@ import {
 useHead({ title: "Snapshot diff | shepard" });
 
 const route = useRoute();
+const router = useRouter();
 const aAppId = ref<string>((route.query.a as string) ?? "");
 const bAppId = ref<string>((route.query.b as string) ?? "");
+const shareCopied = ref(false);
 const result = ref<unknown>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
@@ -99,6 +100,26 @@ async function runDiff() {
     isLoading.value = false;
   }
 }
+
+async function shareUrl() {
+  await router.replace({ query: { a: aAppId.value || undefined, b: bAppId.value || undefined } });
+  const url = window.location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+    shareCopied.value = true;
+    setTimeout(() => { shareCopied.value = false; }, 2000);
+  } catch {
+    // fallback: select a temporary input
+    const el = document.createElement("input");
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+    shareCopied.value = true;
+    setTimeout(() => { shareCopied.value = false; }, 2000);
+  }
+}
 </script>
 
 <template>
@@ -161,6 +182,14 @@ async function runDiff() {
       <v-btn color="primary" :loading="isLoading" @click="runDiff">
         <v-icon start>mdi-vector-difference</v-icon> Compare
       </v-btn>
+      <v-btn
+        variant="tonal"
+        color="secondary"
+        :prepend-icon="shareCopied ? 'mdi-check' : 'mdi-link-variant'"
+        @click="shareUrl"
+      >
+        {{ shareCopied ? "Copied!" : "Share" }}
+      </v-btn>
       <v-switch
         v-model="showAdvanced"
         label="Advanced: raw appIds"
@@ -207,13 +236,6 @@ async function runDiff() {
         <pre class="text-caption diff-result">{{ JSON.stringify(result, null, 2) }}</pre>
       </v-card-text>
     </v-card>
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="SNAP-DIFF"
-      design-doc="aidocs/platform/25-neo4j-id-migration-design.md"
-      endpoint="/v2/snapshots/{a}/diff/{b}"
-      notes="Picker backed by GET /v2/snapshots (SNAPSHOT-LIST-1-FE shipped 2026-05-31). Structured visualisation queued under SNAP-DIFF-UI-FOLLOWUP."
-    />
   </v-container>
 </template>
 
