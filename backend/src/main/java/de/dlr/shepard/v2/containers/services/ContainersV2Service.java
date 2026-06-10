@@ -172,6 +172,16 @@ public class ContainersV2Service {
     return requireHandlerForKind(kind).list(nameFilter);
   }
 
+  /**
+   * V2CONV-A7-HDF — resolve the single-file download for the container at
+   * {@code appId} via the owning kind's handler. Returns empty when no container
+   * carries that appId; the owning handler returns empty when its kind has no
+   * single-file payload (the resolver answers 415 in that case).
+   */
+  public Optional<de.dlr.shepard.v2.containers.spi.ContainerFileDownload> downloadFile(String appId, String rangeHeader) {
+    return resolveByAppId(appId).flatMap(r -> r.handler().downloadFile(appId, rangeHeader));
+  }
+
   /** The (handler, entity) pair an appId resolves to. */
   public record ResolvedContainer(ContainerKindHandler handler, BasicContainer container) {}
 }

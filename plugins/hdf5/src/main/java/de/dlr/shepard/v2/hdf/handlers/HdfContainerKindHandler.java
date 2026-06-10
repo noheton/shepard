@@ -7,16 +7,19 @@ import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
+import de.dlr.shepard.data.hdf.hsds.HsdsClient.ExportResponse;
 import de.dlr.shepard.data.hdf.io.HdfContainerIO;
 import de.dlr.shepard.data.hdf.services.HdfContainerService;
 import de.dlr.shepard.v2.containers.handlers.ContainerPatchSupport;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import de.dlr.shepard.v2.containers.spi.ContainerFileDownload;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * PLUGIN-CONTAINER-HANDLER-HDF — {@link ContainerKindHandler} for {@code kind=hdf}.
@@ -121,5 +124,34 @@ public class HdfContainerKindHandler implements ContainerKindHandler {
     QueryParamHelper params = new QueryParamHelper();
     if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
     return service.getAllContainers(params).stream().map(this::toIO).toList();
+  }
+
+  /**
+   * V2CONV-A7-HDF — the migrated home of the former
+   * {@code GET /v2/hdf-containers/{appId}/file} raw download. Streams the
+   * byte-identical HDF5 from HSDS so a user can open it with
+   * {@code h5py.File(local_path)} even without an {@code h5pyd} client. Range
+   * requests are forwarded verbatim. Reuses {@link HdfContainerService#downloadFile}
+   * — no HDF5/HSDS reading is reimplemented here.
+   */
+  @Override
+  public Optional<ContainerFileDownload> downloadFile(String appId, String rangeHeader) {
+    HdfContainer c = dao.findByAppId(appId);
+    if (c == null || c.isDeleted()) {
+      return Optional.empty();
+    }
+    ExportResponse export = service.downloadFile(c, rangeHeader);
+    String fileName = (c.getName() == null || c.getName().isBlank() ? "container" : c.getName()) + ".h5";
+    return Optional.of(
+      new ContainerFileDownload(
+        export.status(),
+        export.body(),
+        export.contentLength(),
+        export.contentRange(),
+        export.acceptRanges(),
+        fileName,
+        "application/x-hdf5"
+      )
+    );
   }
 }

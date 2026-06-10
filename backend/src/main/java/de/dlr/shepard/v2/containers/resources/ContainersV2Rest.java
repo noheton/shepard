@@ -150,6 +150,87 @@ public class ContainersV2Rest {
     return Response.ok(resolved.get().handler().toIO(resolved.get().container())).build();
   }
 
+  // ─── file download (kind-specific single-file payload) ───────────────────
+
+  @GET
+  @Path("/{appId}/file")
+  @Produces(MediaType.APPLICATION_OCTET_STREAM)
+  @Operation(
+    summary = "Download the single-file payload of a container by appId.",
+    description =
+      "Streams the raw single-file payload for the container at `appId`, when its " +
+      "kind exposes one (today: `hdf` → the raw HDF5 from HSDS). `Range` requests " +
+      "are forwarded to the underlying store; a 206 Partial Content + `Content-Range` " +
+      "is relayed verbatim. Kinds without a single-file payload (timeseries, " +
+      "structured-data) answer 415.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "The full file payload.")
+  @APIResponse(responseCode = "206", description = "Partial content (Range honoured by the store).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no single-file payload.")
+  public Response downloadFile(
+    @PathParam("appId") String appId,
+    @jakarta.ws.rs.HeaderParam("Range") String rangeHeader,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var downloadOpt = resolved.get().handler().downloadFile(appId, rangeHeader);
+    if (downloadOpt.isEmpty()) {
+      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+        .entity("Container kind '" + resolved.get().handler().kind() + "' has no single-file payload")
+        .build();
+    }
+    var download = downloadOpt.get();
+
+    String mediaType = download.mediaType() == null || download.mediaType().isBlank()
+      ? MediaType.APPLICATION_OCTET_STREAM
+      : download.mediaType();
+
+    jakarta.ws.rs.core.StreamingOutput streaming = out -> {
+      try (download) {
+        download.body().transferTo(out);
+      } catch (Exception e) {
+        throw new java.io.IOException("Failed streaming container file for appId " + appId, e);
+      }
+    };
+
+    Response.ResponseBuilder builder = Response.status(download.status())
+      .entity(streaming)
+      .type(mediaType)
+      .header("Content-Disposition", buildContentDisposition(download.fileName()));
+
+    if (download.contentLength() >= 0) {
+      builder.header("Content-Length", download.contentLength());
+    }
+    if (download.contentRange() != null) {
+      builder.header("Content-Range", download.contentRange());
+    }
+    builder.header("Accept-Ranges", download.acceptRanges() != null ? download.acceptRanges() : "bytes");
+    return builder.build();
+  }
+
+  /**
+   * Build a safe {@code Content-Disposition: attachment} header value. Uses RFC
+   * 5987 {@code filename*=UTF-8''<percent-encoded>} so a Unicode container name
+   * transports safely, with an ASCII {@code filename=} fallback for old clients.
+   */
+  private static String buildContentDisposition(String name) {
+    String safeName = (name == null || name.isBlank()) ? "container" : name;
+    String asciiName = safeName.replaceAll("[^\\x20-\\x7E]", "_").replace('"', '_').replace('/', '_');
+    String encoded = java.net.URLEncoder
+      .encode(safeName, java.nio.charset.StandardCharsets.UTF_8)
+      .replace("+", "%20");
+    return "attachment; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encoded;
+  }
+
   // ─── patch ─────────────────────────────────────────────────────────────
 
   @PATCH
