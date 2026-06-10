@@ -80,7 +80,7 @@ describe("useUnhideAdminConfig — refresh()", () => {
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/unhide/config");
+    expect(url).toContain("/v2/admin/config/unhide");
     expect((opts.headers as Record<string, string>)["Authorization"]).toBe(
       `Bearer ${ACCESS_TOKEN}`,
     );
@@ -99,7 +99,7 @@ describe("useUnhideAdminConfig — patch()", () => {
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/admin/unhide/config");
+    expect(url).toContain("/v2/admin/config/unhide");
     expect(opts.method).toBe("PATCH");
     expect(JSON.parse(opts.body as string)).toEqual({ enabled: true });
   });

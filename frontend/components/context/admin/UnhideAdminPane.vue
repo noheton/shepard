@@ -157,7 +157,7 @@ function formatDate(iso: string | null | undefined): string {
             size="small"
             variant="tonal"
             prepend-icon="mdi-open-in-new"
-            :href="`${$config.public.backendV2ApiUrl || ($config.public.backendApiUrl as string).replace(/\/shepard\/api\/?$/, '')}/v2/admin/unhide/config`"
+            :href="`${$config.public.backendV2ApiUrl || ($config.public.backendApiUrl as string).replace(/\/shepard\/api\/?$/, '')}/v2/admin/config/unhide`"
             target="_blank"
             rel="noopener noreferrer"
           >
