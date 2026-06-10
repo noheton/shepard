@@ -5,7 +5,7 @@ package de.dlr.shepard.plugins.video.cli;
  */
 public final class VideoAdminPaths {
 
-  public static final String CONFIG = "/v2/admin/video/config";
+  public static final String CONFIG = "/v2/admin/config/video";
 
   private VideoAdminPaths() {}
 }

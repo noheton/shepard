@@ -117,6 +117,22 @@
     <cve>CVE-2026-1497</cve>
   </suppress>
 
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1524 (CVSS 9.8): False positive. CVE targets Neo4j database server
+    (Bolt protocol RCE); matched against neo4j-ogm-bolt-driver (the Bolt transport adapter
+    for the OGM client library) via CPE version coincidence on 5.0.3. This jar is a
+    client-side network connector, not a server binary, and exposes no Bolt server port.
+    OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-bolt-driver@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1497 (CVSS 7.2): False positive. Same CPE mismatch for neo4j-ogm-bolt-driver.
+    Client-side Bolt transport adapter; does not expose any server port. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-bolt-driver@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+  </suppress>
+
   <!-- ===================================================================
        OWASP-SUPP-003: Apache Jena 5.4.0 (CVE-2025-49656 7.5, CVE-2025-50151 8.8)
        =================================================================== -->
@@ -156,6 +172,37 @@
     <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-arq. Same reasoning
     as jena-core entry — server-constructed SPARQL queries only. OWASP-SUPP-003.</notes>
     <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-arq@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-iri (IRI parsing
+    library module). Same reasoning as jena-core/jena-arq entries: jena-iri is used only
+    for IRI validation of server-constructed identifiers; no user-supplied SPARQL or IRI
+    input reaches the Jena parser directly. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-iri. Same reasoning
+    as jena-core/jena-arq entries — server-constructed identifiers only.
+    OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-base (the shared
+    vocabulary and utility foundation used by all Jena components). Same reasoning as
+    jena-core/jena-arq/jena-iri entries: all queries are server-constructed from
+    validated parameters; no user-supplied SPARQL or IRI input reaches the Jena parser
+    directly. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-base. Same reasoning
+    as jena-core/jena-arq/jena-iri entries — server-constructed queries only.
+    OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
     <cve>CVE-2025-50151</cve>
   </suppress>
 
@@ -229,6 +276,22 @@
     loopback and accessible only from the trusted internal Docker network. Identical
     deployment topology reasoning as OWASP-SUPP-006. OWASP-SUPP-006.</notes>
     <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_common@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE on simpleclient_tracer_otel (the
+    OpenTelemetry bridge adapter for the Prometheus simpleclient). The /q/metrics scrape
+    endpoint is bound to loopback; identical deployment topology reasoning as
+    OWASP-SUPP-006. OWASP-SUPP-006.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE on simpleclient_tracer_common (the shared
+    tracing utilities for the Prometheus simpleclient). The /q/metrics scrape endpoint is
+    bound to loopback and accessible only from the trusted internal Docker network;
+    identical deployment topology reasoning as OWASP-SUPP-006. OWASP-SUPP-006.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_common@.*$</packageUrl>
     <cve>CVE-2026-42154</cve>
   </suppress>
 

@@ -363,6 +363,37 @@ Tracked as **`V2CONV-A7-THERMO-REST-DISSOLVE`** (blocked on
 **`V2CONV-A1b-RENDER-PARAMS`**, the render-params + file-rooted-dispatch +
 focus-resolution contract extension — new row in `aidocs/16`).
 
+### 7c. A7-UNHIDE-NS-REVIEW — `/v2/unhide` namespace verdict (✓ SHIPPED 2026-06-10)
+
+**Verdict: NOT Tier-3 allowlisted. Harvest-key sisters stay. Config GET/PATCH
+migrated to generic ConfigRegistry.**
+
+Three sub-decisions:
+
+1. **`/v2/unhide/feed.jsonld` stays outside Tier-3** — the feed endpoint must
+   remain unconditionally discoverable in the v2 OpenAPI spec (Unhide harvesters
+   probe it via spec-discovery). When `enabled=false` it returns **503
+   `application/problem+json`** (`unhide.feed.disabled`) with a clear operator
+   instruction — this is a better harvester UX than the Tier-3 pattern's 404
+   (which harvesters would interpret as "wrong URL, keep trying"). The endpoint is
+   `@PermitAll` + listed in `PublicEndpointRegistry`; auth is runtime-evaluated
+   inside the handler (`feedPublic` toggle + `X-API-KEY` + instance-admin JWT
+   fallback). Nothing about this pattern fits the Tier-3 mould, and Tier-3 would
+   degrade the UX. **No change to `UnhideFeedRest`.**
+
+2. **`GET|PATCH /v2/admin/unhide/config` migrated to generic ConfigRegistry** —
+   `UnhideConfigDescriptor` (`@ApplicationScoped ConfigDescriptor<UnhideConfigIO>`,
+   `featureName="unhide"`) created in `plugins/unhide/.../config/`. Deleted from
+   `UnhideAdminRest`. The wire shape is byte-identical; the path changes from
+   `/v2/admin/unhide/config` to `/v2/admin/config/unhide`. Tracked as
+   `V2CONV-A7-PLUGIN-ADMIN-CONFIG` slice 1.
+
+3. **Harvest-key credential sisters stay at `/v2/admin/unhide/harvest-key/*`** —
+   per CLAUDE.md "Optional sister endpoints for mint-and-rotate of feature-bound
+   credentials" are bespoke by design. `POST /v2/admin/unhide/harvest-key/rotate`,
+   `POST /v2/admin/unhide/harvest-key/revoke`, `DELETE /v2/admin/unhide/harvest-key`
+   all remain in `UnhideAdminRest`. **No change.**
+
 ## 8. No v2 back-compat (pre-production)
 
 The fork's `/v2/` may change shape freely until production cut-over — paths are
