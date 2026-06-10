@@ -133,6 +133,12 @@ public class NeoConnector implements IConnector {
           // registration, session.loadAll(NotificationTransport.class) returns empty
           // and createOrUpdate throws "not a valid entity class".
           de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport.class.getPackageName(),
+          // FE-PROV-INSTANCE-REGISTRY — :InstanceRegistry singleton backing
+          // GET/PATCH /v2/admin/instances. Without this OGM package registration
+          // session.loadAll(InstanceRegistry.class) returns empty and the seed-on-
+          // first-access createOrUpdate throws "not a valid entity class",
+          // surfacing as HTTP 500 on the instance-registry admin endpoint.
+          de.dlr.shepard.v2.admin.instance.entities.InstanceRegistry.class.getPackageName(),
           // V2CONV-B4 — the :DigitalTwinScene / :CoordinateFrame / :Joint OGM
           // package registration was removed when the bespoke scene-graph
           // subsystem dissolved into the generic MAPPING_RECIPE mechanism
