@@ -129,6 +129,42 @@ queries. Live channel resolution (`status = "OK"` /
 `"MISSING"` / `"UNIT_MISMATCH"`) ships in TPL2c, gated on the
 TS-ID migration (`aidocs/platform/87`).
 
+### `POST /v2/shapes/render` with `Accept: image/png` (RESEED-FIND-RENDER-PNG)
+
+This plugin ships `Trace3DPngRenderer`
+(`de.dlr.shepard.plugins.vistrace3d.render.Trace3DPngRenderer`), a
+`ViewRecipeRenderer` that **claims the `Trace3DViewShape` IRI** and
+declares `image/png` in `producibleMedia()`. With the plugin installed,
+`POST /v2/shapes/render` for a Trace3D VIEW_RECIPE honours
+`Accept: image/png` and returns real PNG bytes instead of falling back
+to the JSON view-model (the V2CONV-A1 content-negotiation contract).
+
+The PNG is rasterised **server-side, pure-JVM** via
+`java.awt.BufferedImage` + `Graphics2D` + `javax.imageio.ImageIO` — no
+headless browser, no native dependency. The image is a labelled
+view-recipe card: the recipe title, the declared colour map, a 2-D
+axis frame with a colour-ramped illustrative path, and a legend of the
+declared channel bindings. Because the render endpoint is stateless and
+does not yet resolve live channel samples (TPL2b/DECLARED beta), the
+drawn path is deterministic and illustrative; it is replaced by the
+resolved frame polyline once live channel resolution lands (TPL2c)
+with no change to the negotiation contract.
+
+```bash
+curl -X POST https://<host>/v2/shapes/render \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: image/png" \
+  -d '{"templateAppId":"<view-recipe-appId>","focusShepardId":"<focus-appId>"}' \
+  -o trace3d.png
+```
+
+Registered through
+`META-INF/services/de.dlr.shepard.spi.view.ViewRecipeRenderer`
+(ServiceLoader, the same mechanism `ViewRecipeRendererRegistry` walks
+at startup). Any other `Accept` (`application/json`, `*/*`) returns the
+JSON view-model unchanged.
+
 ### Frame envelope (the in-tree v1 contract)
 
 The current renderer reads three flat number arrays (`xData`, `yData`,
