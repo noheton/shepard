@@ -1,14 +1,26 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { readDataObjectAppId } from "~/utils/appId";
 
 export interface DataObjectSearchResult {
   dataObjectName: string;
   dataObjectId: number;
   /**
+   * V2-LINKS: UUID-v7 appId of the DataObject — carried on the wire by the
+   * full `DataObject` entity in the search `results` array. Used for the DO
+   * segment of the navigation route; never the numeric id (the v2 route
+   * 404s on it).
+   */
+  dataObjectAppId: string | null;
+  /**
    * Owning collection — populated from the parallel `resultSet` (ResultTriple)
    * array on the server response. Required for building a navigation route
    * from the global header-search dropdown. Optional because legacy callers
    * may not need it; it is set whenever the backend returns it.
+   *
+   * NOTE: this is the NUMERIC id (the triple carries no appId). The header
+   * search resolves it to the collection appId at click time via
+   * `useCollectionAppIdResolver`.
    */
   collectionId?: number;
 }
@@ -83,6 +95,7 @@ export function useDataObjectSearch(
           dataObjectSearchResults.value.push({
             dataObjectId: result.id,
             dataObjectName: result.name,
+            dataObjectAppId: readDataObjectAppId(result),
             collectionId: triples[idx]?.collectionId,
           });
         }

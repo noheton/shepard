@@ -22,6 +22,7 @@ import type { Collection } from "@dlr-shepard/backend-client";
 import { computeMetadataCompleteness } from "~/utils/metadataCompleteness";
 import { descriptionPreview } from "~/utils/helpers";
 import { isCleanupCollection } from "~/composables/context/useFetchRecentCollections";
+import { readCollectionAppId } from "~/utils/appId";
 
 const props = defineProps<{
   collection: Collection;
@@ -91,8 +92,13 @@ const doCount = computed<number>(
 );
 
 // ── Navigation ───────────────────────────────────────────────────────
+// V2-LINKS: route on the UUID-v7 appId only. The numeric id 404s on the v2
+// detail route, so a card whose appId is genuinely absent is non-navigable
+// rather than a dead numeric link.
 function browse() {
-  void router.push(collectionsPath + (props.collection.appId ?? props.collection.id));
+  const appId = readCollectionAppId(props.collection);
+  if (!appId) return;
+  void router.push(collectionsPath + appId);
 }
 </script>
 

@@ -99,7 +99,7 @@ const exportCollection = () => {
   </div>
   <v-card
     :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
-    :to="collectionsPath + `${collection?.id}`"
+    :to="collectionAppId ? collectionsPath + collectionAppId : undefined"
     flat
     hover
     rounded="0"

@@ -6,11 +6,37 @@ import {
   type TimeseriesReference,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { readDataObjectAppId } from "~/utils/appId";
+import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 
 const props = defineProps<{
   dataObject: DataObject;
   containerId: number;
 }>();
+
+// V2-LINKS: routes carry the UUID-v7 appId, never the numeric Neo4j id.
+// The DataObject carries its own appId but only a numeric collectionId, so
+// we resolve the owning collection's appId via the shared cache.
+const { resolve: resolveCollectionAppId, peek: peekCollectionAppId } =
+  useCollectionAppIdResolver();
+const collectionAppIdRef = ref<string | null>(
+  peekCollectionAppId(props.dataObject.collectionId),
+);
+onMounted(async () => {
+  collectionAppIdRef.value = await resolveCollectionAppId(
+    props.dataObject.collectionId,
+  );
+});
+
+const doAppId = computed(() => readDataObjectAppId(props.dataObject));
+const collectionHref = computed(() =>
+  collectionAppIdRef.value ? `/collections/${collectionAppIdRef.value}` : null,
+);
+const dataObjectHref = computed(() =>
+  collectionAppIdRef.value && doAppId.value
+    ? `/collections/${collectionAppIdRef.value}/dataObjects/${doAppId.value}`
+    : null,
+);
 
 const expanded = ref(false);
 const loading = ref(false);
@@ -75,7 +101,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
     <template #append>
       <div class="d-flex ga-1 align-center">
         <v-btn
-          :to="`/collections/${dataObject.collectionId}`"
+          v-if="collectionHref"
+          :to="collectionHref"
           variant="text"
           size="x-small"
           icon="mdi-folder-outline"
@@ -83,7 +110,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           aria-label="Open collection"
         />
         <v-btn
-          :to="`/collections/${dataObject.collectionId}/dataObjects/${dataObject.id}`"
+          v-if="dataObjectHref"
+          :to="dataObjectHref"
           variant="text"
           size="x-small"
           icon="mdi-arrow-right"

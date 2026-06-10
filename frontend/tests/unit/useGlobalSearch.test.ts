@@ -93,14 +93,21 @@ describe("useGlobalSearch", () => {
     mockSearch.mockImplementation((req: { searchBody: { searchParams: { queryType: string } } }) => {
       const t = req.searchBody.searchParams.queryType;
       if (t === "Collection") {
+        // V2-LINKS: the wire carries `appId` (UUID v7) on every entity even
+        // though the generated TS model only declares `id`. The search
+        // composables read it defensively + thread it into the result shape.
         return Promise.resolve({
-          results: [{ id: 42, name: "LUMEN campaign" }],
+          results: [
+            { id: 42, name: "LUMEN campaign", appId: "019eb019-d49b-7131-b2d2-3f3107d36a4f" },
+          ],
           resultSet: [{ collectionId: 42 }],
         });
       }
       // DataObject
       return Promise.resolve({
-        results: [{ id: 999, name: "TR-004" }],
+        results: [
+          { id: 999, name: "TR-004", appId: "019eb019-d6c8-7858-b24d-b3b15de81d97" },
+        ],
         resultSet: [{ collectionId: 42, dataObjectId: 999 }],
       });
     });
@@ -112,9 +119,20 @@ describe("useGlobalSearch", () => {
     g.query.value = "lumen";
     await tickAndFlush(150);
 
-    expect(g.collections.value).toEqual([{ collectionId: 42, collectionName: "LUMEN campaign" }]);
+    expect(g.collections.value).toEqual([
+      {
+        collectionId: 42,
+        collectionName: "LUMEN campaign",
+        collectionAppId: "019eb019-d49b-7131-b2d2-3f3107d36a4f",
+      },
+    ]);
     expect(g.dataObjects.value).toEqual([
-      { dataObjectId: 999, dataObjectName: "TR-004", collectionId: 42 },
+      {
+        dataObjectId: 999,
+        dataObjectName: "TR-004",
+        dataObjectAppId: "019eb019-d6c8-7858-b24d-b3b15de81d97",
+        collectionId: 42,
+      },
     ]);
     expect(g.containers.value).toEqual([
       { containerId: 7, containerName: "lumen-ts", containerType: "TIMESERIES" },

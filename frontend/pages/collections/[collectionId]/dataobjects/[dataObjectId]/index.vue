@@ -827,6 +827,7 @@ async function saveEmbargoEdit() {
                 >
                   <DataObjectRelationshipsTable
                     :collection-id="collection.id"
+                    :collection-app-id="collectionIdStr"
                     :data-object-id="dataObject.id"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false

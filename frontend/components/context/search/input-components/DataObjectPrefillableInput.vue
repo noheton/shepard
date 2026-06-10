@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
 import type { DataObject, ResponseError } from "@dlr-shepard/backend-client";
+import { readDataObjectAppId } from "~/utils/appId";
 
 /**
  * BUG-COLL-APPID-ROUTE-005 (2026-06-02): the prefill lookup routes through
@@ -90,6 +91,8 @@ if (dataObjectId.value) {
     selectedItem.value = mapToSearchResultAutoCompleteItem({
       dataObjectId: dataObject.id,
       dataObjectName: dataObject.name,
+      // V2-LINKS: carry the appId through the search-result shape.
+      dataObjectAppId: readDataObjectAppId(dataObject),
     });
   } catch (error) {
     handleError(error, "fetching data object from url parameters");

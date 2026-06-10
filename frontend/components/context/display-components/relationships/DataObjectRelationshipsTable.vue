@@ -8,6 +8,12 @@ import { handleDataObjectUpdate } from "~/utils/resourceUpdateBus";
 interface DataObjectRelationshipsTable {
   collectionId: number;
   dataObjectId: number;
+  /**
+   * V2-LINKS: the UUID-v7 appId of the collection this table is rendered for
+   * (= the current route param). Used to build appId-keyed navigation routes
+   * to sibling / predecessor / successor DataObjects — the numeric route 404s.
+   */
+  collectionAppId?: string;
   relatedEntities: RelatedEntity[];
   isAllowedToEditCollection: boolean;
   /**
@@ -97,7 +103,10 @@ function getRelationshipElementById(
 
 const tableItems = computed(() =>
   props.relatedEntities.map(entity => {
-    const item = mapRelatedEntityToRelationshipTableElement(entity);
+    const item = mapRelatedEntityToRelationshipTableElement(
+      entity,
+      props.collectionAppId,
+    );
     // PROV1k: attach typed predecessor relationship type when available.
     if (item.relationship === "Predecessor" && props.predecessorRelationshipTypes) {
       item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(entity.id);

@@ -216,6 +216,11 @@ function onPageChange(page: number) {
 }
 
 function detailLinkFor(item: BasicContainer): string {
+  // V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16): container detail
+  // pages fetch via the v1-generated `getXContainer({ containerId })`, whose
+  // path resolves ONLY the numeric Neo4j id (the frozen v1 container GET 404s
+  // on an appId). Keep numeric until the container accessors move to a v2
+  // appId-keyed GET.
   return containersPath + describeContainerType(item.type).urlSegment + item.id;
 }
 

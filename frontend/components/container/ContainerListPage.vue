@@ -402,6 +402,14 @@ const isSearchEmpty = computed(
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
                   <v-list density="compact">
+                    <!-- V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16):
+                         container detail pages fetch via the v1-generated
+                         `getXContainer({ containerId })`, whose path resolves
+                         ONLY the numeric Neo4j id (the frozen v1 container GET
+                         404s on an appId). Routing on the container appId here
+                         would break the destination page until the container
+                         accessors migrate to a v2 appId-keyed GET. Keep numeric
+                         until then. -->
                     <v-list-item
                       v-for="c in items"
                       :key="c.id"

@@ -5,6 +5,7 @@ import {
   type MyCollectionSearchResult,
 } from "~/composables/context/useCollectionSearch";
 import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
+import { readCollectionAppId } from "~/utils/appId";
 
 /**
  * BUG-COLL-APPID-ROUTE-005 (2026-06-02): the prefill lookup routes through
@@ -71,6 +72,8 @@ if (collectionId.value) {
     selectedItem.value = mapToSearchResultAutoCompleteItem({
       collectionId: collection.id,
       collectionName: collection.name,
+      // V2-LINKS: carry the appId through the search-result shape.
+      collectionAppId: readCollectionAppId(collection),
     });
   } catch (e) {
     handleError(e, "fetching collection from url parameters");
