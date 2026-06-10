@@ -28,18 +28,23 @@ def test_admin_features_list(http):
 
 
 def test_container_annotations_endpoint(http):
+    # APISIMP-SA-CONT: the per-kind /v2/{kind}-containers/{id}/annotations
+    # resources were dissolved into the unified polymorphic /v2/annotations
+    # surface (subjectAppId + subjectKind), which is appId-keyed.
     container = _find_ts_container(http, SENSORS_CONTAINER_NAME)
     if container is None:
         pytest.skip(f"Container '{SENSORS_CONTAINER_NAME}' not found — run seed first")
-    cid = container["id"]
-    r = http.get(f"/v2/timeseries-containers/{cid}/annotations")
+    app_id = container.get("appId")
+    if not app_id:
+        pytest.skip("container has no appId on the v1 list payload")
+    r = http.get("/v2/annotations", params={"subjectAppId": app_id})
     assert r.status_code == 200, (
-        f"GET /v2/timeseries-containers/{cid}/annotations returned {r.status_code}. "
-        "This is a fork-specific endpoint; a 404 means it's missing from the image."
+        f"GET /v2/annotations?subjectAppId={app_id} returned {r.status_code}. "
+        "Container annotations flow through the unified /v2/annotations surface."
     )
     body = r.json()
-    assert "annotations" in body or isinstance(body, list), (
-        f"Expected 'annotations' key or list, got: {list(body.keys()) if isinstance(body, dict) else type(body)}"
+    assert isinstance(body, list) or "annotations" in body, (
+        f"Expected list or 'annotations' key, got: {list(body.keys()) if isinstance(body, dict) else type(body)}"
     )
 
 
