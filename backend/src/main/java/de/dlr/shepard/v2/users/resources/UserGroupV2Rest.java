@@ -1,11 +1,14 @@
 package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -168,5 +171,102 @@ public class UserGroupV2Rest {
   public Response deleteUserGroup(@PathParam("appId") String appId) {
     service.deleteUserGroupByAppId(appId);
     return Response.noContent().build();
+  }
+
+  // ─── permissions + roles (V2-SWEEP-002-PERMISSIONS) ───────────────────
+
+  @GET
+  @Path("/{appId}/roles")
+  @Operation(
+    summary = "Get the caller's roles on a user group.",
+    description = "Returns the caller's role flags (owner / manager / writer / reader) for the user group."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Caller's roles.",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "User group not found.")
+  @Parameter(name = "appId", description = "UUID v7 application identifier.")
+  public Response getUserGroupRoles(@PathParam("appId") String appId) {
+    var group = service.getUserGroupByAppId(appId);
+    return Response.ok(service.getUserGroupRoles(group.getId())).build();
+  }
+
+  @GET
+  @Path("/{appId}/permissions")
+  @Operation(
+    summary = "Get permissions for a user group.",
+    description = "Returns the full permissions for the user group. Requires Manage access."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Current permissions.",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Manage on the user group.")
+  @APIResponse(responseCode = "404", description = "User group not found.")
+  @Parameter(name = "appId", description = "UUID v7 application identifier.")
+  public Response getUserGroupPermissions(@PathParam("appId") String appId) {
+    var group = service.getUserGroupByAppId(appId);
+    return Response.ok(new PermissionsIO(service.getUserGroupPermissions(group.getId()))).build();
+  }
+
+  @PATCH
+  @Path("/{appId}/permissions")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "Merge-patch permissions for a user group (RFC 7396).",
+    description =
+      "RFC 7396 merge-patch the permissions for the user group at `appId`. " +
+      "Only fields present in the body are applied; absent fields are left unchanged. " +
+      "Mutable fields: `permissionType`, `owner`, `reader`, `writer`, `manager`, " +
+      "`readerGroupIds`, `writerGroupIds`. Requires Manage access."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Post-patch permissions.",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Manage on the user group.")
+  @APIResponse(responseCode = "404", description = "User group not found.")
+  @Parameter(name = "appId", description = "UUID v7 application identifier.")
+  public Response patchUserGroupPermissions(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+    }
+    var group = service.getUserGroupByAppId(appId);
+    var current = new PermissionsIO(service.getUserGroupPermissions(group.getId()));
+    var patch = JsonNodeMaps.toMap(body);
+    if (patch.containsKey("permissionType") && patch.get("permissionType") instanceof String ptStr) {
+      current.setPermissionType(de.dlr.shepard.common.util.PermissionType.valueOf(ptStr));
+    }
+    if (patch.containsKey("owner") && patch.get("owner") instanceof String ownerStr) {
+      current.setOwner(ownerStr);
+    }
+    if (patch.containsKey("reader") && patch.get("reader") instanceof java.util.List<?> readerList) {
+      current.setReader(readerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("writer") && patch.get("writer") instanceof java.util.List<?> writerList) {
+      current.setWriter(writerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("manager") && patch.get("manager") instanceof java.util.List<?> managerList) {
+      current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
+    }
+    if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
+      current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    }
+    if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
+      current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    }
+    var updated = service.updateUserGroupPermissions(current, group.getId());
+    return Response.ok(new PermissionsIO(updated)).build();
   }
 }

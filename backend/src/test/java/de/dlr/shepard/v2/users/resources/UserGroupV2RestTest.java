@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.users.resources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -12,12 +13,18 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,10 +53,30 @@ class UserGroupV2RestTest {
   // ── helpers ──────────────────────────────────────────────────────────
 
   private UserGroup stubGroup(String appId, String name) {
+    return stubGroup(appId, name, 99L);
+  }
+
+  private UserGroup stubGroup(String appId, String name, long numericId) {
     UserGroup g = new UserGroup();
+    g.setId(numericId);
     g.setAppId(appId);
     g.setName(name);
     return g;
+  }
+
+  private Permissions stubPermissions() {
+    var owner = new User();
+    owner.setUsername("alice");
+    var p = new Permissions();
+    p.setPermissionType(PermissionType.Private);
+    p.setOwner(owner);
+    p.setReader(new ArrayList<>());
+    p.setWriter(new ArrayList<>());
+    p.setManager(new ArrayList<>());
+    p.setReaderGroups(new ArrayList<>());
+    p.setWriterGroups(new ArrayList<>());
+    p.setEntities(List.of(stubGroup(APP_ID, GROUP_NAME, 99L)));
+    return p;
   }
 
   // ── GET /v2/user-groups ──────────────────────────────────────────────
@@ -176,6 +203,94 @@ class UserGroupV2RestTest {
     doThrow(new InvalidPathException("not found")).when(service).deleteUserGroupByAppId(anyString());
     try {
       resource.deleteUserGroup("nonexistent");
+    } catch (InvalidPathException e) {
+      assertNotNull(e);
+    }
+  }
+
+  // ── GET /v2/user-groups/{appId}/roles ────────────────────────────────
+
+  @Test
+  void getRoles_returns200WithRoles() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    var roles = new Roles(true, false, true, true);
+    when(service.getUserGroupRoles(42L)).thenReturn(roles);
+    Response r = resource.getUserGroupRoles(APP_ID);
+    assertEquals(200, r.getStatus());
+    Roles body = (Roles) r.getEntity();
+    assertEquals(true, body.isOwner());
+    assertEquals(true, body.isWriter());
+  }
+
+  @Test
+  void getRoles_propagates404WhenGroupNotFound() {
+    when(service.getUserGroupByAppId(anyString())).thenThrow(new InvalidPathException("not found"));
+    try {
+      resource.getUserGroupRoles("nonexistent");
+    } catch (InvalidPathException e) {
+      assertNotNull(e);
+    }
+  }
+
+  // ── GET /v2/user-groups/{appId}/permissions ──────────────────────────
+
+  @Test
+  void getPermissions_returns200WithPermissions() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    Response r = resource.getUserGroupPermissions(APP_ID);
+    assertEquals(200, r.getStatus());
+    var body = (PermissionsIO) r.getEntity();
+    assertEquals(PermissionType.Private, body.getPermissionType());
+    assertEquals("alice", body.getOwner());
+  }
+
+  @Test
+  void getPermissions_propagates404WhenGroupNotFound() {
+    when(service.getUserGroupByAppId(anyString())).thenThrow(new InvalidPathException("not found"));
+    try {
+      resource.getUserGroupPermissions("nonexistent");
+    } catch (InvalidPathException e) {
+      assertNotNull(e);
+    }
+  }
+
+  // ── PATCH /v2/user-groups/{appId}/permissions ────────────────────────
+
+  @Test
+  void patchPermissions_appliesPermissionTypeChange() throws Exception {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    when(service.updateUserGroupPermissions(any(), eq(42L))).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.put("permissionType", "Public");
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(200, r.getStatus());
+    verify(service).updateUserGroupPermissions(any(PermissionsIO.class), eq(42L));
+  }
+
+  @Test
+  void patchPermissions_nullBody_returns400() {
+    Response r = resource.patchUserGroupPermissions(APP_ID, null);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_nonObjectBody_returns400() throws Exception {
+    Response r = resource.patchUserGroupPermissions(APP_ID, MAPPER.readTree("\"not-an-object\""));
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_propagates404WhenGroupNotFound() {
+    when(service.getUserGroupByAppId(anyString())).thenThrow(new InvalidPathException("not found"));
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.put("permissionType", "Public");
+    try {
+      resource.patchUserGroupPermissions("nonexistent", patch);
     } catch (InvalidPathException e) {
       assertNotNull(e);
     }
