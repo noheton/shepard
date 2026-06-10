@@ -1,0 +1,8 @@
+# MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 2) — ViewRecipeRenderer for the
+# mffd-material-batch-view-shape VIEW_RECIPE template. Walks the inbound
+# urn:shepard:mffd:material-batch semantic-annotation edges from the focus
+# material-batch DataObject and returns each consuming DataObject (AFP course,
+# weld step, NDT measurement, plybook) as a projected lineage node.
+# Dispatched by ViewRecipeRendererRegistry for shape IRI
+# urn:shepard:shape:mffd-material-batch-trace#MaterialBatchTraceShape.
+de.dlr.shepard.v2.shapes.mffd.MaterialBatchTraceViewRenderer

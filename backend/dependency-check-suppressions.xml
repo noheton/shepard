@@ -18,4 +18,255 @@
   expired suppressions show up as warnings.
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+  <!-- ===================================================================
+       OWASP-SUPP-001: Quarkus 3.27.2 framework CVE (CVE-2026-39852, 8.2)
+       =================================================================== -->
+  <!--
+    CVE-2026-39852 affects Quarkus ARC CDI bean resolution. All Quarkus 3.27.2
+    jars are matched via CPE. The exploit requires an attacker to inject crafted
+    CDI beans into the application classpath — precluded by container isolation
+    and no external classloader exposure in our deployment. Accepted residual risk
+    pending a Quarkus upgrade. Re-evaluate when upgrading beyond 3.27.2.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-39852 (CVSS 8.2): Quarkus 3.27.2 ARC CDI context-manipulation CVE.
+    Matched by CPE against all io.quarkus 3.27.2 jars. Exploit requires attacker to
+    supply crafted CDI beans inside the JVM classpath; mitigated by container isolation
+    and no external classloader in production. Accepted residual risk; Quarkus upgrade
+    tracked in dependency backlog. OWASP-SUPP-001.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.quarkus.*@3\.27\.2$</packageUrl>
+    <cve>CVE-2026-39852</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-002: Neo4j server CVEs — false positives via CPE mismatch
+       ===================================================================
+       CVE-2026-1524 (9.8), CVE-2026-1497 (7.2), CVE-2021-34371 (9.8)
+
+       OWASP Dependency-Check assigns CPE cpe:2.3:a:neo4j:neo4j:X.Y to every
+       artifact whose GAV version matches a Neo4j database server CVE target
+       range. The three client-side Neo4j libraries below are NOT the server
+       binary: neo4j-ogm-core is an ORM layer, neo4j-migrations is a schema
+       migration runner, and neo4j-cypher-dsl is a query builder DSL. None
+       exposes a Bolt server port or an RPC endpoint. All matches are false
+       positives from CPE version-number coincidence.
+       =================================================================== -->
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1524 (CVSS 9.8): False positive. CVE targets Neo4j database server
+    (Bolt protocol issue). Matched against neo4j-ogm-core (client-side ORM library) via
+    CPE version coincidence (5.0.3). This jar exposes no server endpoint. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-core@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1497 (CVSS 7.2): False positive. Same CPE mismatch as CVE-2026-1524;
+    neo4j-ogm-core is a client ORM, not the Neo4j server. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-core@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+  </suppress>
+
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1524 (CVSS 9.8): False positive. CVE targets Neo4j server; matched
+    against neo4j-migrations (a schema migration runner library, not a server binary)
+    via CPE version coincidence on 3.2.1. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/eu\.michael-simons\.neo4j/neo4j-migrations@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1497 (CVSS 7.2): False positive. Same CPE mismatch for neo4j-migrations.
+    OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/eu\.michael-simons\.neo4j/neo4j-migrations@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2021-34371 (CVSS 9.8): False positive. CVE is a Neo4j database server
+    Bolt endpoint RCE vulnerability. Matched against neo4j-migrations (migration runner
+    client) by CPE version coincidence on 3.2.1. This library connects TO Neo4j as a
+    client; it does not expose any Bolt server port. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/eu\.michael-simons\.neo4j/neo4j-migrations@.*$</packageUrl>
+    <cve>CVE-2021-34371</cve>
+  </suppress>
+
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1524 (CVSS 9.8): False positive. CVE targets Neo4j database server;
+    matched against neo4j-cypher-dsl (a Cypher query builder DSL library) via CPE
+    version coincidence on version 2025.2.4. OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-cypher-dsl@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1497 (CVSS 7.2): False positive. Same CPE mismatch for neo4j-cypher-dsl.
+    OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-cypher-dsl@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-003: Apache Jena 5.4.0 (CVE-2025-49656 7.5, CVE-2025-50151 8.8)
+       =================================================================== -->
+  <!--
+    Genuine CVEs in Apache Jena 5.4.0. Jena is used for server-side SPARQL
+    processing of internal RDF data. User-supplied SPARQL queries do NOT reach
+    the Jena parser directly — all queries are constructed server-side from
+    validated API parameters or loaded from trusted ontology files. No remote
+    SPARQL endpoint is exposed to untrusted callers. Accepted residual risk
+    pending availability of a patched Jena 5.x release; re-evaluate on next
+    jena-core version upgrade.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE. Jena processes internal
+    RDF data only; no user-supplied SPARQL reaches the Jena parser directly. All queries
+    are server-constructed from validated parameters. Accepted residual risk pending
+    patched Jena release. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-core@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE. Same reasoning as
+    CVE-2025-49656 — no user-supplied SPARQL input, server-constructed queries only.
+    OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-core@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-004: Netty 4.1.133.Final (CVE-2026-42582, 7.5)
+       =================================================================== -->
+  <!--
+    CVE-2026-42582 affects the Netty PROXY protocol decoder (netty-codec-haproxy)
+    and the transport layer. Netty 4.1.133.Final is a transitive dependency pulled
+    in by Quarkus; the version is not directly controllable. External traffic reaches
+    Netty only after passing through the Caddy reverse proxy, which handles TLS
+    termination and shields Netty from raw PROXY protocol input from the internet.
+    Accepted residual risk; re-evaluate on next Quarkus or Netty version bump.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42582 (CVSS 7.5): Netty 4.1.133.Final CVE. Transitive dependency via
+    Quarkus; version not directly controllable. External traffic passes through Caddy
+    reverse proxy before reaching Netty. Accepted residual risk pending upstream Quarkus
+    Netty upgrade. OWASP-SUPP-004.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.netty/.*@4\.1\.133\.Final$</packageUrl>
+    <cve>CVE-2026-42582</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-005: Eclipse Angus Mail / angus-activation 2.0.2 (CVE-2025-7962, 7.5)
+       =================================================================== -->
+  <!--
+    CVE-2025-7962 affects the Jakarta Activation API implementation in Eclipse Angus
+    Mail. angus-activation is a transitive dependency pulled in by Quarkus Mail; Shepard
+    does not send or receive email in production, so the vulnerable Jakarta Activation
+    code path is never exercised. Accepted residual risk; re-evaluate on next dependency
+    tree refresh.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-7962 (CVSS 7.5): Eclipse Angus Mail angus-activation 2.0.2 CVE.
+    Transitive Quarkus dependency. Shepard does not invoke email sending or Jakarta
+    Mail activation paths in production; the vulnerable code is unreachable.
+    OWASP-SUPP-005.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-activation@2\.0\.2$</packageUrl>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-006: Prometheus simpleclient / Micrometer (CVE-2026-42154, 7.5)
+       =================================================================== -->
+  <!--
+    CVE-2026-42154 targets the Prometheus metrics HTTP scrape endpoint. In our
+    deployment the Quarkus management interface (which hosts /q/metrics) is bound
+    to the loopback interface only and is not publicly reachable; Prometheus scrapes
+    it over the internal Docker network from a trusted scraper. The attack vector
+    requires unauthenticated access to the scrape endpoint, which is not exposed.
+    Accepted residual risk.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Prometheus simpleclient CVE. The /q/metrics scrape
+    endpoint is bound to loopback and accessible only from the trusted internal Docker
+    network. Unauthenticated external access to the endpoint is not possible in our
+    deployment topology. OWASP-SUPP-006.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient@0\.16\.0$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE via Micrometer Prometheus simpleclient
+    bridge. Identical deployment topology reasoning as OWASP-SUPP-006 above.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus-simpleclient@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-007: OpenTelemetry Semantic Conventions — false positive
+       (CVE-2026-39883, 7.0)
+       =================================================================== -->
+  <!--
+    CVE-2026-39883 targets the OpenTelemetry Collector (a standalone process).
+    opentelemetry-semconv is a library of string constants (attribute key definitions)
+    used by the OTel SDK for naming spans and attributes; it contains no network code,
+    no server logic, and no instrumentation runtime. OWASP matches it via a broad CPE
+    for "opentelemetry" at version "1.28.0". False positive.
+  -->
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-39883 (CVSS 7.0): False positive. CVE targets the OpenTelemetry
+    Collector binary; matched against opentelemetry-semconv (a string-constants library
+    with no network code) via broad CPE version match. opentelemetry-semconv is not the
+    Collector. OWASP-SUPP-007.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv@.*$</packageUrl>
+    <cve>CVE-2026-39883</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-008: Google protobuf-java 3.25.5 (CVE-2026-0994, 7.5)
+       =================================================================== -->
+  <!--
+    CVE-2026-0994 is a denial-of-service vulnerability triggered by malformed
+    Protocol Buffers wire input. protobuf-java is a transitive dependency pulled
+    in by gRPC and/or OpenTelemetry. Shepard does not expose any protobuf wire
+    endpoints; protobuf serialisation is used only internally for OpenTelemetry
+    span encoding over the loopback. No external protobuf input is accepted from
+    untrusted callers. Accepted residual risk pending upstream dependency upgrade.
+  -->
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-0994 (CVSS 7.5): protobuf-java 3.25.5 DoS via malformed wire input.
+    Transitive dependency via OpenTelemetry. Shepard exposes no protobuf wire endpoint;
+    protobuf is used only for internal OTel span serialisation on the loopback interface.
+    No untrusted protobuf input is accepted. OWASP-SUPP-008.</notes>
+    <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@3\.25\.5$</packageUrl>
+    <cve>CVE-2026-0994</cve>
+  </suppress>
+
+  <!-- ===================================================================
+       OWASP-SUPP-009: MongoDB CVEs on quarkus-mongodb-client — false positives
+       (CVE-2021-32036 7.1, CVE-2025-14847 7.5)
+       =================================================================== -->
+  <!--
+    OWASP matches MongoDB server CVEs against quarkus-mongodb-client because the
+    Quarkus extension jar's version (3.27.2) and a broad CPE for "mongodb" combine
+    to produce false hits.
+
+    CVE-2021-32036: MongoDB server information disclosure (server binary only; requires
+    a client connection to a vulnerable server endpoint). quarkus-mongodb-client is a
+    Quarkus extension wrapping the MongoDB Java driver; it is a client-side library
+    and does not expose any MongoDB server port.
+
+    CVE-2025-14847: Targets the MongoDB Atlas SQL Interface (a SaaS product).
+    quarkus-mongodb-client does not bundle Atlas SQL Interface. False positive.
+  -->
+  <suppress until="2027-06-10">
+    <notes>CVE-2021-32036 (CVSS 7.1): False positive. CVE targets MongoDB server binary
+    (info-disclosure on $getParameter). Matched against quarkus-mongodb-client (a Quarkus
+    extension wrapping the MongoDB Java driver client) via CPE mismatch. No MongoDB server
+    port is exposed by this artifact. OWASP-SUPP-009.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.quarkus/quarkus-mongodb-client@.*$</packageUrl>
+    <cve>CVE-2021-32036</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2025-14847 (CVSS 7.5): False positive. CVE targets MongoDB Atlas SQL
+    Interface (a SaaS product, separate from the MongoDB Java driver). Matched against
+    quarkus-mongodb-client via broad CPE for "mongodb". Shepard does not use MongoDB
+    Atlas SQL Interface. OWASP-SUPP-009.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.quarkus/quarkus-mongodb-client@.*$</packageUrl>
+    <cve>CVE-2025-14847</cve>
+  </suppress>
+
 </suppressions>
