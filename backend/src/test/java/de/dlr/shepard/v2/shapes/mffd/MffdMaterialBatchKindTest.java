@@ -2,9 +2,11 @@ package de.dlr.shepard.v2.shapes.mffd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.v2.shapes.builder.ChannelBindingSpec;
 import de.dlr.shepard.v2.shapes.builder.InMember;
 import de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -115,6 +117,55 @@ class MffdMaterialBatchKindTest {
   void shapeDescriptor_allPropertiesHaveMaxCountOne() {
     List<PropertyShapeSpec> props = kind.shapeDescriptor().properties();
     assertThat(props).allMatch(p -> p.maxCount() != null && p.maxCount() == 1);
+  }
+
+  // ── MFFD-RENDER-MATERIAL-BATCH-TRACE — view-shape descriptor ───────────────
+
+  @Test
+  void viewShapeDescriptor_isNotNull() {
+    assertThat(kind.viewShapeDescriptor()).isNotNull();
+  }
+
+  @Test
+  void viewShapeDescriptor_hasTraceShapeIri() {
+    assertThat(kind.viewShapeDescriptor().viewRecipeShape())
+        .isEqualTo(MffdMaterialBatchKind.TRACE_SHAPE_IRI);
+  }
+
+  @Test
+  void viewShapeDescriptor_hasLineageRenderer() {
+    assertThat(kind.viewShapeDescriptor().renderer())
+        .isEqualTo(MffdMaterialBatchKind.TRACE_RENDERER);
+  }
+
+  @Test
+  void viewShapeDescriptor_rendererIsNonNullSoBodyValidates() {
+    // KindShapeSeeder.serializeViewRecipeSpec requires a non-null renderer so the
+    // seeded VIEW_RECIPE body passes TemplateBodyValidator (must contain "renderer").
+    assertThat(kind.viewShapeDescriptor().renderer()).isNotNull();
+  }
+
+  @Test
+  void viewShapeDescriptor_hasSingleRequiredBatchBinding() {
+    ViewRecipeSpec spec = kind.viewShapeDescriptor();
+    assertThat(spec.channelBindings()).hasSize(1);
+    ChannelBindingSpec b = spec.channelBindings().get(0);
+    assertThat(b.role()).isEqualTo(MffdMaterialBatchKind.TRACE_ROLE_BATCH);
+    assertThat(b.required()).isTrue();
+  }
+
+  @Test
+  void viewShapeDescriptor_bindingSelectorIsMaterialBatchPredicate() {
+    ChannelBindingSpec b = kind.viewShapeDescriptor().channelBindings().get(0);
+    assertThat(b.channelSelector())
+        .isEqualTo(MffdMaterialBatchKind.PRED_MATERIAL_BATCH);
+  }
+
+  @Test
+  void materialBatchPredicate_matchesConsumingStepPredicate() {
+    // The trace follows the same IRI that AFP-course / weld-step / NDT templates carry.
+    assertThat(MffdMaterialBatchKind.PRED_MATERIAL_BATCH)
+        .isEqualTo("urn:shepard:mffd:material-batch");
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────

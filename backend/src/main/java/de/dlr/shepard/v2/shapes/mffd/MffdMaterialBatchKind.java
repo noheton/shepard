@@ -1,9 +1,11 @@
 package de.dlr.shepard.v2.shapes.mffd;
 
 import de.dlr.shepard.spi.payload.PayloadKind;
+import de.dlr.shepard.v2.shapes.builder.ChannelBindingSpec;
 import de.dlr.shepard.v2.shapes.builder.InMember;
 import de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import java.util.List;
 
 /**
@@ -22,6 +24,27 @@ import java.util.List;
 public final class MffdMaterialBatchKind implements PayloadKind {
 
   static final String SHAPE_IRI = "urn:shepard:shape:mffd-material-batch";
+
+  /**
+   * MFFD-RENDER-MATERIAL-BATCH-TRACE — IRI of the MAPPING_RECIPE view-shape that
+   * renders the lineage graph of every process step (AFP course, weld step, NDT
+   * measurement, plybook) consuming a given material batch. Dispatched through
+   * {@link de.dlr.shepard.spi.view.ViewRecipeRendererRegistry}; reuses the AAE3
+   * lineage visual.
+   */
+  static final String TRACE_SHAPE_IRI =
+      "urn:shepard:shape:mffd-material-batch-trace#MaterialBatchTraceShape";
+
+  /** Renderer hint consumed by {@code POST /v2/shapes/render} — the lineage graph visual (AAE3). */
+  static final String TRACE_RENDERER = "lineage";
+
+  /**
+   * Binding role carrying the material-batch DataObject IRI whose consuming
+   * process-step lineage is to be traced. The selector is the
+   * {@code urn:shepard:mffd:material-batch} predicate followed (inbound) from
+   * every consuming step back to the batch.
+   */
+  static final String TRACE_ROLE_BATCH = "materialBatch";
 
   static final String PRED_BATCH_ID            = "urn:shepard:mffd:batch-id";
   static final String PRED_MATERIAL_CLASS      = "urn:shepard:mffd:material-class";
@@ -85,4 +108,38 @@ public final class MffdMaterialBatchKind implements PayloadKind {
       )
     );
   }
+
+  /**
+   * MFFD-RENDER-MATERIAL-BATCH-TRACE — VIEW_RECIPE view-shape for the
+   * material-batch lineage trace.
+   *
+   * <p>Seeded by {@link de.dlr.shepard.v2.shapes.seeder.KindShapeSeeder} as a
+   * system-tagged {@code VIEW_RECIPE} template named
+   * {@code mffd-material-batch-view-shape}. Given a {@code mffd:material-batch}
+   * DataObject IRI bound to the {@value #TRACE_ROLE_BATCH} role, the registered
+   * lineage renderer walks the inbound {@code urn:shepard:mffd:material-batch}
+   * edges to surface every consuming AFP course, weld step, and NDT measurement —
+   * answering "show me everything from batch X" as a graph rather than a flat list.
+   *
+   * <p>The binding is required so the renderer surfaces a MISSING status when no
+   * batch IRI is supplied. The renderer hint ({@value #TRACE_RENDERER}) reuses the
+   * AAE3 lineage visual; the shape IRI ({@value #TRACE_SHAPE_IRI}) is the dispatch
+   * key for the {@code ViewRecipeRendererRegistry}.
+   */
+  @Override
+  public ViewRecipeSpec viewShapeDescriptor() {
+    return new ViewRecipeSpec(
+      TRACE_SHAPE_IRI,
+      TRACE_RENDERER,
+      List.of(ChannelBindingSpec.required(TRACE_ROLE_BATCH, PRED_MATERIAL_BATCH))
+    );
+  }
+
+  /**
+   * Predicate followed (inbound) from each consuming process step back to the
+   * material batch it consumed. The same IRI every AFP course / weld step / NDT
+   * measurement template carries (see {@code MffdAfpCourseKind},
+   * {@code MffdWeldStepKind}).
+   */
+  static final String PRED_MATERIAL_BATCH = "urn:shepard:mffd:material-batch";
 }
