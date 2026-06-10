@@ -86,6 +86,35 @@ feature end-to-end. Synthetic data only (no real MFFD/DLR IP).
 | `feat-semantic-sparql` | semantic annotations + SPARQL playground + vocabulary terms | core semantic |
 | `feat-fair-publish` | license/accessRights + metadata-completeness + cite-this-dataset | core (+ unhide optional) |
 
+Reseed status (Quality / semantic set, regenerated 2026-06-10 against the freshly
+bootstrapped instance — all three run green end-to-end and were GET-verified):
+
+| Seed | Collection appId | Result |
+|---|---|---|
+| `feat-ncr-disposition` | minted per run (`--reset`) | ✓ 2 DataObjects, 7 annotations, typed `fair2r:repairs` edge; quality `status` 403 (role-gated) recorded via annotations |
+| `feat-semantic-sparql` | minted per run | ✓ 3 coupons, 12 annotations read back; SPARQL endpoint SKIP (see RESEED-FIND-SPARQL) |
+| `feat-fair-publish` | minted per run | ✓ FAIR fields + citation + keyword; completeness self-score 95/100; 2 SKIP findings |
+
+**RESEED-FIND rows (open):**
+
+- **RESEED-FIND-SPARQL** — `GET /v2/semantic/internal/sparql` returns 400
+  `urn:shepard:error:sparql.upstream-error` ("n10s INTERNAL returned HTTP 404")
+  on the freshly bootstrapped instance: n10s `_GraphConfig` was initialised
+  *after* the bootstrap data landed, so the RDF/SPARQL projection is empty/
+  unqueryable. Annotations themselves are written + queryable as
+  `:SemanticAnnotation` nodes (`GET /v2/annotations`). Remediation:
+  `n10s.graphconfig.init` on an empty graph before data lands, or
+  `n10s.graphconfig.init(...,{force:true})` on a maintenance window.
+- **RESEED-FIND-ANN-LIST-403** — `GET /v2/annotations?subjectAppId=<Collection>`
+  returns 403 `annotations.forbidden` ("lacks Read permission on the subject
+  entity") even to the Collection's creator under API-key auth, while the
+  per-DataObject subject form works. The annotation POSTs succeed; only the
+  Collection-subject LIST is gated. Expectation: a Collection's creator/admin
+  should be able to list annotations on their own Collection.
+- **RESEED-FIND-UNHIDE-500** — `GET /v2/admin/unhide/config` returns 500
+  `internal.unexpected` on the freshly bootstrapped instance (singleton likely
+  not seeded). Non-blocking for `feat-fair-publish` (publishing is optional).
+
 ### MFFD demonstrator templates (synthetic mini-MFFD)
 | Seed | Feature | Plugins |
 |---|---|---|
