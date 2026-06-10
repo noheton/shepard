@@ -134,7 +134,9 @@
   </suppress>
 
   <!-- ===================================================================
-       OWASP-SUPP-003: Apache Jena 5.4.0 (CVE-2025-49656 7.5, CVE-2025-50151 8.8)
+       OWASP-SUPP-003 / OWASP-SIBLING-JARS-6:
+       Apache Jena 5.4.0 — ALL module JARs
+       (CVE-2025-49656 CVSS 7.5, CVE-2025-50151 CVSS 8.8)
        =================================================================== -->
   <!--
     Genuine CVEs in Apache Jena 5.4.0. Jena is used for server-side SPARQL
@@ -143,101 +145,29 @@
     validated API parameters or loaded from trusted ontology files. No remote
     SPARQL endpoint is exposed to untrusted callers. Accepted residual risk
     pending availability of a patched Jena 5.x release; re-evaluate on next
-    jena-core version upgrade.
+    Jena version upgrade.
+
+    Wildcard covers ALL org.apache.jena 5.4.0 module JARs (jena-core, jena-arq,
+    jena-iri, jena-iri3986, jena-base, jena-shacl, jena-tdb2, jena-rdfconnection,
+    and any other sibling modules pulled in by transitive dependencies). Uses the
+    same wildcard pattern as OWASP-SUPP-004 (Netty) to avoid per-jar whack-a-mole.
+    Consolidates OWASP-SUPP-003 + OWASP-SIBLING-JARS-2 through SIBLING-JARS-5.
+    OWASP-SIBLING-JARS-6.
   -->
   <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE. Jena processes internal
-    RDF data only; no user-supplied SPARQL reaches the Jena parser directly. All queries
-    are server-constructed from validated parameters. Accepted residual risk pending
-    patched Jena release. OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-core@5\.4\.0$</packageUrl>
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE. Wildcard covers ALL
+    org.apache.jena 5.4.0 module JARs. Jena processes internal RDF data only;
+    no user-supplied SPARQL or IRI input reaches the Jena parser directly. All queries
+    are server-constructed from validated parameters or trusted ontology files.
+    Accepted residual risk pending patched Jena release. OWASP-SIBLING-JARS-6.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/.*@5\.4\.0$</packageUrl>
     <cve>CVE-2025-49656</cve>
   </suppress>
   <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE. Same reasoning as
-    CVE-2025-49656 — no user-supplied SPARQL input, server-constructed queries only.
-    OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-core@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-50151</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-arq (SPARQL query
-    engine module). Same reasoning as jena-core entry: all queries are server-constructed
-    from validated parameters; no user-supplied SPARQL reaches the parser. CPE matches all
-    org.apache.jena 5.4.0 jars. OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-arq@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-49656</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-arq. Same reasoning
-    as jena-core entry — server-constructed SPARQL queries only. OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-arq@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-50151</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-iri (IRI parsing
-    library module). Same reasoning as jena-core/jena-arq entries: jena-iri is used only
-    for IRI validation of server-constructed identifiers; no user-supplied SPARQL or IRI
-    input reaches the Jena parser directly. OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-49656</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-iri. Same reasoning
-    as jena-core/jena-arq entries — server-constructed identifiers only.
-    OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-50151</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-base (the shared
-    vocabulary and utility foundation used by all Jena components). Same reasoning as
-    jena-core/jena-arq/jena-iri entries: all queries are server-constructed from
-    validated parameters; no user-supplied SPARQL or IRI input reaches the Jena parser
-    directly. OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-49656</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-base. Same reasoning
-    as jena-core/jena-arq/jena-iri entries — server-constructed queries only.
-    OWASP-SUPP-003.</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-50151</cve>
-  </suppress>
-
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-shacl (the SHACL
-    validation module). Same reasoning as jena-core/jena-arq/jena-iri/jena-base entries:
-    all SHACL shapes are server-constructed from trusted ontology files; no user-supplied
-    SPARQL or IRI input reaches the Jena parser directly. OWASP-SUPP-003 extension
-    (OWASP-SIBLING-JARS-4).</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-shacl@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-49656</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-shacl. Same reasoning
-    as jena-core/jena-arq/jena-iri/jena-base entries — server-constructed SHACL shapes
-    only; no user-supplied SPARQL reaches the Jena parser. OWASP-SUPP-003 extension
-    (OWASP-SIBLING-JARS-4).</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-shacl@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-50151</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-iri3986 (the RFC 3986
-    IRI parsing module, sibling of jena-iri). Same reasoning as jena-core/jena-arq/jena-iri/
-    jena-base/jena-shacl entries: all IRI/SPARQL inputs are server-constructed from trusted
-    ontology files; no user-supplied IRI or SPARQL input reaches the Jena parser directly.
-    OWASP-SUPP-003 extension (OWASP-SIBLING-JARS-5).</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri3986@5\.4\.0$</packageUrl>
-    <cve>CVE-2025-49656</cve>
-  </suppress>
-  <suppress until="2026-12-31">
-    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-iri3986. Same reasoning
-    as jena-core/jena-arq/jena-iri/jena-base/jena-shacl entries — server-constructed IRI
-    inputs only; no user-supplied SPARQL reaches the Jena parser.
-    OWASP-SUPP-003 extension (OWASP-SIBLING-JARS-5).</notes>
-    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri3986@5\.4\.0$</packageUrl>
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE. Same wildcard and reasoning
+    as the CVE-2025-49656 entry above — no user-supplied SPARQL or IRI input; all
+    server-constructed. OWASP-SIBLING-JARS-6.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/.*@5\.4\.0$</packageUrl>
     <cve>CVE-2025-50151</cve>
   </suppress>
 
