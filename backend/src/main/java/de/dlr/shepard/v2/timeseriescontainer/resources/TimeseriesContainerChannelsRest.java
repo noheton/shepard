@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.timeseriescontainer.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
@@ -75,6 +76,11 @@ public class TimeseriesContainerChannelsRest {
 
   private static final int DEFAULT_PAGE_SIZE = 200;
   private static final int MAX_PAGE_SIZE     = 1000;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @GET
   @Path("/{containerId}/channels")
@@ -218,9 +224,8 @@ public class TimeseriesContainerChannelsRest {
     Timeseries tuple = tsChannelResolver.resolveTuple(shepardId)
       .orElse(null);
     if (tuple == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No channel with shepardId " + shepardId + " in container " + containerId)
-        .build();
+      return problem("/problems/timeseries-channels.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No channel with shepardId " + shepardId + " in container " + containerId);
     }
 
     var points = downsample != null && "lttb".equalsIgnoreCase(downsample.trim())
@@ -299,9 +304,8 @@ public class TimeseriesContainerChannelsRest {
       .filter(e -> e.getContainerId() == containerId)
       .orElse(null);
     if (entity == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No channel with shepardId " + shepardId + " in container " + containerId)
-        .build();
+      return problem("/problems/timeseries-channels.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No channel with shepardId " + shepardId + " in container " + containerId);
     }
 
     timeseriesService.ingestDataPointsCopy(containerId, entity, body.dataPoints());

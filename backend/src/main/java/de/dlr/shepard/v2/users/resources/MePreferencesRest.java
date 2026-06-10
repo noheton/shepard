@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -48,6 +49,11 @@ public class MePreferencesRest {
 
   @Inject
   UserService userService;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @GET
   @Operation(
@@ -110,9 +116,8 @@ public class MePreferencesRest {
   ) {
     if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (patch == null || !patch.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)")
-        .build();
+      return problem("/problems/me.preferences.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
     // Build the merge-patch map. Per RFC 7396: null values mean "remove",
@@ -127,9 +132,8 @@ public class MePreferencesRest {
       } else if (value.isTextual()) {
         patchMap.put(field.getKey(), value.asText());
       } else {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("Value for key '" + field.getKey() + "' must be a string or null")
-          .build();
+        return problem("/problems/me.preferences.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+            "Value for key '" + field.getKey() + "' must be a string or null");
       }
     }
 
