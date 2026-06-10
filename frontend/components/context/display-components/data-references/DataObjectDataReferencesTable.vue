@@ -5,6 +5,10 @@ import type { DataTableElement } from "./dataTableElement";
 import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
 import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
+import {
+  usePromoteToSpatial,
+  isSpatialEligibleName,
+} from "~/composables/context/usePromoteToSpatial";
 
 interface DataObjectDataReferencesTableProps {
   collectionId: number;
@@ -76,6 +80,34 @@ function v2BaseUrl(): string {
 
 const emit = defineEmits<{ (e: "refresh"): void }>();
 
+// ── SPATIAL-UNIFY-004: in-context "Promote to spatial" on eligible File rows ──
+const { promote: promoteToSpatial, isPromoting } = usePromoteToSpatial();
+
+/** True when a File row's filename is an eligible pointcloud/trajectory. */
+function isPromotableFile(item: DataTableElement): boolean {
+  return item.type === "File" && isSpatialEligibleName(item.meta.filename ?? item.name);
+}
+
+async function onPromoteToSpatial(item: DataTableElement) {
+  const appId = item.meta.appId;
+  if (!appId) return;
+  const ok = await promoteToSpatial(appId);
+  if (ok) emit("refresh");
+}
+
+const router2 = useRouter();
+/**
+ * SPATIAL-UNIFY-005 — "View as pointcloud" opens the 3D viewer for a spatial
+ * reference's backing container. The container appId is resolved from the
+ * reference (the user never picks a container). Falls back to no-op when the
+ * container hasn't materialised yet (promotion pending).
+ */
+function viewAsPointcloud(item: DataTableElement) {
+  const containerAppId = item.meta.spatialContainerAppId;
+  if (!containerAppId) return;
+  router2.push(`/containers/spatialdata/${encodeURIComponent(containerAppId)}`);
+}
+
 async function confirmDelete() {
   const item = deleteTarget.value;
   if (!item || !props.dataObjectAppId) return;
@@ -91,10 +123,10 @@ async function confirmDelete() {
     return;
   }
 
-  // FR1b singletons: V2CONV-A2 DELETE /v2/references/{appId} (unified surface;
-  // was the per-kind DELETE /v2/files/{appId}). The kind is resolved from the
-  // entity server-side.
-  if (item.type === "File" || item.type === "Notebook") {
+  // FR1b singletons + Spatial: V2CONV-A2 / SPATIAL-UNIFY DELETE
+  // /v2/references/{appId} (unified surface). The kind is resolved from the
+  // entity server-side, so spatial deletes through the same path.
+  if (item.type === "File" || item.type === "Notebook" || item.type === "Spatial") {
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
     const url = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}`;
@@ -165,6 +197,7 @@ const kindCounts = computed<Record<RefKind, number>>(() => {
     Notebook: 0,
     Git: 0,
     Video: 0,
+    Spatial: 0,
   };
   for (const item of allTableItems.value) counts[item.type]++;
   return counts;
@@ -185,6 +218,7 @@ const kindIcons: Record<RefKind, string> = {
   Notebook: "mdi-notebook-outline",
   Git: "mdi-git",
   Video: "mdi-video-outline",
+  Spatial: "mdi-cube-scan",
 };
 const KIND_ORDER: RefKind[] = [
   "TimeSeries",
@@ -194,6 +228,7 @@ const KIND_ORDER: RefKind[] = [
   "Notebook",
   "Git",
   "Video",
+  "Spatial",
 ];
 
 const headers = [
@@ -230,7 +265,7 @@ const headers = [
 const itemsPerPage = 10;
 
 /** True for new-kind rows that have appId but no detail page yet. */
-const NEW_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook", "Git", "Video"]);
+const NEW_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook", "Git", "Video", "Spatial"]);
 
 /** True for kinds whose download URL is the FR1b singleton content endpoint. */
 const SINGLETON_FILE_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook"]);
@@ -238,6 +273,7 @@ const SINGLETON_FILE_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook"])
 function semaKindFor(type: RefKind): string {
   if (type === "Git") return "GitReference";
   if (type === "Video") return "VideoStreamReference";
+  if (type === "Spatial") return "SpatialDataReference";
   if (type === "File" || type === "Notebook") return "FileReference";
   return "DataObjectReference";
 }
@@ -502,6 +538,42 @@ function formatDuration(seconds: number | null | undefined): string {
           >
             Open in JupyterHub
           </v-btn>
+          <!-- SPATIAL-UNIFY-004: in-context "Promote to spatial" on eligible File rows -->
+          <v-btn
+            v-if="isAllowedToEditCollection && isPromotableFile(item) && item.meta.appId"
+            variant="text"
+            density="comfortable"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-cube-scan"
+            :loading="isPromoting"
+            :data-testid="`promote-spatial-${item.meta.appId}`"
+            @click="() => onPromoteToSpatial(item)"
+          >
+            Promote to spatial
+          </v-btn>
+          <!-- SPATIAL-UNIFY-005: "View as pointcloud" on Spatial rows (in-context viewer entry) -->
+          <v-btn
+            v-if="item.type === 'Spatial' && item.meta.spatialContainerAppId"
+            variant="text"
+            density="comfortable"
+            size="small"
+            prepend-icon="mdi-rotate-3d"
+            :data-testid="`view-pointcloud-${item.meta.appId}`"
+            @click="() => viewAsPointcloud(item)"
+          >
+            View as pointcloud
+          </v-btn>
+          <!-- SPATIAL-UNIFY: "promoting…" chip while the importer streams points -->
+          <v-chip
+            v-if="item.type === 'Spatial' && item.meta.promotionState === 'pending'"
+            size="x-small"
+            variant="tonal"
+            color="info"
+            prepend-icon="mdi-progress-clock"
+          >
+            promoting…
+          </v-chip>
           <!-- New kinds: delete action -->
           <ActionButton
             v-if="isAllowedToEditCollection && NEW_KINDS.has(item.type)"

@@ -8,6 +8,7 @@ import type { DataTableElement } from "./dataTableElement";
 import type { GitReferenceIO } from "@dlr-shepard/backend-client";
 import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
 import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
+import type { SpatialReferenceV2IO } from "~/composables/context/useFetchSpatialReferencesV2";
 
 export const mapDataReferenceToDataTableElement = (
   ref: DataReference,
@@ -111,6 +112,31 @@ export const mapVideoReferenceToDataTableElement = (
   };
 };
 
+
+/**
+ * SPATIAL-UNIFY-003 — map a unified spatial reference (kind=spatial) into a
+ * table row. Addressed by appId; the SpatialDataContainer behind it is carried
+ * as `spatialContainerAppId` (the viewer target), never surfaced as a picker.
+ */
+export const mapSpatialReferenceToDataTableElement = (
+  ref: SpatialReferenceV2IO,
+): DataTableElement => ({
+  type: "Spatial",
+  name: ref.name ?? ref.appId,
+  meta: {
+    appId: ref.appId,
+    spatialContainerAppId: ref.spatialDataContainerAppId ?? null,
+    promotionState: ref.promotionState ?? null,
+  },
+  created: {
+    createdAt: ref.createdAt ? new Date(ref.createdAt) : FALLBACK_DATE,
+    createdBy: ref.createdBy ?? "—",
+  },
+  actions: {
+    elementAppId: ref.appId,
+    showDetails: { enabled: false, pathFragment: "" },
+  },
+});
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";

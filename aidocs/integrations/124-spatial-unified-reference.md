@@ -1,6 +1,6 @@
 ---
 title: One spatial integration — spatial as a unified Reference kind
-stage: feature-defined
+stage: feedback-implemented
 last-stage-change: 2026-06-10
 audience: contributor
 supersedes: []
@@ -421,3 +421,19 @@ that merely *looks* like a pointcloud, and could be costly at MFFD scale
 `spatial.auto-promote` toggle (`:*Config` admin knob) defaulting off —
 is safer but reintroduces a (one-time, admin-level) opt-in step. Which
 posture does the operator want as the default?
+
+> **RESOLVED (2026-06-10):** the operator chose **neither eager nor
+> per-Collection toggle** — promotion is an **in-context, per-file
+> one-click action**. A "Promote to spatial / View as pointcloud"
+> button appears on each eligible FileReference row; the user decides
+> per-file when a (costly) spatial container is spawned. This sidesteps
+> both surprise auto-promotion and the opt-in toggle. Implemented as
+> `POST /v2/spatial/promote?fileReferenceAppId=…` (SPATIAL-UNIFY-004,
+> idempotent, Write-on-DataObject gated, `:Activity` auto-captured).
+> The container is minted with `promotionState=pending`; the Python
+> `spatial-importer` sidecar drains that queue (SPATIAL-UNIFY-004-SIDECAR,
+> follow-up). Status: SPATIAL-UNIFY-002/003/004/006 shipped on branch
+> `124-spatial-unify`; the bolt-on `DataObjectSpatialContainersPane.vue`
+> is deleted; SPATIAL-UNIFY-005 (viewer re-root to `/v2/shapes/render`)
+> and SPATIAL-UNIFY-007 (frozen-surface IT + `/v2/spatial-containers`
+> shelf) remain.

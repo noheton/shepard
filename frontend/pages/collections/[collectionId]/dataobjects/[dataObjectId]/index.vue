@@ -34,10 +34,12 @@ import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSin
 import MultiPlayerPane from "~/components/context/multiplayer/MultiPlayerPane.vue";
 import { selectMultiPlayerTiles } from "~/utils/multiPlayerTiles";
 import { useSpatialDataReferencesForDataObject } from "~/composables/context/useSpatialDataReferencesForDataObject";
+import { useFetchSpatialReferencesV2 } from "~/composables/context/useFetchSpatialReferencesV2";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
   mapVideoReferenceToDataTableElement,
+  mapSpatialReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
 
@@ -98,6 +100,8 @@ const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
 // REF-UNIFIED-TABLE-FR1B / J1c retirement: FR1b singletons (incl. notebooks)
 // fetched via the additive /v2/files/by-data-object endpoint.
 const refreshFr1bRefs = ref<(() => void | Promise<void>) | null>(null);
+// SPATIAL-UNIFY-003: spatial references fetched via /v2/references?kind=spatial.
+const refreshSpatialRefs = ref<(() => void | Promise<void>) | null>(null);
 
 // MFFD-MULTIPLAYER-1 — surface the video-reference count outside the
 // watcher's closure so the multi-player tile gate (selectMultiPlayerTiles)
@@ -122,12 +126,16 @@ watch(
     const fr1bComposable = useFetchSingletonFileReferences(appId);
     refreshFr1bRefs.value = fr1bComposable.refresh;
 
-    // Reactively derive extraReferenceItems from the three composable states.
+    const spatialComposable = useFetchSpatialReferencesV2(appId);
+    refreshSpatialRefs.value = spatialComposable.refresh;
+
+    // Reactively derive extraReferenceItems from the composable states.
     watchEffect(() => {
       extraReferenceItems.value = [
         ...gitComposable.gitReferences.value.map(mapGitReferenceToDataTableElement),
         ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
         ...fr1bComposable.references.value.map(mapSingletonFileReferenceToDataTableElement),
+        ...spatialComposable.references.value.map(mapSpatialReferenceToDataTableElement),
       ];
       // MFFD-MULTIPLAYER-1: keep the video count in step with the composable.
       videoReferenceCount.value = videoComposable.references.value.length;
@@ -153,6 +161,7 @@ function refreshExtraReferences() {
   refreshGitRefs.value?.();
   refreshVideoRefs.value?.();
   refreshFr1bRefs.value?.();
+  refreshSpatialRefs.value?.();
 }
 
 /** Total count for the "Data References" panel badge: legacy + new kinds. */
@@ -854,16 +863,13 @@ async function saveEmbargoEdit() {
                      table. Notebooks render as rows with a notebook icon and,
                      when the admin-configurable JupyterConfig (J1e) is open,
                      an "Open in JupyterHub" action button. -->
-                <!-- MFFD W7 / GAP-5: SpatialDataContainer pane lists pointcloud /
-                     trajectory references promoted by the spatial-importer
-                     (plugins/spatial-importer/). Each row links to the 3D
-                     viewer at /containers/spatialdata/{containerId}. -->
-                <ExpansionPanelItem title="Spatial data">
-                  <DataObjectSpatialContainersPane
-                    :collection-id="collection.id"
-                    :data-object-id="dataObject.id"
-                  />
-                </ExpansionPanelItem>
+                <!-- SPATIAL-UNIFY-003: the bolt-on "Spatial data" pane
+                     (DataObjectSpatialContainersPane + the "run the spatial-
+                     importer pass" empty-state) is RETIRED. Spatial is now a
+                     "Spatial (N)" tab in the unified Data References table
+                     above, created in-context via the per-File "Promote to
+                     spatial" action (POST /v2/spatial/promote). See
+                     aidocs/integrations/124. -->
                 <!-- MFFD-MULTIPLAYER-1: synchronised multi-payload player.
                      Mounts only when the DO carries ≥ 2 distinct payload
                      kinds (TS + video / TS + thermo / etc.). One shared

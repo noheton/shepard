@@ -34,6 +34,29 @@ public class SpatialDataContainer extends BasicContainer {
   private String frameAppId;
 
   /**
+   * SPATIAL-UNIFY-004 — when this container was minted by promoting a
+   * pointcloud/trajectory FileReference (the in-context "Promote to spatial"
+   * action), this carries that source FileReference's {@code appId}. Drives
+   * idempotency: re-promoting the same file resolves the existing container
+   * instead of minting a duplicate.
+   *
+   * <p>Additive nullable property — no Neo4j migration required for storage.
+   * Pre-feature / manually-created containers simply lack the property and the
+   * OGM reads the absence as {@code null}.
+   */
+  @Property("sourceFileReferenceAppId")
+  private String sourceFileReferenceAppId;
+
+  /**
+   * SPATIAL-UNIFY-004 — promotion lifecycle marker the Python spatial-importer
+   * sidecar polls: {@code "pending"} (minted, awaiting the streaming worker),
+   * {@code "imported"} (points streamed in), {@code null} for containers not
+   * created via the promote path. Additive nullable property.
+   */
+  @Property("promotionState")
+  private String promotionState;
+
+  /**
    * For testing purposes only.
    *
    * @param id identifies the entity
