@@ -3,7 +3,7 @@ name: v2 surface convergence — minimalist core, shapes + kinds, no bespoke end
 description: Target architecture converging the 232-endpoint /v2 surface onto a minimalist generic core (kind-discriminated references/containers + shapes/render + templates), file-format subtypes on FileReference, templates-as-SHACL-shapes with a JSON→SHACL compiler, a MAPPING_RECIPE template kind that dissolves the scene-graph and KRL namespaces, content-negotiated render output, a registry-driven admin config surface, and a narrow plugin-namespace allowlist (Jupyter, AAS) whose endpoints appear/disappear from OpenAPI with the plugin.
 type: design
 stage: feature-defined
-last-stage-change: 2026-06-03
+last-stage-change: 2026-06-10
 ---
 
 # 191 — v2 surface convergence
@@ -237,6 +237,28 @@ descriptor bean — no new REST class. See
 | `v2.svdx.*` | `plugins/fileformat-svdx` | `fileKind=svdx` → `FileFormatPlugin` (parse `.svdx`+`.csv` → timeseries on upload); no REST |
 | `v2.scenegraph.*` | **dissolved** | `MAPPING_RECIPE` view-shape (urdf + joint TS → played Trace3D); `/v2/scene-graphs/*` deleted |
 | `v2.krl.*` | `plugins/krl-interpreter` | `MAPPING_RECIPE` transform-shape on a `fileKind=krl` ref; sidecar = `TransformExecutor`; `/v2/krl/*` deleted |
+
+### 7a. A7 residual survey (2026-06-10) — no remaining zero-caller-AND-superseded resources
+
+A caller-grep across `frontend/`, `e2e/`, `examples/`, `clients/python/`,
+the MCP tools, and the rest of the backend — plus a live probe against the
+running instance (v2 paths are mounted **bare** at `/v2/…`, not under
+`/shepard/api/`) — found that **every remaining bespoke `/v2/` resource is
+either still called or not actually superseded.** The A2/A3/A6/B4/B5 waves
+already removed the genuinely-superseded-and-dead surfaces (per-kind base
+CRUD, the scene-graph editor, KRL REST). Outstanding verdicts:
+
+| Resource | Verdict | Reason |
+|---|---|---|
+| `/v2/thermography/*` (`ThermographyV2Rest`, fileformat-thermography) | **MIGRATE-FIRST** | 4 live FE callers (`DataObjectThermographyPane`, `DataObjectOtvisViewer`, `MultiPlayerThermographyTile`, `otvisViewer.ts`) + Vitest + showcase seed. Replacement `POST /v2/shapes/render` is live (probe → 405 POST-only). Build the heatmap/otvis-frame view-shapes + repoint FE before deleting (A7-THERMO-REST-DISSOLVE). |
+| `/v2/svdx/ingest` (`SvdxIngestRest`, fileformat-svdx) | **DECOMMISSION-DECISION** | Real CSV→TimescaleDB ingest (parses TwinCAT `.csv`, writes channels via `TimeseriesService`), **NOT** an upload side-effect — the §7 "no REST at all" premise is wrong. Live (probe → 405). No FE caller; only the welding showcase seed. Not superseded → operator chooses keep (recommended) vs decommission. If kept, it is a deliberate non-Tier-3 exception: CSV→TS ingest has no generic-surface equivalent. |
+| `/v2/hdf-containers/{appId}` + `/file` (`HdfContainerRest`, hdf5) | **MIGRATE-FIRST** | Live FE `pages/containers/hdf/[containerId]/index.vue` (GET/DELETE/`/file`). `/v2/containers?kind=hdf` list is live (probe → 200) but the `/{appId}/file` raw-download sub-resource is functional and **not** covered by the unified list — preserve it on the unified surface first (A7-HDF-UNIFY). |
+| `/v2/collections/{appId}/scene-graph` (`CollectionSceneGraphRest`, hero-link) | **KEEP-FUNCTIONAL** | Live FE `CollectionSceneGraphHeader`. This is the link/unlink-a-MAPPING_RECIPE-to-a-Collection feature — distinct from the already-deleted `/v2/scene-graphs/*` editor; not superseded. |
+| `/v2/collections/{appId}/dqr` (`CollectionDQRRest`, TPL10) | **UNUSED-NOT-SUPERSEDED** | Zero callers anywhere (mostly-stub DQR feature). Not superseded by any generic surface → out of scope for this consolidation pass; a separate dead-feature decision. |
+| `/v2/admin/ledger/anchor` (`LedgerAnchorRest`) | **UNUSED-NOT-SUPERSEDED** | Live on instance (probe → 405) but zero callers. Tamper-evidence admin feature, not superseded by `/v2/admin/config` → out of scope. |
+
+Net for this pass: **0 endpoints deleted** (no resource is both superseded
+and zero-caller). The migrate-then-delete order lives in the A7-* rows.
 
 ## 8. No v2 back-compat (pre-production)
 
