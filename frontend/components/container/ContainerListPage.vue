@@ -21,13 +21,9 @@
 import ContainerTypeSelect from "./ContainerTypeSelect.vue";
 import { useSearchContainers } from "./useSearchContainers";
 import type { BasicContainer, ContainerType } from "@dlr-shepard/backend-client";
-import {
-  FileContainerApi,
-  TimeseriesContainerApi,
-  StructuredDataContainerApi,
-  SpatialDataContainerApi,
-} from "@dlr-shepard/backend-client";
+import { SpatialDataContainerApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { safeDeleteContainer } from "~/composables/container/safeDeleteContainer";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { describeContainerType } from "~/utils/containerTypeRegistry";
 import { handleContainerUpdate } from "~/utils/resourceUpdateBus";
@@ -175,21 +171,24 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
   // Use the per-type API; SPATIALDATA + BASIC + HDF5/VIDEO are
   // excluded above by the orphan-check rule, but be defensive here too.
   switch (container.type as ContainerType) {
-    case "FILE":
-      await useShepardApi(FileContainerApi).value.deleteFileContainer({
-        fileContainerId: container.id,
-      });
+    case "FILE": {
+      // V2-SWEEP-003: v2 safe-delete (replaces v1 FileContainerApi.deleteFileContainer)
+      const r = await safeDeleteContainer("file", container.id);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
-    case "TIMESERIES":
-      await useShepardApi(TimeseriesContainerApi).value.deleteTimeseriesContainer({
-        timeseriesContainerId: container.id,
-      });
+    }
+    case "TIMESERIES": {
+      // V2-SWEEP-003: v2 safe-delete (replaces v1 TimeseriesContainerApi.deleteTimeseriesContainer)
+      const r = await safeDeleteContainer("timeseries", container.id);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
-    case "STRUCTUREDDATA":
-      await useShepardApi(StructuredDataContainerApi).value.deleteStructuredDataContainer({
-        structuredDataContainerId: container.id,
-      });
+    }
+    case "STRUCTUREDDATA": {
+      // V2-SWEEP-003: v2 safe-delete (replaces v1 StructuredDataContainerApi.deleteStructuredDataContainer)
+      const r = await safeDeleteContainer("structured-data", container.id);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
+    }
     case "SPATIALDATA":
       await useShepardApi(SpatialDataContainerApi).value.deleteSpatialDataContainer({
         spatialDataContainerId: container.id,
