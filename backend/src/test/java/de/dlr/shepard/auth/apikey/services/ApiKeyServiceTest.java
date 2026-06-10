@@ -315,6 +315,98 @@ public class ApiKeyServiceTest extends BaseTestCase {
   }
 
   /**
+   * RESEED-FIND-APIKEY-ROLES: with no explicit roles requested, the
+   * minted key inherits the owner's effective realm roles (intersected
+   * with the allowlist), so a quality-engineer's API key carries the
+   * `quality-engineer` role and passes `@RolesAllowed("quality-engineer")`.
+   */
+  @Test
+  public void createApiKey_noExplicitRoles_inheritsEffectiveRoles() {
+    var uid = UUID.randomUUID();
+    var user = new User("qe");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("QualityKey");
+    // No roles requested — default mint path.
+    final java.util.Set<String>[] capturedRoles = new java.util.Set[1];
+    var created = new ApiKey() {
+      {
+        setUid(uid);
+        setBelongsTo(user);
+        setCreatedAt(date);
+        setName("QualityKey");
+      }
+    };
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("qe")).thenReturn(user);
+    when(roleDAO.rolesForUser("qe")).thenReturn(java.util.List.of("quality-engineer"));
+    when(dao.createOrUpdate(any(ApiKey.class)))
+      .thenAnswer(invocation -> {
+        ApiKey arg = invocation.getArgument(0);
+        if (arg.getRoles() != null && !arg.getRoles().isEmpty() && arg.getJws() == null) {
+          capturedRoles[0] = new java.util.HashSet<>(arg.getRoles());
+        }
+        arg.setUid(uid);
+        return arg;
+      });
+    when(pkiHelper.getPrivateKey()).thenReturn(key);
+
+    var actual = service.createApiKey(input, "qe", "uri");
+
+    org.junit.jupiter.api.Assertions.assertTrue(
+      actual.getRoles().contains("quality-engineer"),
+      "minted key must inherit the owner's effective quality-engineer role"
+    );
+    // And the signed JWT must carry the `roles` claim the authz reads
+    // (Constants.ROLES = "roles") — decode it directly from the signed JWS.
+    var claims = io.jsonwebtoken.Jwts.parserBuilder()
+      .setSigningKey(pkiHelper.getPrivateKey())
+      .build()
+      .parseClaimsJws(actual.getJws())
+      .getBody();
+    Object rolesClaim = claims.get("roles");
+    org.junit.jupiter.api.Assertions.assertTrue(
+      rolesClaim instanceof java.util.Collection<?> col && col.contains("quality-engineer"),
+      "signed JWT roles claim must contain quality-engineer"
+    );
+  }
+
+  /**
+   * RESEED-FIND-APIKEY-ROLES: effective roles are bounded by the
+   * allowlist — a role the user holds but the operator hasn't allowed
+   * is not embedded in the minted key.
+   */
+  @Test
+  public void createApiKey_noExplicitRoles_intersectsAllowlist() {
+    var uid = UUID.randomUUID();
+    var user = new User("multi");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("MultiKey");
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("multi")).thenReturn(user);
+    // User holds an off-allowlist role plus an allowed one.
+    when(roleDAO.rolesForUser("multi")).thenReturn(java.util.List.of("auditor", "quality-engineer"));
+    when(dao.createOrUpdate(any(ApiKey.class)))
+      .thenAnswer(invocation -> {
+        ApiKey arg = invocation.getArgument(0);
+        arg.setUid(uid);
+        return arg;
+      });
+    when(pkiHelper.getPrivateKey()).thenReturn(key);
+
+    var actual = service.createApiKey(input, "multi", "uri");
+
+    org.junit.jupiter.api.Assertions.assertTrue(actual.getRoles().contains("quality-engineer"));
+    org.junit.jupiter.api.Assertions.assertTrue(
+      !actual.getRoles().contains("auditor"),
+      "off-allowlist role must not be embedded"
+    );
+  }
+
+  /**
    * A0 §4.2: requested role isn't in the allowlist → 400
    * (InvalidRequestException).
    */
