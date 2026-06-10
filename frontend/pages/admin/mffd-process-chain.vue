@@ -20,6 +20,8 @@ useHead({
   title: "MFFD process-chain mapping | shepard",
 });
 
+const exampleYamlHref = "/mffd-process-chain-mapping.example.yaml";
+
 const { data, status } = useAuth();
 
 const isInstanceAdmin = computed(() =>
@@ -100,12 +102,25 @@ async function submit() {
     :stale-session-reason="staleRoleReason ?? undefined"
   />
   <v-container v-else class="py-6">
-    <PlaceholderPageHeader
-      title="MFFD process-chain mapping"
-      subtitle="Apply a YAML file of cross-process Predecessor edges to materialise the MFFD digital thread (tapelaying → bridgewelding → NDT thermography → cleats)."
-      design-doc-href="https://github.com/nucli-de/shepard/blob/main/aidocs/integrations/118-mffd-process-chain-mapping.md"
-      design-doc-label="aidocs/integrations/118"
-    />
+    <div class="d-flex align-start justify-space-between flex-wrap ga-3 mb-4">
+      <div class="d-flex flex-column ga-1">
+        <h4 class="text-h4">MFFD process-chain mapping</h4>
+        <p class="text-body-1 text-medium-emphasis mb-0">
+          Apply a YAML mapping file to materialise cross-process Predecessor
+          edges — tapelaying → bridgewelding → NDT thermography → cleats — and
+          surface the full MFFD digital thread in the provenance graph.
+        </p>
+      </div>
+      <v-btn
+        variant="outlined"
+        size="small"
+        prepend-icon="mdi-download-outline"
+        :href="exampleYamlHref"
+        download="mffd-process-chain-mapping.example.yaml"
+      >
+        Download example YAML
+      </v-btn>
+    </div>
 
     <v-alert
       type="info"
@@ -123,10 +138,14 @@ async function submit() {
           <code>transitionKind</code>.
         </p>
         <p class="mb-0">
-          See the design doc for the YAML schema. The example file lives at
-          <code>scripts/mffd-process-chain-mapping.example.yaml</code> in the
-          repository. Re-uploading the same YAML is safe — the merge is
-          idempotent.
+          Re-uploading the same YAML is safe — the merge is idempotent.
+          Download the example above to see the schema, or read
+          <a
+            href="https://github.com/noheton/shepard/blob/main/aidocs/integrations/118-mffd-process-chain-mapping.md"
+            target="_blank"
+            rel="noopener"
+          >aidocs/integrations/118</a>
+          for the full selector → predicate mapping convention.
         </p>
       </div>
     </v-alert>
