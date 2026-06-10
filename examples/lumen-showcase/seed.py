@@ -771,6 +771,21 @@ def _get_fc_app_id(host: str, api_key: str, fc_id: int) -> str:
         return json.loads(r.read())["appId"]
 
 
+def _get_collection_app_id(host: str, api_key: str, coll_id: int) -> str | None:
+    """Resolve a Collection's appId from its numeric id via the v1 GET — the
+    upstream-generated client model doesn't expose appId on the typed object,
+    but the wire response carries it (same shape as _get_fc_app_id)."""
+    try:
+        req = urllib.request.Request(
+            f"{host}/collections/{coll_id}",
+            headers={"X-API-KEY": api_key, "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read()).get("appId")
+    except Exception:
+        return None
+
+
 def _upload_file_presigned(v2_base: str, api_key: str, container_app_id: str, path: Path) -> str:
     """Three-step presigned upload: obtain URL → PUT bytes → commit. Required for Garage S3 storage."""
     fname = path.name
@@ -2498,6 +2513,9 @@ def main(argv: list[str] | None = None) -> int:
         getattr(coll, "_appId", None)
         or getattr(coll, "appId", None)
         or (getattr(coll, "additional_properties", None) or {}).get("appId")
+        or _get_collection_app_id(
+            args.host, apis.client.configuration.api_key.get("apikey", ""), coll.id
+        )
     )
     inv_app_id = _data_object_app_id(investigation, apis)
     tr004_app_id = _data_object_app_id(runs[ANOMALY_RUN], apis)
