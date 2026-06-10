@@ -2,6 +2,7 @@ package de.dlr.shepard.plugin.fileformat.svdx;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

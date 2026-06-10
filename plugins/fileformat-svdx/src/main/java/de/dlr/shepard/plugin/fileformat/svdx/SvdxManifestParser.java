@@ -1,5 +1,10 @@
 package de.dlr.shepard.plugin.fileformat.svdx;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.AnnotationWriter;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.ParseContext;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.SiblingFile;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Optional;
@@ -36,6 +41,7 @@ import java.util.logging.Logger;
  * {@link Level#WARNING} — never propagated. Semantic annotations are a
  * secondary write per CLAUDE.md §secondary-writes-fire-and-forget.
  */
+@ApplicationScoped
 public final class SvdxManifestParser implements FileParserPlugin {
 
     private static final Logger LOG = Logger.getLogger(SvdxManifestParser.class.getName());

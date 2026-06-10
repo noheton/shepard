@@ -1249,6 +1249,18 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          PARSER-SPI-WIRE-1 — `shepard-plugin-fileformat-robotics`. Wired
+          into the with-plugins profile so the RdkTextScrapeParser
+          (@ApplicationScoped FileParserPlugin) is discovered by the
+          FileParserRegistry CDI Instance<FileParserPlugin> at build time.
+          quarkus.index-dependency.* is set in application.properties.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-robotics</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
           is added at **default (compile) scope** so Quarkus' Jandex
           composite index can resolve the `AdminCliCommandProvider`

@@ -3,6 +3,7 @@ package de.dlr.shepard.plugin.fileformat.svdx;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
