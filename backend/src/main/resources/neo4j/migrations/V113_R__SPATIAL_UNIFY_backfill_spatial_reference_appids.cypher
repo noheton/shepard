@@ -10,14 +10,12 @@
 //
 // Idempotent.
 
-CALL {
-  MATCH (r:SpatialDataReference)
-  WHERE r.appId IS NOT NULL
-  REMOVE r.appId
-} IN TRANSACTIONS OF 500 ROWS;
+// Plain statements (NOT `CALL { ... } IN TRANSACTIONS`) — the migration runner
+// executes in an explicit transaction where batched IN TRANSACTIONS is illegal.
+MATCH (r:SpatialDataReference)
+WHERE r.appId IS NOT NULL
+REMOVE r.appId;
 
-CALL {
-  MATCH (c:SpatialDataContainer)
-  WHERE c.appId IS NOT NULL
-  REMOVE c.appId
-} IN TRANSACTIONS OF 500 ROWS;
+MATCH (c:SpatialDataContainer)
+WHERE c.appId IS NOT NULL
+REMOVE c.appId;
