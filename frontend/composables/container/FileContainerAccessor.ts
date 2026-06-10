@@ -263,10 +263,20 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async fetchPermissions() {
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      this.permissions.value = await this.api.value.getFilePermissions({
-        fileContainerId: this.id,
-      });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 getFilePermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.permissions.value = (await resp.json()) as Permissions;
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
       throw e;
@@ -274,11 +284,22 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async updatePermissions(updatedPermissions: Permissions) {
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      await this.api.value.editFilePermissions({
-        fileContainerId: this.id,
-        permissions: updatedPermissions,
-      });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 editFilePermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "PATCH", headers, body: JSON.stringify(updatedPermissions) },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       emitSuccess(
         `Successfully updated permissions for file container ID: ${this.id}`,
       );
