@@ -236,8 +236,8 @@ PAGE | v2-clean? | violations (file:line) | fix size
 --- | --- | --- | ---
 `index.vue` (home) | yes | — | —
 `collections/index.vue` | yes | v2 list/search via helper | —
-`collections/[collectionId]/index.vue` | **leaks** | `collectionNumericId` → v1 getAllDataObjects/export + numeric props (`:43-103,229,519-653`) | **L**
-`collections/[collectionId]/dataobjects/[dataObjectId]/index.vue` | **leaks** | `collectionNumericId`+`dataObjectNumericId` → v1 refs/annotations (`:75-420`) | **L**
+`collections/[collectionId]/index.vue` | **partial (Wave 3)** | own mutations now v2 (PATCH collection, v2 DO-map); export = documented exception (EXPORT-V2-STREAM); numeric props into v1 child panels = documented exceptions (LINEAGE-V2, SIDEBAR-V2-CREATE) | **M** (panels)
+`collections/[collectionId]/dataobjects/[dataObjectId]/index.vue` | **partial (Wave 3)** | own mutations now v2 (merge-patch desc/status/embargo); refs/annotations composables = documented exceptions (REFS-V2-PANELS, ANNOT-V2) | **M** (panels)
 `.../filereferences/[fileReferenceId]/index.vue` | **leaks** | v1 `FileReferenceApi` numeric (`:80,123`) | **M**
 `.../timeseriesereferences/[timeseriesReferenceId]/index.vue` | **leaks** | v1 `TimeseriesReferenceApi` numeric (`:272,291`) | **M**
 `.../structureddatareferences/[structuredDataReferenceId]/index.vue` | **leaks** | 3× numeric ids, v1 (`:31-73`) | **M**
