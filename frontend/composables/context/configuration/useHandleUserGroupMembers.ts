@@ -4,10 +4,14 @@ import {
   type ResponseError,
   type Roles,
   type User,
-  type UserGroup,
 } from "@dlr-shepard/backend-client";
 import { mapPermissions } from "~/components/common/permissions/mapPermissions";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
+import { resolveNumericIdByName } from "~/composables/context/useCreateUserGroup";
+import {
+  useUserGroupsV2,
+  type UserGroupV2,
+} from "~/composables/context/useUserGroupsV2";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 export const UserGroupMemberRole = {
@@ -25,11 +29,27 @@ export interface UserGroupMemberPermissions {
   roleList: UserGroupMemberRole[];
 }
 
-export function useHandleUserGroupMembers(userGroup: UserGroup) {
-  const currentUserGroup = ref<UserGroup>(userGroup);
+/**
+ * V2-SWEEP-002-2 — member + lifecycle management for a user group.
+ *
+ * CRUD + membership (add/remove member, delete) go through the appId-keyed
+ * `/v2/user-groups` surface (`useUserGroupsV2`). The group is addressed by
+ * `appId` throughout.
+ *
+ * V1-EXCEPTION: roles + permissions (`getUserGroupRoles`,
+ * `getUserGroupPermissions`, `editUserGroupPermissions`) have no v2 counterpart
+ * in V2-SWEEP-002 slice 1. They need the numeric Neo4j id, which the v2 IO does
+ * not expose; we resolve it from the group's unique name (never the route param
+ * directly) via `resolveNumericIdByName`. Tracked by V2-SWEEP-002-PERMISSIONS
+ * in aidocs/16; this whole permission block collapses to v2 calls once it ships.
+ */
+export function useHandleUserGroupMembers(userGroup: UserGroupV2) {
+  const currentUserGroup = ref<UserGroupV2>(userGroup);
   const loading = ref(false);
   const updatedPermissions = ref<UpdatedPermissions | undefined>(undefined);
   const roles = ref<Roles | undefined>(undefined);
+
+  const v2 = useUserGroupsV2();
 
   const isAllowedToEditPermissions: ComputedRef<boolean> = computed(() => {
     return !!roles.value?.owner || !!roles.value?.manager;
@@ -42,6 +62,20 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
   const userGroupMemberPermissions = ref<
     UserGroupMemberPermissions[] | undefined
   >(undefined);
+
+  /**
+   * V1-EXCEPTION: resolves the numeric id for the permission/role ops that lack
+   * a v2 endpoint. Caches per loaded group.
+   */
+  const numericId = ref<number | null>(null);
+  async function ensureNumericId(): Promise<number | null> {
+    if (numericId.value == null) {
+      numericId.value = await resolveNumericIdByName(
+        currentUserGroup.value.name,
+      );
+    }
+    return numericId.value;
+  }
 
   async function getGroupMembers() {
     try {
@@ -56,14 +90,17 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
         roleList: [],
       }));
     } catch (e) {
-      handleError(e as ResponseError, "fetching userGroup roles.");
+      handleError(e as ResponseError, "fetching userGroup members.");
     }
   }
 
   async function getUserRoles() {
     try {
+      const id = await ensureNumericId();
+      if (id == null) return;
+      // V1-EXCEPTION: no v2 roles endpoint (V2-SWEEP-002-PERMISSIONS).
       roles.value = await useShepardApi(UserGroupApi).value.getUserGroupRoles({
-        userGroupId: currentUserGroup.value.id,
+        userGroupId: id,
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching userGroup roles.");
@@ -72,10 +109,13 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
 
   async function getUserGroupPermissions() {
     try {
+      const id = await ensureNumericId();
+      if (id == null) return;
+      // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
       updatedPermissions.value = await useShepardApi(
         UserGroupApi,
       ).value.getUserGroupPermissions({
-        userGroupId: currentUserGroup.value.id,
+        userGroupId: id,
       });
       if (updatedPermissions.value.owner) {
         const owner = await useShepardApi(UserApi).value.getUser({
@@ -109,71 +149,68 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       );
       return;
     }
-    const newMembers = currentUserGroup.value.usernames.concat([
-      member.username,
-    ]);
-    if (updatedPermissions.value) {
-      updatedPermissions.value = {
-        ...updatedPermissions.value,
-        reader: updatedPermissions.value.reader.concat([member.username]),
-      };
-      try {
-        const updatedUserGroup = await useShepardApi(
-          UserGroupApi,
-        ).value.updateUserGroup({
-          userGroupId: currentUserGroup.value.id,
-          userGroup: { ...currentUserGroup.value, usernames: newMembers },
-        });
-        await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
-          userGroupId: currentUserGroup.value.id,
-          permissions: updatedPermissions.value,
-        });
-        emitSuccess(`Successfully added member to "${updatedUserGroup.name}"`);
-        currentUserGroup.value = updatedUserGroup;
-        await loadMembers();
-      } catch (e) {
-        handleError(e as ResponseError, "updating userGroup members.");
+    try {
+      // v2: membership is a PATCH on the usernames array.
+      const updatedUserGroup = await v2.addMember(
+        currentUserGroup.value,
+        member.username,
+      );
+      currentUserGroup.value = updatedUserGroup;
+      if (updatedPermissions.value) {
+        const id = await ensureNumericId();
+        if (id != null) {
+          updatedPermissions.value = {
+            ...updatedPermissions.value,
+            reader: updatedPermissions.value.reader.concat([member.username]),
+          };
+          // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
+          await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
+            userGroupId: id,
+            permissions: updatedPermissions.value,
+          });
+        }
       }
+      emitSuccess(`Successfully added member to "${updatedUserGroup.name}"`);
+      await loadMembers();
+    } catch (e) {
+      handleError(e as ResponseError, "updating userGroup members.");
     }
   }
 
   async function removeMember(member: User) {
-    if (updatedPermissions.value) {
-      const updatedUserGroup = {
-        ...currentUserGroup.value,
-        usernames: currentUserGroup.value.usernames.filter(
-          username => username !== member.username,
-        ),
-      };
-      updatedPermissions.value = {
-        ...updatedPermissions.value,
-        manager: updatedPermissions.value?.manager.filter(
-          username => username !== member.username,
-        ),
-        reader: updatedPermissions.value?.reader.filter(
-          username => username !== member.username,
-        ),
-        writer: updatedPermissions.value?.writer.filter(
-          username => username !== member.username,
-        ),
-      };
-      try {
-        useShepardApi(UserGroupApi).value.updateUserGroup({
-          userGroupId: currentUserGroup.value.id,
-          userGroup: updatedUserGroup,
-        });
-        useShepardApi(UserGroupApi).value.editUserGroupPermissions({
-          userGroupId: currentUserGroup.value.id,
-          permissions: updatedPermissions.value,
-        });
-        emitSuccess(
-          `Successfully removed member from "${updatedUserGroup.name}"`,
-        );
-        currentUserGroup.value = updatedUserGroup;
-        await loadMembers();
-      } catch (e) {
-        handleError(e as ResponseError, "updating userGroup members.");
+    try {
+      // v2: membership is a PATCH on the usernames array.
+      const updatedUserGroup = await v2.removeMember(
+        currentUserGroup.value,
+        member.username,
+      );
+      currentUserGroup.value = updatedUserGroup;
+      if (updatedPermissions.value) {
+        const id = await ensureNumericId();
+        if (id != null) {
+          updatedPermissions.value = {
+            ...updatedPermissions.value,
+            manager: updatedPermissions.value.manager.filter(
+              username => username !== member.username,
+            ),
+            reader: updatedPermissions.value.reader.filter(
+              username => username !== member.username,
+            ),
+            writer: updatedPermissions.value.writer.filter(
+              username => username !== member.username,
+            ),
+          };
+          // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
+          await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
+            userGroupId: id,
+            permissions: updatedPermissions.value,
+          });
+        }
       }
+      emitSuccess(`Successfully removed member from "${updatedUserGroup.name}"`);
+      await loadMembers();
+    } catch (e) {
+      handleError(e as ResponseError, "updating userGroup members.");
     }
   }
 
@@ -185,8 +222,11 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       };
 
       try {
+        const id = await ensureNumericId();
+        if (id == null) return;
+        // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
-          userGroupId: currentUserGroup.value.id,
+          userGroupId: id,
           permissions: updatedPermissions.value,
         });
         emitSuccess(
@@ -208,8 +248,11 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       };
 
       try {
+        const id = await ensureNumericId();
+        if (id == null) return;
+        // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
-          userGroupId: currentUserGroup.value.id,
+          userGroupId: id,
           permissions: updatedPermissions.value,
         });
         emitSuccess(
@@ -232,8 +275,11 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
         owner: newOwner.username,
       };
       try {
+        const id = await ensureNumericId();
+        if (id == null) return;
+        // V1-EXCEPTION: no v2 permissions endpoint (V2-SWEEP-002-PERMISSIONS).
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
-          userGroupId: currentUserGroup.value.id,
+          userGroupId: id,
           permissions: updatedPermissions.value,
         });
         emitSuccess(
@@ -248,9 +294,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
 
   async function deleteUserGroup() {
     try {
-      await useShepardApi(UserGroupApi).value.deleteUserGroup({
-        userGroupId: currentUserGroup.value.id,
-      });
+      // v2: delete by appId.
+      await v2.deleteUserGroup(currentUserGroup.value.appId);
       emitSuccess(
         `Successfully deleted user group "${currentUserGroup.value.name}"`,
       );
