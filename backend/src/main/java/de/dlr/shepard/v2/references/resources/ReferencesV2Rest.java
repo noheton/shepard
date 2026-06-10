@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
@@ -73,6 +74,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "References (v2 unified)")
 public class ReferencesV2Rest {
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/references.bad-request";
+
   @Inject
   ReferencesV2Service referencesService;
 
@@ -110,10 +113,10 @@ public class ReferencesV2Rest {
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (kind == null || kind.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("kind query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("dataObjectAppId query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "dataObjectAppId query parameter is required");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
@@ -123,7 +126,7 @@ public class ReferencesV2Rest {
       ReferenceV2IO created = referencesService.create(kind, dataObjectAppId, map);
       return Response.status(Response.Status.CREATED).entity(created).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -186,7 +189,7 @@ public class ReferencesV2Rest {
     @Context SecurityContext sc
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -198,7 +201,7 @@ public class ReferencesV2Rest {
       ReferenceV2IO updated = referencesService.patchByAppId(appId, JsonNodeMaps.toMap(body));
       return Response.ok(updated).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -263,10 +266,10 @@ public class ReferencesV2Rest {
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (kind == null || kind.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("kind query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("dataObjectAppId query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "dataObjectAppId query parameter is required");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
@@ -275,13 +278,18 @@ public class ReferencesV2Rest {
       List<ReferenceV2IO> refs = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
       return Response.ok(refs).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   private String callerOrNull(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;

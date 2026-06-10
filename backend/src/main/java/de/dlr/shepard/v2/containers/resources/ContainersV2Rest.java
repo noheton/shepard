@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.containers.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
@@ -81,6 +82,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Containers (v2 unified)")
 public class ContainersV2Rest {
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/containers.bad-request";
+  private static final String PROBLEM_TYPE_UNSUPPORTED = "/problems/containers.unsupported-media-type";
+
   @Inject
   ContainersV2Service containersService;
 
@@ -110,14 +114,14 @@ public class ContainersV2Rest {
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (kind == null || kind.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("kind query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     Map<String, Object> map = body == null ? Map.of() : JsonNodeMaps.toMap(body);
     try {
       ContainerV2IO created = containersService.create(kind, map);
       return Response.status(Response.Status.CREATED).entity(created).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     }
   }
 
@@ -184,9 +188,8 @@ public class ContainersV2Rest {
 
     var downloadOpt = resolved.get().handler().downloadFile(appId, rangeHeader);
     if (downloadOpt.isEmpty()) {
-      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-        .entity("Container kind '" + resolved.get().handler().kind() + "' has no single-file payload")
-        .build();
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No single-file payload", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no single-file payload");
     }
     var download = downloadOpt.get();
 
@@ -257,7 +260,7 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -269,7 +272,7 @@ public class ContainersV2Rest {
       ContainerV2IO updated = containersService.patchByAppId(appId, JsonNodeMaps.toMap(body));
       return Response.ok(updated).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -330,13 +333,13 @@ public class ContainersV2Rest {
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (kind == null || kind.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("kind query parameter is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     try {
       List<ContainerV2IO> containers = containersService.list(kind, name);
       return Response.ok(containers).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     }
   }
 
@@ -396,7 +399,7 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -439,6 +442,11 @@ public class ContainersV2Rest {
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   private String callerOrNull(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
