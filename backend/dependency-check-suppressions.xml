@@ -189,6 +189,22 @@
     <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri@5\.4\.0$</packageUrl>
     <cve>CVE-2025-50151</cve>
   </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-base (the shared
+    vocabulary and utility foundation used by all Jena components). Same reasoning as
+    jena-core/jena-arq/jena-iri entries: all queries are server-constructed from
+    validated parameters; no user-supplied SPARQL or IRI input reaches the Jena parser
+    directly. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-base. Same reasoning
+    as jena-core/jena-arq/jena-iri entries — server-constructed queries only.
+    OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-base@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
 
   <!-- ===================================================================
        OWASP-SUPP-004: Netty 4.1.133.Final (CVE-2026-42582, 7.5)
@@ -268,6 +284,14 @@
     endpoint is bound to loopback; identical deployment topology reasoning as
     OWASP-SUPP-006. OWASP-SUPP-006.</notes>
     <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE on simpleclient_tracer_common (the shared
+    tracing utilities for the Prometheus simpleclient). The /q/metrics scrape endpoint is
+    bound to loopback and accessible only from the trusted internal Docker network;
+    identical deployment topology reasoning as OWASP-SUPP-006. OWASP-SUPP-006.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_common@.*$</packageUrl>
     <cve>CVE-2026-42154</cve>
   </suppress>
 
