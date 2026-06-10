@@ -141,7 +141,7 @@ public class UnhideFeedRest {
         "Unhide integration is disabled",
         Status.SERVICE_UNAVAILABLE,
         "This shepard instance has the Helmholtz Unhide integration turned off. " +
-        "An instance-admin can enable it via PATCH /v2/admin/unhide/config or " +
+        "An instance-admin can enable it via PATCH /v2/admin/config/unhide or " +
         "`shepard-admin unhide enable`."
       );
     }
@@ -161,7 +161,7 @@ public class UnhideFeedRest {
             Status.UNAUTHORIZED,
             "This feed is non-public. Set X-API-KEY to the harvest API key (mint via " +
             "POST /v2/admin/unhide/harvest-key/rotate), flip feedPublic=true via " +
-            "PATCH /v2/admin/unhide/config, or authenticate as an instance-admin."
+            "PATCH /v2/admin/config/unhide, or authenticate as an instance-admin."
           );
         }
       } else {
