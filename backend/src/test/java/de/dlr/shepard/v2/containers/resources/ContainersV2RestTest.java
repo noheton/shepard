@@ -16,8 +16,10 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
+import de.dlr.shepard.v2.containers.spi.ContainerFileDownload;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.InputStream;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -178,6 +180,89 @@ class ContainersV2RestTest {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
     var r = resource.delete(APP_ID, securityContext);
     assertEquals(404, r.getStatus());
+  }
+
+  // ─── file download (V2CONV-A7-HDF) ─────────────────────────────────────────
+
+  private void allowRead() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+  }
+
+  @Test
+  void downloadFile_returns200WithMediaTypeAndDisposition() {
+    allowRead();
+    var download = new ContainerFileDownload(
+      200,
+      InputStream.nullInputStream(),
+      9L,
+      null,
+      "bytes",
+      "primary.h5",
+      "application/x-hdf5"
+    );
+    when(handler.downloadFile(eq(APP_ID), eq(null))).thenReturn(Optional.of(download));
+
+    var r = resource.downloadFile(APP_ID, null, securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("application/x-hdf5", r.getMediaType().toString());
+    String cd = (String) r.getHeaders().getFirst("Content-Disposition");
+    org.junit.jupiter.api.Assertions.assertNotNull(cd, "Content-Disposition must be set");
+    org.junit.jupiter.api.Assertions.assertTrue(cd.contains("attachment"), "must be attachment");
+    org.junit.jupiter.api.Assertions.assertTrue(cd.contains("primary.h5"), "filename must be present");
+  }
+
+  @Test
+  void downloadFile_returns206WithRangeHeaders() {
+    allowRead();
+    var download = new ContainerFileDownload(
+      206,
+      InputStream.nullInputStream(),
+      4L,
+      "bytes 0-3/9",
+      "bytes",
+      "run-data.h5",
+      "application/x-hdf5"
+    );
+    when(handler.downloadFile(eq(APP_ID), eq("bytes=0-3"))).thenReturn(Optional.of(download));
+
+    var r = resource.downloadFile(APP_ID, "bytes=0-3", securityContext);
+    assertEquals(206, r.getStatus());
+    assertEquals("bytes 0-3/9", r.getHeaders().getFirst("Content-Range"));
+    assertEquals("bytes", r.getHeaders().getFirst("Accept-Ranges"));
+  }
+
+  @Test
+  void downloadFile_returns415WhenKindHasNoFilePayload() {
+    allowRead();
+    when(handler.kind()).thenReturn("timeseries");
+    when(handler.downloadFile(eq(APP_ID), eq(null))).thenReturn(Optional.empty());
+    var r = resource.downloadFile(APP_ID, null, securityContext);
+    assertEquals(415, r.getStatus());
+  }
+
+  @Test
+  void downloadFile_returns404WhenUnknown() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.downloadFile(APP_ID, null, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void downloadFile_returns403WhenNoRead() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.downloadFile(APP_ID, null, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void downloadFile_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.downloadFile(APP_ID, null, securityContext);
+    assertEquals(401, r.getStatus());
   }
 
   // ─── permissions helpers ───────────────────────────────────────────────────
