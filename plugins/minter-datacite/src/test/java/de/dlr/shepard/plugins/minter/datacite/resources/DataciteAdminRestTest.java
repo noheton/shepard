@@ -14,11 +14,8 @@ import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialSetIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteMinterConfigIO;
-import de.dlr.shepard.plugins.minter.datacite.io.DataciteMinterConfigPatchIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteTestConnectionIO;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
-import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService.DatacitePatch;
-import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService.ReadOnlyFieldException;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -66,112 +63,6 @@ class DataciteAdminRestTest {
     Path p = DataciteAdminRest.class.getAnnotation(Path.class);
     assertThat(p).isNotNull();
     assertThat(p.value()).isEqualTo("/v2/admin/minters/datacite");
-  }
-
-  // ─── GET /config ────────────────────────────────────────────────────────
-
-  @Test
-  void getConfig_returnsMaskedIO() {
-    DataciteMinterConfig cfg = new DataciteMinterConfig();
-    cfg.setEnabled(true);
-    cfg.setApiBaseUrl("https://api.datacite.org");
-    cfg.setHandlePrefix("10.5072");
-    cfg.setRepositoryId("DLR");
-    cfg.setPasswordCipher("gcm1:secret");
-    cfg.setPasswordHash("0123456789abcdef".repeat(4));
-    cfg.setPublisher("DLR e.V.");
-    cfg.setLandingPageBase("https://shepard.dlr.de/v2");
-    cfg.setDefaultState("draft");
-    when(service.current()).thenReturn(cfg);
-
-    Response r = rest.getConfig();
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    DataciteMinterConfigIO body = (DataciteMinterConfigIO) r.getEntity();
-    assertThat(body.enabled()).isTrue();
-    assertThat(body.handlePrefix()).isEqualTo("10.5072");
-    assertThat(body.publisher()).isEqualTo("DLR e.V.");
-    assertThat(body.passwordSet()).isTrue();
-    assertThat(body.passwordFingerprint()).isEqualTo("01234567");
-
-    // CRITICAL — the IO must never serialise the cipher or the full hash.
-    String rendered = body.toString();
-    assertThat(rendered).doesNotContain("gcm1:secret");
-    assertThat(rendered).doesNotContain("0123456789abcdef0123456789abcdef");
-  }
-
-  @Test
-  void getConfig_returnsPasswordSetFalseWhenNoCredential() {
-    DataciteMinterConfig cfg = new DataciteMinterConfig();
-    cfg.setEnabled(false);
-    when(service.current()).thenReturn(cfg);
-
-    Response r = rest.getConfig();
-
-    DataciteMinterConfigIO body = (DataciteMinterConfigIO) r.getEntity();
-    assertThat(body.passwordSet()).isFalse();
-    assertThat(body.passwordFingerprint()).isNull();
-  }
-
-  // ─── PATCH /config ──────────────────────────────────────────────────────
-
-  @Test
-  void patchConfig_appliesAndReturnsMaskedIO() {
-    DataciteMinterConfig saved = new DataciteMinterConfig();
-    saved.setEnabled(true);
-    saved.setApiBaseUrl("https://api.test.datacite.org");
-    when(service.patch(any(DatacitePatch.class), anyString())).thenReturn(saved);
-
-    DataciteMinterConfigPatchIO patch = new DataciteMinterConfigPatchIO();
-    patch.setEnabled(true);
-
-    Response r = rest.patchConfig(patch, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    DataciteMinterConfigIO body = (DataciteMinterConfigIO) r.getEntity();
-    assertThat(body.enabled()).isTrue();
-  }
-
-  @Test
-  void patchConfig_acceptsNullBodyAsNoOp() {
-    DataciteMinterConfig saved = new DataciteMinterConfig();
-    when(service.patch(any(DatacitePatch.class), anyString())).thenReturn(saved);
-
-    Response r = rest.patchConfig(null, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-  }
-
-  @Test
-  void patchConfig_rejectsPasswordHashWithProblemJson() {
-    when(service.patch(any(DatacitePatch.class), anyString()))
-      .thenThrow(new ReadOnlyFieldException("passwordHash"));
-
-    DataciteMinterConfigPatchIO patch = new DataciteMinterConfigPatchIO();
-    patch.setPasswordHash("anything");
-
-    Response r = rest.patchConfig(patch, security);
-
-    assertThat(r.getStatus()).isEqualTo(400);
-    assertThat(r.getMediaType().toString()).contains("application/problem+json");
-    ProblemJson body = (ProblemJson) r.getEntity();
-    assertThat(body.title()).contains("read-only");
-    assertThat(body.detail()).contains("passwordHash");
-  }
-
-  @Test
-  void patchConfig_rejectsInvalidStateWithProblemJson() {
-    when(service.patch(any(DatacitePatch.class), anyString()))
-      .thenThrow(new IllegalArgumentException("defaultState must be one of draft/registered/findable"));
-
-    DataciteMinterConfigPatchIO patch = new DataciteMinterConfigPatchIO();
-    patch.setDefaultState("nonsense");
-
-    Response r = rest.patchConfig(patch, security);
-
-    assertThat(r.getStatus()).isEqualTo(400);
-    ProblemJson body = (ProblemJson) r.getEntity();
-    assertThat(body.title()).contains("Invalid");
   }
 
   // ─── POST /credential ───────────────────────────────────────────────────

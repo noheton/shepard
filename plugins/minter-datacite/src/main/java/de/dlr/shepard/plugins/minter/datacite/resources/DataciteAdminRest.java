@@ -8,19 +8,13 @@ import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialSetIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteMinterConfigIO;
-import de.dlr.shepard.plugins.minter.datacite.io.DataciteMinterConfigPatchIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteTestConnectionIO;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
-import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService.DatacitePatch;
-import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService.ReadOnlyFieldException;
-import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,19 +33,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * KIP1d — admin REST surface for the DataCite Fabrica minter plugin.
  *
  * <p>Lives under {@code /v2/admin/minters/datacite/...}. Class-level
- * {@code @RolesAllowed("instance-admin")} gate (credential management
- * is one of the highest-trust admin paths). Responses are
- * {@code application/json}; errors use the RFC 7807
- * {@code application/problem+json} envelope via {@link ProblemJson}.
+ * {@code @RolesAllowed("instance-admin")} gate. Config fields are now
+ * managed via {@code GET|PATCH /v2/admin/config/minter-datacite}
+ * (V2CONV-A7); this resource retains the credential and test-connection
+ * sister endpoints.
  *
- * <p>PROV1a captures every mutation through this resource via
- * {@code ProvenanceCaptureFilter}; the filter records request method
- * + path + status only, never response bodies — so the {@code POST
- * .../credential} plaintext never enters the {@code :Activity}
- * audit trail.
+ * <p>PROV1a captures every mutation via {@code ProvenanceCaptureFilter};
+ * the filter records method + path + status only — the {@code POST
+ * .../credential} plaintext never enters the {@code :Activity} audit trail.
  *
  * @see DataciteMinterConfigService
- * @see DataciteMinterConfig
  */
 @Path("/v2/admin/minters/datacite")
 @Produces(MediaType.APPLICATION_JSON)
@@ -62,8 +53,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class DataciteAdminRest {
 
   /** RFC 7807 type URIs for problem responses. */
-  static final String PROBLEM_TYPE_READ_ONLY_FIELD = "/problems/minters.datacite.config.read-only-field";
-  static final String PROBLEM_TYPE_BAD_STATE = "/problems/minters.datacite.config.bad-state";
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/minters.datacite.config.bad-request";
 
   @Inject
@@ -71,96 +60,6 @@ public class DataciteAdminRest {
 
   @Inject
   DataciteHttpClient http;
-
-  // ─── GET /config ────────────────────────────────────────────────
-
-  @GET
-  @Path("/config")
-  @Operation(
-    summary = "Read the current :DataciteMinterConfig singleton.",
-    description = "Returns the runtime-mutable DataCite minter config — enabled, apiBaseUrl, " +
-    "handlePrefix, repositoryId, publisher, landingPageBase, defaultState. The credential " +
-    "material is masked: passwordSet + an 8-hex fingerprint of the SHA-256 hash are surfaced " +
-    "in place of the password itself."
-  )
-  @APIResponse(
-    responseCode = "200",
-    description = "Current DataCite minter config (singleton).",
-    content = @Content(schema = @Schema(implementation = DataciteMinterConfigIO.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response getConfig() {
-    DataciteMinterConfig cfg = service.current();
-    return Response.ok(DataciteMinterConfigIO.from(cfg)).build();
-  }
-
-  // ─── PATCH /config ──────────────────────────────────────────────
-
-  @PATCH
-  @Path("/config")
-  @Operation(
-    summary = "RFC 7396 merge-patch the :DataciteMinterConfig singleton.",
-    description = "Patchable fields: enabled, apiBaseUrl, handlePrefix, repositoryId, " +
-    "publisher, landingPageBase, defaultState. The credential fields (passwordHash, " +
-    "passwordCipher, password) are read-only via this path — use POST .../credential to " +
-    "set them. PROV1a captures this PATCH as an :Activity row."
-  )
-  @APIResponse(
-    responseCode = "200",
-    description = "Updated config returned in the same shape as GET.",
-    content = @Content(schema = @Schema(implementation = DataciteMinterConfigIO.class))
-  )
-  @APIResponse(
-    responseCode = "400",
-    description = "Caller patched a read-only field or supplied an invalid state.",
-    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response patchConfig(DataciteMinterConfigPatchIO body, @Context SecurityContext security) {
-    DataciteMinterConfigPatchIO patch = body == null ? new DataciteMinterConfigPatchIO() : body;
-    DatacitePatch svc = new DatacitePatch();
-    svc.enabled = patch.getEnabled();
-    svc.apiBaseUrl = patch.getApiBaseUrl();
-    svc.apiBaseUrlTouched = patch.isApiBaseUrlTouched();
-    svc.handlePrefix = patch.getHandlePrefix();
-    svc.handlePrefixTouched = patch.isHandlePrefixTouched();
-    svc.repositoryId = patch.getRepositoryId();
-    svc.repositoryIdTouched = patch.isRepositoryIdTouched();
-    svc.publisher = patch.getPublisher();
-    svc.publisherTouched = patch.isPublisherTouched();
-    svc.landingPageBase = patch.getLandingPageBase();
-    svc.landingPageBaseTouched = patch.isLandingPageBaseTouched();
-    svc.defaultState = patch.getDefaultState();
-    svc.defaultStateTouched = patch.isDefaultStateTouched();
-    svc.passwordHashTouched = patch.isPasswordHashTouched();
-    svc.passwordCipherTouched = patch.isPasswordCipherTouched();
-
-    final DataciteMinterConfig saved;
-    try {
-      saved = service.patch(svc, callerName(security));
-    } catch (ReadOnlyFieldException denied) {
-      Log.warnf(
-        "KIP1d: rejected PATCH /v2/admin/minters/datacite/config — read-only field '%s' touched",
-        denied.field()
-      );
-      return problem(
-        PROBLEM_TYPE_READ_ONLY_FIELD,
-        "Field is read-only via PATCH",
-        Status.BAD_REQUEST,
-        "Field '" +
-        denied.field() +
-        "' cannot be set via PATCH. Use POST /v2/admin/minters/datacite/credential to mutate it."
-      );
-    } catch (IllegalArgumentException bad) {
-      return problem(
-        PROBLEM_TYPE_BAD_STATE,
-        "Invalid patch value",
-        Status.BAD_REQUEST,
-        bad.getMessage()
-      );
-    }
-    return Response.ok(DataciteMinterConfigIO.from(saved)).build();
-  }
 
   // ─── POST /credential ───────────────────────────────────────────
 
