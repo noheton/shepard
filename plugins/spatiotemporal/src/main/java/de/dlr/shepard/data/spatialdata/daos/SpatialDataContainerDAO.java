@@ -68,6 +68,25 @@ public class SpatialDataContainerDAO extends GenericDAO<SpatialDataContainer> {
     return (container == null || container.isDeleted()) ? null : container;
   }
 
+  /**
+   * SPATIAL-UNIFY-004 — find the non-deleted {@link SpatialDataContainer} minted
+   * by promoting the FileReference with the given {@code appId}, or {@code null}
+   * when none exists. Drives the promote endpoint's idempotency.
+   *
+   * @param sourceFileReferenceAppId the source FileReference's appId
+   * @return the existing container, or {@code null}
+   */
+  public SpatialDataContainer findBySourceFileReferenceAppId(String sourceFileReferenceAppId) {
+    String query =
+      "MATCH " +
+      CypherQueryHelper.getObjectPart("c", "SpatialDataContainer", false) +
+      " WHERE c.sourceFileReferenceAppId = $sourceFileReferenceAppId " +
+      CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("sourceFileReferenceAppId", sourceFileReferenceAppId)).iterator();
+    var container = iter.hasNext() ? iter.next() : null;
+    return (container == null || container.isDeleted()) ? null : container;
+  }
+
   @Override
   public Class<SpatialDataContainer> getEntityType() {
     return SpatialDataContainer.class;
