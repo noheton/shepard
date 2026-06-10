@@ -179,7 +179,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-06-04 |
 | [`aidocs/agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md`](agent-findings/ts-ingest-222gb-importer-audit-2026-05-29.md) | TS ingest 222 GB — v15 importer audit (CHOKE-01 + CHOKE-02) | 2026-05-29 | 2026-06-04 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-06-04 |
-| [`aidocs/agent-findings/ui-gap-survey-2026-06-09.md`](agent-findings/ui-gap-survey-2026-06-09.md) | UI Gap Survey — 2026-06-09 | 2026-06-10 | — |
+| [`aidocs/agent-findings/ui-gap-survey-2026-06-09.md`](agent-findings/ui-gap-survey-2026-06-09.md) | UI Gap Survey — 2026-06-09 | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-30.md`](agent-findings/ui-scrutinizer-2026-05-30.md) | UI Scrutinizer — full-pass audit 2026-05-30 | 2026-05-30 | 2026-06-04 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-31.md`](agent-findings/ui-scrutinizer-2026-05-31.md) | UI Scrutinizer — 2nd pass 2026-05-31 | 2026-05-31 | 2026-06-04 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-06-04 |
