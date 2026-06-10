@@ -57,10 +57,11 @@ buffer-size + output-format settings.
 
 ### MFFD-NDT-QUALITY-1 — analysis defaults (2026-06-02)
 
-The NDT quality-score + plate-heatmap surface lives in-tree at
-`backend/src/main/java/de/dlr/shepard/v2/thermography/` (until
-`OTVIS-WIRE-AGGREGATOR-1` clears, then it moves into this plugin per
-`MFFD-THERMO-MOVE-TO-PLUGIN-1`). It exposes three deploy-time keys:
+The NDT quality-score + plate-heatmap surface lives in this plugin
+(`ThermographyAnalysisService` + `ThermographyHeatmapRenderer`). Viewing
+flows through the generic `POST /v2/shapes/render` endpoint
+(V2CONV-A7-THERMO — no bespoke `/v2/thermography/*` REST). Analysis runs at
+upload time; it exposes three deploy-time keys:
 
 | Key | Default | Effect |
 |---|---|---|

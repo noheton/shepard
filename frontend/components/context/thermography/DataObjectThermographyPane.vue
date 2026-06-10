@@ -8,22 +8,22 @@
  * {@code imageBundleAppId} props removes the discovery responsibility
  * from this component so the panel stays cheap to render.
  *
- * <p>The composite plate-heatmap is fetched via
- * {@code GET /v2/thermography/{appId}/plate-heatmap}; a 404 here means the
- * bundle has not been analyzed yet, surfaced as the "Re-analyze" CTA.
+ * <p>The composite plate-heatmap is fetched via the generic
+ * {@code POST /v2/shapes/render} (file-rooted, ThermographyHeatmapShape,
+ * Accept: application/json — V2CONV-A7-THERMO). A 422 ("render.not-analyzed")
+ * means the bundle has not been analyzed yet.
  *
- * <p>The "Re-analyze" button calls {@code POST /v2/thermography/analyze},
- * waits for the summary, then re-fetches the heatmap. Writes only after
- * the user explicitly clicks the button; no auto-analyze on mount
- * (Permission Write needed; users without it see the button disabled).
+ * <p>Analysis is no longer a user-triggered REST call — it runs at upload time
+ * via the thermography {@code FileFormatPlugin.parse} side-effect
+ * (V2CONV-A7-THERMO). The former "Re-analyze" button is therefore removed; the
+ * pane is read-only and surfaces the cached heatmap.
  */
 import { ref, computed, onMounted, watch } from "vue";
 import {
-  qualityBand,
-  qualityChipColor,
   renderHeatmapPixels,
   cellAtCanvasPosition,
   formatTemp,
+  buildPlateHeatmapBody,
   type PlateHeatmap,
 } from "~/utils/thermographyHeatmap";
 
@@ -32,33 +32,14 @@ const props = defineProps<{
   dataObjectAppId: string;
   /** appId of the FileBundleReference carrying the TIFFs. */
   imageBundleAppId: string;
-  /** Whether the caller has Write permission on the parent DataObject. */
-  canEdit: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "numberOfEntriesChanged", value: number): void;
-  (e: "analyzed", result: AnalyzeResult): void;
 }>();
 
-interface AnalyzeResult {
-  imageBundleAppId: string;
-  framesAnalyzed: number;
-  framesSkipped: number;
-  maxPeakDeltaC: number;
-  meanOfMeanDeltaC: number;
-  maxC: number;
-  thresholdC: number;
-  qualityScore: number;
-  hotspotCentroidX: number;
-  hotspotCentroidY: number;
-  annotationsWritten: number;
-}
-
 const heatmap = ref<PlateHeatmap | null>(null);
-const summary = ref<AnalyzeResult | null>(null);
 const isLoading = ref(false);
-const isAnalyzing = ref(false);
 const errorMessage = ref<string | null>(null);
 const tooltipText = ref<string | null>(null);
 const tooltipX = ref(0);
@@ -67,17 +48,8 @@ const tooltipY = ref(0);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const CELL_PX = 8;
 
-const qualityScore = computed<number | null>(
-  () => summary.value?.qualityScore ?? null,
-);
-const chipColor = computed(() =>
-  qualityChipColor(qualityBand(qualityScore.value)),
-);
-const chipText = computed(() => {
-  const q = qualityScore.value;
-  if (q == null) return "Not analyzed";
-  return `Quality ${q.toFixed(2)}`;
-});
+const chipColor = computed(() => (heatmap.value ? "success" : "grey"));
+const chipText = computed(() => (heatmap.value ? "Analyzed" : "Not analyzed"));
 
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
@@ -92,43 +64,25 @@ async function fetchHeatmap() {
   errorMessage.value = null;
   isLoading.value = true;
   try {
-    const url = `${v2BaseUrl()}/v2/thermography/${encodeURIComponent(
-      props.imageBundleAppId,
-    )}/plate-heatmap`;
-    const res = await $fetch<PlateHeatmap>(url, { credentials: "include" }).catch(
-      err => {
-        // 404 is expected on bundles never analyzed — degrade gracefully.
-        if (err?.response?.status === 404) return null;
-        throw err;
-      },
-    );
+    // V2CONV-A7-THERMO — plate-heatmap via POST /v2/shapes/render (file-rooted,
+    // Accept: application/json). Replaces GET /v2/thermography/{appId}/plate-heatmap.
+    // A 422 ("render.not-analyzed") means the bundle was never analyzed — degrade.
+    const url = `${v2BaseUrl()}/v2/shapes/render`;
+    const res = await $fetch<PlateHeatmap>(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      body: buildPlateHeatmapBody(props.imageBundleAppId),
+    }).catch(err => {
+      if (err?.response?.status === 422 || err?.response?.status === 404) return null;
+      throw err;
+    });
     heatmap.value = res ?? null;
     emit("numberOfEntriesChanged", heatmap.value ? 1 : 0);
   } catch (err) {
     errorMessage.value = `Failed to load heatmap — ${String((err as Error).message)}`;
   } finally {
     isLoading.value = false;
-  }
-}
-
-async function reanalyze() {
-  if (!props.canEdit) return;
-  errorMessage.value = null;
-  isAnalyzing.value = true;
-  try {
-    const url = `${v2BaseUrl()}/v2/thermography/analyze`;
-    const result = await $fetch<AnalyzeResult>(url, {
-      method: "POST",
-      credentials: "include",
-      body: { imageBundleAppId: props.imageBundleAppId },
-    });
-    summary.value = result;
-    emit("analyzed", result);
-    await fetchHeatmap();
-  } catch (err) {
-    errorMessage.value = `Re-analyze failed — ${String((err as Error).message)}`;
-  } finally {
-    isAnalyzing.value = false;
   }
 }
 
@@ -190,16 +144,6 @@ watch(heatmap, () => drawCanvas(), { flush: "post" });
         >
           {{ chipText }}
         </v-chip>
-        <v-btn
-          color="primary"
-          variant="tonal"
-          :loading="isAnalyzing"
-          :disabled="!canEdit || isAnalyzing"
-          data-test="reanalyze-btn"
-          @click="reanalyze"
-        >
-          {{ heatmap ? "Re-analyze" : "Analyze" }}
-        </v-btn>
       </div>
     </div>
 
@@ -221,12 +165,6 @@ watch(heatmap, () => drawCanvas(), { flush: "post" });
         <span><strong>Max:</strong> {{ formatTemp(heatmap.maxTemp) }}</span>
         <span>
           <strong>Threshold:</strong> {{ formatTemp(heatmap.thresholdTemp) }}
-        </span>
-        <span v-if="summary">
-          <strong>Peak Δ:</strong> {{ formatTemp(summary.maxPeakDeltaC) }}
-        </span>
-        <span v-if="summary">
-          <strong>Mean Δ:</strong> {{ formatTemp(summary.meanOfMeanDeltaC) }}
         </span>
       </div>
 
@@ -261,9 +199,9 @@ watch(heatmap, () => drawCanvas(), { flush: "post" });
       variant="tonal"
       data-test="not-analyzed-alert"
     >
-      No analysis cached for this thermography bundle. Click
-      <strong>Analyze</strong> to compute per-frame peak-delta-c metrics and
-      a composite plate heatmap.
+      No analysis cached for this thermography bundle. The composite plate
+      heatmap is computed automatically when the thermography files are
+      uploaded; re-upload the bundle to (re-)generate it.
     </v-alert>
   </div>
 </template>

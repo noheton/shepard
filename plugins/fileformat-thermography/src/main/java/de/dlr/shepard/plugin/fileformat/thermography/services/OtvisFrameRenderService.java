@@ -84,6 +84,50 @@ public class OtvisFrameRenderService {
     return renderFromExtracted(frames, frameIndex, channel);
   }
 
+  // ── V2CONV-A7-THERMO — stream-rooted decode (render-SPI E3 seam) ──────────
+
+  /**
+   * V2CONV-A7-THERMO — decode an OTvis archive supplied as a raw stream and
+   * return the frame index. Used by the {@code OtvisFrameRenderer}
+   * {@link de.dlr.shepard.spi.view.ViewRecipeRenderer}, which obtains the bytes
+   * from the render dispatcher's {@link de.dlr.shepard.spi.view.FocusPayloadResolver}
+   * (E3) rather than resolving the FileReference itself — the renderer is a
+   * ServiceLoader POJO with no CDI scope.
+   *
+   * @param fileReferenceAppId echoed into the index for the viewer (display only)
+   * @param in                 the .OTvis archive byte stream; caller owns it
+   * @return the decoded frame index
+   * @throws InvalidBodyException when the stream is not a usable OTvis tar
+   */
+  public OtvisFramesIO listFramesFromStream(String fileReferenceAppId, InputStream in) {
+    ExtractedFrames frames = decodeStream(in);
+    return buildIndex(fileReferenceAppId, frames);
+  }
+
+  /**
+   * V2CONV-A7-THERMO — render one frame/channel to PNG from a raw OTvis stream.
+   * Stream sibling of {@link #renderPng(String, int, String)}.
+   *
+   * @param in         the .OTvis archive byte stream; caller owns it
+   * @param frameIndex zero-based frame index
+   * @param channel    amplitude|phase (lock-in) or temperature (raw); null → frame default
+   * @return the colour-mapped heatmap PNG bytes
+   * @throws InvalidBodyException for a bad archive, out-of-range frame, or bad channel
+   */
+  public byte[] renderPngFromStream(InputStream in, int frameIndex, String channel) {
+    ExtractedFrames frames = decodeStream(in);
+    return renderFromExtracted(frames, frameIndex, channel);
+  }
+
+  ExtractedFrames decodeStream(InputStream in) {
+    try {
+      return extractor.extract(in);
+    } catch (IOException ex) {
+      Log.warnf("OTVIS-VIEWER: supplied stream is not a usable OTvis archive — %s", ex.getMessage());
+      throw new InvalidBodyException("stream is not a decodable OTvis archive: " + ex.getMessage());
+    }
+  }
+
   // ── decode + resolve ─────────────────────────────────────────────────────
 
   ExtractedFrames decode(String fileReferenceAppId) {

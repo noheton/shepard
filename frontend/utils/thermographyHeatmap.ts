@@ -7,7 +7,16 @@
 
 import { colormapRgb } from "~/utils/colormap";
 
-/** Plate heatmap payload as returned by `/v2/thermography/{appId}/plate-heatmap`. */
+/**
+ * The SHACL shape IRI the thermography plate-heatmap renderer claims.
+ * V2CONV-A7-THERMO: the heatmap is fetched via `POST /v2/shapes/render`
+ * (file-rooted, Accept: application/json) — replacing the bespoke
+ * `GET /v2/thermography/{appId}/plate-heatmap`.
+ */
+export const THERMOGRAPHY_HEATMAP_SHAPE_IRI =
+  "http://semantics.dlr.de/shepard-ui/thermography/transform#ThermographyHeatmapShape";
+
+/** Plate heatmap payload — the renderer's `application/json` view-model. */
 export interface PlateHeatmap {
   imageBundleAppId: string;
   width: number;
@@ -17,6 +26,17 @@ export interface PlateHeatmap {
   maxTemp: number;
   thresholdTemp: number;
   frameCount: number;
+}
+
+/** Request body for the plate-heatmap render (`POST /v2/shapes/render`). */
+export function buildPlateHeatmapBody(imageBundleAppId: string): {
+  shapeIri: string;
+  focusFileRefAppId: string;
+} {
+  return {
+    shapeIri: THERMOGRAPHY_HEATMAP_SHAPE_IRI,
+    focusFileRefAppId: imageBundleAppId,
+  };
 }
 
 /** Quality-score → chip color mapping. */

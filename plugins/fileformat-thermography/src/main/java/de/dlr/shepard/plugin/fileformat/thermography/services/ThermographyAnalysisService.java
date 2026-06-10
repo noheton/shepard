@@ -98,7 +98,7 @@ public class ThermographyAnalysisService {
 
   /**
    * Deploy default for the quality-score denominator (degrees Celsius).
-   * Caller can override per-request via {@code AnalyzeRequestIO.thresholdC};
+   * Caller can override per-analysis via the {@code analyze(...)} thresholdC arg;
    * admin can flip globally via the {@code :ThermographyConfig} singleton
    * once that admin-knob lands (deferred — current PR uses application.properties).
    */
