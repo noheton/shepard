@@ -102,6 +102,21 @@
     <cve>CVE-2026-1497</cve>
   </suppress>
 
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1524 (CVSS 9.8): False positive. CVE targets Neo4j database server;
+    matched against neo4j-ogm-api (the OGM annotation/interface layer, a client-side API
+    library) via CPE version coincidence on 5.0.3. This jar exposes no server endpoint.
+    OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-api@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+  </suppress>
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-1497 (CVSS 7.2): False positive. Same CPE mismatch for neo4j-ogm-api.
+    OWASP-SUPP-002.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j/neo4j-ogm-api@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+  </suppress>
+
   <!-- ===================================================================
        OWASP-SUPP-003: Apache Jena 5.4.0 (CVE-2025-49656 7.5, CVE-2025-50151 8.8)
        =================================================================== -->
@@ -127,6 +142,20 @@
     CVE-2025-49656 — no user-supplied SPARQL input, server-constructed queries only.
     OWASP-SUPP-003.</notes>
     <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-core@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-arq (SPARQL query
+    engine module). Same reasoning as jena-core entry: all queries are server-constructed
+    from validated parameters; no user-supplied SPARQL reaches the parser. CPE matches all
+    org.apache.jena 5.4.0 jars. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-arq@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-arq. Same reasoning
+    as jena-core entry — server-constructed SPARQL queries only. OWASP-SUPP-003.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-arq@5\.4\.0$</packageUrl>
     <cve>CVE-2025-50151</cve>
   </suppress>
 
@@ -192,6 +221,14 @@
     <notes>CVE-2026-42154 (CVSS 7.5): Same CVE via Micrometer Prometheus simpleclient
     bridge. Identical deployment topology reasoning as OWASP-SUPP-006 above.</notes>
     <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus-simpleclient@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE on simpleclient_common (shared utilities
+    for the Prometheus simpleclient family). The /q/metrics scrape endpoint is bound to
+    loopback and accessible only from the trusted internal Docker network. Identical
+    deployment topology reasoning as OWASP-SUPP-006. OWASP-SUPP-006.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_common@.*$</packageUrl>
     <cve>CVE-2026-42154</cve>
   </suppress>
 
