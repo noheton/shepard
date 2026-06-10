@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.users.resources;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.users.services.UserAvatarService;
 import de.dlr.shepard.auth.users.services.UserService;
 import jakarta.enterprise.context.RequestScoped;
@@ -46,6 +47,9 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Tag(name = "Me")
 public class UserAvatarRest {
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/user-avatar.bad-request";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/user-avatar.internal-error";
+
   @Inject
   UserAvatarService avatarService;
 
@@ -67,7 +71,8 @@ public class UserAvatarRest {
       return Response.status(Response.Status.UNAUTHORIZED).build();
     }
     if (upload == null || upload.uploadedFile() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("file part is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing file part",
+        Response.Status.BAD_REQUEST, "file part is required");
     }
 
     String contentType = upload.contentType();
@@ -75,9 +80,9 @@ public class UserAvatarRest {
         ? contentType.split(";")[0].trim()
         : contentType;
     if (mimeType == null || !UserAvatarService.ALLOWED_MIME_TYPES.contains(mimeType.toLowerCase())) {
-      return Response.status(Response.Status.BAD_REQUEST)
-          .entity("unsupported MIME type — use image/jpeg, image/png, image/gif, or image/webp")
-          .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Unsupported media type",
+        Response.Status.BAD_REQUEST,
+        "unsupported MIME type — use image/jpeg, image/png, image/gif, or image/webp");
     }
 
     User caller = userService.getCurrentUser();
@@ -89,14 +94,12 @@ public class UserAvatarRest {
     try (InputStream is = new FileInputStream(uploadedFile)) {
       boolean ok = avatarService.upsert(caller.getAppId(), mimeType, is);
       if (!ok) {
-        return Response.status(Response.Status.BAD_REQUEST)
-            .entity("avatar exceeds maximum size of 2 MB")
-            .build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "File too large",
+          Response.Status.BAD_REQUEST, "avatar exceeds maximum size of 2 MB");
       }
     } catch (IOException e) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity("failed to read uploaded file")
-          .build();
+      return problem(PROBLEM_TYPE_INTERNAL, "Read error",
+        Response.Status.INTERNAL_SERVER_ERROR, "failed to read uploaded file");
     }
 
     return Response.noContent().build();
@@ -119,5 +122,10 @@ public class UserAvatarRest {
 
     avatarService.delete(caller.getAppId());
     return Response.noContent().build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

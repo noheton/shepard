@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.quality.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.quality.io.IndependenceProofRequestIO;
 import de.dlr.shepard.v2.quality.io.IndependenceProofResultIO;
 import de.dlr.shepard.v2.quality.services.IndependenceProofService;
@@ -61,6 +62,8 @@ public class IndependenceProofRest {
    * <p>The check is best-effort: the ancestor walk is bounded at 10 hops.
    * Chains longer than 10 hops are not covered.
    */
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/independence-proof.bad-request";
+
   @POST
   @Operation(
     summary = "Check whether two DataObject sets are mutually independent.",
@@ -88,26 +91,28 @@ public class IndependenceProofRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response check(IndependenceProofRequestIO body) {
     if (body == null) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Request body is required.")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing request body",
+        Response.Status.BAD_REQUEST, "Request body is required.");
     }
 
     List<String> setA = body.getSetA();
     List<String> setB = body.getSetB();
 
     if (setA == null || setA.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("setA must contain at least one appId.")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "setA must contain at least one appId.");
     }
     if (setB == null || setB.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("setB must contain at least one appId.")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "setB must contain at least one appId.");
     }
 
     IndependenceProofResultIO result = service.check(body);
     return Response.ok(result).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

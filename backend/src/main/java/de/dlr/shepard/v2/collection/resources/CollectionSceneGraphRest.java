@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -67,6 +68,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class CollectionSceneGraphRest {
 
   static final String MAPPING_RECIPE_KIND = "MAPPING_RECIPE";
+
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/scene-graph.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/scene-graph.not-found";
+  private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/scene-graph.unprocessable-entity";
 
   @Inject CollectionHeroViewLinkDAO linkDAO;
   @Inject PermissionsService permissionsService;
@@ -148,9 +153,8 @@ public class CollectionSceneGraphRest {
 
     String templateAppId = body == null ? null : body.getSceneGraphAppId();
     if (templateAppId == null || templateAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"detail\":\"sceneGraphAppId (the MAPPING_RECIPE template appId) is required\"}")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "sceneGraphAppId (the MAPPING_RECIPE template appId) is required");
     }
 
     Optional<Long> ogmId = linkDAO.findCollectionIdByAppId(collectionAppId);
@@ -161,15 +165,13 @@ public class CollectionSceneGraphRest {
 
     Optional<ShepardTemplate> template = templateDAO.findByAppId(templateAppId);
     if (template.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("{\"detail\":\"no template with that appId\"}")
-        .build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Template not found",
+        Response.Status.NOT_FOUND, "no template with that appId");
     }
     if (!MAPPING_RECIPE_KIND.equals(template.get().getTemplateKind())) {
-      return Response.status(422)
-        .entity("{\"detail\":\"hero view must be a MAPPING_RECIPE template; kind="
-          + template.get().getTemplateKind() + "\"}")
-        .build();
+      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Wrong template kind",
+        Response.Status.fromStatusCode(422),
+        "hero view must be a MAPPING_RECIPE template; kind=" + template.get().getTemplateKind());
     }
 
     boolean ok = linkDAO.link(collectionAppId, templateAppId);
@@ -209,5 +211,10 @@ public class CollectionSceneGraphRest {
 
   private static String callerOf(SecurityContext sc) {
     return sc != null && sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

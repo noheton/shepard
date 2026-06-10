@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.users;
 
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
@@ -53,6 +54,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin — git credential preseed")
 public class AdminUserGitCredentialRest {
+
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/admin-git-credentials.bad-request";
+  private static final String PROBLEM_TYPE_SERVICE_UNAVAILABLE = "/problems/admin-git-credentials.service-unavailable";
 
   @Inject
   UserService userService;
@@ -130,13 +134,16 @@ public class AdminUserGitCredentialRest {
     ) AdminGitCredentialIO body
   ) {
     if (body == null || body.host() == null || body.host().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"host is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "host is required");
     }
     if (body.username() == null || body.username().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"username is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "username is required");
     }
     if (body.pat() == null || body.pat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"pat is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "pat is required");
     }
 
     if (userService.getUserOptional(targetUsername).isEmpty()) {
@@ -145,9 +152,9 @@ public class AdminUserGitCredentialRest {
 
     byte[] key = resolveKey();
     if (key == null) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\":\"shepard.secrets.encryption-key is not configured — git credentials cannot be stored\"}")
-        .build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "Encryption key not configured",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "shepard.secrets.encryption-key is not configured — git credentials cannot be stored");
     }
 
     String encryptedPat = AesGcmCipher.encrypt(body.pat(), key);
@@ -254,8 +261,8 @@ public class AdminUserGitCredentialRest {
     ) AdminGitCredentialRotateIO body
   ) {
     if (body == null || body.newPat() == null || body.newPat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"newPat is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "newPat is required");
     }
     if (userService.getUserOptional(targetUsername).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -266,13 +273,18 @@ public class AdminUserGitCredentialRest {
     }
     byte[] key = resolveKey();
     if (key == null) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\":\"shepard.secrets.encryption-key is not configured — git credentials cannot be stored\"}")
-        .build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "Encryption key not configured",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "shepard.secrets.encryption-key is not configured — git credentials cannot be stored");
     }
     String encrypted = AesGcmCipher.encrypt(body.newPat(), key);
     gitCredentialDAO.rotateByUserAndAppId(targetUsername, credAppId, encrypted);
     return Response.noContent().build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private byte[] resolveKey() {
