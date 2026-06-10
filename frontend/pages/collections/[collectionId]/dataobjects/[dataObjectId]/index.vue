@@ -927,6 +927,7 @@ async function saveEmbargoEdit() {
                       v-else-if="provView === 'graph'"
                       :data-object="dataObject"
                       :collection-id="collection.id"
+                      :collection-app-id="collectionIdStr"
                     />
                   </div>
                 </ExpansionPanelItem>

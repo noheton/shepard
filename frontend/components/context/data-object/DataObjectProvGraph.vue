@@ -20,12 +20,20 @@ if (process.client) {
 const props = defineProps<{
   dataObject: DataObject;
   collectionId: number;
+  collectionAppId?: string;
 }>();
 
 const activities = ref<ActivityIO[]>([]);
 const loading = ref(false);
 
-const { dataObjects: collectionDataObjects } = useFetchAllDataObjects(props.collectionId);
+// Pass the collection appId so the list hits /v2/collections/{appId}/data-objects.
+// Without it the composable falls back to the numeric id, which this endpoint
+// does not resolve (404) — the source of the "fetchAllDataObjects" toast.
+const collectionAppIdRef = computed(() => props.collectionAppId ?? null);
+const { dataObjects: collectionDataObjects } = useFetchAllDataObjects(
+  props.collectionId,
+  collectionAppIdRef,
+);
 
 const doNameMap = computed(() => {
   const map = new Map<number, string>();
