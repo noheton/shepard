@@ -34,6 +34,13 @@ USER 0
 # the gate stays green. `microdnf update` is idempotent and only fetches
 # what has a newer build; `clean all` keeps the layer small.
 RUN microdnf -y update openssl openssl-libs && microdnf clean all
+# RESEED-FIND-TRACE3D-FONTCONFIG — shepard-plugin-vis-trace3d's Trace3DPngRenderer
+# rasterises a PNG view-recipe card with headless AWT (Graphics2D.drawString). The
+# UBI9 runtime base ships no fontconfig + no fonts, so AWT text init throws
+# "Fontconfig head is null" and the renderer fail-softs to JSON. Install fontconfig +
+# a base font so the image/png content-negotiation path of POST /v2/shapes/render
+# produces real raster bytes.
+RUN microdnf install -y fontconfig dejavu-sans-fonts --nodocs && microdnf clean all
 RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # ffmpeg — required by shepard-plugin-video (ffprobe) and shepard-plugin-imagebundle
 # (movie generation). RPM Fusion ffmpeg on UBI9 requires SDL2 which is not in

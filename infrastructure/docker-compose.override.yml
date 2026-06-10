@@ -125,6 +125,17 @@ services:
       # dependency resolution succeeds. The VideoStreamReference endpoints are in-tree;
       # this toggle also enables the /v2/admin/plugins "video" row in the admin UI.
       SHEPARD_PLUGINS_VIDEO_ENABLED: "true"
+      # Robotics / transform showcase set (RESEED feat-trace3d / feat-scenegraph /
+      # feat-krl-transform). vis-trace3d ships the ViewRecipeRenderer (Trace3D) +
+      # SceneGraphPlayTransformExecutor; krl-interpreter ships the
+      # KrlTrajectoryTransformExecutor + its CDI service beans (KrlTrajectoryService).
+      # Deploy-time enable is required for the plugins' CDI beans to activate
+      # (runtime PATCH /v2/admin/plugins toggles the admin row but cannot bring up
+      # CDI beans that need build/startup-time activation). The krl-interpreter
+      # sidecar runs as the `shepard-krl-interpreter` container (alias
+      # krl-interpreter-sidecar:8000 per plugins/krl-interpreter/compose-profile.yml).
+      SHEPARD_PLUGINS_VIS_TRACE3D_ENABLED: "true"
+      SHEPARD_PLUGINS_KRL_INTERPRETER_ENABLED: "true"
       # PgBouncer — route main JDBC datasource through the pooler.
       # prepareThreshold=0 disables server-side prepared statements, which
       # are incompatible with PgBouncer transaction-pooling mode (the driver

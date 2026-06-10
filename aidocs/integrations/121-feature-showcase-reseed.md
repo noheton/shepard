@@ -79,12 +79,104 @@ feature end-to-end. Synthetic data only (no real MFFD/DLR IP).
 | `feat-krl-transform` | B5 — KRL `.src` + URDF → derived joint-trajectory TS | krl-interpreter + robotics |
 | `feat-trace3d` | Trace3D — X/Y/Z + value TS → colour-mapped 3D path | vis-trace3d |
 
+Reseed status (Robotics / transform set, regenerated 2026-06-10 against the freshly
+bootstrapped instance — all three run idempotently and were GET-verified):
+
+| Seed | Collection appId | Result |
+|---|---|---|
+| `feat-trace3d` | minted per run (`--reset`) | ✓ **GREEN** — 4 TS refs (x/y/z/temp) + VIEW_RECIPE template; `POST /v2/shapes/render` JSON returns 4 DECLARED bindings AND `Accept: image/png` returns a real 800×600 / 39 KB PNG raster via `Trace3DPngRenderer` (after the JANDEX + FONTCONFIG fixes below) |
+| `feat-scenegraph` | minted per run | ✓ **GREEN** — synthetic 3-DOF URDF (FR1b) + joint TS ref → MAPPING_RECIPE materialized to a play-envelope: 4 frames / 3 joints / 3 channel→joint bindings via `SceneGraphPlayTransformExecutor` |
+| `feat-krl-transform` | minted per run | ✓ **GREEN** — KRL `.src` + URDF (FR1b) + MAPPING_RECIPE → `POST /v2/mappings/{appId}/materialize` calls the KRL interpreter sidecar and persists a derived joint-trajectory `TimeseriesReference` (GET-verified to resolve), after the Arc-unremovable fix below |
+
+**RESEED-FIND rows (Robotics / transform set):**
+
+- **RESEED-FIND-TRACE3D-JANDEX** (FIXED this PR) — `shepard-plugin-vis-trace3d` shipped with **no**
+  `quarkus.index-dependency` entry in `application.properties`. Consequence: any
+  `io.quarkus.logging.Log` call in the plugin throws
+  `UnsupportedOperationException` ("only possible with Quarkus bytecode
+  transformation; … include a beans.xml file"). When the plugin is enabled at
+  deploy time its `VisTrace3DPluginManifest.onRegister()` FAILS (plugin state
+  `FAILED`); the `Trace3DPngRenderer.renderMedia()` catch-block `Log.warnf` makes
+  `POST /v2/shapes/render` with `Accept: image/png` 422. The SPI ServiceLoader
+  registration (renderer + scene-graph executor) still works regardless, so the
+  JSON render + scene-graph materialize are unaffected. **Fix shipped this PR:**
+  added the `quarkus.index-dependency.shepard-plugin-vis-trace3d` block (same shape
+  as krl/video/ai) + `SHEPARD_PLUGINS_VIS_TRACE3D_ENABLED=true`; verified post-rebuild
+  the plugin loads cleanly (`state=ENABLED`) and the renderer reaches the actual
+  rasteriser instead of throwing on `Log`.
+- **RESEED-FIND-TRACE3D-FONTCONFIG** (FIXED this PR) — once the JANDEX fix let the
+  renderer reach the AWT rasteriser, the PNG path threw `RuntimeException: Fontconfig
+  head is null, check your fonts or fonts configuration` — the UBI9 backend runtime
+  image ships no fontconfig + no fonts, so headless AWT text rendering
+  (`Graphics2D.drawString`) can't initialise. The renderer fail-softs correctly
+  (catches, logs, returns the JSON view-model — HTTP 200, not 500). **Fix shipped this
+  PR:** `backend/Dockerfile` now `microdnf install -y fontconfig dejavu-sans-fonts`.
+  Verified post-rebuild: `POST /v2/shapes/render` with `Accept: image/png` returns a
+  real 800×600 / 39 KB PNG (magic `\x89PNG`).
+- **RESEED-FIND-KRL-BEANS** (FIXED this PR) — `feat-krl-transform`'s materialize
+  initially 422'd `KrlTrajectoryService … No bean found`. **Confirmed root cause**
+  (from the Arc startup log even after enabling at deploy time + adding the
+  index-dependency): *"At least one bean matched the required type … but was marked as
+  unused and removed during build."* The `KrlTrajectoryTransformExecutor` is a
+  ServiceLoader POJO that reaches its `@ApplicationScoped KrlTrajectoryService` via a
+  dynamic `CDI.current().select(KrlTrajectoryService.class)` lookup — Quarkus Arc's
+  build-time dead-code elimination can't see that dynamic reference, so it removes the
+  bean as unused. **Fix shipped this PR:**
+  `quarkus.arc.unremovable-types=de.dlr.shepard.v2.transform.krl.services.KrlTrajectoryService`
+  in `application.properties`. Verified post-rebuild: materialize calls the KRL sidecar
+  and persists a derived joint-trajectory `TimeseriesReference` (GET-verified). The
+  sibling `SceneGraphPlayTransformExecutor` did NOT hit this because its dynamic lookup
+  target (`SingletonFileReferenceService`) is a core bean other in-tree code already
+  `@Inject`s, so Arc keeps it.
+  Separately, `PluginRuntimeOverride` is "not a valid entity class" in the Neo4j OGM
+  scan, so the runtime `PATCH /v2/admin/plugins` toggle does not persist across
+  restart — deploy-time `SHEPARD_PLUGINS_*_ENABLED` env is the reliable path. Both the
+  Arc-unremovable and OGM-entity-registration bugs are core/plugin findings filed for
+  follow-up, not robotics-specific.
+- **RESEED-FIND-ROBOTICS-NO-MANIFEST** — `shepard-plugin-fileformat-robotics`
+  ships a JAR (`/deployments/lib/main/…-fileformat-robotics-…jar`) but does **not**
+  appear in `GET /v2/admin/plugins` at all — it carries no `PluginManifest`
+  (it is a `FileParserPlugin`-SPI-only module, mid-refactor per the working-tree
+  `META-INF/services/de.dlr.shepard.spi.fileparser.FileParserPlugin` move). The
+  robotics seeds don't depend on a robotics REST surface — they craft synthetic
+  URDF/KRL inline and exercise vis-trace3d + krl-interpreter — so this is a
+  catalogue note, not a blocker for the set.
+
 ### Quality / semantic set
 | Seed | Feature | Plugins |
 |---|---|---|
 | `feat-ncr-disposition` | AAA2 — NCR status + disposition + rework Predecessor chain | core |
 | `feat-semantic-sparql` | semantic annotations + SPARQL playground + vocabulary terms | core semantic |
 | `feat-fair-publish` | license/accessRights + metadata-completeness + cite-this-dataset | core (+ unhide optional) |
+
+Reseed status (Quality / semantic set, regenerated 2026-06-10 against the freshly
+bootstrapped instance — all three run green end-to-end and were GET-verified):
+
+| Seed | Collection appId | Result |
+|---|---|---|
+| `feat-ncr-disposition` | minted per run (`--reset`) | ✓ 2 DataObjects, 7 annotations, typed `fair2r:repairs` edge; quality `status` 403 (role-gated) recorded via annotations |
+| `feat-semantic-sparql` | minted per run | ✓ 3 coupons, 12 annotations read back; SPARQL endpoint SKIP (see RESEED-FIND-SPARQL) |
+| `feat-fair-publish` | minted per run | ✓ FAIR fields + citation + keyword; completeness self-score 95/100; 2 SKIP findings |
+
+**RESEED-FIND rows (open):**
+
+- **RESEED-FIND-SPARQL** — `GET /v2/semantic/internal/sparql` returns 400
+  `urn:shepard:error:sparql.upstream-error` ("n10s INTERNAL returned HTTP 404")
+  on the freshly bootstrapped instance: n10s `_GraphConfig` was initialised
+  *after* the bootstrap data landed, so the RDF/SPARQL projection is empty/
+  unqueryable. Annotations themselves are written + queryable as
+  `:SemanticAnnotation` nodes (`GET /v2/annotations`). Remediation:
+  `n10s.graphconfig.init` on an empty graph before data lands, or
+  `n10s.graphconfig.init(...,{force:true})` on a maintenance window.
+- **RESEED-FIND-ANN-LIST-403** — `GET /v2/annotations?subjectAppId=<Collection>`
+  returns 403 `annotations.forbidden` ("lacks Read permission on the subject
+  entity") even to the Collection's creator under API-key auth, while the
+  per-DataObject subject form works. The annotation POSTs succeed; only the
+  Collection-subject LIST is gated. Expectation: a Collection's creator/admin
+  should be able to list annotations on their own Collection.
+- **RESEED-FIND-UNHIDE-500** — `GET /v2/admin/unhide/config` returns 500
+  `internal.unexpected` on the freshly bootstrapped instance (singleton likely
+  not seeded). Non-blocking for `feat-fair-publish` (publishing is optional).
 
 ### MFFD demonstrator templates (synthetic mini-MFFD)
 | Seed | Feature | Plugins |
