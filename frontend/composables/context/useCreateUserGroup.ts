@@ -31,7 +31,7 @@ export async function createUserGroup(
   let created: UserGroupV2;
   try {
     created = await createV2({ name: userGroupName, usernames: [] });
-  } catch (error) {
+  } catch {
     handleError(
       `User group name "${userGroupName}" could not be created (it may already exist)`,
       "creating user group",
