@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -119,7 +120,8 @@ public class CollectionSnapshotRest {
     @Context SecurityContext sc
   ) {
     if (body == null || body.name() == null || body.name().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("name is required and must be non-blank").build();
+      return problem("/problems/snapshots.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "name is required and must be non-blank");
     }
 
     Response gate = checkAccess(collectionAppId, AccessType.Write, sc);
@@ -194,7 +196,12 @@ public class CollectionSnapshotRest {
     return Response.ok(rows).build();
   }
 
-  // ── private helper ────────────────────────────────────────────────────────
+  // ── private helpers ───────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   /**
    * Returns {@code null} when access is allowed; otherwise a short-circuit

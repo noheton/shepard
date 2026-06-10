@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.watches.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.watches.io.CreateWatchIO;
 import de.dlr.shepard.v2.watches.io.WatchIO;
 import de.dlr.shepard.v2.watches.services.WatchService;
@@ -49,6 +50,11 @@ public class CollectionWatchesRest {
 
   @Inject
   WatchService service;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @GET
   @Operation(
@@ -136,9 +142,8 @@ public class CollectionWatchesRest {
   ) {
     if (body == null || body.containerKind() == null || body.containerAppId() == null
         || body.containerAppId().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"containerKind and containerAppId are required\"}")
-        .build();
+      return problem("/problems/watches.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "containerKind and containerAppId are required");
     }
     WatchIO out = service.create(collectionAppId, body.containerKind(), body.containerAppId());
     return Response.status(Response.Status.CREATED).entity(out).build();

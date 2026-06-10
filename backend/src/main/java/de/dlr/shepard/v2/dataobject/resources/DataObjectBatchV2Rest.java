@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.dataobject.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.ShepardException;
@@ -73,6 +74,11 @@ public class DataObjectBatchV2Rest {
   /** Maximum number of items accepted in a single batch request. */
   static final int MAX_BATCH_SIZE = 500;
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   @Inject
   DataObjectService dataObjectService;
 
@@ -140,14 +146,12 @@ public class DataObjectBatchV2Rest {
 
     // ── size validation ────────────────────────────────────────────────────
     if (items == null || items.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"Batch must contain at least 1 item.\"}")
-        .build();
+      return problem("/problems/data-objects.batch.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Batch must contain at least 1 item.");
     }
     if (items.size() > MAX_BATCH_SIZE) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"Batch size " + items.size() + " exceeds the maximum of " + MAX_BATCH_SIZE + " items.\"}")
-        .build();
+      return problem("/problems/data-objects.batch.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Batch size " + items.size() + " exceeds the maximum of " + MAX_BATCH_SIZE + " items.");
     }
 
     // ── process items sequentially ─────────────────────────────────────────

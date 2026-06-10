@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.template.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
@@ -62,6 +63,11 @@ public class CollectionTemplatesRest {
 
   @Inject
   ShepardTemplateDAO templateDAO;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @Inject
   CollectionPropertiesDAO collectionPropsDAO;
@@ -160,13 +166,13 @@ public class CollectionTemplatesRest {
 
     Optional<ShepardTemplate> template = templateDAO.findByAppId(templateAppId);
     if (template.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).entity("No template with appId " + templateAppId).build();
+      return problem("/problems/templates.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No template with appId " + templateAppId);
     }
     ShepardTemplate t = template.get();
     if (t.isRetired()) {
-      // Retired templates aren't valid for new citations — pick a non-retired
-      // version (e.g. the latest by name+kind).
-      return Response.status(Response.Status.NOT_FOUND).entity("Template " + templateAppId + " is retired").build();
+      return problem("/problems/templates.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "Template " + templateAppId + " is retired");
     }
 
     boolean edgeCreated = templateDAO.recordUsageReportingCreation(collectionAppId, templateAppId);

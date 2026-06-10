@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
@@ -61,6 +62,11 @@ public class UserGroupV2Rest {
 
   @Inject
   UserGroupService service;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @GET
   @Operation(
@@ -148,8 +154,8 @@ public class UserGroupV2Rest {
   @Parameter(name = "appId", description = "UUID v7 application identifier.")
   public Response patchUserGroup(@PathParam("appId") String appId, JsonNode body) {
     if (body == null || body.isNull()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"patch body must not be null\"}").build();
+      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "patch body must not be null");
     }
     String newName = body.has("name") ? body.get("name").textValue() : null;
     List<String> newUsernames = null;
@@ -240,7 +246,8 @@ public class UserGroupV2Rest {
     @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "PATCH body must be a JSON object");
     }
     var group = service.getUserGroupByAppId(appId);
     var current = new PermissionsIO(service.getUserGroupPermissions(group.getId()));
