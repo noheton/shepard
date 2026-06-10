@@ -28,6 +28,9 @@ import DataObjectThermographyPane from "~/components/context/thermography/DataOb
 // this page, so the viewer pulls bytes from the reference (never a path/URL).
 import DataObjectOtvisViewer from "~/components/context/thermography/DataObjectOtvisViewer.vue";
 import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
+// MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3) — in-context lineage pane for
+// mffd:material-batch DataObjects. Mounts only when isMaterialBatchDo is true.
+import MaterialBatchTracePane from "~/components/context/mffd/MaterialBatchTracePane.vue";
 // MFFD-MULTIPLAYER-1 — synchronised multi-payload player. Mounts when the
 // DO carries ≥ 2 distinct payload kinds; renders a shared scrubber + a
 // per-kind tile grid all bound to one `useSyncedTimeCursor` instance.
@@ -280,9 +283,20 @@ const {
 // J1c retirement (2026-05-29): the dedicated notebooks panel + its counter
 // are gone. Notebooks now live as rows in the unified data-references table.
 const numberOfSemanticAnnotations = ref<number | undefined>(undefined);
-function onAnnotationsLoaded(annotations: { length: number }) {
+// MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3): detect mffd:material-batch DOs
+// from the semantic annotation list. We track the full array (not just the
+// count) so the batch-trace pane can mount conditionally without a second fetch.
+const loadedAnnotations = ref<Array<{ propertyIRI?: string }>>([]);
+function onAnnotationsLoaded(annotations: Array<{ propertyIRI?: string }>) {
   numberOfSemanticAnnotations.value = annotations.length;
+  loadedAnnotations.value = annotations;
 }
+/** True when this DataObject carries the urn:shepard:mffd:batch-id predicate. */
+const isMaterialBatchDo = computed<boolean>(() =>
+  loadedAnnotations.value.some(
+    a => a.propertyIRI === "urn:shepard:mffd:batch-id",
+  ),
+);
 // V2-SWEEP Wave 3: inline edits PATCH the v2 appId-keyed endpoint
 // (RFC 7396 merge-patch — only the changed fields go on the wire).
 // Mirrors useEditDataObject.ts; the route params are the appIds.
@@ -944,6 +958,20 @@ async function saveEmbargoEdit() {
                   <DataObjectOtvisViewer
                     :file-reference-app-id="otvisRef.appId"
                     :reference-name="otvisRef.name"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3): in-context
+                     pane showing every process step that consumed this
+                     material batch. Mounts only when the DO carries the
+                     urn:shepard:mffd:batch-id predicate (detected from
+                     the loaded SemanticAnnotation list). -->
+                <ExpansionPanelItem
+                  v-if="isMaterialBatchDo && dataObject.appId && collection.appId"
+                  title="Material Batch Consumers"
+                >
+                  <MaterialBatchTracePane
+                    :data-object-app-id="dataObject.appId"
+                    :collection-app-id="collection.appId"
                   />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.
