@@ -162,6 +162,12 @@ export function useRelatedEntities(
     return { ...dataObject, collection };
   }
 
+  // V1 EXCEPTION (V2-SWEEP Wave 4): the v2 counterpart
+  // `GET /v2/.../data-objects/{appId}/predecessors` returns DataObjectSummary
+  // (appId,id,name,status) only — this panel renders createdAt + full
+  // DataObject fields, so migrating today would lose data. Numeric ids are
+  // resolved from the loaded v2 entities (never route params). Backlog:
+  // PRED-V2-SHAPE in aidocs/16 (enrich the v2 shelves, then migrate).
   async function fetchPredecessors(
     collectionId: number,
     dataObjectId: number,
@@ -179,6 +185,8 @@ export function useRelatedEntities(
     return predecessors.map(pred => ({ ...pred, type: "Predecessor" }));
   }
 
+  // V1 EXCEPTION (V2-SWEEP Wave 4): see fetchPredecessors — same
+  // summary-only v2 shape gap (PRED-V2-SHAPE in aidocs/16).
   async function fetchSuccessors(
     collectionId: number,
     dataObjectId: number,

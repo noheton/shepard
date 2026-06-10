@@ -1,5 +1,4 @@
-import { DataObjectApi, DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 export interface PagedDataObjectsOptions {
@@ -73,7 +72,6 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const hasMore = ref(false);
 
   const v2Api = useV2ShepardApi(DataObjectV2Api);
-  const v1Api = useShepardApi(DataObjectApi);
 
   async function fetch() {
     const appId = collectionAppId.value;
@@ -83,30 +81,22 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
 
     loading.value = true;
     try {
-      let batch: DataObjectListItemV2[];
-      if (appId) {
-        // DB-OPT5: cast bypasses stale generated client that lacks the `fields`
-        // param — see FE-BUILD-03 in aidocs/16. Real fix is client regen.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
-          collectionAppId: appId,
-          name: nameFilter,
-          status: statusFilter,
-          page: currentPage,
-          size: pageSize,
-          include: includeTimeBounds ? 'time-bounds' : undefined,
-          fields: DO_LIST_FIELDS,
-        } as unknown as Parameters<typeof v2Api.value.listDataObjectsWithCount>[0]);
-        batch = fetched;
-        totalItems.value = fetchedTotal;
-      } else {
-        batch = (await v1Api.value.getAllDataObjects({
-          collectionId,
-          page: currentPage,
-          size: pageSize,
-        })) as DataObjectListItemV2[];
-        totalItems.value = null;
-      }
+      // V2-SWEEP Wave 4: v2-only — when the appId hasn't materialised yet,
+      // the stringified numeric id goes on the same v2 path (backend
+      // EntityIdResolver accepts both shapes). The v1 getAllDataObjects
+      // fallback is gone.
+      const identifier = appId ?? String(collectionId);
+      const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
+        collectionAppId: identifier,
+        name: nameFilter,
+        status: statusFilter,
+        page: currentPage,
+        size: pageSize,
+        include: includeTimeBounds ? 'time-bounds' : undefined,
+        fields: DO_LIST_FIELDS,
+      });
+      const batch: DataObjectListItemV2[] = fetched;
+      totalItems.value = fetchedTotal;
       items.value = batch;
       hasMore.value = batch.length >= pageSize;
     } catch (e) {

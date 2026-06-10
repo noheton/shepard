@@ -8,8 +8,6 @@ import DataObjectFileUpload from "~/components/context/data-object/upload-data/D
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
-import { DataObjectApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
@@ -47,18 +45,19 @@ definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
 
-// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE: useFetchCollection +
-// useFetchDataObject hit the v2 appId-keyed endpoints with the route param
-// strings (the route params are now UUIDs). Legacy numeric-id consumers
-// (useDataReferencesByDataObject, useRelatedEntities,
-// useSpatialDataReferencesForDataObject, the dataObjectApi PATCH, the
-// AnnotatedDataObject CRUD, and every v1 child panel) need the NUMERIC ids
-// which only the loaded v2 entities carry. We resolve them reactively
-// (loaded id wins, numeric-route-param fallback for legacy /collections/123
-// deep links) and feed the composables getters so they defer their fetch
-// until the numeric ids are available. The page body only renders once both
-// entities load, so within the template `collection.id` / `dataObject.id`
-// are the canonical numeric source.
+// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE + V2-SWEEP Wave 3:
+// useFetchCollection + useFetchDataObject hit the v2 appId-keyed endpoints
+// with the route param strings, and the inline edits PATCH the v2 endpoint
+// directly (see patchDataObjectV2 below). The remaining numeric-id
+// consumers (useDataReferencesByDataObject, useRelatedEntities,
+// useSpatialDataReferencesForDataObject, the AnnotatedDataObject CRUD, and
+// the v1 child panels) are documented exceptions — they need the NUMERIC
+// ids which only the loaded v2 entities carry (resolved reactively below;
+// loaded id wins, numeric-route-param fallback for legacy /collections/123
+// deep links — never a UUID coerced into a v1 call). Backlog rows:
+// REFS-V2-PANELS / ANNOT-V2 in aidocs/16. The page body only renders once
+// both entities load, so within the template `collection.id` /
+// `dataObject.id` are the canonical numeric source.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
 
@@ -275,7 +274,36 @@ const numberOfSemanticAnnotations = ref<number | undefined>(undefined);
 function onAnnotationsLoaded(annotations: { length: number }) {
   numberOfSemanticAnnotations.value = annotations.length;
 }
-const dataObjectApi = useShepardApi(DataObjectApi);
+// V2-SWEEP Wave 3: inline edits PATCH the v2 appId-keyed endpoint
+// (RFC 7396 merge-patch — only the changed fields go on the wire).
+// Mirrors useEditDataObject.ts; the route params are the appIds.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function patchDataObjectV2(body: Record<string, unknown>): Promise<void> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(collectionIdStr)}/data-objects/` +
+    `${encodeURIComponent(dataObjectIdStr)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/merge-patch+json",
+      Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+}
 
 const showAttributeEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
@@ -307,25 +335,14 @@ function cancelDescEdit() {
 }
 
 async function saveDescEdit() {
-  if (
-    !dataObject.value ||
-    collectionNumericId.value === undefined ||
-    dataObjectNumericId.value === undefined
-  )
-    return;
+  if (!dataObject.value) return;
   descSaving.value = true;
   try {
-    await dataObjectApi.value.updateDataObject({
-      collectionId: collectionNumericId.value,
-      dataObjectId: dataObjectNumericId.value,
-      dataObject: {
-        name: dataObject.value.name,
-        description: descDraft.value,
-        status: descStatusDraft.value ?? undefined,
-        attributes: dataObject.value.attributes ?? {},
-        parentId: dataObject.value.parentId,
-        predecessorIds: dataObject.value.predecessorIds ?? [],
-      },
+    // V2-SWEEP Wave 3: appId-keyed merge-patch — replaces the v1 full-body
+    // updateDataObject keyed on numeric ids.
+    await patchDataObjectV2({
+      description: descDraft.value,
+      status: descStatusDraft.value ?? null,
     });
     emitSuccess(`Description updated`);
     handleDataObjectUpdate();
@@ -407,29 +424,13 @@ function cancelEmbargoEdit() {
 }
 
 async function saveEmbargoEdit() {
-  if (
-    !dataObject.value ||
-    collectionNumericId.value === undefined ||
-    dataObjectNumericId.value === undefined
-  )
-    return;
+  if (!dataObject.value) return;
   embargoSaving.value = true;
   try {
-    await dataObjectApi.value.updateDataObject({
-      collectionId: collectionNumericId.value,
-      dataObjectId: dataObjectNumericId.value,
-      dataObject: {
-        name: dataObject.value.name,
-        description: dataObject.value.description,
-        status: (dataObject.value as unknown as { status?: string }).status,
-        attributes: dataObject.value.attributes ?? {},
-        parentId: dataObject.value.parentId,
-        predecessorIds: dataObject.value.predecessorIds ?? [],
-        // FAIR3: pass embargoEndDate through the update. Null/empty clears it.
-        ...(embargoDraft.value
-          ? { embargoEndDate: embargoDraft.value }
-          : { embargoEndDate: null }),
-      } as Parameters<typeof dataObjectApi.value.updateDataObject>[0]["dataObject"],
+    // V2-SWEEP Wave 3: appId-keyed merge-patch — only the embargo field
+    // travels. Null/empty clears it (FAIR3).
+    await patchDataObjectV2({
+      embargoEndDate: embargoDraft.value ? embargoDraft.value : null,
     });
     emitSuccess("Embargo end date updated");
     handleDataObjectUpdate();

@@ -13,26 +13,28 @@ const {
   isAllowedToEditPermissions,
   isOwner,
 } = useFetchCollectionOfRouteParams(routeParams);
-// BUG-COLL-APPID-ROUTE-006 (2026-06-03): resolve the NUMERIC collection id
-// from the loaded v2 Collection's `.id` and pass it to `useTreeviewItems`,
-// which uses it for the v1 list call (`getAllDataObjects` requires a
-// numeric path param; the UUID v7 route param would 400 at JAX-RS binding).
-// Until the v2 Collection fetch resolves, the treeview shows its loading
-// spinner; if it never resolves the treeview shows `loadError` instead of
-// spinning forever.
-const collectionNumericId = computed<number | undefined>(() =>
-  collection.value?.id ?? undefined,
-);
+// V2-SWEEP Wave 1 (2026-06-10): the tree loads from the v2 appId-keyed list
+// (`GET /v2/collections/{collectionAppId}/data-objects`) using the route
+// param directly — no numeric-collection-id gate (the BUG-COLL-APPID-ROUTE-006
+// plumbing this replaces left the sidebar spinning on appId-only data).
 const {
   treeviewItems,
   openedTreeviewItems,
   loading,
   loadError,
-  loadChildrenOfItem,
   refreshItems,
   collapseItem,
-} = useTreeviewItems(routeParams, collectionNumericId);
+} = useTreeviewItems(routeParams);
 const { advancedMode: _advancedMode } = useAdvancedMode();
+
+// SIDEBAR-V2-CREATE (aidocs/16): CreateDataObjectDialog's blank form still
+// uses the v1 `createDataObject` + v1-backed Parent/Predecessor inputs (no
+// v2 create wired in the dialog yet). Per the documented-exception rule the
+// numeric id is resolved from the loaded v2 Collection entity's `.id` at
+// call time — never from the route param.
+const collectionNumericId = computed<number | undefined>(() =>
+  collection.value?.id ?? undefined,
+);
 
 const collectionAppId = computed<string | undefined>(() => {
   const raw = (collection.value as unknown as { appId?: string | null })?.appId;
@@ -125,9 +127,9 @@ const filteredItems = computed<TreeviewItem[]>(() => {
 function collectAncestorIds(
   items: TreeviewItem[],
   needle: string,
-): Set<number> {
+): Set<string> {
   const lower = needle.toLowerCase();
-  const ids = new Set<number>();
+  const ids = new Set<string>();
 
   function walk(node: TreeviewItem): boolean {
     const selfMatch = node.title.toLowerCase().includes(lower);
@@ -154,30 +156,18 @@ function collectAncestorIds(
  * While filtering, we augment the user's opened set with ancestors of matches
  * so matched children are immediately visible without a manual expand.
  */
-const effectiveOpenedItems = computed<number[]>(() => {
+const effectiveOpenedItems = computed<string[]>(() => {
   const needle = filterText.value.trim();
   if (!needle || !treeviewItems.value) return openedTreeviewItems.value;
   const ancestors = collectAncestorIds(treeviewItems.value, needle);
   if (ancestors.size === 0) return openedTreeviewItems.value;
-  const merged = new Set<number>([...openedTreeviewItems.value, ...ancestors]);
+  const merged = new Set<string>([...openedTreeviewItems.value, ...ancestors]);
   return Array.from(merged);
 });
 
-async function onOpenClicked(expandGroup: {
-  id: unknown;
-  value: boolean;
-  path: unknown[];
-}) {
-  if (!treeviewItems.value) return;
-  // do not handle any specific case when closing group
-  if (expandGroup.value === false) return;
-  if (typeof expandGroup.id !== "number") return;
-
-  loadChildrenOfItem(expandGroup.id);
-}
-
 function onActivated(activeItems: unknown) {
   if (Array.isArray(activeItems) && activeItems.length) {
+    // V2-SWEEP Wave 1: item values are appIds — the route carries the appId.
     router.push(
       collectionsPath +
         routeParams.value.collectionId +
@@ -187,12 +177,11 @@ function onActivated(activeItems: unknown) {
   }
 }
 
-function onDeleted(deletedItemId: number) {
+function onDeleted(deletedItemId: string) {
   collapseItem(deletedItemId);
   refreshItems();
-  // BUG-COLL-APPID-ROUTE-001: routeParams.dataObjectId is now string; compare
-  // stringified for safe match across legacy-numeric + UUID-v7 shapes.
-  if (routeParams.value.dataObjectId === String(deletedItemId)) {
+  // V2-SWEEP Wave 1: both sides are appId strings now.
+  if (routeParams.value.dataObjectId === deletedItemId) {
     router.push(collectionsPath + routeParams.value.collectionId);
   }
 }
@@ -297,9 +286,8 @@ const { mobile } = useDisplay();
           mandatory
           collapse-icon="mdi-chevron-down"
           expand-icon="mdi-chevron-right"
-          @update:opened="(val: number[]) => openedTreeviewItems = val"
+          @update:opened="(val: string[]) => openedTreeviewItems = val"
           @update:activated="onActivated"
-          @click:open="onOpenClicked"
         >
           <template #prepend="{ item }">
             <v-icon
@@ -310,9 +298,10 @@ const { mobile } = useDisplay();
           </template>
 
           <template #title="{ item }">
+            <!-- V2-SWEEP Wave 1: item.id is the appId — links carry appIds. -->
             <CollectionSidebarEntry
               :title="item.title"
-              :is-focused="routeParams.dataObjectId === String(item.id)"
+              :is-focused="routeParams.dataObjectId === item.id"
               :to="
                 collectionsPath +
                 `${routeParams.collectionId}` +
@@ -325,10 +314,11 @@ const { mobile } = useDisplay();
           <template #append="{ item }">
             <CollectionSidebarItemContextMenu
               v-if="isAllowedToEditCollection"
-              :collection-id="(routeParams.collectionId as unknown as number)"
+              :collection-id="routeParams.collectionId"
               :collection-app-id="collectionAppId"
+              :collection-numeric-id="collectionNumericId"
               :data-object-id="item.id"
-              :parent-id="item.parentId"
+              :data-object-numeric-id="item.numericId"
               :item-name="item.title"
               @data-object-created="refreshItems"
               @data-object-updated="refreshItems"
@@ -392,10 +382,13 @@ const { mobile } = useDisplay();
       </v-expansion-panel>
     </v-expansion-panels>
   </div>
+  <!-- SIDEBAR-V2-CREATE (aidocs/16): the create dialog's blank form is still
+       v1-backed and needs the numeric collection id, resolved from the loaded
+       v2 Collection entity (never the route param). -->
   <CreateDataObjectDialog
     v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
-    :collection-id="(routeParams.collectionId as unknown as number)"
+    :collection-id="(collectionNumericId as unknown as number)"
     :collection-app-id="collectionAppId"
     @data-object-created="refreshItems"
   />

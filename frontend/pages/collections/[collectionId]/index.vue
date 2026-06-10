@@ -40,12 +40,20 @@ const {
   isError: isCollectionError,
   notFound: isCollectionNotFound,
 } = useFetchCollection(collectionIdStr);
+// V2-SWEEP Wave 3: the remaining `collectionNumericId` consumers are the
+// still-v1-backed child components (CollectionLineageGraph,
+// CollectionCrossTrackViewPane, CollectionDataObjectsPanel, MffdNdtGridCard,
+// CreateDataObjectDialog blank form) and the v1 streaming export below —
+// each a documented exception resolved from the loaded v2 entity's `.id`
+// (never the route param). Backlog: LINEAGE-V2 / SIDEBAR-V2-CREATE /
+// EXPORT-V2-STREAM in aidocs/16.
 const collectionNumericId = computed<number | undefined>(() =>
   resolveNumericId(collection.value?.id, routeParams.value.collectionId),
 );
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
-const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionNumericId);
-const collectionApi = useShepardApi(CollectionApi);
+// V2-SWEEP Wave 3: the DataObject id→name map loads from the v2 appId-keyed
+// list — the route param goes straight in.
+const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionIdStr);
 
 const showAttributeEditDialog = ref(false);
 const showCreateDataObjectDialog = ref(false);
@@ -68,18 +76,30 @@ function cancelDescEdit() {
 }
 
 async function saveDescEdit() {
-  if (!collection.value || collectionNumericId.value === undefined) return;
+  if (!collection.value) return;
   descSaving.value = true;
   try {
-    await collectionApi.value.updateCollection({
-      collectionId: collectionNumericId.value,
-      collection: {
-        name: collection.value.name,
-        description: descDraft.value,
-        status: descStatusDraft.value ?? undefined,
-        attributes: collection.value.attributes ?? {},
+    // V2-SWEEP Wave 3: PATCH /v2/collections/{collectionAppId} (RFC 7396
+    // merge-patch) — appId-keyed, sends only the changed fields. Replaces
+    // the v1 full-body updateCollection keyed on the numeric id.
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const resp = await fetch(
+      `${repV2BaseUrl()}/v2/collections/${encodeURIComponent(collectionIdStr)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/merge-patch+json",
+          Accept: "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          description: descDraft.value,
+          status: descStatusDraft.value ?? null,
+        }),
       },
-    });
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     emitSuccess(`Description updated`);
     handleCollectionUpdate();
     descEditActive.value = false;
@@ -94,6 +114,12 @@ async function downloadRoCrate() {
   if (isExporting.value || collectionNumericId.value === undefined) return;
   isExporting.value = true;
   try {
+    // V1 EXCEPTION (V2-SWEEP Wave 3): the v2 counterpart
+    // `POST /v2/collections/{appId}/export-url` returns 503 on storage
+    // backends without presigned support and points callers back to this
+    // v1 streaming export — so the streaming path has no full v2
+    // equivalent yet. Numeric id is resolved from the loaded v2 entity
+    // (never the route param). Backlog: EXPORT-V2-STREAM in aidocs/16.
     const blob = await useShepardApi(CollectionApi).value.exportCollection({
       collectionId: collectionNumericId.value,
     });

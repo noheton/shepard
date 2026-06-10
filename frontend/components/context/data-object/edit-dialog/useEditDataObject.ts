@@ -25,8 +25,10 @@ function v2BaseUrl(): string {
 }
 
 export function useEditDataObject(
-  collectionId: number,
-  dataObjectId: number,
+  // V2-SWEEP Wave 1: appId (UUID v7) strings or legacy numerics — both
+  // stringify into the v2 path, resolved by the backend EntityIdResolver.
+  collectionId: number | string,
+  dataObjectId: number | string,
   isValid: Ref<boolean>,
   onSuccess: () => void,
 ) {
