@@ -43,7 +43,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from _client import ShepardError, add_common_args, client_from_args  # noqa: E402
+from _client_mffd import ShepardError, add_common_args, client_from_args  # noqa: E402
 
 SLUG = "feat-cad-plybook"
 COLLECTION_NAME = SLUG

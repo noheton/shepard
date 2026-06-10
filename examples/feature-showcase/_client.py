@@ -305,26 +305,3 @@ def log(action: str, name: str, kind: str, ident: object = "") -> None:
     tail = f"  [{ident}]" if ident != "" else ""
     print(f"  {action:5s} {kind}: {name}{tail}", flush=True)
 
-
-# ── ported from the MFFD set's _client variant (merge keep-ours reconciliation) ──
-
-class ShepardError(RuntimeError):
-    def __init__(self, status: int, body: str, url: str):
-        super().__init__(f"HTTP {status} on {url}: {body[:300]}")
-        self.status = status
-        self.body = body
-        self.url = url
-
-
-def add_common_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--host", default=os.environ.get("BACKEND_URL", "http://localhost:8080"),
-        help="Shepard backend root or /shepard/api base URL.",
-    )
-    parser.add_argument(
-        "--apikey", default=os.environ.get("API_KEY", ""),
-        help="Shepard JWT API key (or set API_KEY env var). See _client.py docstring to mint one.",
-    )
-    parser.add_argument("--reset", action="store_true", help="Delete + recreate the feat-* collection.")
-
-
