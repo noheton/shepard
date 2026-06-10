@@ -172,6 +172,46 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     spatialDataReferenceDAO.createOrUpdate(spatialDataReference);
   }
 
+  /**
+   * SPATIAL-UNIFY-002 — find a {@link SpatialDataReference} by its
+   * {@code appId} (UUID v7). Returns {@code null} when not found. Used by the
+   * unified {@code /v2/references?kind=spatial} dispatch ({@code findByAppId},
+   * {@code patch}, {@code delete}).
+   *
+   * @param appId the reference's appId
+   * @return the reference, or {@code null} if not found
+   */
+  public SpatialDataReference findByAppId(String appId) {
+    return spatialDataReferenceDAO.findByAppId(appId);
+  }
+
+  /**
+   * SPATIAL-UNIFY-002 — list all {@link SpatialDataReference} nodes attached
+   * to the DataObject identified by its {@code appId}. The appId-keyed list
+   * path the unified surface needs.
+   *
+   * @param dataObjectAppId parent DataObject's appId
+   * @return the references (may be empty, never null)
+   */
+  public List<SpatialDataReference> listByDataObjectAppId(String dataObjectAppId) {
+    return spatialDataReferenceDAO.findByDataObjectAppId(dataObjectAppId);
+  }
+
+  /**
+   * SPATIAL-UNIFY-002 — soft-delete a {@link SpatialDataReference} resolved by
+   * its {@code appId} (UUID v7). The owning DataObject's write permission is
+   * gated by the unified resource before this is invoked.
+   *
+   * @param ref the reference to delete (already resolved by appId)
+   */
+  public void delete(SpatialDataReference ref) {
+    User user = userService.getCurrentUser();
+    ref.setDeleted(true);
+    ref.setUpdatedBy(user);
+    ref.setUpdatedAt(dateHelper.getDate());
+    spatialDataReferenceDAO.createOrUpdate(ref);
+  }
+
   public List<SpatialDataPointIO> getReferencePayload(
     long collectionShepardId,
     long dataObjectShepardId,

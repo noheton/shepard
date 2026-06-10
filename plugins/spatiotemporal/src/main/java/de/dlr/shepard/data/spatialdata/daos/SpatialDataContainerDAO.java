@@ -47,6 +47,27 @@ public class SpatialDataContainerDAO extends GenericDAO<SpatialDataContainer> {
     return name == null || container.getName().equalsIgnoreCase(name);
   }
 
+  /**
+   * SPATIAL-UNIFY-002/004 — find one non-deleted {@link SpatialDataContainer}
+   * by its {@code appId} (UUID v7). Returns {@code null} when not found. The
+   * appId-keyed read path the unified surface + the promote endpoint need;
+   * the container appId never appears on the wire as a first-class user
+   * concept, but the unified create-by-container path resolves it here.
+   *
+   * @param appId the container's appId
+   * @return the container, or {@code null} if not found or deleted
+   */
+  public SpatialDataContainer findByAppId(String appId) {
+    String query =
+      "MATCH " +
+      CypherQueryHelper.getObjectPart("c", "SpatialDataContainer", false) +
+      " WHERE c.appId = $appId " +
+      CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    var container = iter.hasNext() ? iter.next() : null;
+    return (container == null || container.isDeleted()) ? null : container;
+  }
+
   @Override
   public Class<SpatialDataContainer> getEntityType() {
     return SpatialDataContainer.class;
