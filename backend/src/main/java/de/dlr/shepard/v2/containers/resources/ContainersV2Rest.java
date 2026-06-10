@@ -8,6 +8,7 @@ import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
+import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -341,6 +342,50 @@ public class ContainersV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     }
+  }
+
+  // ─── payload versioning ────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/files/{fileName}/versions")
+  @Operation(
+    summary = "List all payload versions for a named file in a container by appId.",
+    description =
+      "Returns the complete upload history for the file identified by `fileName` within " +
+      "the container at `appId`, ordered by `versionNumber` ascending (oldest first). " +
+      "Supported for `file` and `structured-data` kind containers. Other kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-PV-UNIFY — replaces per-kind " +
+      "`/v2/file-containers/{appId}/files/{name}/versions` and " +
+      "`/v2/structured-data-containers/{appId}/files/{name}/versions`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Version list (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PayloadVersionIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind does not support file-payload versioning.")
+  public Response listVersions(
+    @PathParam("appId") String appId,
+    @PathParam("fileName") String fileName,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var versionsOpt = resolved.get().handler().listVersions(appId, fileName);
+    if (versionsOpt.isEmpty()) {
+      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+        .entity("Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning")
+        .build();
+    }
+    return Response.ok(versionsOpt.get()).build();
   }
 
   // ─── permissions ───────────────────────────────────────────────────────

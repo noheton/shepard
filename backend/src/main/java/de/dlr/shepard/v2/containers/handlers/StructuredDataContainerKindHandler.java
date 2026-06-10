@@ -5,17 +5,20 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
+import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * V2CONV-A3 — in-tree {@link ContainerKindHandler} for
@@ -32,6 +35,9 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
 
   @Inject
   StructuredDataContainerDAO dao;
+
+  @Inject
+  PayloadVersionDAO payloadVersionDAO;
 
   @Inject
   UserService userService;
@@ -100,5 +106,17 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
     var params = new QueryParamHelper();
     if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
     return service.getAllContainers(params).stream().map(this::toIO).toList();
+  }
+
+  @Override
+  public Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
+    return Optional.of(
+      payloadVersionDAO.findByContainerAndName(appId, fileName).stream()
+        .map(v -> new PayloadVersionIO(
+          v.getAppId(), v.getVersionNumber(), v.getFileOid(),
+          v.getSha256(), v.getSizeBytes(), v.getUploadedBy(), v.getUploadedAt()
+        ))
+        .toList()
+    );
   }
 }

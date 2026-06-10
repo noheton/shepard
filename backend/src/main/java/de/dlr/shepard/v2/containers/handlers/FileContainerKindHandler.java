@@ -7,16 +7,19 @@ import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
+import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * V2CONV-A3 — in-tree {@link ContainerKindHandler} for {@code kind=file}.
@@ -33,6 +36,9 @@ public class FileContainerKindHandler implements ContainerKindHandler {
 
   @Inject
   FileContainerDAO dao;
+
+  @Inject
+  PayloadVersionDAO payloadVersionDAO;
 
   @Inject
   UserService userService;
@@ -107,5 +113,17 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     var params = new QueryParamHelper();
     if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
     return service.getAllContainers(params).stream().map(this::toIO).toList();
+  }
+
+  @Override
+  public Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
+    return Optional.of(
+      payloadVersionDAO.findByContainerAndName(appId, fileName).stream()
+        .map(v -> new PayloadVersionIO(
+          v.getAppId(), v.getVersionNumber(), v.getFileOid(),
+          v.getSha256(), v.getSizeBytes(), v.getUploadedBy(), v.getUploadedAt()
+        ))
+        .toList()
+    );
   }
 }
