@@ -83,35 +83,33 @@ malformed file:
 | Filename does not match `S_M_L_F` pattern | All four MFFD grid annotations are dropped; acquisition annotations still emit. |
 | Both DataObject and FileReference appIds absent | Zero annotations emitted (nothing to anchor on). |
 
-## 4.5. NDT quality score + plate heatmap (MFFD-NDT-QUALITY-1, 2026-06-02)
+## 4.5. NDT quality score + plate heatmap (MFFD-NDT-QUALITY-1, 2026-06-02; V2CONV-A7-THERMO, 2026-06-10)
 
-A complementary surface ships in the main backend (not in this plugin —
-see "Why in-tree" below): `POST /v2/thermography/analyze` and
-`GET /v2/thermography/{imageBundleAppId}/plate-heatmap`. These compute
-per-frame statistics on TIFF bundles and surface a DataObject-level
-quality score for the MFFD upper-shell NDT use case.
+The composite plate-heatmap surfaces through the **generic
+`POST /v2/shapes/render`** endpoint (V2CONV-A7-THERMO — the bespoke
+`/v2/thermography/*` REST is dissolved). A *file-rooted* render names the
+`ThermographyHeatmapShape` IRI + the TIFF `FileBundleReference` appId; the
+plugin's `ThermographyHeatmapRenderer` returns the cached grid
+(`PlateHeatmapIO`) as its own `application/json` view-model.
 
-### 4.5.1 Endpoints
+**Analysis runs at upload time** via the thermography file-parse side-effect
+(per V2CONV-A7-THERMO) — there is no user-triggered analyze REST call. The
+per-frame statistics + DataObject-level quality score are computed once on
+ingest and cached as `urn:shepard:ndt:*` annotations.
 
-| Verb | Path | Body | Returns |
-|---|---|---|---|
-| `POST` | `/v2/thermography/analyze` | `AnalyzeRequestIO` | `AnalyzeResultIO` |
-| `GET`  | `/v2/thermography/{imageBundleAppId}/plate-heatmap` | — | `PlateHeatmapIO` |
+### 4.5.1 Render call (plate heatmap)
 
-`AnalyzeRequestIO`:
-
-```json
-{ "imageBundleAppId": "0197b6a2-...", "thresholdC": 80.0, "gridWidth": 64, "gridHeight": 64 }
+```jsonc
+// POST /v2/shapes/render   (Accept: application/json)
+{
+  "shapeIri": "http://semantics.dlr.de/shepard-ui/thermography/transform#ThermographyHeatmapShape",
+  "focusFileRefAppId": "0197b6a2-..."   // the TIFF FileBundleReference appId
+}
+// 200 → PlateHeatmapIO ; 422 (code render.not-analyzed) when never analyzed
 ```
 
-`thresholdC`, `gridWidth`, `gridHeight` are optional; deploy defaults
-(`shepard.v2.thermography.threshold-c=80.0`,
-`shepard.v2.thermography.grid-width=64`,
-`shepard.v2.thermography.grid-height=64`) apply when omitted.
-
-`AnalyzeResultIO` summary fields: `framesAnalyzed`, `framesSkipped`,
-`maxPeakDeltaC`, `meanOfMeanDeltaC`, `maxC`, `thresholdC`, `qualityScore`,
-`hotspotCentroidX`, `hotspotCentroidY`, `annotationsWritten`.
+`200` heatmap grid · `401` unauth · `403` no Read on parent DO ·
+`422` (`render.not-analyzed`) bundle never analyzed.
 
 `PlateHeatmapIO`: `width`, `height`, `cells` (row-major `[h][w]` floats,
 degrees Celsius), `minTemp`, `maxTemp`, `thresholdTemp`, `frameCount`.
@@ -159,20 +157,25 @@ the bundle are wiped before the re-write. The DO-level `quality-score`
 takes the `min` of the existing value and the new computation so a
 second bundle with a worse region replaces an earlier permissive score.
 
-### 4.5.4 Why in-tree, not in this plugin
+### 4.5.4 Renderer wiring (V2CONV-A7-THERMO)
 
-This plugin is currently standalone (NOT wired into the backend
-aggregator) because of the Quarkus / Jandex `CompositeIndex` hang in
-the main backend — see `OTVIS-WIRE-AGGREGATOR-1`. Plugin-resident
-classes cannot serve a `/v2/` REST endpoint until that's fixed.
+The analysis + heatmap classes (`ThermographyAnalysisService`,
+`OtvisFrameRenderService`, the IO records) live in this plugin (Tier-1,
+backend dep). Viewing is exposed through two `ViewRecipeRenderer`
+registrations on the generic `/v2/shapes/render` endpoint — no bespoke
+plugin REST resource remains:
 
-The MFFD-NDT-QUALITY-1 implementation therefore lives at
-`backend/src/main/java/de/dlr/shepard/v2/thermography/` so it can be
-called immediately. A follow-up row `MFFD-THERMO-MOVE-TO-PLUGIN-1`
-will relocate the code into this plugin once
-`OTVIS-WIRE-AGGREGATOR-1` lands. The wire shape (REST paths +
-annotation predicates) does not change with the move — operators won't
-notice the transplant.
+| Renderer | Shape IRI | Output |
+|---|---|---|
+| `ThermographyHeatmapRenderer` | `…/transform#ThermographyHeatmapShape` | `application/json` plate-heatmap grid (`PlateHeatmapIO`) |
+| `OtvisFrameRenderer` | `…/transform#OtvisFrameShape` | frame catalogue JSON (`params.mode=index`) / frame heatmap PNG (`params.frame`+`params.channel`) |
+
+Both are registered via
+`META-INF/services/de.dlr.shepard.spi.view.ViewRecipeRenderer`. The
+heatmap renderer reaches the request-scoped analysis service via
+`CDI.current()` (it reads cached annotations); the OTvis frame renderer
+reads bytes through the render dispatcher's `FocusPayloadResolver`
+(V2CONV-A1b E3) — no decode logic is rewritten.
 
 ## 5. Out-of-scope (tier-2+)
 
@@ -212,54 +215,45 @@ public interface FileParserPlugin {
 Implementation: `OTvisParser.accepts(...)` matches on extension
 `.OTvis` (case-insensitive) or MIME type `application/x-tar`.
 
-## 6.5 REST surface — decoded-frame viewer (OTVIS-VIEWER)
+## 6.5 Render surface — decoded-frame viewer (OTVIS-VIEWER; V2CONV-A7-THERMO)
 
 Tier-2 frame extraction (`OTvisFrameExtractor` → amplitude / phase /
-raw-calibrated) is surfaced over REST so the frontend renders the
-**actual decoded heatmap frames** (distinct from the §4.5
-plate-heatmap, which works on a `FileBundleReference` of pre-rendered
-TIFFs). The endpoints live on the existing
-`de.dlr.shepard.v2.thermography.resources.ThermographyV2Rest`
-(`/v2/thermography`).
+raw-calibrated) is surfaced through the **generic `POST /v2/shapes/render`**
+(V2CONV-A7-THERMO — the bespoke `/v2/thermography/otvis/*` REST is
+dissolved) so the frontend renders the **actual decoded heatmap frames**
+(distinct from the §4.5 plate-heatmap on pre-rendered TIFFs). The
+`OtvisFrameRenderer` (`ViewRecipeRenderer`) claims the
+`OtvisFrameShape` IRI and serves both the frame catalogue and the
+per-frame heatmap PNG.
 
-The backend depends on this plugin as a **plain-Java jar** (the
-extractor has no Quarkus/CDI surface, so — like
-`shepard-plugin-fileformat-svdx` — it does **not** worsen the Jandex
-`CompositeIndex` hang that blocks `OTVIS-WIRE-AGGREGATOR-1`). The
-extractor is invoked directly; the `FileParserPlugin` SPI shim stays
-unused until the aggregator wire-up lands.
+Both calls take a **singleton `FileReference` appId** (FR1b) of the
+`.OTvis` archive as `focusFileRefAppId`. The render dispatcher resolves the
+bytes via the `FocusPayloadResolver` (V2CONV-A1b E3) and the renderer
+decodes with `OTvisFrameExtractor`. Read is enforced against the
+reference's parent DataObject upstream of the renderer. The viewer never
+sees a path/URL (per the "UI never asks for paths/URLs" rule).
 
-Both endpoints take a **singleton `FileReference` appId** (FR1b) of
-the `.OTvis` archive. The backend resolves the bytes via
-`SingletonFileReferenceService.getPayload(appId)` and decodes with
-`OTvisFrameExtractor`. Read is enforced against the reference's parent
-DataObject. The viewer never sees a path/URL (per the
-"UI never asks for paths/URLs" rule).
-
-### `GET /v2/thermography/otvis/{fileReferenceAppId}/frames`
-
-Frame index, no pixel data:
+### Frames catalogue — `POST /v2/shapes/render` (`params.mode=index`, Accept: application/json)
 
 ```jsonc
-// 200 OK
-{
-  "fileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
-  "width": 1024, "height": 768, "frameCount": 2,
-  "frames": [
-    { "index": 0, "kind": "lockin", "channels": ["amplitude","phase"], "defaultChannel": "phase" },
-    { "index": 1, "kind": "raw",    "channels": ["temperature"],        "defaultChannel": "temperature" }
-  ],
-  "partialReason": null   // non-null → fail-soft tolerance notes (unknown DataFormat, truncation, …)
-}
+// request
+{ "shapeIri": "…/transform#OtvisFrameShape", "focusFileRefAppId": "019e7243-…", "params": { "mode": "index" } }
+// 200 → ShapesRenderResponseIO; one channelBinding per frame:
+//   role=frame index, channelSelector=kind (lockin|raw), unit=defaultChannel
 ```
 
-`200` ok · `401` unauth · `403` no Read on parent DO · `404` no
-singleton FileReference with that appId · `422` not a decodable OTvis
-archive.
+The frontend reconstructs the per-frame channel list from the kind
+(`utils/otvisViewer.ts → parseFramesIndex` / `channelsForKind`). `401`
+unauth · `403` no Read on parent DO · `422` not a decodable OTvis archive.
 
-### `GET /v2/thermography/otvis/{fileReferenceAppId}/frames/{n}?channel=...`
+### Frame heatmap — `POST /v2/shapes/render` (`params.frame`+`params.channel`, Accept: image/png)
 
-Colour-mapped heatmap **PNG** (`image/png`) for frame `n`:
+```jsonc
+// request
+{ "shapeIri": "…/transform#OtvisFrameShape", "focusFileRefAppId": "019e7243-…", "params": { "frame": "0", "channel": "phase" } }
+```
+
+Colour-mapped heatmap **PNG** (`image/png`) for the named frame:
 
 | Frame kind | valid `channel` | default |
 |---|---|---|
@@ -272,8 +266,8 @@ wraps at ±π, so a discontinuous ramp misleads). Phase is the canonical
 NDT defect channel — least sensitive to surface emissivity and uneven
 heating.
 
-`200` PNG · `401` · `403` · `404` · `422` (bad archive / frame index /
-channel).
+`200` PNG · `401` · `403` · `422` (bad archive / frame index / channel).
+`params.frame` defaults to `0` when omitted.
 
 **Serving-shape note.** v1 re-decodes the bounded archive per request
 and renders one PNG. Full OME-Zarr (chunked, multiscale, napari-pannable)

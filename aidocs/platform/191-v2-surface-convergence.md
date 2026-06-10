@@ -250,7 +250,7 @@ CRUD, the scene-graph editor, KRL REST). Outstanding verdicts:
 
 | Resource | Verdict | Reason |
 |---|---|---|
-| `/v2/thermography/*` (`ThermographyV2Rest`, fileformat-thermography) | **MIGRATE-FIRST** | 4 live FE callers (`DataObjectThermographyPane`, `DataObjectOtvisViewer`, `MultiPlayerThermographyTile`, `otvisViewer.ts`) + Vitest + showcase seed. Replacement `POST /v2/shapes/render` is live (probe → 405 POST-only). Build the heatmap/otvis-frame view-shapes + repoint FE before deleting (A7-THERMO-REST-DISSOLVE). |
+| `/v2/thermography/*` (`ThermographyV2Rest`, fileformat-thermography) | **✓ DISSOLVED 2026-06-10** | Migrated onto `POST /v2/shapes/render` via two `ViewRecipeRenderer`s (`OtvisFrameRenderer` + `ThermographyHeatmapRenderer`); all 5 FE callers repointed; `ThermographyV2Rest` + `AnalyzeRequestIO` deleted. On the `V2CONV-A1b-RENDER-PARAMS` contract extension (E1–E4). See A7-THERMO-REST-DISSOLVE + A1b rows in `aidocs/16`. |
 | `/v2/svdx/ingest` (`SvdxIngestRest`, fileformat-svdx) | **DECOMMISSION-DECISION** | Real CSV→TimescaleDB ingest (parses TwinCAT `.csv`, writes channels via `TimeseriesService`), **NOT** an upload side-effect — the §7 "no REST at all" premise is wrong. Live (probe → 405). No FE caller; only the welding showcase seed. Not superseded → operator chooses keep (recommended) vs decommission. If kept, it is a deliberate non-Tier-3 exception: CSV→TS ingest has no generic-surface equivalent. |
 | `/v2/hdf-containers/{appId}` + `/file` (`HdfContainerRest`, hdf5) | **MIGRATE-FIRST** | Live FE `pages/containers/hdf/[containerId]/index.vue` (GET/DELETE/`/file`). `/v2/containers?kind=hdf` list is live (probe → 200) but the `/{appId}/file` raw-download sub-resource is functional and **not** covered by the unified list — preserve it on the unified surface first (A7-HDF-UNIFY). |
 | `/v2/collections/{appId}/scene-graph` (`CollectionSceneGraphRest`, hero-link) | **KEEP-FUNCTIONAL** | Live FE `CollectionSceneGraphHeader`. This is the link/unlink-a-MAPPING_RECIPE-to-a-Collection feature — distinct from the already-deleted `/v2/scene-graphs/*` editor; not superseded. |
@@ -260,7 +260,21 @@ CRUD, the scene-graph editor, KRL REST). Outstanding verdicts:
 Net for this pass: **0 endpoints deleted** (no resource is both superseded
 and zero-caller). The migrate-then-delete order lives in the A7-* rows.
 
-### 7b. A7-THERMO — render-contract blocker (`[NEEDS-DECISION]`, 2026-06-10)
+### 7b. A7-THERMO — render-contract extension (✓ RESOLVED + SHIPPED 2026-06-10)
+
+**Resolution.** The decision was taken as recommended below: the render-SPI
+contract was extended additively (`V2CONV-A1b-RENDER-PARAMS`, shipped) and the
+thermography vertical migrated onto it (`V2CONV-A7-THERMO-REST-DISSOLVE`,
+shipped). E1+E3 landed as written (`RenderRequest.params` + the
+`FocusPayloadResolver` SPI seam); E2 as the file-rooted dispatch
+(`shapeIri`+`focusFileRefAppId`, no stored template — chosen over per-file
+template seeding); E4 folded the frames index into the JSON view-model via
+`params.mode=index`. Trace3D's template-rooted path stayed byte-compatible
+(legacy 4-arg `RenderRequest` constructor preserved; `vis-trace3d verify`
+green). The two thermography renderers (`OtvisFrameRenderer`,
+`ThermographyHeatmapRenderer`) now serve the three former bespoke surfaces
+through `POST /v2/shapes/render`; `ThermographyV2Rest` is deleted. The
+original analysis below is retained for the design rationale.
 
 Attempting the thermography migrate-then-delete vertical surfaced a hard
 contract mismatch between what `POST /v2/shapes/render` carries and what the

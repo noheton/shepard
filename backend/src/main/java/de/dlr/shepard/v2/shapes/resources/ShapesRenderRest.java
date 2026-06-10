@@ -377,35 +377,82 @@ public class ShapesRenderRest {
     if (producible == null || producible.isEmpty()) {
       return null;
     }
+    // V2CONV-A7-THERMO — a renderer may declare application/json in
+    // producibleMedia() to emit its OWN JSON view-model (e.g. the thermography
+    // plate-heatmap grid that thermographyHeatmap.ts consumes) instead of the
+    // generic channel-bindings envelope. Additive: a renderer that does NOT
+    // declare application/json (every renderer today, incl. Trace3D) keeps the
+    // default view-model path unchanged.
+    boolean rendererOwnsJson = producible.contains(MediaType.APPLICATION_JSON);
     List<MediaType> accepted = headers == null ? List.of() : headers.getAcceptableMediaTypes();
     for (MediaType mt : accepted) {
       if (mt.isWildcardType() || MediaType.APPLICATION_JSON_TYPE.isCompatible(mt)) {
+        if (rendererOwnsJson) {
+          Response json = emitRendererMedia(renderer, req, MediaType.APPLICATION_JSON);
+          if (json != null) {
+            return json;
+          }
+        }
         return null; // caller accepts JSON / */* — use the default view-model
       }
       String concrete = mt.getType() + "/" + mt.getSubtype();
       if (producible.contains(concrete)) {
-        try {
-          Optional<RenderedMedia> rendered = renderer.renderMedia(req, concrete);
-          if (rendered.isPresent() && rendered.get().bytes() != null) {
-            return Response.ok(rendered.get().bytes(), rendered.get().mediaType()).build();
-          }
-        } catch (RuntimeException ex) {
-          Log.warnf(
-            ex,
-            "V2CONV-A1: renderer '%s' threw producing %s for shape <%s> — surfacing 422",
-            renderer.name(),
-            concrete,
-            req.shapeIri()
-          );
-          return Response
-            .status(422)
-            .entity(Map.of("error", "media render failed for " + concrete, "renderer", renderer.name()))
-            .build();
-        }
-        return null; // renderer declined this media — JSON fallback
+        Response media = emitRendererMedia(renderer, req, concrete);
+        // null → renderer declined this media → JSON view-model fallback.
+        return media;
       }
     }
     return null;
+  }
+
+  /**
+   * V2CONV-A1/A7 — call {@link ViewRecipeRenderer#renderMedia} for one concrete
+   * media type. Returns the bytes {@link Response}, a 422 on a renderer throw,
+   * or null when the renderer declined (the caller falls back to the JSON
+   * view-model).
+   */
+  private Response emitRendererMedia(ViewRecipeRenderer renderer, RenderRequest req, String concrete) {
+    try {
+      Optional<RenderedMedia> rendered = renderer.renderMedia(req, concrete);
+      if (rendered.isPresent() && rendered.get().bytes() != null) {
+        return Response.ok(rendered.get().bytes(), rendered.get().mediaType()).build();
+      }
+    } catch (RenderException ex) {
+      Log.debugf(
+        ex,
+        "V2CONV-A1: renderer '%s' threw RenderException %s producing %s for shape <%s>",
+        renderer.name(),
+        ex.code(),
+        concrete,
+        req.shapeIri()
+      );
+      return Response
+        .status(422)
+        .entity(
+          Map.of(
+            "error",
+            ex.getMessage() == null ? "media render failed for " + concrete : ex.getMessage(),
+            "code",
+            ex.code() == null ? "render.unknown-error" : ex.code(),
+            "renderer",
+            renderer.name()
+          )
+        )
+        .build();
+    } catch (RuntimeException ex) {
+      Log.warnf(
+        ex,
+        "V2CONV-A1: renderer '%s' threw producing %s for shape <%s> — surfacing 422",
+        renderer.name(),
+        concrete,
+        req.shapeIri()
+      );
+      return Response
+        .status(422)
+        .entity(Map.of("error", "media render failed for " + concrete, "renderer", renderer.name()))
+        .build();
+    }
+    return null; // renderer declined this media — JSON fallback
   }
 
   /**

@@ -23,6 +23,7 @@ import {
   qualityChipColor,
   qualityBand,
   formatTemp,
+  buildPlateHeatmapBody,
 } from "~/utils/thermographyHeatmap";
 
 const props = defineProps<{
@@ -52,13 +53,16 @@ function v2BaseUrl(): string {
 
 async function fetchSummary(): Promise<void> {
   try {
-    const url = `${v2BaseUrl()}/v2/thermography/${encodeURIComponent(
-      props.imageBundleAppId,
-    )}/plate-heatmap`;
+    // V2CONV-A7-THERMO — plate-heatmap summary via POST /v2/shapes/render
+    // (file-rooted, Accept: application/json). 422/404 → never analyzed.
+    const url = `${v2BaseUrl()}/v2/shapes/render`;
     const res = await $fetch<PlateHeatmapSummary>(url, {
+      method: "POST",
       credentials: "include",
+      headers: { Accept: "application/json" },
+      body: buildPlateHeatmapBody(props.imageBundleAppId),
     }).catch(err => {
-      if (err?.response?.status === 404) return null;
+      if (err?.response?.status === 422 || err?.response?.status === 404) return null;
       throw err;
     });
     summary.value = res ?? null;

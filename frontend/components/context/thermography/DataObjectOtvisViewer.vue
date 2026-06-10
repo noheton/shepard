@@ -23,7 +23,10 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import {
   resolveChannel,
-  buildOtvisFrameUrl,
+  buildRenderUrl,
+  buildOtvisIndexBody,
+  buildOtvisFrameBody,
+  parseFramesIndex,
   type OtvisFrameInfo,
 } from "~/utils/otvisViewer";
 
@@ -37,11 +40,18 @@ const props = defineProps<{
 type FrameInfo = OtvisFrameInfo;
 interface FramesIndex {
   fileReferenceAppId: string;
-  width: number;
-  height: number;
   frameCount: number;
   frames: FrameInfo[];
   partialReason?: string | null;
+}
+
+/** Shape of the POST /v2/shapes/render JSON view-model (channel bindings). */
+interface RenderViewModel {
+  channelBindings?: Array<{
+    role?: string | null;
+    channelSelector?: string | null;
+    unit?: string | null;
+  }> | null;
 }
 
 const index = ref<FramesIndex | null>(null);
@@ -81,10 +91,17 @@ async function fetchIndex() {
   errorMessage.value = null;
   isLoading.value = true;
   try {
-    const url = `${v2BaseUrl()}/v2/thermography/otvis/${encodeURIComponent(
-      props.fileReferenceAppId,
-    )}/frames`;
-    const res = await fetch(url, { headers: { ...authHeaders(), Accept: "application/json" } });
+    // V2CONV-A7-THERMO — frames catalogue via POST /v2/shapes/render
+    // (file-rooted, params.mode=index). Replaces GET /v2/thermography/otvis/{appId}/frames.
+    const res = await fetch(buildRenderUrl(v2BaseUrl()), {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(buildOtvisIndexBody(props.fileReferenceAppId)),
+    });
     if (!res.ok) {
       if (res.status === 422) {
         errorMessage.value = "This file is not a decodable Edevis OTvis archive.";
@@ -92,10 +109,15 @@ async function fetchIndex() {
       }
       throw new Error(`HTTP ${res.status}`);
     }
-    const data = (await res.json()) as FramesIndex;
-    index.value = data;
+    const vm = (await res.json()) as RenderViewModel;
+    const frames = parseFramesIndex(vm.channelBindings);
+    index.value = {
+      fileReferenceAppId: props.fileReferenceAppId,
+      frameCount: frames.length,
+      frames,
+    };
     currentFrame.value = 0;
-    channel.value = data.frames?.[0]?.defaultChannel ?? "amplitude";
+    channel.value = frames[0]?.defaultChannel ?? "amplitude";
     await loadFrameImage();
   } catch (e) {
     errorMessage.value = `Failed to load OTvis frames — ${String((e as Error).message)}`;
@@ -108,13 +130,19 @@ async function loadFrameImage() {
   if (!index.value || frameCount.value === 0) return;
   isFrameLoading.value = true;
   try {
-    const url = buildOtvisFrameUrl(
-      v2BaseUrl(),
-      props.fileReferenceAppId,
-      currentFrame.value,
-      channel.value,
-    );
-    const res = await fetch(url, { headers: authHeaders() });
+    // V2CONV-A7-THERMO — frame heatmap PNG via POST /v2/shapes/render
+    // (file-rooted, params.frame/channel, Accept: image/png).
+    const res = await fetch(buildRenderUrl(v2BaseUrl()), {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        Accept: "image/png",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        buildOtvisFrameBody(props.fileReferenceAppId, currentFrame.value, channel.value),
+      ),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     if (lastObjectUrl) URL.revokeObjectURL(lastObjectUrl);
@@ -195,7 +223,6 @@ onUnmounted(() => {
     <template v-else-if="index && frameCount > 0">
       <div class="d-flex flex-wrap ga-3 text-body-2">
         <span><strong>Frames:</strong> {{ frameCount }}</span>
-        <span><strong>Size:</strong> {{ index.width }}×{{ index.height }} px</span>
         <span v-if="frameInfo"><strong>Kind:</strong> {{ frameInfo.kind }}</span>
         <span><strong>Channel:</strong> {{ channel }}</span>
       </div>

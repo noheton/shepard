@@ -923,7 +923,6 @@ async function saveEmbargoEdit() {
                   <DataObjectThermographyPane
                     :data-object-app-id="dataObject.appId"
                     :image-bundle-app-id="thermographyBundleAppId"
-                    :can-edit="!!isAllowedToEditCollection"
                   />
                 </ExpansionPanelItem>
                 <!-- OTVIS-VIEWER: decoded Edevis OTvis amplitude/phase frame

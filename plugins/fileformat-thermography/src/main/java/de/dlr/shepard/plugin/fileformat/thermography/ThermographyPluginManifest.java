@@ -11,9 +11,14 @@ import java.util.Optional;
  * shepard-plugin-fileformat-thermography.
  *
  * Upgraded from Tier-0 (standalone pure-Java parser) to Tier-1 (backend dep)
- * by moving ThermographyV2Rest + ThermographyAnalysisService +
- * OtvisFrameRenderService + IO classes into this plugin, dissolving the
- * bespoke in-core de.dlr.shepard.v2.thermography.* surface.
+ * by moving ThermographyAnalysisService + OtvisFrameRenderService + IO classes
+ * into this plugin, dissolving the bespoke in-core de.dlr.shepard.v2.thermography.*
+ * surface.
+ *
+ * <p>V2CONV-A7-THERMO further dissolved the plugin's own bespoke
+ * {@code /v2/thermography/*} REST: viewing now flows through the generic
+ * {@code POST /v2/shapes/render} via two {@link de.dlr.shepard.spi.view.ViewRecipeRenderer}
+ * registrations ({@code OtvisFrameRenderer} + {@code ThermographyHeatmapRenderer}).
  */
 public class ThermographyPluginManifest implements PluginManifest {
 
@@ -40,10 +45,13 @@ public class ThermographyPluginManifest implements PluginManifest {
   @Override
   public String description() {
     return "Parses Edevis OTvis thermography archives (.OTvis): decodes amplitude/phase "
-        + "lock-in frames and raw calibrated temperature grids. "
-        + "POST /v2/thermography/analyze runs quality scoring on a TIFF image bundle; "
-        + "GET /v2/thermography/otvis/{appId}/frames renders PNG frames for the viewer. "
-        + "Extracted from backend core per V2CONV-A6 (MFFD-NDT-QUALITY-1).";
+        + "lock-in frames and raw calibrated temperature grids. Viewing flows through the "
+        + "generic POST /v2/shapes/render endpoint: an OtvisFrameShape render returns the "
+        + "frame catalogue (params.mode=index) or a colour-mapped frame PNG "
+        + "(params.frame/channel, Accept: image/png); a ThermographyHeatmapShape render "
+        + "returns the composite plate-heatmap grid (Accept: application/json). "
+        + "Quality scoring runs on TIFF image bundles at upload (FileFormatPlugin.parse). "
+        + "Bespoke /v2/thermography/* REST dissolved per V2CONV-A7-THERMO (MFFD-NDT-QUALITY-1).";
   }
 
   @Override
@@ -58,8 +66,9 @@ public class ThermographyPluginManifest implements PluginManifest {
 
   @Override
   public void onRegister(PluginContext ctx) {
-    Log.info("V2CONV-A6: plugin 'fileformat-thermography' registered — "
-        + "POST /v2/thermography/analyze + GET /v2/thermography/otvis/* active");
+    Log.info("V2CONV-A7-THERMO: plugin 'fileformat-thermography' registered — "
+        + "OTvis frame + plate-heatmap renderers serve POST /v2/shapes/render "
+        + "(OtvisFrameShape / ThermographyHeatmapShape); analysis runs on upload");
   }
 
   @Override
