@@ -76,6 +76,56 @@ public class UserGroupService {
     return userGroupDAO.findAllUserGroups(params, authenticationContext.getCurrentUserName());
   }
 
+  /**
+   * V2-SWEEP-002 — look up a UserGroup by its UUID v7 appId, with read-permission check.
+   *
+   * @throws InvalidPathException if not found or deleted
+   * @throws InvalidAuthException if the caller lacks read access
+   */
+  public UserGroup getUserGroupByAppId(String appId) {
+    UserGroup group = userGroupDAO.findByAppId(appId);
+    if (group == null) {
+      throw new InvalidPathException("User Group with appId %s not found".formatted(appId));
+    }
+    assertIsAllowedToReadUserGroup(group.getId());
+    return group;
+  }
+
+  /**
+   * V2-SWEEP-002 — RFC 7396 merge-patch via appId.
+   * Null arguments mean "leave unchanged"; present arguments replace the existing value.
+   *
+   * @throws InvalidPathException if not found or deleted
+   * @throws InvalidAuthException if the caller lacks write access
+   */
+  public UserGroup patchUserGroupByAppId(String appId, String newName, List<String> newUsernames) {
+    UserGroup group = userGroupDAO.findByAppId(appId);
+    if (group == null) {
+      throw new InvalidPathException("User Group with appId %s not found".formatted(appId));
+    }
+    assertIsAllowedToEditUserGroup(group.getId());
+    var user = userService.getCurrentUser();
+    if (newName != null) group.setName(newName);
+    if (newUsernames != null) group.setUsers(fetchUsers(newUsernames.toArray(new String[0])));
+    group.setUpdatedBy(user);
+    group.setUpdatedAt(dateHelper.getDate());
+    return userGroupDAO.createOrUpdate(group);
+  }
+
+  /**
+   * V2-SWEEP-002 — delete by appId, delegating to {@link #deleteUserGroup(Long)}.
+   *
+   * @throws InvalidPathException if not found or deleted
+   * @throws InvalidAuthException if the caller lacks write access
+   */
+  public void deleteUserGroupByAppId(String appId) {
+    UserGroup group = userGroupDAO.findByAppId(appId);
+    if (group == null) {
+      throw new InvalidPathException("User Group with appId %s not found".formatted(appId));
+    }
+    deleteUserGroup(group.getId());
+  }
+
   public UserGroup createUserGroup(UserGroupIO userGroup) {
     var user = userService.getCurrentUser();
     var toCreate = new UserGroup();
