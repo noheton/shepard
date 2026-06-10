@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { UserGroup } from "@dlr-shepard/backend-client";
 import { ConfigurationFragments } from "./configurationMenuItems";
 import UserGroupDetailView from "./UserGroupDetailView.vue";
 import UserGroupList from "./UserGroupList.vue";
+import type { UserGroupV2 } from "~/composables/context/useUserGroupsV2";
 
-const selectedUserGroup = ref<UserGroup | undefined>(undefined);
+const selectedUserGroup = ref<UserGroupV2 | undefined>(undefined);
 </script>
 
 <template>
@@ -12,7 +12,7 @@ const selectedUserGroup = ref<UserGroup | undefined>(undefined);
     <UserGroupList
       v-if="!selectedUserGroup"
       @select-user-group="
-        (userGroup: UserGroup) => (selectedUserGroup = userGroup)
+        (userGroup: UserGroupV2) => (selectedUserGroup = userGroup)
       "
     />
     <UserGroupDetailView
