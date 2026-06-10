@@ -8,19 +8,13 @@ import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialSetIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigPatchIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicTestConnectionIO;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
-import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService.EpicPatch;
-import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService.ReadOnlyFieldException;
-import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,19 +33,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * KIP1c — admin REST surface for the ePIC handle service minter plugin.
  *
  * <p>Lives under {@code /v2/admin/minters/epic/...}. Class-level
- * {@code @RolesAllowed("instance-admin")} gate (credential management
- * is one of the highest-trust admin paths). Responses are
- * {@code application/json}; errors use the RFC 7807
- * {@code application/problem+json} envelope via {@link ProblemJson}.
+ * {@code @RolesAllowed("instance-admin")} gate. Config fields (enabled,
+ * apiBaseUrl, handlePrefix) are now managed via
+ * {@code GET|PATCH /v2/admin/config/minter-epic} (V2CONV-A7);
+ * this resource retains the credential and test-connection sister endpoints.
  *
- * <p>PROV1a captures every mutation through this resource via
- * {@code ProvenanceCaptureFilter}; the filter records request method
- * + path + status only, never response bodies — so the {@code POST
- * .../credential} plaintext never enters the {@code :Activity}
- * audit trail.
+ * <p>PROV1a captures every mutation via {@code ProvenanceCaptureFilter};
+ * the filter records method + path + status only — the {@code POST
+ * .../credential} plaintext never enters the {@code :Activity} audit trail.
  *
  * @see EpicMinterConfigService
- * @see EpicMinterConfig
  */
 @Path("/v2/admin/minters/epic")
 @Produces(MediaType.APPLICATION_JSON)
@@ -61,8 +52,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Admin")
 public class EpicAdminRest {
 
-  /** RFC 7807 type URIs for problem responses. */
-  static final String PROBLEM_TYPE_READ_ONLY_FIELD = "/problems/minters.epic.config.read-only-field";
+  /** RFC 7807 type URI for bad-request responses on this resource. */
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/minters.epic.config.bad-request";
 
   @Inject
@@ -70,86 +60,6 @@ public class EpicAdminRest {
 
   @Inject
   EpicHttpClient http;
-
-  // ─── GET /config ────────────────────────────────────────────────
-
-  @GET
-  @Path("/config")
-  @Operation(
-    summary = "Read the current :EpicMinterConfig singleton.",
-    description = "Returns the runtime-mutable ePIC minter config — enabled, apiBaseUrl, handlePrefix. " +
-    "The credential material is masked: credentialSet + an 8-hex fingerprint of the SHA-256 hash are " +
-    "surfaced in place of the credential itself."
-  )
-  @APIResponse(
-    responseCode = "200",
-    description = "Current ePIC minter config (singleton).",
-    content = @Content(schema = @Schema(implementation = EpicMinterConfigIO.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response getConfig() {
-    EpicMinterConfig cfg = service.current();
-    return Response.ok(EpicMinterConfigIO.from(cfg)).build();
-  }
-
-  // ─── PATCH /config ──────────────────────────────────────────────
-
-  @PATCH
-  @Path("/config")
-  @Operation(
-    summary = "RFC 7396 merge-patch the :EpicMinterConfig singleton.",
-    description = "Patchable fields: enabled, apiBaseUrl, handlePrefix. The credential fields " +
-    "(credentialHash, credentialKey, credential) are read-only via this path — use " +
-    "POST .../credential to set them. PROV1a captures this PATCH as an :Activity row."
-  )
-  @APIResponse(
-    responseCode = "200",
-    description = "Updated config returned in the same shape as GET.",
-    content = @Content(schema = @Schema(implementation = EpicMinterConfigIO.class))
-  )
-  @APIResponse(
-    responseCode = "400",
-    description = "Caller patched a read-only field.",
-    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response patchConfig(EpicMinterConfigPatchIO body, @Context SecurityContext security) {
-    EpicMinterConfigPatchIO patch = body == null ? new EpicMinterConfigPatchIO() : body;
-    EpicPatch svc = new EpicPatch();
-    svc.enabled = patch.getEnabled();
-    svc.apiBaseUrl = patch.getApiBaseUrl();
-    svc.apiBaseUrlTouched = patch.isApiBaseUrlTouched();
-    svc.handlePrefix = patch.getHandlePrefix();
-    svc.handlePrefixTouched = patch.isHandlePrefixTouched();
-    svc.credentialHashTouched = patch.isCredentialHashTouched();
-    svc.credentialKeyTouched = patch.isCredentialKeyTouched();
-
-    final EpicMinterConfig saved;
-    try {
-      saved = service.patch(svc, callerName(security));
-    } catch (ReadOnlyFieldException denied) {
-      Log.warnf(
-        "KIP1c: rejected PATCH /v2/admin/minters/epic/config — read-only field '%s' touched",
-        denied.field()
-      );
-      return problem(
-        PROBLEM_TYPE_READ_ONLY_FIELD,
-        "Field is read-only via PATCH",
-        Status.BAD_REQUEST,
-        "Field '" +
-        denied.field() +
-        "' cannot be set via PATCH. Use POST /v2/admin/minters/epic/credential to mutate it."
-      );
-    } catch (IllegalArgumentException bad) {
-      return problem(
-        PROBLEM_TYPE_BAD_REQUEST,
-        "Invalid patch value",
-        Status.BAD_REQUEST,
-        bad.getMessage()
-      );
-    }
-    return Response.ok(EpicMinterConfigIO.from(saved)).build();
-  }
 
   // ─── POST /credential ───────────────────────────────────────────
 
