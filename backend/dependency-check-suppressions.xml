@@ -223,6 +223,23 @@
     <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-shacl@5\.4\.0$</packageUrl>
     <cve>CVE-2025-50151</cve>
   </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-iri3986 (the RFC 3986
+    IRI parsing module, sibling of jena-iri). Same reasoning as jena-core/jena-arq/jena-iri/
+    jena-base/jena-shacl entries: all IRI/SPARQL inputs are server-constructed from trusted
+    ontology files; no user-supplied IRI or SPARQL input reaches the Jena parser directly.
+    OWASP-SUPP-003 extension (OWASP-SIBLING-JARS-5).</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri3986@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-iri3986. Same reasoning
+    as jena-core/jena-arq/jena-iri/jena-base/jena-shacl entries — server-constructed IRI
+    inputs only; no user-supplied SPARQL reaches the Jena parser.
+    OWASP-SUPP-003 extension (OWASP-SIBLING-JARS-5).</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-iri3986@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
 
   <!-- ===================================================================
        OWASP-SUPP-004: Netty 4.1.133.Final (CVE-2026-42582, 7.5)
