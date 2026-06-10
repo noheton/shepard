@@ -88,14 +88,14 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.fetchData();
     await flush();
 
     expect(fetch).toHaveBeenCalledTimes(1);
     const calledUrl = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
     expect(calledUrl).toBe(
-      `http://localhost:8080/v2/collections/${encodeURIComponent("42")}`,
+      `http://localhost:8080/v2/collections/${encodeURIComponent(APP_ID)}`,
     );
     expect(acc.collection.value?.name).toBe("LUMEN Showcase");
     expect(v1GetCollectionSentinel).not.toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.delete();
     await flush();
 
@@ -125,7 +125,7 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const deleteCall = calls.find(c => (c[1] as RequestInit).method === "DELETE");
     expect(deleteCall).toBeTruthy();
     expect(deleteCall?.[0]).toBe(
-      `http://localhost:8080/v2/collections/${encodeURIComponent("42")}`,
+      `http://localhost:8080/v2/collections/${encodeURIComponent(APP_ID)}`,
     );
     expect(v1DeleteCollectionSentinel).not.toHaveBeenCalled();
     expect(routerPush).toHaveBeenCalledWith("/collections");
@@ -143,13 +143,13 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.updateCollection({ ...collectionBody, name: "Renamed" } as never);
     await flush();
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls;
     expect(calls[0]?.[0]).toBe(
-      `http://localhost:8080/v2/collections/${encodeURIComponent("42")}`,
+      `http://localhost:8080/v2/collections/${encodeURIComponent(APP_ID)}`,
     );
     expect((calls[0]?.[1] as RequestInit).method).toBe("PATCH");
     const headers = (calls[0]?.[1] as RequestInit).headers as Record<string, string>;
@@ -170,7 +170,7 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.fetchPermissions();
     await flush();
 
@@ -190,7 +190,7 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.fetchPermissions();
     await flush();
 
@@ -210,7 +210,7 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
-    const acc = new CollectionAccessor(42);
+    const acc = new CollectionAccessor(APP_ID);
     await acc.fetchRoles();
     await flush();
 

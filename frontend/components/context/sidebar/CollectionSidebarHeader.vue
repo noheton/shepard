@@ -158,7 +158,7 @@ const exportCollection = () => {
             <EditPermissionsDialog
               v-if="showEditPermissionsDialog"
               v-model:show-dialog="showEditPermissionsDialog"
-              :shepard-object-accessor="new CollectionAccessor(collection.id)"
+              :shepard-object-accessor="new CollectionAccessor(collectionAppId!)"
             />
           </div>
         </div>

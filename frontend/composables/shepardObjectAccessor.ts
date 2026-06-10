@@ -8,8 +8,8 @@ import {
 import type { Ref } from "vue";
 import { useShepardApi } from "./common/api/useShepardApi";
 
-export abstract class ShepardObjectAccessor {
-  id: number;
+export abstract class ShepardObjectAccessor<TId extends number | string = number> {
+  id: TId;
   roles: Ref<Roles | undefined>;
   permissions: Ref<Permissions | undefined>;
   owner: Ref<User | undefined>;
@@ -22,7 +22,7 @@ export abstract class ShepardObjectAccessor {
     return !!this.roles.value?.owner || !!this.roles.value?.manager;
   });
 
-  constructor(id: number) {
+  constructor(id: TId) {
     this.id = id;
     this.roles = ref<Roles>();
     this.permissions = ref();

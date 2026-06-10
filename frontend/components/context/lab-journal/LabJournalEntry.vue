@@ -18,7 +18,13 @@ const props = defineProps<{
   isExpanded?: boolean;
 }>();
 
-const collectionAccessor = new CollectionAccessor(props.collectionId);
+// CollectionAccessor is v2/appId-keyed; the numeric collectionId prop stays
+// for the v1 upload paths. This component only renders under
+// /collections/[collectionId]/..., where the route param IS the appId.
+const route = useRoute();
+const collectionAccessor = new CollectionAccessor(
+  String(route.params.collectionId),
+);
 collectionAccessor.fetchData();
 
 function handleUploadedImages(files: ShepardFile[], filecontainerId: number) {

@@ -94,7 +94,11 @@ async function ensureDataObjectAppId(): Promise<string | undefined> {
   }
 }
 
-const collectionAccessor = new CollectionAccessor(props.collectionId);
+// CollectionAccessor is v2/appId-keyed; the numeric collectionId prop stays
+// for the v1 upload paths. Dialog only opens on /collections/[collectionId]/...
+const collectionAccessor = new CollectionAccessor(
+  String(useRoute().params.collectionId),
+);
 try {
   await collectionAccessor.fetchData();
 } catch {

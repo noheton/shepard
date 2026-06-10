@@ -54,7 +54,7 @@ async function v2Fetch(
   return resp;
 }
 
-export class CollectionAccessor extends ShepardObjectAccessor {
+export class CollectionAccessor extends ShepardObjectAccessor<string> {
   api = useShepardApi(CollectionApi);
   collection = ref<Collection>();
 

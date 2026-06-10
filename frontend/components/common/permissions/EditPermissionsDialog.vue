@@ -17,7 +17,7 @@ import Select from "../Select.vue";
 import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
 import { UserRole } from "./UserRole";
 
-const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
+const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor<number | string> }>();
 const shepardObjectAccessor = props.shepardObjectAccessor;
 
 // MemberPermissions moved to ./permissionTypes — re-exported here for backward compat,
