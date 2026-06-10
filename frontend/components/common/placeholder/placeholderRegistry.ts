@@ -175,7 +175,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "route",
     title: "HDF container browser",
     subtitle:
-      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/hdf-containers/{id}/file works today.",
+      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/containers/{appId}/file works today.",
     endpoint: null,
     backlogRow: "A5",
     designDoc: "aidocs/data/35-hdf5-hsds-implementation-design.md",

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 // /containers/hdf/[containerId] — full HDF5 container browser (A5-UI-PHASE-1).
 //
-// Backend endpoints used:
-//   GET    /v2/hdf-containers/{appId}        — container metadata
-//   DELETE /v2/hdf-containers/{appId}        — delete container
-//   GET    /v2/hdf-containers/{appId}/file   — download raw HDF5
+// Backend endpoints used (V2CONV-A7-HDF: unified /v2/containers surface):
+//   GET    /v2/containers/{appId}        — container metadata (kind=hdf)
+//   DELETE /v2/containers/{appId}        — delete container
+//   GET    /v2/containers/{appId}/file   — download raw HDF5
+//
+// hsdsDomain + description arrive in the unified ContainerV2IO `payload` map.
 //
 // Dataset/group browsing (HSDS sidecar proxy) and per-container file upload
 // are not yet in the backend (A5b/A5c). The page shows a clear empty state
@@ -27,17 +29,24 @@ function v2BaseUrl(): string {
 }
 
 // ─── Container metadata ──────────────────────────────────────────────────────
-interface HdfContainerData {
+// Unified ContainerV2IO: common fields flat; hdf-specific fields under `payload`.
+interface ContainerV2IO {
   id: number;
   appId: string;
   name: string;
-  description?: string | null;
-  hsdsDomain?: string | null;
+  kind?: string;
   attributes?: Record<string, string>;
   createdAt?: string | null;
   createdBy?: string | null;
   updatedAt?: string | null;
   updatedBy?: string | null;
+  payload?: { hsdsDomain?: string | null; description?: string | null } | null;
+}
+
+// View-model flattening the unified payload back into the fields the template reads.
+interface HdfContainerData extends ContainerV2IO {
+  description?: string | null;
+  hsdsDomain?: string | null;
 }
 
 const container = ref<HdfContainerData | null>(null);
@@ -62,7 +71,7 @@ async function fetchContainer() {
   }
   try {
     const resp = await fetch(
-      `${v2BaseUrl()}/v2/hdf-containers/${encodeURIComponent(appId.value)}`,
+      `${v2BaseUrl()}/v2/containers/${encodeURIComponent(appId.value)}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -79,7 +88,13 @@ async function fetchContainer() {
       containerError.value = `Server returned HTTP ${resp.status}`;
       return;
     }
-    container.value = (await resp.json()) as HdfContainerData;
+    const io = (await resp.json()) as ContainerV2IO;
+    // Flatten the unified payload map into the view-model the template reads.
+    container.value = {
+      ...io,
+      hsdsDomain: io.payload?.hsdsDomain ?? null,
+      description: io.payload?.description ?? null,
+    };
     // Show delete button for the owner field (owners can delete).
     // Permissions check: the server will 403 on delete if the caller isn't owner.
     canDelete.value = true;
@@ -105,7 +120,7 @@ async function confirmDelete() {
   }
   try {
     const resp = await fetch(
-      `${v2BaseUrl()}/v2/hdf-containers/${encodeURIComponent(appId.value)}`,
+      `${v2BaseUrl()}/v2/containers/${encodeURIComponent(appId.value)}`,
       {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -131,7 +146,7 @@ async function confirmDelete() {
 // ─── Download ────────────────────────────────────────────────────────────────
 const downloadUrl = computed(
   () =>
-    `${v2BaseUrl()}/v2/hdf-containers/${encodeURIComponent(appId.value)}/file`,
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(appId.value)}/file`,
 );
 
 // ─── Attributes display ──────────────────────────────────────────────────────
