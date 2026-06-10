@@ -260,6 +260,95 @@ CRUD, the scene-graph editor, KRL REST). Outstanding verdicts:
 Net for this pass: **0 endpoints deleted** (no resource is both superseded
 and zero-caller). The migrate-then-delete order lives in the A7-* rows.
 
+### 7b. A7-THERMO — render-contract blocker (`[NEEDS-DECISION]`, 2026-06-10)
+
+Attempting the thermography migrate-then-delete vertical surfaced a hard
+contract mismatch between what `POST /v2/shapes/render` carries and what the
+bespoke `/v2/thermography/*` endpoints need. **The migration is blocked on a
+render-SPI contract extension, not on renderer authoring.** Half-building it
+would corrupt the render contract for every renderer — so it is stopped here
+with the minimal extension specified.
+
+**Why the current render contract cannot carry the OTvis viewer.** Three
+independent gaps, each load-bearing:
+
+1. **No per-call parameters.** `RenderRequest`
+   (`spi/view/RenderRequest.java`) and `ShapesRenderRequestIO`
+   (`v2/shapes/io/ShapesRenderRequestIO.java`) carry only
+   `{templateAppId, focusShepardId, shapeIri, templateBodyJson}`. The OTvis
+   viewer's `GET /otvis/{appId}/frames/{n}?channel=amplitude|phase|temperature`
+   streams a **different frame index + channel per request** against the same
+   source. These vary per call and **cannot live in a stored template body** —
+   one stored template per (file × frame × channel) is absurd. There is no
+   `params`/`bindings` map on the render request to carry them.
+2. **A stored `VIEW_RECIPE` `ShepardTemplate` is mandatory.**
+   `ShapesRenderRest.render()` does `templateDAO.findByAppId(...)` → 404 when
+   absent, 422 when `templateKind != VIEW_RECIPE`. The OTvis viewer works off a
+   **FileReference appId with no template at all**; OTvis uploads mint no
+   VIEW_RECIPE template (and minting one per uploaded file is not the model).
+3. **Renderers never receive the focus DataObject/FileReference bytes.** The
+   dispatcher passes only `templateBodyJson` to the renderer; `focusShepardId`
+   is echoed, never resolved. `Trace3DPngRenderer.renderMedia(...)` reads
+   *only* the template body — it never touches sample data. Thermography
+   rendering *is* byte resolution: decode the `.OTvis` tar
+   (`OtvisFrameRenderService.decode()` →
+   `SingletonFileReferenceService.getPayload(appId)` →
+   `OTvisFrameExtractor.extract`). A renderer with no path to the focus bytes
+   cannot produce a heatmap.
+
+Additionally, the **frames-index** endpoint (`GET /otvis/{appId}/frames`,
+returns the decoded frame catalogue: per-frame kind + channels + dims) has
+**no render-endpoint analogue at all** — it is a *list/describe* operation, not
+a *render* one. `POST /v2/shapes/render` is render-only by name and contract.
+
+**Minimal contract extension to unblock (the decision to make).** Extend the
+generic render contract additively — no per-format paths, no breaking the
+template-centric default:
+
+- **(E1) Add an optional `params: Map<String,String>` (or `JsonNode`) to
+  `RenderRequest` + `ShapesRenderRequestIO`** for per-call render knobs
+  (`frame`, `channel`, …). Existing callers pass null → byte-compatible.
+- **(E2) Make `templateAppId` optional when a `shapeIri` + `focusFileRefAppId`
+  are supplied directly.** A *file-rooted* render dispatch path: the caller
+  names the shape IRI (e.g. `…#OtvisFrameShape`) and the source FileReference
+  appId; no stored template required. The template-rooted path stays the
+  default for VIEW_RECIPE flows. (Alternative: a tiny built-in/seeded
+  "OTvis frame" VIEW_RECIPE template whose body is constant and whose
+  `focusShepardId` is the FileReference appId — avoids E2 at the cost of a
+  seeded template + still needs E1 + E3.)
+- **(E3) Give the renderer SPI a focus-resolution seam.** Either pass the
+  resolved `focusFileRefAppId` on `RenderRequest` and let the plugin inject
+  `SingletonFileReferenceService` (already a shared `context.references.*`
+  contract plugins may import), or add a narrow `FocusResolver` handle to the
+  request. The renderer needs the bytes; today it has only the template body.
+- **(E4) A *describe* sibling for the frames index.** Either a JSON-only
+  `render` variant that returns the frame catalogue (frame index as the
+  `application/json` view-model for the OTvis shape, with `params.mode=index`),
+  or accept that `GET /otvis/{appId}/frames` is a *list* op that belongs on the
+  generic `/v2/references/{appId}` describe surface, not on `render`.
+
+**Recommendation:** E1 + E3 are unavoidable and small. For E2, prefer the
+**file-rooted dispatch** (no stored template) over seeding per-file templates —
+it matches "the reference IS the data" and avoids template sprawl. E4: fold the
+frames-index into the JSON view-model of the OTvis shape (`params.mode=index`),
+keeping one endpoint. With E1–E4 the three thermography surfaces map cleanly:
+
+| bespoke endpoint | render call | media |
+| --- | --- | --- |
+| `GET /otvis/{ref}/frames` | `POST /render {shapeIri:…#OtvisFrameShape, focusFileRefAppId:ref, params:{mode:index}}` `Accept: application/json` | JSON frame catalogue |
+| `GET /otvis/{ref}/frames/{n}?channel=c` | `POST /render {shapeIri:…#OtvisFrameShape, focusFileRefAppId:ref, params:{frame:n, channel:c}}` `Accept: image/png` | `image/png` |
+| `GET /{bundle}/plate-heatmap` | `POST /render {shapeIri:…#ThermographyHeatmapShape, focusFileRefAppId:bundle}` `Accept: application/json` (and/or `image/png`) | JSON view-model `thermographyHeatmap.ts` consumes |
+| `POST /analyze` (re-analyze) | already covered by `FileFormatPlugin.parse` on upload (RESEED-FIND-FILEPARSER-DISPATCH). Re-trigger = re-parse via the generic file-parse path; the tier-2 OME-Zarr pipeline (`OTvisTier2Pipeline`) stays behind a generic flag, **not** silently dropped. | — |
+
+The contract extension (E1–E4) is the prerequisite. It touches the **core
+render SPI** (`spi/view/*`) + the dispatcher (`ShapesRenderRest`) — affecting
+every renderer — so per CLAUDE.md ("if an SPI interface forces a change that
+affects every plugin, that is a finding to flag — don't silently rewrite core
+SPI") it is escalated here rather than landed inside the thermography vertical.
+Tracked as **`V2CONV-A7-THERMO-REST-DISSOLVE`** (blocked on
+**`V2CONV-A1b-RENDER-PARAMS`**, the render-params + file-rooted-dispatch +
+focus-resolution contract extension — new row in `aidocs/16`).
+
 ## 8. No v2 back-compat (pre-production)
 
 The fork's `/v2/` may change shape freely until production cut-over — paths are
