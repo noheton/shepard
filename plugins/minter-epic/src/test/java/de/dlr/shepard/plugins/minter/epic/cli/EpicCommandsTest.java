@@ -55,7 +55,7 @@ class EpicCommandsTest {
 
   @Test
   void status_humanOutput_rendersTable() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new EpicStatusCommand(), backend.baseUrl(), "test-key");
 
@@ -68,7 +68,7 @@ class EpicCommandsTest {
 
   @Test
   void status_jsonOutput_emitsParseableJson() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new EpicStatusCommand(), backend.baseUrl(), "test-key", "--output=json");
 
@@ -81,13 +81,13 @@ class EpicCommandsTest {
 
   @Test
   void enable_patchesEnabledTrue() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new EpicEnableCommand(), backend.baseUrl(), "test-key");
 
     assertThat(cap.exit()).withFailMessage(cap.stderr()).isEqualTo(0);
     List<RecordedRequest> requests = backend.requests().stream()
-      .filter(r -> r.path().equals("/v2/admin/minters/epic/config"))
+      .filter(r -> r.path().equals("/v2/admin/config/minter-epic"))
       .collect(Collectors.toList());
     assertThat(requests).hasSize(1);
     assertThat(requests.get(0).method()).isEqualTo("PATCH");
@@ -97,13 +97,13 @@ class EpicCommandsTest {
 
   @Test
   void disable_patchesEnabledFalse() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY.replace("\"enabled\":true", "\"enabled\":false"));
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY.replace("\"enabled\":true", "\"enabled\":false"));
 
     Captured cap = CliRunner.run(new EpicDisableCommand(), backend.baseUrl(), "test-key");
 
     assertThat(cap.exit()).withFailMessage(cap.stderr()).isEqualTo(0);
     List<RecordedRequest> requests = backend.requests().stream()
-      .filter(r -> r.path().equals("/v2/admin/minters/epic/config"))
+      .filter(r -> r.path().equals("/v2/admin/config/minter-epic"))
       .collect(Collectors.toList());
     assertThat(requests).hasSize(1);
     assertThat(requests.get(0).body()).contains("false");
@@ -113,7 +113,7 @@ class EpicCommandsTest {
 
   @Test
   void setApiUrl_patchesApiBaseUrl() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(
       new EpicSetApiUrlCommand(),
@@ -124,7 +124,7 @@ class EpicCommandsTest {
 
     assertThat(cap.exit()).withFailMessage(cap.stderr()).isEqualTo(0);
     List<RecordedRequest> requests = backend.requests().stream()
-      .filter(r -> r.path().equals("/v2/admin/minters/epic/config"))
+      .filter(r -> r.path().equals("/v2/admin/config/minter-epic"))
       .collect(Collectors.toList());
     assertThat(requests).hasSize(1);
     assertThat(requests.get(0).body()).contains("apiBaseUrl");
@@ -135,7 +135,7 @@ class EpicCommandsTest {
 
   @Test
   void setPrefix_patchesHandlePrefix() {
-    backend.route("/v2/admin/minters/epic/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-epic", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(
       new EpicSetPrefixCommand(),
@@ -146,7 +146,7 @@ class EpicCommandsTest {
 
     assertThat(cap.exit()).withFailMessage(cap.stderr()).isEqualTo(0);
     List<RecordedRequest> requests = backend.requests().stream()
-      .filter(r -> r.path().equals("/v2/admin/minters/epic/config"))
+      .filter(r -> r.path().equals("/v2/admin/config/minter-epic"))
       .collect(Collectors.toList());
     assertThat(requests).hasSize(1);
     assertThat(requests.get(0).body()).contains("handlePrefix");
