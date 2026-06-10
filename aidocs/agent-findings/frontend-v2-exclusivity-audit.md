@@ -109,7 +109,17 @@ collection id that no longer needs to exist.**
   `useTreeviewItems` + `CollectionSidebar.vue`, and the numeric gate
   disappears. This is the **single highest-impact fix** (see end).
 
-### Bug 3 — Trace3D / render URL carries a numeric id (stale-URL warning)
+### Bug 3 — Trace3D / render URL carries a numeric id (stale-URL warning) — **urdfUrl leak FIXED (V2-SWEEP Wave 2, 2026-06-10)**
+
+Fix shipped: `ViewRecipeBuilderDialog.openUrdf()` now emits
+`?renderer=urdf&urdfFileAppId=<FileReference appId>` (no raw URL/path on
+the query); `pages/shapes/render.vue` resolves the bytes via
+`useUrdfReferenceBlob` → `GET /v2/files/{appId}/content` and surfaces
+resolve errors (stale bookmark → explicit 404 message). The legacy
+`urdfUrl`/`packagePath` params remain readable for one deprecation window
+(UI-PATHS-FROM-REFERENCES); parse contract in `utils/urdfRenderQuery.ts`
+(+ unit tests). The numeric `containerId` rides the documented TS-ID
+exception until aidocs/platform/87 lands. Original analysis below.
 **Two distinct violations in `components/container/timeseries/ViewRecipeBuilderDialog.vue`:**
 - `openUrdf()` (`:103-116`) puts a raw **`urdfUrl`** path/URL on the render
   query string — a direct breach of "UI never asks for paths/URLs — pulls

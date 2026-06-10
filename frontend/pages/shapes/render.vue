@@ -16,6 +16,10 @@
  * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
+import {
+  isUrdfRenderQuery,
+  parseUrdfRenderQuery,
+} from "~/utils/urdfRenderQuery";
 import type { Trace3DColorScheme } from "~/components/container/timeseries/Trace3DView.vue";
 import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
 import UrdfView from "~/components/container/timeseries/UrdfView.vue";
@@ -540,10 +544,31 @@ const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "
 //
 // URDF is a SEPARATELY SELECTABLE renderer alongside Trace3D — same
 // VIEW_RECIPE template kind, same shapes/render delegation, but rendered by
-// UrdfView instead of Trace3DView. Driven by query params:
-//   ?renderer=urdf&urdfUrl=<encoded>&packagePath=<encoded>
+// UrdfView instead of Trace3DView.
+//
+// V2-SWEEP Wave 2: the canonical bootstrap shape is
+//   ?renderer=urdf&urdfFileAppId=<FileReference appId>
+// — the page resolves the bytes via GET /v2/files/{appId}/content
+// (useUrdfReferenceBlob), never a raw URL/path ("UI never asks for
+// paths/URLs — pulls from references"). The legacy
+// `?urdfUrl=…&packagePath=…` params are still read for one deprecation
+// window (old bookmarks + the static /urdf-samples/ demo assets); removal
+// tracked under UI-PATHS-FROM-REFERENCES in aidocs/16.
 const urdfUrl     = ref<string>("");
 const urdfPackage = ref<string>("");
+const {
+  resolve: resolveUrdfBlob,
+  revoke: revokeUrdfBlob,
+  loading: urdfResolving,
+  error: urdfBlobError,
+} = useUrdfReferenceBlob();
+
+async function bootstrapUrdfFromReference(fileReferenceAppId: string) {
+  const blobUrl = await resolveUrdfBlob(fileReferenceAppId);
+  if (blobUrl) urdfUrl.value = blobUrl;
+}
+
+onUnmounted(() => revokeUrdfBlob());
 
 // Thermography renderer state (tier-1) — purely annotation-driven, no
 // channel bindings yet. Channel-bound playback ships with tier-2
@@ -592,11 +617,23 @@ onMounted(() => {
     }
   }
 
-  // URDF renderer — different bootstrap shape: ?renderer=urdf&urdfUrl=…
-  if (q.renderer === "urdf" || (q.urdfUrl && !q.roles)) {
-    renderer.value     = "urdf";
-    urdfUrl.value      = q.urdfUrl     ? decodeURIComponent(String(q.urdfUrl))     : "/urdf-samples/two-link-arm.urdf";
-    urdfPackage.value  = q.packagePath ? decodeURIComponent(String(q.packagePath)) : "";
+  // URDF renderer — canonical bootstrap shape (V2-SWEEP Wave 2):
+  //   ?renderer=urdf&urdfFileAppId=<FileReference appId>
+  // (parse logic + legacy fallback live in utils/urdfRenderQuery.ts)
+  if (isUrdfRenderQuery(q)) {
+    renderer.value = "urdf";
+    const bootstrap = parseUrdfRenderQuery(q);
+    if (bootstrap.fileReferenceAppId) {
+      // Resolve the bytes from the FileReference via the v2 content
+      // endpoint — the UI never constructs or receives a storage URL.
+      void bootstrapUrdfFromReference(bootstrap.fileReferenceAppId);
+    } else {
+      // DEPRECATED legacy shape (?urdfUrl=…&packagePath=…) — kept one
+      // deprecation window for old bookmarks + the static /urdf-samples/
+      // demo assets. Removal: UI-PATHS-FROM-REFERENCES (aidocs/16).
+      urdfUrl.value     = bootstrap.legacyUrl ?? "";
+      urdfPackage.value = bootstrap.legacyPackagePath ?? "";
+    }
     fromReference.value = true;
     return;
   }
@@ -760,7 +797,20 @@ onMounted(() => {
          not require channel bindings to render a robot (static view); when
          joint-bound channels are bound, UrdfAnimator wraps UrdfView. -->
     <template v-if="rendererKind === 'urdf'">
-      <ClientOnly>
+      <!-- V2-SWEEP Wave 2: reference-resolution states — the page fetches
+           the URDF bytes from the FileReference appId; surface resolve
+           errors (404 = stale bookmark / deleted reference) explicitly. -->
+      <v-alert
+        v-if="urdfBlobError"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        data-testid="urdf-blob-error"
+      >
+        {{ urdfBlobError.message }}
+      </v-alert>
+      <v-skeleton-loader v-else-if="urdfResolving" type="image" height="500" />
+      <ClientOnly v-else-if="urdfUrl">
         <UrdfView :urdf-url="urdfUrl" :package-path="urdfPackage" label="URDF view" />
         <template #fallback>
           <v-skeleton-loader type="image" height="500" />

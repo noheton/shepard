@@ -20,10 +20,14 @@ const open = defineModel<boolean>({ default: false });
 type RendererKind = "trace-3d" | "urdf" | "thermography";
 const rendererKind = ref<RendererKind>("trace-3d");
 
-// URDF binding state — when rendererKind === "urdf", the dialog asks for a
-// URDF source URL (signed Garage URL or a path under /urdf-samples/).
-const urdfUrl = ref<string>("/urdf-samples/two-link-arm.urdf");
-const urdfPackagePath = ref<string>("");
+// URDF binding state — when rendererKind === "urdf", the dialog asks for the
+// FileReference appId of the .urdf singleton (V2-SWEEP Wave 2: "UI never
+// asks for paths/URLs — pulls from references"; the render page resolves
+// the bytes via GET /v2/files/{appId}/content, and the mesh package root
+// travels as the `urn:shepard:urdf:package-path` annotation on the
+// FileReference — never as a typed path). A context-scoped reference
+// picker is the follow-up (URDF-REF-PICKER, aidocs/16).
+const urdfFileAppId = ref<string>("");
 
 const pickerRef = ref<InstanceType<typeof Trace3DChannelPicker> | null>(null);
 const canOpen = ref(false);
@@ -100,17 +104,22 @@ function openTrace3D() {
 }
 
 // ── open URDF render page ────────────────────────────────────────────────────
+// V2-SWEEP Wave 2: the render link carries the FileReference appId only —
+// the backend/content endpoint resolves the actual bytes (and the mesh
+// package root from the reference's annotations). No raw URL/path on the
+// query string. The numeric `containerId` rides the documented TS-ID
+// exception (v2 timeseries-container content endpoints are still numeric
+// pending aidocs/platform/87).
 function openUrdf() {
-  if (!urdfUrl.value.trim()) return;
+  if (!urdfFileAppId.value.trim()) return;
   navigateTo({
     path: "/shapes/render",
     query: {
-      renderer:    "urdf",
-      urdfUrl:     encodeURIComponent(urdfUrl.value.trim()),
-      packagePath: encodeURIComponent(urdfPackagePath.value.trim()),
-      containerId: String(props.containerId),
-      startNs:     String(props.startNs),
-      endNs:       String(props.endNs),
+      renderer:      "urdf",
+      urdfFileAppId: urdfFileAppId.value.trim(),
+      containerId:   String(props.containerId),
+      startNs:       String(props.startNs),
+      endNs:         String(props.endNs),
     },
   });
 }
@@ -136,7 +145,7 @@ function openThermography() {
 
 const canOpenAny = computed(() =>
   (rendererKind.value === "trace-3d" && canOpen.value) ||
-  (rendererKind.value === "urdf" && urdfUrl.value.trim().length > 0) ||
+  (rendererKind.value === "urdf" && urdfFileAppId.value.trim().length > 0) ||
   (rendererKind.value === "thermography"),
 );
 </script>
@@ -183,25 +192,21 @@ const canOpenAny = computed(() =>
         />
 
         <div v-else-if="rendererKind === 'urdf'" class="d-flex flex-column ga-3">
+          <!-- V2-SWEEP Wave 2: no URL/path inputs — the dialog takes the
+               FileReference appId; the render page resolves the bytes via
+               the v2 content endpoint. Context-scoped picker tracked as
+               URDF-REF-PICKER in aidocs/16. -->
           <div class="text-caption text-medium-emphasis">
-            Render a robot description (URDF) in the browser. The default sample
-            is a two-link demo arm; replace with a signed Garage URL of a real
-            URDF FileReference to render your own robot.
+            Render a robot description (URDF) in the browser. Paste the appId
+            of the .urdf FileReference (copy it from the file's detail page —
+            or use "Open in URDF view" there directly).
           </div>
           <v-text-field
-            v-model="urdfUrl"
-            label="URDF source URL"
+            v-model="urdfFileAppId"
+            label="URDF FileReference appId"
             density="compact"
             variant="outlined"
-            hint="Signed URL of the .urdf file, or a static path under /urdf-samples/."
-            persistent-hint
-          />
-          <v-text-field
-            v-model="urdfPackagePath"
-            label="Mesh package path (optional)"
-            density="compact"
-            variant="outlined"
-            hint="Root used to resolve `package://` mesh URIs."
+            hint="UUID of the singleton FileReference holding the .urdf file."
             persistent-hint
           />
         </div>
