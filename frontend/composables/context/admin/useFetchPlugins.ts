@@ -76,7 +76,14 @@ export function useFetchPlugins() {
         handleError(fetchError.value, "listPlugins");
         return;
       }
-      const raw = (await response.json()) as PluginEntryIO[];
+      // The endpoint returns `{ plugins: [...] }` (a wrapper object), not a
+      // bare array — spreading the object directly threw "p is not iterable".
+      const body = (await response.json()) as
+        | PluginEntryIO[]
+        | { plugins?: PluginEntryIO[] };
+      const raw: PluginEntryIO[] = Array.isArray(body)
+        ? body
+        : (body?.plugins ?? []);
       plugins.value = [...raw].sort(
         (a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state],
       );
