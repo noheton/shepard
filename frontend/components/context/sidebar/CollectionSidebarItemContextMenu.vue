@@ -2,10 +2,22 @@
 import type { ResponseError } from "@dlr-shepard/backend-client";
 
 const props = defineProps<{
-  collectionId: number;
+  /**
+   * V2-SWEEP Wave 1: collection identifier for v2 calls — the appId (UUID v7)
+   * route param (the backend EntityIdResolver also accepts a legacy numeric
+   * string).
+   */
+  collectionId: string;
   collectionAppId?: string;
-  dataObjectId: number;
-  parentId?: number;
+  /** DataObject appId (UUID v7) — used for the v2 delete + edit. */
+  dataObjectId: string;
+  /**
+   * SIDEBAR-V2-CREATE (aidocs/16): numeric ids resolved from the loaded v2
+   * entities, required only by the still-v1-backed create dialog (v1
+   * createDataObject + Parent/Predecessor inputs). Never placed on a route.
+   */
+  collectionNumericId?: number;
+  dataObjectNumericId: number;
   itemName: string;
 }>();
 
@@ -43,8 +55,8 @@ async function deleteItem() {
   const accessToken = session.value?.accessToken;
   const url =
     `${v2BaseUrl()}/v2/collections/` +
-    `${encodeURIComponent(String(props.collectionId))}/data-objects/` +
-    `${encodeURIComponent(String(props.dataObjectId))}`;
+    `${encodeURIComponent(props.collectionId)}/data-objects/` +
+    `${encodeURIComponent(props.dataObjectId)}`;
   const headers: Record<string, string> = { Accept: "application/json" };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
@@ -105,18 +117,21 @@ async function deleteItem() {
       />
     </div>
   </DisplayChildrenOnHover>
+  <!-- SIDEBAR-V2-CREATE (aidocs/16): the create dialog's blank form is still
+       v1-backed — it gets the numeric ids resolved from loaded v2 entities. -->
   <CreateDataObjectDialog
     v-if="showCreateDialog"
     v-model:show-dialog="showCreateDialog"
-    :collection-id="collectionId"
+    :collection-id="(collectionNumericId as unknown as number)"
     :collection-app-id="collectionAppId"
-    :parent-id="dataObjectId"
+    :parent-id="dataObjectNumericId"
     @data-object-created="emit('data-object-created')"
   />
   <EditDataObjectDialog
     v-if="showEditDialog"
     v-model:show-dialog="showEditDialog"
     :collection-id="collectionId"
+    :collection-numeric-id="collectionNumericId"
     :data-object-id="dataObjectId"
     :data-object-name="itemName"
     @data-object-updated="emit('data-object-updated')"

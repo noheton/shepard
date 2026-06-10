@@ -66,8 +66,12 @@ async function onTemplateSelected(template: ShepardTemplateIO) {
       });
     emitSuccess(`Created "${created.name}" from template "${template.name}"`);
     emit("data-object-created");
+    // V2-SWEEP Wave 1: routes carry appIds, never numeric Neo4j ids.
     router.push(
-      collectionsPath + props.collectionId + dataObjectsPathFragment + created.id,
+      collectionsPath +
+        (props.collectionAppId ?? props.collectionId) +
+        dataObjectsPathFragment +
+        ((created as unknown as { appId?: string | null }).appId ?? created.id),
     );
     showDialog.value = false;
   } catch (error) {
@@ -112,11 +116,14 @@ async function createDataObject() {
     .then(response => {
       emitSuccess(`Successfully created data object "${dataObjectToSave.name}"`);
       emit("data-object-created");
+      // V2-SWEEP Wave 1: routes carry appIds, never numeric Neo4j ids. The
+      // v1 create response includes the minted appId; fall back to the
+      // numeric id only for pre-appId legacy instances.
       router.push(
         collectionsPath +
-          props.collectionId +
+          (props.collectionAppId ?? props.collectionId) +
           dataObjectsPathFragment +
-          response.id,
+          (response.appId ?? response.id),
       );
       showDialog.value = false;
     })

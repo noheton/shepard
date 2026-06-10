@@ -2,9 +2,20 @@
 import { useEditDataObject } from "./useEditDataObject";
 
 interface EditDataObjectDialogProps {
-  collectionId: number;
-  dataObjectId: number;
+  // V2-SWEEP Wave 1: ids may be appId (UUID v7) strings — they are
+  // stringified into the v2 fetch/PATCH paths, whose EntityIdResolver
+  // accepts UUID v7 or legacy numeric form transparently.
+  collectionId: number | string;
+  dataObjectId: number | string;
   dataObjectName: string;
+  /**
+   * Numeric collection id resolved from the loaded v2 Collection entity —
+   * required only by the Parent/Predecessor autocompletes, which still use
+   * the v1 SearchApi (documented exception: no v2 search surface yet,
+   * SEARCH-V2 in aidocs/16). Falls back to `collectionId` when that is
+   * already numeric (legacy callers).
+   */
+  collectionNumericId?: number;
 }
 
 const props = defineProps<EditDataObjectDialogProps>();
@@ -27,6 +38,12 @@ const { saveChanges, updatedDataObject, loading } = useEditDataObject(
 
 const form = useTemplateRef("form");
 watch(updatedDataObject, () => form.value?.validate(), { deep: true });
+
+// Numeric scope for the v1-search-backed autocompletes (see prop docs).
+const searchCollectionId = computed<number | undefined>(() => {
+  if (props.collectionNumericId !== undefined) return props.collectionNumericId;
+  return typeof props.collectionId === "number" ? props.collectionId : undefined;
+});
 </script>
 
 <template>
@@ -92,7 +109,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
           <v-col class="pb-2">
             <ParentInput
               v-model:parent-id="updatedDataObject.parentId"
-              :collection-id="collectionId"
+              :collection-id="(searchCollectionId as unknown as number)"
             />
           </v-col>
         </v-row>
@@ -100,7 +117,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
           <v-col class="pt-2">
             <PredecessorInput
               v-model:predecessor-ids="updatedDataObject.predecessorIds"
-              :collection-id="collectionId"
+              :collection-id="(searchCollectionId as unknown as number)"
             />
           </v-col>
         </v-row>
