@@ -30,14 +30,15 @@
 //   Expected: N → 0 for both. On a fresh install the count is already 0
 //   (this migration is a no-op) — that is the expected steady state.
 
-CALL {
-  MATCH (r:SpatialDataReference)
-  WHERE r.appId IS NULL
-  SET r.appId = randomUUID()
-} IN TRANSACTIONS OF 500 ROWS;
+// Plain SET (NOT `CALL { ... } IN TRANSACTIONS`): the neo4j-migrations runner
+// executes each statement inside an explicit transaction, where batched
+// `IN TRANSACTIONS` is illegal ("can only be executed in an implicit
+// transaction"). The targeted set is only legacy NULL-appId rows — rare and
+// small — so no batching is needed.
+MATCH (r:SpatialDataReference)
+WHERE r.appId IS NULL
+SET r.appId = randomUUID();
 
-CALL {
-  MATCH (c:SpatialDataContainer)
-  WHERE c.appId IS NULL
-  SET c.appId = randomUUID()
-} IN TRANSACTIONS OF 500 ROWS;
+MATCH (c:SpatialDataContainer)
+WHERE c.appId IS NULL
+SET c.appId = randomUUID();
