@@ -572,6 +572,8 @@ should land alongside each migration:
 
 | **UI-GAP-SURVEY-2026-06-09 — doc-only survey, no operator action** | 2026-06-10. Survey of the live frontend for backend features lacking a real (non-stub) UI surface. Filed UI-GAP-1 through UI-GAP-8 in `aidocs/16`. Report at `aidocs/agent-findings/ui-gap-survey-2026-06-09.md`. Bonus: corrected stale `queued` status of `PLACEHOLDER-REPLACE-TS-SEMANTIC-REST` (already shipped as `ChannelAnnotationsPane.vue`). | **ZERO** | **No schema, config, or endpoint changes.** Pure doc/backlog update. | None. | **No action required.** |
 
+| **UI-GAP-2 — MFFD process-chain page polish: real header + download button** | 2026-06-10. Replaces `PlaceholderPageHeader` in `frontend/pages/admin/mffd-process-chain.vue` with a real `<h4 class="text-h4">` heading + prose description. Adds a "Download example YAML" button serving `scripts/mffd-process-chain-mapping.example.yaml` as a static asset at `/mffd-process-chain-mapping.example.yaml` (copied to `frontend/public/`). Also fixes the design-doc link (was pointing to `nucli-de/shepard`; corrected to `noheton/shepard`). | **ZERO** | **No schema, config, or endpoint changes.** Pure frontend polish. The static YAML asset is additive; the existing endpoint is unchanged. | None. | **No action required.** |
+
 ## Reporting an upgrade-path gap
 
 If you find a change on `main` that breaks an upstream upgrade and
