@@ -206,6 +206,24 @@
     <cve>CVE-2025-50151</cve>
   </suppress>
 
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-49656 (CVSS 7.5): Apache Jena 5.4.0 CVE on jena-shacl (the SHACL
+    validation module). Same reasoning as jena-core/jena-arq/jena-iri/jena-base entries:
+    all SHACL shapes are server-constructed from trusted ontology files; no user-supplied
+    SPARQL or IRI input reaches the Jena parser directly. OWASP-SUPP-003 extension
+    (OWASP-SIBLING-JARS-4).</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-shacl@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-49656</cve>
+  </suppress>
+  <suppress until="2026-12-31">
+    <notes>CVE-2025-50151 (CVSS 8.8): Apache Jena 5.4.0 CVE on jena-shacl. Same reasoning
+    as jena-core/jena-arq/jena-iri/jena-base entries — server-constructed SHACL shapes
+    only; no user-supplied SPARQL reaches the Jena parser. OWASP-SUPP-003 extension
+    (OWASP-SIBLING-JARS-4).</notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.jena/jena-shacl@5\.4\.0$</packageUrl>
+    <cve>CVE-2025-50151</cve>
+  </suppress>
+
   <!-- ===================================================================
        OWASP-SUPP-004: Netty 4.1.133.Final (CVE-2026-42582, 7.5)
        =================================================================== -->
@@ -292,6 +310,16 @@
     bound to loopback and accessible only from the trusted internal Docker network;
     identical deployment topology reasoning as OWASP-SUPP-006. OWASP-SUPP-006.</notes>
     <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_common@.*$</packageUrl>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+
+  <suppress until="2026-12-31">
+    <notes>CVE-2026-42154 (CVSS 7.5): Same CVE on simpleclient_tracer_otel_agent (the
+    OpenTelemetry Java agent bridge for the Prometheus simpleclient). The /q/metrics scrape
+    endpoint is bound to loopback and accessible only from the trusted internal Docker
+    network; identical deployment topology reasoning as OWASP-SUPP-006.
+    OWASP-SIBLING-JARS-4.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient_tracer_otel_agent@.*$</packageUrl>
     <cve>CVE-2026-42154</cve>
   </suppress>
 
