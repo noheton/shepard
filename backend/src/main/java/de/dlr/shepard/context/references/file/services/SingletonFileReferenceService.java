@@ -152,7 +152,7 @@ public class SingletonFileReferenceService {
     // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
     // this file before buffering bytes. Only if a parser wants it do we read all bytes
     // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
-    boolean anyAccepts = parserRegistry.anyAccepts(null, filename);
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
     byte[] parseBuf = null;
     ShepardFile saved;
     if (anyAccepts) {
@@ -255,7 +255,7 @@ public class SingletonFileReferenceService {
     // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
     // this file before buffering bytes. Only if a parser wants it do we read all bytes
     // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
-    boolean anyAccepts = parserRegistry.anyAccepts(null, filename);
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
     byte[] parseBuf = null;
     ShepardFile saved;
     if (anyAccepts) {
