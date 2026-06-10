@@ -33,9 +33,9 @@ section and the `upgrade-overlay` section.
 | `fragment` | 44 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 130 |
+| `feature-defined` | 129 |
 | `audited-by-personas` | 74 |
-| `feedback-implemented` | 3 |
+| `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
 | `deployed` | 74 |
 | `decommissioned` | 49 |
@@ -140,7 +140,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (130)
+## feature-defined (129)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -212,7 +212,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-09 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/121-feature-showcase-reseed.md`](integrations/121-feature-showcase-reseed.md) | Feature-showcase reseed initiative (2026-06-09) | 2026-06-09 | 2026-06-10 |
-| [`aidocs/integrations/124-spatial-unified-reference.md`](integrations/124-spatial-unified-reference.md) | 124 — One spatial integration: spatial as a unified Reference kind | 2026-06-10 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
@@ -354,13 +353,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-27 |
 | [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-28 |
 
-## feedback-implemented (3)
+## feedback-implemented (4)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/mffd-urdf-scene-building.md`](agent-findings/mffd-urdf-scene-building.md) | MFFD URDF scene-building — audit + fixes | 2026-06-03 | 2026-06-03 |
 | [`aidocs/agent-findings/q7-fileref-parser-bug-2026-05-28.md`](agent-findings/q7-fileref-parser-bug-2026-05-28.md) | Q7 / task #145 — fileRef parser bug (BUG-FILEREF-TRUNCATION) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/integrations/124-spatial-unified-reference.md`](integrations/124-spatial-unified-reference.md) | 124 — One spatial integration: spatial as a unified Reference kind | 2026-06-10 | 2026-06-10 |
 
 ## tests-implemented (9)
 
