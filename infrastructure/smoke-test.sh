@@ -216,15 +216,10 @@ check "DELETE /v2/structured-data-containers/1 (no auth → 401)" \
       "$BACKEND_URL/v2/structured-data-containers/1" \
       "401,403" "" DELETE
 
-# SA-CONT — container-level semantic annotation endpoints exist
-check "GET /v2/timeseries-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/annotations" \
-      "401,403"
-check "GET /v2/file-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/file-containers/1/annotations" \
-      "401,403"
-check "GET /v2/structured-data-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/structured-data-containers/1/annotations" \
+# SA-CONT (APISIMP-SA-CONT-DELETE) — the per-kind container-annotation
+# resources were dissolved into the polymorphic /v2/annotations surface.
+check "GET /v2/annotations (no auth → 401)" \
+      "$BACKEND_URL/v2/annotations" \
       "401,403"
 
 # INST1 — public instance identity (ROR-based)
