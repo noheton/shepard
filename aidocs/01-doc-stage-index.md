@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 44 |
 | `concept` | 25 |
 | `idea` | 13 |
-| `feature-defined` | 129 |
+| `feature-defined` | 130 |
 | `audited-by-personas` | 74 |
 | `feedback-implemented` | 3 |
 | `tests-implemented` | 9 |
 | `deployed` | 74 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **420** |
+| **total docs** | **421** |
 | **UNTAGGED** | **0** |
 
 ## fragment (44)
@@ -140,7 +140,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (129)
+## feature-defined (130)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -212,6 +212,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/119-mffd-collection-layout.md`](integrations/119-mffd-collection-layout.md) | 119 — MFFD Collection layout (B-pattern) | 2026-06-02 | 2026-06-09 |
 | [`aidocs/integrations/120-mffd-wiki-transformation.md`](integrations/120-mffd-wiki-transformation.md) | 120 — MFFD wiki transformation | 2026-06-02 | 2026-06-02 |
 | [`aidocs/integrations/121-feature-showcase-reseed.md`](integrations/121-feature-showcase-reseed.md) | Feature-showcase reseed initiative (2026-06-09) | 2026-06-09 | 2026-06-10 |
+| [`aidocs/integrations/124-spatial-unified-reference.md`](integrations/124-spatial-unified-reference.md) | 124 — One spatial integration: spatial as a unified Reference kind | 2026-06-10 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-28 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-26 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
