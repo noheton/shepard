@@ -151,7 +151,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`](agent-findings/btkvs-docket-showcase-2026-05-29.md) | BT-KVS docket showcase — C/C and C/SiC fabrication tracking | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/frontend-v2-exclusivity-audit.md`](agent-findings/frontend-v2-exclusivity-audit.md) | Frontend v2 / appId exclusivity audit | 2026-06-10 | — |
+| [`aidocs/agent-findings/frontend-v2-exclusivity-audit.md`](agent-findings/frontend-v2-exclusivity-audit.md) | Frontend v2 / appId exclusivity audit | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |

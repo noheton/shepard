@@ -1,5 +1,4 @@
-import { DataObjectApi, DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
@@ -12,12 +11,11 @@ import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
  * invalidateDataObjectsCache(collectionId) from mutation paths (create /
  * delete / update) to force an immediate refetch on the next consumer.
  *
- * Note on v1 vs v2: the first consumer to resolve the cache entry determines
- * the fetch path. Lineage (which passes collectionAppId) goes via v2 and gets
- * per-kind ref counts; provenance (which omits collectionAppId) goes via v1.
- * Neither consumer reads the extra ref-count fields today, so this is fine.
- * When both are on the same page the first-caller wins; the second re-uses
- * the same data regardless of which path resolved it.
+ * V2-SWEEP Wave 4: v2-only. The list always loads from
+ * GET /v2/collections/{collectionAppId}/data-objects — when the caller has
+ * no appId yet, the numeric id is stringified into the same path (the
+ * backend EntityIdResolver accepts both shapes), so the v1
+ * getAllDataObjects fallback is gone.
  */
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -58,14 +56,12 @@ export function invalidateDataObjectsCache(collectionId?: number): void {
  * paginated round-trips when CollectionLineageGraph and DataObjectProvGraph
  * are both mounted for the same collection).
  *
- * When `collectionAppId` is provided the v2 endpoint is used, which includes
- * per-kind reference counts (`timeseriesCount`, `fileCount`, `structuredDataCount`).
- * Falls back to the v1 endpoint (numeric collectionId only) when appId is not yet
- * available (e.g. before the Collection has loaded).
+ * Always v2 (V2-SWEEP Wave 4): the collection identifier on the wire is the
+ * appId when available, otherwise the stringified numeric id — both resolve
+ * via the backend EntityIdResolver on the same appId-keyed endpoint.
  */
 export function useFetchAllDataObjects(collectionId: number, collectionAppId?: Ref<string | null>) {
   const v2Api = useV2ShepardApi(DataObjectV2Api);
-  const v1Api = useShepardApi(DataObjectApi);
 
   // Return or create the cache entry for this collectionId.
   function getOrCreateEntry(): CacheEntry {
@@ -82,40 +78,24 @@ export function useFetchAllDataObjects(collectionId: number, collectionAppId?: R
   }
 
   async function fetchAll(entry: CacheEntry): Promise<void> {
-    const appId = collectionAppId?.value ?? null;
+    // appId when available, else the stringified numeric id — same v2 path.
+    const identifier = collectionAppId?.value ?? String(collectionId);
     entry.loading.value = true;
     try {
-      if (appId) {
-        const PAGE = 200;
-        let page = 0;
-        const results: DataObjectListItemV2[] = [];
-        while (true) {
-          const batch = await v2Api.value.listDataObjects({
-            collectionAppId: appId,
-            page,
-            size: PAGE,
-          });
-          results.push(...batch);
-          if (batch.length < PAGE) break;
-          page++;
-        }
-        entry.dataObjects.value = results;
-      } else {
-        const PAGE = 200;
-        let page = 0;
-        const results: DataObjectListItemV2[] = [];
-        while (true) {
-          const batch = await v1Api.value.getAllDataObjects({
-            collectionId,
-            page,
-            size: PAGE,
-          });
-          results.push(...(batch as DataObjectListItemV2[]));
-          if (batch.length < PAGE) break;
-          page++;
-        }
-        entry.dataObjects.value = results;
+      const PAGE = 200;
+      let page = 0;
+      const results: DataObjectListItemV2[] = [];
+      while (true) {
+        const batch = await v2Api.value.listDataObjects({
+          collectionAppId: identifier,
+          page,
+          size: PAGE,
+        });
+        results.push(...batch);
+        if (batch.length < PAGE) break;
+        page++;
       }
+      entry.dataObjects.value = results;
       entry.fetchedAt = Date.now();
     } catch (e) {
       // On error keep any previously cached data rather than wiping it.
@@ -142,19 +122,10 @@ export function useFetchAllDataObjects(collectionId: number, collectionAppId?: R
 
   const entry = getOrCreateEntry();
 
-  if (collectionAppId) {
-    // Re-fetch whenever the appId materialises (initial null → uuid transition).
-    watch(collectionAppId, (appId) => {
-      if (appId !== null) {
-        // If the entry was populated via v1 before appId arrived, keep the
-        // data but mark it stale so v2 supersedes it on the next watcher tick.
-        entry.fetchedAt = 0;
-        ensureFetched(entry);
-      }
-    }, { immediate: true });
-  } else {
-    ensureFetched(entry);
-  }
+  // Both identifier shapes hit the same v2 endpoint, so no refetch is needed
+  // when the appId materialises later — the numeric-string fetch already
+  // returned the same rows.
+  ensureFetched(entry);
 
   return { dataObjects: entry.dataObjects, loading: entry.loading };
 }

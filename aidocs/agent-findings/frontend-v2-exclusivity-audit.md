@@ -149,6 +149,13 @@ exception until aidocs/platform/87 lands. Original analysis below.
 144 call sites; grouped by migratability. **File:line → operation →
 v2-equivalent exists?**
 
+**Sweep status (V2-SWEEP, 2026-06-10):** Waves 1–4 shipped. Done:
+sidebar tree (Wave 1), URDF render link (Wave 2), detail-page mutations +
+DO-map (Wave 3), `useFetchAllDataObjects` / `usePagedDataObjects` v1
+fallbacks removed (Wave 4). Remaining v1 sites are either documented
+exceptions (call-site comment + `V2-SWEEP` rows in aidocs/16) or the
+ANNOT-V2 model migration (deferred — needs live UI validation).
+
 **MIGRATE NOW (v2 appId endpoint confirmed in openapi):**
 - `composables/annotated.ts:24,54,89` — `SemanticAnnotationApi` CRUD →
   `/v2/annotations` (+ `/find`, `/{appId}`). High value: annotations are the
