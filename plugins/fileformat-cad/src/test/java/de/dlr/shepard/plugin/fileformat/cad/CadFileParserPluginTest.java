@@ -2,6 +2,7 @@ package de.dlr.shepard.plugin.fileformat.cad;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;

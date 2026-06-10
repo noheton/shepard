@@ -83,6 +83,7 @@ for p in \
   fileformat-svdx \
   fileformat-thermography \
   fileformat-cad \
+  fileformat-robotics \
   minter-local minter-datacite minter-epic \
   unhide kip hdf5 git file-s3 aas importer \
   spatiotemporal wiki-writer analytics-ts
