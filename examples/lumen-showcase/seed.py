@@ -2492,12 +2492,22 @@ def main(argv: list[str] | None = None) -> int:
     best_effort_versions(apis, coll)
     best_effort_api_keys(apis, args.username)
 
+    # Frontend is v2/appId-only — print appId-based URLs, never numeric ids.
+    frontend = os.environ.get("FRONTEND_URL", "https://shepard.nuclide.systems")
+    coll_app_id = (
+        getattr(coll, "_appId", None)
+        or getattr(coll, "appId", None)
+        or (getattr(coll, "additional_properties", None) or {}).get("appId")
+    )
+    inv_app_id = _data_object_app_id(investigation, apis)
+    tr004_app_id = _data_object_app_id(runs[ANOMALY_RUN], apis)
+    tr006_app_id = _data_object_app_id(runs[6], apis)
     print(
         "\nseed complete.\n"
-        f"  Collection id: {coll.id}\n"
-        f"  Investigation DataObject id: {investigation.id}\n"
-        f"  TR-004 id: {runs[ANOMALY_RUN].id}\n"
-        f"  TR-006 id: {runs[6].id}\n"
+        f"  Collection:    {frontend}/collections/{coll_app_id}\n"
+        f"  Investigation: {frontend}/collections/{coll_app_id}/dataobjects/{inv_app_id}\n"
+        f"  TR-004:        {frontend}/collections/{coll_app_id}/dataobjects/{tr004_app_id}\n"
+        f"  TR-006:        {frontend}/collections/{coll_app_id}/dataobjects/{tr006_app_id}\n"
         "Next: open `notebooks/anomaly-analysis.ipynb` (see README) "
         "or run with --close-anomaly after you publish the investigation finding.",
         flush=True,
