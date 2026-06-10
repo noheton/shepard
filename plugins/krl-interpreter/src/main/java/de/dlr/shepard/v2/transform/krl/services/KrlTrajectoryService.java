@@ -16,6 +16,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import io.quarkus.arc.Unremovable;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -63,6 +64,7 @@ import org.neo4j.ogm.session.Session;
  * from the application-scoped context.
  */
 @ApplicationScoped
+@Unremovable
 public class KrlTrajectoryService {
 
   /** Target-kind label for the recorded {@link Activity}. */
