@@ -77,7 +77,8 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   }
 
   async fetchPermissions() {
-    const containerAppId = this.container.value?.appId;
+    // v1-generated model omits appId though the wire carries it (same cast as useFetchCollection)
+    const containerAppId = (this.container.value as unknown as { appId?: string | null } | undefined)?.appId;
     if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
       // V2-SWEEP-003-2: v2 unified permissions (replaces v1 getTimeseriesPermissions)
@@ -108,7 +109,8 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   }
 
   async updatePermissions(updatedPermissions: Permissions) {
-    const containerAppId = this.container.value?.appId;
+    // v1-generated model omits appId though the wire carries it (same cast as useFetchCollection)
+    const containerAppId = (this.container.value as unknown as { appId?: string | null } | undefined)?.appId;
     if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
       // V2-SWEEP-003-2: v2 unified permissions (replaces v1 editTimeseriesPermissions)
