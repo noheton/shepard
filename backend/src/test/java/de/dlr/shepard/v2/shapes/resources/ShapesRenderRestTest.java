@@ -7,12 +7,15 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.spi.view.RenderException;
 import de.dlr.shepard.spi.view.RenderRequest;
 import de.dlr.shepard.spi.view.RenderResponse;
+import de.dlr.shepard.spi.view.RenderedMedia;
 import de.dlr.shepard.spi.view.ViewRecipeRenderer;
 import de.dlr.shepard.spi.view.ViewRecipeRendererRegistry;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderRequestIO;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderResponseIO;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
@@ -466,5 +469,135 @@ class ShapesRenderRestTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> body = (Map<String, Object>) r.getEntity();
     assertThat(body.get("code")).isEqualTo("render.unknown-error");
+  }
+
+  // ─── V2CONV-A1b — file-rooted dispatch (E1/E2/E3/E4) ─────────────────────
+
+  /** Headers stub whose acceptable media types are exactly {@code accepts}. */
+  private static HttpHeaders acceptHeaders(MediaType... accepts) {
+    HttpHeaders h = mock(HttpHeaders.class);
+    when(h.getAcceptableMediaTypes()).thenReturn(List.of(accepts));
+    return h;
+  }
+
+  /**
+   * Renderer that captures the request + emits a PNG for image/png and a JSON
+   * view-model (echoing params via the binding role) otherwise — proves E1/E3.
+   */
+  private static final class FileRootedCapturingRenderer implements ViewRecipeRenderer {
+
+    final String iri;
+    RenderRequest captured;
+
+    FileRootedCapturingRenderer(String iri) {
+      this.iri = iri;
+    }
+
+    @Override
+    public Set<String> supportedShapeIris() {
+      return Set.of(iri);
+    }
+
+    @Override
+    public Set<String> producibleMedia() {
+      return Set.of("image/png");
+    }
+
+    @Override
+    public Optional<RenderedMedia> renderMedia(RenderRequest req, String acceptMediaType) {
+      this.captured = req;
+      if ("image/png".equals(acceptMediaType)) {
+        return Optional.of(new RenderedMedia("image/png", new byte[] { (byte) 0x89, 'P', 'N', 'G' }));
+      }
+      return Optional.empty();
+    }
+
+    @Override
+    public RenderResponse render(RenderRequest req) {
+      this.captured = req;
+      // Echo the per-call params + focusFileRefAppId back through the binding
+      // so the test can assert E1/E2 reached the renderer.
+      return new RenderResponse(
+        null,
+        req.focusShepardId(),
+        "describe",
+        List.of(
+          new RenderResponse.ChannelBindingProjection(
+            req.param("mode"),
+            req.focusFileRefAppId(),
+            null,
+            false,
+            "OK",
+            null
+          )
+        )
+      );
+    }
+
+    @Override
+    public String name() {
+      return "FileRootedCapturingRenderer";
+    }
+  }
+
+  @Test
+  void fileRootedRenderReturnsPngWithParamsAndFocusFileRef() {
+    String iri = "http://semantics.dlr.de/shepard-ui/thermography/transform#OtvisFrameShape";
+    FileRootedCapturingRenderer captor = new FileRootedCapturingRenderer(iri);
+    wireRegistry(captor);
+
+    var body = new ShapesRenderRequestIO(
+      null, "do-otvis-1", null, iri, "otvis-ref-appid", Map.of("frame", "3", "channel", "phase")
+    );
+    Response r = rest.render(acceptHeaders(MediaType.valueOf("image/png")), body);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getMediaType().toString()).isEqualTo("image/png");
+    assertThat((byte[]) r.getEntity()).hasSize(4);
+    // E1 + E2 reached the renderer.
+    assertThat(captor.captured).isNotNull();
+    assertThat(captor.captured.shapeIri()).isEqualTo(iri);
+    assertThat(captor.captured.focusFileRefAppId()).isEqualTo("otvis-ref-appid");
+    assertThat(captor.captured.param("frame")).isEqualTo("3");
+    assertThat(captor.captured.param("channel")).isEqualTo("phase");
+    // No stored template was loaded (E2) — templateDAO is never consulted.
+    assertThat(captor.captured.templateAppId()).isNull();
+  }
+
+  @Test
+  void fileRootedRenderReturnsJsonViewModelForDescribeMode() {
+    // E4 — params.mode=index → JSON describe view-model (the frames catalogue).
+    String iri = "http://semantics.dlr.de/shepard-ui/thermography/transform#OtvisFrameShape";
+    FileRootedCapturingRenderer captor = new FileRootedCapturingRenderer(iri);
+    wireRegistry(captor);
+
+    var body = new ShapesRenderRequestIO(
+      null, "do-otvis-1", null, iri, "otvis-ref-appid", Map.of("mode", "index")
+    );
+    Response r = rest.render(acceptHeaders(MediaType.APPLICATION_JSON_TYPE), body);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    var io = (ShapesRenderResponseIO) r.getEntity();
+    assertThat(io.renderer()).isEqualTo("describe");
+    assertThat(io.channelBindings()).hasSize(1);
+    // Echoed: the role carries params.mode, the selector carries focusFileRefAppId.
+    assertThat(io.channelBindings().get(0).role()).isEqualTo("index");
+    assertThat(io.channelBindings().get(0).channelSelector()).isEqualTo("otvis-ref-appid");
+  }
+
+  @Test
+  void fileRootedRenderReturns422WhenNoRendererClaimsShape() {
+    var body = new ShapesRenderRequestIO(
+      null, "do-1", null, "http://example.com/UnknownShape", "ref-1", Map.of()
+    );
+    Response r = rest.render(null, body);
+    assertThat(r.getStatus()).isEqualTo(422);
+  }
+
+  @Test
+  void returns400WhenNeitherTemplateNorShapeIriSupplied() {
+    var body = new ShapesRenderRequestIO(null, "do-1", null, null, "ref-1", Map.of());
+    Response r = rest.render(null, body);
+    assertThat(r.getStatus()).isEqualTo(400);
   }
 }

@@ -3,6 +3,8 @@ package de.dlr.shepard.v2.shapes.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
+import de.dlr.shepard.spi.view.FocusPayloadResolver;
 import de.dlr.shepard.spi.view.RenderException;
 import de.dlr.shepard.spi.view.RenderRequest;
 import de.dlr.shepard.spi.view.RenderResponse;
@@ -125,6 +127,16 @@ public class ShapesRenderRest {
   @Inject
   ViewRecipeRendererRegistry rendererRegistry;
 
+  /**
+   * V2CONV-A1b (E3) — focus-byte resolution. The dispatcher wraps this CDI
+   * service in a {@link FocusPayloadResolver} and hands it to the renderer so
+   * a byte-rooted renderer (thermography OTvis/heatmap) can read the focus
+   * FileReference's content without itself being a CDI bean. Field-injected so
+   * unit tests can leave it null and exercise the template-rooted path.
+   */
+  @Inject
+  SingletonFileReferenceService singletonFileReferenceService;
+
   @POST
   @Path("/render")
   @RolesAllowed("authenticated")
@@ -162,8 +174,21 @@ public class ShapesRenderRest {
     if (body == null) {
       return badRequest("request body required");
     }
-    if (body.templateAppId() == null || body.templateAppId().isBlank()) {
-      return badRequest("templateAppId is required");
+
+    boolean hasTemplate = body.templateAppId() != null && !body.templateAppId().isBlank();
+    boolean hasFileRoot = body.shapeIri() != null && !body.shapeIri().isBlank();
+
+    // V2CONV-A1b (E2) — file-rooted dispatch: a caller may name a shapeIri
+    // (+ focusFileRefAppId) directly with no stored VIEW_RECIPE template. The
+    // template-rooted path stays the default. 400 only when neither is usable.
+    if (!hasTemplate && hasFileRoot) {
+      return renderFileRooted(headers, body);
+    }
+
+    if (!hasTemplate) {
+      return badRequest(
+        "either templateAppId (template-rooted) or shapeIri (+focusFileRefAppId, file-rooted) is required"
+      );
     }
     if (body.focusShepardId() == null || body.focusShepardId().isBlank()) {
       return badRequest("focusShepardId is required");
@@ -229,6 +254,65 @@ public class ShapesRenderRest {
     return Response.ok(response).build();
   }
 
+  // ─── V2CONV-A1b (E2) file-rooted dispatch ────────────────────────────────
+
+  /**
+   * V2CONV-A1b (E2/E3) — render a file-rooted request: the caller names a
+   * {@code shapeIri} + (optionally) a {@code focusFileRefAppId} with no stored
+   * VIEW_RECIPE template. Resolves the renderer by shape IRI and hands it the
+   * per-call {@code params} + a {@link FocusPayloadResolver} (E3). Content
+   * negotiation honours {@code Accept} just like the template-rooted path; the
+   * default is the JSON view-model ({@code params.mode=index} returns a
+   * describe view-model — the frames catalogue, E4).
+   */
+  private Response renderFileRooted(HttpHeaders headers, ShapesRenderRequestIO body) {
+    String shapeIri = body.shapeIri();
+    if (rendererRegistry == null) {
+      return Response.status(422)
+        .entity(Map.of("error", "no renderer registry available for shape: " + shapeIri))
+        .build();
+    }
+    Optional<ViewRecipeRenderer> match = rendererRegistry.resolve(shapeIri);
+    if (match.isEmpty()) {
+      return Response.status(422)
+        .entity(Map.of("error", "no renderer registered for shape: " + shapeIri))
+        .build();
+    }
+    RenderRequest req = buildFileRootedRequest(body, shapeIri);
+
+    // Content negotiation — a non-JSON Accept that the renderer produces returns
+    // bytes (e.g. image/png frame); otherwise the JSON view-model.
+    Response media = negotiateMediaForRequest(match.get(), headers, req);
+    if (media != null) {
+      return media;
+    }
+    return dispatchRequestToRenderer(match.get(), req, body.templateAppId(), body.focusShepardId());
+  }
+
+  private RenderRequest buildFileRootedRequest(ShapesRenderRequestIO body, String shapeIri) {
+    return new RenderRequest(
+      null,
+      body.focusShepardId(),
+      shapeIri,
+      null,
+      body.params() == null ? Map.of() : body.params(),
+      body.focusFileRefAppId(),
+      focusPayloadResolver()
+    );
+  }
+
+  /**
+   * V2CONV-A1b (E3) — adapt the CDI {@link SingletonFileReferenceService} to the
+   * SPI {@link FocusPayloadResolver} handle. Null when the service isn't wired
+   * (unit tests) so the renderer can detect the absent-resolver case.
+   */
+  private FocusPayloadResolver focusPayloadResolver() {
+    if (singletonFileReferenceService == null) {
+      return null;
+    }
+    return appId -> singletonFileReferenceService.getPayload(appId).getInputStream();
+  }
+
   // ─── VIS-S1 SPI dispatch ─────────────────────────────────────────────────
 
   /**
@@ -277,6 +361,18 @@ public class ShapesRenderRest {
     ShepardTemplate template,
     String shapeIri
   ) {
+    // V2CONV-A1b — build the request once (now carries params + the focus
+    // payload resolver) and delegate to the request-based negotiator so the
+    // template-rooted and file-rooted paths share one code path.
+    return negotiateMediaForRequest(renderer, headers, buildTemplateRequest(body, template, shapeIri));
+  }
+
+  /**
+   * V2CONV-A1b — content negotiation for a fully-built {@link RenderRequest}.
+   * Returns a media {@link Response} when the caller's {@code Accept} asks for a
+   * non-JSON media type the renderer produces; otherwise null → JSON fallback.
+   */
+  private Response negotiateMediaForRequest(ViewRecipeRenderer renderer, HttpHeaders headers, RenderRequest req) {
     java.util.Set<String> producible = renderer.producibleMedia();
     if (producible == null || producible.isEmpty()) {
       return null;
@@ -288,12 +384,6 @@ public class ShapesRenderRest {
       }
       String concrete = mt.getType() + "/" + mt.getSubtype();
       if (producible.contains(concrete)) {
-        RenderRequest req = new RenderRequest(
-          body.templateAppId(),
-          body.focusShepardId(),
-          shapeIri,
-          template.getBody()
-        );
         try {
           Optional<RenderedMedia> rendered = renderer.renderMedia(req, concrete);
           if (rendered.isPresent() && rendered.get().bytes() != null) {
@@ -305,7 +395,7 @@ public class ShapesRenderRest {
             "V2CONV-A1: renderer '%s' threw producing %s for shape <%s> — surfacing 422",
             renderer.name(),
             concrete,
-            shapeIri
+            req.shapeIri()
           );
           return Response
             .status(422)
@@ -318,18 +408,50 @@ public class ShapesRenderRest {
     return null;
   }
 
+  /**
+   * V2CONV-A1b — build the renderer request for a template-rooted dispatch.
+   * Carries the per-call {@code params} from the body + the focus payload
+   * resolver so a renderer that also wants bytes can reach them.
+   */
+  private RenderRequest buildTemplateRequest(ShapesRenderRequestIO body, ShepardTemplate template, String shapeIri) {
+    return new RenderRequest(
+      body.templateAppId(),
+      body.focusShepardId(),
+      shapeIri,
+      template.getBody(),
+      body.params() == null ? Map.of() : body.params(),
+      body.focusFileRefAppId(),
+      focusPayloadResolver()
+    );
+  }
+
   private Response dispatchToRenderer(
     ViewRecipeRenderer renderer,
     ShapesRenderRequestIO body,
     ShepardTemplate template,
     String shapeIri
   ) {
-    RenderRequest req = new RenderRequest(
+    return dispatchRequestToRenderer(
+      renderer,
+      buildTemplateRequest(body, template, shapeIri),
       body.templateAppId(),
-      body.focusShepardId(),
-      shapeIri,
-      template.getBody()
+      body.focusShepardId()
     );
+  }
+
+  /**
+   * V2CONV-A1b — invoke a renderer for a fully-built {@link RenderRequest} and
+   * translate the envelope onto the wire IO. Echoes the supplied
+   * {@code templateAppId}/{@code focusShepardId} (which may be null on a
+   * file-rooted render) onto the response — never trusts the renderer's echo.
+   */
+  private Response dispatchRequestToRenderer(
+    ViewRecipeRenderer renderer,
+    RenderRequest req,
+    String echoTemplateAppId,
+    String echoFocusShepardId
+  ) {
+    String shapeIri = req.shapeIri();
     try {
       RenderResponse out = renderer.render(req);
       if (out == null) {
@@ -350,7 +472,7 @@ public class ShapesRenderRest {
           )
           .build();
       }
-      return Response.ok(toWire(out, body)).build();
+      return Response.ok(toWire(out, echoTemplateAppId, echoFocusShepardId)).build();
     } catch (RenderException ex) {
       Log.debugf(
         ex,
@@ -401,7 +523,7 @@ public class ShapesRenderRest {
    * is preserved byte-for-byte; clients can keep their existing
    * branch logic.
    */
-  private ShapesRenderResponseIO toWire(RenderResponse out, ShapesRenderRequestIO req) {
+  private ShapesRenderResponseIO toWire(RenderResponse out, String echoTemplateAppId, String echoFocusShepardId) {
     List<ChannelBindingProjectionIO> wireBindings = new ArrayList<>();
     List<RenderResponse.ChannelBindingProjection> in = out.channelBindings();
     if (in != null) {
@@ -426,8 +548,8 @@ public class ShapesRenderRest {
     // Echo the request's appIds — never trust the renderer to fill
     // these correctly; this is dispatcher-level housekeeping.
     return new ShapesRenderResponseIO(
-      req.templateAppId(),
-      req.focusShepardId(),
+      echoTemplateAppId,
+      echoFocusShepardId,
       out.renderer(),
       wireBindings
     );
