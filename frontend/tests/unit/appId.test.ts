@@ -7,7 +7,13 @@
  * the clipboard helper's degradation paths.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { truncateAppId, copyAppIdToClipboard } from "../../utils/appId";
+import {
+  truncateAppId,
+  copyAppIdToClipboard,
+  readCollectionAppId,
+  readDataObjectAppId,
+  readContainerAppId,
+} from "../../utils/appId";
 
 describe("appId — truncateAppId", () => {
   it("uses 8…4 form for a full UUID v7", () => {
@@ -82,5 +88,40 @@ describe("appId — copyAppIdToClipboard", () => {
     const ok = await copyAppIdToClipboard("");
     expect(ok).toBe(false);
     expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe("appId — read*AppId navigation accessors (V2-LINKS)", () => {
+  const UUID = "019eb019-d49b-7131-b2d2-3f3107d36a4f";
+
+  it("reads appId directly off an entity (the v2 wire shape)", () => {
+    // The generated TS model only declares `id`; appId arrives on the wire.
+    expect(readCollectionAppId({ id: 42, appId: UUID })).toBe(UUID);
+    expect(readDataObjectAppId({ id: 99, appId: UUID })).toBe(UUID);
+    expect(readContainerAppId({ id: 7, appId: UUID })).toBe(UUID);
+  });
+
+  it("falls back to additional_properties.appId when surfaced there", () => {
+    expect(
+      readCollectionAppId({ id: 42, additional_properties: { appId: UUID } }),
+    ).toBe(UUID);
+  });
+
+  it("returns null when the appId is genuinely absent on the wire", () => {
+    // A numeric-only entity must NOT yield a route segment — the v2 detail
+    // route 404s on the numeric id (the operator's /collections/367014 bug).
+    expect(readCollectionAppId({ id: 42 })).toBeNull();
+    expect(readDataObjectAppId({ id: 99 })).toBeNull();
+  });
+
+  it("returns null for nullish / non-object input", () => {
+    expect(readCollectionAppId(null)).toBeNull();
+    expect(readCollectionAppId(undefined)).toBeNull();
+    expect(readCollectionAppId(42)).toBeNull();
+    expect(readDataObjectAppId("not-an-object")).toBeNull();
+  });
+
+  it("returns null for an empty-string appId rather than an empty segment", () => {
+    expect(readCollectionAppId({ id: 42, appId: "" })).toBeNull();
   });
 });

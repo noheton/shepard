@@ -7,9 +7,16 @@ import {
 } from "@dlr-shepard/backend-client";
 import type { RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
+import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
 export function mapRelatedEntityToRelationshipTableElement(
   relatedEntity: RelatedEntity,
+  // V2-LINKS: the appId of the collection this relationships table is rendered
+  // for (= the current route param, already a UUID). Predecessor / Successor /
+  // sibling DataObjects all live in this same collection, so their route uses
+  // this appId for the collection segment + their own appId for the DO segment.
+  // Never the numeric collectionId — the v2 detail route 404s on it.
+  parentCollectionAppId?: string,
 ): RelationshipTableElement {
   const isUri = instanceOfURIReference(relatedEntity);
   // REF-EDIT-6: carry appId + edit-seed for URI references.
@@ -22,7 +29,7 @@ export function mapRelatedEntityToRelationshipTableElement(
   return {
     id: relatedEntity.id,
     relationship: mapRelationshipType(relatedEntity),
-    name: mapName(relatedEntity),
+    name: mapName(relatedEntity, parentCollectionAppId),
     information: {
       referenceId: relatedEntity.id,
       type: mapType(relatedEntity),
@@ -56,31 +63,48 @@ function mapRelationshipType(
   return entity.relationship ?? undefined;
 }
 
-function mapName(entity: RelatedEntity): RelationshipTableElement["name"] {
+function mapName(
+  entity: RelatedEntity,
+  parentCollectionAppId?: string,
+): RelationshipTableElement["name"] {
   if (instanceOfURIReference(entity)) {
     return { value: entity.name, path: entity.uri };
   }
   if (instanceOfDataObject(entity)) {
+    // Predecessor / Successor / sibling DataObjects share the parent's
+    // collection. V2-LINKS: route on the parent collection appId + the
+    // entity's own appId; never numeric ids (the v2 route 404s on them).
+    const doAppId = readDataObjectAppId(entity);
+    if (!parentCollectionAppId || !doAppId) return { value: entity.name };
     return {
       value: entity.name,
-      path: `/collections/${entity.collectionId}/dataobjects/${entity.id}`,
+      path: `/collections/${parentCollectionAppId}/dataobjects/${doAppId}`,
     };
   }
   if (instanceOfDataObjectReference(entity)) {
+    // The payload carries the FULL referenced collection (with appId) +
+    // the referenced DataObject (with appId) — both available on the wire.
+    const colAppId = readCollectionAppId(entity.payload?.collection);
+    const doAppId = readDataObjectAppId(entity.payload);
     return {
       value: entity.name,
-      path: entity.payload
-        ? `/collections/${entity.payload.collectionId}/dataobjects/${entity.payload.id}`
-        : undefined,
+      path:
+        entity.payload && colAppId && doAppId
+          ? `/collections/${colAppId}/dataobjects/${doAppId}`
+          : undefined,
     };
   }
 
   if (isDeleted(entity.referencedCollectionId)) return { value: entity.name };
 
-  return {
-    value: entity.name,
-    path: `/collections/${entity.referencedCollectionId}`,
-  };
+  // V1-EXCEPTION (V2-LINKS): a CollectionReference's `referencedCollectionId`
+  // is the numeric id of ANOTHER collection and carries no appId sibling on
+  // the wire (the BasicReference payload omits it). Linking would need an
+  // async numeric→appId resolve, which this synchronous mapper can't do.
+  // Backlog: COLLREF-V2-APPID in aidocs/16 (add `referencedCollectionAppId`
+  // to the CollectionReference v2 payload, then route on it). Until then we
+  // render a non-navigable label rather than a numeric route that 404s.
+  return { value: entity.name };
 }
 
 function mapType(

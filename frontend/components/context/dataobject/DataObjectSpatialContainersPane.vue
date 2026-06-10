@@ -114,6 +114,11 @@ const totalCount = computed(() => references.value.length);
               Container #{{ ref.spatialDataContainerId }}
             </v-list-item-subtitle>
             <template #append>
+              <!-- V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16):
+                   the spatialdata container detail page fetches via the v1
+                   container GET, which resolves only the numeric id. Keep
+                   numeric until the container accessors move to a v2 appId
+                   GET. -->
               <v-btn
                 v-if="ref.spatialDataContainerId"
                 size="small"

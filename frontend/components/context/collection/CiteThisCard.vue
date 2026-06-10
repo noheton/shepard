@@ -22,6 +22,7 @@
  */
 import type { Collection } from "@dlr-shepard/backend-client";
 import type { CitationInput } from "~/utils/citation";
+import { readCollectionAppId } from "~/utils/appId";
 
 const { collection } = defineProps<{
   collection: Collection;
@@ -51,7 +52,11 @@ const accessedDate = computed(() => {
  */
 const canonicalUrl = computed(() => {
   if (typeof window === "undefined") {
-    return `/collections/${collection.id}`;
+    // V2-LINKS: SSR fallback uses the UUID-v7 appId — the numeric id 404s on
+    // the v2 collection detail route. When the wire shape lacks appId we emit
+    // the bare /collections root rather than a dead numeric deep link.
+    const appId = readCollectionAppId(collection);
+    return appId ? `/collections/${appId}` : "/collections";
   }
   return `${window.location.origin}${window.location.pathname}`;
 });

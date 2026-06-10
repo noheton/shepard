@@ -118,7 +118,8 @@
                 density="compact"
                 :title="c.collectionName"
                 data-testid="header-search-result-collection"
-                @click="onPick('collection', c.collectionId)"
+                :disabled="!c.collectionAppId"
+                @click="onPickCollection(c)"
               >
                 <template #append>
                   <v-chip size="x-small" variant="tonal" color="primary">collection</v-chip>
@@ -410,7 +411,9 @@ import { useTheme } from "vuetify";
 import type { ContainerType } from "@dlr-shepard/backend-client";
 import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
 import type { DataObjectSearchResult } from "~/composables/context/useDataObjectSearch";
+import type { MyCollectionSearchResult } from "~/composables/context/useCollectionSearch";
 import type { MyContainerSearchResult } from "~/composables/context/useContainerSearch";
+import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useFetchNotifications } from "~/composables/context/useFetchNotifications";
@@ -585,6 +588,7 @@ const toggleTheme = () => {
 // ── Global header search (QW1 / UI-002) ───────────────────────────────────────
 
 const search = useGlobalSearch({ debounceMs: 300 });
+const { resolve: resolveCollectionAppId } = useCollectionAppIdResolver();
 const dropdownOpen = ref(false);
 const searchFieldRef = ref<{ $el: HTMLElement } | null>(null);
 const resultListRef = ref<{ $el: HTMLElement } | null>(null);
@@ -612,17 +616,25 @@ function closeDropdown() {
   dropdownOpen.value = false;
 }
 
-function onPick(kind: "collection", id: number) {
-  if (kind === "collection") {
-    closeDropdown();
-    void router.push(`/collections/${id}`);
-  }
+// V2-LINKS: navigate on the UUID-v7 appId only. The search results carry the
+// collection/dataobject appId on the wire; the numeric id 404s on the v2
+// detail route (operator-surfaced /collections/367014 dead link).
+function onPickCollection(c: MyCollectionSearchResult) {
+  if (!c.collectionAppId) return;
+  closeDropdown();
+  void router.push(`/collections/${c.collectionAppId}`);
 }
 
-function onPickDataObject(d: DataObjectSearchResult) {
-  if (d.collectionId === undefined) return;
+async function onPickDataObject(d: DataObjectSearchResult) {
+  if (d.collectionId === undefined || !d.dataObjectAppId) return;
+  // The DataObject carries its own appId, but the owning collection arrives as
+  // a numeric id (the search ResultTriple has no appId) — resolve it.
+  const colAppId = await resolveCollectionAppId(d.collectionId);
+  if (!colAppId) return;
   closeDropdown();
-  void router.push(`/collections/${d.collectionId}/dataobjects/${d.dataObjectId}`);
+  void router.push(
+    `/collections/${colAppId}/dataobjects/${d.dataObjectAppId}`,
+  );
 }
 
 function onPickContainer(c: MyContainerSearchResult) {
@@ -631,6 +643,11 @@ function onPickContainer(c: MyContainerSearchResult) {
   if (route) void router.push(route);
 }
 
+// V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16): container detail
+// pages fetch via the v1-generated `getXContainer({ containerId })`, whose path
+// resolves only the numeric Neo4j id (the frozen v1 container GET 404s on an
+// appId). Keep numeric here until the container accessors move to a v2
+// appId-keyed GET.
 function containerRoute(t: ContainerType, id: number): string | null {
   switch (t) {
     case "FILE":

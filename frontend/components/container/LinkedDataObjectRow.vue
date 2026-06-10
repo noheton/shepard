@@ -1,9 +1,37 @@
 <script setup lang="ts">
 import type { DataObject } from "@dlr-shepard/backend-client";
+import { readDataObjectAppId } from "~/utils/appId";
+import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 
-defineProps<{
+const props = defineProps<{
   dataObject: DataObject;
 }>();
+
+// V2-LINKS: routes carry the UUID-v7 appId, never the numeric Neo4j id —
+// the v2 detail routes 404 on a numeric segment (operator-surfaced
+// /collections/367014 dead link). The DataObject carries its own appId on
+// the wire but only a numeric collectionId, so we resolve the owning
+// collection's appId via the shared cache.
+const { resolve: resolveCollectionAppId, peek: peekCollectionAppId } =
+  useCollectionAppIdResolver();
+const collectionAppIdRef = ref<string | null>(
+  peekCollectionAppId(props.dataObject.collectionId),
+);
+onMounted(async () => {
+  collectionAppIdRef.value = await resolveCollectionAppId(
+    props.dataObject.collectionId,
+  );
+});
+
+const doAppId = computed(() => readDataObjectAppId(props.dataObject));
+const collectionHref = computed(() =>
+  collectionAppIdRef.value ? `/collections/${collectionAppIdRef.value}` : null,
+);
+const dataObjectHref = computed(() =>
+  collectionAppIdRef.value && doAppId.value
+    ? `/collections/${collectionAppIdRef.value}/dataObjects/${doAppId.value}`
+    : null,
+);
 </script>
 
 <template>
@@ -28,7 +56,8 @@ defineProps<{
     <template #append>
       <div class="d-flex ga-1">
         <v-btn
-          :to="`/collections/${dataObject.collectionId}`"
+          v-if="collectionHref"
+          :to="collectionHref"
           variant="text"
           size="x-small"
           icon="mdi-folder-outline"
@@ -36,7 +65,8 @@ defineProps<{
           aria-label="Open collection"
         />
         <v-btn
-          :to="`/collections/${dataObject.collectionId}/dataObjects/${dataObject.id}`"
+          v-if="dataObjectHref"
+          :to="dataObjectHref"
           variant="text"
           size="x-small"
           icon="mdi-arrow-right"

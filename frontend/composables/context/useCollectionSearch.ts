@@ -1,9 +1,18 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { readCollectionAppId } from "~/utils/appId";
 
 export interface MyCollectionSearchResult {
   collectionName: string;
   collectionId: number;
+  /**
+   * V2-LINKS: UUID-v7 appId for route construction. The search response
+   * `results` are full `Collection` entities, which carry `appId` on the
+   * wire (the generated model only declares `id`, hence the defensive cast).
+   * Navigation MUST use this, never the numeric id — the v2 detail route
+   * 404s on a numeric segment.
+   */
+  collectionAppId: string | null;
 }
 
 export function useCollectionSearch(
@@ -50,6 +59,7 @@ export function useCollectionSearch(
           collectionSearchResults.value.push({
             collectionId: result.id,
             collectionName: result.name,
+            collectionAppId: readCollectionAppId(result),
           });
         }
       });

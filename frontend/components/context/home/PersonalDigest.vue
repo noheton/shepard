@@ -4,6 +4,7 @@ import {
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
+import { readCollectionAppId } from "~/utils/appId";
 import { usePinnedChannels } from "~/composables/container/usePinnedChannels";
 
 const router = useRouter();
@@ -374,7 +375,7 @@ function relativeTime(date: Date | null | undefined): string {
         <v-list-item
           v-for="(collection, idx) in sharedCollections"
           :key="collection.id"
-          :to="`/collections/${collection.id}`"
+          :to="readCollectionAppId(collection) ? `/collections/${readCollectionAppId(collection)}` : undefined"
           :data-testid="`shared-collection-row-${idx}`"
           :divider="idx < sharedCollections.length - 1"
         >
