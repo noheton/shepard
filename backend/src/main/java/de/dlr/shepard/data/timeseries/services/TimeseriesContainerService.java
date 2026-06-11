@@ -137,6 +137,19 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
   }
 
   /**
+   * CC1b (appId variant) — return the list of non-deleted DataObjects that
+   * reference this TimeseriesContainer via a TimeseriesReference, keyed by appId.
+   * Does not require a prior permission check — callers must call
+   * {@link #getContainerByAppId(String)} first.
+   *
+   * @param containerAppId UUID v7 appId of the TimeseriesContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
+    return timeseriesContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  /**
    * Deletes a TimeseriesContainer in Neo4j
    *
    * @param timeSeriesContainerId identifies the TimeseriesContainer
