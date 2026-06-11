@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.bundle.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
@@ -102,6 +103,10 @@ public class FileBundleReferenceRest {
 
   @Inject
   ObjectMapper objectMapper;
+
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-bundle-references.bad-request";
+  private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/file-bundle-references.unprocessable-entity";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-bundle-references.internal-error";
 
   // ─── bundle ───────────────────────────────────────────────────────────────
 
@@ -225,7 +230,7 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || body.getName() == null || body.getName().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("name is required and must be non-blank").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing field", Response.Status.BAD_REQUEST, "name is required and must be non-blank");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
     if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -236,7 +241,7 @@ public class FileBundleReferenceRest {
       FileGroup created = fileGroupService.createGroup(bundleAppId, body);
       return Response.status(Response.Status.CREATED).entity(new FileGroupIO(created)).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -320,7 +325,7 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
     if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -335,7 +340,7 @@ public class FileBundleReferenceRest {
       FileGroup updated = fileGroupService.patchGroup(groupAppId, patch);
       return Response.ok(new FileGroupIO(updated)).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -384,7 +389,7 @@ public class FileBundleReferenceRest {
       fileGroupService.deleteGroup(groupAppId, force);
       return Response.noContent().build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -511,12 +516,10 @@ public class FileBundleReferenceRest {
     if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
 
     if (upload == null || upload.uploadedFile() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("file part is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
     }
     if (bundle.getFileContainer() == null || bundle.getFileContainer().getMongoId() == null) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Bundle has no underlying FileContainer; cannot accept uploads.")
-        .build();
+      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Bundle not writable", Response.Status.BAD_REQUEST, "Bundle has no underlying FileContainer; cannot accept uploads.");
     }
 
     File file = upload.uploadedFile().toFile();
@@ -528,7 +531,7 @@ public class FileBundleReferenceRest {
       fileGroupService.attachFile(groupAppId, saved);
       return Response.status(Response.Status.CREATED).entity(saved).build();
     } catch (IOException ioe) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ioe.getMessage()).build();
+      return problem(PROBLEM_TYPE_INTERNAL, "Upload failed", Response.Status.INTERNAL_SERVER_ERROR, ioe.getMessage());
     }
   }
 
@@ -562,6 +565,11 @@ public class FileBundleReferenceRest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**

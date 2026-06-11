@@ -75,6 +75,9 @@ public class ProvenanceRest {
   @Inject
   ProvenanceStatsService statsService;
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/provenance.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/provenance.not-found";
+
   @GET
   @Path("/activities")
   @Operation(
@@ -421,7 +424,7 @@ public class ProvenanceRest {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (scope == null || scope.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("scope is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "scope is required");
     }
     boolean isAdmin = securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
 
@@ -430,7 +433,7 @@ public class ProvenanceRest {
     }
     if (ProvenanceStatsService.SCOPE_USER.equals(scope)) {
       if (id == null || id.isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=user").build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "id is required for scope=user");
       }
       if (!id.equals(caller) && !isAdmin) {
         return Response.status(Response.Status.FORBIDDEN).build();
@@ -438,7 +441,7 @@ public class ProvenanceRest {
     }
     if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope)) {
       if (id == null || id.isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=collection").build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "id is required for scope=collection");
       }
       // PROV1c-acl: gate on Read permission against the target Collection.
       // Admins bypass the per-Collection check (instance-admin already sees
@@ -446,7 +449,7 @@ public class ProvenanceRest {
       if (!isAdmin) {
         var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(id);
         if (ogmId.isEmpty()) {
-          return Response.status(Response.Status.NOT_FOUND).entity("No Collection with appId " + id).build();
+          return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "No Collection with appId " + id);
         }
         if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller, 0L)) {
           return Response.status(Response.Status.FORBIDDEN).build();
@@ -467,13 +470,18 @@ public class ProvenanceRest {
       ProvenanceStatsIO out = statsService.compute(scope, id, effSince, effUntil);
       return Response.ok(out).build();
     } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, e.getMessage());
     }
   }
 
   /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
   private static long clampToNonNegative(long v) {
     return Math.max(0L, v);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**
