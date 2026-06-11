@@ -96,6 +96,7 @@ const { dataReferences } = useDataReferencesByDataObject(
 const { relatedEntities } = useRelatedEntities(
   collectionNumericId,
   dataObjectNumericId,
+  dataObjectIdStr, // V2-SWEEP-004-2: route param UUID → v2 endpoint returns referencedCollectionAppId
 );
 
 // REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.

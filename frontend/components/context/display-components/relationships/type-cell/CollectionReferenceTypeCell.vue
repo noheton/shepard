@@ -12,6 +12,7 @@ defineProps<{
     <span class="text-error">(Deleted)</span>
   </template>
   <template v-else>
-    <div>Collection (ID: {{ value.id }})</div>
+    <div v-if="value.collectionAppId">Collection</div>
+    <div v-else>Collection (ID: {{ value.id }})</div>
   </template>
 </template>
