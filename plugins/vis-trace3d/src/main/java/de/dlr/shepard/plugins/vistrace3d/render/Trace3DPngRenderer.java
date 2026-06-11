@@ -7,7 +7,6 @@ import de.dlr.shepard.spi.view.RenderResponse;
 import de.dlr.shepard.spi.view.RenderResponse.ChannelBindingProjection;
 import de.dlr.shepard.spi.view.RenderedMedia;
 import de.dlr.shepard.spi.view.ViewRecipeRenderer;
-import io.quarkus.logging.Log;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -20,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.jboss.logging.Logger;
 import javax.imageio.ImageIO;
 
 /**
@@ -64,6 +64,16 @@ import javax.imageio.ImageIO;
  * @see de.dlr.shepard.spi.view.ViewRecipeRendererRegistry
  */
 public final class Trace3DPngRenderer implements ViewRecipeRenderer {
+
+  private static final Logger LOG = Logger.getLogger(Trace3DPngRenderer.class.getName());
+
+  static {
+    // Server-side PNG rasterisation uses BufferedImage + Graphics2D: headless mode
+    // must be enabled before the AWT toolkit initialises or Font construction throws.
+    if (System.getProperty("java.awt.headless") == null) {
+      System.setProperty("java.awt.headless", "true");
+    }
+  }
 
   /**
    * The Trace3D VIEW_RECIPE shape IRI this renderer claims — the same IRI the
@@ -129,7 +139,7 @@ public final class Trace3DPngRenderer implements ViewRecipeRenderer {
     } catch (IOException | RuntimeException ex) {
       // Fail-soft: an encoder hiccup falls back to the JSON view-model rather
       // than failing the whole render call.
-      Log.warnf(ex, "RESEED-FIND-RENDER-PNG: PNG rasterisation failed for shape <%s> — falling back to JSON", TRACE3D_VIEW_SHAPE_IRI);
+      LOG.warnf(ex, "RESEED-FIND-RENDER-PNG: PNG rasterisation failed for shape <%s> — falling back to JSON", TRACE3D_VIEW_SHAPE_IRI);
       return Optional.empty();
     }
   }
