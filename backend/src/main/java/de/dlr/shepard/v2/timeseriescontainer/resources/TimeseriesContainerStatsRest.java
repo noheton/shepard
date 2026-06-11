@@ -22,7 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * TS_STATS1 — storage and ingestion statistics for a TimeseriesContainer.
  *
- * <p>Route: {@code GET /v2/timeseries-containers/{containerId}/stats}
+ * <p>Route: {@code GET /v2/timeseries-containers/{containerAppId}/stats}
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -41,7 +41,7 @@ public class TimeseriesContainerStatsRest {
   EntityManager entityManager;
 
   @GET
-  @Path("/{containerId}/stats")
+  @Path("/{containerAppId}/stats")
   @Operation(
     summary = "Storage and ingestion stats for a TimeseriesContainer.",
     description = "Returns point count, channel count, estimated uncompressed size, and recent " +
@@ -55,10 +55,11 @@ public class TimeseriesContainerStatsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
-  public Response getStats(@PathParam("containerId") long containerId) {
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
+  public Response getStats(@PathParam("containerAppId") String containerAppId) {
     // Permission check — throws 403/404 if not accessible.
-    timeseriesContainerService.getContainer(containerId);
+    var container = timeseriesContainerService.getContainerByAppId(containerAppId);
+    long containerId = container.getId();
 
     Object[] totals = (Object[]) entityManager.createNativeQuery(
       "SELECT COUNT(dp.timeseries_id) AS point_count, COUNT(DISTINCT dp.timeseries_id) AS channel_count " +

@@ -32,12 +32,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Route:
  * <ul>
- *   <li>{@code GET /v2/timeseries-containers/{containerId}/linked-data-objects}
+ *   <li>{@code GET /v2/timeseries-containers/{containerAppId}/linked-data-objects}
  *       — returns the distinct DataObjects whose TimeseriesReference nodes point
  *       at this container. Requires Read permission on the container.</li>
  * </ul>
- *
- * <p>Uses the numeric OGM id so the frontend can pass the route param directly.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -50,7 +48,7 @@ public class TimeseriesContainerLinkedDataObjectsRest {
   TimeseriesContainerService timeseriesContainerService;
 
   @GET
-  @Path("/{containerId}/linked-data-objects")
+  @Path("/{containerAppId}/linked-data-objects")
   @Operation(
     summary = "List DataObjects linked to this TimeseriesContainer.",
     description = "Returns the distinct DataObjects whose TimeseriesReference nodes point at this " +
@@ -63,11 +61,13 @@ public class TimeseriesContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
   public Response getLinkedDataObjects(
-    @PathParam("containerId") long containerId
+    @PathParam("containerAppId") String containerAppId
   ) {
-    List<DataObject> dataObjects = timeseriesContainerService.findLinkedDataObjectsById(containerId);
+    // Permission + existence check via getContainerByAppId; delegates to appId-keyed DAO.
+    timeseriesContainerService.getContainerByAppId(containerAppId);
+    List<DataObject> dataObjects = timeseriesContainerService.findLinkedDataObjectsByAppId(containerAppId);
     List<DataObjectIO> result = new ArrayList<>(dataObjects.size());
     for (DataObject dataObject : dataObjects) {
       result.add(new DataObjectIO(dataObject));
@@ -85,7 +85,7 @@ public class TimeseriesContainerLinkedDataObjectsRest {
    * orphan-references-silently semantics (per the API freeze).
    */
   @DELETE
-  @Path("/{containerId}")
+  @Path("/{containerAppId}")
   @Operation(
     summary = "Safely delete this TimeseriesContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
@@ -100,13 +100,14 @@ public class TimeseriesContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
   public Response safeDeleteContainer(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @QueryParam("force") @DefaultValue("false") boolean force
   ) {
+    var container = timeseriesContainerService.getContainerByAppId(containerAppId);
     if (!force) {
-      List<DataObject> linked = timeseriesContainerService.findLinkedDataObjectsById(containerId);
+      List<DataObject> linked = timeseriesContainerService.findLinkedDataObjectsByAppId(containerAppId);
       if (!linked.isEmpty()) {
         List<String> sample = linked.stream()
           .map(DataObject::getAppId)
@@ -118,7 +119,7 @@ public class TimeseriesContainerLinkedDataObjectsRest {
           .build();
       }
     }
-    timeseriesContainerService.deleteContainer(containerId);
+    timeseriesContainerService.deleteContainer(container.getId());
     return Response.status(Status.NO_CONTENT).build();
   }
 }
