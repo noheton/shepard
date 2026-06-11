@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -304,8 +305,8 @@ class TemplateInstantiationRestTest {
     Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
 
     assertEquals(422, r.getStatus());
-    String entity = (String) r.getEntity();
-    assertTrue(entity.contains("violates"), "Response body should mention violation: " + entity);
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    assertTrue(entity.detail().contains("violates"), "Problem detail should mention violation: " + entity.detail());
     // DataObject must NOT be created on validation failure
     verify(dataObjectService, never()).createDataObject(anyLong(), any());
   }
