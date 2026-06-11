@@ -7,7 +7,6 @@ import de.dlr.shepard.spi.transform.TransformException;
 import de.dlr.shepard.spi.transform.TransformExecutor;
 import de.dlr.shepard.spi.transform.TransformRequest;
 import de.dlr.shepard.spi.transform.TransformResult;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.inject.spi.CDI;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -15,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
  * V2CONV-B4 — the {@link TransformExecutor} that dissolves the bespoke
@@ -53,6 +53,8 @@ import java.util.Set;
  * backend resolves" contract.
  */
 public final class SceneGraphPlayTransformExecutor implements TransformExecutor {
+
+  private static final Logger LOG = Logger.getLogger(SceneGraphPlayTransformExecutor.class.getName());
 
   /** The MAPPING_RECIPE shape IRI this executor claims (the materialize dispatch key). */
   public static final String SCENE_GRAPH_PLAY_SHAPE_IRI =
@@ -230,7 +232,7 @@ public final class SceneGraphPlayTransformExecutor implements TransformExecutor 
       }
       return out;
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      Log.debugf("V2CONV-B4: jointChannelBindings not parseable — treating as empty: %s", e.getMessage());
+      LOG.debugf("V2CONV-B4: jointChannelBindings not parseable — treating as empty: %s", e.getMessage());
       return List.of();
     }
   }
