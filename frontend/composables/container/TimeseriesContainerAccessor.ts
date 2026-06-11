@@ -23,7 +23,10 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
     // External clients (admin CLI, scripts) that call the same endpoint without
     // force get the server-side 409 protection.
     try {
-      const result = await safeDeleteContainer("timeseries", this.id, {
+      // APISIMP-TSCONT-APPID-KEY: DELETE keyed on appId; fall back to numeric
+      // this.id only if the container hasn't been loaded yet (graceful degradation).
+      const containerAppId = (this.container.value as unknown as { appId?: string | null })?.appId ?? this.id;
+      const result = await safeDeleteContainer("timeseries", containerAppId, {
         force: true,
       });
       if (!result.ok) {

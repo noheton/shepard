@@ -119,13 +119,15 @@ describe("useContainerReferencedByCollections — FILE container", () => {
   });
 });
 
+const TIMESERIES_APP_ID = "01901234-5678-7abc-def0-abcdef012345";
+
 describe("useContainerReferencedByCollections — TIMESERIES container", () => {
-  it("calls the correct TIMESERIES endpoint URL", async () => {
+  it("calls the correct TIMESERIES endpoint URL using containerAppId string", async () => {
     mockFetchOk([]);
-    useContainerReferencedByCollections(55, "TIMESERIES");
+    useContainerReferencedByCollections(TIMESERIES_APP_ID, "TIMESERIES");
     await flush();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
-    expect(url).toContain("/v2/timeseries-containers/55/linked-data-objects");
+    expect(url).toContain(`/v2/timeseries-containers/${TIMESERIES_APP_ID}/linked-data-objects`);
   });
 
   it("deduplicates when the same collection references the container multiple times", async () => {
@@ -134,7 +136,7 @@ describe("useContainerReferencedByCollections — TIMESERIES container", () => {
       { id: 2, collectionId: 300, referenceIds: [], successorIds: [], childrenIds: [], parentId: null, incomingIds: [], name: "B", createdAt: "2024-01-01", createdBy: "u1", updatedAt: null, updatedBy: null },
     ];
     mockFetchOk(dataObjects);
-    const { collectionIds } = useContainerReferencedByCollections(55, "TIMESERIES");
+    const { collectionIds } = useContainerReferencedByCollections(TIMESERIES_APP_ID, "TIMESERIES");
     await flush();
     expect(collectionIds.value).toHaveLength(1);
     expect(collectionIds.value).toContain(300);

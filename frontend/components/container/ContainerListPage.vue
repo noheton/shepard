@@ -178,8 +178,10 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
       return;
     }
     case "TIMESERIES": {
-      // V2-SWEEP-003: v2 safe-delete (replaces v1 TimeseriesContainerApi.deleteTimeseriesContainer)
-      const r = await safeDeleteContainer("timeseries", container.id);
+      // APISIMP-TSCONT-APPID-KEY: DELETE is keyed on containerAppId; appId is
+      // carried by the wire even though BasicContainer's TS type omits it.
+      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
+      const r = await safeDeleteContainer("timeseries", containerAppId);
       if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
     }

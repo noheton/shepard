@@ -1,7 +1,12 @@
 /**
  * TS_STATS1 — fetches storage + ingest stats for a TimeseriesContainer.
- * Calls GET /v2/timeseries-containers/{containerId}/stats.
+ * Calls GET /v2/timeseries-containers/{containerAppId}/stats.
+ *
+ * Accepts a static string or a Ref<string | null> so callers that resolve
+ * appId asynchronously (via a container accessor) can pass a computed ref and
+ * the fetch fires once the appId becomes non-null.
  */
+import type { Ref } from "vue";
 
 export interface TimeseriesContainerStats {
   pointCount: number;
@@ -19,18 +24,22 @@ function getV2BaseUrl(): string {
     : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
 }
 
-export function useFetchTimeseriesContainerStats(containerId: number) {
+export function useFetchTimeseriesContainerStats(containerAppId: string | Ref<string | null>) {
+  const appIdRef: Ref<string | null> = isRef(containerAppId)
+    ? containerAppId
+    : ref(containerAppId || null);
   const stats = ref<TimeseriesContainerStats | null>(null);
   const loading = ref(false);
 
   async function fetchStats() {
-    if (loading.value) return;
+    const id = appIdRef.value;
+    if (!id || loading.value) return;
     loading.value = true;
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       if (!accessToken) return;
-      const url = `${getV2BaseUrl()}/v2/timeseries-containers/${containerId}/stats`;
+      const url = `${getV2BaseUrl()}/v2/timeseries-containers/${encodeURIComponent(id)}/stats`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
         credentials: "include",
@@ -45,7 +54,7 @@ export function useFetchTimeseriesContainerStats(containerId: number) {
     }
   }
 
-  fetchStats();
+  watch(appIdRef, (id) => { if (id) fetchStats(); }, { immediate: true });
 
   return { stats, loading, refresh: fetchStats };
 }
