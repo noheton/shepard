@@ -2,8 +2,8 @@
  * TS_CHART_VIEW1 — fetch and PATCH the per-container chart-view config.
  *
  * Wire endpoints:
- *   GET   /v2/timeseries-containers/{containerId}/chart-view
- *   PATCH /v2/timeseries-containers/{containerId}/chart-view
+ *   GET   /v2/timeseries-containers/{containerAppId}/chart-view
+ *   PATCH /v2/timeseries-containers/{containerAppId}/chart-view
  *
  * Returns:
  *   selectedChannelKeys (ref) — current persisted curated selection;
@@ -13,6 +13,7 @@
  *   save(keys: string[]) — replaces the curated selection.
  *   refresh() — re-fetches the server state.
  */
+import { ref, watch, type Ref } from "vue";
 
 interface ChartViewDto {
   selectedChannels?: string[];
@@ -40,7 +41,7 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-export function useTimeseriesContainerChartView(containerId: number) {
+export function useTimeseriesContainerChartView(containerAppId: Ref<string | null>) {
   const selectedChannelKeys = ref<string[]>([]);
   const updatedAt = ref<number | undefined>(undefined);
   const updatedBy = ref<string | undefined>(undefined);
@@ -48,10 +49,11 @@ export function useTimeseriesContainerChartView(containerId: number) {
   const saving = ref(false);
 
   async function refresh() {
+    if (!containerAppId.value) return;
     loading.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/chart-view`;
+      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerAppId.value}/chart-view`;
       const response = await fetch(url, { headers });
       if (response.ok) {
         const data = (await response.json()) as ChartViewDto;
@@ -71,10 +73,11 @@ export function useTimeseriesContainerChartView(containerId: number) {
   }
 
   async function save(keys: string[]): Promise<boolean> {
+    if (!containerAppId.value) { saving.value = false; return false; }
     saving.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/chart-view`;
+      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerAppId.value}/chart-view`;
       const response = await fetch(url, {
         method: "PATCH",
         headers,
@@ -97,7 +100,7 @@ export function useTimeseriesContainerChartView(containerId: number) {
     }
   }
 
-  refresh();
+  watch(containerAppId, (v) => { if (v) refresh(); }, { immediate: true });
 
   return {
     selectedChannelKeys,

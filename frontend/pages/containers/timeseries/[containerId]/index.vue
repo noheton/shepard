@@ -38,7 +38,7 @@ const {
   updatedBy: chartViewUpdatedBy,
   saving: chartViewSaving,
   save: saveChartView,
-} = useTimeseriesContainerChartView(containerId);
+} = useTimeseriesContainerChartView(containerAppId);
 
 // Per-session "Show all channels" override — ignores the persisted curated
 // view but doesn't change it. Pure browser state.
@@ -302,7 +302,6 @@ useHead({
           :count="containerAccessor.measurements.value.length"
         >
           <ChannelAnnotationsPane
-            :container-id="containerId"
             :container-app-id="containerAppId ?? ''"
             :measurements="containerAccessor.measurements.value"
             :is-allowed-to-edit-data="!!containerAccessor.isAllowedToEditData.value"

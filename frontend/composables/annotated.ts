@@ -211,17 +211,17 @@ export class AnnotatedStructuredDataContainer extends ContainerAnnotated {
 // list and POST will 404 — surface that to the user as "no annotations yet".
 
 export class AnnotatedChannel implements Annotated {
-  readonly containerId: number;
+  readonly containerAppId: string;
   readonly channelShepardId: string;
 
-  constructor(containerId: number, channelShepardId: string) {
-    this.containerId = containerId;
+  constructor(containerAppId: string, channelShepardId: string) {
+    this.containerAppId = containerAppId;
     this.channelShepardId = channelShepardId;
   }
 
   private endpoint(annotationId?: number): string {
     const base =
-      `${v2BaseUrl()}/v2/timeseries-containers/${this.containerId}` +
+      `${v2BaseUrl()}/v2/timeseries-containers/${this.containerAppId}` +
       `/channels/${encodeURIComponent(this.channelShepardId)}/annotations`;
     return annotationId === undefined ? base : `${base}/${annotationId}`;
   }

@@ -8,8 +8,6 @@ import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -39,20 +37,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Routes:
  * <ul>
- *   <li>{@code GET    /v2/timeseries-containers/{containerId}/temporal-annotations}</li>
- *   <li>{@code POST   /v2/timeseries-containers/{containerId}/temporal-annotations}</li>
- *   <li>{@code GET    /v2/timeseries-containers/{containerId}/temporal-annotations/{annotationAppId}}</li>
- *   <li>{@code PATCH  /v2/timeseries-containers/{containerId}/temporal-annotations/{annotationAppId}}</li>
- *   <li>{@code DELETE /v2/timeseries-containers/{containerId}/temporal-annotations/{annotationAppId}}</li>
+ *   <li>{@code GET    /v2/timeseries-containers/{containerAppId}/temporal-annotations}</li>
+ *   <li>{@code POST   /v2/timeseries-containers/{containerAppId}/temporal-annotations}</li>
+ *   <li>{@code GET    /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}}</li>
+ *   <li>{@code PATCH  /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}}</li>
+ *   <li>{@code DELETE /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}}</li>
  * </ul>
  *
  * <p>Auth: same pattern as other container endpoints —
- * {@link TimeseriesContainerService#getContainer(long)} enforces Read;
+ * {@link TimeseriesContainerService#getContainerByAppId(String)} enforces Read;
  * {@link TimeseriesContainerService#assertIsAllowedToEditContainer(long)} enforces Write.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/timeseries-containers/{containerId}/temporal-annotations")
+@Path("/v2/timeseries-containers/{containerAppId}/temporal-annotations")
 @RequestScoped
 @Tag(name = "Timeseries container temporal annotations (TS-ANNOT-B)")
 public class TimeseriesContainerTemporalAnnotationRest {
@@ -77,7 +75,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     summary = "List all temporal annotations on a TimeseriesContainer.",
     description =
       "Returns all `:TimeseriesAnnotation` nodes attached to the `:TimeseriesContainer` " +
-      "identified by `containerId` via the `HAS_TEMPORAL_ANNOTATION` relationship. " +
+      "identified by `containerAppId` via the `HAS_TEMPORAL_ANNOTATION` relationship. " +
       "Container-level annotations are independent of individual channel references — " +
       "they mark time ranges of interest on the entire container (e.g. an event window, " +
       "a calibration period, or an anomaly span detected by the AI pipeline).\n\n" +
@@ -93,9 +91,9 @@ public class TimeseriesContainerTemporalAnnotationRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
-  public Response list(@PathParam("containerId") @NotNull @PositiveOrZero Long containerId) {
-    containerService.getContainer(containerId);
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId.")
+  public Response list(@PathParam("containerAppId") String containerAppId) {
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     List<TimeseriesAnnotationIO> rows = annotationDAO
       .findByContainerId(containerId)
       .stream()
@@ -109,7 +107,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     summary = "Create a temporal annotation on a TimeseriesContainer.",
     description =
       "Creates a `:TimeseriesAnnotation` node and links it to the `:TimeseriesContainer` " +
-      "identified by `containerId` via `HAS_TEMPORAL_ANNOTATION`. The server mints `appId` " +
+      "identified by `containerAppId` via `HAS_TEMPORAL_ANNOTATION`. The server mints `appId` " +
       "(UUID v7).\n\n" +
       "Body: `startNs` (long, required — nanoseconds since Unix epoch), `endNs` (long, optional — " +
       "omit for a point annotation), `label` (string, required, non-blank), `description` " +
@@ -124,9 +122,9 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @APIResponse(responseCode = "400", description = "`startNs` is null, or `label` is null or blank.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId.")
   public Response create(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     TimeseriesAnnotationIO body
   ) {
     if (body == null || body.getStartNs() == null) {
@@ -135,7 +133,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     if (body.getLabel() == null || body.getLabel().isBlank()) {
       return problem("timeseries-container-annotations.bad-request", "Bad Request", Response.Status.BAD_REQUEST, "label is required and must be non-blank");
     }
-    containerService.getContainer(containerId);
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
 
     TimeseriesAnnotation a = new TimeseriesAnnotation();
@@ -159,7 +157,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     summary = "Read a single container temporal annotation by appId.",
     description =
       "Returns the `TimeseriesAnnotationIO` record for the annotation identified by " +
-      "`annotationAppId` within the container `containerId`. " +
+      "`annotationAppId` within the container `containerAppId`. " +
       "Auth: Read permission on the container."
   )
   @APIResponse(
@@ -169,12 +167,12 @@ public class TimeseriesContainerTemporalAnnotationRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No container with that id, or no annotation with that appId.")
+  @APIResponse(responseCode = "404", description = "No container with that containerAppId, or no annotation with that appId.")
   public Response read(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("annotationAppId") String annotationAppId
   ) {
-    containerService.getContainer(containerId);
+    containerService.getContainerByAppId(containerAppId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
     return Response.ok(new TimeseriesAnnotationIO(a)).build();
@@ -198,13 +196,13 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @APIResponse(responseCode = "400", description = "`label` is provided but blank.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No container with that id, or no annotation with that appId.")
+  @APIResponse(responseCode = "404", description = "No container with that containerAppId, or no annotation with that appId.")
   public Response update(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("annotationAppId") String annotationAppId,
     TimeseriesAnnotationIO body
   ) {
-    containerService.getContainer(containerId);
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -236,12 +234,12 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No container with that id, or no annotation with that appId.")
+  @APIResponse(responseCode = "404", description = "No container with that containerAppId, or no annotation with that appId.")
   public Response delete(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("annotationAppId") String annotationAppId
   ) {
-    containerService.getContainer(containerId);
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return Response.status(Response.Status.NOT_FOUND).build();

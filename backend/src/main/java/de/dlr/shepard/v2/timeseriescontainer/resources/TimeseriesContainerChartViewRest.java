@@ -8,8 +8,6 @@ import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -38,7 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * frontend keeps a session-only toggle that ignores this persisted
  * default). The audit trail (PROV1a) captures every PATCH.
  */
-@Path("/v2/timeseries-containers/{containerId}/chart-view")
+@Path("/v2/timeseries-containers/{containerAppId}/chart-view")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -68,12 +66,12 @@ public class TimeseriesContainerChartViewRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId.")
   public Response get(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId
+    @PathParam("containerAppId") String containerAppId
   ) {
-    // getContainer enforces the Read-permission check.
-    containerService.getContainer(containerId);
+    // getContainerByAppId enforces the Read-permission check.
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     TimeseriesContainerChartView view = chartViewService.find(containerId);
     return Response.ok(TimeseriesContainerChartViewIO.from(view)).build();
   }
@@ -94,9 +92,9 @@ public class TimeseriesContainerChartViewRest {
   @APIResponse(responseCode = "400", description = "Bad request — malformed channel keys.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId.")
   public Response patch(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesContainerChartViewIO.class))
@@ -104,7 +102,7 @@ public class TimeseriesContainerChartViewRest {
   ) {
     // Read first to fail fast on 404 / 403 (Read); then escalate to the
     // Write check via the standard container-service assertion.
-    containerService.getContainer(containerId);
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
     TimeseriesContainerChartView updated = chartViewService.patch(containerId, patch);
     return Response.ok(TimeseriesContainerChartViewIO.from(updated)).build();

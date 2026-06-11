@@ -19,6 +19,7 @@ const PALETTE = [
 ];
 
 const props = defineProps<{
+  /** V1-EXCEPTION: kept for v1 timeseries data fetch (getTimeseries); see APISIMP-TSCONT-APPID-KEY. */
   containerId: number;
   measurements: TimeseriesEntity[];
   /**
@@ -250,7 +251,9 @@ onBeforeUnmount(() => {
 });
 
 // ── Container-level temporal annotations ──────────────────────────────────
-const containerIdRef = computed(() => props.containerId);
+// APISIMP-TSCONT-APPID-KEY: Use containerAppId for the temporal-annotations v2 endpoint.
+// containerId (number) is kept below as a V1-EXCEPTION for the v1 getTimeseries data fetch.
+const containerIdRef = computed<string | null>(() => props.containerAppId ?? null);
 const {
   annotations: containerAnnotations,
   deleteAnnotation: deleteContainerAnnotation,
@@ -632,7 +635,7 @@ function onAnnotationSaved() {
   <!-- Temporal annotation create / edit dialog -->
   <TemporalAnnotationDialog
     v-model:show-dialog="showAnnotationDialog"
-    :container-id="containerId"
+    :container-app-id="containerAppId ?? null"
     :initial-start-ns="editingAnnotation?.startNs ?? brushSelection?.startNs"
     :initial-end-ns="editingAnnotation?.endNs ?? brushSelection?.endNs"
     :annotation-app-id="editingAnnotation?.appId"
