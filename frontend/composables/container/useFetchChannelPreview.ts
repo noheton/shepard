@@ -254,8 +254,6 @@ export function useChannelPreviewLazy(
 
   // `useIntersectionObserver` requires a Vue component context; calling it
   // inside a composable that is itself called from setup() is safe.
-  let stopObserver: (() => void) | undefined;
-
   const { stop } = useIntersectionObserver(
     target,
     ([entry]: IntersectionObserverEntry[]) => {
@@ -267,7 +265,7 @@ export function useChannelPreviewLazy(
     },
     { threshold: 0.1 },
   );
-  stopObserver = stop;
+  const stopObserver = stop;
 
   /**
    * User-initiated re-fetch (e.g. toggling the "Full" / downsampled switch).

@@ -46,7 +46,6 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import {
   EMPTY_CELL_COLOUR,
-  annotationsContainSection,
   bucketByGrid,
   cellKey,
   colourForCount,

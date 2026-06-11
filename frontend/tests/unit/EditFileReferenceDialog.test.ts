@@ -10,7 +10,7 @@
  * pattern used in AnnotationChip.test.ts and ViewRecipeBuilderDialog.test.ts.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // ── Inline helpers from the component ────────────────────────────────────────
 

@@ -39,4 +39,7 @@ if (selectedFilter) {
 }
 </script>
 
-<template />
+<template>
+  <!-- Redirect shim — renders nothing; navigateTo runs in setup. -->
+  <div />
+</template>

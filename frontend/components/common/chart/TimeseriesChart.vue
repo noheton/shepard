@@ -13,8 +13,17 @@ import {
   ToolboxComponent,
   TooltipComponent,
 } from "echarts/components";
+import type { CallbackDataParams } from "echarts/types/dist/shared";
 import type { TimeseriesSeries } from "./types";
 import { formatDualTime } from "~/utils/wallClockTime";
+
+// Minimal shapes for ECharts interactions whose full types are not exported.
+interface BrushEndEvent {
+  areas?: { coordRange?: [number, number] }[];
+}
+interface EChartsActionDispatcher {
+  dispatchAction: (payload: Record<string, unknown>) => void;
+}
 
 if (import.meta.client) {
   use([
@@ -105,7 +114,7 @@ const emit = defineEmits<{
 
 const chartRef = ref<InstanceType<typeof VChart> | null>(null);
 
-function onBrushEnd(event: any) {
+function onBrushEnd(event: BrushEndEvent) {
   const area = event?.areas?.[0];
   if (!area?.coordRange) return;
   const [a, b] = area.coordRange as [number, number];
@@ -119,8 +128,8 @@ function onBrushEnd(event: any) {
 
 function restoreZoom() {
   if (!chartRef.value) return;
-  (chartRef.value as any).dispatchAction({ type: "dataZoom", start: 0, end: 100 });
-  (chartRef.value as any).dispatchAction({ type: "brush", areas: [] });
+  (chartRef.value as unknown as EChartsActionDispatcher).dispatchAction({ type: "dataZoom", start: 0, end: 100 });
+  (chartRef.value as unknown as EChartsActionDispatcher).dispatchAction({ type: "brush", areas: [] });
 }
 
 defineExpose({ restoreZoom });
@@ -149,9 +158,9 @@ const chartOption = computed(() => ({
   tooltip: {
     trigger: "axis",
     axisPointer: { type: "cross", snap: true },
-    formatter: (params: any[]) => {
+    formatter: (params: CallbackDataParams[]) => {
       if (!params?.length) return "";
-      const tsMs = params[0].value[0];
+      const tsMs = (params[0]!.value as number[])[0] as number;
       let header: string;
       if (props.wallClockOffsetMs != null) {
         // TM1b — EXPERIMENT_RELATIVE mode: show both relative and absolute UTC.
@@ -169,10 +178,11 @@ const chartOption = computed(() => ({
         });
       }
       const rows = params
-        .map(
-          (p: any) =>
-            `<span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${p.color};"></span>${p.seriesName}: <b>${typeof p.value[1] === "number" ? p.value[1].toPrecision(6) : p.value[1]}</b>`,
-        )
+        .map((p: CallbackDataParams) => {
+          const val = (p.value as unknown[])[1];
+          const rendered = typeof val === "number" ? val.toPrecision(6) : val;
+          return `<span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${p.color as string};"></span>${p.seriesName}: <b>${rendered}</b>`;
+        })
         .join("<br/>");
       return `${header}<br/>${rows}`;
     },

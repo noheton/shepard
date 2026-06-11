@@ -37,7 +37,7 @@ watch(
     }
     // Only probe when an INTERNAL repository is present.
     // The TypeScript client predates the INTERNAL type, so cast to any.
-    if (!repos.some(r => (r as any).type === "INTERNAL")) return;
+    if (!repos.some(r => (r as { type?: string }).type === "INTERNAL")) return;
     const results = await search("aa", 1);
     noLabelsWarning.value = results.length === 0;
   },

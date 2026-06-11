@@ -181,10 +181,11 @@ describe("section visibility rule (sharedCollections.length > 0)", () => {
   });
 
   it("section is hidden while loading even if splits would produce shared entries", () => {
+    const loading = true;
     const theirs = buildCollection({ id: 2, createdBy: "bob" });
-    const shared = splitSharedCollections([theirs], "alice", true);
+    const shared = splitSharedCollections([theirs], "alice", loading);
     // loading=true → splitSharedCollections returns [] → section hidden
-    const sectionVisible = !true && shared.length > 0;
+    const sectionVisible = !loading && shared.length > 0;
     expect(sectionVisible).toBe(false);
   });
 });
