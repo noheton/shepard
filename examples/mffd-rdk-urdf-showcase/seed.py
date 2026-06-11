@@ -313,6 +313,60 @@ def ensure_data_object(apis: Apis, coll: Collection, name: str, description: str
 
 
 # ---------------------------------------------------------------------------
+# DataObject appId helpers
+
+def _get_do_app_id(apis: Apis, do: DataObject) -> str | None:
+    """Return the UUID v7 appId for a DataObject.
+
+    The upstream-generated swagger client uses pydantic and drops unknown
+    fields, so ``appId`` is never populated on the typed model even though
+    the backend sends it. We probe three sources in order:
+
+    1. A direct attribute (``do.app_id`` or ``do.appId``) — works when the
+       client version exposes it.
+    2. ``do.additional_properties["appId"]`` — the pydantic catch-all bag.
+    3. Raw v1 single-object JSON endpoint — the reliable fallback.
+
+    Returns the appId string or ``None`` when the backend is too old to
+    expose it (pre-L2 builds).
+    """
+    for attr in ("app_id", "appId", "_appId"):
+        val = getattr(do, attr, None)
+        if val:
+            return str(val)
+    extras = getattr(do, "additional_properties", None) or {}
+    if isinstance(extras, dict):
+        val = extras.get("appId")
+        if val:
+            return str(val)
+    # Fall back: read the raw v1 JSON for this DataObject.
+    try:
+        coll_list = apis.data_object.get_all_data_objects(do.collection_id if hasattr(do, "collection_id") else 0) or []
+    except Exception:
+        coll_list = []
+    # The v1 endpoint for a single DO is GET /collections/{collId}/dataObjects/{doId}
+    host    = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    # Walk all collections to find do.id — less ideal, but we only need this
+    # on old backends.  Prefer the fast v1 single-DO path.
+    try:
+        # v1 URL pattern used by the swagger client's own transport layer:
+        #   GET {host}/collections/{collId}/dataObjects/{doId}
+        # do.collection_id is not always present; fall back to a raw lookup
+        # that iterates the DataObject's first-available collection context.
+        resp = _http.get(
+            f"{host}/dataObjects/{do.id}",
+            headers={"X-API-KEY": api_key, "Accept": "application/json"},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("appId") or None
+    except Exception:
+        pass
+    return None
+
+
+# ---------------------------------------------------------------------------
 # File upload (v2 presigned)
 
 def _get_fc_app_id(host: str, api_key: str, fc_id: int) -> str:
@@ -399,6 +453,80 @@ def upload_file_reference(apis: Apis, coll: Collection, do: DataObject,
     fr = apis.file_reference.create_file_reference(coll.id, do.id, fr)
     _log("OK", ref_name, "FileReference", fr.id)
     return fr
+
+
+def upload_singleton_file_reference(
+    apis: Apis,
+    do: DataObject,
+    file_path: Path,
+    ref_name: str,
+) -> str | None:
+    """Upload one file as an FR1b singleton via ``POST /v2/files``.
+
+    Per the CLAUDE.md rule "Always: singleton FileReference for one-file
+    uploads; FileBundleReference only when bundling >1" this is the
+    canonical path for every one-file upload.  The backend creates the
+    FileContainer automatically; no ``fc`` argument is needed.
+
+    Idempotent: if a singleton FileReference with the same ``ref_name``
+    already exists on the DataObject (checked via
+    ``GET /v2/files/by-data-object/{doAppId}``), the upload is skipped
+    and the existing appId is returned.
+
+    Returns the singleton ``appId`` string on success, or ``None`` when
+    the file is missing locally or the upload fails.
+    """
+    if not file_path.exists():
+        _log("SKIP", ref_name, "FileReference (missing local file)", str(file_path))
+        return None
+
+    do_app_id = _get_do_app_id(apis, do)
+    if not do_app_id:
+        _log("FAIL", ref_name, "FileReference (could not resolve DataObject appId)")
+        return None
+
+    host    = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    v2      = _v2_base(host)
+    headers = {"X-API-KEY": api_key}
+
+    # --- idempotency check ---------------------------------------------------
+    try:
+        list_resp = _http.get(
+            f"{v2}/files/by-data-object/{do_app_id}",
+            headers=headers,
+            timeout=15,
+        )
+        if list_resp.status_code == 200:
+            for item in list_resp.json() or []:
+                if isinstance(item, dict) and item.get("name") == ref_name:
+                    _log("SKIP", ref_name, "FileReference (singleton)", item.get("appId", "?"))
+                    return item.get("appId")
+    except Exception as exc:
+        # Skip-check failure is non-fatal — proceed to upload; the backend
+        # will return 409 / duplicate-name behaviour if already present.
+        _log("WARN", ref_name, f"FileReference skip-check failed ({str(exc)[:60]})")
+
+    # --- upload --------------------------------------------------------------
+    try:
+        with file_path.open("rb") as fh:
+            upload_resp = _http.post(
+                f"{v2}/files",
+                params={"parentDataObjectAppId": do_app_id, "name": ref_name},
+                files={"file": (file_path.name, fh)},
+                headers=headers,
+                timeout=180,
+            )
+        if upload_resp.status_code in (200, 201):
+            app_id = upload_resp.json().get("appId")
+            _log("OK", ref_name, "FileReference (singleton)", app_id)
+            return app_id
+        _log("FAIL", ref_name, "FileReference (singleton)",
+             f"HTTP {upload_resp.status_code}: {upload_resp.text[:120]}")
+        return None
+    except Exception as exc:
+        _log("FAIL", ref_name, "FileReference (singleton)", str(exc)[:120])
+        return None
 
 
 # ---------------------------------------------------------------------------
