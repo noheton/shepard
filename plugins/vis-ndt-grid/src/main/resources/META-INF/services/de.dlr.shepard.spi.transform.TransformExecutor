@@ -1,0 +1,6 @@
+# MFFD-RENDER-NDT-GRID slice 2 — NDT thermography tile-grid mosaic executor.
+# Builds the S×M×L×F tile-grid VIEW envelope from a Collection of
+# mffd:ndt-otvis-measurement DataObjects annotated with SMFL coordinates.
+# Claims NdtGridShape (http://semantics.dlr.de/shepard/transform#NdtGridShape).
+# ServiceLoader unions this with the built-in NoOpTransformExecutor on the backend classpath.
+de.dlr.shepard.plugins.visndtgrid.NdtGridTransformExecutor
