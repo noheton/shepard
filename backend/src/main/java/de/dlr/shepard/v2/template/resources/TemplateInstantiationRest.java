@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -76,6 +77,11 @@ public class TemplateInstantiationRest {
    * for SHACL validation. The URI is local to the validation call and never
    * persisted; it just needs to be stable within one validation invocation.
    */
+  private static final String PT_NOT_FOUND    = "/problems/template-instantiation.not-found";
+  private static final String PT_FORBIDDEN    = "/problems/template-instantiation.forbidden";
+  private static final String PT_CONFLICT     = "/problems/template-instantiation.conflict";
+  private static final String PT_UNPROCESSABLE = "/problems/template-instantiation.unprocessable";
+
   static final String INSTANCE_URI = "urn:shepard:instance:candidate";
 
   /**
@@ -146,31 +152,27 @@ public class TemplateInstantiationRest {
     // Step 2 + 3: resolve collection and check Write permission
     Optional<Long> ogmId = collectionPropsDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No Collection with appId " + collectionAppId)
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "No Collection with appId " + collectionAppId);
     }
     String caller = securityContext.getUserPrincipal().getName();
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN)
-        .entity("Caller lacks Write on Collection " + collectionAppId)
-        .build();
+      return problem(PT_FORBIDDEN, "Insufficient permission", Response.Status.FORBIDDEN,
+        "Caller lacks Write on Collection " + collectionAppId);
     }
 
     // Step 4: resolve template
     Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(templateAppId);
     if (templateOpt.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No template with appId " + templateAppId)
-        .build();
+      return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND,
+        "No template with appId " + templateAppId);
     }
     ShepardTemplate template = templateOpt.get();
 
     // Step 5: 409 if retired
     if (template.isRetired()) {
-      return Response.status(Response.Status.CONFLICT)
-        .entity("Template " + templateAppId + " is retired; pick a non-retired version")
-        .build();
+      return problem(PT_CONFLICT, "Template retired", Response.Status.CONFLICT,
+        "Template " + templateAppId + " is retired; pick a non-retired version");
     }
 
     // Step 6: allow-list guard (empty list = unrestricted)
@@ -178,9 +180,8 @@ public class TemplateInstantiationRest {
     if (!allowed.isEmpty()) {
       boolean inList = allowed.stream().anyMatch(t -> templateAppId.equals(t.getAppId()));
       if (!inList) {
-        return Response.status(Response.Status.FORBIDDEN)
-          .entity("Template " + templateAppId + " is not in the allow-list for Collection " + collectionAppId)
-          .build();
+        return problem(PT_FORBIDDEN, "Template not in allow-list", Response.Status.FORBIDDEN,
+          "Template " + templateAppId + " is not in the allow-list for Collection " + collectionAppId);
       }
     }
 
@@ -222,9 +223,8 @@ public class TemplateInstantiationRest {
             return sb.toString().trim();
           })
           .collect(Collectors.joining("; "));
-        return Response.status(422)
-          .entity("DataObject violates the template's SHACL shape. Violations: " + violations)
-          .build();
+        return problem(PT_UNPROCESSABLE, "SHACL validation failed", 422,
+          "DataObject violates the template's SHACL shape. Violations: " + violations);
       }
     }
 
@@ -242,6 +242,18 @@ public class TemplateInstantiationRest {
     templateDAO.recordCreatedFrom(created.getShepardId(), template);
 
     return Response.status(Response.Status.CREATED).entity(new DataObjectIO(created)).build();
+  }
+
+  // ─── helpers ───────────────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
+
+  private static Response problem(String type, String title, int status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status, detail, null)).build();
   }
 
   /**

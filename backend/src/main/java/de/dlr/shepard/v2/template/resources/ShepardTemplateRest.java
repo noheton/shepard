@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.template.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -55,6 +56,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Tag(name = "Templates (v2)")
 public class ShepardTemplateRest {
+
+  private static final String PT_BAD_REQUEST = "/problems/templates.bad-request";
+  private static final String PT_NOT_FOUND   = "/problems/templates.not-found";
 
   @Inject
   ShepardTemplateDAO dao;
@@ -133,7 +137,8 @@ public class ShepardTemplateRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   public Response create(CreateShepardTemplateIO body, @Context SecurityContext securityContext) {
     if (body == null || body.getName() == null || body.getTemplateKind() == null || body.getBody() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("name, templateKind, body are required").build();
+      return problem(PT_BAD_REQUEST, "Required fields missing", Response.Status.BAD_REQUEST,
+        "name, templateKind, body are required");
     }
     try {
       bodyValidator.validate(body.getBody(), body.getTemplateKind());
@@ -145,12 +150,12 @@ public class ShepardTemplateRest {
     if (parentAppId != null && !parentAppId.isBlank()) {
       Optional<ShepardTemplate> parent = dao.findByAppId(parentAppId);
       if (parent.isEmpty()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("parentTemplateAppId not found: " + parentAppId).build();
+        return problem(PT_BAD_REQUEST, "Parent template not found", Response.Status.BAD_REQUEST,
+          "parentTemplateAppId not found: " + parentAppId);
       }
       if (!body.getTemplateKind().equals(parent.get().getTemplateKind())) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + body.getTemplateKind() + ")")
-          .build();
+        return problem(PT_BAD_REQUEST, "Parent kind mismatch", Response.Status.BAD_REQUEST,
+          "parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + body.getTemplateKind() + ")");
       }
     }
     String caller = securityContext.getUserPrincipal().getName();
@@ -199,17 +204,16 @@ public class ShepardTemplateRest {
       String newParent = body.getParentTemplateAppId();
       Optional<ShepardTemplate> parent = dao.findByAppId(newParent);
       if (parent.isEmpty()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("parentTemplateAppId not found: " + newParent).build();
+        return problem(PT_BAD_REQUEST, "Parent template not found", Response.Status.BAD_REQUEST,
+          "parentTemplateAppId not found: " + newParent);
       }
       if (!prior.getTemplateKind().equals(parent.get().getTemplateKind())) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + prior.getTemplateKind() + ")")
-          .build();
+        return problem(PT_BAD_REQUEST, "Parent kind mismatch", Response.Status.BAD_REQUEST,
+          "parent template kind (" + parent.get().getTemplateKind() + ") must match child kind (" + prior.getTemplateKind() + ")");
       }
       if (inheritanceResolver.wouldCreateCycle(appId, newParent)) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("parentTemplateAppId would create an inheritance cycle")
-          .build();
+        return problem(PT_BAD_REQUEST, "Inheritance cycle", Response.Status.BAD_REQUEST,
+          "parentTemplateAppId would create an inheritance cycle");
       }
     }
     String caller = securityContext.getUserPrincipal().getName();
@@ -281,5 +285,12 @@ public class ShepardTemplateRest {
   ) {
     if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     return Response.ok(dao.listDistinctTags(kind)).build();
+  }
+
+  // ─── helpers ───────────────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }
