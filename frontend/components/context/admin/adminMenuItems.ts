@@ -31,6 +31,8 @@ export enum AdminFragments {
   INSTANCE_REGISTRY = "instance-registry",
   // J1e
   JUPYTER = "jupyter",
+  // UI-GAP-3
+  CONFIG_OVERVIEW = "config-overview",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -38,6 +40,12 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Feature Toggles",
     fragment: AdminFragments.FEATURE_TOGGLES,
     icon: "mdi-toggle-switch-outline",
+  },
+  // UI-GAP-3
+  {
+    name: "Runtime Config Registry",
+    fragment: AdminFragments.CONFIG_OVERVIEW,
+    icon: "mdi-tune-vertical-variant",
   },
   {
     name: "Plugins",

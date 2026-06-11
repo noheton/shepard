@@ -24,6 +24,7 @@ import AdminNotificationsPane from "~/components/context/admin/AdminNotification
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
+import AdminConfigOverviewPane from "~/components/context/admin/AdminConfigOverviewPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -65,6 +66,14 @@ const landingCards = [
     icon: "mdi-toggle-switch-outline",
     title: "Feature Toggles",
     description: "Flip runtime feature flags without a restart.",
+  },
+  // UI-GAP-3
+  {
+    fragment: AdminFragments.CONFIG_OVERVIEW,
+    icon: "mdi-tune-vertical-variant",
+    title: "Runtime Config Registry",
+    description:
+      "Inspect all registered runtime-configurable features — current JSON shape per feature, with links to bespoke panes.",
   },
   {
     fragment: AdminFragments.PLUGINS,
@@ -259,6 +268,10 @@ const landingCards = [
     />
     <FeatureTogglesPane
       v-if="routeFragment === AdminFragments.FEATURE_TOGGLES"
+    />
+    <!-- UI-GAP-3: config registry overview -->
+    <AdminConfigOverviewPane
+      v-if="routeFragment === AdminFragments.CONFIG_OVERVIEW"
     />
     <PluginsAdminPane v-if="routeFragment === AdminFragments.PLUGINS" />
     <AdminMetricsCard
