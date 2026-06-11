@@ -100,6 +100,7 @@ public class ImportV2Rest {
   @POST
   @Path("/validate")
   @Operation(
+    operationId = "validateImport",
     summary = "Dry-run validate an import manifest (IMP1)",
     description =
       "Validates the manifest without writing any DataObjects, Containers, or References. " +

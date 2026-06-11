@@ -86,6 +86,7 @@ public class ReferencesV2Rest {
 
   @POST
   @Operation(
+    operationId = "createReference",
     summary = "Create a non-binary reference of the given kind under a DataObject.",
     description =
       "Creates a reference of `kind` attached to the DataObject identified by " +
@@ -137,6 +138,7 @@ public class ReferencesV2Rest {
   @GET
   @Path("/{appId}")
   @Operation(
+    operationId = "getReference",
     summary = "Get any reference by appId; the entity self-describes its kind.",
     description =
       "Resolves the reference (of any kind) at `appId` and returns the unified " +
@@ -168,6 +170,7 @@ public class ReferencesV2Rest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchReference",
     summary = "RFC 7396 merge-patch any reference by appId; dispatched by kind.",
     description =
       "Applies a merge-patch to the reference at `appId`, dispatched to the owning " +
@@ -212,6 +215,7 @@ public class ReferencesV2Rest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteReference",
     summary = "Delete any reference by appId; dispatched by kind.",
     description = "Deletes the reference at `appId` via the owning kind's deleter.\n\nAuth: Write on the parent DataObject."
   )
@@ -238,6 +242,7 @@ public class ReferencesV2Rest {
 
   @GET
   @Operation(
+    operationId = "listReferences",
     summary = "List references of a kind attached to a DataObject, optionally filtered.",
     description =
       "Returns every reference of `kind` attached to `dataObjectAppId` as " +

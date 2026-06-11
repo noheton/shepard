@@ -145,6 +145,7 @@ public class ShapesRenderRest {
   // is set on the Response. JSON stays the default view-model.
   @Produces({ MediaType.APPLICATION_JSON, MediaType.WILDCARD })
   @Operation(
+    operationId = "renderShape",
     summary = "Project a VIEW_RECIPE template's channel bindings onto a focus DataObject.",
     description = "Stateless, read-only. Returns the template's channel binding declarations. " +
     "Beta (TPL2b): all bindings have status=DECLARED — live channel resolution " +

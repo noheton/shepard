@@ -48,6 +48,7 @@ public class LegacyV1StatsAdminRest {
 
   @GET
   @Operation(
+    operationId = "getLegacyV1Stats",
     summary = "Read the in-memory v1 hit-stats snapshot.",
     description = "Returns total hits, per-endpoint breakdown, per-principal breakdown, " +
     "and first/most-recent hit timestamps. Process restart resets the counters. The " +

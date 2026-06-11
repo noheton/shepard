@@ -52,6 +52,7 @@ public class StructuredDataContainerLinkedDataObjectsRest {
   @GET
   @Path("/{containerId}/linked-data-objects")
   @Operation(
+    operationId = "getStructuredDataContainerLinkedDataObjects",
     summary = "List DataObjects linked to this StructuredDataContainer.",
     description = "Returns the distinct DataObjects whose StructuredDataReference nodes point at this " +
     "container. Requires Read permission on the container."
@@ -79,6 +80,7 @@ public class StructuredDataContainerLinkedDataObjectsRest {
   @DELETE
   @Path("/{containerId}")
   @Operation(
+    operationId = "deleteStructuredDataContainerSafely",
     summary = "Safely delete this StructuredDataContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
     "Use this in preference to the upstream /shepard/api/structuredDataContainers/{id} DELETE, " +

@@ -77,6 +77,7 @@ public class ContainerPublicationStateRest {
 
   @GET
   @Operation(
+    operationId = "getContainerPublicationState",
     summary = "Read the current publication state of a Container.",
     description =
       "Returns the container's `status` and a convenience `archived` boolean. " +
@@ -107,6 +108,7 @@ public class ContainerPublicationStateRest {
 
   @PATCH
   @Operation(
+    operationId = "patchContainerPublicationState",
     summary = "Flip the publication state of a Container (Owner or instance-admin only).",
     description =
       "Sets the container's `status` to one of DRAFT, IN_REVIEW, READY, " +

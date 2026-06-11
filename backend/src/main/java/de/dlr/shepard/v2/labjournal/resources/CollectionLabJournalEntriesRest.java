@@ -69,6 +69,7 @@ public class CollectionLabJournalEntriesRest {
 
   @GET
   @Operation(
+    operationId = "listLabJournalEntries",
     summary = "Bulk list all lab journal entries for a collection (UI-020).",
     description =
       "Walks Collection → DataObject → LabJournalEntry once and returns every " +

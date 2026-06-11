@@ -82,6 +82,7 @@ public class PublicationsListRest {
 
   @GET
   @Operation(
+    operationId = "listPublications",
     summary = "List Publications attached to an entity (most-recent first).",
     description = "Returns every :Publication row attached to the entity ordered by mintedAt DESC. " +
     "Includes retired rows (digitalObjectMutability = 'retired') so callers can render the full " +

@@ -95,6 +95,7 @@ public class SnapshotListRest {
 
   @GET
   @Operation(
+    operationId = "listSnapshots",
     summary = "List snapshots the caller can read (paginated, optionally scoped to one Collection).",
     description =
       "Returns one page of `:Snapshot` rows the caller has Read on, ordered " +

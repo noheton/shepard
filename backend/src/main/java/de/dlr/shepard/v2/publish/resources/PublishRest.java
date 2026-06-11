@@ -172,6 +172,7 @@ public class PublishRest {
 
   @DELETE
   @Operation(
+    operationId = "retirePublication",
     summary = "Retire a publication — mark the entity's most-recent :Publication as retired.",
     description = "Sets `digitalObjectMutability = 'retired'` on the most-recent `:Publication` row attached to " +
     "the entity. The row is never deleted — KIP records are append-only per the HMC spec. " +

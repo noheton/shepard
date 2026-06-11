@@ -50,6 +50,7 @@ public class TimeseriesContainerLinkedDataObjectsRest {
   @GET
   @Path("/{containerAppId}/linked-data-objects")
   @Operation(
+    operationId = "getTimeseriesContainerLinkedDataObjects",
     summary = "List DataObjects linked to this TimeseriesContainer.",
     description = "Returns the distinct DataObjects whose TimeseriesReference nodes point at this " +
     "container. Requires Read permission on the container."
@@ -87,6 +88,7 @@ public class TimeseriesContainerLinkedDataObjectsRest {
   @DELETE
   @Path("/{containerAppId}")
   @Operation(
+    operationId = "deleteTimeseriesContainerSafely",
     summary = "Safely delete this TimeseriesContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
     "Use this in preference to the upstream /shepard/api/timeseriesContainers/{id} DELETE, which " +

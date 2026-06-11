@@ -64,6 +64,7 @@ public class ProjectsRest {
 
   @GET
   @Operation(
+    operationId = "listProjects",
     summary = "List Project appIds.",
     description =
       "Returns the appIds of every Collection that carries " +
@@ -89,6 +90,7 @@ public class ProjectsRest {
   @GET
   @Path("/{appId}")
   @Operation(
+    operationId = "getProject",
     summary = "Get a Project envelope by appId.",
     description =
       "Returns the Project-flavoured envelope: the underlying Collection's name " +

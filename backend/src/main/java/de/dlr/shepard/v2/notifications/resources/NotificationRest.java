@@ -38,6 +38,7 @@ public class NotificationRest {
 
   @GET
   @Operation(
+    operationId = "listNotifications",
     summary = "List in-app notifications for the authenticated user.",
     description = "Returns all non-expired notifications visible to the caller, ordered most-recent-first. " +
     "Includes notifications addressed to the caller's username, ALL-audience broadcasts, and (when the " +

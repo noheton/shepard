@@ -58,6 +58,7 @@ public class CollectionWatchesRest {
 
   @GET
   @Operation(
+    operationId = "listWatchedContainers",
     summary = "List containers this Collection is watching (WATCH1).",
     description =
       "Returns one `WatchIO` row per `:Watch` edge attached to the " +
@@ -99,6 +100,7 @@ public class CollectionWatchesRest {
 
   @POST
   @Operation(
+    operationId = "createWatchedContainer",
     summary = "Add a Watch link from a Collection to a Container (WATCH1).",
     description =
       "Creates a `:Watch` edge from the Collection identified by " +
@@ -152,6 +154,7 @@ public class CollectionWatchesRest {
   @DELETE
   @Path("{watchAppId}")
   @Operation(
+    operationId = "deleteWatchedContainer",
     summary = "Remove a Watch link by its appId (WATCH1).",
     description =
       "Deletes the `:Watch` edge identified by `watchAppId` from the " +

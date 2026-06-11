@@ -72,6 +72,7 @@ public class ShapesValidateRest {
   @Path("/validate")
   @RolesAllowed("authenticated")
   @Operation(
+    operationId = "validateShape",
     summary = "Validate a candidate RDF payload against a SHACL shape graph.",
     description = "Stateless, read-only. Returns the SHACL validation report. Bad Turtle in either input " +
     "is reported via parseError in the 200 body, NOT as a 400 — so a caller (e.g. an MCP tool) can " +
