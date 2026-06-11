@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.importer.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.importer.entities.ImportDiagnosticEvent;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.BatchIngestIO;
@@ -68,6 +69,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Import (IMP1)")
 public class ImportDiagnosticsV2Rest {
 
+  private static final String PT_BAD_REQUEST = "/problems/import-diagnostics.bad-request";
+
   /** Allowed level values for the {@code ?level=} filter. */
   private static final Set<String> VALID_LEVELS = Set.of(
     ImportDiagnosticEvent.LEVEL_INFO,
@@ -116,14 +119,10 @@ public class ImportDiagnosticsV2Rest {
     if (caller(sc) == null) return unauthorized();
 
     if (level != null && !VALID_LEVELS.contains(level)) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Invalid level filter '" + level + "'. Valid values: " + VALID_LEVELS)
-        .build();
+      return badRequest("Invalid level filter '" + level + "'. Valid values: " + VALID_LEVELS);
     }
     if (phase != null && !VALID_PHASES.contains(phase)) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Invalid phase filter '" + phase + "'. Valid values: " + VALID_PHASES)
-        .build();
+      return badRequest("Invalid phase filter '" + phase + "'. Valid values: " + VALID_PHASES);
     }
 
     List<EventIO> events = diagnosticsLog.query(runId, level, phase)
@@ -232,9 +231,7 @@ public class ImportDiagnosticsV2Rest {
     if (caller(sc) == null) return unauthorized();
 
     if (body == null || body.events() == null || body.events().isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("events list must not be empty")
-        .build();
+      return badRequest("events list must not be empty");
     }
 
     // Validate all events before writing any (fail-fast).
@@ -286,7 +283,8 @@ public class ImportDiagnosticsV2Rest {
   }
 
   private static Response badRequest(String message) {
-    return Response.status(Response.Status.BAD_REQUEST).entity(message).build();
+    ProblemJson body = new ProblemJson(PT_BAD_REQUEST, "Bad request", 400, message, null);
+    return Response.status(Response.Status.BAD_REQUEST).type("application/problem+json").entity(body).build();
   }
 
   private static String caller(SecurityContext sc) {

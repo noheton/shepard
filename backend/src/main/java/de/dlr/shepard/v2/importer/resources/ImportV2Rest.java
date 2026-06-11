@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.resources;
 
 import de.dlr.shepard.auth.bootstrap.BootstrapTokenInitializer;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
@@ -76,6 +77,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Import (IMP1)")
 public class ImportV2Rest {
 
+  private static final String PT_NOT_FOUND   = "/problems/import.not-found";
+  private static final String PT_BAD_REQUEST = "/problems/import.bad-request";
+
   @Inject
   ImportValidationService validationService;
 
@@ -122,9 +126,8 @@ public class ImportV2Rest {
     Optional<Long> collOgmId = collectionPropertiesDAO.findCollectionIdByAppId(
       manifest.collectionAppId());
     if (collOgmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Collection not found: " + manifest.collectionAppId())
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "Collection not found: " + manifest.collectionAppId());
     }
     if (!permissionsService.isAccessTypeAllowedForUser(
         collOgmId.get(), AccessType.Write, caller)) {
@@ -204,16 +207,14 @@ public class ImportV2Rest {
     if (caller == null) return unauthorized();
 
     if (collectionAppId == null || collectionAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("collectionAppId query parameter is required")
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST,
+        "collectionAppId query parameter is required");
     }
 
     Optional<Long> collOgmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (collOgmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Collection not found: " + collectionAppId)
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "Collection not found: " + collectionAppId);
     }
     if (!permissionsService.isAccessTypeAllowedForUser(collOgmId.get(), AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
@@ -263,6 +264,11 @@ public class ImportV2Rest {
     String commitId = "INVALIDATED".equals(plan.getStatus()) ? null : plan.getCommitId();
 
     return new ImportPlanIO(commitId, plan.getStatus(), expiresAt, summary, warnings, errors);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private static String caller(SecurityContext sc) {
