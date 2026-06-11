@@ -1189,6 +1189,19 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          MFFD-RENDER-AFP-THERMO-OVERLAY slice 1 — `shepard-plugin-vis-afp-thermo-overlay`.
+          Capability manifest + AfpThermoOverlayShape SHACL classpath resource at
+          `/shapes/afp-thermo-overlay.shacl.ttl`. Surfaces `vis-afp-thermo-overlay`
+          in `GET /v2/admin/plugins`. No CDI beans, no @Path resources, no sidecars
+          in slice 1 — no quarkus.index-dependency entry needed.
+          See aidocs/16 MFFD-RENDER-AFP-THERMO-OVERLAY.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-afp-thermo-overlay</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           V2CONV-A6 — `shepard-plugin-krl-interpreter`. Extracts the
           KRL trajectory interpret subsystem from backend core into a
           drop-in Tier-1 plugin JAR. The plugin carries:
