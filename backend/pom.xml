@@ -1174,6 +1174,21 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          MFFD-RENDER-NDT-GRID slice 1 — `shepard-plugin-vis-ndt-grid`.
+          Capability manifest + NdtGridShape SHACL classpath resource at
+          `/shapes/ndt-grid.shacl.ttl`. Surfaces `vis-ndt-grid` in
+          `GET /v2/admin/plugins`. No CDI beans, no @Path resources, no
+          sidecars in slice 1 — no quarkus.index-dependency entry needed.
+          Slice 2 (NdtGridTransformExecutor) will add the TransformExecutor
+          SPI; slice 3 (NdtGridView.vue) adds the frontend renderer.
+          See aidocs/16 MFFD-RENDER-NDT-GRID + aidocs/44 MFFD tracker.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-ndt-grid</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           V2CONV-A6 — `shepard-plugin-krl-interpreter`. Extracts the
           KRL trajectory interpret subsystem from backend core into a
           drop-in Tier-1 plugin JAR. The plugin carries:
