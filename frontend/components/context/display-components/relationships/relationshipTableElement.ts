@@ -58,7 +58,10 @@ export type CollectionReferenceType =
   | {
       type: "Collection Reference";
       availability: "available";
-      id: number;
+      /** v1 path: numeric Neo4j id of the referenced collection. */
+      id?: number;
+      /** v2 path (V2-SWEEP-004-2): UUID v7 appId of the referenced collection. */
+      collectionAppId?: string;
     }
   | {
       type: "Collection Reference";

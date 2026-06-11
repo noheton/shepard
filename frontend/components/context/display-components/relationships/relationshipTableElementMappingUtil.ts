@@ -5,7 +5,7 @@ import {
   instanceOfURIReference,
   type URIReference,
 } from "@dlr-shepard/backend-client";
-import type { RelatedEntity } from "./relatedEntity";
+import { isCollectionReferenceV2, type RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
@@ -60,6 +60,9 @@ function mapRelationshipType(
   if (instanceOfDataObject(entity)) {
     return entity.type;
   }
+  if (isCollectionReferenceV2(entity)) {
+    return (entity.payload.relationship ?? undefined) as string | undefined;
+  }
   return entity.relationship ?? undefined;
 }
 
@@ -95,15 +98,21 @@ function mapName(
     };
   }
 
+  // V2-SWEEP-004-2: v2 collection reference — payload carries referencedCollectionAppId.
+  if (isCollectionReferenceV2(entity)) {
+    const refColAppId = entity.payload.referencedCollectionAppId;
+    return {
+      value: entity.name,
+      path: refColAppId ? `/collections/${refColAppId}` : undefined,
+    };
+  }
+
   if (isDeleted(entity.referencedCollectionId)) return { value: entity.name };
 
-  // V1-EXCEPTION (V2-LINKS): a CollectionReference's `referencedCollectionId`
-  // is the numeric id of ANOTHER collection and carries no appId sibling on
-  // the wire (the BasicReference payload omits it). Linking would need an
-  // async numeric→appId resolve, which this synchronous mapper can't do.
-  // Backlog: COLLREF-V2-APPID in aidocs/16 (add `referencedCollectionAppId`
-  // to the CollectionReference v2 payload, then route on it). Until then we
-  // render a non-navigable label rather than a numeric route that 404s.
+  // V1-EXCEPTION (V2-LINKS): v1 CollectionReference carries only the numeric
+  // referencedCollectionId — no appId on the wire. Renders as a non-navigable
+  // label. Cleared once the v2 endpoint (COLLREF-V2-APPID backend, V2-SWEEP-004-1)
+  // is used, which happens when dataObjectAppId is passed to useRelatedEntities.
   return { value: entity.name };
 }
 
@@ -142,6 +151,12 @@ function mapType(
     };
   }
 
+  if (isCollectionReferenceV2(entity)) {
+    const refColAppId = entity.payload.referencedCollectionAppId;
+    if (!refColAppId) return { type: "Collection Reference", availability: "deleted" };
+    return { type: "Collection Reference", collectionAppId: refColAppId, availability: "available" };
+  }
+
   if (isDeleted(entity.referencedCollectionId))
     return { type: "Collection Reference", availability: "deleted" };
   return {
@@ -154,6 +169,7 @@ function mapType(
 function isAnnotatable(entity: RelatedEntity): boolean {
   return (
     instanceOfCollectionReference(entity) ||
+    isCollectionReferenceV2(entity) ||
     instanceOfDataObjectReference(entity) ||
     instanceOfURIReference(entity)
   );
