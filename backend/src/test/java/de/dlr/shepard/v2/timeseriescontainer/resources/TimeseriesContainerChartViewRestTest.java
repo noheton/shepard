@@ -11,6 +11,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
 import de.dlr.shepard.v2.timeseriescontainer.services.TimeseriesContainerChartViewService;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +78,19 @@ class TimeseriesContainerChartViewRestTest {
     assertThat(r.getStatus()).isEqualTo(200);
     TimeseriesContainerChartViewIO body = (TimeseriesContainerChartViewIO) r.getEntity();
     assertThat(body.selectedChannels()).isEmpty();
+  }
+
+  @Test
+  void get_propagatesNotFoundException_whenContainerMissing() {
+    when(containerService.getContainerByAppId(CONTAINER_APP_ID))
+      .thenThrow(new NotFoundException("No container with appId " + CONTAINER_APP_ID));
+
+    // NotFoundException from getContainerByAppId propagates as 404 via JAX-RS container mapping.
+    // In a pure unit test there is no JAX-RS container, so we verify the throw itself.
+    org.junit.jupiter.api.Assertions.assertThrows(
+      NotFoundException.class,
+      () -> resource.get(CONTAINER_APP_ID)
+    );
   }
 
   // ── PATCH ─────────────────────────────────────────────────────────────────
