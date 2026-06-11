@@ -1,0 +1,143 @@
+---
+stage: concept
+last-stage-change: 2026-06-11
+---
+
+# APISIMP — v2 surface simplification sweep (2026-06-11)
+
+Second incremental audit of the `/v2` REST surface, run after the 2026-06-10 sweep
+actioned five major findings (SA-CONT-DELETE, PV-UNIFY, TSCONT-APPID-KEY,
+PAGINATION-UNIFY, ERROR-ENVELOPE-UNIFY — all shipped or in-flight). This pass
+scans the residual surface after those waves completed.
+
+Scope: `backend/.../v2/**` + `plugins/*/.../v2/**` (+ plugin `@Path`s).
+Research-and-backlog only; no production Java/Vue touched.
+
+## What I found
+
+### Finding 1 — ThermographyConfigAdminRest not on the generic registry
+
+`backend/.../v2/admin/thermography/resources/ThermographyConfigAdminRest.java`
+serves `GET|PATCH /v2/admin/thermography/config` — a bespoke admin config REST
+class following the exact pattern that V2CONV-A4 (2026-06-03) was designed to
+supersede. The generic `AdminConfigRest` + `ConfigDescriptor<T>` SPI is fully
+shipped; all other config resources have been migrated (V2CONV-A4: ror,
+sql-timeseries, jupyter, semantic; V2CONV-A7-PLUGIN-ADMIN-CONFIG slices 1–5:
+unhide, video, AAS, v1-compat, ePIC, DataCite, jupyter-plugin). This one was
+added by MFFD-NDT-ADMIN-CONFIG-1 after the A4 wave, landing after the migration
+pass.
+
+No FE caller on the bespoke `/v2/admin/thermography/config` path found
+(grep `frontend/`). The path change to `/v2/admin/config/thermography` is a
+wire break for any direct admin-pane caller, but since there is none, the
+migration is backend-only.
+
+**Filed as `APISIMP-THERMO-ADMIN-CONFIG` (S).**
+
+### Finding 2 — FC + SDC linked-data-objects still numeric-keyed
+
+`FileContainerLinkedDataObjectsRest` (`GET /v2/file-containers/{containerId}/linked-data-objects` +
+`DELETE /v2/file-containers/{containerId}`) and
+`StructuredDataContainerLinkedDataObjectsRest` (`GET /v2/structured-data-containers/{containerId}/linked-data-objects` +
+`DELETE /v2/structured-data-containers/{containerId}`) both accept
+`@PathParam("containerId") long containerId` — the raw Neo4j OGM id.
+
+The timeseries equivalent was fully migrated in APISIMP-TSCONT-APPID-KEY (2026-06-11).
+These two resources were added by CC1b / DI1 (safe-delete) and predate the
+TSCONT migration; they were not in scope at the time.
+
+FE callers using numeric ids:
+- `frontend/composables/containers/useFileContainerLinkedDataObjects.ts:37`
+  (`${containerId}/linked-data-objects` — numeric `containerId`)
+- `frontend/composables/containers/useStructuredDataContainerLinkedDataObjects.ts:37`
+  (same pattern)
+- `frontend/composables/containers/useContainerReferencedByCollections.ts:37,43`
+  (constructs URL for FILE and STRUCTUREDDATA with a `containerId: string | number`)
+
+Note: `useContainerReferencedByCollections` already handles TIMESERIES with
+the post-TSCONT-APPID-KEY `containerAppId`; its comment at line 39–41 explicitly
+notes callers must pass the appId for timeseries — the same constraint now
+applies to file and structured containers.
+
+**Filed as `APISIMP-FC-SDC-LINKED-DO-APPID` (S).**
+
+### Finding 3 — TimeseriesChannelAnnotationRest annotationId numeric leak
+
+`TimeseriesChannelAnnotationRest` (`backend/.../v2/timeseriescontainer/resources/`):
+The DELETE endpoint `DELETE /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations/{annotationId}`
+takes `@PathParam("annotationId") @NotNull Long annotationId` (line 130) — a
+Neo4j OGM node id for the `SemanticAnnotation` entity. The `containerAppId` (line 69)
+was already migrated in APISIMP-TSCONT-APPID-KEY-4, but the `annotationId`
+parameter inside the sub-resource was left numeric.
+
+The GET (`listAnnotations`) and POST (`createAnnotation`) paths are clean
+(no numeric annotation id in path). Only the DELETE has this residual leak.
+
+No FE caller for the DELETE endpoint found (grep `frontend/`, `e2e/`).
+Backend-only migration; `AnnotatableTimeseriesService` needs a
+`deleteAnnotationByAppId(String containerAppId, String channelShepardId, String annotationAppId)`
+service method.
+
+**Filed as `APISIMP-CHANNEL-ANNOT-APPID` (S).**
+
+### Clean-check — patterns from the 2026-06-10 sweep
+
+| Check | Status |
+|---|---|
+| `@Path(Constants.SHEPARD_API + …)` in `/v2/**` code | **Clean** — zero new additions. The spatiotemporal plugin's `SpatialDataPointRest` + `SpatialDataReferenceRest` on `Constants.SHEPARD_API` are the frozen upstream-byte-compat v1 paths; their v2 parity shelf is tracked as `PLUGIN-V2-001`. |
+| `@QueryParam("size")` on pagination endpoints | **In-flight** — the 7 endpoints covered by APISIMP-PAGINATION-UNIFY-1 (PR #1847) still show `"size"`; PR is waiting on CodeQL race resolution. No NEW untracked pagination-size uses found. |
+| Bespoke `*ConfigRest` on `/v2/admin/*/config` | **One found** — `ThermographyConfigAdminRest` (F1 above). No others. |
+| Numeric `@PathParam Long` in v2 | **Two residuals** — `FileContainerLinkedDataObjectsRest` + `StructuredDataContainerLinkedDataObjectsRest` (F2) + `TimeseriesChannelAnnotationRest`'s `annotationId` (F3). No new numeric path params otherwise. |
+| `ProvenanceRest` + `SemanticTermSearchRest` `limit` → `pageSize` | **Shipped** — APISIMP-PAGINATION-UNIFY-2 merged (#1848). |
+| RFC-7807 error envelopes | **Shipped** — APISIMP-ERROR-ENVELOPE-UNIFY all 8 slices merged. |
+| RESEED-FIND-KRL-CDI | **Shipped** — PR #1815 merged 2026-06-10. Backlog row status correction noted. |
+
+## Opportunities
+
+1. **`APISIMP-THERMO-ADMIN-CONFIG`** — S, low risk. Only backend; path changes; no FE caller.
+   The `ThermographyConfigDescriptor` pattern follows the other A7 descriptors exactly.
+   Natural next-smallest APISIMP dispatch.
+
+2. **`APISIMP-FC-SDC-LINKED-DO-APPID`** — S, medium spread. Backend + FE migration.
+   The same two-step shape as TSCONT-APPID-KEY: (a) backend path-param type change +
+   service `findByAppId` addition; (b) FE composable update. Can be a single PR.
+
+3. **`APISIMP-CHANNEL-ANNOT-APPID`** — S, low risk. No FE caller; backend-only.
+   Add `deleteAnnotationByAppId` to `AnnotatableTimeseriesService`; change path param type.
+
+## Gaps & blockers
+
+- `APISIMP-PAGINATION-UNIFY-1` (#1847) stuck on CodeQL summary race flake.
+  All substantive analyses (java-kotlin, javascript-typescript) pass.
+  Recommend operator re-run of the CodeQL check or a force-merge with
+  `merge_override: security_alerts`. Failing check is the aggregator wrapper,
+  not a real finding.
+- `PLUGIN-V2-001` (spatial `/v2/` parity shelf) remains queued; the
+  spatiotemporal v1 frozen surfaces stay as-is until that row ships.
+
+## What surprised me
+
+- `ThermographyConfigAdminRest` still uses `io.quarkus.logging.Log` (line 8)
+  — the same class-scanning bug fixed for vis-trace3d in RESEED-FIND-RENDER-PNG-LOG.
+  However, this class is in the **main backend module** (not a separate plugin jar),
+  so Quarkus's bytecode transformer does apply here and the Log usage is safe.
+  No action needed; noted for completeness.
+- The linked-data-objects numeric-id issue is more impactful than it looks:
+  `useContainerReferencedByCollections` is called from the container list page for
+  every visible row — passing numeric ids to the file/structured endpoints means
+  every container list row relies on the legacy OGM-id surface.
+- After this sweep: the residual numeric-id surface in `/v2/` is now only these
+  three findings plus the spatiotemporal frozen v1 endpoints (PLUGIN-V2-001).
+
+## Cross-references
+- `aidocs/platform/191-v2-surface-convergence.md` (V2CONV SSOT)
+- `aidocs/agent-findings/apisimp-sweep-2026-06-10.md` (prior sweep — base findings)
+- `aidocs/16` rows: `APISIMP-THERMO-ADMIN-CONFIG`, `APISIMP-FC-SDC-LINKED-DO-APPID`,
+  `APISIMP-CHANNEL-ANNOT-APPID`, `PLUGIN-V2-001`, `APISIMP-PAGINATION-UNIFY`
+- Files: `backend/.../v2/admin/thermography/resources/ThermographyConfigAdminRest.java`,
+  `backend/.../v2/filecontainer/resources/FileContainerLinkedDataObjectsRest.java`,
+  `backend/.../v2/structureddatacontainer/resources/StructuredDataContainerLinkedDataObjectsRest.java`,
+  `backend/.../v2/timeseriescontainer/resources/TimeseriesChannelAnnotationRest.java:130`,
+  `frontend/composables/containers/useFileContainerLinkedDataObjects.ts`,
+  `frontend/composables/containers/useStructuredDataContainerLinkedDataObjects.ts`,
+  `frontend/composables/containers/useContainerReferencedByCollections.ts`

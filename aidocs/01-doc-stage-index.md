@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 45 |
-| `concept` | 28 |
+| `concept` | 29 |
 | `idea` | 13 |
 | `feature-defined` | 130 |
 | `audited-by-personas` | 74 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 74 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **426** |
+| **total docs** | **427** |
 | **UNTAGGED** | **0** |
 
 ## fragment (45)
@@ -93,11 +93,12 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-06-10 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-06-10 |
 
-## concept (28)
+## concept (29)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-10.md`](agent-findings/apisimp-sweep-2026-06-10.md) | APISIMP — v2 surface simplification sweep (2026-06-10) | 2026-06-10 | 2026-06-10 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-11.md`](agent-findings/apisimp-sweep-2026-06-11.md) | APISIMP — v2 surface simplification sweep (2026-06-11) | 2026-06-11 | — |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-06-10 |
