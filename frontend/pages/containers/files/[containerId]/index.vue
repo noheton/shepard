@@ -8,8 +8,11 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;
 
 const containerAccessor = new FileContainerAccessor(containerId);
+const containerAppId = computed<string | null>(
+  () => (containerAccessor.fileContainer.value as unknown as { appId?: string | null })?.appId ?? null,
+);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useFileContainerLinkedDataObjects(containerId);
+  useFileContainerLinkedDataObjects(containerAppId);
 
 const totalFileSizeBytes = computed(() =>
   (containerAccessor.files.value ?? []).reduce((sum, f) => sum + (f.fileSize ?? 0), 0)

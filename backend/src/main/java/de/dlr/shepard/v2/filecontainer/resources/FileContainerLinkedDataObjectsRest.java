@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.filecontainer.resources;
 
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.v2.integrity.SafeDeleteConflict;
 import jakarta.enterprise.context.RequestScoped;
@@ -32,15 +33,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Route:
  * <ul>
- *   <li>{@code GET /v2/file-containers/{containerId}/linked-data-objects}
+ *   <li>{@code GET /v2/file-containers/{containerAppId}/linked-data-objects}
  *       — returns the distinct DataObjects whose references (SingletonFileReference or
  *       FileReference/FileBundleReference) point at this container. Requires Read
  *       permission on the container.</li>
  * </ul>
  *
- * <p>Uses the numeric OGM id (same as the legacy {@code /shepard/api/fileContainers/{id}}
- * surface) so the frontend can pass the route param directly without waiting for the
- * container's appId to be loaded.
+ * <p>Identifiers are {@code appId} (UUID v7) strings throughout;
+ * numeric Neo4j ids never appear on the wire (APISIMP-FC-SDC-LINKED-DO-APPID).
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -53,7 +53,7 @@ public class FileContainerLinkedDataObjectsRest {
   FileContainerService fileContainerService;
 
   @GET
-  @Path("/{containerId}/linked-data-objects")
+  @Path("/{containerAppId}/linked-data-objects")
   @Operation(
     summary = "List DataObjects linked to this FileContainer.",
     description = "Returns the distinct DataObjects whose references (SingletonFileReference or " +
@@ -66,11 +66,12 @@ public class FileContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No FileContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No FileContainer with that appId.")
   public Response getLinkedDataObjects(
-    @PathParam("containerId") long containerId
+    @PathParam("containerAppId") String containerAppId
   ) {
-    List<DataObject> dataObjects = fileContainerService.findLinkedDataObjectsById(containerId);
+    fileContainerService.getContainerByAppId(containerAppId);
+    List<DataObject> dataObjects = fileContainerService.findLinkedDataObjectsByAppId(containerAppId);
     List<DataObjectIO> result = new ArrayList<>(dataObjects.size());
     for (DataObject dataObject : dataObjects) {
       result.add(new DataObjectIO(dataObject));
@@ -80,7 +81,7 @@ public class FileContainerLinkedDataObjectsRest {
 
   /** DI1 — safe delete: refuses with 409 if active references exist unless ?force=true. */
   @DELETE
-  @Path("/{containerId}")
+  @Path("/{containerAppId}")
   @Operation(
     summary = "Safely delete this FileContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
@@ -95,13 +96,14 @@ public class FileContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No FileContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No FileContainer with that appId.")
   public Response safeDeleteContainer(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @QueryParam("force") @DefaultValue("false") boolean force
   ) {
+    FileContainer container = fileContainerService.getContainerByAppId(containerAppId);
     if (!force) {
-      List<DataObject> linked = fileContainerService.findLinkedDataObjectsById(containerId);
+      List<DataObject> linked = fileContainerService.findLinkedDataObjectsByAppId(containerAppId);
       if (!linked.isEmpty()) {
         List<String> sample = linked.stream()
           .map(DataObject::getAppId)
@@ -113,7 +115,7 @@ public class FileContainerLinkedDataObjectsRest {
           .build();
       }
     }
-    fileContainerService.deleteContainer(containerId);
+    fileContainerService.deleteContainer(container.getId());
     return Response.status(Status.NO_CONTENT).build();
   }
 }

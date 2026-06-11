@@ -36,8 +36,8 @@ function linkedDataObjectsUrl(containerId: string | number, type: string): strin
     case "FILE":
       return `${v2BaseUrl()}/v2/file-containers/${containerId}/linked-data-objects`;
     case "TIMESERIES":
-      // v2 endpoint is keyed by containerAppId (UUID v7 string); numeric ids
-      // will 404 — callers must pass the appId for timeseries containers.
+      // All three v2 endpoints are keyed by containerAppId (UUID v7 string);
+      // numeric ids will 404 — callers must pass the appId (APISIMP-FC-SDC-LINKED-DO-APPID).
       return `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/linked-data-objects`;
     case "STRUCTUREDDATA":
       return `${v2BaseUrl()}/v2/structured-data-containers/${containerId}/linked-data-objects`;
