@@ -30,9 +30,6 @@ public class ProjectIO {
   @Schema(description = "Stable UUID v7 identifier of the underlying Collection.", required = true)
   private String appId;
 
-  @Schema(description = "Legacy long identifier of the underlying Collection (for upstream callers).")
-  private Long id;
-
   @Schema(description = "Display name of the Project.", required = true)
   private String name;
 

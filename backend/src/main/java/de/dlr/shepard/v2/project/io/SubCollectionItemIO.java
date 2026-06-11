@@ -22,9 +22,6 @@ public class SubCollectionItemIO {
   @Schema(description = "appId of the child Collection.", required = true)
   private String appId;
 
-  @Schema(description = "Legacy long id of the child Collection.")
-  private Long id;
-
   @Schema(description = "Display name.", required = true)
   private String name;
 

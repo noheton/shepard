@@ -11,7 +11,6 @@
 
 export interface ProjectIO {
   appId: string;
-  id?: number;
   name: string;
   description?: string | null;
   ownerGroup?: string | null;
@@ -24,7 +23,6 @@ export interface ProjectIO {
 
 export interface SubCollectionItemIO {
   appId: string;
-  id?: number;
   name: string;
   ownerGroup?: string | null;
   doCount: number;
