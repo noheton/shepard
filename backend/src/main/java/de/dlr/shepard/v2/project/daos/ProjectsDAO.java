@@ -97,7 +97,7 @@ public class ProjectsDAO {
       "OPTIONAL MATCH (proj:SemanticAnnotation { " +
       "  subjectAppId: $appId, propertyIRI: $predProject }) " +
       "WHERE proj.valueName = 'true' " +
-      "RETURN c.appId AS appId, c.shepardId AS shepardId, c.name AS name, " +
+      "RETURN c.appId AS appId, c.name AS name, " +
       "       c.description AS description, c.ownerGroup AS ownerGroup, " +
       "       count(proj) > 0 AS isProject";
 
@@ -113,7 +113,6 @@ public class ProjectsDAO {
       if (!isProject) return null;
       io = new ProjectIO();
       io.setAppId((String) row.get("appId"));
-      io.setId(asLong(row.get("shepardId")));
       io.setName((String) row.get("name"));
       io.setDescription((String) row.get("description"));
       io.setOwnerGroup((String) row.get("ownerGroup"));
@@ -198,7 +197,7 @@ public class ProjectsDAO {
       "  subjectAppId: child.appId, propertyIRI: $predPartOf }) " +
       "WHERE other.valueName <> $appId " +
       "WITH child, doCount, lastActivityMillis, collect(DISTINCT other.valueName) AS alsoMemberOf " +
-      "RETURN child.appId AS appId, child.shepardId AS shepardId, child.name AS name, " +
+      "RETURN child.appId AS appId, child.name AS name, " +
       "       child.ownerGroup AS ownerGroup, doCount, lastActivityMillis, alsoMemberOf " +
       "ORDER BY child.name";
 
@@ -211,7 +210,6 @@ public class ProjectsDAO {
     for (var row : result) {
       SubCollectionItemIO io = new SubCollectionItemIO();
       io.setAppId((String) row.get("appId"));
-      io.setId(asLong(row.get("shepardId")));
       io.setName((String) row.get("name"));
       io.setOwnerGroup((String) row.get("ownerGroup"));
       io.setDoCount(asLongOrZero(row.get("doCount")));
@@ -306,7 +304,7 @@ public class ProjectsDAO {
       "      subjectAppId: do.appId, propertyIRI: $predicate }) " +
       "    WHERE (a.valueName = $value OR a.valueIRI = $value) " +
       "  } " +
-      "RETURN do.appId AS doAppId, do.shepardId AS doShepardId, do.name AS doName, " +
+      "RETURN do.appId AS doAppId, do.name AS doName, " +
       "       child.appId AS collAppId, child.name AS collName " +
       "ORDER BY do.name " +
       "SKIP " + skip + " LIMIT " + safeSize;
@@ -322,7 +320,6 @@ public class ProjectsDAO {
     for (var row : result) {
       ProjectByAnnotationItemIO io = new ProjectByAnnotationItemIO();
       io.setAppId((String) row.get("doAppId"));
-      io.setId(asLong(row.get("doShepardId")));
       io.setName((String) row.get("doName"));
       io.setCollectionAppId((String) row.get("collAppId"));
       io.setCollectionName((String) row.get("collName"));
