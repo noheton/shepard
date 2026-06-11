@@ -1155,6 +1155,7 @@ onMounted(() => {
     <Trace3DEditChannelsDialog
       v-model="showEditDialog"
       :container-id="Number(containerId) || 0"
+      :container-app-id="containerId"
       :channels="channelList"
       :initial="currentSelection"
       @save="onEditSave"

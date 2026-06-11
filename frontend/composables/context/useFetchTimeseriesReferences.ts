@@ -9,8 +9,10 @@ import {
 import type { ReferencedContainerMeta } from "~/components/context/display-components/data-references/dataReference";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+// APISIMP-TSCONT-APPID-KEY: include appId alongside the numeric id so callers
+// can address the v2 channel endpoints without a separate container fetch.
 type TimeseriesReferenceWithContainerMeta = TimeseriesReference &
-  ReferencedContainerMeta;
+  ReferencedContainerMeta & { timeseriesContainerAppId?: string };
 
 // BUG-COLL-APPID-ROUTE-007-REFPAGE: accept the numeric ids as a plain number, a
 // Ref, or a getter and resolve them at fetch time. The reference detail page's
@@ -76,15 +78,17 @@ export function useFetchTimeseriesReference(
 
   async function fetchTimeseriesContainerMeta(
     containerId: number,
-  ): Promise<ReferencedContainerMeta> {
+  ): Promise<ReferencedContainerMeta & { timeseriesContainerAppId?: string }> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
     return useShepardApi(TimeseriesContainerApi)
       .value.getTimeseriesContainer({ timeseriesContainerId: containerId })
-      .then((response): ReferencedContainerMeta => {
+      .then((response): ReferencedContainerMeta & { timeseriesContainerAppId?: string } => {
         return {
           referencedContainerName: response.name,
           referencedContainerAvailability: "available",
+          // APISIMP-TSCONT-APPID-KEY: v1 TS type omits appId but the wire carries it.
+          timeseriesContainerAppId: (response as unknown as { appId?: string }).appId,
         };
       })
       .catch((error: ResponseError) => {

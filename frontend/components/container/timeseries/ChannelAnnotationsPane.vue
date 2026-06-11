@@ -26,6 +26,7 @@ import { AnnotatedChannel } from "~/composables/annotated";
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string;
   /** Container measurements (same shape as TimeseriesContainerAccessor.measurements). */
   measurements: Array<{
     measurement?: string | null;
@@ -38,7 +39,7 @@ const props = defineProps<{
 }>();
 
 const { channelMap, loading: channelMapLoading, resolveShepardId } =
-  useFetchV2Channels(props.containerId);
+  useFetchV2Channels(props.containerAppId);
 
 interface ChannelRow {
   shepardId: string;

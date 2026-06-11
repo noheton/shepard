@@ -56,17 +56,17 @@ function v2Base(publicConfig: Record<string, unknown>): string {
  * shepardId is absent the key falls back to the legacy 5-tuple.
  */
 function previewKey(
-  containerId: number,
+  containerAppId: string,
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
   channelShepardId?: string | null,
 ): string {
   if (channelShepardId) {
-    return [containerId, "sid", channelShepardId, String(downsample), String(maxPoints)].join("|");
+    return [containerAppId, "sid", channelShepardId, String(downsample), String(maxPoints)].join("|");
   }
   return [
-    containerId,
+    containerAppId,
     channel.measurement ?? "",
     channel.device ?? "",
     channel.location ?? "",
@@ -87,13 +87,13 @@ const inFlight = new Map<string, Promise<Array<[number, number]>>>();
  * this collapses concurrent identical requests to a single HTTP call.
  */
 async function fetchPreviewData(
-  containerId: number,
+  containerAppId: string,
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
   channelShepardId?: string | null,
 ): Promise<Array<[number, number]>> {
-  const key = previewKey(containerId, channel, downsample, maxPoints, channelShepardId);
+  const key = previewKey(containerAppId, channel, downsample, maxPoints, channelShepardId);
 
   const existing = inFlight.get(key);
   if (existing) return existing;
@@ -101,10 +101,7 @@ async function fetchPreviewData(
   const promise = (async (): Promise<Array<[number, number]>> => {
     const endNs = Date.now() * 1e6; // ms → ns
 
-    // TS-IDc preferred path: single-field shepardId. The v2 path-param
-    // endpoint isn't in the generated client yet, so we hit it directly
-    // with the runtime-config-derived base URL + raw fetch — same shape
-    // PinnedChannelTile already uses successfully against prod.
+    // TS-IDc preferred path: single-field shepardId against the appId-keyed v2 endpoint.
     if (channelShepardId) {
       const { public: publicConfig } = useRuntimeConfig();
       const { data: authData } = useAuth();
@@ -119,7 +116,7 @@ async function fetchPreviewData(
         qs.set("max_points", String(maxPoints));
       }
       const url =
-        `${v2Base(publicConfig as Record<string, unknown>)}/v2/timeseries-containers/${containerId}` +
+        `${v2Base(publicConfig as Record<string, unknown>)}/v2/timeseries-containers/${containerAppId}` +
         `/channels/${channelShepardId}/data?${qs.toString()}`;
 
       const res = await fetch(url, { headers });
@@ -128,9 +125,12 @@ async function fetchPreviewData(
       return (body.points ?? []).map(p => [p.timestamp, p.value] as [number, number]);
     }
 
-    // Legacy 5-tuple path (transition bridge until TS-IDd closes the loop).
+    // Legacy 5-tuple path (transition bridge — requires numeric containerId via v1).
+    // Number(containerAppId) works when the caller is still passing a string-cast numeric id;
+    // will be NaN for UUID-format appIds (channels should have shepardId post-TS-ID migration).
+    const numericId = Number(containerAppId);
     const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
-      timeseriesContainerId: containerId,
+      timeseriesContainerId: numericId,
       measurement: channel.measurement ?? "",
       device: channel.device ?? "",
       location: channel.location ?? "",
@@ -168,7 +168,7 @@ export interface UseFetchChannelPreviewOptions {
  * can use this directly without `IntersectionObserver` involvement.
  */
 export function useFetchChannelPreview(
-  containerId: number,
+  containerAppId: string,
   channel: TimeseriesEntity,
   options?: UseFetchChannelPreviewOptions,
 ) {
@@ -184,7 +184,7 @@ export function useFetchChannelPreview(
     loading.value = true;
     try {
       data.value = await fetchPreviewData(
-        containerId, channel, downsample, maxPoints, channelShepardId);
+        containerAppId, channel, downsample, maxPoints, channelShepardId);
       downsampled.value = downsample;
     } catch {
       data.value = [];
@@ -223,7 +223,7 @@ export function useFetchChannelPreview(
  * ```
  */
 export function useChannelPreviewLazy(
-  containerId: number,
+  containerAppId: string,
   channel: TimeseriesEntity,
   target: Ref<HTMLElement | null>,
   options?: UseFetchChannelPreviewOptions,
@@ -242,7 +242,7 @@ export function useChannelPreviewLazy(
     loading.value = true;
     try {
       data.value = await fetchPreviewData(
-        containerId, channel, downsample, maxPoints, channelShepardId);
+        containerAppId, channel, downsample, maxPoints, channelShepardId);
       downsampled.value = downsample;
     } catch {
       data.value = [];

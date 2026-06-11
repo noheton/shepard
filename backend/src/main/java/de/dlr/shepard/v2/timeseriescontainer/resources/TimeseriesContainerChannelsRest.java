@@ -83,7 +83,7 @@ public class TimeseriesContainerChannelsRest {
   }
 
   @GET
-  @Path("/{containerId}/channels")
+  @Path("/{containerAppId}/channels")
   @Operation(
     summary = "List all channels of a TimeseriesContainer with shepardId.",
     description = "Returns one entry per channel in the container, each carrying its " +
@@ -98,13 +98,13 @@ public class TimeseriesContainerChannelsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
   public Response listChannels(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("size") @DefaultValue("200") @PositiveOrZero int size
   ) {
-    timeseriesContainerService.getContainer(containerId);
+    long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
     int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
     List<TimeseriesEntity> rows = tsChannelResolver.listPaged(containerId, page, safeSize);
@@ -128,7 +128,7 @@ public class TimeseriesContainerChannelsRest {
    * wins; additional duplicates (e.g. stale entries) are silently ignored.
    */
   @GET
-  @Path("/{containerId}/channels/spatial-roles")
+  @Path("/{containerAppId}/channels/spatial-roles")
   @Operation(
     operationId = "getChannelSpatialRoles",
     summary = "Return per-axis channel assignments for the Trace3D view recipe (TS-AXIS-AUTO).",
@@ -144,9 +144,9 @@ public class TimeseriesContainerChannelsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
-  public Response getSpatialRoles(@PathParam("containerId") long containerId) {
-    timeseriesContainerService.getContainer(containerId);
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
+  public Response getSpatialRoles(@PathParam("containerAppId") String containerAppId) {
+    long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
     // Walk all channels; for each one probe Neo4j for an axis-role annotation.
     // We page through in batches of 500 to avoid loading everything at once
@@ -193,7 +193,7 @@ public class TimeseriesContainerChannelsRest {
   private static final int HARD_MAX_POINTS    = 5000;
 
   @GET
-  @Path("/{containerId}/channels/{shepardId}/data")
+  @Path("/{containerAppId}/channels/{shepardId}/data")
   @Operation(
     summary = "Fetch data points for a channel by shepardId (TS-IDc).",
     description = "Resolves the single-field shepardId to the legacy 5-tuple internally " +
@@ -212,14 +212,14 @@ public class TimeseriesContainerChannelsRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
   @APIResponse(responseCode = "404", description = "No channel with that shepardId in this container.")
   public Response getChannelData(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("shepardId") UUID shepardId,
     @QueryParam("start")      @NotNull @PositiveOrZero Long start,
     @QueryParam("end")        @NotNull @PositiveOrZero Long end,
     @QueryParam("downsample") String downsample,
     @QueryParam("max_points") Integer maxPoints
   ) {
-    timeseriesContainerService.getContainer(containerId);
+    long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
     Timeseries tuple = tsChannelResolver.resolveTuple(shepardId)
       .orElse(null);
@@ -241,7 +241,7 @@ public class TimeseriesContainerChannelsRest {
   // ── TS-OPT2: multi-channel bulk raw fetch ─────────────────────────────────
 
   @POST
-  @Path("/{containerId}/channels/data/bulk")
+  @Path("/{containerAppId}/channels/data/bulk")
   @Operation(
     summary = "Fetch raw data for multiple channels in one call (TS-OPT2).",
     description = "Accepts a list of shepardIds (max 200) plus a shared time window and returns " +
@@ -258,12 +258,12 @@ public class TimeseriesContainerChannelsRest {
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that appId.")
   public Response getBulkChannelData(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @NotNull @Valid BulkChannelDataRequestIO body
   ) {
-    timeseriesContainerService.getContainer(containerId);
+    long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
     // Single bulk query resolves all shepardIds → entities; unknown ids are silently absent.
     // Then fetch data points sequentially — avoids the parallelStream connection-pool storm.
@@ -278,7 +278,7 @@ public class TimeseriesContainerChannelsRest {
   // ── TS-OPT3-COPY: high-throughput COPY-protocol single-channel ingest ────────
 
   @POST
-  @Path("/{containerId}/channels/{shepardId}/data/ingest")
+  @Path("/{containerAppId}/channels/{shepardId}/data/ingest")
   @Operation(
     summary = "High-throughput COPY ingest for a single channel (TS-OPT3-COPY).",
     description = "Uses the PostgreSQL COPY protocol, which is 3–5× faster than the " +
@@ -294,11 +294,11 @@ public class TimeseriesContainerChannelsRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
   @APIResponse(responseCode = "404", description = "No channel with that shepardId in this container.")
   public Response ingestChannelData(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("shepardId") UUID shepardId,
     @NotNull @Valid CopyIngestRequestIO body
   ) {
-    timeseriesContainerService.getContainer(containerId);
+    long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
     var entity = tsChannelResolver.findByShepardId(shepardId)
       .filter(e -> e.getContainerId() == containerId)

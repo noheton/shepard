@@ -7,7 +7,7 @@
  * This stub satisfies the CLAUDE.md "ship a UI stub" rule so the backend
  * feature has a navigable frontend surface from day one.
  */
-const props = defineProps<{
+defineProps<{
   afpDataObjectAppId?: string;
   ndtDataObjectAppId?: string;
 }>();

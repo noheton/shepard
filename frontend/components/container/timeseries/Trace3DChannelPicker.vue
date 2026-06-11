@@ -39,6 +39,7 @@ export interface Trace3DChannelSelection {
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string;
   channels: ChannelV2[];
   /** Initial selection — null slots left blank, then auto-populate fills them. */
   initial?: Partial<Trace3DChannelSelection>;
@@ -123,7 +124,7 @@ async function autoPopulateFromAnnotations() {
   if (!props.channels.length) return;
   try {
     const data = await $fetch<Record<RoleKey, string | null>>(
-      `/v2/timeseries-containers/${props.containerId}/channels/spatial-roles`,
+      `/v2/timeseries-containers/${props.containerAppId}/channels/spatial-roles`,
     );
     const roleToRef: Record<RoleKey, typeof xKey> = {
       x: xKey, y: yKey, z: zKey, rot_a: rotAKey, rot_b: rotBKey, rot_c: rotCKey,
@@ -173,7 +174,7 @@ async function init() {
 }
 
 onMounted(init);
-watch(() => props.containerId, init);
+watch(() => props.containerAppId, init);
 // Re-init when the channel list transitions from empty (v1 fallback) to populated
 // (v2 list with shepardIds) so auto-populate fires once real IDs are available.
 watch(

@@ -290,6 +290,7 @@ useHead({
            tile can navigate back to this container. -->
       <TimeseriesMeasurementsTable
         :container-id="containerId"
+        :container-app-id="containerAppId ?? ''"
         :is-allowed-to-edit-data="containerAccessor.isAllowedToEditData.value"
         :measurements="containerAccessor.measurements.value"
         :container-path="`${containersPath}${urlSegment}${containerId}`"
@@ -302,6 +303,7 @@ useHead({
         >
           <ChannelAnnotationsPane
             :container-id="containerId"
+            :container-app-id="containerAppId ?? ''"
             :measurements="containerAccessor.measurements.value"
             :is-allowed-to-edit-data="!!containerAccessor.isAllowedToEditData.value"
           />
