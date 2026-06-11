@@ -96,9 +96,10 @@ watchEffect(() => {
   }
 });
 
-function onRefsResolved(payload: { id: number; refs: number[] | null }) {
-  refsById.set(payload.id, payload.refs);
-  emit("refs-resolved", payload);
+function onRefsResolved(payload: { id: string | number; refs: number[] | null }) {
+  const numericId = Number(payload.id);
+  if (!Number.isNaN(numericId)) refsById.set(numericId, payload.refs);
+  emit("refs-resolved", { id: numericId, refs: payload.refs });
 }
 
 // ── Sizebar column (d) ──────────────────────────────────────────────────────
@@ -398,7 +399,7 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
                partition can read it without a second fetch. -->
           <template #[`item.referencedBy`]>
             <ContainerReferencedByCell
-              :container-id="(rowProps.item as unknown as { appId?: string | null }).appId ?? rowProps.item.id"
+              :container-id="(rowProps.item as any).appId ?? rowProps.item.id"
               :container-type="rowProps.item.type"
               @refs-resolved="onRefsResolved"
             />

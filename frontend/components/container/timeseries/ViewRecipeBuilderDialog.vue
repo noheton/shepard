@@ -5,6 +5,7 @@ import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "./Trace3
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string;
   channels: Timeseries[];
   /** v2 channel list carrying shepardId for auto-populate and annotation save. */
   channelsV2?: ChannelV2[];
@@ -186,6 +187,7 @@ const canOpenAny = computed(() =>
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
+          :container-app-id="containerAppId"
           :channels="resolvedChannels"
           @update:can-confirm="canOpen = $event"
           @save-annotations-requested="saveAnnotations"

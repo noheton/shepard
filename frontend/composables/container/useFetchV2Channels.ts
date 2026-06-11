@@ -34,7 +34,7 @@ function tupleKey(
   return `${n(m)}|${n(d)}|${n(l)}|${n(sn)}|${n(f)}`;
 }
 
-export function useFetchV2Channels(containerId: number) {
+export function useFetchV2Channels(containerAppId: string) {
   // useRuntimeConfig and useAuth must be called inside the composable
   // function body (inside the Vue composition context, not at module scope).
   const { public: publicConfig } = useRuntimeConfig();
@@ -58,7 +58,7 @@ export function useFetchV2Channels(containerId: number) {
     loading.value = true;
     try {
       const res = await fetch(
-        `${v2Base()}/v2/timeseries-containers/${containerId}/channels?size=2000`,
+        `${v2Base()}/v2/timeseries-containers/${containerAppId}/channels?size=2000`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;

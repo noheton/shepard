@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
@@ -42,6 +43,7 @@ public class TimeseriesChannelDataRestTest {
   private TimeseriesService serviceMock;
   private TimeseriesContainerService containerServiceMock;
 
+  private static final String CONTAINER_APP_ID = "00000000-0000-7000-8000-00000000002a";
   private static final long CONTAINER_ID = 42L;
   private static final UUID KNOWN_ID     = UUID.fromString("00000000-0000-4000-8000-000000000001");
   private static final UUID UNKNOWN_ID   = UUID.fromString("00000000-0000-4000-8000-000000000002");
@@ -58,6 +60,10 @@ public class TimeseriesChannelDataRestTest {
     inject(resource, "tsChannelResolver",        resolverMock);
     inject(resource, "timeseriesService",         serviceMock);
     inject(resource, "timeseriesContainerService", containerServiceMock);
+
+    var mockContainer = mock(TimeseriesContainer.class);
+    when(mockContainer.getId()).thenReturn(CONTAINER_ID);
+    when(containerServiceMock.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(mockContainer);
   }
 
   /** Use reflection to set CDI-injected fields. */
@@ -77,7 +83,7 @@ public class TimeseriesChannelDataRestTest {
   void returnsNotFound_whenShepardIdUnknown() {
     when(resolverMock.resolveTuple(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-    Response resp = resource.getChannelData(CONTAINER_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
 
     assertEquals(Response.Status.NOT_FOUND.getStatusCode(), resp.getStatus());
   }
@@ -92,7 +98,7 @@ public class TimeseriesChannelDataRestTest {
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(List.of());
 
-    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
     assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
     assertNotNull(resp.getEntity());
@@ -106,7 +112,7 @@ public class TimeseriesChannelDataRestTest {
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(List.of());
 
-    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
     assertEquals(TimeseriesWithDataPoints.class, resp.getEntity().getClass(),
       "entity must be TimeseriesWithDataPoints so it serialises like the v1 shape");
@@ -124,7 +130,7 @@ public class TimeseriesChannelDataRestTest {
       .thenReturn(null);
 
     // should not NPE even when points == null and downsample requested
-    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", 500);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 500);
 
     assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
   }
@@ -142,7 +148,7 @@ public class TimeseriesChannelDataRestTest {
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(pts);
 
-    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
     @SuppressWarnings("unchecked")
     TimeseriesWithDataPoints body = (TimeseriesWithDataPoints) resp.getEntity();
@@ -163,7 +169,7 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), anyInt()))
       .thenReturn(pts);
 
-    Response resp = resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", 200);
+    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 200);
 
     assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
     // Verify LTTB-optimised path was used
@@ -181,7 +187,7 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000)))
       .thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", 99_999);
+    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 99_999);
 
     verify(serviceMock).getDataPointsLttbOptimised(
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000));
@@ -195,7 +201,7 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000)))
       .thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, "lttb", null);
+    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", null);
 
     verify(serviceMock).getDataPointsLttbOptimised(
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000));
@@ -207,7 +213,7 @@ public class TimeseriesChannelDataRestTest {
     when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
     when(serviceMock.getDataPointsByTimeseries(anyLong(), any(), any())).thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
     verify(serviceMock, never()).getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt());
   }
@@ -218,8 +224,8 @@ public class TimeseriesChannelDataRestTest {
   void alwaysChecksContainerPermission() {
     when(resolverMock.resolveTuple(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-    resource.getChannelData(CONTAINER_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
+    resource.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
 
-    verify(containerServiceMock).getContainer(CONTAINER_ID);
+    verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
 }

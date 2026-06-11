@@ -69,6 +69,9 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     io.put("start", kindIO.getStart());
     io.put("end", kindIO.getEnd());
     io.put("timeseriesContainerId", kindIO.getTimeseriesContainerId());
+    // APISIMP-TSCONT-APPID-KEY-3: expose container appId so callers can reach /v2/channels
+    io.put("timeseriesContainerAppId",
+        ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getAppId() : null);
     io.put("timeseries", kindIO.getTimeseries());
     io.put("timeReference", kindIO.getTimeReference());
     io.put("wallClockOffset", kindIO.getWallClockOffset());

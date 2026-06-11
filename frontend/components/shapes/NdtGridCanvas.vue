@@ -15,7 +15,7 @@
  * Backlog: MFFD-RENDER-NDT-GRID (aidocs/16-dispatcher-backlog.md).
  */
 
-const props = defineProps<{
+defineProps<{
   /** Collection appId bound in the NdtGridShape template. */
   collectionAppId?: string;
   /** Active colour mode: 'mean-delta-t' | 'pass-fail'. */

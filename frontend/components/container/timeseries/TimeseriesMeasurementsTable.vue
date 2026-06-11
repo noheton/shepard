@@ -14,6 +14,7 @@ interface AnnotatedTimeseries extends TimeseriesEntity {
 const props = defineProps<{
   measurements: TimeseriesEntity[];
   containerId: number;
+  containerAppId: string;
   isAllowedToEditData: boolean;
   /** Optional: absolute path to this container's page, stored with pins for navigation. */
   containerPath?: string;
@@ -21,7 +22,7 @@ const props = defineProps<{
 
 // UX-PIN1 — pin/unpin support
 const { pin, unpin, isPinned } = usePinnedChannels();
-const { resolveShepardId } = useFetchV2Channels(props.containerId);
+const { resolveShepardId } = useFetchV2Channels(props.containerAppId);
 
 /**
  * Human-readable label for a channel, matching the format used in
@@ -111,7 +112,7 @@ const itemsPerPage = 10;
           <!-- inline channel chart -->
           <ChannelPreviewChart
             :channel="item"
-            :container-id="containerId"
+            :container-app-id="containerAppId"
             :channel-shepard-id="channelShepardId(item)"
           />
 

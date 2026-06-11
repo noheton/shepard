@@ -343,13 +343,17 @@ interface ChannelV2 {
 
 const channelsV2 = ref<ChannelV2[]>([]);
 
+// APISIMP-TSCONT-APPID-KEY: the /channels endpoint now expects the appId, not
+// the numeric Neo4j id. useFetchTimeseriesReference now extracts the appId from
+// the v1 container response (wire carries it) and surfaces it as
+// timeseriesContainerAppId. Fall back gracefully when it's absent.
 watch(
-  () => timeseriesReference.value?.timeseriesContainerId,
-  async (containerId) => {
-    if (!containerId) return;
+  () => timeseriesReference.value?.timeseriesContainerAppId,
+  async (containerAppId) => {
+    if (!containerAppId) return;
     try {
       const data = await $fetch<ChannelV2[]>(
-        `/v2/timeseries-containers/${containerId}/channels`,
+        `/v2/timeseries-containers/${containerAppId}/channels`,
       );
       channelsV2.value = data ?? [];
     } catch {
@@ -710,6 +714,7 @@ watch(
       v-if="timeseriesReference && timeseriesReference.timeseriesContainerId"
       v-model="showVisualize3D"
       :container-id="timeseriesReference.timeseriesContainerId"
+      :container-app-id="timeseriesReference.timeseriesContainerAppId ?? ''"
       :channels="timeseriesReference.timeseries"
       :channels-v2="channelsV2.length ? channelsV2 : undefined"
       :start-ns="timeseriesReference.start"

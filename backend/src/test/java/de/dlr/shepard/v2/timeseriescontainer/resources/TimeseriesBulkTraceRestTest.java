@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
@@ -33,6 +34,7 @@ class TimeseriesBulkTraceRestTest {
   private TimeseriesContainerService containerServiceMock;
   private TsChannelResolver resolverMock;
 
+  private static final String CONTAINER_APP_ID = "00000000-0000-7000-8000-00000000002a";
   private static final long CONTAINER_ID = 42L;
   private static final long START_NS     = 1_000_000_000L;
   private static final long END_NS       = 2_000_000_000L;
@@ -48,6 +50,10 @@ class TimeseriesBulkTraceRestTest {
     inject(resource, "tsChannelResolver",          resolverMock);
     when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
+
+    var mockContainer = mock(TimeseriesContainer.class);
+    when(mockContainer.getId()).thenReturn(CONTAINER_ID);
+    when(containerServiceMock.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(mockContainer);
   }
 
   private static void inject(Object target, String fieldName, Object value) throws Exception {
@@ -60,10 +66,10 @@ class TimeseriesBulkTraceRestTest {
 
   @Test
   void alwaysChecksContainerPermission() {
-    resource.getBulkChannelData(CONTAINER_ID,
+    resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
-    verify(containerServiceMock).getContainer(CONTAINER_ID);
+    verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
 
   // ── Empty result when no channel resolves ────────────────────────────────
@@ -74,7 +80,7 @@ class TimeseriesBulkTraceRestTest {
     when(resolverMock.bulkFindByShepardIds(List.of(unknown))).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+    Response resp = resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(unknown), START_NS, END_NS));
 
     assertThat(resp.getStatus()).isEqualTo(200);
@@ -91,7 +97,7 @@ class TimeseriesBulkTraceRestTest {
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
       .thenReturn(List.of(resultItem));
 
-    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+    Response resp = resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
     assertThat(resp.getStatus()).isEqualTo(200);
@@ -108,7 +114,7 @@ class TimeseriesBulkTraceRestTest {
     UUID id2 = UUID.randomUUID();
     UUID id3 = UUID.randomUUID();
 
-    resource.getBulkChannelData(CONTAINER_ID,
+    resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(id1, id2, id3), START_NS, END_NS));
 
     verify(resolverMock).bulkFindByShepardIds(List.of(id1, id2, id3));
@@ -118,7 +124,7 @@ class TimeseriesBulkTraceRestTest {
 
   @Test
   void delegatesToManyPointsService() {
-    resource.getBulkChannelData(CONTAINER_ID,
+    resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
     verify(serviceMock).getManyDataPointsByEntities(anyLong(), any(), any());

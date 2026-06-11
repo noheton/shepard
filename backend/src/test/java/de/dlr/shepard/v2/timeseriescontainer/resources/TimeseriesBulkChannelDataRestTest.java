@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
@@ -33,6 +34,7 @@ public class TimeseriesBulkChannelDataRestTest {
   private TimeseriesService serviceMock;
   private TimeseriesContainerService containerServiceMock;
 
+  private static final String CONTAINER_APP_ID = "00000000-0000-7000-8000-00000000002a";
   private static final long   CONTAINER_ID = 42L;
   private static final long   START_NS     = 1_000_000_000L;
   private static final long   END_NS       = 2_000_000_000L;
@@ -49,6 +51,10 @@ public class TimeseriesBulkChannelDataRestTest {
     inject(resource, "tsChannelResolver",         resolverMock);
     inject(resource, "timeseriesService",          serviceMock);
     inject(resource, "timeseriesContainerService", containerServiceMock);
+
+    var mockContainer = mock(TimeseriesContainer.class);
+    when(mockContainer.getId()).thenReturn(CONTAINER_ID);
+    when(containerServiceMock.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(mockContainer);
   }
 
   private static void inject(Object target, String fieldName, Object value) throws Exception {
@@ -68,10 +74,10 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.resolveTuple(any())).thenReturn(Optional.empty());
     when(serviceMock.getManyTimeseriesWithDataPoints(anyLong(), any(), any())).thenReturn(List.of());
 
-    resource.getBulkChannelData(CONTAINER_ID,
+    resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(UNKNOWN), START_NS, END_NS));
 
-    verify(containerServiceMock).getContainer(CONTAINER_ID);
+    verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
 
   // ── Unknown IDs silently skipped ───────────────────────────────────────────
@@ -81,7 +87,7 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.resolveTuple(UNKNOWN)).thenReturn(Optional.empty());
     when(serviceMock.getManyTimeseriesWithDataPoints(anyLong(), any(), any())).thenReturn(List.of());
 
-    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+    Response resp = resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(UNKNOWN), START_NS, END_NS));
 
     assertEquals(200, resp.getStatus());
@@ -102,7 +108,7 @@ public class TimeseriesBulkChannelDataRestTest {
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
       .thenReturn(List.of(expected));
 
-    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+    Response resp = resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(KNOWN_A, UNKNOWN), START_NS, END_NS));
 
     assertEquals(200, resp.getStatus());
@@ -124,7 +130,7 @@ public class TimeseriesBulkChannelDataRestTest {
         new TimeseriesWithDataPoints(ta, List.of()),
         new TimeseriesWithDataPoints(tb, List.of())));
 
-    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+    Response resp = resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(KNOWN_A, KNOWN_B), START_NS, END_NS));
 
     assertEquals(200, resp.getStatus());
@@ -142,7 +148,7 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    resource.getBulkChannelData(CONTAINER_ID,
+    resource.getBulkChannelData(CONTAINER_APP_ID,
       new BulkChannelDataRequestIO(List.of(KNOWN_A), START_NS, END_NS));
 
     verify(serviceMock).getManyDataPointsByEntities(
