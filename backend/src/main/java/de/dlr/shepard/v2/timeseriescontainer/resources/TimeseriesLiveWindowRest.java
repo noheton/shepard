@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.timeseriescontainer.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
@@ -54,6 +55,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class TimeseriesLiveWindowRest {
 
   private static final long NS_PER_MS = 1_000_000L;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @Inject
   TimeseriesContainerService containerService;
@@ -135,9 +141,8 @@ public class TimeseriesLiveWindowRest {
       Optional<TimeseriesEntity> byShepardId =
         channelResolver.findByContainerAndShepardId(containerId, shepardId);
       if (byShepardId.isEmpty()) {
-        return Response.status(Response.Status.NOT_FOUND)
-          .entity("No channel with shepardId " + shepardId + " in container " + containerAppId)
-          .build();
+        return problem("timeseries-live-window.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No channel with shepardId " + shepardId + " in container " + containerAppId);
       }
       entity = byShepardId.get();
     } else {
@@ -150,15 +155,12 @@ public class TimeseriesLiveWindowRest {
         containerId, measurement, device, location, symbolicName, field);
 
       if (matched.isEmpty()) {
-        return Response.status(Response.Status.NOT_FOUND)
-          .entity("No channel matches the supplied filter fields in container " + containerAppId)
-          .build();
+        return problem("timeseries-live-window.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No channel matches the supplied filter fields in container " + containerAppId);
       }
       if (matched.size() > 1) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("Channel address is ambiguous — " + matched.size() +
-            " channels match. Provide more specific filter fields.")
-          .build();
+        return problem("timeseries-live-window.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Channel address is ambiguous — " + matched.size() + " channels match. Provide more specific filter fields.");
       }
 
       entity = matched.get(0);

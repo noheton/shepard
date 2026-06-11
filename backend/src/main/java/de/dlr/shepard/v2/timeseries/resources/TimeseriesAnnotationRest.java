@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.timeseries.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -54,6 +55,11 @@ public class TimeseriesAnnotationRest {
   PermissionsService permissionsService;
 
   // ─── helpers ─────────────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   private TimeseriesReference resolveRef(String refAppId) {
     return timeseriesReferenceDAO.findByAppId(refAppId);
@@ -150,10 +156,10 @@ public class TimeseriesAnnotationRest {
     @Context SecurityContext sc
   ) {
     if (body == null || body.getStartNs() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("startNs is required").build();
+      return problem("timeseries-annotations.bad-request", "Bad Request", Response.Status.BAD_REQUEST, "startNs is required");
     }
     if (body.getLabel() == null || body.getLabel().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("label is required and must be non-blank").build();
+      return problem("timeseries-annotations.bad-request", "Bad Request", Response.Status.BAD_REQUEST, "label is required and must be non-blank");
     }
     var gate = checkAccess(refAppId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -249,7 +255,7 @@ public class TimeseriesAnnotationRest {
     if (body.getEndNs() != null) a.setEndNs(body.getEndNs());
     if (body.getLabel() != null) {
       if (body.getLabel().isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("label must be non-blank").build();
+        return problem("timeseries-annotations.bad-request", "Bad Request", Response.Status.BAD_REQUEST, "label must be non-blank");
       }
       a.setLabel(body.getLabel().strip());
     }
