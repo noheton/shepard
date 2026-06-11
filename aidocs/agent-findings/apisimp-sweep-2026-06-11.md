@@ -197,3 +197,54 @@ APISIMP-CHANNEL-ANNOT-APPID all shipped, the residual findings are:
   `frontend/composables/containers/useFileContainerLinkedDataObjects.ts`,
   `frontend/composables/containers/useStructuredDataContainerLinkedDataObjects.ts`,
   `frontend/composables/containers/useContainerReferencedByCollections.ts`
+
+## Third-pass findings (2026-06-11, post-merge of UI-GAP-3 #1854)
+
+Third scan after all second-pass rows shipped. Scope: full `/v2` REST + plugin
+REST surfaces on current `main`.
+
+Verified-clean (agent findings cross-checked, all already shipped or intentional):
+
+| Agent finding | Actual state |
+|---|---|
+| `TimeseriesContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE (#1834) |
+| `FileContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE |
+| `StructuredDataContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE |
+| `TimeseriesChannelAnnotationRest.annotationId` (Long) | Now `String annotationAppId` — APISIMP-CHANNEL-ANNOT-APPID (#1851) |
+| `TimeseriesContainerTemporalAnnotationRest.containerId` (Long) | Now `String containerAppId` — APISIMP-TSCONT-APPID-KEY-4 (#1846) |
+| `JupyterConfigPublicRest` not on config registry | Intentional — public read-only endpoint (any-auth), not an admin-only config surface |
+| `TimeseriesAnnotationRest` / `AnomalyDetectionRest` path pattern | Correct — keyed on `String refAppId`, under `/v2/timeseries-references/` |
+| `ThumbnailRest ?size` | Intentional image-dimension param, not pagination |
+| `ProjectsRest` pagination | Already uses `page` + `pageSize` — no action |
+| Spatial plugin v1 paths | PLUGIN-V2-001 already queued |
+
+### Finding 5 — `ProjectIO` / `SubCollectionItemIO` / `ProjectByAnnotationItemIO` expose legacy `Long id`
+
+`backend/.../v2/project/io/ProjectIO.java:34` carries:
+```java
+@Schema(description = "Legacy long identifier of the underlying Collection (for upstream callers).")
+private Long id;
+```
+`SubCollectionItemIO.java:26` and `ProjectByAnnotationItemIO.java:31` have the same
+field with identical "Legacy long id" schema description.
+
+`ProjectsDAO.java:116,214,325` actively populates these via `io.setId(asLong(row.get("shepardId")))`.
+
+The `/v2/projects/` surface is a **fork-only** surface (not present in upstream
+`openapi-5.4.0.json`). The "for upstream callers" justification does not apply —
+upstream has no `/v2/projects/` endpoint to call. No frontend composable reads
+`.id` off a project response (grep `frontend/` returns zero hits for
+`project.id` / `projectData.id`). The field is purely additive dead weight.
+
+AC: drop `Long id` from all three IO classes; drop the three `io.setId(...)` calls
+in `ProjectsDAO`; `mvn verify` green. No FE change. Wire break on `/v2/projects/`
+(pre-prod, not in any stable release).
+
+**Filed as `APISIMP-PROJECT-IO-DROP-LEGACY-ID` (XS).**
+
+## Third-pass summary
+
+| Finding | Row | Size | State |
+|---|---|---|---|
+| `ProjectIO.Long id` dead legacy field | APISIMP-PROJECT-IO-DROP-LEGACY-ID | XS | queued |
+| All prior findings | shipped | — | — |
