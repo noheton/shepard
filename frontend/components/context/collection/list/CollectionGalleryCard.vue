@@ -116,7 +116,7 @@ function browse() {
         :src="heroUrl"
         :alt="collection.name"
         class="gallery-card-hero-img"
-      />
+      >
       <div
         v-else
         class="gallery-card-hero-placeholder"

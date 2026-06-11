@@ -228,14 +228,14 @@ watch(showRetired, (val) => {
       </template>
 
       <!-- Kind column -->
-      <template #item.templateKind="{ item }">
+      <template #[`item.templateKind`]="{ item }">
         <v-chip :color="kindColor(item.templateKind)" variant="tonal" size="small">
           {{ kindLabel(item.templateKind) }}
         </v-chip>
       </template>
 
       <!-- Tags column -->
-      <template #item.tags="{ item }">
+      <template #[`item.tags`]="{ item }">
         <div class="d-flex flex-wrap ga-1">
           <v-chip
             v-for="tag in (item.tags ?? [])"
@@ -250,12 +250,12 @@ watch(showRetired, (val) => {
       </template>
 
       <!-- Created date column -->
-      <template #item.createdAt="{ item }">
+      <template #[`item.createdAt`]="{ item }">
         <span class="text-body-2">{{ formatDate(item.createdAt) }}</span>
       </template>
 
       <!-- Status column -->
-      <template #item.retired="{ item }">
+      <template #[`item.retired`]="{ item }">
         <v-chip
           :color="item.retired ? 'error' : 'success'"
           variant="tonal"
@@ -266,7 +266,7 @@ watch(showRetired, (val) => {
       </template>
 
       <!-- Actions column -->
-      <template #item.actions="{ item }">
+      <template #[`item.actions`]="{ item }">
         <div class="d-flex ga-1">
           <v-btn
             :disabled="item.retired"

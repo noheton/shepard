@@ -21,7 +21,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 // urdf-loader is a Three.js Loader; named import URDFRobot for the result type.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import URDFLoader from "urdf-loader";
 
 interface URDFJointLike {

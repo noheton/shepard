@@ -4,17 +4,36 @@ import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { GraphChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
-import type { DataObject } from "@dlr-shepard/backend-client";
-import {
-  ProvenanceApi,
-  type ActivityIO,
-} from "@dlr-shepard/backend-client";
+import type { DataObject, ActivityIO } from "@dlr-shepard/backend-client";
+import { ProvenanceApi } from "@dlr-shepard/backend-client";
+import type { CallbackDataParams } from "echarts/types/dist/shared";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import { ACTION_COLORS, nodeColor, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
-if (process.client) {
+if (import.meta.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent]);
+}
+
+interface EChartsGraphNode {
+  id: string;
+  name: string;
+  category: number;
+  symbolSize: number;
+  symbol: string;
+  itemStyle?: Record<string, unknown>;
+  label?: Record<string, unknown>;
+  tooltip?: { formatter: string };
+  fixed?: boolean;
+  x?: number;
+  y?: number;
+}
+
+interface EChartsGraphEdge {
+  source: string;
+  target: string;
+  lineStyle?: Record<string, unknown>;
+  label?: Record<string, unknown>;
 }
 
 const props = defineProps<{
@@ -67,7 +86,7 @@ const chartOption = computed(() => {
   const acts = activities.value;
 
   // central entity node
-  const nodes: any[] = [
+  const nodes: EChartsGraphNode[] = [
     {
       id: "entity",
       name: do_.name ?? String(do_.id),
@@ -81,7 +100,7 @@ const chartOption = computed(() => {
     },
   ];
 
-  const edges: any[] = [];
+  const edges: EChartsGraphEdge[] = [];
 
   // predecessor nodes
   (do_.predecessorIds ?? []).slice(0, 6).forEach((predId) => {
@@ -126,7 +145,7 @@ const chartOption = computed(() => {
   // unique agents
   const agentSet = new Set(acts.map(a => a.agentUsername));
   const agentArr = [...agentSet];
-  agentArr.forEach((agent, i) => {
+  agentArr.forEach((agent) => {
     const nid = `agent_${agent}`;
     const agentActs = acts.filter(a => a.agentUsername === agent);
     const kindCount = agentActs.reduce<Record<string, number>>((m, a) => {
@@ -164,13 +183,14 @@ const chartOption = computed(() => {
     backgroundColor: "transparent",
     tooltip: {
       enterable: false,
-      formatter: (params: any) => {
+      formatter: (params: CallbackDataParams) => {
         if (params.dataType === "node") {
-          if (params.data.tooltip) return params.data.tooltip.formatter;
+          const node = params.data as EChartsGraphNode;
+          if (node.tooltip) return node.tooltip.formatter;
           return `<b>${params.name}</b>`;
         }
         if (params.dataType === "edge") {
-          const ls = params.data.lineStyle;
+          const ls = (params.data as EChartsGraphEdge).lineStyle as { type?: string } | undefined;
           return ls?.type === "dashed" ? "predecessor → this dataset" : "this dataset → child / agent action";
         }
         return "";
@@ -192,7 +212,7 @@ const chartOption = computed(() => {
         emphasis: { focus: "adjacency" },
         label: {
           color: "inherit",
-          formatter: (params: any) => {
+          formatter: (params: CallbackDataParams) => {
             const n: string = params.name ?? "";
             return truncateLabel(n, 16);
           },

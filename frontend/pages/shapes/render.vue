@@ -1150,16 +1150,16 @@ onMounted(() => {
       endpoint="/v2/shapes/render"
       notes="Beta: all bindings return status=DECLARED. Live channel resolution (TPL2c) ships after the TS-ID migration (aidocs/platform/87). Color-mapped 3D trace via Three.js."
     />
-  </v-container>
 
-  <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
-  <Trace3DEditChannelsDialog
-    v-model="showEditDialog"
-    :container-id="Number(containerId) || 0"
-    :channels="channelList"
-    :initial="currentSelection"
-    @save="onEditSave"
-  />
+    <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
+    <Trace3DEditChannelsDialog
+      v-model="showEditDialog"
+      :container-id="Number(containerId) || 0"
+      :channels="channelList"
+      :initial="currentSelection"
+      @save="onEditSave"
+    />
+  </v-container>
 </template>
 
 <style scoped>

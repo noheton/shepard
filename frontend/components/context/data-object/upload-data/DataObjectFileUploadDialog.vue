@@ -121,9 +121,6 @@ const isFileContainerDefault = ref<boolean>(false);
 // extra clicks.
 const containerMode = ref<"link" | "create">("link");
 
-// Backwards-compat alias used by createNewFileContainer() and the CC1c name-prefill watch.
-const isCreatingNewFileContainer = computed(() => containerMode.value === "create");
-
 // CC1d: collection-scoped FILE containers for the "Link existing" list.
 const collectionAppId = computed(
   () => collectionAccessor.collection.value?.appId ?? null,

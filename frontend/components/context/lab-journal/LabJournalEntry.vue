@@ -11,7 +11,7 @@ const journalContent = defineModel<string>("journalContent", {
   default: "",
 });
 
-const props = defineProps<{
+defineProps<{
   collectionId: number;
   dataObjectId: number;
   isEditing: boolean;

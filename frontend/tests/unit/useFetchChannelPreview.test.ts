@@ -153,8 +153,8 @@ describe("useFetchChannelPreview — in-flight de-duplication", () => {
   });
 
   it("does NOT dedup when downsample options differ (different cache key)", async () => {
-    const a = useFetchChannelPreview(42, ch, { downsample: true });
-    const b = useFetchChannelPreview(42, ch, { downsample: false });
+    useFetchChannelPreview(42, ch, { downsample: true });
+    useFetchChannelPreview(42, ch, { downsample: false });
 
     await flush();
 

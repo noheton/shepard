@@ -28,7 +28,6 @@ function fmtBytes(b: number): string {
 // with the "Show all channels" toggle below the chart.
 const {
   selectedChannelKeys: persistedChannelKeys,
-  updatedAt: chartViewUpdatedAt,
   updatedBy: chartViewUpdatedBy,
   saving: chartViewSaving,
   save: saveChartView,

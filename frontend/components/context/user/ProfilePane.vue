@@ -193,7 +193,7 @@ async function saveIdentity() {
           accept="image/jpeg,image/png,image/gif,image/webp"
           class="d-none"
           @change="onAvatarFileSelected"
-        />
+        >
         <v-btn
           size="small"
           variant="tonal"

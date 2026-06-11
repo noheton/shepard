@@ -176,7 +176,7 @@ export async function xhrUploadPresignedPut(args: {
   contentType: string;
   options?: XhrUploadOptions;
 }): Promise<void> {
-  return runXhr<void>({
+  return runXhr<undefined>({
     method: "PUT",
     url: args.url,
     body: args.file,
