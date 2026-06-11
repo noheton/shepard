@@ -22,6 +22,12 @@ import { useFetchSingletonFileReferences } from "~/composables/context/useFetchS
 // imagery. Pane is self-contained (fetches its own cached plate-heatmap +
 // quality summary); we only need to discover the bundle's appId here.
 import DataObjectThermographyPane from "~/components/context/thermography/DataObjectThermographyPane.vue";
+// MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — generic image-bundle frame scrubber. Mounts
+// when the DO carries at least one FileBundleReference whose first group
+// contains image-extension files (.png, .jpg, .jpeg, .tif, .tiff, …).
+// Self-detecting: passes candidateBundleAppIds from the v1 dataReferences list;
+// the pane calls GET /v2/bundles/{appId} internally for detection.
+import DataObjectImageBundlePane from "~/components/context/data-object/DataObjectImageBundlePane.vue";
 // OTVIS-VIEWER — decoded Edevis OTvis amplitude/phase frame viewer. Mounts
 // when the DO carries a singleton FileReference whose filename ends `.OTvis`.
 // In-context-first entry per the tools rule: the appId is already in hand on
@@ -208,6 +214,21 @@ const thermographyBundleAppId = computed<string | null>(() => {
     }
   }
   return null;
+});
+
+/**
+ * MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — collect appIds of FileBundleReferences from
+ * the v1 dataReferences list. FileBundleReferences carry a `fileContainerId`
+ * field (distinguishing them from TimeseriesReferences / StructuredDataRefs).
+ * The pane itself calls GET /v2/bundles/{appId} to detect whether the bundle
+ * actually contains image-extension files.
+ */
+const imageBundleCandidateAppIds = computed<string[]>(() => {
+  const refs = dataReferences.value ?? [];
+  return refs
+    .filter(r => "fileContainerId" in r)
+    .map(r => (r as { appId?: string | null }).appId)
+    .filter((id): id is string => !!id);
 });
 
 /**
@@ -973,6 +994,23 @@ async function saveEmbargoEdit() {
                   <MaterialBatchTracePane
                     :data-object-app-id="dataObject.appId"
                     :collection-app-id="collection.appId"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-IMAGEBUNDLE-PANE-MOUNT-1: generic image frame scrubber.
+                     Shown when at least one FileBundleReference is attached and
+                     its first group carries at least one image-extension file.
+                     Distinct from the Thermography NDT pane — that pane uses a
+                     name heuristic and renders a plate-heatmap; this one uses
+                     content-type detection and renders the ImageBundleViewer
+                     scrubber. Non-overlapping: thermography bundles are excluded
+                     by the name heuristic so they don't appear here too. -->
+                <ExpansionPanelItem
+                  v-if="imageBundleCandidateAppIds.length > 0 && dataObject.appId"
+                  title="Image Frames"
+                >
+                  <DataObjectImageBundlePane
+                    :data-object-app-id="dataObject.appId"
+                    :candidate-bundle-app-ids="imageBundleCandidateAppIds"
                   />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.
