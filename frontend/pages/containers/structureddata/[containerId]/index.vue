@@ -12,8 +12,11 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;
 
 const containerAccessor = new StructuredDataContainerAccessor(containerId);
+const containerAppId = computed<string | null>(
+  () => (containerAccessor.container.value as unknown as { appId?: string | null })?.appId ?? null,
+);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useStructuredDataContainerLinkedDataObjects(containerId);
+  useStructuredDataContainerLinkedDataObjects(containerAppId);
 
 const deleteWarning = computed<string | undefined>(() => {
   const n = linkedDataObjects.value?.length ?? 0;

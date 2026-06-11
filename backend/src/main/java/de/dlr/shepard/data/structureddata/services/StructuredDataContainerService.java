@@ -307,4 +307,16 @@ public class StructuredDataContainerService
     }
     return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(appId);
   }
+
+  /**
+   * CC1b (appId variant) — return the list of non-deleted DataObjects that
+   * reference this StructuredDataContainer, keyed by appId. Does not perform
+   * a permission check — callers must call {@link #getContainerByAppId(String)} first.
+   *
+   * @param containerAppId UUID v7 appId of the StructuredDataContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
+    return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
+  }
 }
