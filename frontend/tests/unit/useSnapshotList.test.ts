@@ -37,7 +37,7 @@ function mockFetchError(status: number, bodyText = "boom") {
 }
 
 describe("useSnapshotList — fetchPage()", () => {
-  it("hits GET /v2/snapshots with default page=0 size=200", async () => {
+  it("hits GET /v2/snapshots with default page=0 pageSize=200", async () => {
     mockFetchOk({ items: [], total: 0, page: 0, size: 200 });
     const { fetchPage } = useSnapshotList();
     await fetchPage();
@@ -46,7 +46,7 @@ describe("useSnapshotList — fetchPage()", () => {
     ) as [string, RequestInit];
     expect(url).toContain("/v2/snapshots?");
     expect(url).toContain("page=0");
-    expect(url).toContain("size=200");
+    expect(url).toContain("pageSize=200");
   });
 
   it("populates items + total from the response envelope", async () => {
@@ -83,13 +83,13 @@ describe("useSnapshotList — fetchPage()", () => {
   it("includes collectionAppId param when provided", async () => {
     mockFetchOk({ items: [], total: 0, page: 0, size: 50 });
     const { fetchPage } = useSnapshotList();
-    await fetchPage({ collectionAppId: "coll-abc", page: 1, size: 50 });
+    await fetchPage({ collectionAppId: "coll-abc", page: 1, pageSize: 50 });
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
       -1,
     ) as [string, RequestInit];
     expect(url).toContain("collectionAppId=coll-abc");
     expect(url).toContain("page=1");
-    expect(url).toContain("size=50");
+    expect(url).toContain("pageSize=50");
   });
 
   it("sends Bearer auth header when token present", async () => {

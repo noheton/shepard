@@ -102,11 +102,11 @@ public class TimeseriesContainerChannelsRest {
   public Response listChannels(
     @PathParam("containerAppId") String containerAppId,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("200") @PositiveOrZero int size
+    @QueryParam("pageSize") @DefaultValue("200") @PositiveOrZero int pageSize
   ) {
     long containerId = timeseriesContainerService.getContainerByAppId(containerAppId).getId();
 
-    int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+    int safeSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     List<TimeseriesEntity> rows = tsChannelResolver.listPaged(containerId, page, safeSize);
     List<TimeseriesChannelV2IO> body = rows.stream().map(TimeseriesChannelV2IO::from).toList();
     return Response.ok(body).build();

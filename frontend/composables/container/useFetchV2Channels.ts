@@ -58,7 +58,7 @@ export function useFetchV2Channels(containerAppId: string) {
     loading.value = true;
     try {
       const res = await fetch(
-        `${v2Base()}/v2/timeseries-containers/${containerAppId}/channels?size=2000`,
+        `${v2Base()}/v2/timeseries-containers/${containerAppId}/channels?pageSize=2000`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;

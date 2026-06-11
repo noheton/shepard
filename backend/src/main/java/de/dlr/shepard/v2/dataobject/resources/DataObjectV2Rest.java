@@ -138,8 +138,8 @@ public class DataObjectV2Rest {
       "`timeseriesCount`, `fileCount`, `structuredDataCount`. Counts reflect " +
       "non-deleted references only and are computed in a single Cypher round-trip " +
       "(no N+1 queries).\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both to " +
-      "paginate. `size` capped at 200 server-side.\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both to " +
+      "paginate. `pageSize` capped at 200 server-side.\n\n" +
       "Filtering: `name` does a case-insensitive substring match. Each row " +
       "also carries `referenceIds[]` (legacy long ids of all refs) and " +
       "`childrenIds[]` (direct child DOs).\n\n" +
@@ -182,7 +182,7 @@ public class DataObjectV2Rest {
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("status") String status,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
     @Context SecurityContext sc
@@ -207,7 +207,7 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);

@@ -88,7 +88,7 @@ async function fetchPage(page: number, size: number): Promise<PagedFiles | null>
   const url =
     `${v2BaseUrl()}/v2/bundles/${encodeURIComponent(props.bundleAppId)}` +
     `/groups/${encodeURIComponent(props.groupAppId)}` +
-    `/files?page=${page}&size=${size}`;
+    `/files?page=${page}&pageSize=${size}`;
   isLoading.value = true;
   fetchError.value = null;
   try {

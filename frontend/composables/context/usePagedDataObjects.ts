@@ -91,7 +91,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         name: nameFilter,
         status: statusFilter,
         page: currentPage,
-        size: pageSize,
+        pageSize: pageSize,
         include: includeTimeBounds ? 'time-bounds' : undefined,
         fields: DO_LIST_FIELDS,
       });

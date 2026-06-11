@@ -2,12 +2,12 @@
  * SNAPSHOT-LIST-1-FE — composable wrapping the global snapshot list
  * endpoint shipped 2026-05-31 (backend 1935128eb):
  *
- *   GET /v2/snapshots[?collectionAppId=…][&page=N&size=M]
+ *   GET /v2/snapshots[?collectionAppId=…][&page=N&pageSize=M]
  *
  * Response envelope: `{ items[], total, page, size }` where each item is
  * `{ appId, name, createdAt, collectionAppId, collectionName }`.
  *
- * The `/snapshots/diff` picker fetches a single page (`size=200`) on
+ * The `/snapshots/diff` picker fetches a single page (`pageSize=200`) on
  * mount and lets v-autocomplete filter client-side — covers any
  * realistic instance size; remote search with debounce is queued as a
  * follow-up if pagination becomes load-bearing.
@@ -46,7 +46,7 @@ export function useSnapshotList() {
   async function fetchPage(opts: {
     collectionAppId?: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
   } = {}): Promise<SnapshotListItem[]> {
     isLoading.value = true;
     error.value = null;
@@ -54,7 +54,7 @@ export function useSnapshotList() {
       const params = new URLSearchParams();
       if (opts.collectionAppId) params.set("collectionAppId", opts.collectionAppId);
       params.set("page", String(opts.page ?? 0));
-      params.set("size", String(opts.size ?? 200));
+      params.set("pageSize", String(opts.pageSize ?? 200));
       const { data: auth } = useAuth();
       const token = auth.value?.accessToken;
       const headers: Record<string, string> = { Accept: "application/json" };

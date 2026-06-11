@@ -129,8 +129,8 @@ public class CollectionV2Rest {
       "authenticated caller has Read permission on. The page is unordered by default; " +
       "supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, " +
       "`status`, …) with `orderDesc=true` for a sorted result.\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both to paginate. " +
-      "The server caps `size` at 200 to avoid unbounded result sets.\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. " +
+      "The server caps `pageSize` at 200 to avoid unbounded result sets.\n\n" +
       "Filtering: `name` does a case-insensitive substring match.\n\n" +
       "Each returned `CollectionIO` carries both `id` (legacy long) and `appId` " +
       "(canonical UUID v7); v2 clients should branch on `appId` and use the matching " +
@@ -146,16 +146,16 @@ public class CollectionV2Rest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
   @APIResponse(responseCode = "400",
-    description = "Bean Validation rejected the query — `page` or `size` is negative.")
+    description = "Bean Validation rejected the query — `page` or `pageSize` is negative.")
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size
+    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
   ) {
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);

@@ -89,7 +89,7 @@ export function useFetchAllDataObjects(collectionId: number, collectionAppId?: R
         const batch = await v2Api.value.listDataObjects({
           collectionAppId: identifier,
           page,
-          size: PAGE,
+          pageSize: PAGE,
         });
         results.push(...batch);
         if (batch.length < PAGE) break;

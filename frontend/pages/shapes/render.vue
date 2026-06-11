@@ -230,7 +230,7 @@ async function fetchChannelList() {
   if (!isFinite(id)) return;
   try {
     const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
+      getV2Base() + `/v2/timeseries-containers/${id}/channels?pageSize=1000`,
       { headers: getAuthHeaders() },
     );
     if (!res.ok) return;
@@ -356,7 +356,7 @@ async function fetchBulkTrace(
     let localChannelList = channelList.value;
     if (localChannelList.length === 0) {
       const listRes = await fetch(
-        getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
+        getV2Base() + `/v2/timeseries-containers/${id}/channels?pageSize=1000`,
         { headers: getAuthHeaders() },
       );
       if (!listRes.ok) return result;

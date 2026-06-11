@@ -119,7 +119,7 @@ public class SnapshotListRest {
   public Response list(
     @QueryParam("collectionAppId") String collectionAppId,
     @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("size") @DefaultValue("50") int size,
+    @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc != null && sc.getUserPrincipal() != null
@@ -127,7 +127,7 @@ public class SnapshotListRest {
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
 
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     List<Snapshot> rawPage;
     long total;

@@ -19,7 +19,7 @@ export interface ListPermissionAuditLogRequest {
   from?: string;
   to?: string;
   page?: number;
-  size?: number;
+  pageSize?: number;
 }
 
 /**
@@ -48,8 +48,8 @@ export class AdminPermissionAuditApi extends runtime.BaseAPI {
     if (requestParameters['page'] != null) {
       queryParameters['page'] = requestParameters['page'];
     }
-    if (requestParameters['size'] != null) {
-      queryParameters['size'] = requestParameters['size'];
+    if (requestParameters['pageSize'] != null) {
+      queryParameters['pageSize'] = requestParameters['pageSize'];
     }
 
     const headerParameters: runtime.HTTPHeaders = {};
