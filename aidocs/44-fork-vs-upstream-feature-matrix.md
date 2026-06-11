@@ -427,8 +427,9 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | `GET /users/me`, `PATCH /users/me`, `PUT /users/me/avatar`, `GET /users/{appId}`, `GET /users/{appId}/avatar` | U1a-U1e | `aidocs/36` |
 | `GET /v2/templates/{...}/processes/...` (process runtime; subset of PR1) | | `aidocs/40 §2` |
 | `POST /v2/timeseries/{appId}/detect-anomalies`, `GET /v2/data-objects/{appId}/similar`, `POST /v2/search/natural`, `POST /v2/lab-journal/assist`, `POST /v2/semantic-annotations/suggest`, `POST /v2/collections/{appId}/export?aiAssist=true`, the snap-dashboards tool-use catalogue | AI1a-AI1l | `aidocs/43` |
-| `GET /v2/file-containers/{containerAppId}/files/{originalName}/versions` — `:PayloadVersion` node, SHA-256 recording on upload, versionNumber counter | PV1a — ✓ shipped (2026-05-20) | `aidocs/46` |
-| `GET /v2/structured-data-containers/{containerAppId}/files/{originalName}/versions` — same `:PayloadVersion` shape for StructuredDataContainer uploads; SHA-256 computed from JSON bytes | PV1b — ✓ shipped (2026-05-20) | `aidocs/46` |
+| ~~`GET /v2/file-containers/{containerAppId}/files/{originalName}/versions`~~ — **REMOVED 2026-06-10 (APISIMP-PV-UNIFY)** | PV1a — ✓ shipped (2026-05-20); ~~superseded 2026-06-10~~ | `aidocs/46` |
+| ~~`GET /v2/structured-data-containers/{containerAppId}/files/{originalName}/versions`~~ — **REMOVED 2026-06-10 (APISIMP-PV-UNIFY)** | PV1b — ✓ shipped (2026-05-20); ~~superseded 2026-06-10~~ | `aidocs/46` |
+| `GET /v2/containers/{appId}/files/{fileName}/versions` — unified payload-version endpoint; 415 for kinds without file-payload versioning (timeseries/hdf) | APISIMP-PV-UNIFY — ✓ shipped (2026-06-10) | `aidocs/16` APISIMP-PV-UNIFY |
 | `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1c-f — queued | `aidocs/46` |
 | `POST /v2/file-containers/{containerAppId}/upload-url`, `POST /v2/file-containers/{containerAppId}/upload-url/commit`, `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` | FS1c — ✓ shipped | `aidocs/45 §7` |
 | `GET /v2/artifacts/{type}/{id}/url` | FS1g | `aidocs/45` |

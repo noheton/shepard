@@ -368,6 +368,59 @@ class ContainersV2RestTest {
     assertEquals(404, r.getStatus());
   }
 
+  // ─── listVersions (APISIMP-PV-UNIFY) ──────────────────────────────────────
+
+  @Test
+  void listVersions_returns200WithVersionList() {
+    allowRead();
+    var v = new de.dlr.shepard.v2.file.io.PayloadVersionIO(
+      "pv-app-1", 1L, "oid1", "AABBCC", 512L, "alice", "2026-06-01T00:00:00Z"
+    );
+    when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of(v)));
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void listVersions_returns200WithEmptyList() {
+    allowRead();
+    when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of()));
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void listVersions_returns415WhenKindHasNoVersioning() {
+    allowRead();
+    when(handler.kind()).thenReturn("timeseries");
+    when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.empty());
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(415, r.getStatus());
+  }
+
+  @Test
+  void listVersions_returns404WhenUnknown() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void listVersions_returns403WhenNoRead() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void listVersions_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
   // ─── list ──────────────────────────────────────────────────────────────────
 
   @Test

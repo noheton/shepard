@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,6 +153,31 @@ public interface ContainerKindHandler {
    *         has no single-file payload.
    */
   default Optional<ContainerFileDownload> downloadFile(String appId, String rangeHeader) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-PV-UNIFY — optionally return the version history for the named file
+   * stored in the container at {@code appId}, ordered by {@code versionNumber}
+   * ascending. This is the converged home for payload versioning behind the
+   * generic {@code GET /v2/containers/{appId}/files/{name}/versions} route,
+   * replacing the per-kind {@code PayloadVersionRest} and
+   * {@code StructuredDataPayloadVersionRest} resources.
+   *
+   * <p>Default returns {@link Optional#empty()} — kinds without file-payload
+   * versioning (timeseries, hdf) leave the dispatcher to answer 415. File and
+   * structured-data kind handlers override this to query the shared
+   * {@link de.dlr.shepard.data.file.daos.PayloadVersionDAO}.
+   *
+   * <p>The dispatching resource has already gated Read on the container before
+   * calling this method.
+   *
+   * @param appId    UUID v7 of the container.
+   * @param fileName the file or entry name as supplied at upload time.
+   * @return the version list (may be empty), or {@link Optional#empty()} when
+   *         this kind has no file-payload versioning (→ 415).
+   */
+  default Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
     return Optional.empty();
   }
 }
