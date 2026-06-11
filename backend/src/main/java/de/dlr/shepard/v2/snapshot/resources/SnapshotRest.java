@@ -74,6 +74,7 @@ public class SnapshotRest {
    */
   @GET
   @Operation(
+    operationId = "getSnapshot",
     summary = "Read snapshot metadata.",
     description = "Returns name, description, snapshotCapturedAt, snapshotCreatedByUsername, collectionAppId, and entryCount. Requires Read permission on the root Collection."
   )
@@ -158,6 +159,7 @@ public class SnapshotRest {
    */
   @DELETE
   @Operation(
+    operationId = "deleteSnapshot",
     summary = "Delete a snapshot.",
     description =
       "Soft-deletes the snapshot and all its SnapshotEntry rows. " +

@@ -53,6 +53,7 @@ public class JupyterConfigPublicRest {
 
   @GET
   @Operation(
+    operationId = "getJupyterConfig",
     summary = "Read the public JupyterHub link-out config (any authenticated user).",
     description =
       "Returns the same `{enabled, hubUrl}` shape as `GET /v2/admin/config/jupyter` " +

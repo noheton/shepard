@@ -54,6 +54,7 @@ public class CollectionContainersRest {
 
   @GET
   @Operation(
+    operationId = "listReferencedContainers",
     summary = "List containers referenced by data objects in this collection (CC2).",
     description =
       "Walks Collection → DataObject → Reference → Container and returns " +

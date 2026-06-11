@@ -96,6 +96,7 @@ public class ContainersV2Rest {
 
   @POST
   @Operation(
+    operationId = "createContainer",
     summary = "Create a container of the given kind.",
     description =
       "Creates a container of `kind` (file | timeseries | structured-data). The " +
@@ -131,6 +132,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}")
   @Operation(
+    operationId = "getContainer",
     summary = "Get any container by appId; the entity self-describes its kind.",
     description =
       "Resolves the container (of any kind) at `appId` and returns the unified " +
@@ -241,6 +243,7 @@ public class ContainersV2Rest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchContainer",
     summary = "RFC 7396 merge-patch any container by appId; dispatched by kind.",
     description =
       "Applies a merge-patch to the container at `appId` (`name`, `status`). " +
@@ -284,6 +287,7 @@ public class ContainersV2Rest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteContainer",
     summary = "Delete any container by appId; dispatched by kind.",
     description = "Deletes the container at `appId` via the owning kind's deleter.\n\nAuth: Write on the container."
   )
@@ -310,6 +314,7 @@ public class ContainersV2Rest {
 
   @GET
   @Operation(
+    operationId = "listContainers",
     summary = "List containers of a kind, optionally filtered by name.",
     description =
       "Returns every container of `kind` the caller may read, as ContainerV2IO[]. " +

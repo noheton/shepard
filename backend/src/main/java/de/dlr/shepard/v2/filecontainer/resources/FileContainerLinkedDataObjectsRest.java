@@ -55,6 +55,7 @@ public class FileContainerLinkedDataObjectsRest {
   @GET
   @Path("/{containerAppId}/linked-data-objects")
   @Operation(
+    operationId = "getFileContainerLinkedDataObjects",
     summary = "List DataObjects linked to this FileContainer.",
     description = "Returns the distinct DataObjects whose references (SingletonFileReference or " +
     "FileReference/FileBundleReference) point at this container. Requires Read permission on the container."
@@ -83,6 +84,7 @@ public class FileContainerLinkedDataObjectsRest {
   @DELETE
   @Path("/{containerAppId}")
   @Operation(
+    operationId = "deleteFileContainerSafely",
     summary = "Safely delete this FileContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
     "Use this in preference to the upstream /shepard/api/fileContainers/{id} DELETE, which " +

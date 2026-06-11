@@ -43,6 +43,7 @@ public class TimeseriesContainerStatsRest {
   @GET
   @Path("/{containerAppId}/stats")
   @Operation(
+    operationId = "getTimeseriesContainerStats",
     summary = "Storage and ingestion stats for a TimeseriesContainer.",
     description = "Returns point count, channel count, estimated uncompressed size, and recent " +
       "ingest rate. Requires Read permission on the container. The size is an uncompressed " +

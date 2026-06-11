@@ -62,6 +62,7 @@ public class MirroredUserRest {
 
   @POST
   @Operation(
+    operationId = "mirrorUsers",
     summary = "Create or update a :MirroredUser node (idempotent).",
     description = "Mints a :MirroredUser shadow node for a user from a remote Shepard " +
       "instance. Idempotent: if a node with the same (sourceInstance, sourceUsername) pair " +

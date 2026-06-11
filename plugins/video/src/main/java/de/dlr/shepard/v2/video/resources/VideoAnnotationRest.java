@@ -106,6 +106,7 @@ public class VideoAnnotationRest {
 
   @GET
   @Operation(
+    operationId = "listVideoAnnotations",
     summary = "List all annotations on a VideoStreamReference (VID1b-annotation).",
     description =
       "Returns all :VideoAnnotation nodes attached to the :VideoStreamReference " +
@@ -144,6 +145,7 @@ public class VideoAnnotationRest {
 
   @POST
   @Operation(
+    operationId = "createVideoAnnotation",
     summary = "Create an annotation on a VideoStreamReference (VID1b-annotation).",
     description =
       "Creates a :VideoAnnotation node and links it to the :VideoStreamReference " +
@@ -198,6 +200,7 @@ public class VideoAnnotationRest {
   @GET
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "getVideoAnnotation",
     summary = "Read a single VideoAnnotation by appId (VID1b-annotation).",
     description =
       "Returns the VideoAnnotationIO for the :VideoAnnotation identified by annotationAppId " +
@@ -232,6 +235,7 @@ public class VideoAnnotationRest {
   @PATCH
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "updateVideoAnnotation",
     summary = "Update a VideoAnnotation (merge-patch) (VID1b-annotation).",
     description =
       "Applies a partial update to the :VideoAnnotation identified by annotationAppId. " +
@@ -283,6 +287,7 @@ public class VideoAnnotationRest {
   @DELETE
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "deleteVideoAnnotation",
     summary = "Delete a VideoAnnotation from a VideoStreamReference (VID1b-annotation).",
     description =
       "Removes the :VideoAnnotation identified by annotationAppId from the :VideoStreamReference " +

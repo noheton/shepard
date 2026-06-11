@@ -108,6 +108,7 @@ public class AdminUserGitCredentialRest {
 
   @POST
   @Operation(
+    operationId = "preseedGitCredential",
     summary = "Preseed a git credential for another user (admin-only).",
     description = "Creates or replaces a git credential for the named user. " +
     "If a credential for the same host already exists, it is overwritten. " +
@@ -200,6 +201,7 @@ public class AdminUserGitCredentialRest {
 
   @GET
   @Operation(
+    operationId = "listGitCredentials",
     summary = "List a user's git credentials (admin-only).",
     description =
       "Returns the discovery metadata for every credential the named user " +

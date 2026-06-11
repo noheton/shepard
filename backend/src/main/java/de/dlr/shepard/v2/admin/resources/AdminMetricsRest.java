@@ -41,6 +41,7 @@ public class AdminMetricsRest {
 
   @GET
   @Operation(
+    operationId = "getMetricsSummary",
     summary = "Instance-health summary for the admin pane.",
     description = "Rolls up JVM heap / uptime / HTTP-request total + mean / permissions-cache " +
     "hit ratio into one payload, read from the in-process Micrometer registry. " +

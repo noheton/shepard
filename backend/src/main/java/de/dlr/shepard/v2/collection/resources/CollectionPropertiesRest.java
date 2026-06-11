@@ -52,6 +52,7 @@ public class CollectionPropertiesRest {
 
   @GET
   @Operation(
+    operationId = "getCollectionProperties",
     summary = "Read the per-Collection settings node.",
     description =
       "Returns the `:CollectionProperties` node attached to the Collection identified by " +
@@ -91,6 +92,7 @@ public class CollectionPropertiesRest {
 
   @PATCH
   @Operation(
+    operationId = "patchCollectionProperties",
     summary = "Partial-update the per-Collection settings node.",
     description =
       "Applies a partial update to the `:CollectionProperties` node for the Collection " +

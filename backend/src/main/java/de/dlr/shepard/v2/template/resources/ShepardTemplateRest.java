@@ -71,6 +71,7 @@ public class ShepardTemplateRest {
 
   @GET
   @Operation(
+    operationId = "listTemplates",
     summary = "List templates (latest non-retired version per name).",
     description = "Any authenticated user can browse. Retired rows are excluded by default; admins may " +
     "set ?includeRetired=true to see them too."
@@ -95,7 +96,9 @@ public class ShepardTemplateRest {
 
   @GET
   @Path("/{appId}")
-  @Operation(summary = "Read one template by appId.")
+  @Operation(
+    operationId = "getTemplate",
+    summary = "Read one template by appId.")
   @APIResponse(
     responseCode = "200",
     description = "The template.",
@@ -123,6 +126,7 @@ public class ShepardTemplateRest {
 
   @POST
   @Operation(
+    operationId = "createTemplate",
     summary = "Mint a new template (version=1). Admin-only.",
     description = "Names need not be unique. Two templates can share a name when they're different " +
     "kinds; same-kind same-name should use PATCH which triggers copy-on-write."
@@ -175,6 +179,7 @@ public class ShepardTemplateRest {
   @PATCH
   @Path("/{appId}")
   @Operation(
+    operationId = "patchTemplate",
     summary = "Edit a template (triggers copy-on-write). Admin-only.",
     description = "The prior row is marked retired = true; a new row is minted with version + 1 " +
     "carrying the patched fields (unchanged fields copied through)."
@@ -250,6 +255,7 @@ public class ShepardTemplateRest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteTemplate",
     summary = "Retire a template (soft-delete). Admin-only.",
     description = "Sets retired = true; the row stays on disk so existing citations remain valid."
   )

@@ -81,6 +81,7 @@ public class CollectionSceneGraphRest {
 
   @GET
   @Operation(
+    operationId = "getCollectionSceneGraph",
     summary = "Resolve the Collection's hero-view link.",
     description =
       "Returns the linked MAPPING_RECIPE template's identity tuple for the "

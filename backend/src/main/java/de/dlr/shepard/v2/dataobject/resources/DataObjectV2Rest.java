@@ -130,6 +130,7 @@ public class DataObjectV2Rest {
 
   @GET
   @Operation(
+    operationId = "listDataObjects",
     summary = "List DataObjects under a Collection.",
     description =
       "Returns a page of `:DataObject` entities belonging to the Collection " +
@@ -291,6 +292,7 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}")
   @Produces({ MediaType.APPLICATION_JSON, "application/ld+json" })
   @Operation(
+    operationId = "getDataObject",
     summary = "Get a DataObject by appId.",
     description =
       "Returns the full `DataObjectIO` shape for the DataObject identified by " +
@@ -395,6 +397,7 @@ public class DataObjectV2Rest {
 
   @POST
   @Operation(
+    operationId = "createDataObject",
     summary = "Create a DataObject inside a Collection.",
     description =
       "Creates a `:DataObject` in the Collection identified by `collectionAppId` " +
@@ -459,6 +462,7 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}")
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchDataObject",
     summary = "Partially update a DataObject (RFC 7396 JSON Merge Patch).",
     description =
       "Applies an RFC 7396 JSON Merge Patch to the `:DataObject` identified by " +
@@ -535,6 +539,7 @@ public class DataObjectV2Rest {
   @DELETE
   @Path("/{dataObjectAppId}")
   @Operation(
+    operationId = "deleteDataObject",
     summary = "Delete a DataObject and its references.",
     description =
       "Soft-deletes the `:DataObject` identified by `dataObjectAppId` within the Collection " +

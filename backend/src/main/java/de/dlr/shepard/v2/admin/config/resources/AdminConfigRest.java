@@ -91,6 +91,7 @@ public class AdminConfigRest {
   @GET
   @Path("/{feature}")
   @Operation(
+    operationId = "getFeatureConfig",
     summary = "Read the current config for a feature.",
     description = "Resolves the ConfigDescriptor for {feature} and returns its current, " +
     "fully-resolved config shape. 404 (problem+json) when no feature is registered under that key."
@@ -114,6 +115,7 @@ public class AdminConfigRest {
   @Path("/{feature}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchFeatureConfig",
     summary = "RFC 7396 merge-patch the config for a feature.",
     description = "Resolves the ConfigDescriptor for {feature} and applies an RFC-7396 " +
     "merge-patch: absent = leave alone, null = clear, value = replace. Returns the updated " +
