@@ -3,12 +3,12 @@ package de.dlr.shepard.v2.timeseriescontainer.resources;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
+import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -33,7 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * addressed by the channel's UUID v7 {@code channelShepardId} (the Postgres
  * {@code shepard_id} column set during channel creation by TS-SEMANTIC-01).
  *
- * <p>Path: {@code /v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations}
+ * <p>Path: {@code /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations}
  *
  * <p>Only channels that have been through the TS-SEMANTIC-01 dual-write path have
  * a backing {@code AnnotatableTimeseries} node. Channels created before that
@@ -41,13 +41,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations")
+@Path("/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations")
 @RequestScoped
 @Tag(name = "Timeseries channel annotations (TS-SEMANTIC-REST)")
 public class TimeseriesChannelAnnotationRest {
 
   @Inject
   AnnotatableTimeseriesService service;
+
+  @Inject
+  TimeseriesContainerService containerService;
 
   @GET
   @Operation(
@@ -61,11 +64,12 @@ public class TimeseriesChannelAnnotationRest {
   )
   @APIResponse(responseCode = "400", description = "channelShepardId is blank.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerId.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId.")
   public Response listAnnotations(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("channelShepardId") String channelShepardId
   ) {
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     List<SemanticAnnotation> annotations =
       service.getAnnotationsByChannelShepardId(containerId, channelShepardId);
     List<SemanticAnnotationIO> result = annotations.stream()
@@ -91,15 +95,16 @@ public class TimeseriesChannelAnnotationRest {
   @APIResponse(responseCode = "400", description = "Bad request — blank channelShepardId or invalid annotation body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerId, or no AnnotatableTimeseries node for that channelShepardId.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId, or no AnnotatableTimeseries node for that channelShepardId.")
   public Response createAnnotation(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("channelShepardId") String channelShepardId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
     ) @Valid SemanticAnnotationIO annotationIO
   ) {
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     SemanticAnnotation created =
       service.createAnnotationForChannel(containerId, channelShepardId, annotationIO);
     return Response.status(Response.Status.CREATED)
@@ -118,12 +123,13 @@ public class TimeseriesChannelAnnotationRest {
   @APIResponse(responseCode = "400", description = "channelShepardId is blank.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerId, or annotation not found.")
+  @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that containerAppId, or annotation not found.")
   public Response deleteAnnotation(
-    @PathParam("containerId") @NotNull @PositiveOrZero Long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @PathParam("channelShepardId") String channelShepardId,
-    @PathParam("annotationId") @NotNull @PositiveOrZero Long annotationId
+    @PathParam("annotationId") @NotNull Long annotationId
   ) {
+    long containerId = containerService.getContainerByAppId(containerAppId).getId();
     service.deleteAnnotationForChannel(containerId, channelShepardId, annotationId);
     return Response.noContent().build();
   }

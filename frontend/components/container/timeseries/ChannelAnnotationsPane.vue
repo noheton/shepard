@@ -11,7 +11,7 @@
 // TimeseriesMeasurementsTable, which still uses the legacy numeric-id-keyed
 // AnnotatedTimeseries (upstream `/shepard/api/...`). This pane uses the
 // shepardId-keyed v2 endpoint
-// `/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations`
+// `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`
 // (TimeseriesChannelAnnotationRest) which is the post-TS-CORE-SCHEMA-01 contract.
 //
 // Channels without a backing AnnotatableTimeseries node (pre-TS-SEMANTIC-01
@@ -25,7 +25,6 @@ import { useFetchV2Channels } from "~/composables/container/useFetchV2Channels";
 import { AnnotatedChannel } from "~/composables/annotated";
 
 const props = defineProps<{
-  containerId: number;
   containerAppId: string;
   /** Container measurements (same shape as TimeseriesContainerAccessor.measurements). */
   measurements: Array<{
@@ -120,7 +119,7 @@ const unresolvableCount = computed(
           <template #subtitle>
             <div class="d-flex align-start ga-2 mt-1 flex-wrap">
               <SemanticAnnotationList
-                :annotated="new AnnotatedChannel(containerId, row.shepardId)"
+                :annotated="new AnnotatedChannel(containerAppId, row.shepardId)"
                 :can-delete="isAllowedToEditData"
               />
             </div>
@@ -128,7 +127,7 @@ const unresolvableCount = computed(
           <template #append>
             <AddAnnotationButton
               v-if="isAllowedToEditData"
-              :annotated="new AnnotatedChannel(containerId, row.shepardId)"
+              :annotated="new AnnotatedChannel(containerAppId, row.shepardId)"
               button-icon="mdi-plus-circle"
               button-text="ADD"
             />

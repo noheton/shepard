@@ -24,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 class TimeseriesContainerTemporalAnnotationRestTest {
 
   static final long CONTAINER_ID = 42L;
+  static final String CONTAINER_APP_ID = "01928eaa-0000-7000-8000-000000000042";
   static final String ANN_APP_ID = "ann-appid-1";
 
   @Mock
@@ -32,8 +33,10 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Mock
   TimeseriesContainerService containerService;
 
-  TimeseriesContainerTemporalAnnotationRest resource;
+  @Mock
   TimeseriesContainer container;
+
+  TimeseriesContainerTemporalAnnotationRest resource;
   TimeseriesAnnotation annotation;
 
   @BeforeEach
@@ -43,14 +46,14 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     resource.annotationDAO = annotationDAO;
     resource.containerService = containerService;
 
-    container = new TimeseriesContainer();
     annotation = new TimeseriesAnnotation(1L);
     annotation.setAppId(ANN_APP_ID);
     annotation.setStartNs(1_000_000_000L);
     annotation.setEndNs(2_000_000_000L);
     annotation.setLabel("anomaly");
 
-    when(containerService.getContainer(CONTAINER_ID)).thenReturn(container);
+    when(container.getId()).thenReturn(CONTAINER_ID);
+    when(containerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(container);
   }
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -58,7 +61,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Test
   void list_returnsEmptyArrayWhenNoAnnotations() {
     when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of());
-    Response r = resource.list(CONTAINER_ID);
+    Response r = resource.list(CONTAINER_APP_ID);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat((List<?>) r.getEntity()).isEmpty();
   }
@@ -66,7 +69,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Test
   void list_returnsAnnotationsAsMappedIOs() {
     when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of(annotation));
-    Response r = resource.list(CONTAINER_ID);
+    Response r = resource.list(CONTAINER_APP_ID);
     assertThat(r.getStatus()).isEqualTo(200);
     List<?> rows = (List<?>) r.getEntity();
     assertThat(rows).hasSize(1);
@@ -79,7 +82,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   void create_returns400WhenStartNsNull() {
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
     body.setLabel("event");
-    Response r = resource.create(CONTAINER_ID, body);
+    Response r = resource.create(CONTAINER_APP_ID, body);
     assertThat(r.getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
@@ -89,7 +92,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
     body.setStartNs(1_000_000_000L);
     body.setLabel("  ");
-    Response r = resource.create(CONTAINER_ID, body);
+    Response r = resource.create(CONTAINER_APP_ID, body);
     assertThat(r.getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
@@ -100,7 +103,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     body.setStartNs(1_000_000_000L);
     body.setEndNs(2_000_000_000L);
     body.setLabel("spike");
-    Response r = resource.create(CONTAINER_ID, body);
+    Response r = resource.create(CONTAINER_APP_ID, body);
     assertThat(r.getStatus()).isEqualTo(201);
     verify(annotationDAO).createOrUpdate(any());
     verify(annotationDAO).linkToContainer(eq(CONTAINER_ID), anyString());
@@ -114,7 +117,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
     body.setStartNs(1_000_000_000L);
     body.setLabel("  spike  ");
-    resource.create(CONTAINER_ID, body);
+    resource.create(CONTAINER_APP_ID, body);
     // label is stripped before storing; verify the stored entity had stripped label
     // (captured via createOrUpdate argument)
   }
@@ -124,14 +127,14 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Test
   void read_returns404WhenAnnotationNotFound() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(null);
-    Response r = resource.read(CONTAINER_ID, ANN_APP_ID);
+    Response r = resource.read(CONTAINER_APP_ID, ANN_APP_ID);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
   @Test
   void read_returnsAnnotationWhenFound() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(annotation);
-    Response r = resource.read(CONTAINER_ID, ANN_APP_ID);
+    Response r = resource.read(CONTAINER_APP_ID, ANN_APP_ID);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((TimeseriesAnnotationIO) r.getEntity()).getAppId()).isEqualTo(ANN_APP_ID);
   }
@@ -141,7 +144,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Test
   void update_returns404WhenAnnotationNotFound() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(null);
-    Response r = resource.update(CONTAINER_ID, ANN_APP_ID, new TimeseriesAnnotationIO());
+    Response r = resource.update(CONTAINER_APP_ID, ANN_APP_ID, new TimeseriesAnnotationIO());
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
@@ -150,7 +153,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(annotation);
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
     body.setLabel("  ");
-    Response r = resource.update(CONTAINER_ID, ANN_APP_ID, body);
+    Response r = resource.update(CONTAINER_APP_ID, ANN_APP_ID, body);
     assertThat(r.getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
@@ -160,7 +163,7 @@ class TimeseriesContainerTemporalAnnotationRestTest {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(annotation);
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
     body.setLabel("relabelled");
-    Response r = resource.update(CONTAINER_ID, ANN_APP_ID, body);
+    Response r = resource.update(CONTAINER_APP_ID, ANN_APP_ID, body);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((TimeseriesAnnotationIO) r.getEntity()).getLabel()).isEqualTo("relabelled");
     // startNs should be unchanged
@@ -172,14 +175,14 @@ class TimeseriesContainerTemporalAnnotationRestTest {
   @Test
   void delete_returns404WhenAnnotationNotFound() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(null);
-    Response r = resource.delete(CONTAINER_ID, ANN_APP_ID);
+    Response r = resource.delete(CONTAINER_APP_ID, ANN_APP_ID);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
   @Test
   void delete_returns204AndUnlinks() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(annotation);
-    Response r = resource.delete(CONTAINER_ID, ANN_APP_ID);
+    Response r = resource.delete(CONTAINER_APP_ID, ANN_APP_ID);
     assertThat(r.getStatus()).isEqualTo(204);
     verify(annotationDAO).unlinkAndDeleteFromContainer(eq(CONTAINER_ID), eq(annotation));
   }

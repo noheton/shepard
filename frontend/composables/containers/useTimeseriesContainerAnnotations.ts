@@ -2,10 +2,10 @@
  * TS-ANNOT-B — container-scoped temporal annotations.
  *
  * Wraps the raw-fetch CRUD surface at:
- *   GET    /v2/timeseries-containers/{containerId}/temporal-annotations
- *   POST   /v2/timeseries-containers/{containerId}/temporal-annotations
- *   PATCH  /v2/timeseries-containers/{containerId}/temporal-annotations/{appId}
- *   DELETE /v2/timeseries-containers/{containerId}/temporal-annotations/{appId}
+ *   GET    /v2/timeseries-containers/{containerAppId}/temporal-annotations
+ *   POST   /v2/timeseries-containers/{containerAppId}/temporal-annotations
+ *   PATCH  /v2/timeseries-containers/{containerAppId}/temporal-annotations/{appId}
+ *   DELETE /v2/timeseries-containers/{containerAppId}/temporal-annotations/{appId}
  *
  * The OpenAPI generator hasn't been re-run since this endpoint shipped, so we
  * use raw fetch — matching the pattern in useTimeseriesReferenceAnnotations.ts.
@@ -55,7 +55,7 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-export function useTimeseriesContainerAnnotations(containerId: Ref<number | undefined>) {
+export function useTimeseriesContainerAnnotations(containerId: Ref<string | null>) {
   const annotations = ref<ContainerAnnotationDto[]>([]);
   const loading = ref(false);
   const saving = ref(false);

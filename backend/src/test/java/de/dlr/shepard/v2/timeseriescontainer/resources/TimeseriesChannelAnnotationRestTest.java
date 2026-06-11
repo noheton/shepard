@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
@@ -30,10 +32,17 @@ import org.mockito.MockitoAnnotations;
 class TimeseriesChannelAnnotationRestTest {
 
   static final long CONTAINER_ID = 42L;
+  static final String CONTAINER_APP_ID = "01928eaa-0000-7000-8000-000000000042";
   static final String CHANNEL_SHEPARD_ID = "0190abcd-1234-7abc-8def-000000000001";
 
   @Mock
   AnnotatableTimeseriesService service;
+
+  @Mock
+  TimeseriesContainerService containerService;
+
+  @Mock
+  TimeseriesContainer mockContainer;
 
   TimeseriesChannelAnnotationRest resource;
 
@@ -42,6 +51,10 @@ class TimeseriesChannelAnnotationRestTest {
     MockitoAnnotations.openMocks(this);
     resource = new TimeseriesChannelAnnotationRest();
     resource.service = service;
+    resource.containerService = containerService;
+
+    when(mockContainer.getId()).thenReturn(CONTAINER_ID);
+    when(containerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(mockContainer);
   }
 
   // ── list ────────────────────────────────────────────────────────────────
@@ -51,7 +64,7 @@ class TimeseriesChannelAnnotationRestTest {
     when(service.getAnnotationsByChannelShepardId(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
       .thenReturn(Collections.emptyList());
 
-    var r = resource.listAnnotations(CONTAINER_ID, CHANNEL_SHEPARD_ID);
+    var r = resource.listAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID);
 
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -61,14 +74,14 @@ class TimeseriesChannelAnnotationRestTest {
 
   @Test
   void listAnnotations_propagatesNotFoundException_whenContainerMissing() {
-    when(service.getAnnotationsByChannelShepardId(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
-      .thenThrow(new NotFoundException("No container with id " + CONTAINER_ID));
+    when(containerService.getContainerByAppId(CONTAINER_APP_ID))
+      .thenThrow(new NotFoundException("No container with appId " + CONTAINER_APP_ID));
 
     // NotFoundException from the service propagates as 404 via JAX-RS container mapping.
     // In a pure unit test there is no JAX-RS container, so we verify the throw itself.
     org.junit.jupiter.api.Assertions.assertThrows(
       NotFoundException.class,
-      () -> resource.listAnnotations(CONTAINER_ID, CHANNEL_SHEPARD_ID)
+      () -> resource.listAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID)
     );
   }
 
@@ -78,7 +91,7 @@ class TimeseriesChannelAnnotationRestTest {
     when(service.getAnnotationsByChannelShepardId(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
       .thenReturn(List.of(ann));
 
-    var r = resource.listAnnotations(CONTAINER_ID, CHANNEL_SHEPARD_ID);
+    var r = resource.listAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID);
 
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -99,7 +112,7 @@ class TimeseriesChannelAnnotationRestTest {
     var body = new SemanticAnnotationIO();
     body.setPropertyIRI("http://p.org/pred");
     body.setValueIRI("http://v.org/val");
-    var r = resource.createAnnotation(CONTAINER_ID, CHANNEL_SHEPARD_ID, body);
+    var r = resource.createAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, body);
 
     assertThat(r.getStatus()).isEqualTo(201);
     var result = (SemanticAnnotationIO) r.getEntity();
@@ -118,7 +131,7 @@ class TimeseriesChannelAnnotationRestTest {
     // The BadRequestException thrown by the service propagates to the caller
     // (it is a JAX-RS exception and would be mapped by the container).
     try {
-      resource.createAnnotation(CONTAINER_ID, "", body);
+      resource.createAnnotation(CONTAINER_APP_ID, "", body);
     } catch (BadRequestException e) {
       assertThat(e.getMessage()).contains("channelShepardId");
     }
@@ -128,16 +141,16 @@ class TimeseriesChannelAnnotationRestTest {
 
   @Test
   void deleteAnnotation_returns204() {
-    var r = resource.deleteAnnotation(CONTAINER_ID, CHANNEL_SHEPARD_ID, 55L);
+    var r = resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 55L);
 
     assertThat(r.getStatus()).isEqualTo(204);
     verify(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(55L));
   }
 
   @Test
-  void deleteAnnotation_doesNotCallService_whenIdIsZero() {
-    // annotationId = 0 is still valid (PositiveOrZero); service decides if it exists
-    resource.deleteAnnotation(CONTAINER_ID, CHANNEL_SHEPARD_ID, 0L);
+  void deleteAnnotation_callsServiceWithIdZero() {
+    // annotationId = 0 is valid; service decides if it exists
+    resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0L);
     verify(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(0L));
   }
 

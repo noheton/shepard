@@ -11,7 +11,7 @@ import {
 } from "~/composables/containers/useTimeseriesContainerAnnotations";
 
 const props = defineProps<{
-  containerId: number;
+  containerAppId: string | null;
   /** Pre-filled from brush selection (create mode). */
   initialStartNs?: number;
   initialEndNs?: number | null;
@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 const showDialog = defineModel<boolean>("showDialog", { default: false });
 
-const containerIdRef = computed(() => props.containerId);
+const containerIdRef = computed<string | null>(() => props.containerAppId ?? null);
 const { createAnnotation, updateAnnotation, saving } =
   useTimeseriesContainerAnnotations(containerIdRef);
 

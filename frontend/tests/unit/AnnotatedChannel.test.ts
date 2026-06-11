@@ -40,18 +40,18 @@ function mockFetchOnce(response: Partial<Response> & { ok: boolean; status?: num
 describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
   it("derives the v2 base URL from backendApiUrl by stripping /shepard/api", async () => {
     const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(42, "01928eaa-1234-7000-9000-aaaaaaaaaaaa");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000042", "01928eaa-1234-7000-9000-aaaaaaaaaaaa");
     await a.fetchAnnotations();
     const url = String(fetchMock.mock.calls[0]![0]);
     expect(url).toBe(
-      "https://api.example.com/v2/timeseries-containers/42/channels/01928eaa-1234-7000-9000-aaaaaaaaaaaa/annotations",
+      "https://api.example.com/v2/timeseries-containers/01928eaa-0000-7000-8000-000000000042/channels/01928eaa-1234-7000-9000-aaaaaaaaaaaa/annotations",
     );
   });
 
   it("URL-encodes the channelShepardId path segment", async () => {
     const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
     // unusual id with slash/colon to prove encoding
-    const a = new AnnotatedChannel(7, "foo/bar:baz");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000007", "foo/bar:baz");
     await a.fetchAnnotations();
     const url = String(fetchMock.mock.calls[0]![0]);
     expect(url).toContain("/channels/foo%2Fbar%3Abaz/annotations");
@@ -59,7 +59,7 @@ describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
 
   it("attaches the Bearer token from useAuth", async () => {
     const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(1, "sid");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000001", "sid");
     await a.fetchAnnotations();
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     expect((init.headers as Record<string, string>).Authorization).toBe(
@@ -69,21 +69,21 @@ describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
 
   it("swallows a GET 404 into an empty list (pre-TS-SEMANTIC-01 channels)", async () => {
     mockFetchOnce({ ok: false, status: 404 });
-    const a = new AnnotatedChannel(1, "sid-missing");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000001", "sid-missing");
     const out = await a.fetchAnnotations();
     expect(out).toEqual([]);
   });
 
   it("re-throws on non-404 errors", async () => {
     mockFetchOnce({ ok: false, status: 500 });
-    const a = new AnnotatedChannel(1, "sid");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000001", "sid");
     await expect(a.fetchAnnotations()).rejects.toThrow(/HTTP 500/);
   });
 
   it("POST add — sends JSON body and returns the created annotation", async () => {
     const created = { id: 999, propertyIRI: "p", valueIRI: "v" };
     const fetchMock = mockFetchOnce({ ok: true, status: 201, jsonBody: created });
-    const a = new AnnotatedChannel(3, "sid-3");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000003", "sid-3");
     const out = await a.addAnnotation({
       propertyIRI: "p",
       valueIRI: "v",
@@ -101,7 +101,7 @@ describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
 
   it("DELETE — targets {annotationId} subpath", async () => {
     const fetchMock = mockFetchOnce({ ok: true, status: 204 });
-    const a = new AnnotatedChannel(3, "sid-3");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000003", "sid-3");
     await a.deleteAnnotation(777);
     const url = String(fetchMock.mock.calls[0]![0]);
     expect(url).toMatch(/\/channels\/sid-3\/annotations\/777$/);
@@ -118,7 +118,7 @@ describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
         },
       });
     const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(9, "sid-9");
+    const a = new AnnotatedChannel("01928eaa-0000-7000-8000-000000000009", "sid-9");
     await a.fetchAnnotations();
     const url = String(fetchMock.mock.calls[0]![0]);
     expect(url).toMatch(/^https:\/\/v2\.example\.com\/v2\//);
