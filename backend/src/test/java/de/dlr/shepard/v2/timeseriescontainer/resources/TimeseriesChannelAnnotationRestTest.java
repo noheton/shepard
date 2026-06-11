@@ -2,10 +2,8 @@ package de.dlr.shepard.v2.timeseriescontainer.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -139,19 +137,25 @@ class TimeseriesChannelAnnotationRestTest {
 
   // ── delete ──────────────────────────────────────────────────────────────
 
+  static final String ANNOTATION_APP_ID = "01928fff-0000-7000-8000-000000000037";
+
   @Test
   void deleteAnnotation_returns204() {
-    var r = resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 55L);
+    var r = resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, ANNOTATION_APP_ID);
 
     assertThat(r.getStatus()).isEqualTo(204);
-    verify(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(55L));
+    verify(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(ANNOTATION_APP_ID));
   }
 
   @Test
-  void deleteAnnotation_callsServiceWithIdZero() {
-    // annotationId = 0 is valid; service decides if it exists
-    resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0L);
-    verify(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(0L));
+  void deleteAnnotation_propagatesNotFoundException_whenAnnotationMissing() {
+    org.mockito.Mockito.doThrow(new NotFoundException("No annotation with appId " + ANNOTATION_APP_ID))
+      .when(service).deleteAnnotationForChannel(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(ANNOTATION_APP_ID));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+      NotFoundException.class,
+      () -> resource.deleteAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, ANNOTATION_APP_ID)
+    );
   }
 
   // ── helpers ─────────────────────────────────────────────────────────────
