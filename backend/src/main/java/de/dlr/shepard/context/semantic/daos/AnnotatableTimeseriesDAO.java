@@ -46,6 +46,15 @@ public class AnnotatableTimeseriesDAO extends GenericDAO<AnnotatableTimeseries> 
     session.delete(annotation);
   }
 
+  public void deleteAnnotationByAppId(String annotationAppId) {
+    var filter = new Filter("appId", ComparisonOperator.EQUALS, annotationAppId);
+    var annotation = session.loadAll(SemanticAnnotation.class, filter, 1)
+      .stream()
+      .findFirst()
+      .orElseThrow(() -> new NotFoundException("No semantic annotation found with appId " + annotationAppId));
+    session.delete(annotation);
+  }
+
   public SemanticRepository getSemanticRepositoryById(long semanticRepositoryId) {
     var entity = session.load(SemanticRepository.class, semanticRepositoryId);
     if (entity != null) return entity;
