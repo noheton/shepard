@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.timeseries.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
@@ -61,6 +62,11 @@ public class AnomalyDetectionRest {
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   private TimeseriesReference resolveRef(String refAppId) {
     return timeseriesReferenceDAO.findByAppId(refAppId);
   }
@@ -108,14 +114,9 @@ public class AnomalyDetectionRest {
       if (all.size() == 1) {
         return all.get(0).toTimeseries();
       }
-      out[0] = Response
-        .status(Response.Status.BAD_REQUEST)
-        .entity(
-          "The TimeseriesReference contains " +
-          all.size() +
-          " series; provide measurement/device/location/symbolicName/field to select one."
-        )
-        .build();
+      out[0] = problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+        "The TimeseriesReference contains " + all.size() +
+          " series; provide measurement/device/location/symbolicName/field to select one.");
       return null;
     }
 
@@ -137,7 +138,7 @@ public class AnomalyDetectionRest {
     String msg = matched.isEmpty()
       ? "No series in the reference matches the supplied filter fields."
       : "Filter fields are ambiguous — " + matched.size() + " series matched. Provide more specific filters.";
-    out[0] = Response.status(Response.Status.BAD_REQUEST).entity(msg).build();
+    out[0] = problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST, msg);
     return null;
   }
 
@@ -190,17 +191,13 @@ public class AnomalyDetectionRest {
     // Validate numeric parameters early (before auth lookup)
     int rawWindow = body.effectiveWindow();
     if (rawWindow < 3) {
-      return Response
-        .status(Response.Status.BAD_REQUEST)
-        .entity("window must be ≥ 3, got " + rawWindow)
-        .build();
+      return problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+        "window must be ≥ 3, got " + rawWindow);
     }
     double k = body.effectiveK();
     if (k <= 0) {
-      return Response
-        .status(Response.Status.BAD_REQUEST)
-        .entity("k must be > 0, got " + k)
-        .build();
+      return problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+        "k must be > 0, got " + k);
     }
 
     // Auth: Read always; Write additionally if createAnnotations
@@ -214,10 +211,8 @@ public class AnomalyDetectionRest {
 
     // Check the reference has a non-deleted container
     if (ref.getTimeseriesContainer() == null || ref.getTimeseriesContainer().isDeleted()) {
-      return Response
-        .status(Response.Status.BAD_REQUEST)
-        .entity("The TimeseriesReference's container is missing or deleted.")
-        .build();
+      return problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+        "The TimeseriesReference's container is missing or deleted.");
     }
 
     // Select series
@@ -230,7 +225,7 @@ public class AnomalyDetectionRest {
     try {
       result = anomalyDetectionService.detect(ref, series, body);
     } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+      return problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST, e.getMessage());
     }
 
     return Response.ok(result).build();
