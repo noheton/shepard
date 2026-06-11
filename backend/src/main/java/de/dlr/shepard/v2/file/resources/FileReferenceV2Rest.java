@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.file.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.HttpRangeUtil;
@@ -87,6 +88,10 @@ public class FileReferenceV2Rest {
   @Inject
   ObjectMapper objectMapper;
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-references.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-references.not-found";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-references.internal-error";
+
   // ─── upload ───────────────────────────────────────────────────────────────
 
   @POST
@@ -130,12 +135,10 @@ public class FileReferenceV2Rest {
     String caller = callerOrNull(securityContext);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (parentDataObjectAppId == null || parentDataObjectAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("parentDataObjectAppId query parameter is required")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "parentDataObjectAppId query parameter is required");
     }
     if (upload == null || upload.uploadedFile() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("file part is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
     }
 
     // Permission check against the parent DataObject — same shape as
@@ -167,9 +170,9 @@ public class FileReferenceV2Rest {
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (IOException ioe) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ioe.getMessage()).build();
+      return problem(PROBLEM_TYPE_INTERNAL, "Upload failed", Response.Status.INTERNAL_SERVER_ERROR, ioe.getMessage());
     }
   }
 
@@ -235,7 +238,7 @@ public class FileReferenceV2Rest {
     String caller = callerOrNull(securityContext);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("dataObjectAppId is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing path parameter", Response.Status.BAD_REQUEST, "dataObjectAppId is required");
     }
 
     // Resolve parent DO existence — 404 when missing.
@@ -423,7 +426,7 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     FileReference ref = singletonService.getByAppId(appId);
     if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -435,7 +438,7 @@ public class FileReferenceV2Rest {
       FileReference updated = singletonService.patchSingleton(appId, patch);
       return Response.ok(new FileReferenceV2IO(updated)).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -588,5 +591,10 @@ public class FileReferenceV2Rest {
       }
     }
     return out;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

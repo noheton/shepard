@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.notifications.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
 import de.dlr.shepard.v2.notifications.io.TestNotificationIO;
@@ -47,6 +48,10 @@ public class NotificationAdminRest {
 
   @Inject
   NotificationTransportRegistry transportRegistry;
+
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/notifications.not-found";
+  private static final String PROBLEM_TYPE_SERVICE_UNAVAILABLE = "/problems/notifications.service-unavailable";
+  private static final String PROBLEM_TYPE_BAD_GATEWAY = "/problems/notifications.bad-gateway";
 
   @POST
   @Path("/test")
@@ -127,8 +132,7 @@ public class NotificationAdminRest {
       Log.warnf("NTF1: no registered sender for transport appId=%s kind=%s",
           transport.getAppId(), transport.getKind());
       recordTestOutcome(transport, "FAIL", "no registered sender for kind=" + transport.getKind());
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-          .entity("no registered sender for kind=" + transport.getKind()).build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "No sender registered", Response.Status.SERVICE_UNAVAILABLE, "no registered sender for kind=" + transport.getKind());
     }
 
     NotificationMessage msg = new NotificationMessage(
@@ -142,16 +146,19 @@ public class NotificationAdminRest {
     } catch (RuntimeException e) {
       Log.warnf(e, "NTF1: sender for kind=%s threw — treating as failure", transport.getKind());
       recordTestOutcome(transport, "FAIL", e.getMessage());
-      return Response.status(Response.Status.BAD_GATEWAY)
-          .entity("transport send threw: " + e.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send threw: " + e.getMessage());
     }
     if (ok) {
       recordTestOutcome(transport, "OK", "delivered");
       return Response.ok().entity("delivered via " + transport.getKind()).build();
     }
     recordTestOutcome(transport, "FAIL", "sender returned false (see backend logs)");
-    return Response.status(Response.Status.BAD_GATEWAY)
-        .entity("transport send returned false").build();
+    return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send returned false");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /** Persist last-test fields on the transport row. Best-effort — never throws. */
