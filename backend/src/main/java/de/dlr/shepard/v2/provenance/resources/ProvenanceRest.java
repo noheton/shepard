@@ -101,7 +101,7 @@ public class ProvenanceRest {
     @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
     @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
     @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
-    @Parameter(description = "Max rows. Defaults to 100; capped at 1000.") @QueryParam("limit") Integer limit,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -118,7 +118,7 @@ public class ProvenanceRest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
       .list(agent, targetKind, targetAppId, since, until, eff)
@@ -156,7 +156,7 @@ public class ProvenanceRest {
     @QueryParam("targetAppId") String targetAppId,
     @QueryParam("since") Long since,
     @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -169,7 +169,7 @@ public class ProvenanceRest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, eff);
     return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
@@ -195,7 +195,7 @@ public class ProvenanceRest {
     @QueryParam("targetAppId") String targetAppId,
     @QueryParam("since") Long since,
     @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @QueryParam("pageSize") Integer pageSize,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
@@ -213,7 +213,7 @@ public class ProvenanceRest {
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, eff);
     return Response.ok(provJsonLdRenderer.render(rows, profile))
       .type(jsonLdMediaTypeFor(profile))
@@ -238,7 +238,7 @@ public class ProvenanceRest {
     @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
     @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
     @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
-    @Parameter(description = "Max rows. Defaults to 100; capped at 1000.") @QueryParam("limit") Integer limit,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -248,7 +248,7 @@ public class ProvenanceRest {
     // Casual users only see their own rows against this entity; admins see all.
     String agentFilter = isAdmin ? null : caller;
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
       .list(agentFilter, null, entityAppId, since, until, eff)
@@ -273,7 +273,7 @@ public class ProvenanceRest {
     @PathParam("appId") String entityAppId,
     @QueryParam("since") Long since,
     @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -282,7 +282,7 @@ public class ProvenanceRest {
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     String agentFilter = isAdmin ? null : caller;
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
     return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
@@ -303,7 +303,7 @@ public class ProvenanceRest {
     @PathParam("appId") String entityAppId,
     @QueryParam("since") Long since,
     @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @QueryParam("pageSize") Integer pageSize,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
@@ -317,7 +317,7 @@ public class ProvenanceRest {
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
 
-    int eff = limit == null ? 100 : limit;
+    int eff = pageSize == null ? 100 : pageSize;
     List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
     return Response.ok(provJsonLdRenderer.render(rows, profile))
       .type(jsonLdMediaTypeFor(profile))

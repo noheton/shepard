@@ -22,7 +22,7 @@ export function useFetchAdminActivities() {
         agent: filterAgent.value || undefined,
         targetKind: filterTargetKind.value || undefined,
         targetAppId: filterTargetAppId.value || undefined,
-        limit: limit.value,
+        pageSize: limit.value,
       });
       activities.value = rows ?? [];
       hasMore.value = rows.length >= limit.value;

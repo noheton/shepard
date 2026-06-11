@@ -199,7 +199,7 @@ export function useShapePalette() {
     }
     searching.value = true;
     try {
-      const url = `${v2Base()}/v2/semantic/terms/search?q=${encodeURIComponent(query)}&limit=25`;
+      const url = `${v2Base()}/v2/semantic/terms/search?q=${encodeURIComponent(query)}&pageSize=25`;
       const res = await fetch(url, { headers: authHeaders() });
       if (!res.ok) {
         searchResults.value = [];

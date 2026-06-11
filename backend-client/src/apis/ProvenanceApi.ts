@@ -68,7 +68,7 @@ export interface ListActivitiesParams {
   targetAppId?: string;
   since?: number;
   until?: number;
-  limit?: number;
+  pageSize?: number;
 }
 
 export class ProvenanceApi extends runtime.BaseAPI {
@@ -116,7 +116,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
     if (params.targetAppId !== undefined) query['targetAppId'] = params.targetAppId;
     if (params.since !== undefined) query['since'] = params.since;
     if (params.until !== undefined) query['until'] = params.until;
-    if (params.limit !== undefined) query['limit'] = params.limit;
+    if (params.pageSize !== undefined) query['pageSize'] = params.pageSize;
 
     const response = await this.request({
       path: `/v2/provenance/activities`,

@@ -72,7 +72,7 @@ onMounted(async () => {
   try {
     activities.value = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.dataObject.appId,
-      limit: 50,
+      pageSize: 50,
     });
   } catch {
     activities.value = [];

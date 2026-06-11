@@ -189,7 +189,7 @@ async function load() {
   try {
     const rows = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.targetAppId,
-      limit: limit.value,
+      pageSize: limit.value,
     });
     activities.value = rows ?? [];
     hasMore.value = rows.length >= limit.value;
