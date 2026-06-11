@@ -13,7 +13,7 @@
 import { useContainerReferencedByCollections } from "~/composables/containers/useContainerReferencedByCollections";
 
 const props = defineProps<{
-  containerId: number;
+  containerId: string | number;
   containerType: string;
 }>();
 

@@ -36,7 +36,7 @@ function v2BaseUrl(): string {
 
 export async function safeDeleteContainer(
   kind: SafeDeleteKind,
-  containerId: number,
+  containerId: string | number,
   options: { force?: boolean } = {},
 ): Promise<
   | { ok: true }

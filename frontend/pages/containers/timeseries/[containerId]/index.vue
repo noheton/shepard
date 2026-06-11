@@ -11,10 +11,17 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
-const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useTimeseriesContainerLinkedDataObjects(containerId);
 
-const { stats: containerStats } = useFetchTimeseriesContainerStats(containerId);
+// APISIMP-TSCONT-APPID-KEY: resolve appId from the loaded container.
+// The v1-generated TimeseriesContainer type omits appId but the wire carries it.
+const containerAppId = computed<string | null>(
+  () => (containerAccessor.container.value as unknown as { appId?: string | null })?.appId ?? null,
+);
+
+const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
+  useTimeseriesContainerLinkedDataObjects(containerAppId);
+
+const { stats: containerStats } = useFetchTimeseriesContainerStats(containerAppId);
 
 function fmtBytes(b: number): string {
   if (b === 0) return "0 B";
@@ -199,6 +206,7 @@ useHead({
           </template>
           <TimeseriesAllChannelsChart
             :container-id="containerId"
+            :container-app-id="containerAppId"
             :measurements="containerAccessor.measurements.value"
             :selected-channel-keys="effectiveChannelKeys"
           />

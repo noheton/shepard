@@ -31,11 +31,13 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-function linkedDataObjectsUrl(containerId: number, type: string): string | null {
+function linkedDataObjectsUrl(containerId: string | number, type: string): string | null {
   switch (type) {
     case "FILE":
       return `${v2BaseUrl()}/v2/file-containers/${containerId}/linked-data-objects`;
     case "TIMESERIES":
+      // v2 endpoint is keyed by containerAppId (UUID v7 string); numeric ids
+      // will 404 — callers must pass the appId for timeseries containers.
       return `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/linked-data-objects`;
     case "STRUCTUREDDATA":
       return `${v2BaseUrl()}/v2/structured-data-containers/${containerId}/linked-data-objects`;
@@ -45,7 +47,7 @@ function linkedDataObjectsUrl(containerId: number, type: string): string | null 
 }
 
 export function useContainerReferencedByCollections(
-  containerId: number,
+  containerId: string | number,
   containerType: string,
 ) {
   /**

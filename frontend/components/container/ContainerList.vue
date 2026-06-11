@@ -398,7 +398,7 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
                partition can read it without a second fetch. -->
           <template #[`item.referencedBy`]>
             <ContainerReferencedByCell
-              :container-id="rowProps.item.id"
+              :container-id="(rowProps.item as unknown as { appId?: string | null }).appId ?? rowProps.item.id"
               :container-type="rowProps.item.type"
               @refs-resolved="onRefsResolved"
             />

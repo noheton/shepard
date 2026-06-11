@@ -30,6 +30,8 @@ const props = defineProps<{
    * (legacy behaviour).
    */
   selectedChannelKeys?: string[];
+  /** APISIMP-TSCONT-APPID-KEY: appId for the stats endpoint (UUID v7). */
+  containerAppId?: string | null;
 }>();
 
 function channelKey(ch: TimeseriesEntity): string {
@@ -83,8 +85,9 @@ const looksBoolean = computed(() => {
   );
 });
 
-// TS_STATS1 — ingest rate displayed in live toolbar
-const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(props.containerId);
+// TS_STATS1 — ingest rate displayed in live toolbar; use containerAppId prop when available
+const chartStatsAppId = computed<string | null>(() => props.containerAppId ?? null);
+const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(chartStatsAppId);
 const ingestMBps = computed(() => {
   if (!containerStats.value || containerStats.value.ingestRateBytesPerSec === 0) return null;
   return (containerStats.value.ingestRateBytesPerSec / 1_048_576).toFixed(3);
