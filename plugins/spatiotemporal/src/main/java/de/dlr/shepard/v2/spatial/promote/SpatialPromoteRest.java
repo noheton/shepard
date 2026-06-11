@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.spatial.promote;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.entities.FileReference;
@@ -93,7 +94,15 @@ public class SpatialPromoteRest {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (fileReferenceAppId == null || fileReferenceAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("fileReferenceAppId query parameter is required").build();
+      return Response.status(Response.Status.BAD_REQUEST)
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:validation",
+          "Request validation failed",
+          Response.Status.BAD_REQUEST.getStatusCode(),
+          "fileReferenceAppId query parameter is required",
+          null))
+        .build();
     }
 
     // Permission gate: Write on the parent DataObject of the source FileReference.
@@ -114,7 +123,15 @@ public class SpatialPromoteRest {
       Response.Status status = result.created() ? Response.Status.CREATED : Response.Status.OK;
       return Response.status(status).entity(result.io()).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return Response.status(Response.Status.BAD_REQUEST)
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:validation",
+          "Request validation failed",
+          Response.Status.BAD_REQUEST.getStatusCode(),
+          bre.getMessage(),
+          null))
+        .build();
     } catch (NotFoundException nfe) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }

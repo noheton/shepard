@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.git.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.git.adapters.GitAdapterException;
@@ -150,7 +151,13 @@ public class GitReferenceRest {
       return Response.ok(result).build();
     } catch (GitAdapterException e) {
       return Response.status(e.getStatus())
-        .entity("{\"error\":\"" + e.getMessage().replace("\"", "'") + "\"}")
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:upstream",
+          "Git adapter error",
+          e.getStatus(),
+          e.getMessage(),
+          null))
         .build();
     }
   }

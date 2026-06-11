@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.users.resources;
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.users.io.CreateGitCredentialIO;
 import de.dlr.shepard.v2.users.io.GitCredentialIO;
 import de.dlr.shepard.v2.users.io.PatchGitCredentialIO;
@@ -90,15 +91,15 @@ public class MeCredentialsRest {
     String caller = callerOrNull(securityContext);
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
 
-    if (body == null) return Response.status(Response.Status.BAD_REQUEST).entity("Request body is required").build();
+    if (body == null) return problem(Response.Status.BAD_REQUEST, "Request body is required");
     if (body.getHost() == null || body.getHost().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("host is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "host is required and must be non-blank");
     }
     if (body.getUsername() == null || body.getUsername().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("username is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "username is required and must be non-blank");
     }
     if (body.getPat() == null || body.getPat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("pat is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "pat is required and must be non-blank");
     }
 
     byte[] key = resolveKey();
@@ -213,9 +214,23 @@ public class MeCredentialsRest {
   }
 
   private Response notImplementedNoKey() {
-    return Response
-      .status(Response.Status.NOT_IMPLEMENTED)
-      .entity("PAT storage is disabled: shepard.secrets.encryption-key is not configured")
+    return problem(
+      Response.Status.NOT_IMPLEMENTED,
+      "PAT storage is disabled: shepard.secrets.encryption-key is not configured"
+    );
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case CONFLICT -> "urn:shepard:error:conflict";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:validation";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
       .build();
   }
 }

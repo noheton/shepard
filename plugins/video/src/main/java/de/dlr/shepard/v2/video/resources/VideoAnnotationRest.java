@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.video.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
@@ -87,6 +88,20 @@ public class VideoAnnotationRest {
     return null;
   }
 
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case CONFLICT -> "urn:shepard:error:conflict";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:validation";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
+  }
+
   // ─── endpoints ───────────────────────────────────────────────────────────
 
   @GET
@@ -154,10 +169,10 @@ public class VideoAnnotationRest {
     @Context SecurityContext sc
   ) {
     if (body == null || body.getStartSeconds() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("startSeconds is required").build();
+      return problem(Response.Status.BAD_REQUEST, "startSeconds is required");
     }
     if (body.getLabel() == null || body.getLabel().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("label is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "label is required and must be non-blank");
     }
 
     String caller = callerOrNull(sc);
@@ -254,7 +269,7 @@ public class VideoAnnotationRest {
     if (body.getEndSeconds() != null) a.setEndSeconds(body.getEndSeconds());
     if (body.getLabel() != null) {
       if (body.getLabel().isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("label must be non-blank").build();
+        return problem(Response.Status.BAD_REQUEST, "label must be non-blank");
       }
       a.setLabel(body.getLabel().strip());
     }

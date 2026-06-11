@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.wikiwriter.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteRequestIO;
@@ -119,9 +120,14 @@ public class WikiWriterRest {
     // Guard: LLM provider must be available.
     if (!wikiWriterService.isAvailable()) {
       Log.warnf("WW1: wiki-write requested but LLM TEXT capability is not available");
-      return Response
-        .status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\": \"LLM TEXT capability is not configured. Deploy shepard-plugin-ai and configure the TEXT capability.\"}")
+      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:service-unavailable",
+          "Service Unavailable",
+          Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
+          "LLM TEXT capability is not configured. Deploy shepard-plugin-ai and configure the TEXT capability.",
+          null))
         .build();
     }
 
@@ -132,9 +138,14 @@ public class WikiWriterRest {
       return Response.ok(result).build();
     } catch (de.dlr.shepard.spi.ai.LlmException e) {
       Log.errorf(e, "WW1: LLM call failed for DataObject %s", dataObjectAppId);
-      return Response
-        .status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\": \"LLM call failed: " + e.getMessage() + "\"}")
+      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:service-unavailable",
+          "Service Unavailable",
+          Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
+          "LLM call failed: " + e.getMessage(),
+          null))
         .build();
     }
   }
