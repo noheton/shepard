@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.video.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.HttpRangeUtil;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
@@ -101,7 +102,15 @@ public class VideoStreamReferenceV2Rest {
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
 
     if (upload == null || upload.uploadedFile() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("file part is required").build();
+      return Response.status(Response.Status.BAD_REQUEST)
+        .type("application/problem+json")
+        .entity(new ProblemJson(
+          "urn:shepard:error:validation",
+          "Request validation failed",
+          Response.Status.BAD_REQUEST.getStatusCode(),
+          "file part is required",
+          null))
+        .build();
     }
 
     Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
