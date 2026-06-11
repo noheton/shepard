@@ -17,12 +17,12 @@ import Select from "../Select.vue";
 import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
 import { UserRole } from "./UserRole";
 
-const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor<number | string> }>();
-const shepardObjectAccessor = props.shepardObjectAccessor;
-
 // MemberPermissions moved to ./permissionTypes — re-exported here for backward compat,
 // and re-imported via a local alias so this file's own usages still resolve.
 import type { MemberPermissions } from "./permissionTypes";
+
+const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor<number | string> }>();
+const shepardObjectAccessor = props.shepardObjectAccessor;
 export type { MemberPermissions } from "./permissionTypes";
 
 const showDialog = defineModel<boolean>("showDialog", {

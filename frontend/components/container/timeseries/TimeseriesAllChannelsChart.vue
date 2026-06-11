@@ -459,10 +459,10 @@ function onAnnotationSaved() {
           <div>
             <strong>LTTB</strong> (Largest-Triangle-Three-Buckets) preserves visual
             peaks and troughs at heavy compression — anomaly spikes stay visible.
-            <br /><br />
+            <br ><br >
             <strong>Raw</strong> fetches every recorded sample. Use Raw to verify
             fidelity or for export / analysis after visual inspection.
-            <br /><br />
+            <br ><br >
             <em>Note: export and bulk-fetch paths always use Raw data regardless
             of this toggle.</em>
           </div>

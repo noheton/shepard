@@ -4,8 +4,8 @@ import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { GraphChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
-import type { DataObject } from "@dlr-shepard/backend-client";
 import {
+  type DataObject,
   ProvenanceApi,
   type ActivityIO,
 } from "@dlr-shepard/backend-client";
@@ -13,7 +13,7 @@ import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import { ACTION_COLORS, nodeColor, truncateLabel, baseGraphSeriesConfig } from "~/composables/useLineageGraph";
 
-if (process.client) {
+if (import.meta.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent]);
 }
 

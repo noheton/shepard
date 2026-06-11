@@ -16,7 +16,7 @@ import {
 import type { TimeseriesSeries } from "./types";
 import { formatDualTime } from "~/utils/wallClockTime";
 
-if (process.client) {
+if (import.meta.client) {
   use([
     CanvasRenderer,
     LineChart,
@@ -323,7 +323,7 @@ const chartOption = computed(() => ({
       :update-options="{ notMerge: false, lazyUpdate: true }"
       :style="{ height }"
       autoresize
-      @brushEnd="onBrushEnd"
+      @brush-end="onBrushEnd"
     />
   </ClientOnly>
 </template>
