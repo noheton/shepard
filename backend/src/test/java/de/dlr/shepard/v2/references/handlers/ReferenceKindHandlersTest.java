@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.handlers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,6 +14,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
+import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
+import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
+import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
@@ -53,9 +58,17 @@ class ReferenceKindHandlersTest {
   @Mock
   TimeseriesReferenceDAO timeseriesReferenceDAO;
 
+  @Mock
+  CollectionReferenceService collectionReferenceService;
+
+  @Mock
+  DataObjectReferenceService dataObjectReferenceService;
+
   UriReferenceKindHandler uriHandler;
   FileReferenceKindHandler fileHandler;
   TimeseriesReferenceKindHandler tsHandler;
+  CollectionReferenceKindHandler collectionHandler;
+  DataObjectReferenceKindHandler dataObjectRefHandler;
 
   DataObject parent;
 
@@ -72,6 +85,12 @@ class ReferenceKindHandlersTest {
     tsHandler.timeseriesReferenceDAO = timeseriesReferenceDAO;
     tsHandler.dataObjectDAO = dataObjectDAO;
     tsHandler.objectMapper = new ObjectMapper();
+    collectionHandler = new CollectionReferenceKindHandler();
+    collectionHandler.collectionReferenceService = collectionReferenceService;
+    collectionHandler.dataObjectDAO = dataObjectDAO;
+    dataObjectRefHandler = new DataObjectReferenceKindHandler();
+    dataObjectRefHandler.dataObjectReferenceService = dataObjectReferenceService;
+    dataObjectRefHandler.dataObjectDAO = dataObjectDAO;
 
     var coll = new Collection(1L);
     coll.setShepardId(1L);
@@ -279,5 +298,157 @@ class ReferenceKindHandlersTest {
     var out = tsHandler.listByDataObject(DO_APP_ID, null);
     assertEquals(1, out.size());
     assertEquals("timeseries", out.get(0).getKind());
+  }
+
+  // ─── collection handler ────────────────────────────────────────────────────
+
+  private CollectionReference collRef() {
+    var ref = new CollectionReference(20L);
+    ref.setAppId("coll-ref-1");
+    ref.setName("linked collection");
+    ref.setRelationship("relatedTo");
+    ref.setDataObject(parent);
+    ref.setShepardId(20L);
+    Collection referencedColl = new Collection(99L);
+    referencedColl.setShepardId(99L);
+    referencedColl.setAppId("coll-app-99");
+    ref.setReferencedCollection(referencedColl);
+    return ref;
+  }
+
+  @Test
+  void collection_kindAndOwns() {
+    assertEquals("collection", collectionHandler.kind());
+    assertTrue(collectionHandler.owns(collRef()));
+    assertFalse(collectionHandler.owns(uriRef()));
+  }
+
+  @Test
+  void collection_toIO_flattensPayload() {
+    var io = collectionHandler.toIO(collRef());
+    assertEquals("collection", io.getKind());
+    assertEquals("coll-app-99", io.getPayload().get("referencedCollectionAppId"));
+    assertEquals("relatedTo", io.getPayload().get("relationship"));
+  }
+
+  @Test
+  void collection_toIO_nullReferencedCollection_yieldsNullAppId() {
+    var ref = collRef();
+    ref.setReferencedCollection(null);
+    var io = collectionHandler.toIO(ref);
+    assertNull(io.getPayload().get("referencedCollectionAppId"));
+  }
+
+  @Test
+  void collection_findByAppId_delegates() {
+    when(collectionReferenceService.findByAppId("coll-ref-1")).thenReturn(collRef());
+    var found = collectionHandler.findByAppId("coll-ref-1");
+    assertTrue(found instanceof CollectionReference);
+  }
+
+  @Test
+  void collection_patch_delegates() {
+    when(collectionReferenceService.patchReferenceByAppId(eq("coll-ref-1"), any())).thenReturn(collRef());
+    var io = collectionHandler.patch("coll-ref-1", Map.of("relationship", "seeAlso"));
+    assertEquals("collection", io.getKind());
+  }
+
+  @Test
+  void collection_delete_delegates() {
+    when(collectionReferenceService.findByAppId("coll-ref-1")).thenReturn(collRef());
+    collectionHandler.delete("coll-ref-1");
+    verify(collectionReferenceService).deleteReference(eq(1L), eq(101L), eq(20L));
+  }
+
+  @Test
+  void collection_delete_missing_throwsNotFound() {
+    when(collectionReferenceService.findByAppId("coll-ref-1")).thenReturn(null);
+    assertThrows(NotFoundException.class, () -> collectionHandler.delete("coll-ref-1"));
+  }
+
+  @Test
+  void collection_list_delegates() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(collectionReferenceService.getAllReferencesByDataObjectId(eq(1L), eq(101L), any()))
+      .thenReturn(List.of(collRef()));
+    var out = collectionHandler.listByDataObject(DO_APP_ID, null);
+    assertEquals(1, out.size());
+    assertEquals("collection", out.get(0).getKind());
+  }
+
+  // ─── dataobject handler ────────────────────────────────────────────────────
+
+  private DataObjectReference doRef() {
+    var ref = new DataObjectReference(30L);
+    ref.setAppId("do-ref-1");
+    ref.setName("linked dataobject");
+    ref.setRelationship("uses");
+    ref.setDataObject(parent);
+    ref.setShepardId(30L);
+    DataObject referencedDO = new DataObject(200L);
+    referencedDO.setShepardId(200L);
+    referencedDO.setAppId("do-app-200");
+    ref.setReferencedDataObject(referencedDO);
+    return ref;
+  }
+
+  @Test
+  void dataobject_kindAndOwns() {
+    assertEquals("dataobject", dataObjectRefHandler.kind());
+    assertTrue(dataObjectRefHandler.owns(doRef()));
+    assertFalse(dataObjectRefHandler.owns(uriRef()));
+  }
+
+  @Test
+  void dataobject_toIO_flattensPayload() {
+    var io = dataObjectRefHandler.toIO(doRef());
+    assertEquals("dataobject", io.getKind());
+    assertEquals("do-app-200", io.getPayload().get("referencedDataObjectAppId"));
+    assertEquals("uses", io.getPayload().get("relationship"));
+  }
+
+  @Test
+  void dataobject_toIO_nullReferencedDataObject_yieldsNullAppId() {
+    var ref = doRef();
+    ref.setReferencedDataObject(null);
+    var io = dataObjectRefHandler.toIO(ref);
+    assertNull(io.getPayload().get("referencedDataObjectAppId"));
+  }
+
+  @Test
+  void dataobject_findByAppId_delegates() {
+    when(dataObjectReferenceService.findByAppId("do-ref-1")).thenReturn(doRef());
+    var found = dataObjectRefHandler.findByAppId("do-ref-1");
+    assertTrue(found instanceof DataObjectReference);
+  }
+
+  @Test
+  void dataobject_patch_delegates() {
+    when(dataObjectReferenceService.patchReferenceByAppId(eq("do-ref-1"), any())).thenReturn(doRef());
+    var io = dataObjectRefHandler.patch("do-ref-1", Map.of("relationship", "linkedTo"));
+    assertEquals("dataobject", io.getKind());
+  }
+
+  @Test
+  void dataobject_delete_delegates() {
+    when(dataObjectReferenceService.findByAppId("do-ref-1")).thenReturn(doRef());
+    dataObjectRefHandler.delete("do-ref-1");
+    verify(dataObjectReferenceService).deleteReference(eq(1L), eq(101L), eq(30L));
+  }
+
+  @Test
+  void dataobject_delete_missing_throwsNotFound() {
+    when(dataObjectReferenceService.findByAppId("do-ref-1")).thenReturn(null);
+    assertThrows(NotFoundException.class, () -> dataObjectRefHandler.delete("do-ref-1"));
+  }
+
+  @Test
+  void dataobject_list_delegates() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(dataObjectReferenceService.getAllReferencesByDataObjectId(eq(1L), eq(101L), any()))
+      .thenReturn(List.of(doRef()));
+    var out = dataObjectRefHandler.listByDataObject(DO_APP_ID, null);
+    assertEquals(1, out.size());
+    assertEquals("dataobject", out.get(0).getKind());
   }
 }
