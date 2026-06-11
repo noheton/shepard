@@ -98,7 +98,7 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-10.md`](agent-findings/apisimp-sweep-2026-06-10.md) | APISIMP — v2 surface simplification sweep (2026-06-10) | 2026-06-10 | 2026-06-10 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-11.md`](agent-findings/apisimp-sweep-2026-06-11.md) | APISIMP — v2 surface simplification sweep (2026-06-11) | 2026-06-11 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-11.md`](agent-findings/apisimp-sweep-2026-06-11.md) | APISIMP — v2 surface simplification sweep (2026-06-11) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-06-10 |
