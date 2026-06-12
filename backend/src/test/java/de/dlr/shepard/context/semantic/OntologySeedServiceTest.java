@@ -143,7 +143,7 @@ class OntologySeedServiceTest {
   @Test
   void readBundleBytes_absolutePathMissing_throwsSeedException() {
     var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
-    org.junit.jupiter.api.Assertions.assertThrows(OntologySeedException.class, () ->
+    org.junit.jupiter.api.Assertions.assertThrows(OntologySeedService.OntologySeedException.class, () ->
       svc.readBundleBytes("/definitely/not/here/bundle.ttl")
     );
   }
