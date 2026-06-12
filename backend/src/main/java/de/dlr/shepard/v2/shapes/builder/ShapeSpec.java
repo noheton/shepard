@@ -22,10 +22,36 @@ import java.util.List;
  *                    default is open, so an omitted triple is the open shape)
  * @param properties  the property constraints; nullable / empty = a shape with
  *                    no property constraints (still a valid {@code sh:NodeShape})
+ * @param groups      {@code sh:PropertyGroup} declarations (form sections —
+ *                    doc 125 §4.2); nullable / empty = none. Property shapes
+ *                    reference a group via their hint's {@code group} IRI.
+ * @param targetNode  {@code sh:targetNode} IRI; nullable. Shapes meant to fire
+ *                    on the validate-on-instantiate seam (V2CONV-B2) target
+ *                    {@code urn:shepard:instance:candidate} — the stable local
+ *                    URI {@code TemplateInstantiationRest} gives the candidate
+ *                    data graph.
  */
 public record ShapeSpec(
   String shapeIri,
   String targetClass,
   boolean closed,
-  List<PropertyShapeSpec> properties
-) {}
+  List<PropertyShapeSpec> properties,
+  List<GroupSpec> groups,
+  String targetNode
+) {
+  /** Pre-BTKVS-B2 compatibility constructor (no group declarations, no targetNode). */
+  public ShapeSpec(String shapeIri, String targetClass, boolean closed, List<PropertyShapeSpec> properties) {
+    this(shapeIri, targetClass, closed, properties, null, null);
+  }
+
+  /** Compatibility constructor without {@code sh:targetNode}. */
+  public ShapeSpec(
+    String shapeIri,
+    String targetClass,
+    boolean closed,
+    List<PropertyShapeSpec> properties,
+    List<GroupSpec> groups
+  ) {
+    this(shapeIri, targetClass, closed, properties, groups, null);
+  }
+}
