@@ -27,9 +27,6 @@ public class ProjectByAnnotationItemIO {
   @Schema(description = "appId of the DataObject.", required = true)
   private String appId;
 
-  @Schema(description = "Legacy long id of the DataObject.")
-  private Long id;
-
   @Schema(description = "DataObject name.", required = true)
   private String name;
 

@@ -62,6 +62,7 @@ public class MeRest {
    */
   @GET
   @Operation(
+    operationId = "getMe",
     summary = "Return the caller's enriched v2 profile.",
     description = "Includes all upstream User fields plus v2 additions: " +
     "`watchedCollectionCount` (CW1) — number of collections the caller is watching."

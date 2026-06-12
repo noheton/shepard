@@ -63,6 +63,7 @@ public class NotificationTransportRest {
 
   @GET
   @Operation(
+    operationId = "listNotificationTransports",
     summary = "List all configured notification transports.",
     description = "Returns every :NotificationTransport row in the instance, ordered " +
       "by name ascending. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + " +
@@ -87,6 +88,7 @@ public class NotificationTransportRest {
 
   @POST
   @Operation(
+    operationId = "createNotificationTransport",
     summary = "Create a new notification transport.",
     description = "Creates a :NotificationTransport row. Required fields: `kind` " +
       "(must be a valid TransportKind), `name`. All other fields are optional and " +
@@ -138,6 +140,7 @@ public class NotificationTransportRest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchNotificationTransport",
     summary = "RFC 7396 merge-patch an existing notification transport.",
     description = "Patches the :NotificationTransport identified by appId. RFC 7396 " +
       "semantics: absent = leave alone, explicit null = clear, value = replace. " +
@@ -176,6 +179,7 @@ public class NotificationTransportRest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteNotificationTransport",
     summary = "Delete a notification transport.",
     description = "Removes the :NotificationTransport row identified by appId. " +
       "No cascade — historical :Activity rows referencing the deleted transport's " +

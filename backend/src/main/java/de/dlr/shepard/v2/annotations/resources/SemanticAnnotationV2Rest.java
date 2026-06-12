@@ -117,6 +117,7 @@ public class SemanticAnnotationV2Rest {
 
   @GET
   @Operation(
+    operationId = "listAnnotations",
     summary = "List annotations with optional filters.",
     description =
       "Returns a page of `:SemanticAnnotation` nodes matching the provided filter parameters. " +
@@ -220,6 +221,7 @@ public class SemanticAnnotationV2Rest {
   @GET
   @Path("/{appId}")
   @Operation(
+    operationId = "getAnnotation",
     summary = "Get one annotation by its appId.",
     description =
       "Returns the full AnnotationV2 for the annotation identified by `appId` (UUID v7). " +
@@ -293,6 +295,7 @@ public class SemanticAnnotationV2Rest {
 
   @POST
   @Operation(
+    operationId = "createAnnotation",
     summary = "Create a new semantic annotation.",
     description =
       "Creates a `:SemanticAnnotation` node for the given subject entity. " +
@@ -422,6 +425,7 @@ public class SemanticAnnotationV2Rest {
   @PUT
   @Path("/{appId}")
   @Operation(
+    operationId = "updateAnnotation",
     summary = "Update (merge-patch) an annotation.",
     description =
       "RFC 7396 merge-patch: only non-null fields in the request body are applied. " +
@@ -522,6 +526,7 @@ public class SemanticAnnotationV2Rest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteAnnotation",
     summary = "Delete an annotation.",
     description =
       "Deletes the `:SemanticAnnotation` node identified by `appId`. " +

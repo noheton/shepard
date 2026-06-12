@@ -67,6 +67,7 @@ public class OntologyAlignmentRest {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "listOntologyAlignments",
     summary = "List all upper-ontology alignment rows.",
     description =
       "Returns the complete set of `(:OntologyAlignment)` nodes seeded by " +

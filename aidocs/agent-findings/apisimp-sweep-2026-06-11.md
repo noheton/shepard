@@ -129,15 +129,122 @@ service method.
 - After this sweep: the residual numeric-id surface in `/v2/` is now only these
   three findings plus the spatiotemporal frozen v1 endpoints (PLUGIN-V2-001).
 
+## Second-pass findings (2026-06-11, post-merge of #1852)
+
+After APISIMP-FC-SDC-LINKED-DO-APPID shipped (#1852, `df8b242e`), a second scan
+ran across the full `/v2` surface. Findings and observations:
+
+### Finding 4 — `SnapshotListPageIO` response field named `size`, request param renamed to `pageSize` by #1847
+
+`SnapshotListRest` (lines 89–94) defines a nested `SnapshotListPageIO` record:
+```java
+public record SnapshotListPageIO(
+  List<SnapshotListItemIO> items,
+  long total,
+  int page,
+  int size      // ← response body field name
+) {}
+```
+
+PR #1847 (`APISIMP-PAGINATION-UNIFY-1`) renames `@QueryParam("size")` →
+`@QueryParam("pageSize")` but does NOT rename the `SnapshotListPageIO.size`
+record field. After #1847 merges: request param is `?pageSize` but the
+JSON response body still contains `"size": 50`. Inconsistent to callers
+who now read `pageSize` in the request docs but see `size` in the response.
+
+AC: rename `SnapshotListPageIO.size` → `pageSize`; update FE consumer
+`useSnapshotList.ts` if it reads `.size` off the response envelope.
+
+**Filed as `APISIMP-SNAPSHOT-RESP-SIZE` (XS); pairs with/blocked by #1847.**
+
+### Scan observations — intentional legacy debt (not filed)
+
+These surfaces were examined and noted as intentional technical debt that
+is already tracked or explicitly documented inline — no new rows filed:
+
+| Surface | State | Why not filed |
+|---|---|---|
+| `TimeseriesChannelV2IO.id` (int, Postgres serial) | Legacy, explicit | Schema says "Legacy numeric channel id (Postgres serial). Will be deprecated once shepardId adoption is complete." Tracked under TS-ID migration (`aidocs/platform/87`). |
+| `TimeseriesChannelV2IO.containerId` (long, Postgres FK) | Intentional | Postgres FK, not a Neo4j OGM id; retained for callers joining the Postgres `timeseries` table. |
+| `ContainerSummaryIO.id` (long, Neo4j OGM) | Legacy, explicit | Schema says "Neo4j OGM id — use for legacy navigation routes." Needed until CONTAINER-V2-ROUTE migration clears (V2-SWEEP row). |
+| `DataObjectDetailV2IO.referenceIds[]` (numeric longs) | Legacy, explicit | Javadoc at line 30 tags these as "Legacy fields." Migration deferred pending REFS-V2-PANELS sweep row. |
+| Plugin ref resources (git preview/checkUpdate, video upload/download) | Correct per PLUGIN-PERKIND-CRUD-CLEANUP | Shipped 2026-06-09: per-kind CRUD deleted; only domain-specific special ops remain. Not a finding. |
+
+### Post-second-pass status
+
+After APISIMP-THERMO-ADMIN-CONFIG + APISIMP-FC-SDC-LINKED-DO-APPID +
+APISIMP-CHANNEL-ANNOT-APPID all shipped, the residual findings are:
+
+| Finding | Row | Size | State |
+|---|---|---|---|
+| Pagination `?size` vs `?pageSize` (7 endpoints) | APISIMP-PAGINATION-UNIFY-1 | M | PR #1847 — CodeQL race ⚠️ |
+| `SnapshotListPageIO.size` → `pageSize` (response body) | APISIMP-SNAPSHOT-RESP-SIZE | XS | queued; pairs with #1847 |
+| `ContainerSummaryIO.id` OGM exposure | (implicit) | S | blocked by CONTAINER-V2-ROUTE |
+| `DataObjectDetailV2IO` numeric refIds | (implicit) | M | blocked by REFS-V2-PANELS |
+| Spatial plugin v1 frozen surface | PLUGIN-V2-001 | M | queued |
+
 ## Cross-references
 - `aidocs/platform/191-v2-surface-convergence.md` (V2CONV SSOT)
 - `aidocs/agent-findings/apisimp-sweep-2026-06-10.md` (prior sweep — base findings)
 - `aidocs/16` rows: `APISIMP-THERMO-ADMIN-CONFIG`, `APISIMP-FC-SDC-LINKED-DO-APPID`,
-  `APISIMP-CHANNEL-ANNOT-APPID`, `PLUGIN-V2-001`, `APISIMP-PAGINATION-UNIFY`
+  `APISIMP-CHANNEL-ANNOT-APPID`, `APISIMP-SNAPSHOT-RESP-SIZE`, `PLUGIN-V2-001`,
+  `APISIMP-PAGINATION-UNIFY`
 - Files: `backend/.../v2/admin/thermography/resources/ThermographyConfigAdminRest.java`,
   `backend/.../v2/filecontainer/resources/FileContainerLinkedDataObjectsRest.java`,
   `backend/.../v2/structureddatacontainer/resources/StructuredDataContainerLinkedDataObjectsRest.java`,
   `backend/.../v2/timeseriescontainer/resources/TimeseriesChannelAnnotationRest.java:130`,
+  `backend/.../v2/snapshot/resources/SnapshotListRest.java:89-94`,
   `frontend/composables/containers/useFileContainerLinkedDataObjects.ts`,
   `frontend/composables/containers/useStructuredDataContainerLinkedDataObjects.ts`,
   `frontend/composables/containers/useContainerReferencedByCollections.ts`
+
+## Third-pass findings (2026-06-11, post-merge of UI-GAP-3 #1854)
+
+Third scan after all second-pass rows shipped. Scope: full `/v2` REST + plugin
+REST surfaces on current `main`.
+
+Verified-clean (agent findings cross-checked, all already shipped or intentional):
+
+| Agent finding | Actual state |
+|---|---|
+| `TimeseriesContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE (#1834) |
+| `FileContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE |
+| `StructuredDataContainerSemanticAnnotationRest` numeric `@PathParam` | GONE — deleted by APISIMP-SA-CONT-DELETE |
+| `TimeseriesChannelAnnotationRest.annotationId` (Long) | Now `String annotationAppId` — APISIMP-CHANNEL-ANNOT-APPID (#1851) |
+| `TimeseriesContainerTemporalAnnotationRest.containerId` (Long) | Now `String containerAppId` — APISIMP-TSCONT-APPID-KEY-4 (#1846) |
+| `JupyterConfigPublicRest` not on config registry | Intentional — public read-only endpoint (any-auth), not an admin-only config surface |
+| `TimeseriesAnnotationRest` / `AnomalyDetectionRest` path pattern | Correct — keyed on `String refAppId`, under `/v2/timeseries-references/` |
+| `ThumbnailRest ?size` | Intentional image-dimension param, not pagination |
+| `ProjectsRest` pagination | Already uses `page` + `pageSize` — no action |
+| Spatial plugin v1 paths | PLUGIN-V2-001 already queued |
+
+### Finding 5 — `ProjectIO` / `SubCollectionItemIO` / `ProjectByAnnotationItemIO` expose legacy `Long id`
+
+`backend/.../v2/project/io/ProjectIO.java:34` carries:
+```java
+@Schema(description = "Legacy long identifier of the underlying Collection (for upstream callers).")
+private Long id;
+```
+`SubCollectionItemIO.java:26` and `ProjectByAnnotationItemIO.java:31` have the same
+field with identical "Legacy long id" schema description.
+
+`ProjectsDAO.java:116,214,325` actively populates these via `io.setId(asLong(row.get("shepardId")))`.
+
+The `/v2/projects/` surface is a **fork-only** surface (not present in upstream
+`openapi-5.4.0.json`). The "for upstream callers" justification does not apply —
+upstream has no `/v2/projects/` endpoint to call. No frontend composable reads
+`.id` off a project response (grep `frontend/` returns zero hits for
+`project.id` / `projectData.id`). The field is purely additive dead weight.
+
+AC: drop `Long id` from all three IO classes; drop the three `io.setId(...)` calls
+in `ProjectsDAO`; `mvn verify` green. No FE change. Wire break on `/v2/projects/`
+(pre-prod, not in any stable release).
+
+**Filed as `APISIMP-PROJECT-IO-DROP-LEGACY-ID` (XS).**
+
+## Third-pass summary
+
+| Finding | Row | Size | State |
+|---|---|---|---|
+| `ProjectIO.Long id` dead legacy field | APISIMP-PROJECT-IO-DROP-LEGACY-ID | XS | queued |
+| All prior findings | shipped | — | — |

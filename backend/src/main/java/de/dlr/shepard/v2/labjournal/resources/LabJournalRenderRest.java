@@ -74,6 +74,7 @@ public class LabJournalRenderRest {
   @Path("/{appId}/render")
   @Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "renderLabJournal",
     summary = "Render a lab journal entry as sanitised HTML.",
     description =
       "Parses the entry's journalContent field as CommonMark + GFM markdown " +

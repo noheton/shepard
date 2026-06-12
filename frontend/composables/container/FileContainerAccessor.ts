@@ -4,6 +4,7 @@ import {
   type FileContainer,
   type Permissions,
   type ResponseError,
+  type Roles,
   type ShepardFile,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
@@ -59,10 +60,20 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async fetchRoles() {
+    // V2-SWEEP-003-1: v2 unified roles (replaces v1 getFileRoles)
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      this.roles.value = await this.api.value.getFileRoles({
-        fileContainerId: this.id,
-      });
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/roles`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.roles.value = (await resp.json()) as Roles;
     } catch (e) {
       handleError(e as ResponseError, "fetching roles");
       throw e;

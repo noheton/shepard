@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.structureddatacontainer.resources;
 
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.v2.integrity.SafeDeleteConflict;
 import jakarta.enterprise.context.RequestScoped;
@@ -32,12 +33,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Route:
  * <ul>
- *   <li>{@code GET /v2/structured-data-containers/{containerId}/linked-data-objects}
+ *   <li>{@code GET /v2/structured-data-containers/{containerAppId}/linked-data-objects}
  *       — returns the distinct DataObjects whose StructuredDataReference nodes point
  *       at this container. Requires Read permission on the container.</li>
  * </ul>
  *
- * <p>Uses the numeric OGM id so the frontend can pass the route param directly.
+ * <p>Identifiers are {@code appId} (UUID v7) strings throughout;
+ * numeric Neo4j ids never appear on the wire (APISIMP-FC-SDC-LINKED-DO-APPID).
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -50,8 +52,9 @@ public class StructuredDataContainerLinkedDataObjectsRest {
   StructuredDataContainerService structuredDataContainerService;
 
   @GET
-  @Path("/{containerId}/linked-data-objects")
+  @Path("/{containerAppId}/linked-data-objects")
   @Operation(
+    operationId = "getStructuredDataContainerLinkedDataObjects",
     summary = "List DataObjects linked to this StructuredDataContainer.",
     description = "Returns the distinct DataObjects whose StructuredDataReference nodes point at this " +
     "container. Requires Read permission on the container."
@@ -63,11 +66,12 @@ public class StructuredDataContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
-  @APIResponse(responseCode = "404", description = "No StructuredDataContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No StructuredDataContainer with that appId.")
   public Response getLinkedDataObjects(
-    @PathParam("containerId") long containerId
+    @PathParam("containerAppId") String containerAppId
   ) {
-    List<DataObject> dataObjects = structuredDataContainerService.findLinkedDataObjectsById(containerId);
+    structuredDataContainerService.getContainerByAppId(containerAppId);
+    List<DataObject> dataObjects = structuredDataContainerService.findLinkedDataObjectsByAppId(containerAppId);
     List<DataObjectIO> result = new ArrayList<>(dataObjects.size());
     for (DataObject dataObject : dataObjects) {
       result.add(new DataObjectIO(dataObject));
@@ -77,8 +81,9 @@ public class StructuredDataContainerLinkedDataObjectsRest {
 
   /** DI1 — safe delete: refuses with 409 if active references exist unless ?force=true. */
   @DELETE
-  @Path("/{containerId}")
+  @Path("/{containerAppId}")
   @Operation(
+    operationId = "deleteStructuredDataContainerSafely",
     summary = "Safely delete this StructuredDataContainer.",
     description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
     "Use this in preference to the upstream /shepard/api/structuredDataContainers/{id} DELETE, " +
@@ -92,13 +97,14 @@ public class StructuredDataContainerLinkedDataObjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
-  @APIResponse(responseCode = "404", description = "No StructuredDataContainer with that id.")
+  @APIResponse(responseCode = "404", description = "No StructuredDataContainer with that appId.")
   public Response safeDeleteContainer(
-    @PathParam("containerId") long containerId,
+    @PathParam("containerAppId") String containerAppId,
     @QueryParam("force") @DefaultValue("false") boolean force
   ) {
+    StructuredDataContainer container = structuredDataContainerService.getContainerByAppId(containerAppId);
     if (!force) {
-      List<DataObject> linked = structuredDataContainerService.findLinkedDataObjectsById(containerId);
+      List<DataObject> linked = structuredDataContainerService.findLinkedDataObjectsByAppId(containerAppId);
       if (!linked.isEmpty()) {
         List<String> sample = linked.stream()
           .map(DataObject::getAppId)
@@ -110,7 +116,7 @@ public class StructuredDataContainerLinkedDataObjectsRest {
           .build();
       }
     }
-    structuredDataContainerService.deleteContainer(containerId);
+    structuredDataContainerService.deleteContainer(container.getId());
     return Response.status(Status.NO_CONTENT).build();
   }
 }

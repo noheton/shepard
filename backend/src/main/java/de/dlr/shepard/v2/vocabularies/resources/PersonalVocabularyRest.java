@@ -85,6 +85,7 @@ public class PersonalVocabularyRest {
 
   @POST
   @Operation(
+    operationId = "createVocabularyTerm",
     summary = "Mint a personal vocabulary.",
     description = "Creates a :Vocabulary node with type=PERSONAL scoped to the calling user. " +
       "URI format: urn:shepard:personal:<userAppId>:<name>. " +
@@ -162,6 +163,7 @@ public class PersonalVocabularyRest {
 
   @GET
   @Operation(
+    operationId = "listVocabularyTerms",
     summary = "List the caller's personal vocabularies.",
     description = "Returns all :Vocabulary nodes with type=PERSONAL owned by the calling user. " +
       "Returns an empty list when the feature is disabled or the user has no personal vocabularies."

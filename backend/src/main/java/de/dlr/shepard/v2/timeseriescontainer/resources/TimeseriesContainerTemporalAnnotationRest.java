@@ -72,6 +72,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
 
   @GET
   @Operation(
+    operationId = "listTemporalAnnotations",
     summary = "List all temporal annotations on a TimeseriesContainer.",
     description =
       "Returns all `:TimeseriesAnnotation` nodes attached to the `:TimeseriesContainer` " +
@@ -104,6 +105,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
 
   @POST
   @Operation(
+    operationId = "createTemporalAnnotation",
     summary = "Create a temporal annotation on a TimeseriesContainer.",
     description =
       "Creates a `:TimeseriesAnnotation` node and links it to the `:TimeseriesContainer` " +
@@ -154,6 +156,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @GET
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "getTemporalAnnotation",
     summary = "Read a single container temporal annotation by appId.",
     description =
       "Returns the `TimeseriesAnnotationIO` record for the annotation identified by " +
@@ -181,6 +184,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @PATCH
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "updateTemporalAnnotation",
     summary = "Update a container temporal annotation (merge-patch).",
     description =
       "Applies a partial update: only non-null fields in the body are changed. " +
@@ -225,6 +229,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
   @DELETE
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "deleteTemporalAnnotation",
     summary = "Delete a container temporal annotation.",
     description =
       "Removes the `:TimeseriesAnnotation` node and its `HAS_TEMPORAL_ANNOTATION` " +

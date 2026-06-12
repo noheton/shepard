@@ -56,6 +56,7 @@ public class CollectionDQRRest {
 
   @GET
   @Operation(
+    operationId = "listDataQualityRequirements",
     summary = "List DQRs assigned to this Collection (TPL10).",
     description =
       "Returns all Data Quality Requirements that have been assigned to this Collection " +

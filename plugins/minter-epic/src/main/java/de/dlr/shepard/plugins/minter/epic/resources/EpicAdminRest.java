@@ -66,6 +66,7 @@ public class EpicAdminRest {
   @POST
   @Path("/credential")
   @Operation(
+    operationId = "setEpicMinterCredential",
     summary = "Set or rotate the ePIC credential.",
     description = "Body: {\"credential\": \"<plaintext>\"}. The plaintext is encrypted with " +
     "AES-GCM keyed off the shepard instance id and stored on :EpicMinterConfig. The " +
@@ -105,6 +106,7 @@ public class EpicAdminRest {
   @DELETE
   @Path("/credential")
   @Operation(
+    operationId = "clearEpicMinterCredential",
     summary = "Clear the stored ePIC credential.",
     description = "Wipes :EpicMinterConfig.credentialKey + .credentialHash. Subsequent " +
     "mint calls throw publish.minter.failed until a fresh credential is set. The action is " +
@@ -126,6 +128,7 @@ public class EpicAdminRest {
   @POST
   @Path("/test-connection")
   @Operation(
+    operationId = "testEpicMinterConnection",
     summary = "Diagnose connectivity to the configured ePIC API.",
     description = "Issues a GET against <apiBaseUrl> (or <apiBaseUrl>/handles if the root " +
     "redirects) and reports reachable/statusCode/latency. Useful for operators to verify " +

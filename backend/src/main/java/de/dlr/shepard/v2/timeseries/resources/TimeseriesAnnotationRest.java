@@ -83,6 +83,7 @@ public class TimeseriesAnnotationRest {
 
   @GET
   @Operation(
+    operationId = "listTimeseriesReferenceAnnotations",
     summary = "List all annotations on a TimeseriesReference.",
     description =
       "Returns all `:TimeseriesAnnotation` nodes attached to the `:TimeseriesReference` " +
@@ -121,6 +122,7 @@ public class TimeseriesAnnotationRest {
 
   @POST
   @Operation(
+    operationId = "createTimeseriesReferenceAnnotation",
     summary = "Create an annotation on a TimeseriesReference.",
     description =
       "Creates a `:TimeseriesAnnotation` node and links it to the `:TimeseriesReference` " +
@@ -181,6 +183,7 @@ public class TimeseriesAnnotationRest {
   @GET
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "getTimeseriesReferenceAnnotation",
     summary = "Read a single annotation by appId.",
     description =
       "Returns the `TimeseriesAnnotationIO` record for the `:TimeseriesAnnotation` " +
@@ -216,6 +219,7 @@ public class TimeseriesAnnotationRest {
   @PATCH
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "updateTimeseriesReferenceAnnotation",
     summary = "Update an annotation (merge-patch: only non-null provided fields are changed).",
     description =
       "Applies a partial update to the `:TimeseriesAnnotation` identified by " +
@@ -269,6 +273,7 @@ public class TimeseriesAnnotationRest {
   @DELETE
   @Path("/{annotationAppId}")
   @Operation(
+    operationId = "deleteTimeseriesReferenceAnnotation",
     summary = "Delete an annotation from a TimeseriesReference.",
     description =
       "Removes the `:TimeseriesAnnotation` identified by `annotationAppId` (UUID v7) " +

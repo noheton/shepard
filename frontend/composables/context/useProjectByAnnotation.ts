@@ -13,7 +13,6 @@ export interface MatchedAnnotation {
 
 export interface ProjectByAnnotationItemIO {
   appId: string;
-  id?: number;
   name: string;
   kind: string;
   collectionAppId?: string | null;

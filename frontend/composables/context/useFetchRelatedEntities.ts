@@ -20,6 +20,7 @@ import type {
   Predecessor,
   RelatedEntity,
   Successor,
+  URIReferenceV2,
 } from "~/components/context/display-components/relationships/relatedEntity";
 import { useShepardApi } from "../common/api/useShepardApi";
 
@@ -82,13 +83,50 @@ export function useRelatedEntities(
   async function fetchURIReferences(
     collectionId: number,
     dataObjectId: number,
-  ): Promise<URIReference[]> {
+  ): Promise<(URIReference | URIReferenceV2)[]> {
+    const doAppId = toValue(dataObjectAppIdInput);
+    // V2-SWEEP-004-3: use v2 surface when a UUID v7 appId is available.
+    if (doAppId && doAppId.includes("-")) {
+      return fetchURIReferencesV2(doAppId);
+    }
     return useShepardApi(UriReferenceApi)
       .value.getAllUriReferences({ collectionId, dataObjectId })
       .catch(error => {
         handleError(error, "fetchURIReferences");
         return [];
       });
+  }
+
+  async function fetchURIReferencesV2(dataObjectAppId: string): Promise<URIReferenceV2[]> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url = `${v2BaseUrl()}/v2/references?kind=uri&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: "application/json",
+        },
+      });
+      if (!resp.ok) return [];
+      const data: unknown = await resp.json();
+      if (!Array.isArray(data)) return [];
+      return (data as Record<string, unknown>[]).map(item => ({
+        id: item.id as number,
+        appId: item.appId as string,
+        kind: "uri" as const,
+        name: item.name as string,
+        createdAt: new Date(item.createdAt as string),
+        createdBy: item.createdBy as string,
+        payload: {
+          uri: ((item.payload as Record<string, unknown>)?.uri ?? "") as string,
+          relationship: (item.payload as Record<string, unknown>)?.relationship as string | null | undefined,
+        },
+      }));
+    } catch (e) {
+      handleError(e, "fetchURIReferencesV2");
+      return [];
+    }
   }
 
   async function fetchDataObjectReferences(

@@ -60,7 +60,9 @@ public class MeCredentialsRest {
   Optional<String> encryptionKey;
 
   @GET
-  @Operation(summary = "List the caller's Git credentials.")
+  @Operation(
+    operationId = "listUserGitCredentials",
+    summary = "List the caller's Git credentials.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = GitCredentialIO.class))
@@ -75,7 +77,9 @@ public class MeCredentialsRest {
   }
 
   @POST
-  @Operation(summary = "Create a new Git credential for the caller.")
+  @Operation(
+    operationId = "createGitCredential",
+    summary = "Create a new Git credential for the caller.")
   @APIResponse(
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
@@ -118,7 +122,9 @@ public class MeCredentialsRest {
 
   @GET
   @Path("/{appId}")
-  @Operation(summary = "Get a single Git credential by appId.")
+  @Operation(
+    operationId = "getGitCredential",
+    summary = "Get a single Git credential by appId.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
@@ -136,7 +142,9 @@ public class MeCredentialsRest {
 
   @PATCH
   @Path("/{appId}")
-  @Operation(summary = "Partially update a Git credential.")
+  @Operation(
+    operationId = "patchGitCredential",
+    summary = "Partially update a Git credential.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
@@ -179,7 +187,9 @@ public class MeCredentialsRest {
 
   @DELETE
   @Path("/{appId}")
-  @Operation(summary = "Delete a Git credential.")
+  @Operation(
+    operationId = "deleteGitCredential",
+    summary = "Delete a Git credential.")
   @APIResponse(responseCode = "204", description = "Deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "Not found or not owned by caller.")

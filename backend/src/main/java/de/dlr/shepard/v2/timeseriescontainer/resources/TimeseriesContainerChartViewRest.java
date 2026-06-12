@@ -52,6 +52,7 @@ public class TimeseriesContainerChartViewRest {
 
   @GET
   @Operation(
+    operationId = "getChartView",
     summary = "Read the persisted chart-view configuration for this container.",
     description = "Returns the curated channel-selection list shared by all users " +
     "viewing this container. An empty list (or no persisted view yet) means " +
@@ -78,6 +79,7 @@ public class TimeseriesContainerChartViewRest {
 
   @PATCH
   @Operation(
+    operationId = "patchChartView",
     summary = "RFC 7396 merge-patch the chart-view configuration.",
     description = "Replaces the persisted selectedChannels list. Mutation requires " +
     "Write permission on the container — anyone who can upload data can also " +

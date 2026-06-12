@@ -71,6 +71,7 @@ public class CollectionPublicationStateRest {
 
   @GET
   @Operation(
+    operationId = "getCollectionPublicationState",
     summary = "Read the current publication state of a Collection.",
     description =
       "Returns the current `status` value of the Collection (DRAFT, IN_REVIEW, " +
@@ -102,6 +103,7 @@ public class CollectionPublicationStateRest {
 
   @PATCH
   @Operation(
+    operationId = "patchCollectionPublicationState",
     summary = "Flip the publication state of a Collection (Owner or instance-admin only).",
     description =
       "Sets the Collection's `status` to one of DRAFT, IN_REVIEW, READY, " +

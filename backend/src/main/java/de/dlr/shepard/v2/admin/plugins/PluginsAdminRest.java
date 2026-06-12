@@ -93,6 +93,7 @@ public class PluginsAdminRest {
 
   @GET
   @Operation(
+    operationId = "listPlugins",
     summary = "List every discovered plugin.",
     description = "Returns one row per plugin observed by the PM1a PluginRegistry — including " +
     "DISABLED + FAILED rows so the operator sees the full state space. Order matches the " +
@@ -119,6 +120,7 @@ public class PluginsAdminRest {
   @PATCH
   @jakarta.ws.rs.Path("/{id}")
   @Operation(
+    operationId = "patchPlugin",
     summary = "RFC 7396 merge-patch a plugin's enabled toggle.",
     description = "Patchable fields: `enabled` (Boolean). PM1e — the flip is persisted to the " +
     ":PluginRuntimeOverride table synchronously within this request so it survives restart. " +

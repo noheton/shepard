@@ -40,6 +40,7 @@ public class AdminFeaturesRest {
 
   @GET
   @Operation(
+    operationId = "listFeatureToggles",
     summary = "List runtime feature toggles.",
     description = "Returns all registered feature toggles with their current enabled state. " +
     "Changes made via PATCH take effect immediately in the running JVM but are not persisted " +
@@ -62,6 +63,7 @@ public class AdminFeaturesRest {
   @PATCH
   @Path("/{name}")
   @Operation(
+    operationId = "patchFeatureToggle",
     summary = "Toggle a runtime feature flag.",
     description = "Sets the enabled state of the named feature toggle for the lifetime of the " +
     "current JVM process. The change does not survive a restart."

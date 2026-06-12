@@ -52,6 +52,7 @@ public class CollectionWatchersRest {
 
   @GET
   @Operation(
+    operationId = "listCollectionWatches",
     summary = "List all watchers for this Collection (CW1).",
     description =
       "Returns the complete list of users currently watching this Collection. Each " +
@@ -81,6 +82,7 @@ public class CollectionWatchersRest {
   @GET
   @Path("me")
   @Operation(
+    operationId = "getMyCollectionWatch",
     summary = "Check whether the caller is watching this Collection (CW1).",
     description =
       "Returns 200 with the caller's watch record when they are subscribed to " +

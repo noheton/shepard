@@ -66,6 +66,7 @@ public class DataciteAdminRest {
   @POST
   @Path("/credential")
   @Operation(
+    operationId = "setDataciteMinterCredential",
     summary = "Set or rotate the DataCite Member password.",
     description = "Body: {\"password\": \"<plaintext>\"}. The plaintext is encrypted with " +
     "AES-GCM keyed off the shepard instance id and stored on :DataciteMinterConfig. The " +
@@ -106,6 +107,7 @@ public class DataciteAdminRest {
   @DELETE
   @Path("/credential")
   @Operation(
+    operationId = "clearDataciteMinterCredential",
     summary = "Clear the stored DataCite credential.",
     description = "Wipes :DataciteMinterConfig.passwordCipher + .passwordHash. Subsequent " +
     "mint calls throw publish.minter.failed until a fresh credential is set. The action is " +
@@ -127,6 +129,7 @@ public class DataciteAdminRest {
   @POST
   @Path("/test-connection")
   @Operation(
+    operationId = "testDataciteMinterConnection",
     summary = "Diagnose connectivity to the configured DataCite API.",
     description = "Issues a GET against <apiBaseUrl>/heartbeat (DataCite's documented " +
     "uptime endpoint) and reports reachable/statusCode/latency. Useful for operators to " +

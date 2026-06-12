@@ -40,6 +40,7 @@ public class StorageAdminRest {
 
   @GET
   @Operation(
+    operationId = "getAdminStorage",
     summary = "List all file-storage adapters.",
     description = "Returns all discovered FileStorage adapters with their id, enabled state, " +
     "and which one is active for new uploads. The active provider is set via " +

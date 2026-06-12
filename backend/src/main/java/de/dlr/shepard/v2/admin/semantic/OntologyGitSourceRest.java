@@ -79,6 +79,7 @@ public class OntologyGitSourceRest {
 
   @GET
   @Operation(
+    operationId = "listSemanticGitSources",
     summary = "List all ontology git sources.",
     description = "Returns every registered OntologyGitSource (enabled and disabled), " +
     "ordered by name. Includes last-ingest status and error for quick health assessment."
@@ -106,6 +107,7 @@ public class OntologyGitSourceRest {
 
   @POST
   @Operation(
+    operationId = "createSemanticGitSource",
     summary = "Register a new ontology git source.",
     description = "Creates an OntologyGitSource record. The source is not immediately " +
     "ingested — call .../ingest to trigger an on-demand run, or wait for the nightly " +
@@ -175,6 +177,7 @@ public class OntologyGitSourceRest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteSemanticGitSource",
     summary = "Delete an ontology git source.",
     description = "Removes the OntologyGitSource record. Does NOT remove the " +
     "UserOntologyBundle entries that were previously ingested from this source — " +

@@ -106,7 +106,7 @@ public final class VisNdtGridPluginManifest implements PluginManifest {
   public void onRegister(PluginContext ctx) {
     Log.infof(
       "MFFD-RENDER-NDT-GRID: vis-ndt-grid plugin v%s active (id=%s, compat=%s, shape=%s). " +
-      "Executor (slice 2) and renderer (slice 3) pending.",
+      "Executor (slice 2) active. Renderer (slice 3) pending.",
       VERSION,
       ID,
       SHEPARD_COMPATIBILITY,

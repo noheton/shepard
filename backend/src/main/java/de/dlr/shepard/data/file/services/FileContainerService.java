@@ -539,6 +539,18 @@ public class FileContainerService extends AbstractContainerService<FileContainer
   }
 
   /**
+   * CC1b (appId variant) — return the list of non-deleted DataObjects that
+   * reference this FileContainer, keyed by appId. Does not perform a
+   * permission check — callers must call {@link #getContainerByAppId(String)} first.
+   *
+   * @param containerAppId UUID v7 appId of the FileContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
+    return fileContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  /**
    * FS1c — generate a presigned GET URL so the caller can download
    * bytes directly from the storage backend.
    *

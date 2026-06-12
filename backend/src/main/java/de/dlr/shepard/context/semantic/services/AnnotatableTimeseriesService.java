@@ -143,13 +143,13 @@ public class AnnotatableTimeseriesService {
    * Delete a semantic annotation from a channel identified by UUID v7 shepardId.
    * Requires write permission on the container.
    */
-  public void deleteAnnotationForChannel(long containerId, String channelShepardId, long annotationId) {
+  public void deleteAnnotationForChannel(long containerId, String channelShepardId, String annotationAppId) {
     if (channelShepardId == null || channelShepardId.isBlank()) {
       throw new BadRequestException("channelShepardId must not be blank");
     }
     timeseriesContainerService.getContainer(containerId); // 404 if missing
     timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
-    dao.deleteAnnotation(annotationId);
+    dao.deleteAnnotationByAppId(annotationAppId);
   }
 
   public void clearSession() {

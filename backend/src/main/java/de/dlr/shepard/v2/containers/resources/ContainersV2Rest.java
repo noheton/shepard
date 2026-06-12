@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
@@ -96,6 +97,7 @@ public class ContainersV2Rest {
 
   @POST
   @Operation(
+    operationId = "createContainer",
     summary = "Create a container of the given kind.",
     description =
       "Creates a container of `kind` (file | timeseries | structured-data). The " +
@@ -131,6 +133,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}")
   @Operation(
+    operationId = "getContainer",
     summary = "Get any container by appId; the entity self-describes its kind.",
     description =
       "Resolves the container (of any kind) at `appId` and returns the unified " +
@@ -241,6 +244,7 @@ public class ContainersV2Rest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchContainer",
     summary = "RFC 7396 merge-patch any container by appId; dispatched by kind.",
     description =
       "Applies a merge-patch to the container at `appId` (`name`, `status`). " +
@@ -284,6 +288,7 @@ public class ContainersV2Rest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteContainer",
     summary = "Delete any container by appId; dispatched by kind.",
     description = "Deletes the container at `appId` via the owning kind's deleter.\n\nAuth: Write on the container."
   )
@@ -310,6 +315,7 @@ public class ContainersV2Rest {
 
   @GET
   @Operation(
+    operationId = "listContainers",
     summary = "List containers of a kind, optionally filtered by name.",
     description =
       "Returns every container of `kind` the caller may read, as ContainerV2IO[]. " +
@@ -484,6 +490,39 @@ public class ContainersV2Rest {
     }
     var updated = permissionsService.updatePermissionsByNeo4jId(current, id);
     return Response.ok(new PermissionsIO(updated)).build();
+  }
+
+  // ─── roles ─────────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/roles")
+  @Operation(
+    operationId = "getContainerRoles",
+    summary = "Get the calling user's roles on a container by appId.",
+    description =
+      "Returns the calling user's roles (owner / manager / writer / reader) on " +
+      "the container at `appId`. This is the v2 equivalent of the per-kind v1 " +
+      "`GET /shepard/api/{kind}Containers/{id}/roles` endpoints, converged onto " +
+      "the unified container surface (V2-SWEEP-003).\n\n" +
+      "Auth: Read on the container."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Roles of the calling user on this container.",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response getRoles(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    Long id = resolved.get().container().getId();
+    return Response.ok(permissionsService.getUserRolesOnEntity(id, caller)).build();
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────

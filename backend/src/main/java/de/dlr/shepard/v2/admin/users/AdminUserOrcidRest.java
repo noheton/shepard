@@ -52,6 +52,7 @@ public class AdminUserOrcidRest {
 
   @PATCH
   @Operation(
+    operationId = "patchUserOrcid",
     summary = "Set or clear the ORCID id on another user's shepard record.",
     description = "Admin-only one-shot preseed for demo / migration scenarios. " +
     "Passing null clears the orcid; a non-null value must be a valid ORCID " +

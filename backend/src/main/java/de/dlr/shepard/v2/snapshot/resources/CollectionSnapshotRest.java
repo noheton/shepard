@@ -81,6 +81,7 @@ public class CollectionSnapshotRest {
    */
   @POST
   @Operation(
+    operationId = "createCollectionSnapshot",
     summary = "Create a Snapshot of a Collection's current state (V2b).",
     description =
       "Creates a point-in-time `:Snapshot` of the Collection identified by " +
@@ -148,6 +149,7 @@ public class CollectionSnapshotRest {
    */
   @GET
   @Operation(
+    operationId = "listCollectionSnapshots",
     summary = "List Snapshots of a Collection, newest first (V2b).",
     description =
       "Returns one page of non-deleted `:Snapshot` entities for the " +

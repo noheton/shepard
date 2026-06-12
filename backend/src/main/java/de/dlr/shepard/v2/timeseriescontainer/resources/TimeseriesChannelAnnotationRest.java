@@ -113,11 +113,11 @@ public class TimeseriesChannelAnnotationRest {
   }
 
   @DELETE
-  @Path("{annotationId}")
+  @Path("{annotationAppId}")
   @Transactional
   @Operation(
     operationId = "deleteChannelAnnotation",
-    description = "Remove a semantic annotation from a timeseries channel. Requires Write permission on the container."
+    description = "Remove a semantic annotation from a timeseries channel by its UUID v7 appId. Requires Write permission on the container."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
   @APIResponse(responseCode = "400", description = "channelShepardId is blank.")
@@ -127,10 +127,10 @@ public class TimeseriesChannelAnnotationRest {
   public Response deleteAnnotation(
     @PathParam("containerAppId") String containerAppId,
     @PathParam("channelShepardId") String channelShepardId,
-    @PathParam("annotationId") @NotNull Long annotationId
+    @PathParam("annotationAppId") @NotNull String annotationAppId
   ) {
     long containerId = containerService.getContainerByAppId(containerAppId).getId();
-    service.deleteAnnotationForChannel(containerId, channelShepardId, annotationId);
+    service.deleteAnnotationForChannel(containerId, channelShepardId, annotationAppId);
     return Response.noContent().build();
   }
 }
