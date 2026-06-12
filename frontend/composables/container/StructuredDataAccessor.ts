@@ -17,10 +17,17 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   items = ref<StructuredData[]>([]);
   loading = ref<boolean>(true);
 
+  // Resolve numeric Neo4j id for v1 API calls that still require it.
+  private get numericId(): number {
+    if (/^\d+$/.test(this.id)) return Number(this.id);
+    return this.container.value?.id ?? 0;
+  }
+
   override async delete(): Promise<void> {
     // DI1 — see TimeseriesContainerAccessor.delete for rationale.
     try {
-      const result = await safeDeleteContainer("structured-data", this.id, {
+      const containerAppId = this.container.value?.appId ?? this.id;
+      const result = await safeDeleteContainer("structured-data", containerAppId, {
         force: true,
       });
       if (!result.ok) {
@@ -45,7 +52,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   async deleteItem(oid: string): Promise<void> {
     try {
       await this.api.value.deleteStructuredData({
-        structuredDataContainerId: this.id,
+        structuredDataContainerId: this.numericId,
         oid,
       });
       emitSuccess(`Successfully deleted item "${oid}"`);
@@ -57,10 +64,33 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   }
 
   override async fetchData(): Promise<void> {
+    const idStr = this.id;
+    if (/^\d+$/.test(idStr)) {
+      // V1-EXCEPTION: HeaderBar search still routes numeric ids (SEARCH-V2 will retire).
+      try {
+        this.container.value = await this.api.value.getStructuredDataContainer({
+          structuredDataContainerId: Number(idStr),
+        });
+      } catch (e) {
+        handleError(e as ResponseError, "fetching structured data container");
+      }
+      return;
+    }
+    // V2-SWEEP-003-2: appId path — used when navigated from CollectionContainersPanel.
     try {
-      this.container.value = await this.api.value.getStructuredDataContainer({
-        structuredDataContainerId: this.id,
-      });
+      const { data: session } = useAuth();
+      const accessToken = (session.value as unknown as { accessToken?: string } | null)?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(idStr)}`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) {
+        handleError(new Error(`HTTP ${resp.status}`), "fetching structured data container");
+        return;
+      }
+      this.container.value = await resp.json() as StructuredDataContainer;
     } catch (e) {
       handleError(e as ResponseError, "fetching structured data container");
     }
@@ -70,7 +100,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
     this.loading.value = true;
     try {
       this.items.value = await this.api.value.getAllStructuredDatas({
-        structuredDataContainerId: this.id,
+        structuredDataContainerId: this.numericId,
       });
     } catch (e) {
       handleError(
@@ -157,7 +187,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
 
   async uploadItem(name: string, content: string): Promise<void> {
     await this.api.value.createStructuredData({
-      structuredDataContainerId: this.id,
+      structuredDataContainerId: this.numericId,
       structuredDataPayload: {
         structuredData: { name: name },
         payload: content,

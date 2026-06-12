@@ -249,7 +249,7 @@ async function uploadFileWithProgress(
     throw new Error("File container needs to be set!");
   }
   if (!containerAccessor) {
-    containerAccessor = new FileContainerAccessor(fileContainerId.value);
+    containerAccessor = new FileContainerAccessor(String(fileContainerId.value));
   }
   progress.markStarted(index);
   try {

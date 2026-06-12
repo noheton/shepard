@@ -18,15 +18,20 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   container = ref<TimeseriesContainer>();
   loading = ref<boolean>(true);
 
+  // Resolve numeric Neo4j id for v1 API calls that still require it.
+  private get numericId(): number {
+    if (/^\d+$/.test(this.id)) return Number(this.id);
+    return this.container.value?.id ?? 0;
+  }
+
   async delete() {
     // DI1: call the /v2/ safe-delete endpoint. The UI has already shown the
     // active-references warning in the confirm dialog, so force=true here.
     // External clients (admin CLI, scripts) that call the same endpoint without
     // force get the server-side 409 protection.
     try {
-      // APISIMP-TSCONT-APPID-KEY: DELETE keyed on appId; fall back to numeric
-      // this.id only if the container hasn't been loaded yet (graceful degradation).
-      const containerAppId = (this.container.value as unknown as { appId?: string | null })?.appId ?? this.id;
+      // V2-SWEEP-003-2: this.id is the appId from the route (UUID) or numeric string (V1-EXCEPTION).
+      const containerAppId = this.container.value?.appId ?? this.id;
       const result = await safeDeleteContainer("timeseries", containerAppId, {
         force: true,
       });
@@ -51,10 +56,33 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   }
 
   async fetchData() {
+    const idStr = this.id;
+    if (/^\d+$/.test(idStr)) {
+      // V1-EXCEPTION: HeaderBar search still routes numeric ids (SEARCH-V2 will retire).
+      try {
+        this.container.value = await this.api.value.getTimeseriesContainer({
+          timeseriesContainerId: Number(idStr),
+        });
+      } catch (e) {
+        handleError(e as ResponseError, "fetching timeseries container");
+      }
+      return;
+    }
+    // V2-SWEEP-003-2: appId path — used when navigated from CollectionContainersPanel.
     try {
-      this.container.value = await this.api.value.getTimeseriesContainer({
-        timeseriesContainerId: this.id,
-      });
+      const { data: session } = useAuth();
+      const accessToken = (session.value as unknown as { accessToken?: string } | null)?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(idStr)}`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) {
+        handleError(new Error(`HTTP ${resp.status}`), "fetching timeseries container");
+        return;
+      }
+      this.container.value = await resp.json() as TimeseriesContainer;
     } catch (e) {
       handleError(e as ResponseError, "fetching timeseries container");
     }
@@ -64,7 +92,7 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
     try {
       this.loading.value = true;
       this.measurements.value = await this.api.value.getTimeseriesOfContainer({
-        timeseriesContainerId: this.id,
+        timeseriesContainerId: this.numericId,
       });
     } catch (e) {
       // Was "fetching files" — copy-paste from FileContainerAccessor. The
@@ -153,7 +181,7 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
 
   async uploadMeasurements(file: File) {
     await this.api.value.importTimeseries({
-      timeseriesContainerId: this.id,
+      timeseriesContainerId: this.numericId,
       file,
     });
   }
