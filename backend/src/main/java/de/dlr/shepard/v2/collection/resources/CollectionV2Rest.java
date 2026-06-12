@@ -175,7 +175,7 @@ public class CollectionV2Rest {
   @GET
   @Path("/{collectionAppId}")
   @Operation(
-    operationId = "getCollection",
+    operationId = "getCollectionV2",
     summary = "Get a Collection by appId, with DataObjects and incoming references.",
     description =
       "Returns the `:Collection` identified by `collectionAppId` (UUID v7) " +
@@ -218,7 +218,7 @@ public class CollectionV2Rest {
 
   @POST
   @Operation(
-    operationId = "createCollection",
+    operationId = "createCollectionV2",
     summary = "Create a new Collection.",
     description =
       "Creates a `:Collection` and returns the full entity in the 201 body. " +
@@ -270,7 +270,7 @@ public class CollectionV2Rest {
   @Path("/{collectionAppId}")
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
-    operationId = "patchCollection",
+    operationId = "patchCollectionV2",
     summary = "Partially update a Collection (RFC 7396 JSON Merge Patch).",
     description =
       "Applies an RFC 7396 JSON Merge Patch to the `:Collection`:\n" +
@@ -343,7 +343,7 @@ public class CollectionV2Rest {
   @DELETE
   @Path("/{collectionAppId}")
   @Operation(
-    operationId = "deleteCollection",
+    operationId = "deleteCollectionV2",
     summary = "Soft-delete a Collection and cascade.",
     description =
       "Marks the `:Collection` deleted (`deleted=true`) plus every reachable " +

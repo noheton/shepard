@@ -167,6 +167,7 @@ public class SemanticTermSearchRest {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "searchSemanticTerms",
     summary = "Search ontology terms in the INTERNAL semantic repository.",
     description =
       "Searches `:Resource` nodes imported by n10s (neosemantics) and returns matching " +
