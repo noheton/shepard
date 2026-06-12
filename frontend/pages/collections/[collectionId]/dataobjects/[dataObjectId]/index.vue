@@ -14,6 +14,10 @@ import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPr
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
+// UX612-M1 — resolve the attached template's kind so the Tools menu can gate
+// "Render view" on VIEW_RECIPE (the only kind /v2/shapes/render accepts).
+import { TemplatesApi } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
@@ -445,6 +449,29 @@ const dataObjectAttachedTemplateAppId = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// UX612-M1 — kind of the attached template (VIEW_RECIPE / DATAOBJECT_RECIPE /
+// …), resolved via the typed v2 client. `POST /v2/shapes/render` accepts only
+// VIEW_RECIPE (422 otherwise), so the Tools menu's "Render view" item gates on
+// this kind instead of mere template presence. Best-effort: a failed lookup
+// leaves the kind null and the render item hidden (it would 422 anyway when
+// the kind can't be confirmed as VIEW_RECIPE).
+const templatesApi = useV2ShepardApi(TemplatesApi);
+const dataObjectAttachedTemplateKind = ref<string | null>(null);
+watch(
+  dataObjectAttachedTemplateAppId,
+  async appId => {
+    dataObjectAttachedTemplateKind.value = null;
+    if (!appId) return;
+    try {
+      const tpl = await templatesApi.value.getTemplate({ appId });
+      dataObjectAttachedTemplateKind.value = tpl.templateKind ?? null;
+    } catch {
+      // fire-and-forget — menu falls back to hiding the render item
+    }
+  },
+  { immediate: true },
+);
+
 // FAIR3: embargoEndDate — user-provided ISO-8601 end date for embargoed datasets.
 // Editable when the user has Write permission on the collection.
 const dataObjectEmbargoEndDate = computed<string | null>(() => {
@@ -648,6 +675,7 @@ async function saveEmbargoEdit() {
                 :app-id="dataObject.appId"
                 scope="data-object"
                 :attached-template-app-id="dataObjectAttachedTemplateAppId"
+                :attached-template-kind="dataObjectAttachedTemplateKind"
               />
               <PublishButton
                 v-if="isAllowedToEditCollection"

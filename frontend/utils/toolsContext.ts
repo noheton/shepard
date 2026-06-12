@@ -56,6 +56,13 @@ export interface ContextToolItem {
  */
 export interface ContextToolBuildContext {
   attachedTemplateAppId?: string | null;
+  /**
+   * UX612-M1 — `templateKind` of the attached template (resolved by the
+   * detail page via GET /v2/templates/{appId}). `POST /v2/shapes/render`
+   * accepts only VIEW_RECIPE templates (422 otherwise), so the DO-RENDER
+   * gate checks the kind, not mere template presence.
+   */
+  attachedTemplateKind?: string | null;
 }
 
 /**
@@ -202,8 +209,13 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
       if (ctx?.attachedTemplateAppId) out.templateAppId = ctx.attachedTemplateAppId;
       return out;
     },
-    // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
-    enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
+    // UX612-M1 — gate on the render endpoint's actual contract: only
+    // VIEW_RECIPE templates render (anything else 422s). Gating on mere
+    // template presence hid the item where it could work and showed it
+    // where it failed.
+    enabledWhen: (ctx) =>
+      Boolean(ctx.attachedTemplateAppId) &&
+      ctx.attachedTemplateKind === "VIEW_RECIPE",
   },
   {
     // V2CONV-B6-POLISH Item 4 — in-context "create template" affordance.
