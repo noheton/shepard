@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.AccessType;
@@ -166,6 +167,42 @@ class PublicationStateRestTest {
       securityContextFor("alice", false)
     );
     assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void collection_patch_invalidState_returns_problem_json() {
+    CollectionPublicationStateRest rest = new CollectionPublicationStateRest();
+    rest.entityIdResolver = mock(EntityIdResolver.class);
+    rest.permissionsService = mock(PermissionsService.class);
+
+    Response r = rest.patch("col-app-id", new PublicationStateIO("BAD", null),
+      securityContextFor("alice", false));
+    assertEquals(400, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/publication-state.invalid", body.type());
+    assertEquals(400, body.status());
+  }
+
+  @Test
+  void collection_patch_forbidden_returns_problem_json() {
+    CollectionPublicationStateRest rest = new CollectionPublicationStateRest();
+    EntityIdResolver resolver = mock(EntityIdResolver.class);
+    PermissionsService perms = mock(PermissionsService.class);
+    rest.entityIdResolver = resolver;
+    rest.permissionsService = perms;
+
+    when(resolver.resolveLong("col-app-id")).thenReturn(42L);
+    when(perms.isAccessTypeAllowedForUser(anyLong(), eq(AccessType.Manage), anyString(), anyLong()))
+      .thenReturn(false);
+
+    Response r = rest.patch("col-app-id", new PublicationStateIO("ARCHIVED", null),
+      securityContextFor("bob", false));
+    assertEquals(403, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/publication-state.forbidden", body.type());
+    assertEquals(403, body.status());
   }
 
   @Test

@@ -147,7 +147,8 @@ public class ShepardTemplateRest {
     try {
       bodyValidator.validate(body.getBody(), body.getTemplateKind());
     } catch (InvalidTemplateBodyException e) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
+      return problem(PT_BAD_REQUEST, "Template body invalid", Response.Status.BAD_REQUEST,
+          null, java.util.Map.of("errors", e.getErrors()));
     }
     // Inheritance guard (aidocs/integrations/123 §2): parent must exist and share the kind.
     String parentAppId = body.getParentTemplateAppId();
@@ -201,7 +202,8 @@ public class ShepardTemplateRest {
       try {
         bodyValidator.validate(body.getBody(), prior.getTemplateKind());
       } catch (InvalidTemplateBodyException e) {
-        return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
+        return problem(PT_BAD_REQUEST, "Template body invalid", Response.Status.BAD_REQUEST,
+          null, java.util.Map.of("errors", e.getErrors()));
       }
     }
     // Inheritance guard (aidocs/integrations/123 §2): validate parent change before mutating.
@@ -298,5 +300,11 @@ public class ShepardTemplateRest {
   private static Response problem(String type, String title, Response.Status status, String detail) {
     return Response.status(status).type("application/problem+json")
       .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail,
+      java.util.Map<String, Object> ext) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null, ext)).build();
   }
 }
