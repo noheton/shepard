@@ -82,6 +82,7 @@ public class MeCredentialsRest {
     summary = "Create a new Git credential for the caller.")
   @APIResponse(
     responseCode = "201",
+    description = "Git credential created for the caller.",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
   )
   @APIResponse(responseCode = "400", description = "host, username, or pat is missing/blank.")

@@ -85,6 +85,7 @@ public class VideoStreamReferenceV2Rest {
   )
   @APIResponse(
     responseCode = "201",
+    description = "Video stream reference created and linked to the parent DataObject.",
     content = @Content(schema = @Schema(implementation = VideoStreamReferenceIO.class))
   )
   @APIResponse(responseCode = "400", description = "Missing file part.")

@@ -364,7 +364,7 @@ public class SemanticAdminRest {
     "Validation: id must match ^[a-z0-9][a-z0-9_-]{0,63}$ and not collide with a built-in " +
     "or another user bundle; payload ≤ 10 MB; payload must look like Turtle."
   )
-  @APIResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = OntologyBundleIO.class)))
+  @APIResponse(responseCode = "201", description = "Ontology bundle uploaded and registered.", content = @Content(schema = @Schema(implementation = OntologyBundleIO.class)))
   @APIResponse(responseCode = "400", description = "Invalid TTL or missing metadata (RFC 7807).")
   @APIResponse(responseCode = "409", description = "Bundle id collides with a built-in or existing user upload (RFC 7807).")
   public Response uploadOntology(
