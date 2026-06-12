@@ -56,7 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries/cross-data-object-bulk-data")
 @RequestScoped
-@Tag(name = "Timeseries — cross-DataObject view (TS-CROSS-DO-VIEW-1)")
+@Tag(name = "Timeseries cross-DataObject view")
 public class CrossDoBulkDataRest {
 
   /** Default LTTB target rows per series (per request body), per the GAP-2 brief. */

@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Data Quality Requirements (TPL10)")
+@Tag(name = "Data quality requirements")
 public class CollectionDQRRest {
 
   @Inject

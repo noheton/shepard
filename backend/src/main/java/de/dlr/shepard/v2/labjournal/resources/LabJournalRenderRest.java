@@ -51,7 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/lab-journal")
 @RequestScoped
-@Tag(name = "Lab journal (v2)")
+@Tag(name = "Lab journal")
 public class LabJournalRenderRest {
 
   @Inject

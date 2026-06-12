@@ -61,7 +61,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/data-objects/{dataObjectAppId}/video-stream-references")
 @RequestScoped
-@Tag(name = "Video stream references (v2)")
+@Tag(name = "Video stream references")
 public class VideoStreamReferenceV2Rest {
 
   @Inject

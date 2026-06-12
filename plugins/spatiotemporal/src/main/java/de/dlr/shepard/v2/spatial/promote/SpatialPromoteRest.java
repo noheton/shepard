@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/spatial")
 @RequestScoped
-@Tag(name = "Spatial (v2)")
+@Tag(name = "Spatial")
 public class SpatialPromoteRest {
 
   @Inject

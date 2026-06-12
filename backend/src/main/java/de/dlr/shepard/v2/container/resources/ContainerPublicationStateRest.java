@@ -52,7 +52,7 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Container lifecycle (v2)")
+@Tag(name = "Container lifecycle")
 public class ContainerPublicationStateRest {
 
   private static final Set<String> VALID_STATES = Set.of(

@@ -71,7 +71,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/references")
 @RequestScoped
-@Tag(name = "References (v2 unified)")
+@Tag(name = "References")
 public class ReferencesV2Rest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/references.bad-request";

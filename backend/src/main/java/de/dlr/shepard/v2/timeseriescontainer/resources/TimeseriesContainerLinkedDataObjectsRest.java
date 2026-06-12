@@ -41,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-containers")
 @RequestScoped
-@Tag(name = "Timeseries containers — linked DataObjects (CC1b)")
+@Tag(name = "Timeseries container linked DataObjects")
 public class TimeseriesContainerLinkedDataObjectsRest {
 
   @Inject

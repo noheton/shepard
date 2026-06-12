@@ -68,7 +68,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/.well-known/kip")
 @RequestScoped
-@Tag(name = "KIP resolver (public)")
+@Tag(name = "KIP resolver")
 public class KipResolverRest {
 
   /**

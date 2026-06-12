@@ -41,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Timeseries container chart view (TS_CHART_VIEW1)")
+@Tag(name = "Timeseries container chart view")
 public class TimeseriesContainerChartViewRest {
 
   @Inject

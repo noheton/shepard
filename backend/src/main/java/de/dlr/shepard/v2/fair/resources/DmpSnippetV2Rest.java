@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces({ "text/markdown", MediaType.APPLICATION_JSON })
 @RequestScoped
 @Authenticated
-@Tag(name = "FAIR — DMP snippet (v2)")
+@Tag(name = "FAIR DMP snippet")
 public class DmpSnippetV2Rest {
 
   @Inject

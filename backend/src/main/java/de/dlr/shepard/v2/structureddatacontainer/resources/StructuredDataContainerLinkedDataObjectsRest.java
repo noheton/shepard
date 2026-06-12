@@ -45,7 +45,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/structured-data-containers")
 @RequestScoped
-@Tag(name = "Structured data containers — linked DataObjects (CC1b)")
+@Tag(name = "Structured data container linked DataObjects")
 public class StructuredDataContainerLinkedDataObjectsRest {
 
   @Inject

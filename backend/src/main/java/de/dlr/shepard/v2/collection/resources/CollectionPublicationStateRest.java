@@ -53,7 +53,7 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection lifecycle (v2)")
+@Tag(name = "Collection lifecycle")
 public class CollectionPublicationStateRest {
 
   private static final Set<String> VALID_STATES = Set.of(

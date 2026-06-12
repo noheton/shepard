@@ -50,7 +50,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/me/git-credentials")
 @RequestScoped
-@Tag(name = "Git credentials (v2)")
+@Tag(name = "Git credentials")
 public class MeCredentialsRest {
 
   @Inject

@@ -43,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations")
 @RequestScoped
-@Tag(name = "Timeseries channel annotations (TS-SEMANTIC-REST)")
+@Tag(name = "Timeseries channel annotations")
 public class TimeseriesChannelAnnotationRest {
 
   @Inject

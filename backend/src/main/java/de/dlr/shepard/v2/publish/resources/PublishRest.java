@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/{kind}/{appId}/publish")
 @RequestScoped
-@Tag(name = "Publish (v2)")
+@Tag(name = "Publish")
 public class PublishRest {
 
   @Inject

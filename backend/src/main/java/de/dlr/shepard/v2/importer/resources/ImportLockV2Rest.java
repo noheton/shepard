@@ -54,7 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import (IMP1)")
+@Tag(name = "Import")
 public class ImportLockV2Rest {
 
   private static final String PT_BAD_REQUEST = "/problems/import-lock.bad-request";

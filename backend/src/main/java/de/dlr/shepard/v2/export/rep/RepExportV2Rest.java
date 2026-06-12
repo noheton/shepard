@@ -49,7 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collections — Regulatory Evidence Pack (TPL14)")
+@Tag(name = "Collection regulatory evidence pack")
 public class RepExportV2Rest {
 
   @Inject

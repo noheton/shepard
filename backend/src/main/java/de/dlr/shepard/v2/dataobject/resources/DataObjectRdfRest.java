@@ -77,7 +77,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/data-objects")
 @RequestScoped
 @Authenticated
-@Tag(name = "DataObjects (v2)")
+@Tag(name = "DataObjects")
 public class DataObjectRdfRest {
 
   // ─── namespace constants (mirrored from M4iDataObjectRenderer to keep

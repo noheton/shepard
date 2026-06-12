@@ -51,7 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/timeseries-containers/{containerAppId}/channels/live-window")
 @RequestScoped
 @Authenticated
-@Tag(name = "Timeseries container live window (TS_LIVE1)")
+@Tag(name = "Timeseries container live window")
 public class TimeseriesLiveWindowRest {
 
   private static final long NS_PER_MS = 1_000_000L;

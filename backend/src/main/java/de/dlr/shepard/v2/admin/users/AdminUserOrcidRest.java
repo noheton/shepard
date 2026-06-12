@@ -42,7 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Admin — user ORCID preseed (U1a-admin)")
+@Tag(name = "Admin — user ORCID preseed")
 public class AdminUserOrcidRest {
 
   @Inject

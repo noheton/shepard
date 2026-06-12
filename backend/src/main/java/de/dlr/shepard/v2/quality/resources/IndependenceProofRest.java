@@ -42,7 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/quality/independence-proof")
 @Authenticated
 @RequestScoped
-@Tag(name = "Data quality (v2)")
+@Tag(name = "Data quality")
 public class IndependenceProofRest {
 
   @Inject

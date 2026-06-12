@@ -76,7 +76,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/files")
 @RequestScoped
-@Tag(name = "File references (v2 singleton)")
+@Tag(name = "File references")
 public class FileReferenceV2Rest {
 
   @Inject

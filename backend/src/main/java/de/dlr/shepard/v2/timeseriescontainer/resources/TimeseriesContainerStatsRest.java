@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-containers")
 @RequestScoped
-@Tag(name = "Timeseries containers — storage stats (TS_STATS1)")
+@Tag(name = "Timeseries container storage stats")
 public class TimeseriesContainerStatsRest {
 
   private static final int BYTES_PER_POINT = 28; // 8 time + 8 double_value + 4 id + 8 overhead

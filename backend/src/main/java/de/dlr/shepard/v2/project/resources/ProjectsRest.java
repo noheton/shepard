@@ -50,7 +50,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Projects (v2)")
+@Tag(name = "Projects")
 public class ProjectsRest {
 
   static final String PROBLEM_TYPE_NOT_FOUND     = "/problems/projects.not-found";

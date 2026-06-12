@@ -44,7 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection watches (CW1)")
+@Tag(name = "Collection watches")
 public class CollectionWatchersRest {
 
   @Inject

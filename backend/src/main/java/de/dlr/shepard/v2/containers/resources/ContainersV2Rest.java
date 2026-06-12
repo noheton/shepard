@@ -81,7 +81,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/containers")
 @RequestScoped
-@Tag(name = "Containers (v2 unified)")
+@Tag(name = "Containers")
 public class ContainersV2Rest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/containers.bad-request";
