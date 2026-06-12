@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
@@ -489,6 +490,39 @@ public class ContainersV2Rest {
     }
     var updated = permissionsService.updatePermissionsByNeo4jId(current, id);
     return Response.ok(new PermissionsIO(updated)).build();
+  }
+
+  // ─── roles ─────────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/roles")
+  @Operation(
+    operationId = "getContainerRoles",
+    summary = "Get the calling user's roles on a container by appId.",
+    description =
+      "Returns the calling user's roles (owner / manager / writer / reader) on " +
+      "the container at `appId`. This is the v2 equivalent of the per-kind v1 " +
+      "`GET /shepard/api/{kind}Containers/{id}/roles` endpoints, converged onto " +
+      "the unified container surface (V2-SWEEP-003).\n\n" +
+      "Auth: Read on the container."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Roles of the calling user on this container.",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response getRoles(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    Long id = resolved.get().container().getId();
+    return Response.ok(permissionsService.getUserRolesOnEntity(id, caller)).build();
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────

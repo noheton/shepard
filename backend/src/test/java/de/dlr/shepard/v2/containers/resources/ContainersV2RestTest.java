@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.AccessType;
@@ -418,6 +419,42 @@ class ContainersV2RestTest {
   void listVersions_returns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  // ─── getRoles (V2-SWEEP-003-1) ─────────────────────────────────────────────
+
+  @Test
+  void getRoles_returns200WhenAllowed() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getUserRolesOnEntity(CONTAINER_NEO_ID, CALLER))
+      .thenReturn(new Roles(true, false, false, true));
+    var r = resource.getRoles(APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void getRoles_returns404WhenUnknownAppId() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.getRoles(APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void getRoles_returns403WhenNoRead() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.getRoles(APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void getRoles_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.getRoles(APP_ID, securityContext);
     assertEquals(401, r.getStatus());
   }
 
