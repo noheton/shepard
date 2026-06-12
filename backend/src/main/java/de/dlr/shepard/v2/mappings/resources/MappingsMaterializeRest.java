@@ -76,7 +76,7 @@ import java.util.Optional;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/mappings")
 @RequestScoped
-@org.eclipse.microprofile.openapi.annotations.tags.Tag(name = "Mappings (v2)")
+@org.eclipse.microprofile.openapi.annotations.tags.Tag(name = "Mappings")
 public class MappingsMaterializeRest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
