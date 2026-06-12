@@ -12,10 +12,15 @@ const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
 
-// APISIMP-TSCONT-APPID-KEY: resolve appId from the loaded container.
-// The v1-generated TimeseriesContainer type omits appId but the wire carries it.
+// V2-SWEEP-003-2: route param is now an appId (UUID v7); HeaderBar search still
+// routes numeric id (V1-EXCEPTION, SEARCH-V2 will retire it). Resolve appId from
+// the loaded container (v1 fallback path) or from the route param directly (v2 path).
 const containerAppId = computed<string | null>(
-  () => (containerAccessor.container.value as unknown as { appId?: string | null })?.appId ?? null,
+  () => containerAccessor.container.value?.appId ?? (/^\d+$/.test(containerId) ? null : containerId),
+);
+// Numeric Neo4j id for child components still using v1 API (V1-EXCEPTION).
+const containerNumericId = computed<number>(
+  () => /^\d+$/.test(containerId) ? Number(containerId) : (containerAccessor.container.value?.id ?? 0),
 );
 
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
@@ -87,8 +92,8 @@ const deleteWarning = computed<string | undefined>(() => {
   );
 });
 
-const fetchData = () => {
-  containerAccessor.fetchData();
+const fetchData = async () => {
+  await containerAccessor.fetchData();
   containerAccessor.fetchMeasurements();
   containerAccessor.fetchRoles();
 };
@@ -141,7 +146,7 @@ useHead({
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <ContainerTitleAndMetadataDisplay
-                :id="containerAccessor.container.value.id"
+                :app-id="containerAppId ?? containerId"
                 :n-items="containerAccessor.measurements.value.length"
                 :name="containerAccessor.container.value.name"
                 :type-label="'Timeseries Container'"
@@ -205,7 +210,7 @@ useHead({
             />
           </template>
           <TimeseriesAllChannelsChart
-            :container-id="containerId"
+            :container-id="containerNumericId"
             :container-app-id="containerAppId"
             :measurements="containerAccessor.measurements.value"
             :selected-channel-keys="effectiveChannelKeys"
@@ -289,7 +294,7 @@ useHead({
       <!-- UX-PIN1: containerPath is stored with each pin so the PersonalDigest
            tile can navigate back to this container. -->
       <TimeseriesMeasurementsTable
-        :container-id="containerId"
+        :container-id="containerNumericId"
         :container-app-id="containerAppId ?? ''"
         :is-allowed-to-edit-data="containerAccessor.isAllowedToEditData.value"
         :measurements="containerAccessor.measurements.value"
@@ -329,7 +334,7 @@ useHead({
                 v-for="obj in linkedDataObjects"
                 :key="obj.id"
                 :data-object="obj"
-                :container-id="containerId"
+                :container-id="containerNumericId"
               />
             </v-list>
           </div>

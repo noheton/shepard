@@ -14,7 +14,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
   async delete() {
     try {
       await this.api.value.deleteSpatialDataContainer({
-        spatialDataContainerId: this.id,
+        spatialDataContainerId: Number(this.id),
       });
       emitSuccess(
         `Successfully deleted container "${this.spatialData.value?.name}"`,
@@ -29,7 +29,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
   async fetchRoles() {
     try {
       this.roles.value = await this.api.value.getSpatialDataRoles({
-        spatialDataContainerId: this.id,
+        spatialDataContainerId: Number(this.id),
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching roles");
@@ -40,7 +40,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
   async fetchData() {
     try {
       this.spatialData.value = await this.api.value.getSpatialDataContainer({
-        spatialDataContainerId: this.id,
+        spatialDataContainerId: Number(this.id),
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching spatial data container");
@@ -51,7 +51,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
   async fetchPermissions() {
     try {
       this.permissions.value = await this.api.value.getSpatialDataPermissions({
-        spatialDataContainerId: this.id,
+        spatialDataContainerId: Number(this.id),
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
@@ -62,7 +62,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
   async updatePermissions(updatedPermissions: Permissions) {
     try {
       await this.api.value.editSpatialDataPermissions({
-        spatialDataContainerId: this.id,
+        spatialDataContainerId: Number(this.id),
         permissions: updatedPermissions,
       });
       emitSuccess(

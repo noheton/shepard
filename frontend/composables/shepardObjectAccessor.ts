@@ -56,7 +56,9 @@ export abstract class ShepardObjectAccessor<TId extends number | string = number
   }
 }
 
-export abstract class ContainerAccessor extends ShepardObjectAccessor {
+// V2-SWEEP-003-2: changed TId to string — container routes now carry UUID-v7 appId
+// or numeric string (V1-EXCEPTION). Accessors detect via /^\d+$/ and branch.
+export abstract class ContainerAccessor extends ShepardObjectAccessor<string> {
   isAllowedToDelete: ComputedRef<boolean> = computed(() => {
     return !!this.roles.value?.owner;
   });
