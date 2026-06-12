@@ -4,7 +4,7 @@
 import * as runtime from '../runtime';
 
 export interface PermissionAuditLogEntryIO {
-  id: number;
+  appId: string;
   occurredAt: string;
   entityAppId: string;
   entityKind: string | null;
