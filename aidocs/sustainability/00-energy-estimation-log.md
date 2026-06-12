@@ -510,4 +510,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | COMP-SE-ROLES + COMP-SE-DOCS + API3 — DLR SE compliance docs (SEA naming, AK classification) + container safe-delete design doc. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | PERF9 — channel-edit checkbox virtualization: search filter + v-virtual-scroll in ShowTimeseriesReferenceDialog; TimeseriesReferencePicker already handled. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | UX-PROV1 — Ancestor Chain panel: `AncestorChainPanel.vue` + `useFetchPredecessorChain.ts` + 9 Vitest tests; reuses ANC-1 `predecessor-chain` endpoint; advanced-mode gate on DataObject detail page. ~0.15 kWh / ~60 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-06-12 | BTKVS-C1-EXCEL-EXPORT — shape-driven Excel export: `TemplateExcelExportRest` + `CellMappingExcelExporter` (POI 5.4.1) + 17 JUnit + `export_demo.py` + "Download Excel" on `/tools/form-preview` + backlog reconciliation (BTKVS-C1 → generic seams per 191). ~0.05 kWh / ~20 gCO₂e (one full backend verify + frontend gates in a fresh worktree). | Claude Opus 4.7 |
 

@@ -1,7 +1,11 @@
 // BTKVS-B2 — pure helpers of the form-descriptor composable:
 // path building + the doc 125 §5.2 violations[]→field dictionary mapping.
 import { describe, expect, it } from "vitest";
-import { templateFormPath, violationsByPath } from "~/composables/useTemplateForm";
+import {
+  templateExcelExportPath,
+  templateFormPath,
+  violationsByPath,
+} from "~/composables/useTemplateForm";
 
 describe("templateFormPath", () => {
   it("builds the /v2/ descriptor path from an appId", () => {
@@ -12,6 +16,20 @@ describe("templateFormPath", () => {
 
   it("URL-encodes hostile appIds", () => {
     expect(templateFormPath("a/b")).toBe("/v2/templates/a%2Fb/form");
+  });
+});
+
+describe("templateExcelExportPath", () => {
+  it("builds the /v2/ export path with the dataObjectAppId query (BTKVS-C1-EXCEL-EXPORT)", () => {
+    expect(templateExcelExportPath("tmpl-1", "019e7243-f995-7914-be80-1")).toBe(
+      "/v2/templates/tmpl-1/export?dataObjectAppId=019e7243-f995-7914-be80-1",
+    );
+  });
+
+  it("URL-encodes both appIds", () => {
+    expect(templateExcelExportPath("a/b", "c&d")).toBe(
+      "/v2/templates/a%2Fb/export?dataObjectAppId=c%26d",
+    );
   });
 });
 

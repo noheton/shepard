@@ -76,6 +76,10 @@
          strictly the validation engine. See
          aidocs/semantics/48 §3 + aidocs/95 §11. -->
     <jena.version>5.4.0</jena.version>
+    <!-- Apache POI (Apache-2.0) — xlsx writer for the shape-driven Excel
+         export (BTKVS-C1-EXCEL-EXPORT, doc 125 §6/D5). poi-ooxml pulls the
+         trimmed poi-ooxml-lite schema jar, not the full ooxml-schemas. -->
+    <poi.version>5.4.1</poi.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -349,6 +353,19 @@
           <artifactId>slf4j-jdk14</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <!-- Apache POI xlsx writer/reader (Apache-2.0). BTKVS-C1-EXCEL-EXPORT
+           (doc 125 §6/D5): the shape-driven Excel export walks the
+           urn:btkvs:cell-mapping / urn:btkvs:sheet annotations on a data-kind
+           template's shapeGraph and writes the focused DataObject's attribute
+           values into the mapped workbook cells. Retires the BT-KVS group's
+           xlwings (requires-a-running-Excel) tooling server-side. poi-ooxml
+           depends on poi-ooxml-lite (the trimmed XML-schema jar), keeping the
+           transitive weight to poi + xmlbeans + commons-compress. -->
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
