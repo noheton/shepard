@@ -34,10 +34,30 @@ export function isCollectionReferenceV2(entity: unknown): entity is CollectionRe
   );
 }
 
+/** V2-SWEEP-004-3: v2 wire shape for kind=uri references. */
+export type URIReferenceV2 = {
+  id: number;
+  appId: string;
+  kind: "uri";
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+  payload: { uri: string; relationship?: string | null };
+};
+
+export function isURIReferenceV2(entity: unknown): entity is URIReferenceV2 {
+  return (
+    !!entity &&
+    typeof entity === "object" &&
+    (entity as URIReferenceV2).kind === "uri"
+  );
+}
+
 export type RelatedEntity =
   | URIReference
   | DataObjectReferenceWithPayload
   | CollectionReference
   | CollectionReferenceV2
+  | URIReferenceV2
   | Successor
   | Predecessor;

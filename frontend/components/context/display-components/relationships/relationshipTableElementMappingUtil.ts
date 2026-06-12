@@ -5,7 +5,7 @@ import {
   instanceOfURIReference,
   type URIReference,
 } from "@dlr-shepard/backend-client";
-import { isCollectionReferenceV2, type RelatedEntity } from "./relatedEntity";
+import { isCollectionReferenceV2, isURIReferenceV2, type RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
@@ -25,6 +25,8 @@ export function mapRelatedEntityToRelationshipTableElement(
   const uriEntity = isUri
     ? (relatedEntity as URIReference & { appId?: string })
     : undefined;
+  // V2-SWEEP-004-3: v2 URI reference wire shape (kind=uri, appId always present).
+  const isUriV2 = isURIReferenceV2(relatedEntity);
 
   return {
     id: relatedEntity.id,
@@ -42,14 +44,20 @@ export function mapRelatedEntityToRelationshipTableElement(
     actions: {
       elementId: relatedEntity.id,
       annotatable: isAnnotatable(relatedEntity),
-      uriRefAppId: uriEntity?.appId,
+      uriRefAppId: uriEntity?.appId ?? (isUriV2 ? relatedEntity.appId : undefined),
       uriRefEditData: uriEntity
         ? {
             name: uriEntity.name,
             uri: uriEntity.uri,
             relationship: uriEntity.relationship ?? undefined,
           }
-        : undefined,
+        : isUriV2
+          ? {
+              name: relatedEntity.name,
+              uri: relatedEntity.payload.uri,
+              relationship: relatedEntity.payload.relationship ?? undefined,
+            }
+          : undefined,
     },
   };
 }
@@ -63,6 +71,9 @@ function mapRelationshipType(
   if (isCollectionReferenceV2(entity)) {
     return (entity.payload.relationship ?? undefined) as string | undefined;
   }
+  if (isURIReferenceV2(entity)) {
+    return entity.payload.relationship ?? undefined;
+  }
   return entity.relationship ?? undefined;
 }
 
@@ -72,6 +83,9 @@ function mapName(
 ): RelationshipTableElement["name"] {
   if (instanceOfURIReference(entity)) {
     return { value: entity.name, path: entity.uri };
+  }
+  if (isURIReferenceV2(entity)) {
+    return { value: entity.name, path: entity.payload.uri };
   }
   if (instanceOfDataObject(entity)) {
     // Predecessor / Successor / sibling DataObjects share the parent's
@@ -122,6 +136,9 @@ function mapType(
   if (instanceOfURIReference(entity)) {
     return { type: `Link` };
   }
+  if (isURIReferenceV2(entity)) {
+    return { type: "Link" };
+  }
   if (instanceOfDataObject(entity)) {
     return {
       type: "Data Object",
@@ -171,6 +188,7 @@ function isAnnotatable(entity: RelatedEntity): boolean {
     instanceOfCollectionReference(entity) ||
     isCollectionReferenceV2(entity) ||
     instanceOfDataObjectReference(entity) ||
-    instanceOfURIReference(entity)
+    instanceOfURIReference(entity) ||
+    isURIReferenceV2(entity)
   );
 }
