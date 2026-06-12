@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.v2.resources;
 
 import de.dlr.shepard.plugins.aas.services.AasIdtaTemplateImportService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.template.services.TemplateBodyValidator.InvalidTemplateBodyException;
 import de.dlr.shepard.plugins.aas.v2.io.AasIdtaImportResultIO;
@@ -13,7 +14,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -66,11 +66,16 @@ public class AasAdminRest {
       return Response.ok(result).build();
     } catch (InvalidTemplateBodyException e) {
       return Response.serverError()
-          .entity(Map.of("error", "Bundled template body invalid: " + String.join("; ", e.getErrors())))
+          .entity(new ProblemJson("/problems/aas-admin.template-body-invalid",
+            "Template Body Invalid", 500,
+            "Bundled template body invalid: " + String.join("; ", e.getErrors()), null))
+          .type("application/problem+json")
           .build();
     } catch (IllegalStateException e) {
       return Response.serverError()
-          .entity(Map.of("error", e.getMessage()))
+          .entity(new ProblemJson("/problems/aas-admin.internal-error",
+            "Internal Error", 500, e.getMessage(), null))
+          .type("application/problem+json")
           .build();
     }
   }

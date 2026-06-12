@@ -899,10 +899,9 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", securityContext);
     assertEquals(400, r.getStatus());
-    // 400 returns Map entity with the offending field name in 'detail'
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    String detail = (String) body.get("detail");
+    // 400 returns ProblemJson entity with the offending field name in 'detail'
+    de.dlr.shepard.common.exceptions.ProblemJson body = (de.dlr.shepard.common.exceptions.ProblemJson) r.getEntity();
+    String detail = body.detail();
     org.junit.jupiter.api.Assertions.assertNotNull(detail);
     org.junit.jupiter.api.Assertions.assertTrue(detail.contains("bogusField"), "400 body should cite the offending field name; got: " + detail);
     // 400 must short-circuit before any DB hit
