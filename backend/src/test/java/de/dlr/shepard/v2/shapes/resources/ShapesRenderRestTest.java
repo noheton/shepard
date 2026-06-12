@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.spi.view.RenderException;
 import de.dlr.shepard.spi.view.RenderRequest;
 import de.dlr.shepard.spi.view.RenderResponse;
@@ -417,10 +418,9 @@ class ShapesRenderRestTest {
 
     Response r = rest.render(null,new ShapesRenderRequestIO("throwy-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("code")).isEqualTo("render.body.invalid");
-    assertThat(body.get("error")).asString().contains("missing required");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.extensions().get("code")).isEqualTo("render.body.invalid");
+    assertThat(body.detail()).contains("missing required");
   }
 
   @Test
@@ -434,10 +434,9 @@ class ShapesRenderRestTest {
 
     Response r = rest.render(null,new ShapesRenderRequestIO("broken-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("type")).isEqualTo("render.internal-error");
-    assertThat(body.get("error")).asString().contains("synthetic unexpected failure");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.type()).contains("internal-error");
+    assertThat(body.detail()).contains("synthetic unexpected failure");
   }
 
   @Test
@@ -451,9 +450,8 @@ class ShapesRenderRestTest {
 
     Response r = rest.render(null,new ShapesRenderRequestIO("null-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("type")).isEqualTo("render.internal-error");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.type()).contains("internal-error");
   }
 
   @Test
@@ -466,9 +464,8 @@ class ShapesRenderRestTest {
 
     Response r = rest.render(null,new ShapesRenderRequestIO("nc-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("code")).isEqualTo("render.unknown-error");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.extensions().get("code")).isEqualTo("render.unknown-error");
   }
 
   // ─── V2CONV-A1b — file-rooted dispatch (E1/E2/E3/E4) ─────────────────────
