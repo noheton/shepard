@@ -54,7 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <h2>Pagination</h2>
  *
- * <p>{@code page} default 0, clamped to {@code >= 0}; {@code size}
+ * <p>{@code page} default 0, clamped to {@code >= 0}; {@code pageSize}
  * default 50, clamped into {@code [1, 200]}. {@code collectionAppId}
  * is optional — when supplied, the result is scoped to that Collection;
  * when absent, the result spans every Collection the caller can read.
@@ -90,7 +90,7 @@ public class SnapshotListRest {
     List<SnapshotListItemIO> items,
     long total,
     int page,
-    int size
+    int pageSize
   ) {}
 
   @GET
@@ -102,11 +102,11 @@ public class SnapshotListRest {
       "newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` " +
       "scopes the result to a single Collection; when absent, the list spans " +
       "every Collection the caller can read.\n\n" +
-      "Response envelope: `{ items[], total, page, size }`. **`total` reports " +
+      "Response envelope: `{ items[], total, page, pageSize }`. **`total` reports " +
       "the unfiltered count** (every snapshot in scope, not just the ones the " +
       "caller can read) — so a caller looking at `items.length` vs. `total` " +
       "can infer how many they can't see. The page is post-filtered to the " +
-      "readable subset, so `items.length` may be lower than `size` even when " +
+      "readable subset, so `items.length` may be lower than `pageSize` even when " +
       "more snapshots exist.\n\n" +
       "Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up)."
   )

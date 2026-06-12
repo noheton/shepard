@@ -38,7 +38,7 @@ function mockFetchError(status: number, bodyText = "boom") {
 
 describe("useSnapshotList — fetchPage()", () => {
   it("hits GET /v2/snapshots with default page=0 size=200", async () => {
-    mockFetchOk({ items: [], total: 0, page: 0, size: 200 });
+    mockFetchOk({ items: [], total: 0, page: 0, pageSize: 200 });
     const { fetchPage } = useSnapshotList();
     await fetchPage();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
@@ -69,7 +69,7 @@ describe("useSnapshotList — fetchPage()", () => {
       ],
       total: 2,
       page: 0,
-      size: 200,
+      pageSize: 200,
     });
     const { fetchPage, items, total } = useSnapshotList();
     const list = await fetchPage();
@@ -81,7 +81,7 @@ describe("useSnapshotList — fetchPage()", () => {
   });
 
   it("includes collectionAppId param when provided", async () => {
-    mockFetchOk({ items: [], total: 0, page: 0, size: 50 });
+    mockFetchOk({ items: [], total: 0, page: 0, pageSize: 50 });
     const { fetchPage } = useSnapshotList();
     await fetchPage({ collectionAppId: "coll-abc", page: 1, size: 50 });
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
@@ -93,7 +93,7 @@ describe("useSnapshotList — fetchPage()", () => {
   });
 
   it("sends Bearer auth header when token present", async () => {
-    mockFetchOk({ items: [], total: 0, page: 0, size: 200 });
+    mockFetchOk({ items: [], total: 0, page: 0, pageSize: 200 });
     const { fetchPage } = useSnapshotList();
     await fetchPage();
     const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(
@@ -113,7 +113,7 @@ describe("useSnapshotList — fetchPage()", () => {
   });
 
   it("handles missing items array gracefully", async () => {
-    mockFetchOk({ total: 0, page: 0, size: 200 });
+    mockFetchOk({ total: 0, page: 0, pageSize: 200 });
     const { fetchPage, items } = useSnapshotList();
     await fetchPage();
     expect(items.value).toEqual([]);

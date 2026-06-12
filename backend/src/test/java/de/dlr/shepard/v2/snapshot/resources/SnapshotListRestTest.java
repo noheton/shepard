@@ -95,7 +95,7 @@ class SnapshotListRestTest {
     assertThat(body.items()).isEmpty();
     assertThat(body.total()).isEqualTo(0L);
     assertThat(body.page()).isEqualTo(0);
-    assertThat(body.size()).isEqualTo(50);
+    assertThat(body.pageSize()).isEqualTo(50);
   }
 
   @Test
@@ -200,7 +200,7 @@ class SnapshotListRestTest {
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
     assertThat(body.page()).isEqualTo(0);
-    assertThat(body.size()).isEqualTo(200);
+    assertThat(body.pageSize()).isEqualTo(200);
   }
 
   @Test
@@ -211,6 +211,6 @@ class SnapshotListRestTest {
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
     assertThat(body.page()).isEqualTo(3);
-    assertThat(body.size()).isEqualTo(25);
+    assertThat(body.pageSize()).isEqualTo(25);
   }
 }
