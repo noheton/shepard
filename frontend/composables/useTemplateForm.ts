@@ -50,6 +50,18 @@ export function templateFormPath(templateAppId: string): string {
 }
 
 /**
+ * BTKVS-C1-EXCEL-EXPORT — the shape-driven Excel export path (doc 125 §6/D5):
+ * the same cell-mapping annotations that drive the form drive the workbook.
+ * Sibling of the form descriptor on the generic template surface.
+ */
+export function templateExcelExportPath(templateAppId: string, dataObjectAppId: string): string {
+  return (
+    `/v2/templates/${encodeURIComponent(templateAppId)}/export` +
+    `?dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`
+  );
+}
+
+/**
  * Map a 422 problem-JSON's violations[] to {fields[].path → message} — the
  * doc 125 §5.2 dictionary lookup. Pure + side-effect-free for unit tests.
  */

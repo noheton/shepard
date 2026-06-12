@@ -142,6 +142,23 @@ itself when nothing applies, and it replaces the Tools menu's former
 "Render view" entry — two clicks from the entity to a rendered view or an
 open form, no typed ids.
 
+## Excel export from shapes — `GET /v2/templates/{appId}/export`
+
+The same shape that drives the form drives a **spreadsheet projection**:
+property shapes annotated with `urn:btkvs:cell-mapping` (A1-style cell
+reference) and optionally `urn:btkvs:sheet` (worksheet name) place the focused
+DataObject's attribute values into a generated `.xlsx` workbook —
+`GET /v2/templates/{appId}/export?dataObjectAppId=<doAppId>` returns it with a
+`Content-Disposition` download filename. Fields without cell-mappings are
+skipped silently; an absent attribute value leaves its cell empty. Templates
+whose shapes carry no cell-mappings answer 409 (nothing to place); unknown
+template or DataObject answer 404; the caller needs Read on the DataObject's
+Collection. A "Download Excel" button lives on **Tools → Form preview**; a
+Python download example ships at
+`examples/btkvs-docket-showcase/export_demo.py`. The Excel **import**
+direction (workbook → cells → SHACL validation → DataObject) is planned —
+see `BTKVS-C2`.
+
 ## Permissions
 
 Creating and editing templates requires the **instance-admin** role. The build

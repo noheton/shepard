@@ -14,7 +14,7 @@
  */
 
 import { useRoute } from "vue-router";
-import { templateFormPath } from "~/composables/useTemplateForm";
+import { templateExcelExportPath, templateFormPath } from "~/composables/useTemplateForm";
 
 useHead({ title: "Form preview | shepard" });
 
@@ -33,6 +33,52 @@ const focusAppId = computed(() =>
 const endpoint = computed(() =>
   templateAppId.value.trim() ? templateFormPath(templateAppId.value.trim()) : null,
 );
+
+// BTKVS-C1-EXCEL-EXPORT — shape-driven Excel download (doc 125 §6/D5): the
+// same urn:btkvs:cell-mapping annotations that drive the form drive the
+// generated workbook server-side.
+const dataObjectAppId = ref<string>("");
+const exporting = ref(false);
+const exportError = ref<string | null>(null);
+
+async function downloadExcel() {
+  const tmpl = templateAppId.value.trim();
+  const dataObject = dataObjectAppId.value.trim();
+  if (!tmpl || !dataObject) return;
+  exporting.value = true;
+  exportError.value = null;
+  try {
+    const { data: auth } = useAuth();
+    const config = useRuntimeConfig().public;
+    const explicit = config.backendV2ApiUrl as string | undefined;
+    const v2Base =
+      explicit && explicit.length > 0
+        ? explicit
+        : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
+    if (auth.value?.accessToken) {
+      headers["Authorization"] = `Bearer ${auth.value.accessToken}`;
+    }
+    const res = await fetch(v2Base + templateExcelExportPath(tmpl, dataObject), { headers });
+    if (!res.ok) {
+      exportError.value = `${res.status} ${res.statusText}`;
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `docket-${dataObject}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e: unknown) {
+    exportError.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    exporting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -74,6 +120,38 @@ const endpoint = computed(() =>
         >
           Focus: {{ focusAppId }}
         </v-chip>
+      </v-card-text>
+    </v-card>
+
+    <v-card class="mb-6">
+      <v-card-title>Excel export (shape-driven)</v-card-title>
+      <v-card-text>
+        <p class="text-caption text-medium-emphasis mb-4">
+          The same <code>urn:btkvs:cell-mapping</code> annotations that drive the form drive the
+          workbook: the focused DataObject's attribute values land in the mapped cells
+          (<code>GET /v2/templates/{appId}/export</code>, doc 125 §6).
+        </p>
+        <v-text-field
+          v-model="dataObjectAppId"
+          label="DataObject appId (the docket instance to export)"
+          density="comfortable"
+          variant="outlined"
+          prepend-inner-icon="mdi-file-table-outline"
+          placeholder="019e7243-f995-7914-be80-…"
+          spellcheck="false"
+        />
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-microsoft-excel"
+          :disabled="!templateAppId.trim() || !dataObjectAppId.trim()"
+          :loading="exporting"
+          @click="downloadExcel"
+        >
+          Download Excel
+        </v-btn>
+        <div v-if="exportError" class="text-caption text-error mt-2">
+          Export failed: {{ exportError }}
+        </div>
       </v-card-text>
     </v-card>
 
