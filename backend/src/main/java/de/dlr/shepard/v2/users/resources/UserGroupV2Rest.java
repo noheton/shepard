@@ -100,7 +100,7 @@ public class UserGroupV2Rest {
 
   @GET
   @Path("/{appId}")
-  @Operation(summary = "Get a user group by appId.")
+  @Operation(operationId = "getUserGroupV2", summary = "Get a user group by appId.")
   @APIResponse(
     responseCode = "200",
     description = "The user group.",
@@ -114,7 +114,7 @@ public class UserGroupV2Rest {
   }
 
   @POST
-  @Operation(summary = "Create a user group.")
+  @Operation(operationId = "createUserGroupV2", summary = "Create a user group.")
   @APIResponse(
     responseCode = "201",
     description = "User group created.",
@@ -169,7 +169,7 @@ public class UserGroupV2Rest {
 
   @DELETE
   @Path("/{appId}")
-  @Operation(summary = "Delete a user group.")
+  @Operation(operationId = "deleteUserGroupV2", summary = "Delete a user group.")
   @APIResponse(responseCode = "204", description = "User group deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "User group not found.")
@@ -184,6 +184,7 @@ public class UserGroupV2Rest {
   @GET
   @Path("/{appId}/roles")
   @Operation(
+    operationId = "getUserGroupRolesV2",
     summary = "Get the caller's roles on a user group.",
     description = "Returns the caller's role flags (owner / manager / writer / reader) for the user group."
   )
@@ -203,6 +204,7 @@ public class UserGroupV2Rest {
   @GET
   @Path("/{appId}/permissions")
   @Operation(
+    operationId = "getUserGroupPermissionsV2",
     summary = "Get permissions for a user group.",
     description = "Returns the full permissions for the user group. Requires Manage access."
   )
