@@ -7,14 +7,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
-@Schema(name = "DataObjectSummary", description = "Compact DataObject reference — appId, id, name, status.")
+@Schema(name = "DataObjectSummary", description = "Compact DataObject reference — appId, name, status.")
 public class DataObjectSummaryIO {
 
   @Schema(readOnly = true)
   private String appId;
-
-  @Schema(readOnly = true)
-  private long id;
 
   @Schema(readOnly = true)
   private String name;
@@ -24,7 +21,6 @@ public class DataObjectSummaryIO {
 
   public DataObjectSummaryIO(DataObject d) {
     this.appId = d.getAppId();
-    this.id = d.getShepardId() != null ? d.getShepardId() : -1L;
     this.name = d.getName();
     this.status = d.getStatus();
   }

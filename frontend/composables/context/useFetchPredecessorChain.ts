@@ -11,7 +11,6 @@
 
 export interface DataObjectChainItem {
   appId: string;
-  id: number;
   name: string;
   status: string | null;
 }
