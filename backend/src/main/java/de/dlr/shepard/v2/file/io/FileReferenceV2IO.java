@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.file.io;
 
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.v2.references.io.BasicReferenceV2IO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Objects;
@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @Schema(name = "FileReferenceV2", description = "Singleton FileReference (FR1b) — exactly one ShepardFile.")
-public class FileReferenceV2IO extends BasicReferenceIO {
+public class FileReferenceV2IO extends BasicReferenceV2IO {
 
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;
