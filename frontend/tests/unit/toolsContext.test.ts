@@ -69,10 +69,11 @@ describe("COLLECTION_CONTEXT_TOOLS", () => {
 // ── DATA_OBJECT_CONTEXT_TOOLS ──────────────────────────────────────────────
 
 describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
-  it("exposes the five DataObject-scope tool entries", () => {
+  it("exposes the four DataObject-scope tool entries (do-render absorbed by ActionMenuButton)", () => {
+    // FORM-UX-ACTIONBUTTON — the former "do-render" entry moved into the
+    // unified ActionMenuButton ("View as …", fed by /v2/shapes/applicable).
     expect(DATA_OBJECT_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
       "do-create-template",
-      "do-render",
       "do-shacl",
       "do-sparql",
       "do-vocab",
@@ -106,16 +107,6 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     expect(q.scope).toBe("data-object");
   });
 
-  it("do-render routes to /shapes/render with focusShepardId (existing param name)", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(t.path).toBe("/shapes/render");
-    const q = t.buildQuery(SAMPLE_APP_ID);
-    // The /shapes/render page already reads `focusShepardId` from the
-    // query string into its template-render form. We MUST use that
-    // exact param name — not `focusAppId` — or the prefill won't fire.
-    expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
-  });
-
   // ── TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — conditional rendering ─────────
 
   it("do-shacl is hidden when no template is attached (enabledWhen=false)", () => {
@@ -128,44 +119,6 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
   it("do-shacl is visible when a template is attached (enabledWhen=true)", () => {
     const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
     expect(t.enabledWhen!({ attachedTemplateAppId: "tpl-001" })).toBe(true);
-  });
-
-  it("do-render is hidden when no template is attached", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(t.enabledWhen).toBeDefined();
-    expect(t.enabledWhen!({ attachedTemplateAppId: null })).toBe(false);
-  });
-
-  // ── UX612-M1 — gate matches the render endpoint's contract ─────────────
-  // POST /v2/shapes/render accepts only templateKind=VIEW_RECIPE (422
-  // otherwise). The gate checks the kind, not mere template presence.
-
-  it("do-render is visible when the attached template is a VIEW_RECIPE", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(
-      t.enabledWhen!({
-        attachedTemplateAppId: "tpl-001",
-        attachedTemplateKind: "VIEW_RECIPE",
-      }),
-    ).toBe(true);
-  });
-
-  it("do-render is hidden when the attached template is a DATAOBJECT_RECIPE (would 422)", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(
-      t.enabledWhen!({
-        attachedTemplateAppId: "tpl-001",
-        attachedTemplateKind: "DATAOBJECT_RECIPE",
-      }),
-    ).toBe(false);
-  });
-
-  it("do-render is hidden when the template kind is unknown (unresolved fetch)", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(t.enabledWhen!({ attachedTemplateAppId: "tpl-001" })).toBe(false);
-    expect(
-      t.enabledWhen!({ attachedTemplateAppId: "tpl-001", attachedTemplateKind: null }),
-    ).toBe(false);
   });
 
   it("do-shacl stays presence-gated (validation works for any template kind)", () => {
@@ -183,13 +136,6 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-001" });
     expect(q.templateAppId).toBe("tpl-001");
     expect(q.focusAppId).toBe(SAMPLE_APP_ID);
-  });
-
-  it("do-render prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-002" });
-    expect(q.templateAppId).toBe("tpl-002");
-    expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
   });
 
   it("do-sparql + do-vocab have no gate (enabledWhen undefined) and always render", () => {

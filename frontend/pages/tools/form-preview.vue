@@ -13,11 +13,23 @@
  * arrives with the ActionMenuButton.
  */
 
+import { useRoute } from "vue-router";
 import { templateFormPath } from "~/composables/useTemplateForm";
 
 useHead({ title: "Form preview | shepard" });
 
-const templateAppId = ref<string>("");
+// FORM-UX-ACTIONBUTTON — the "Record a …" entries in ActionMenuButton route
+// here with `?template=<templateAppId>&focusAppId=<entityAppId>` until the
+// full form pane ships. Prefill from the query so the in-context entry is
+// zero-typing (tools-in-context-first rule); the focus context is carried
+// for the future edit-form prefill (FORM-DESCRIPTOR-1 residue).
+const route = useRoute();
+const templateAppId = ref<string>(
+  typeof route.query.template === "string" ? route.query.template : "",
+);
+const focusAppId = computed(() =>
+  typeof route.query.focusAppId === "string" ? route.query.focusAppId : null,
+);
 const endpoint = computed(() =>
   templateAppId.value.trim() ? templateFormPath(templateAppId.value.trim()) : null,
 );
@@ -52,6 +64,16 @@ const endpoint = computed(() =>
           placeholder="019e7243-f995-7914-be80-…"
           spellcheck="false"
         />
+        <v-chip
+          v-if="focusAppId"
+          size="small"
+          variant="tonal"
+          color="primary"
+          prepend-icon="mdi-target"
+          data-testid="form-preview-focus-chip"
+        >
+          Focus: {{ focusAppId }}
+        </v-chip>
       </v-card-text>
     </v-card>
 

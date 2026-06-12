@@ -130,6 +130,18 @@ before validation. Retired templates answer 409; templates without a
 lives at **Tools → Form preview**; a Python consumption example ships at
 `examples/btkvs-docket-showcase/form_demo.py`.
 
+**In-context entry — the Actions button.** Entity detail pages (DataObject
+today) carry one **Actions** button fed by the unified discovery endpoint
+`GET /v2/shapes/applicable?focusAppId=…`: it lists everything shape-driven
+that applies to the entity you are looking at, split into **"View as …"**
+(`mode=VIEW` — VIEW_RECIPE templates attached to the entity, opening the
+prefilled render flow) and **"Record a …"** (`mode=FORM` — data-kind
+templates with a `shapeGraph`, scoped to the Collection's template
+allow-list when one is set, opening the form surface). The button hides
+itself when nothing applies, and it replaces the Tools menu's former
+"Render view" entry — two clicks from the entity to a rendered view or an
+open form, no typed ids.
+
 ## Permissions
 
 Creating and editing templates requires the **instance-admin** role. The build

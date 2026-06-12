@@ -14,6 +14,9 @@ import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPr
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
+// FORM-UX-ACTIONBUTTON — unified "View as … / Record a …" entry point fed by
+// GET /v2/shapes/applicable; absorbs the former Tools-menu "Render view" item.
+import ActionMenuButton from "~/components/context/tools/ActionMenuButton.vue";
 // UX612-M1 — resolve the attached template's kind so the Tools menu can gate
 // "Render view" on VIEW_RECIPE (the only kind /v2/shapes/render accepts).
 import { TemplatesApi } from "@dlr-shepard/backend-client";
@@ -671,6 +674,11 @@ async function saveEmbargoEdit() {
                    view-recipe render entry points. Visible to readers
                    too; only the actions themselves require permissions
                    (handled by destination pages). -->
+              <!-- FORM-UX-ACTIONBUTTON — "View as …" / "Record a …" from
+                   GET /v2/shapes/applicable. Replaces the Tools menu's
+                   former "Render view" entry (absorbed; the VIEW gate is
+                   server-owned now). Hidden when nothing is applicable. -->
+              <ActionMenuButton :focus-app-id="dataObject.appId" />
               <EntityToolsMenu
                 :app-id="dataObject.appId"
                 scope="data-object"
