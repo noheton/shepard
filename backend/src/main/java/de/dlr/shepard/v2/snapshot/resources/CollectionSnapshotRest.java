@@ -180,14 +180,14 @@ public class CollectionSnapshotRest {
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
     @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("size") @DefaultValue("50") int size,
+    @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     List<SnapshotIO> rows = snapshotService
       .listByCollection(collectionAppId, safePage, safeSize)

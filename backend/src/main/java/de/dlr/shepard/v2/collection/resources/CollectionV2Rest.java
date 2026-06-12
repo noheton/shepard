@@ -153,10 +153,10 @@ public class CollectionV2Rest {
   public Response list(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size
+    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
   ) {
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);

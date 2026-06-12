@@ -36,7 +36,7 @@ const {
 } = useSnapshotList();
 
 onMounted(() => {
-  void fetchPage({ size: 200 });
+  void fetchPage({ pageSize: 200 });
 });
 
 const snapshotOptions = computed(() =>

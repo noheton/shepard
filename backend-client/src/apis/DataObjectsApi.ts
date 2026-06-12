@@ -78,7 +78,7 @@ export interface ListDataObjectsRequest {
     include?: string;
     name?: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
     status?: string;
 }
 
@@ -446,8 +446,8 @@ export class DataObjectsApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['status'] != null) {

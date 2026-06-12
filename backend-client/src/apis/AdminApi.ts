@@ -278,7 +278,7 @@ export interface PermissionAuditLogRequest {
     entityAppId?: string;
     from?: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
     to?: string;
 }
 
@@ -1992,8 +1992,8 @@ export class AdminApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['to'] != null) {

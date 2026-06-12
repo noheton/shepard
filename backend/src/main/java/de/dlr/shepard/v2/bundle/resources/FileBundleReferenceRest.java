@@ -428,7 +428,7 @@ public class FileBundleReferenceRest {
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
     @QueryParam("page") Integer page,
-    @QueryParam("size") Integer size,
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
@@ -446,16 +446,16 @@ public class FileBundleReferenceRest {
     // a UI that may just have a stale slider value while the bundle's
     // file count is fluctuating.
     int pageIdx = (page == null || page < 0) ? 0 : page;
-    int pageSize = (size == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, size));
+    int safePageSize = (pageSize == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, pageSize));
 
     List<ShepardFile> all = group.getFiles() != null ? group.getFiles() : List.of();
     long total = all.size();
-    int totalPages = pageSize == 0 ? 0 : (int) ((total + pageSize - 1) / pageSize);
-    int from = Math.min((int) total, pageIdx * pageSize);
-    int to = Math.min((int) total, from + pageSize);
+    int totalPages = safePageSize == 0 ? 0 : (int) ((total + safePageSize - 1) / safePageSize);
+    int from = Math.min((int) total, pageIdx * safePageSize);
+    int to = Math.min((int) total, from + safePageSize);
     List<ShepardFile> slice = from >= to ? List.of() : new ArrayList<>(all.subList(from, to));
 
-    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, pageSize, total, totalPages);
+    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, safePageSize, total, totalPages);
     return Response.ok(envelope).build();
   }
 

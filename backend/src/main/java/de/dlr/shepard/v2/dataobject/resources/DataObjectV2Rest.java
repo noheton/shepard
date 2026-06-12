@@ -189,7 +189,7 @@ public class DataObjectV2Rest {
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("status") String status,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
     @Context SecurityContext sc
@@ -217,7 +217,7 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
