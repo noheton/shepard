@@ -433,6 +433,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | ~~`GET /v2/file-containers/{containerAppId}/files/{originalName}/versions`~~ — **REMOVED 2026-06-10 (APISIMP-PV-UNIFY)** | PV1a — ✓ shipped (2026-05-20); ~~superseded 2026-06-10~~ | `aidocs/46` |
 | ~~`GET /v2/structured-data-containers/{containerAppId}/files/{originalName}/versions`~~ — **REMOVED 2026-06-10 (APISIMP-PV-UNIFY)** | PV1b — ✓ shipped (2026-05-20); ~~superseded 2026-06-10~~ | `aidocs/46` |
 | `GET /v2/containers/{appId}/files/{fileName}/versions` — unified payload-version endpoint; 415 for kinds without file-payload versioning (timeseries/hdf) | APISIMP-PV-UNIFY — ✓ shipped (2026-06-10) | `aidocs/16` APISIMP-PV-UNIFY |
+| `GET /v2/admin/permission-audit/log` — response entries now carry `appId: string` (UUID) instead of `id: number` (BIGSERIAL); `V1.19.0` adds `app_id` UUID column with unique index | APISIMP-PERM-AUDIT-LOG-APPID — ✓ shipped (2026-06-12) | `aidocs/16` APISIMP-PERM-AUDIT-LOG-APPID |
 | `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1c-f — queued | `aidocs/46` |
 | `POST /v2/file-containers/{containerAppId}/upload-url`, `POST /v2/file-containers/{containerAppId}/upload-url/commit`, `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` | FS1c — ✓ shipped | `aidocs/45 §7` |
 | `GET /v2/artifacts/{type}/{id}/url` | FS1g | `aidocs/45` |
