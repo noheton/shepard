@@ -651,6 +651,8 @@ not a documentation backlog item.
 
 | **APISIMP-DO-V2-FIELDS-ERROR-ENVELOPE — `GET /v2/collections/{appId}/data-objects?fields=` 400 now RFC 7807** | 2026-06-12. `aidocs/16` APISIMP-DO-V2-FIELDS-ERROR-ENVELOPE. The 400 response returned when `?fields=` contains an unknown field name was a near-miss `Map.of("title","detail","status")` missing `type` and `Content-Type: application/problem+json`. Converted to `ProblemJson` — adds `type=/problems/data-objects.unknown-field` and the correct content-type. | **AWARE — PRE-PROD WIRE BREAK** on the 400 error body for `GET /v2/collections/{appId}/data-objects?fields=<bad>`: body gains `type` field and correct `Content-Type`. Any client parsing this specific error response must update. Success responses (200) unchanged. | — (no schema migration). | **No operator action required.** Pre-production surface. |
 
+| **APISIMP-BOOTSTRAP-SUCCESS-IO — `POST /v2/admin/bootstrap` 201 body now typed `BootstrapResponseIO`** | 2026-06-12. `aidocs/16` APISIMP-BOOTSTRAP-SUCCESS-IO. The 201 success response entity was an untyped `Map.of("username","role")` with no OpenAPI schema declaration. Replaced with a `BootstrapResponseIO` record carrying the same `username` and `role` fields. Wire shape is identical; only the Java type (and OpenAPI schema `BootstrapResponse`) changes. | **ADDITIVE** — identical JSON fields; OpenAPI schema now documents the response. | — (no schema migration). | **No operator action required.** |
+
 ## Image CVE scan posture (2026-06-04)
 
 The CI Trivy scan on the published GHCR images (`.github/workflows/ci.yml`,
