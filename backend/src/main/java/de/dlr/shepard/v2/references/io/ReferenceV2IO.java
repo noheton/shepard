@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.references.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -52,7 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
   name = "ReferenceV2",
   description = "Unified, polymorphic wire shape for every reference kind under /v2/references."
 )
-public class ReferenceV2IO extends BasicReferenceIO {
+public class ReferenceV2IO extends BasicReferenceV2IO {
 
   @Schema(
     description =
