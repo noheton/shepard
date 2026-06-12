@@ -249,6 +249,20 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | RL-UNAS-STUDIUM | UNAS `public/documents/fkrebs/Studium` — scan for Diplom-era material (2002–2008) that anchors `aidocs/strategy/104` §2 timeline rows + the 2008 IEEE SMC paper backstory; operator-uploads-only per `feedback_uploads_never_in_repo.md` (raw files never enter the repo; only abstracted findings + public-source citations) | Op flag 2026-05-23. The 2002–2008 Diplom-era is the thinnest part of the timeline — surfacing the Diplom thesis title, supervisor, year-by-year project notes would close the strongest factual gap. Host-boundary: UNAS not reachable from dev box; needs operator to upload representative artefacts. Tracked as backlog row `UNAS-FKREBS-FOLDER-SCAN` | open |
 | RL-UNAS-TAUCHGAENGE | UNAS `public/documents/fkrebs/Tauchgänge - Subsurface` — scuba-diving logs in Subsurface format; lower priority for thesis substrate, possibly relevant for author-profile breadth-context | Op flag 2026-05-23. Adjacent biographical material — would inform "what the author does outside research" if any thesis chapter or about-the-author section needs breadth-context. Default posture: stays UNAS-only unless operator explicitly opts in | open |
 
+### Views-as-shapes UX externals (RL-UXSHAPES series, 2026-06-12)
+
+Surfaced during the shapes-for-displays UX audit
+(`aidocs/agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md`);
+not yet pursued.
+
+| ID | Item | Why | Status |
+|---|---|---|---|
+| RL-UXSHAPES-GRAFANA-SUGGEST | Read Grafana's suggested-visualizations implementation notes (panel editor analyses query-result shape → ranked viz suggestions + live preview): https://grafana.com/docs/grafana/latest/visualizations/panels-visualizations/panel-editor-overview/ | Direct model for the proposed `GET /v2/shapes/render/applicable` ranking heuristics (data shape → applicable VIEW_RECIPEs) | skimmed |
+| RL-UXSHAPES-JLAB-MIME | Read the JupyterLab MIME-renderer extension contract end-to-end (rank, safety, `_repr_mimebundle_` dispatch): https://jupyterlab.readthedocs.io/en/stable/user/file_formats.html + https://github.com/jupyterlab/jupyter-renderers | The renderer-rank + MIME-dispatch shape maps onto ViewRecipeRendererRegistry claim-by-IRI; rank semantics could resolve multi-renderer conflicts | skimmed |
+| RL-UXSHAPES-OBSERVABLE-PLOT | Observable Plot's "marks infer scales/axes from data" API design (https://observablehq.com/plot/) — defaults-first charting where a bare `Plot.dot(data)` renders something sensible | The defaults-first posture is the target for /shapes/render's basic mode: render *something* from annotations alone, refine later | unread |
+| RL-UXSHAPES-KADI-RECORDVIEW | How Kadi4Mat renders record views / extras (generic metadata → auto-rendered record page) — competitor reference for zero-config entity views | The four journeys converge on "view of the entity I'm standing on"; Kadi's record-view is the nearest RDM-world equivalent to benchmark | unread |
+| RL-UXSHAPES-VEGA-LITE-EMBED | Vega-Lite as a declarative view-recipe carrier (JSON spec ≈ VIEW_RECIPE body; vega-embed renders client-side) | If VIEW_RECIPE bodies ever standardise on a declarative grammar instead of bespoke renderer hints, Vega-Lite is the obvious candidate; assess fit vs Trace3D/URDF needs | unread |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
