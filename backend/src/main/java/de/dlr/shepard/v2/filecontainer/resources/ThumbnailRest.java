@@ -34,7 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/file-containers")
 @RequestScoped
-@Tag(name = "File containers — thumbnails (TH1a)")
+@Tag(name = "File container thumbnails")
 public class ThumbnailRest {
 
   private static final int DEFAULT_SIZE = 400;

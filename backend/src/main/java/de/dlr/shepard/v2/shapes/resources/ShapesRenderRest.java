@@ -103,7 +103,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/shapes")
 @RequestScoped
-@Tag(name = "Shapes (v2)")
+@Tag(name = "Shapes")
 public class ShapesRenderRest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();

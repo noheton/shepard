@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-@Tag(name = "Instance identity (INST1)")
+@Tag(name = "Instance identity")
 public class InstanceCapabilitiesRest {
 
   @Inject

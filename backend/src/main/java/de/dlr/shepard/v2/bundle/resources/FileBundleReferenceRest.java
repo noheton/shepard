@@ -80,7 +80,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/bundles")
 @RequestScoped
-@Tag(name = "File bundles (v2)")
+@Tag(name = "File bundles")
 public class FileBundleReferenceRest {
 
   @Inject

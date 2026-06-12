@@ -41,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{appId}/properties")
 @RequestScoped
-@Tag(name = "Collection properties (v2)")
+@Tag(name = "Collection properties")
 public class CollectionPropertiesRest {
 
   @Inject

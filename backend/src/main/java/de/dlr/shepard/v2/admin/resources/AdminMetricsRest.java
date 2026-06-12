@@ -33,7 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/admin/metrics-summary")
 @RequestScoped
-@Tag(name = "Admin metrics (v2)")
+@Tag(name = "Admin metrics")
 public class AdminMetricsRest {
 
   @Inject

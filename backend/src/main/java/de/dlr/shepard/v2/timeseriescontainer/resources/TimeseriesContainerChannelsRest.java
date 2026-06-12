@@ -59,7 +59,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-containers")
 @RequestScoped
-@Tag(name = "Timeseries containers — channel listing (TS-ID PR-2)")
+@Tag(name = "Timeseries container channel listing")
 public class TimeseriesContainerChannelsRest {
 
   @Inject

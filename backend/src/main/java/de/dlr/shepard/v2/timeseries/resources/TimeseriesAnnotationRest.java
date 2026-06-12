@@ -42,7 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-references/{refAppId}/annotations")
 @RequestScoped
-@Tag(name = "Timeseries annotations (v2)")
+@Tag(name = "Timeseries annotations")
 public class TimeseriesAnnotationRest {
 
   @Inject

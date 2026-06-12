@@ -43,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/data-objects/{dataObjectAppId}/video-stream-references/{refAppId}/annotations")
 @RequestScoped
-@Tag(name = "Video annotations (v2)")
+@Tag(name = "Video annotations")
 public class VideoAnnotationRest {
 
   @Inject

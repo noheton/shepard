@@ -63,7 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collections — timeline (COLL-TIMELINE-1)")
+@Tag(name = "Collection timeline")
 public class CollectionTimelineRest {
 
   @Inject

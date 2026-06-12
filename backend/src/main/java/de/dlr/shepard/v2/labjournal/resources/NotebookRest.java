@@ -59,7 +59,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/lab-journal")
 @RequestScoped
-@Tag(name = "Lab journal (v2)")
+@Tag(name = "Lab journal")
 public class NotebookRest {
 
   /** Canonical IANA media type for Jupyter notebook files. */

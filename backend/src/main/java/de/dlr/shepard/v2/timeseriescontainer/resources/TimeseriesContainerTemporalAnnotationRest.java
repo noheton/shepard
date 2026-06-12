@@ -52,7 +52,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/timeseries-containers/{containerAppId}/temporal-annotations")
 @RequestScoped
-@Tag(name = "Timeseries container temporal annotations (TS-ANNOT-B)")
+@Tag(name = "Timeseries container temporal annotations")
 public class TimeseriesContainerTemporalAnnotationRest {
 
   @Inject

@@ -56,7 +56,7 @@ import org.neo4j.ogm.session.Session;
  */
 @Path("/v2/semantic/terms/search")
 @RequestScoped
-@Tag(name = "Semantic term search (v2, N1e)")
+@Tag(name = "Semantic term search")
 public class SemanticTermSearchRest {
 
   /** Maximum number of results the endpoint ever returns, regardless of caller-supplied limit. */

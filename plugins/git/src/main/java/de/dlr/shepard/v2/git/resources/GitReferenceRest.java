@@ -46,7 +46,7 @@ import org.jboss.logging.Logger;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/data-objects/{dataObjectAppId}/git-references")
 @RequestScoped
-@Tag(name = "Git references (v2)")
+@Tag(name = "Git references")
 public class GitReferenceRest {
 
   private static final Logger LOG = Logger.getLogger(GitReferenceRest.class);

@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed("authenticated")
-@Tag(name = "UserGroups (v2)")
+@Tag(name = "UserGroups")
 public class UserGroupV2Rest {
 
   @Inject

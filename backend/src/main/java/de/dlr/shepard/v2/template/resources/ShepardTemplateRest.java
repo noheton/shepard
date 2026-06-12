@@ -54,7 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/templates")
 @RequestScoped
-@Tag(name = "Templates (v2)")
+@Tag(name = "Templates")
 public class ShepardTemplateRest {
 
   private static final String PT_BAD_REQUEST = "/problems/templates.bad-request";

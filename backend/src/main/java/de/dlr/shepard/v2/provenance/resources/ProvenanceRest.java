@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/provenance")
 @RequestScoped
-@Tag(name = "Provenance (v2)")
+@Tag(name = "Provenance")
 public class ProvenanceRest {
 
   @Inject

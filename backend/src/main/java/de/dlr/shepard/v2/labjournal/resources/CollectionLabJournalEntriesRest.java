@@ -55,7 +55,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/lab-journal-entries")
 @RequestScoped
-@Tag(name = "Collections — lab journal entries (UI-020)")
+@Tag(name = "Collection lab journal entries")
 public class CollectionLabJournalEntriesRest {
 
   @Inject

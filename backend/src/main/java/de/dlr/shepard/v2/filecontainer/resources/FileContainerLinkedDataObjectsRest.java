@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/file-containers")
 @RequestScoped
-@Tag(name = "File containers — linked DataObjects (CC1b)")
+@Tag(name = "File container linked DataObjects")
 public class FileContainerLinkedDataObjectsRest {
 
   @Inject

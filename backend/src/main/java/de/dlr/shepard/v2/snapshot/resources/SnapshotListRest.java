@@ -73,7 +73,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Snapshots (v2)")
+@Tag(name = "Snapshots")
 public class SnapshotListRest {
 
   @Inject

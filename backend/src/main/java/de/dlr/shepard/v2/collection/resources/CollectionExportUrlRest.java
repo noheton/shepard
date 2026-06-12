@@ -61,7 +61,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collections — presigned export URL (FS1g)")
+@Tag(name = "Collection export URL")
 public class CollectionExportUrlRest {
 
   @Inject

@@ -52,7 +52,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/snapshots/{snapshotAppId}")
 @RequestScoped
-@Tag(name = "Snapshots (v2)")
+@Tag(name = "Snapshots")
 public class SnapshotRest {
 
   @Inject

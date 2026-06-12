@@ -56,7 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Semantic vocabularies (v2, SEMA-V6)")
+@Tag(name = "Semantic vocabularies")
 public class VocabularyBrowseRest {
 
   static final String PROBLEM_TYPE_NOT_FOUND = "/problems/semantic.vocabulary.not-found";

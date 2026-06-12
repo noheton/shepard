@@ -64,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/templates")
 @RequestScoped
-@Tag(name = "Templates (v2)")
+@Tag(name = "Templates")
 public class TemplatePortabilityRest {
 
   static final String MEDIA_TYPE_YAML = "text/yaml";

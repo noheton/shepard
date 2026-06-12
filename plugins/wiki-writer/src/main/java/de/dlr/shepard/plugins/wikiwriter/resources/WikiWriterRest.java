@@ -52,7 +52,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Wiki Writer (v2)")
+@Tag(name = "Wiki Writer")
 public class WikiWriterRest {
 
   @Inject

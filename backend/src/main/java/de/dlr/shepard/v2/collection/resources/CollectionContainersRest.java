@@ -40,7 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/referenced-containers")
 @RequestScoped
-@Tag(name = "Collections — referenced containers (CC2)")
+@Tag(name = "Collection referenced containers")
 public class CollectionContainersRest {
 
   @Inject

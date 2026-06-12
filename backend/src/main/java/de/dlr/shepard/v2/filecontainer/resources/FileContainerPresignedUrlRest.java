@@ -58,7 +58,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/file-containers")
 @RequestScoped
-@Tag(name = "File containers — presigned URLs (FS1c)")
+@Tag(name = "File container presigned URLs")
 public class FileContainerPresignedUrlRest {
 
   @Inject
