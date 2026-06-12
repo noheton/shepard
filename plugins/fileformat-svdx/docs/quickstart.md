@@ -50,22 +50,40 @@ annotation-search UI.
 
 ## Step 4 — Get sample data into a TimeseriesReference
 
-The proprietary binary section of `.svdx` is not parsed (Beckhoff
-publishes no spec). To get sample-level data:
+The proprietary binary section of `.svdx` is not parsed on upload
+(Beckhoff publishes no spec). To get sample-level data into a queryable
+TimeseriesReference:
 
 1. On the TwinCAT engineering box, run the TwinCAT Scope Export Tool
    ([Beckhoff Infosys](https://infosys.beckhoff.com/content/1033/te13xx_tc3_scopeview/1022949131.html))
    against your `.svdx` and export to CSV.
-2. Upload the resulting CSV into the same FileContainer as the
-   `.svdx`.
-3. The next time the SVDX parser runs (or a re-parse is triggered),
-   it will emit `urn:shepard:svdx:companionCsv` pointing at your
-   CSV's FileReference.
-4. Once the CSV-ingest tier ships
-   (`MFFD-PLUGIN-SVDX-CSV-INGEST-1`), the CSV will be auto-imported
-   into a TimeseriesReference. Until then, the CSV is searchable as
-   a regular file annotation, and downstream notebooks can consume
-   it via `pytcs` ([PyPI](https://pypi.org/project/pytcs/)).
+2. Upload the resulting CSV as a singleton FileReference on the **same
+   DataObject** as the `.svdx` (`POST /v2/files`).
+3. Create a `MAPPING_RECIPE` template targeting the
+   `SvdxCsvIngestShape` IRI and bind the two appIds, then materialize
+   it via `POST /v2/mappings/{templateAppId}/materialize`. The
+   `SvdxCsvTransformExecutor` parses the CSV, writes each column into
+   TimescaleDB, and returns the derived TimeseriesReference appId. See
+   the **CSV ingest via MAPPING_RECIPE** section of `reference.md` for
+   the exact request/response bodies.
+
+   ```bash
+   # body of the MAPPING_RECIPE template:
+   #   { "templateKind": "MAPPING_RECIPE",
+   #     "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape",
+   #     "svdxFileReferenceAppId": "<svdx appId>",
+   #     "csvFileReferenceAppId":  "<csv appId>",
+   #     "targetDataObjectAppId":  "<DataObject appId>" }
+
+   curl -X POST "https://<shepard-host>/v2/mappings/$TEMPLATE_APPID/materialize" \
+     -H "X-API-KEY: $API_KEY" -H "Content-Type: application/json" \
+     -d '{"inputReferenceAppIds":{"svdxFileAppId":"<svdx appId>","csvFileAppId":"<csv appId>"}}'
+   ```
+
+   The ingest is idempotent: re-materializing the same `.svdx`+`.csv`
+   pair returns the existing reference. Downstream notebooks can also
+   consume the raw CSV via `pytcs`
+   ([PyPI](https://pypi.org/project/pytcs/)).
 
 ## Worked example — MFFD AFP spot-welding file
 

@@ -3,8 +3,14 @@
   shepard-plugin-fileformat-svdx — Beckhoff TwinCAT Scope (.svdx) ingest plugin
 
   V2CONV-A6 — upgraded from Tier-0 (standalone pure-Java parser) to Tier-1
-  (backend dep) by moving SvdxIngestRest + SvdxCsvIngestionService + IOs
-  into this plugin, dissolving the bespoke in-core /v2/svdx/ surface.
+  (backend dep) by moving SvdxCsvIngestionService into this plugin,
+  dissolving the bespoke in-core /v2/svdx/ surface.
+
+  V2CONV-A7 — the bespoke top-level POST /v2/svdx/ingest namespace was
+  further dissolved onto the generic MAPPING_RECIPE / TransformExecutor
+  seam: SvdxIngestRest + SvdxIngestRequest/ResponseIO are DELETED; the
+  CSV→TimescaleDB ingest now runs through SvdxCsvTransformExecutor
+  (claims the SvdxCsvIngestShape IRI) via POST /v2/mappings/{appId}/materialize.
 
   The plugin carries:
     * Pure-Java format-detection + parsing tier (Tier-0 heritage):
@@ -14,11 +20,12 @@
         `fileformat-svdx` in `GET /v2/admin/plugins`.
     * META-INF/services/de.dlr.shepard.plugin.PluginManifest pointing
         at the manifest class.
-    * SvdxIngestRest — JAX-RS @Path /v2/svdx resource; picked up by
-        Quarkus build-time CDI scanner via quarkus.index-dependency entry
-        in application.properties.
-    * SvdxCsvIngestionService — @ApplicationScoped service; same CDI discovery.
-    * SvdxIngestRequest/ResponseIO — Lombok @Data Jackson IO records.
+    * SvdxCsvTransformExecutor — ServiceLoader TransformExecutor SPI
+        (META-INF/services/de.dlr.shepard.spi.transform.TransformExecutor);
+        resolves SvdxCsvIngestionService via CDI.current() at materialize time.
+    * SvdxCsvIngestionService — @ApplicationScoped service; CDI discovery
+        via the quarkus.index-dependency entry in application.properties.
+    * SvdxCsvIngestParams/SvdxCsvIngestResult — SPI-neutral input/output records.
 
   Build order (Tier-1 two-pass — same as every plugin that has backend dep):
 
@@ -201,14 +208,16 @@
       </exclusions>
     </dependency>
 
-    <!-- Quarkus runtime types used in SvdxIngestRest + SvdxCsvIngestionService. -->
+    <!-- Quarkus ARC — CDI (@ApplicationScoped/@Inject) used in SvdxCsvIngestionService. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!-- JAX-RS API — @Path, @POST, @Context, etc. in SvdxIngestRest. -->
+    <!-- JAX-RS API — retained for transitive backend types the service touches
+         (the bespoke SvdxIngestRest @Path resource was deleted in V2CONV-A7;
+         the ingest now flows through the core /v2/mappings materialize endpoint). -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-rest</artifactId>

@@ -19,8 +19,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.plugin.fileformat.svdx.TcScopeCsvParser;
-import de.dlr.shepard.v2.svdx.io.SvdxIngestRequestIO;
-import de.dlr.shepard.v2.svdx.io.SvdxIngestResponseIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,6 +30,16 @@ import java.util.Map;
 
 /**
  * Glue layer for {@code MFFD-PLUGIN-SVDX-CSV-INGEST-1}.
+ *
+ * <p>V2CONV-A7 — formerly the collaborator of the bespoke
+ * {@code POST /v2/svdx/ingest} REST resource, this service is now the collaborator
+ * of {@link de.dlr.shepard.v2.svdx.transform.SvdxCsvTransformExecutor}. The
+ * Tier-3 top-level {@code /v2/svdx} namespace was dissolved onto the generic
+ * MAPPING_RECIPE / {@code TransformExecutor} seam (aidocs/platform/191), exactly
+ * mirroring the KRL (V2CONV-B5) and URScript dissolutions. The ingestion logic
+ * below is unchanged — only its entry point moved from a JAX-RS handler to a
+ * ServiceLoader executor that resolves this {@code @ApplicationScoped} bean via
+ * {@code CDI.current()} at materialize time.
  *
  * <p>The pure-Java {@link TcScopeCsvParser} (in the
  * {@code shepard-plugin-fileformat-svdx} module) owns the file-format
@@ -102,38 +110,38 @@ public class SvdxCsvIngestionService {
    * @throws SecurityException 403-equivalent — caller lacks Write on
    *     the parent DataObject.
    */
-  public SvdxIngestResponseIO ingest(SvdxIngestRequestIO req, String callerUsername) {
+  public SvdxCsvIngestResult ingest(SvdxCsvIngestParams req, String callerUsername) {
     if (req == null) throw new InvalidBodyException("request body required");
-    if (req.getSvdxFileAppId() == null || req.getSvdxFileAppId().isBlank())
+    if (req.svdxFileAppId() == null || req.svdxFileAppId().isBlank())
       throw new InvalidBodyException("svdxFileAppId required");
-    if (req.getCsvFileAppId() == null || req.getCsvFileAppId().isBlank())
+    if (req.csvFileAppId() == null || req.csvFileAppId().isBlank())
       throw new InvalidBodyException("csvFileAppId required");
-    if (req.getDataObjectAppId() == null || req.getDataObjectAppId().isBlank())
+    if (req.dataObjectAppId() == null || req.dataObjectAppId().isBlank())
       throw new InvalidBodyException("dataObjectAppId required");
 
     // ── resolve DataObject ──
-    DataObject dataObject = dataObjectDAO.findByAppId(req.getDataObjectAppId());
+    DataObject dataObject = dataObjectDAO.findByAppId(req.dataObjectAppId());
     if (dataObject == null || dataObject.isDeleted()) {
-      throw new InvalidPathException("DataObject '" + req.getDataObjectAppId() + "' not found");
+      throw new InvalidPathException("DataObject '" + req.dataObjectAppId() + "' not found");
     }
     long dataObjectShepardId = dataObject.getId();
 
     // ── auth gate (Write on parent DataObject) ──
     if (!permissionsService.isAccessTypeAllowedForUser(dataObjectShepardId, AccessType.Write, callerUsername)) {
-      throw new SecurityException("caller lacks Write on DataObject " + req.getDataObjectAppId());
+      throw new SecurityException("caller lacks Write on DataObject " + req.dataObjectAppId());
     }
 
     // ── resolve both FileReferences ──
-    FileReference svdxFile = singletonService.getByAppId(req.getSvdxFileAppId());
-    FileReference csvFile = singletonService.getByAppId(req.getCsvFileAppId());
+    FileReference svdxFile = singletonService.getByAppId(req.svdxFileAppId());
+    FileReference csvFile = singletonService.getByAppId(req.csvFileAppId());
     if (svdxFile == null || svdxFile.isDeleted())
-      throw new InvalidPathException("SVDX FileReference '" + req.getSvdxFileAppId() + "' not found");
+      throw new InvalidPathException("SVDX FileReference '" + req.svdxFileAppId() + "' not found");
     if (csvFile == null || csvFile.isDeleted())
-      throw new InvalidPathException("CSV FileReference '" + req.getCsvFileAppId() + "' not found");
+      throw new InvalidPathException("CSV FileReference '" + req.csvFileAppId() + "' not found");
 
     // Sanity check: both refs must belong to the named DataObject.
-    Long svdxParent = singletonService.getDataObjectOgmId(req.getSvdxFileAppId());
-    Long csvParent = singletonService.getDataObjectOgmId(req.getCsvFileAppId());
+    Long svdxParent = singletonService.getDataObjectOgmId(req.svdxFileAppId());
+    Long csvParent = singletonService.getDataObjectOgmId(req.csvFileAppId());
     if (svdxParent == null || svdxParent.longValue() != dataObjectShepardId
         || csvParent == null || csvParent.longValue() != dataObjectShepardId) {
       throw new InvalidBodyException(
@@ -143,22 +151,22 @@ public class SvdxCsvIngestionService {
     long collectionShepardId = resolveCollectionId(dataObject);
 
     // ── idempotency probe — deterministic name on the DataObject ──
-    String refName = (req.getReferenceName() != null && !req.getReferenceName().isBlank())
-        ? req.getReferenceName()
-        : (REF_NAME_PREFIX + req.getSvdxFileAppId() + "+" + req.getCsvFileAppId());
+    String refName = (req.referenceName() != null && !req.referenceName().isBlank())
+        ? req.referenceName()
+        : (REF_NAME_PREFIX + req.svdxFileAppId() + "+" + req.csvFileAppId());
 
     TimeseriesReference existing = findExistingReference(collectionShepardId, dataObjectShepardId, refName);
     if (existing != null) {
       Log.infof("SVDX ingest replay short-circuit: ref '%s' already exists on DO %s",
-          refName, req.getDataObjectAppId());
+          refName, req.dataObjectAppId());
       return buildResponse(existing, /*idempotent*/ true, /*unmatched*/ 0);
     }
 
     // ── pull CSV bytes ──
     TcScopeCsvParser.ParsedScopeCsv parsed;
-    NamedInputStream nis = singletonService.getPayload(req.getCsvFileAppId());
+    NamedInputStream nis = singletonService.getPayload(req.csvFileAppId());
     if (nis == null || nis.getInputStream() == null) {
-      throw new InvalidBodyException("CSV payload for '" + req.getCsvFileAppId() + "' is empty");
+      throw new InvalidBodyException("CSV payload for '" + req.csvFileAppId() + "' is empty");
     }
     try {
       parsed = TcScopeCsvParser.parse(nis.getInputStream());
@@ -169,10 +177,10 @@ public class SvdxCsvIngestionService {
     }
 
     // ── target container ──
-    TimeseriesContainer container = resolveOrMintContainer(req.getTsContainerAppId(), refName);
+    TimeseriesContainer container = resolveOrMintContainer(req.tsContainerAppId(), refName);
     long containerShepardId = container.getId();
 
-    String projectName = parsed.projectName().orElse("svdx-ingest-" + req.getCsvFileAppId());
+    String projectName = parsed.projectName().orElse("svdx-ingest-" + req.csvFileAppId());
 
     // ── pre-flight: build channel list, count unmatched against manifest names (best-effort) ──
     Map<String, Timeseries> tupleByChannel = new LinkedHashMap<>();
@@ -257,7 +265,7 @@ public class SvdxCsvIngestionService {
     created = timeseriesReferenceService.createReference(collectionShepardId, dataObjectShepardId, tio);
 
     Log.infof("SVDX ingest: minted TimeseriesReference '%s' (shepardId=%d, %d channels, %d rows max) on DO %s",
-        refName, created.getId(), tupleByChannel.size(), realRows, req.getDataObjectAppId());
+        refName, created.getId(), tupleByChannel.size(), realRows, req.dataObjectAppId());
 
     return buildResponse(created, /*idempotent*/ false, unmatched);
   }
@@ -296,18 +304,18 @@ public class SvdxCsvIngestionService {
     return dataObject.getCollection().getId();
   }
 
-  private SvdxIngestResponseIO buildResponse(TimeseriesReference ref, boolean idempotent, int unmatchedCount) {
-    SvdxIngestResponseIO out = new SvdxIngestResponseIO();
-    out.setTimeseriesReferenceAppId(ref.getAppId());
-    out.setTimeseriesReferenceShepardId(ref.getId());
-    if (ref.getTimeseriesContainer() != null) {
-      out.setTimeseriesContainerAppId(ref.getTimeseriesContainer().getAppId());
-    }
-    out.setChannelCount(ref.getReferencedTimeseriesList() == null ? 0 : ref.getReferencedTimeseriesList().size());
+  private SvdxCsvIngestResult buildResponse(TimeseriesReference ref, boolean idempotent, int unmatchedCount) {
+    String containerAppId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getAppId() : null;
+    int channelCount = ref.getReferencedTimeseriesList() == null ? 0 : ref.getReferencedTimeseriesList().size();
     long span = ref.getEnd() - ref.getStart();
-    out.setRowCount(span <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, span / 1_000_000L + 1L));
-    out.setUnmatchedChannelCount(unmatchedCount);
-    out.setIdempotentReplay(idempotent);
-    return out;
+    int rowCount = span <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, span / 1_000_000L + 1L);
+    return new SvdxCsvIngestResult(
+        ref.getAppId(),
+        ref.getId(),
+        containerAppId,
+        channelCount,
+        rowCount,
+        unmatchedCount,
+        idempotent);
   }
 }

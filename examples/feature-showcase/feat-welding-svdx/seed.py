@@ -9,19 +9,25 @@ and ``video`` (companion clip).
 
 Why the TimeseriesReference path, not the ``.svdx`` binary
 ----------------------------------------------------------
-The shipped, wired svdx surface is ``POST /v2/svdx/ingest`` — it ingests the
-operator-generated TwinCAT-Scope-Export-Tool ``.csv`` *sibling* of a real
-``.svdx`` (16-byte binary envelope + trailing ``<ScopeProject>`` XML), mapping
-5-tuple channel identities (measurement=projectName, device=NetID,
-location=Port, symbolicName=SymbolName, field=display name) into TimescaleDB.
-The CSV format is tab-delimited with FILETIME timestamps and repeating per-
-channel key/value header blocks (see ``TcScopeCsvParser``) — faking a byte-
-valid synthetic pair is fragile. Per the showcase spec ("svdx plugin path if a
-synthetic .svdx is feasible, else a TimeseriesReference with welding channels +
-companion VideoReference"), this seed takes the TimeseriesReference fallback:
-real, queryable welding channels without faking a binary TwinCAT recording.
-The ``/v2/svdx/ingest`` path is exercised against real ZLP ``.svdx``/``.csv``
-pairs by the MFFD-STRINGER-SVDX-INGEST-1 import job, not here.
+The shipped, wired svdx ingest surface is a MAPPING_RECIPE targeting the
+``http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape`` IRI, materialized
+via ``POST /v2/mappings/{templateAppId}/materialize`` — the generic transform seam
+the former bespoke ``POST /v2/svdx/ingest`` endpoint was dissolved onto (V2CONV-A7,
+mirroring the KRL/URScript dissolutions). The ``SvdxCsvTransformExecutor`` (in the
+``fileformat-svdx`` plugin) binds the ``.svdx`` + the operator-generated
+TwinCAT-Scope-Export-Tool ``.csv`` *sibling* FileReferences (16-byte binary
+envelope + trailing ``<ScopeProject>`` XML for the .svdx; tab-delimited with
+FILETIME timestamps + per-channel header blocks for the .csv — see
+``TcScopeCsvParser``), maps 5-tuple channel identities (measurement=projectName,
+device=NetID, location=Port, symbolicName=SymbolName, field=display name) into
+TimescaleDB, and returns a derived TimeseriesReference. Faking a byte-valid
+synthetic ``.svdx``/``.csv`` pair is fragile. Per the showcase spec ("svdx plugin
+path if a synthetic .svdx is feasible, else a TimeseriesReference with welding
+channels + companion VideoReference"), this seed takes the TimeseriesReference
+fallback: real, queryable welding channels without faking a binary TwinCAT
+recording, and does not drive the materialize path. The MAPPING_RECIPE ingest is
+exercised against real ZLP ``.svdx``/``.csv`` pairs by the
+MFFD-STRINGER-SVDX-INGEST-1 import job, not here.
 
 Standards: Beckhoff TwinCAT Scope ``.svdx`` (the recording format this stands
 in for), CHAMEO/EMMO (ultrasonic-welding process terms), DIN EN 9100
