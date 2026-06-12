@@ -15,7 +15,14 @@
  *
  * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
+import { TimeseriesContainerChannelListingApi } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
+import {
+  fetchChannelListByAppId,
+  fetchBulkTraceByAppId,
+} from "~/utils/shapesRenderChannels";
+import { mapRenderFetchError } from "~/utils/shapesRenderErrors";
 import {
   isUrdfRenderQuery,
   parseUrdfRenderQuery,
@@ -86,7 +93,9 @@ watch(pickerDataObjectId, async newId => {
 const fromReference   = ref(false);
 const refStartNs      = ref<number | null>(null);
 const refEndNs        = ref<number | null>(null);
-const containerId     = ref(""); // numeric TS container ID (legacy v1 path)
+// UX612-C2: the channel endpoints are appId-keyed (APISIMP-TSCONT-APPID-KEY)
+// — this carries the container's appId (UUID v7), never the numeric Neo4j id.
+const containerAppId  = ref("");
 const colormapName    = ref<ColormapName>("inferno");
 const windowHours     = ref(1);
 
@@ -220,25 +229,25 @@ function getAuthHeaders(): Record<string, string> {
   return h;
 }
 
-// ── channel list cache (for edit dialog + fetchBulkTrace) ─────────────────────
+// ── channel list cache (for edit dialog + bulk trace fetch) ──────────────────
+// UX612-C2: fetched through the typed v2 client, keyed by container appId.
+// The previous numeric-keyed fetch 404ed against the appId-keyed endpoint,
+// so no Trace3D render could succeed from any entry point.
+
+const channelListingApi = useV2ShepardApi(TimeseriesContainerChannelListingApi);
 
 const channelList = ref<ChannelV2[]>([]);
 
 async function fetchChannelList() {
-  if (!containerId.value.trim()) return;
-  const id = Number(containerId.value.trim());
-  if (!isFinite(id)) return;
-  try {
-    const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
-      { headers: getAuthHeaders() },
-    );
-    if (!res.ok) return;
-    channelList.value = await res.json();
-  } catch { /* silent */ }
+  if (!containerAppId.value.trim()) return;
+  const list = await fetchChannelListByAppId(
+    channelListingApi.value,
+    containerAppId.value,
+  );
+  if (list.length > 0) channelList.value = list;
 }
 
-watch(containerId, (v) => { if (v.trim()) void fetchChannelList(); });
+watch(containerAppId, (v) => { if (v.trim()) void fetchChannelList(); });
 
 // ── edit channels dialog ──────────────────────────────────────────────────────
 
@@ -321,7 +330,9 @@ async function fetchBindings() {
     });
     const body = await res.json();
     if (!res.ok) {
-      fetchError.value = `${res.status} ${res.statusText}: ${JSON.stringify(body)}`;
+      // UX612-M1: map the 422 contract mismatch (templateKind != VIEW_RECIPE)
+      // to a human-readable sentence instead of dumping raw JSON.
+      fetchError.value = mapRenderFetchError(res.status, res.statusText, body);
       return;
     }
     renderer.value = body.renderer ?? null;
@@ -341,90 +352,31 @@ async function fetchBindings() {
 }
 
 // ── bulk channel fetch (TS-OPT2) — one request for all roles ─────────────────
+// UX612-C2: delegated to utils/shapesRenderChannels.ts (typed v2 client,
+// appId-keyed). Caches the channel list back into `channelList`.
 async function fetchBulkTrace(
   channels: { role: string; parsed: NonNullable<Binding["parsed"]> }[],
   startNs: number,
   endNs: number,
 ): Promise<Map<string, [number, number][]>> {
-  const result = new Map<string, [number, number][]>();
-  if (!containerId.value.trim() || channels.length === 0) return result;
-  const id = Number(containerId.value.trim());
-  if (!isFinite(id)) return result;
-
-  try {
-    // Step 1: use cached channel list or fetch + cache
-    let localChannelList = channelList.value;
-    if (localChannelList.length === 0) {
-      const listRes = await fetch(
-        getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
-        { headers: getAuthHeaders() },
-      );
-      if (!listRes.ok) return result;
-      localChannelList = await listRes.json();
-      channelList.value = localChannelList;
-    }
-
-    const norm = (s: string | null | undefined) => (s ?? "").trim();
-    const tupleKey = (m: string, d: string, l: string, sn: string, f: string) =>
-      `${norm(m)}|${norm(d)}|${norm(l)}|${norm(sn)}|${norm(f)}`;
-
-    const tupleToShepardId = new Map<string, string>();
-    for (const ch of localChannelList) {
-      tupleToShepardId.set(
-        tupleKey(ch.measurement as string, ch.device as string, ch.location as string, ch.symbolicName as string, ch.field as string),
-        ch.shepardId,
-      );
-    }
-
-    // Step 2: resolve each role's 5-tuple; build shepardId → role reverse map
-    const shepardIdToRole = new Map<string, string>();
-    const shepardIds: string[] = [];
-    for (const { role, parsed } of channels) {
-      const key = tupleKey(parsed.measurement, parsed.device, parsed.location, parsed.symbolicName, parsed.field);
-      const shepardId = tupleToShepardId.get(key);
-      if (shepardId) {
-        shepardIds.push(shepardId);
-        shepardIdToRole.set(shepardId, role);
-      }
-    }
-    if (shepardIds.length === 0) return result;
-
-    // Step 3: bulk fetch
-    const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels/data/bulk`,
-      {
-        method:  "POST",
-        headers: getAuthHeaders(),
-        body:    JSON.stringify({ shepardIds, start: startNs, end: endNs }),
-      },
-    );
-    if (!res.ok) return result;
-
-    // Step 4: map response entries back to roles via 5-tuple
-    const body: {
-      timeseries: { measurement: string; device: string; location: string; symbolicName: string; field: string };
-      points: { timestamp: number; value: number }[];
-    }[] = await res.json();
-
-    for (const entry of body) {
-      const ts = entry.timeseries;
-      const key = tupleKey(ts.measurement, ts.device, ts.location, ts.symbolicName, ts.field);
-      const shepardId = tupleToShepardId.get(key);
-      const role = shepardId ? shepardIdToRole.get(shepardId) : undefined;
-      if (role) {
-        result.set(role, (entry.points ?? []).map(p => [p.timestamp, p.value as number] as [number, number]));
-      }
-    }
-  } catch {
-    /* swallow — caller will see missing keys as empty arrays */
+  const { byRole, channelList: fetchedList } = await fetchBulkTraceByAppId(
+    channelListingApi.value,
+    containerAppId.value,
+    channels,
+    startNs,
+    endNs,
+    channelList.value,
+  );
+  if (channelList.value.length === 0 && fetchedList.length > 0) {
+    channelList.value = fetchedList;
   }
-  return result;
+  return byRole;
 }
 
 // ── render trace ──────────────────────────────────────────────────────────────
 async function renderTrace() {
-  if (!containerId.value.trim()) {
-    renderError.value = "TS container ID is required to fetch channel data.";
+  if (!containerAppId.value.trim()) {
+    renderError.value = "TS container appId is required to fetch channel data.";
     return;
   }
   isRendering.value = true;
@@ -654,7 +606,11 @@ onMounted(() => {
     return;
   }
 
-  if (!q.roles || !q.containerId) return;
+  // UX612-C2: the handoff carries `containerAppId` (appId-keyed channel
+  // endpoints). `containerId` (numeric) is the pre-fix legacy param — it is
+  // accepted so old bookmarks still populate the field, but a numeric value
+  // cannot resolve channels anymore.
+  if (!q.roles || !(q.containerAppId || q.containerId)) return;
 
   try {
     const roles = JSON.parse(atob(String(q.roles))) as Record<string, {
@@ -673,7 +629,7 @@ onMounted(() => {
     return;
   }
 
-  containerId.value    = String(q.containerId);
+  containerAppId.value = String(q.containerAppId || q.containerId || "");
   refStartNs.value     = q.startNs ? Number(q.startNs) : null;
   refEndNs.value       = q.endNs   ? Number(q.endNs)   : null;
   colormapName.value   = (q.colormap as ColormapName | undefined) ?? "inferno";
@@ -709,7 +665,7 @@ onMounted(() => {
       class="mb-4"
       prepend-icon="mdi-cube-outline"
     >
-      Rendering from a Timeseries Reference · container {{ containerId }}
+      Rendering from a Timeseries Reference · container {{ containerAppId }}
       <span v-if="refStartNs && refEndNs" class="text-caption ml-2">
         ({{ new Date(refStartNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }}
         → {{ new Date(refEndNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }} UTC)
@@ -845,7 +801,7 @@ onMounted(() => {
           </v-chip>
           <v-spacer />
           <v-btn
-            v-if="containerId.trim()"
+            v-if="containerAppId.trim()"
             size="x-small"
             variant="tonal"
             prepend-icon="mdi-pencil-outline"
@@ -891,12 +847,14 @@ onMounted(() => {
       <!-- ── 3D render controls ──────────────────────────────────────────── -->
       <v-row class="mb-2" align="center">
         <v-col cols="12" md="4">
+          <!-- UX612-C2: the channel endpoints are appId-keyed — this takes
+               the container's appId (UUID v7), not the numeric Neo4j id. -->
           <v-text-field
-            v-model="containerId"
-            label="TS container ID (numeric)"
+            v-model="containerAppId"
+            label="TS container appId"
             variant="outlined"
             density="compact"
-            hint="The timeseries container that holds the x/y/z channels (from /containers/timeseries/{id})"
+            hint="appId of the timeseries container holding the x/y/z channels (prefilled when opened from a reference)"
             persistent-hint
           />
         </v-col>
@@ -1154,8 +1112,8 @@ onMounted(() => {
     <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
     <Trace3DEditChannelsDialog
       v-model="showEditDialog"
-      :container-id="Number(containerId) || 0"
-      :container-app-id="containerId"
+      :container-id="0"
+      :container-app-id="containerAppId"
       :channels="channelList"
       :initial="currentSelection"
       @save="onEditSave"

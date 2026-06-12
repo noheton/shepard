@@ -92,9 +92,13 @@ function openTrace3D() {
   if (sel.rot_b) roles.rot_b = sel.rot_b;
   if (sel.rot_c) roles.rot_c = sel.rot_c;
 
+  // UX612-C2: the render page's channel endpoints are appId-keyed
+  // (APISIMP-TSCONT-APPID-KEY) — carry the container appId through the
+  // handoff. The numeric containerId remains for legacy bookmarks only.
   navigateTo({
     path: "/shapes/render",
     query: {
+      ...(props.containerAppId ? { containerAppId: props.containerAppId } : {}),
       containerId: String(props.containerId),
       startNs:    String(props.startNs),
       endNs:      String(props.endNs),

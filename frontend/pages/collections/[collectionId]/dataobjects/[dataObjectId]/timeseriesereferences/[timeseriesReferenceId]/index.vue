@@ -4,14 +4,19 @@ import type {
   SemanticAnnotation,
   Timeseries,
 } from "@dlr-shepard/backend-client";
-import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
+import {
+  TimeseriesContainerChannelListingApi,
+  TimeseriesReferenceApi,
+} from "@dlr-shepard/backend-client";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import {
   useFetchTimeseriesReferenceMetrics,
   type Metrics,
 } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
+import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
 import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
@@ -50,9 +55,17 @@ const collectionNumericId = computed(() =>
 const dataObjectNumericId = computed(() =>
   resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
 );
-const timeseriesReferenceNumericId = computed(() =>
-  resolveNumericId(undefined, routeParams.value.timeseriesReferenceId),
+
+// UX612-C1: the route param IS the v2 appId (frontend-v2-only rule). Load the
+// reference via GET /v2/references/{appId} and resolve the numeric id the
+// still-v1-only sub-calls (payload, metrics, export, delete) need from the
+// loaded v2 entity's `.id` at call time — never from the route param. The
+// previous `resolveNumericId(undefined, <uuid>)` returned undefined, so the
+// v1 fetch never fired and the page spun forever.
+const { referenceV2, notFound: referenceNotFound } = useFetchReferenceV2(
+  () => routeParams.value.timeseriesReferenceId,
 );
+const timeseriesReferenceNumericId = computed(() => referenceV2.value?.id);
 
 const { timeseriesReference, refresh: refreshTimeseriesReference } = useFetchTimeseriesReference(
   collectionNumericId,
@@ -66,11 +79,10 @@ async function onTimeReferenceUpdated() {
   refreshTimeseriesReference();
 }
 
-// TA1a + AI1b — appId is now typed in the model (TM1a added it to the
-// backend-client TypeScript interface). The cast below is retained for
-// safety when the server returns a pre-TM1a row that omits appId.
+// TA1a + AI1b — sourced from the loaded v2 entity (UX612-C1); falls back to
+// the v1 wire shape for safety when the v2 load hasn't resolved yet.
 const timeseriesReferenceAppId = computed<string | undefined>(
-  () => timeseriesReference.value?.appId ?? undefined,
+  () => referenceV2.value?.appId ?? timeseriesReference.value?.appId ?? undefined,
 );
 const {
   annotations: tsAnnotations,
@@ -343,18 +355,28 @@ interface ChannelV2 {
 
 const channelsV2 = ref<ChannelV2[]>([]);
 
-// APISIMP-TSCONT-APPID-KEY: the /channels endpoint now expects the appId, not
-// the numeric Neo4j id. useFetchTimeseriesReference now extracts the appId from
-// the v1 container response (wire carries it) and surfaces it as
-// timeseriesContainerAppId. Fall back gracefully when it's absent.
+// APISIMP-TSCONT-APPID-KEY: the /channels endpoint is appId-keyed. The
+// container appId comes from the v1 container meta when available, with the
+// v2 reference payload (UX612-C1) as fallback.
+const containerAppId = computed<string | undefined>(
+  () =>
+    timeseriesReference.value?.timeseriesContainerAppId ??
+    (referenceV2.value?.payload?.timeseriesContainerAppId as string | undefined),
+);
+
+// UX612-C1: this call previously went through a relative `$fetch` against the
+// frontend origin (→ 401). Route it through the typed v2 client instead.
+const channelListingApi = useV2ShepardApi(TimeseriesContainerChannelListingApi);
+
 watch(
-  () => timeseriesReference.value?.timeseriesContainerAppId,
-  async (containerAppId) => {
-    if (!containerAppId) return;
+  containerAppId,
+  async (appId) => {
+    if (!appId) return;
     try {
-      const data = await $fetch<ChannelV2[]>(
-        `/v2/timeseries-containers/${containerAppId}/channels`,
-      );
+      const data = await channelListingApi.value.listChannels({
+        containerAppId: appId,
+        size: 1000,
+      });
       channelsV2.value = data ?? [];
     } catch {
       // Best-effort; falls back to no auto-populate
@@ -708,13 +730,26 @@ watch(
           </v-container>
         </v-col>
       </v-row>
+      <!-- UX612-C1: 404 on the v2 reference load → honest empty state
+           (UU1 pattern) instead of the former eternal spinner. -->
+      <EntityNotFound
+        v-else-if="referenceNotFound"
+        entity-kind="TimeseriesReference"
+        :requested-id="routeParams.timeseriesReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
     <ViewRecipeBuilderDialog
       v-if="timeseriesReference && timeseriesReference.timeseriesContainerId"
       v-model="showVisualize3D"
       :container-id="timeseriesReference.timeseriesContainerId"
-      :container-app-id="timeseriesReference.timeseriesContainerAppId ?? ''"
+      :container-app-id="containerAppId ?? ''"
       :channels="timeseriesReference.timeseries"
       :channels-v2="channelsV2.length ? channelsV2 : undefined"
       :start-ns="timeseriesReference.start"

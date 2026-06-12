@@ -136,6 +136,48 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     expect(t.enabledWhen!({ attachedTemplateAppId: null })).toBe(false);
   });
 
+  // ── UX612-M1 — gate matches the render endpoint's contract ─────────────
+  // POST /v2/shapes/render accepts only templateKind=VIEW_RECIPE (422
+  // otherwise). The gate checks the kind, not mere template presence.
+
+  it("do-render is visible when the attached template is a VIEW_RECIPE", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
+    expect(
+      t.enabledWhen!({
+        attachedTemplateAppId: "tpl-001",
+        attachedTemplateKind: "VIEW_RECIPE",
+      }),
+    ).toBe(true);
+  });
+
+  it("do-render is hidden when the attached template is a DATAOBJECT_RECIPE (would 422)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
+    expect(
+      t.enabledWhen!({
+        attachedTemplateAppId: "tpl-001",
+        attachedTemplateKind: "DATAOBJECT_RECIPE",
+      }),
+    ).toBe(false);
+  });
+
+  it("do-render is hidden when the template kind is unknown (unresolved fetch)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
+    expect(t.enabledWhen!({ attachedTemplateAppId: "tpl-001" })).toBe(false);
+    expect(
+      t.enabledWhen!({ attachedTemplateAppId: "tpl-001", attachedTemplateKind: null }),
+    ).toBe(false);
+  });
+
+  it("do-shacl stays presence-gated (validation works for any template kind)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
+    expect(
+      t.enabledWhen!({
+        attachedTemplateAppId: "tpl-001",
+        attachedTemplateKind: "DATAOBJECT_RECIPE",
+      }),
+    ).toBe(true);
+  });
+
   it("do-shacl prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
     const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
     const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-001" });
