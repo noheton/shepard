@@ -125,6 +125,30 @@ class OntologySeedServiceTest {
   }
 
   @Test
+  void readBundleBytes_absolutePath_readsFromDisk() throws Exception {
+    // User-uploaded bundles register an ABSOLUTE filesystem path (the
+    // user-bundles-dir); the classpath prefix can never resolve them.
+    var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    java.nio.file.Path tmp = java.nio.file.Files.createTempFile("user-bundle", ".ttl");
+    try {
+      byte[] payload = SAMPLE_TTL.getBytes(StandardCharsets.UTF_8);
+      java.nio.file.Files.write(tmp, payload);
+      byte[] read = svc.readBundleBytes(tmp.toAbsolutePath().toString());
+      org.junit.jupiter.api.Assertions.assertArrayEquals(payload, read);
+    } finally {
+      java.nio.file.Files.deleteIfExists(tmp);
+    }
+  }
+
+  @Test
+  void readBundleBytes_absolutePathMissing_throwsSeedException() {
+    var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    org.junit.jupiter.api.Assertions.assertThrows(OntologySeedException.class, () ->
+      svc.readBundleBytes("/definitely/not/here/bundle.ttl")
+    );
+  }
+
+  @Test
   void seed_importsValidBundle_andSendsCorrectCypher() {
     Session session = mock(Session.class);
     String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
