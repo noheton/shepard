@@ -54,6 +54,11 @@ image-backend: build-backend
 	docker build -t $(BACKEND_IMAGE) ./backend
 
 build-frontend:
+	# Refresh the file:../backend-client dep first — npm version-caches file: deps
+	# (the package stays 1.0.0 across regens), so a stale generated client silently
+	# survives `npm install`. Force a clean re-copy so the build always uses the
+	# current client (the V2-SWEEP-001-CLIENT-REGEN stale-client incident, 2026-06-12).
+	rm -rf frontend/node_modules/@dlr-shepard && cd frontend && npm install
 	cd frontend && npm run build
 
 image-frontend: build-frontend
