@@ -90,7 +90,7 @@ public class SnapshotListRest {
     List<SnapshotListItemIO> items,
     long total,
     int page,
-    int size
+    int pageSize
   ) {}
 
   @GET
@@ -101,7 +101,7 @@ public class SnapshotListRest {
       "newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` " +
       "scopes the result to a single Collection; when absent, the list spans " +
       "every Collection the caller can read.\n\n" +
-      "Response envelope: `{ items[], total, page, size }`. **`total` reports " +
+      "Response envelope: `{ items[], total, page, pageSize }`. **`total` reports " +
       "the unfiltered count** (every snapshot in scope, not just the ones the " +
       "caller can read) — so a caller looking at `items.length` vs. `total` " +
       "can infer how many they can't see. The page is post-filtered to the " +
