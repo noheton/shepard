@@ -7,9 +7,16 @@ const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;
 
+// V2-SWEEP-003-2: route param is now an appId (UUID v7) when navigated from
+// CollectionContainersPanel / ContainerList. HeaderBar search still routes numeric
+// id (V1-EXCEPTION, SEARCH-V2 will retire it) — fetchData() handles both paths.
 const containerAccessor = new FileContainerAccessor(containerId);
 const containerAppId = computed<string | null>(
-  () => (containerAccessor.fileContainer.value as unknown as { appId?: string | null })?.appId ?? null,
+  () => containerAccessor.fileContainer.value?.appId ?? (/^\d+$/.test(containerId) ? null : containerId),
+);
+// Numeric Neo4j id for child components still using v1 API (V1-EXCEPTION).
+const containerNumericId = computed<number>(
+  () => /^\d+$/.test(containerId) ? Number(containerId) : (containerAccessor.fileContainer.value?.id ?? 0),
 );
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useFileContainerLinkedDataObjects(containerAppId);
@@ -34,8 +41,8 @@ const deleteWarning = computed<string | undefined>(() => {
   );
 });
 
-const fetchData = () => {
-  containerAccessor.fetchData();
+const fetchData = async () => {
+  await containerAccessor.fetchData();
   containerAccessor.fetchFiles();
   containerAccessor.fetchRoles();
 };
@@ -82,7 +89,7 @@ useHead({
         <v-container class="pa-0" fluid>
           <v-row no-gutters>
             <ContainerTitleAndMetadataDisplay
-              :id="containerAccessor.fileContainer.value.id"
+              :app-id="containerAppId ?? containerId"
               :n-items="containerAccessor.files.value?.length"
               :name="containerAccessor.fileContainer.value.name"
               :type-label="'File Container'"
@@ -130,7 +137,7 @@ useHead({
       :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
       :loading="containerAccessor.loading.value"
       :container-app-id="containerAccessor.fileContainer.value?.appId ?? undefined"
-      :container-id="containerId"
+      :container-id="containerNumericId"
       @delete-file="(file: ShepardFile) => containerAccessor.deleteFile(file)"
       @download-file="
         (file: ShepardFile) => containerAccessor.downloadFile(file)

@@ -55,7 +55,7 @@ async function fetchPoints() {
   try {
     const api = useShepardApi(SpatialDataContainerApi).value;
     const dataPoints = await api.getSpatialDataPoints({
-      spatialDataContainerId: containerId,
+      spatialDataContainerId: Number(containerId),
       limit: 500_000,
     });
     points.value = dataPoints.map((p: SpatialDataPoint) => ({
@@ -111,7 +111,7 @@ useHead({
         <v-container class="pa-0" fluid>
           <v-row no-gutters>
             <ContainerTitleAndMetadataDisplay
-              :id="containerAccessor.spatialData.value.id"
+              :app-id="containerAccessor.spatialData.value.appId ?? String(containerAccessor.spatialData.value.id)"
               :name="containerAccessor.spatialData.value.name"
               :type-label="'Spatial Data Container'"
             >

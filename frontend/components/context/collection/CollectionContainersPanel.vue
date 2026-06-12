@@ -15,8 +15,8 @@ const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
 function containerPath(c: ContainerSummaryIO): string {
-  // Detail-page route is `/containers/<segment>/<id>/`.
-  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.id ?? ""}/`;
+  // V2-SWEEP-003-2: route by appId; accessors handle UUID (v2 GET) and numeric (V1-EXCEPTION).
+  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.appId ?? c.id}/`;
 }
 
 function containerIcon(type: string | undefined): string {
@@ -47,10 +47,10 @@ function containerLabel(type: string | undefined): string {
     <v-list v-else density="compact" class="pa-0">
       <v-list-item
         v-for="c in containers"
-        :key="c.id"
+        :key="c.appId ?? c.id"
         :to="containerPath(c)"
         :prepend-icon="containerIcon(c.containerType)"
-        :title="c.name ?? `Container ${c.id}`"
+        :title="c.name ?? `Container ${c.appId ?? c.id}`"
         :subtitle="containerLabel(c.containerType)"
         rounded
       />
