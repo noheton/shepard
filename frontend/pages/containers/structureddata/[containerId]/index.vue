@@ -195,11 +195,11 @@ useHead({
             #append
           >
             <AddAnnotationButton
-              :annotated="new AnnotatedStructuredDataContainer(containerId)"
+              :annotated="new AnnotatedStructuredDataContainer(containerAppId ?? '')"
             />
           </template>
           <SemanticAnnotationList
-            :annotated="new AnnotatedStructuredDataContainer(containerId)"
+            :annotated="new AnnotatedStructuredDataContainer(containerAppId ?? '')"
             :can-delete="!!containerAccessor.isAllowedToEditData.value"
           />
         </ExpansionPanelItem>

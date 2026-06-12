@@ -45,6 +45,7 @@ function togglePin(ch: TimeseriesEntity) {
     pin({
       shepardId,
       containerId: props.containerId,
+      containerAppId: props.containerAppId,
       channelName: channelLabel(ch),
       containerPath: props.containerPath,
     });
