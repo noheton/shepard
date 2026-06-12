@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.containers.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
-import de.dlr.shepard.common.neo4j.io.BasicContainerIO;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -44,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
   name = "ContainerV2",
   description = "Unified, polymorphic wire shape for every container kind under /v2/containers."
 )
-public class ContainerV2IO extends BasicContainerIO {
+public class ContainerV2IO extends BasicContainerV2IO {
 
   @Schema(
     description =
