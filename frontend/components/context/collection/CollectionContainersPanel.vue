@@ -15,8 +15,7 @@ const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
 function containerPath(c: ContainerSummaryIO): string {
-  // V2-SWEEP-003-2: route by appId; accessors handle UUID (v2 GET) and numeric (V1-EXCEPTION).
-  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.appId ?? c.id}/`;
+  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.appId}/`;
 }
 
 function containerIcon(type: string | undefined): string {

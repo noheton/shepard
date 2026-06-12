@@ -50,8 +50,8 @@ class CollectionContainersRestTest {
       .thenReturn(true);
     when(containersDAO.findByCollectionAppId(COLL_APP_ID))
       .thenReturn(List.of(
-        new ContainerSummaryIO(1L, "ts-app-1", "HotfireTS", "TIMESERIES"),
-        new ContainerSummaryIO(2L, "fb-app-1", "HotfireFiles", "FILE")
+        new ContainerSummaryIO("ts-app-1", "HotfireTS", "TIMESERIES"),
+        new ContainerSummaryIO("fb-app-1", "HotfireFiles", "FILE")
       ));
   }
 

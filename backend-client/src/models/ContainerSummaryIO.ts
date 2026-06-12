@@ -20,12 +20,6 @@ import { mapValues } from '../runtime';
  */
 export interface ContainerSummaryIO {
     /**
-     * Neo4j OGM id — use for legacy navigation routes.
-     * @type {number}
-     * @memberof ContainerSummaryIO
-     */
-    id?: number;
-    /**
      * Application-level UUID-v7 identifier.
      * @type {string}
      * @memberof ContainerSummaryIO
@@ -74,8 +68,7 @@ export function ContainerSummaryIOFromJSONTyped(json: any, ignoreDiscriminator: 
         return json;
     }
     return {
-        
-        'id': json['id'] == null ? undefined : json['id'],
+
         'appId': json['appId'] == null ? undefined : json['appId'],
         'name': json['name'] == null ? undefined : json['name'],
         'containerType': json['containerType'] == null ? undefined : json['containerType'],
@@ -87,8 +80,7 @@ export function ContainerSummaryIOToJSON(value?: ContainerSummaryIO | null): any
         return value;
     }
     return {
-        
-        'id': value['id'],
+
         'appId': value['appId'],
         'name': value['name'],
         'containerType': value['containerType'],
