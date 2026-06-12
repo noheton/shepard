@@ -6,11 +6,11 @@
  * needs the full app context.
  */
 import { describe, it, expect } from "vitest";
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
 // ── Logic units (mirror the inline functions in MyTemplatesPane.vue) ──
 
-function shippedVia(t: ShepardTemplateIO): string {
+function shippedVia(t: ShepardTemplate): string {
   const tags = t.tags ?? [];
   if (tags.some(tag => tag.startsWith("system:") || tag === "system")) return "system";
   if (tags.some(tag => tag.startsWith("git:") || tag === "git")) return "git import";
@@ -18,9 +18,9 @@ function shippedVia(t: ShepardTemplateIO): string {
 }
 
 function filterTemplates(
-  templates: ShepardTemplateIO[],
+  templates: ShepardTemplate[],
   q: string,
-): ShepardTemplateIO[] {
+): ShepardTemplate[] {
   const needle = q.trim().toLowerCase();
   if (!needle) return templates;
   return templates.filter(
@@ -32,7 +32,7 @@ function filterTemplates(
   );
 }
 
-const mk = (overrides: Partial<ShepardTemplateIO>): ShepardTemplateIO => ({
+const mk = (overrides: Partial<ShepardTemplate>): ShepardTemplate => ({
   appId: "00000000-0000-7000-8000-000000000001",
   name: "default",
   templateKind: "DATAOBJECT_RECIPE",

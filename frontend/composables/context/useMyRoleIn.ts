@@ -1,4 +1,4 @@
-import { MeRoleInApi, type MeRoleInIO } from "@dlr-shepard/backend-client";
+import { MeApi, type MeRoleIn } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 /**
@@ -10,7 +10,7 @@ import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
  * if the user has no access or is not authenticated.
  */
 export function useMyRoleIn(collectionAppId: Ref<string | null | undefined>) {
-  const roleIn = ref<MeRoleInIO | null>(null);
+  const roleIn = ref<MeRoleIn | null>(null);
 
   /** Highest-effective role label. Null until fetch completes or if no access. */
   const roleLabel = computed<string | null>(() => {
@@ -21,11 +21,11 @@ export function useMyRoleIn(collectionAppId: Ref<string | null | undefined>) {
     return null;
   });
 
-  const api = useV2ShepardApi(MeRoleInApi);
+  const api = useV2ShepardApi(MeApi);
 
   function fetch(appId: string) {
     api.value
-      .getRoleIn(appId)
+      .roleIn({ collectionAppId: appId })
       .then(result => {
         roleIn.value = result;
       })

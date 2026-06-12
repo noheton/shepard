@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
-  ShepardTemplateApi,
-  type ShepardTemplateIO,
+  TemplatesApi,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchTemplates } from "~/composables/context/admin/useFetchTemplates";
@@ -33,10 +33,10 @@ const filterTag = ref<string | null>(null);
 
 // Dialog state
 const dialogOpen = ref(false);
-const editingTemplate = ref<ShepardTemplateIO | null>(null);
+const editingTemplate = ref<ShepardTemplate | null>(null);
 
 // Retire confirmation
-const retireTarget = ref<ShepardTemplateIO | null>(null);
+const retireTarget = ref<ShepardTemplate | null>(null);
 const retireConfirmOpen = ref(false);
 const isRetiring = ref(false);
 const retireError = ref<string | null>(null);
@@ -108,12 +108,12 @@ function openCreate() {
   dialogOpen.value = true;
 }
 
-function openEdit(template: ShepardTemplateIO) {
+function openEdit(template: ShepardTemplate) {
   editingTemplate.value = template;
   dialogOpen.value = true;
 }
 
-function openRetireConfirm(template: ShepardTemplateIO) {
+function openRetireConfirm(template: ShepardTemplate) {
   retireTarget.value = template;
   retireError.value = null;
   retireConfirmOpen.value = true;
@@ -124,7 +124,7 @@ async function confirmRetire() {
   retireError.value = null;
   isRetiring.value = true;
   try {
-    await useV2ShepardApi(ShepardTemplateApi).value.retireTemplate({
+    await useV2ShepardApi(TemplatesApi).value.deleteTemplate({
       appId: retireTarget.value.appId,
     });
     retireConfirmOpen.value = false;

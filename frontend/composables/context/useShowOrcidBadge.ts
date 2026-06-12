@@ -29,7 +29,9 @@ export function useShowOrcidBadge() {
     if (loaded) return;
     loaded = true;
     try {
-      const prefs = await api.value.getPreferences();
+      // V2-SWEEP-001-CLIENT-REGEN: getPreferences now returns `object`; the
+      // preferences map is a flat string→string bag keyed by PREF_KEY.
+      const prefs = (await api.value.getPreferences()) as Record<string, string>;
       // Default true unless the user has explicitly set "false".
       showOrcidBadge.value = prefs[PREF_KEY] !== "false";
     } catch {
@@ -40,7 +42,7 @@ export function useShowOrcidBadge() {
   async function setShowOrcidBadge(enabled: boolean) {
     isSaving.value = true;
     try {
-      await api.value.patchPreferences({ [PREF_KEY]: enabled ? "true" : "false" });
+      await api.value.patchPreferences({ body: { [PREF_KEY]: enabled ? "true" : "false" } });
       showOrcidBadge.value = enabled;
     } catch (error) {
       handleError(error, "saving ORCID badge preference");

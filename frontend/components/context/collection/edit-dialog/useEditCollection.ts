@@ -36,25 +36,18 @@ export function useEditCollection(
   isValid: Ref<boolean>,
   isAllowedToEditPermissions?: boolean,
 ) {
-  // LIC1 + PROMPT-h2: the generated `Collection` model may not yet expose
-  // license / accessRights / promptLogMode as top-level fields (the generator
-  // runs from an older OpenAPI snapshot). Read defensively from the
-  // unknown-shaped object so a fresh backend build with the fields is consumed
-  // without regenerating the client.
-  const rawCollection = collection as unknown as {
-    license?: string | null;
-    accessRights?: string | null;
-    promptLogMode?: string | null;
-  };
+  // LIC1 + PROMPT-h2: V2-SWEEP-001-CLIENT-REGEN — the regenerated `Collection`
+  // model now exposes license / accessRights / promptLogMode as typed
+  // top-level fields, so the previous defensive `unknown`-shaped read is gone.
   const updatedCollection = ref<UpdatedCollection>({
     name: collection.name,
     attributes: collection.attributes ?? {},
     description: collection.description ?? "",
     status: collection.status ?? null,
     heroImageUrl: collection.heroImageUrl ?? null,
-    license: rawCollection.license ?? null,
-    accessRights: rawCollection.accessRights ?? null,
-    promptLogMode: rawCollection.promptLogMode ?? null,
+    license: collection.license ?? null,
+    accessRights: collection.accessRights ?? null,
+    promptLogMode: collection.promptLogMode ?? null,
   });
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
 

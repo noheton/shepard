@@ -17,23 +17,23 @@
  * Collection. Follow-up: TPL-ME-USE-FROM-BROWSE (a Collection picker).
  */
 import {
-  ShepardTemplateApi,
-  type ShepardTemplateIO,
+  TemplatesApi,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
-const templates = ref<ShepardTemplateIO[]>([]);
+const templates = ref<ShepardTemplate[]>([]);
 const isLoading = ref(false);
 const loadError = ref<string | null>(null);
 const filter = ref("");
-const selected = ref<ShepardTemplateIO | null>(null);
+const selected = ref<ShepardTemplate | null>(null);
 const showDetails = ref(false);
 
 function load() {
   isLoading.value = true;
   loadError.value = null;
-  useV2ShepardApi(ShepardTemplateApi)
-    .value.getTemplates({})
+  useV2ShepardApi(TemplatesApi)
+    .value.listTemplates({})
     .then(rows => {
       templates.value = rows ?? [];
     })
@@ -65,7 +65,7 @@ const filtered = computed(() => {
   );
 });
 
-function shippedVia(t: ShepardTemplateIO): string {
+function shippedVia(t: ShepardTemplate): string {
   // Lightweight heuristic — system seeds are created by the migrations
   // runner under a service principal; git imports leave a `git:` tag per
   // TPL5; everything else is admin upload. Adjust as more sources land.
@@ -75,7 +75,7 @@ function shippedVia(t: ShepardTemplateIO): string {
   return "admin upload";
 }
 
-function openDetails(t: ShepardTemplateIO) {
+function openDetails(t: ShepardTemplate) {
   selected.value = t;
   showDetails.value = true;
 }

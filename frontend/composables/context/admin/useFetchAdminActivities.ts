@@ -1,10 +1,10 @@
-import { ProvenanceApi, type ActivityIO } from "@dlr-shepard/backend-client";
+import { ProvenanceApi, type Activity } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const LOAD_BATCH = 100;
 
 export function useFetchAdminActivities() {
-  const activities = ref<ActivityIO[]>([]);
+  const activities = ref<Activity[]>([]);
   const isLoading = ref(false);
   const hasMore = ref(false);
 

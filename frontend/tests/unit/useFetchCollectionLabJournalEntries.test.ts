@@ -15,7 +15,7 @@ const mockList = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
   (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ listCollectionLabJournalEntries: mockList }),
+    ref({ listLabJournalEntries: mockList }),
   );
 });
 

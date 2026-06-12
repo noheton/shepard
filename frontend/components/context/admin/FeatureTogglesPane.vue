@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
-  AdminFeaturesApi,
-  type FeatureToggleIO,
+  AdminApi,
+  type FeatureToggle,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchFeatureToggles } from "~/composables/context/admin/useFetchFeatureToggles";
@@ -12,13 +12,13 @@ const { features, isLoading, refresh } = useFetchFeatureToggles();
 const patchingName = ref<string | null>(null);
 const patchError = ref<string | null>(null);
 
-async function onToggle(feature: FeatureToggleIO, newValue: boolean) {
+async function onToggle(feature: FeatureToggle, newValue: boolean) {
   patchError.value = null;
   patchingName.value = feature.name;
   try {
-    await useV2ShepardApi(AdminFeaturesApi).value.patchFeature({
+    await useV2ShepardApi(AdminApi).value.patchFeatureToggle({
       name: feature.name,
-      patchFeatureToggleIO: { enabled: newValue },
+      patchFeatureToggle: { enabled: newValue },
     });
     await refresh();
   } catch (e) {

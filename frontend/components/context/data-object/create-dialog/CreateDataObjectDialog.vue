@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {
-  CollectionTemplateApi,
+  CollectionTemplatesApi,
   DataObjectApi,
-  type ShepardTemplateIO,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
@@ -29,14 +29,14 @@ const { advancedMode } = useAdvancedMode();
 
 type Mode = "picker" | "form";
 const mode = ref<Mode>("form");
-const allowedTemplates = ref<ShepardTemplateIO[]>([]);
+const allowedTemplates = ref<ShepardTemplate[]>([]);
 const isLoadingTemplates = ref(false);
 const isInstantiating = ref(false);
 
 if (props.collectionAppId) {
   isLoadingTemplates.value = true;
-  useV2ShepardApi(CollectionTemplateApi)
-    .value.listAllowedTemplates({ collectionAppId: props.collectionAppId })
+  useV2ShepardApi(CollectionTemplatesApi)
+    .value.listAllowed({ appId: props.collectionAppId })
     .then(templates => {
       allowedTemplates.value = templates;
       // Basic-mode users see the template picker first (templates are the
@@ -55,11 +55,11 @@ if (props.collectionAppId) {
     });
 }
 
-async function onTemplateSelected(template: ShepardTemplateIO) {
+async function onTemplateSelected(template: ShepardTemplate) {
   if (!props.collectionAppId) return;
   isInstantiating.value = true;
   try {
-    const created = await useV2ShepardApi(CollectionTemplateApi)
+    const created = await useV2ShepardApi(CollectionTemplatesApi)
       .value.instantiateDataObject({
         collectionAppId: props.collectionAppId,
         templateAppId: template.appId,

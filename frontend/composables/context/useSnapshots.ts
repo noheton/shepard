@@ -1,8 +1,7 @@
 import {
-  CollectionSnapshotApi,
-  SnapshotApi,
-  type SnapshotDiffIO,
-  type SnapshotIO,
+  SnapshotsApi,
+  type SnapshotDiff,
+  type Snapshot,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
@@ -16,20 +15,23 @@ import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
  *   before the collection is loaded).
  */
 export function useSnapshots(collectionAppId: Ref<string | null>) {
-  const snapshots = ref<SnapshotIO[]>([]);
+  const snapshots = ref<Snapshot[]>([]);
   const isLoading = ref(false);
   const isSaving = ref(false);
 
-  const collectionSnapshotApi = useV2ShepardApi(CollectionSnapshotApi);
-  const snapshotApi = useV2ShepardApi(SnapshotApi);
+  // V2-SWEEP-001-CLIENT-REGEN: the regenerated client folds the old
+  // CollectionSnapshotApi + SnapshotApi into one SnapshotsApi with
+  // request-object params. listSnapshots→listCollectionSnapshots,
+  // createSnapshot→createCollectionSnapshot, diffSnapshots→diff.
+  const snapshotsApi = useV2ShepardApi(SnapshotsApi);
 
   function refresh() {
     const appId = collectionAppId.value;
     if (!appId) return;
 
     isLoading.value = true;
-    collectionSnapshotApi.value
-      .listSnapshots(appId)
+    snapshotsApi.value
+      .listCollectionSnapshots({ collectionAppId: appId })
       .then(result => {
         snapshots.value = result;
       })
@@ -45,15 +47,15 @@ export function useSnapshots(collectionAppId: Ref<string | null>) {
   async function createSnapshot(
     name: string,
     description?: string | null,
-  ): Promise<SnapshotIO | null> {
+  ): Promise<Snapshot | null> {
     const appId = collectionAppId.value;
     if (!appId) return null;
 
     isSaving.value = true;
     try {
-      const created = await collectionSnapshotApi.value.createSnapshot(appId, {
-        name,
-        description,
+      const created = await snapshotsApi.value.createCollectionSnapshot({
+        collectionAppId: appId,
+        snapshot: { name, description: description ?? undefined },
       });
       refresh();
       return created;
@@ -68,7 +70,7 @@ export function useSnapshots(collectionAppId: Ref<string | null>) {
   async function deleteSnapshot(snapshotAppId: string): Promise<boolean> {
     isSaving.value = true;
     try {
-      await snapshotApi.value.deleteSnapshot(snapshotAppId);
+      await snapshotsApi.value.deleteSnapshot({ snapshotAppId });
       refresh();
       return true;
     } catch (error) {
@@ -82,9 +84,9 @@ export function useSnapshots(collectionAppId: Ref<string | null>) {
   async function diffSnapshots(
     aAppId: string,
     bAppId: string,
-  ): Promise<SnapshotDiffIO | null> {
+  ): Promise<SnapshotDiff | null> {
     try {
-      return await snapshotApi.value.diffSnapshots(aAppId, bAppId);
+      return await snapshotsApi.value.diff({ aAppId, bAppId });
     } catch (error) {
       handleError(error, "diffSnapshots");
       return null;

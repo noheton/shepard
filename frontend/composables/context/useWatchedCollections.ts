@@ -67,7 +67,7 @@ export function useWatchedCollections() {
 
   async function saveEntries(entries: WatchedEntry[]) {
     const value = entries.length > 0 ? JSON.stringify(entries) : null;
-    await meApi.value.patchPreferences({ [PREF_KEY]: value });
+    await meApi.value.patchPreferences({ body: { [PREF_KEY]: value } });
   }
 
   async function load() {
@@ -81,7 +81,9 @@ export function useWatchedCollections() {
     _loaded = true;
     _loading.value = true;
     try {
-      const prefs = await meApi.value.getPreferences();
+      // V2-SWEEP-001-CLIENT-REGEN: getPreferences now returns `object`; the
+      // preferences map is a flat string→string bag keyed by PREF_KEY.
+      const prefs = (await meApi.value.getPreferences()) as Record<string, string>;
       _rawEntries = parseEntries(prefs[PREF_KEY]);
       if (_rawEntries.length === 0) return;
 

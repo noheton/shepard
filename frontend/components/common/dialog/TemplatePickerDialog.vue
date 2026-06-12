@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useDisplay } from "vuetify";
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
 defineProps<{
   title: string;
-  templates: ShepardTemplateIO[];
+  templates: ShepardTemplate[];
   loading: boolean;
   isInstantiating?: boolean;
   deEmphasiseBlank?: boolean;
@@ -16,7 +16,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const emit = defineEmits<{
-  (e: "select", template: ShepardTemplateIO): void;
+  (e: "select", template: ShepardTemplate): void;
   (e: "start-blank"): void;
 }>();
 

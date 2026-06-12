@@ -1,6 +1,6 @@
 import {
   ProvenanceApi,
-  type ProvenanceStatsIO,
+  type ProvenanceStats,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
@@ -43,7 +43,7 @@ export interface UseFetchProvenanceStatsOptions {
 const THIRTY_DAYS_MILLIS = 30 * 24 * 60 * 60 * 1000;
 
 export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
-  const stats = ref<ProvenanceStatsIO | null>(null);
+  const stats = ref<ProvenanceStats | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -75,7 +75,7 @@ export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
     isLoading.value = true;
     error.value = null;
     useV2ShepardApi(ProvenanceApi)
-      .value.getStats({
+      .value.stats({
         scope: opts.scope,
         id: opts.id,
         since: effectiveSince(),

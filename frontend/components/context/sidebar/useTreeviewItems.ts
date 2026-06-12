@@ -1,5 +1,5 @@
 import {
-  DataObjectV2Api,
+  DataObjectsApi,
   type DataObjectListItemV2,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
@@ -32,7 +32,7 @@ const PAGE_SIZE = 200;
 const MAX_PAGES = 100;
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
-  const dataObjectV2Api = useV2ShepardApi(DataObjectV2Api);
+  const dataObjectV2Api = useV2ShepardApi(DataObjectsApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
   // Distinct from `loading` so the template can render an explicit error

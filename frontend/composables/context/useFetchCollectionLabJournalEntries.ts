@@ -22,7 +22,7 @@ export function useFetchCollectionLabJournalEntries(collectionAppId: Ref<string 
   async function fetch(appId: string) {
     isLoading.value = true;
     try {
-      entries.value = await api.value.listCollectionLabJournalEntries({
+      entries.value = await api.value.listLabJournalEntries({
         collectionAppId: appId,
       });
     } catch (e) {

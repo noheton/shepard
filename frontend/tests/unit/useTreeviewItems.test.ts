@@ -4,7 +4,7 @@
  *
  * The sidebar tree loads exclusively from the v2 appId-keyed list
  * `GET /v2/collections/{collectionAppId}/data-objects` (via the generated
- * `DataObjectV2Api` through `useV2ShepardApi`) and materialises the whole
+ * `DataObjectsApi` through `useV2ShepardApi`) and materialises the whole
  * tree client-side. The v1 helper (`useShepardApi`) and the v1
  * `getAllDataObjects` list are GONE — the numeric-collection-id gate that
  * left the sidebar spinning on appId-only data (operator regression
@@ -26,7 +26,7 @@ const listDataObjects = vi.fn();
 const addOpen = vi.fn();
 
 vi.mock("@dlr-shepard/backend-client", () => ({
-  DataObjectV2Api: function DataObjectV2Api() {},
+  DataObjectsApi: function DataObjectsApi() {},
 }));
 vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
   useV2ShepardApi: () => ref({ listDataObjects }),

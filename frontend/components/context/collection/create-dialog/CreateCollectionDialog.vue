@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {
   CollectionApi,
-  CollectionTemplateApi,
+  CollectionTemplatesApi,
   PermissionType,
-  ShepardTemplateApi,
+  TemplatesApi,
   type Collection,
   type ResponseError,
-  type ShepardTemplateIO,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
@@ -43,12 +43,12 @@ const emit = defineEmits<{
 
 type Mode = "picker" | "form";
 const mode = ref<Mode>("form");
-const collectionTemplates = ref<ShepardTemplateIO[]>([]);
+const collectionTemplates = ref<ShepardTemplate[]>([]);
 const isLoadingTemplates = ref(true);
-const selectedTemplate = ref<ShepardTemplateIO | null>(null);
+const selectedTemplate = ref<ShepardTemplate | null>(null);
 
-useV2ShepardApi(ShepardTemplateApi)
-  .value.getTemplates({ kind: "COLLECTION_RECIPE" })
+useV2ShepardApi(TemplatesApi)
+  .value.listTemplates({ kind: "COLLECTION_RECIPE" })
   .then(templates => {
     collectionTemplates.value = templates.filter(t => !t.retired);
     if (collectionTemplates.value.length > 0) mode.value = "picker";
@@ -60,7 +60,7 @@ useV2ShepardApi(ShepardTemplateApi)
     isLoadingTemplates.value = false;
   });
 
-function onTemplateSelected(template: ShepardTemplateIO) {
+function onTemplateSelected(template: ShepardTemplate) {
   selectedTemplate.value = template;
   if (template.description) {
     collectionToCreate.value.description = template.description;
@@ -144,9 +144,12 @@ async function saveChanges() {
   if (selectedTemplate.value) {
     const collectionAppId = (created as unknown as { appId?: string | null }).appId;
     if (collectionAppId) {
-      await useV2ShepardApi(CollectionTemplateApi)
-        .value.recordTemplateUsage({
-          collectionAppId,
+      // V2-SWEEP-001-CLIENT-REGEN: recordTemplateUsage was folded into the
+      // unified `instantiate` op (POST /v2/collections/{appId}/templates/from/
+      // {templateAppId}); the path param is now `appId` (was collectionAppId).
+      await useV2ShepardApi(CollectionTemplatesApi)
+        .value.instantiate({
+          appId: collectionAppId,
           templateAppId: selectedTemplate.value.appId,
         })
         .catch(() => {

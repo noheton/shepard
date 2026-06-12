@@ -8,7 +8,7 @@ vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
   useV2ShepardApi: vi.fn(),
 }));
 
-// CW1 wire mocks. The composable now (UI-005) calls listWatchers + getMe
+// CW1 wire mocks. The composable now (UI-005) calls listCollectionWatches + getMe
 // instead of getMyWatch so the browser never emits a 404 on landing.
 const mockListWatchers = vi.fn();
 const mockWatch = vi.fn();
@@ -25,7 +25,7 @@ beforeEach(() => {
     }
     if (apiClass === CollectionWatchesApi) {
       return ref({
-        listWatchers: mockListWatchers,
+        listCollectionWatches: mockListWatchers,
         watch: mockWatch,
         unwatch: mockUnwatch,
       });
