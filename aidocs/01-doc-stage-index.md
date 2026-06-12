@@ -105,7 +105,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-05-26 |
-| [`aidocs/agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md`](agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md) | UX audit 2026-06-12 — shapes-for-displays + canonical user journeys | 2026-06-12 | — |
+| [`aidocs/agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md`](agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md) | UX audit 2026-06-12 — shapes-for-displays + canonical user journeys | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/v5-metadata-enrichment-2026-05-23.md`](agent-findings/v5-metadata-enrichment-2026-05-23.md) | V5-METADATA-SURVEY — Metadata enrichment opportunities from v5 OpenAPI surface | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/05-db-inventory.md`](data/05-db-inventory.md) | Shepard DB Schema Inventory | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/45-gridfs-to-s3-evaluation.md`](data/45-gridfs-to-s3-evaluation.md) | GridFS → S3 — Evaluation | 2026-05-23 | 2026-05-23 |
@@ -341,7 +341,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/strategy-advisor.md`](agent-findings/strategy-advisor.md) | Shepard — Strategic Advisor Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/test-cleanup-2026-05-22.md`](agent-findings/test-cleanup-2026-05-22.md) | Backend test cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/trace3d-spike.md`](agent-findings/trace3d-spike.md) | Trace3D view — spike: library shortlist + view-shape input contract | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/ui-annoyances.md`](agent-findings/ui-annoyances.md) | UI annoyances — running log | 2026-05-23 | 2026-05-29 |
+| [`aidocs/agent-findings/ui-annoyances.md`](agent-findings/ui-annoyances.md) | UI annoyances — running log | 2026-05-23 | 2026-06-12 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-24.md`](agent-findings/ui-scrutinizer-2026-05-24.md) | UI Scrutinizer — live-shepard systematic walk, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-auditor.md`](agent-findings/ux-auditor.md) | UX Auditor — Discovery Report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-progress-indicators-sweep.md`](agent-findings/ux-progress-indicators-sweep.md) | UX progress indicators — Playwright-driven sweep (task #136) | 2026-05-23 | 2026-05-23 |
@@ -455,7 +455,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/85-openapi-llm-readable.md`](platform/85-openapi-llm-readable.md) | OpenAPI documentation standard — LLM-readable | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/87-timeseries-appid-migration.md`](platform/87-timeseries-appid-migration.md) | 87 — Timeseries appId Migration (TS-ID) | 2026-05-23 | 2026-05-29 |
 | [`aidocs/plugins/69-aas-plugin-extraction-design.md`](plugins/69-aas-plugin-extraction-design.md) | AAS → plugin extraction — Design (AAS1-plugin) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/reading-list.md`](reading-list.md) | Reading list | 2026-05-23 | 2026-05-23 |
+| [`aidocs/reading-list.md`](reading-list.md) | Reading list | 2026-05-23 | 2026-06-12 |
 | [`aidocs/roadmap.md`](roadmap.md) | Shepard Fork — Roadmap | 2026-05-23 | 2026-05-28 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/85-github-project-management-policies.md`](strategy/85-github-project-management-policies.md) | 85 — GitHub project-management policies (traceability SSOT) | 2026-05-23 | 2026-05-27 |

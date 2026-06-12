@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.bundle.io;
 
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.v2.references.io.BasicReferenceV2IO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
@@ -37,7 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "FileBundleReference")
-public class FileBundleReferenceIO extends BasicReferenceIO {
+public class FileBundleReferenceIO extends BasicReferenceV2IO {
 
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;

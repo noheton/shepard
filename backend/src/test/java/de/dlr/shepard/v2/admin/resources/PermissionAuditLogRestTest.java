@@ -93,8 +93,8 @@ class PermissionAuditLogRestTest {
 
   @Test
   void noFilters_returnsAllRows() {
-    var row1 = new PermissionAuditLogEntryIO(1L, "2026-01-01T00:00:00Z", "app-1", "Collection", "alice", "GRANT", null);
-    var row2 = new PermissionAuditLogEntryIO(2L, "2026-01-02T00:00:00Z", "app-2", "DataObject", "bob", "UPDATE", "{}");
+    var row1 = new PermissionAuditLogEntryIO("pal-uuid-1", "2026-01-01T00:00:00Z", "app-1", "Collection", "alice", "GRANT", null);
+    var row2 = new PermissionAuditLogEntryIO("pal-uuid-2", "2026-01-02T00:00:00Z", "app-2", "DataObject", "bob", "UPDATE", "{}");
     when(permissionAuditLogQueryService.query(isNull(), isNull(), isNull(), isNull(), eq(0), eq(50)))
       .thenReturn(List.of(row1, row2));
 
@@ -112,7 +112,7 @@ class PermissionAuditLogRestTest {
   void entityAppIdFilter_passedThrough() {
     when(permissionAuditLogQueryService.query(eq("my-app-id"), isNull(), isNull(), isNull(), eq(0), eq(50)))
       .thenReturn(List.of(
-        new PermissionAuditLogEntryIO(5L, "2026-03-01T10:00:00Z", "my-app-id", "Collection", "carol", "REVOKE", null)
+        new PermissionAuditLogEntryIO("pal-uuid-5", "2026-03-01T10:00:00Z", "my-app-id", "Collection", "carol", "REVOKE", null)
       ));
 
     Response r = resource.permissionAuditLog(adminCtx, "my-app-id", null, null, null, 0, 50);

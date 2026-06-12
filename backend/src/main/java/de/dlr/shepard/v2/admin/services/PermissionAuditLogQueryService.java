@@ -50,7 +50,7 @@ public class PermissionAuditLogQueryService {
     int effectivePage = Math.max(page, 0);
 
     StringBuilder sql = new StringBuilder(
-      "SELECT id, occurred_at, entity_app_id, entity_kind, actor_username, action, detail_json " +
+      "SELECT app_id, occurred_at, entity_app_id, entity_kind, actor_username, action, detail_json " +
       "FROM permission_audit_log WHERE 1=1 "
     );
     List<Object> params = new ArrayList<>();
@@ -91,7 +91,7 @@ public class PermissionAuditLogQueryService {
         while (rs.next()) {
           Timestamp ts = rs.getTimestamp("occurred_at");
           out.add(new PermissionAuditLogEntryIO(
-            rs.getLong("id"),
+            rs.getString("app_id"),
             ts != null ? ts.toInstant().toString() : null,
             rs.getString("entity_app_id"),
             rs.getString("entity_kind"),
