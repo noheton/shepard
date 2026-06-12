@@ -113,6 +113,23 @@ scoped to same-kind, non-retired, non-cyclic templates. Inherited fields are
 shown read-only above the body. See the templates reference for the full
 copy-on-write versioning model.
 
+## Forms from shapes — `GET /v2/templates/{appId}/form`
+
+A data-kind template's shape doubles as a **form**: the descriptor endpoint
+compiles the flattened `shapeGraph` into groups + fields (label, order,
+required-ness, regex pattern, enum options, [DASH](https://datashapes.org/dash)
+editor hints with constraint-scoring defaults) plus a server-computed `submit`
+block pointing at the instantiation endpoint. Submitting values that violate
+the shape returns **422** whose problem-JSON carries a structured
+`violations[]` — each entry's `path` equals the descriptor's `fields[].path`,
+so rendering an inline field error is a dictionary lookup. Caller-supplied
+values ride the instantiation request's `attributes` map (keys = the
+descriptor's `fields[].attributeKey`) and merge over the template's defaults
+before validation. Retired templates answer 409; templates without a
+`shapeGraph` or with a non-data kind answer 422. A minimal in-app preview
+lives at **Tools → Form preview**; a Python consumption example ships at
+`examples/btkvs-docket-showcase/form_demo.py`.
+
 ## Permissions
 
 Creating and editing templates requires the **instance-admin** role. The build

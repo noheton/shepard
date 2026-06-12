@@ -26,6 +26,7 @@ describe("TOOLS_TILES", () => {
       "/shapes/validate",
       "/snapshots/diff",
       "/shapes/render",
+      "/tools/form-preview", // BTKVS-B2 — form-descriptor placeholder stub
     ];
     expect(TOOLS_TILES.map(t => t.to).sort()).toEqual(expectedRoutes.sort());
   });

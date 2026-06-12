@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,8 +89,10 @@ public class TemplateInstantiationRest {
    * Predicate namespace for DataObject attributes in the data Turtle graph.
    * Mirrors the {@code urn:shepard:attribute:} namespace used in the default
    * organizing ontology so shapes authored against that namespace work here.
+   * Public because the form-descriptor compiler (FORM-DESCRIPTOR-1) derives
+   * each field's {@code attributeKey} from the same namespace.
    */
-  static final String ATTR_NS = "urn:shepard:attribute:";
+  public static final String ATTR_NS = "urn:shepard:attribute:";
 
   @Inject
   ShepardTemplateDAO templateDAO;
@@ -133,13 +136,19 @@ public class TemplateInstantiationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection, or the template is not in the Collection's allow-list.")
   @APIResponse(responseCode = "404", description = "Collection or template not found.")
   @APIResponse(responseCode = "409", description = "Template is retired and cannot be used for new instantiations.")
-  @APIResponse(responseCode = "422", description = "The candidate DataObject violates the template's SHACL shape graph.")
+  @APIResponse(
+    responseCode = "422",
+    description = "The candidate DataObject violates the template's SHACL shape graph. The problem-JSON " +
+    "carries a structured violations[] extension ({path, value?, constraint?, message} per finding; " +
+    "path = the SHACL resultPath predicate IRI, matching the form descriptor's fields[].path)."
+  )
   public Response instantiateDataObject(
     @PathParam("collectionAppId") String collectionAppId,
     @PathParam("templateAppId") String templateAppId,
     @RequestBody(
       required = false,
-      description = "Optional override for the DataObject name. All fields are optional.",
+      description = "Optional name override + caller-supplied attribute values (form input; merged over " +
+      "the template's defaults before SHACL validation). All fields are optional.",
       content = @Content(schema = @Schema(implementation = TemplateInstantiateRequestIO.class))
     ) TemplateInstantiateRequestIO body,
     @Context SecurityContext securityContext
@@ -191,8 +200,17 @@ public class TemplateInstantiationRest {
     // shapeGraph strings (parent ahead), so the result is the full inherited shape.
     String effectiveBody = inheritanceResolver.flattenBody(template);
 
-    // Step 7: extract attributes from the flattened template body dataobjects[0].attributes
-    Map<String, String> attributes = extractAttributes(effectiveBody);
+    // Step 7: extract attributes from the flattened template body dataobjects[0].attributes,
+    // then merge caller-supplied attributes over them (caller wins per key — the form-submit
+    // leg, BTKVS-B2 / doc 125 §5.2).
+    Map<String, String> attributes = new HashMap<>(extractAttributes(effectiveBody));
+    if (body != null && body.getAttributes() != null) {
+      body.getAttributes().forEach((k, v) -> {
+        if (k != null && v != null) {
+          attributes.put(k, v);
+        }
+      });
+    }
 
     // Step 8: SHACL shape validation — V2CONV-B2 / aidocs/platform/191 §3.
     // If the flattened body carries a top-level "shapeGraph" Turtle string, validate the
@@ -213,18 +231,30 @@ public class TemplateInstantiationRest {
           report.engineError() != null ? "engineError=" + report.engineError() : ""
         );
       } else if (!report.conforms()) {
-        // Shape violation: return 422 with violation details
-        String violations = report.findings().stream()
+        // Shape violation: 422 with the structured violations[] extension
+        // (FORM-422-FIELDS, doc 125 §5.2) — additive next to the prose detail
+        // so pre-existing consumers keep parsing the same fields.
+        List<Map<String, Object>> violations = report.findings().stream()
+          .map(TemplateInstantiationRest::violationEntry)
+          .collect(Collectors.toList());
+        String prose = report.findings().stream()
           .map(f -> {
             StringBuilder sb = new StringBuilder();
-            if (f.resultPath() != null) sb.append("path=").append(f.resultPath()).append(" ");
+            if (f.resultPath() != null) sb.append("path=").append(normalizePathIri(f.resultPath())).append(" ");
             if (f.value() != null) sb.append("value=").append(f.value()).append(" ");
             if (f.message() != null && !f.message().isBlank()) sb.append(f.message());
             return sb.toString().trim();
           })
           .collect(Collectors.joining("; "));
-        return problem(PT_UNPROCESSABLE, "SHACL validation failed", 422,
-          "DataObject violates the template's SHACL shape. Violations: " + violations);
+        ProblemJson problem = new ProblemJson(
+          PT_UNPROCESSABLE,
+          "SHACL validation failed",
+          422,
+          "DataObject violates the template's SHACL shape. Violations: " + prose,
+          null,
+          Map.of("violations", violations)
+        );
+        return Response.status(422).type("application/problem+json").entity(problem).build();
       }
     }
 
@@ -245,6 +275,34 @@ public class TemplateInstantiationRest {
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * One structured {@code violations[]} entry (FORM-422-FIELDS, doc 125 §5.2):
+   * {@code path} is the SHACL {@code resultPath} normalised to a bare predicate
+   * IRI — byte-identical to the form descriptor's {@code fields[].path}, so the
+   * client's field mapping is a dictionary lookup, no heuristics.
+   */
+  static Map<String, Object> violationEntry(JenaShaclValidator.Finding f) {
+    Map<String, Object> entry = new LinkedHashMap<>();
+    if (f.resultPath() != null) entry.put("path", normalizePathIri(f.resultPath()));
+    if (f.value() != null) entry.put("value", f.value());
+    if (f.constraint() != null) entry.put("constraint", f.constraint());
+    entry.put("message", f.message() == null ? "" : f.message());
+    return entry;
+  }
+
+  /**
+   * Jena stringifies a predicate-only SPARQL path as {@code <iri>}; strip the
+   * angle brackets so the wire value matches the descriptor's bare IRI.
+   */
+  static String normalizePathIri(String resultPath) {
+    if (resultPath == null) return null;
+    String p = resultPath.strip();
+    if (p.startsWith("<") && p.endsWith(">") && p.length() > 1) {
+      return p.substring(1, p.length() - 1);
+    }
+    return p;
+  }
 
   private static Response problem(String type, String title, Response.Status status, String detail) {
     return Response.status(status).type("application/problem+json")

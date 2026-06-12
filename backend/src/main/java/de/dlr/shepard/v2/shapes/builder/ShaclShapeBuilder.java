@@ -55,6 +55,25 @@ public class ShaclShapeBuilder {
   static final String XSD = "http://www.w3.org/2001/XMLSchema#";
   static final String XSD_STRING = XSD + "string";
 
+  // ── BTKVS-B2 hint vocabulary (doc 125 §4) ──────────────────────────
+  /** DASH namespace (adopted verbatim — doc 125 D2). */
+  public static final String DASH = "http://datashapes.org/dash#";
+
+  /** RDFS namespace ({@code rdfs:label} on {@code sh:PropertyGroup}s). */
+  static final String RDFS = "http://www.w3.org/2000/01/rdf-schema#";
+
+  /** Minted residue predicate — input placeholder text (doc 125 §4.2 Layer 3). */
+  public static final String FORM_PLACEHOLDER = "urn:shepard:form:placeholder";
+
+  /** Minted residue predicate — conditional-visibility JSON (doc 125 §4.2 Layer 3). */
+  public static final String FORM_VISIBLE_WHEN = "urn:shepard:form:visibleWhen";
+
+  /** Domain-side Excel annotation — A1-style cell ref (doc 125 §4.2 "Domain layer"). */
+  public static final String BTKVS_CELL_MAPPING = "urn:btkvs:cell-mapping";
+
+  /** Domain-side Excel annotation — worksheet name (doc 125 §4.2 "Domain layer"). */
+  public static final String BTKVS_SHEET = "urn:btkvs:sheet";
+
   /** Default IRI minted for an anonymous shape so output stays blank-node-free. */
   public static final String DEFAULT_SHAPE_IRI = "urn:shepard:shape:anonymous";
 
@@ -80,13 +99,18 @@ public class ShaclShapeBuilder {
     StringBuilder sb = new StringBuilder();
     sb.append("@prefix sh: <").append(SH).append("> .\n");
     sb.append("@prefix rdf: <").append(RDF).append("> .\n");
+    sb.append("@prefix rdfs: <").append(RDFS).append("> .\n");
     sb.append("@prefix xsd: <").append(XSD).append("> .\n");
+    sb.append("@prefix dash: <").append(DASH).append("> .\n");
     sb.append("\n");
 
     // Node shape.
     sb.append("<").append(shapeIri).append("> a sh:NodeShape");
     if (spec.targetClass() != null && !spec.targetClass().isBlank()) {
       sb.append(" ;\n  sh:targetClass <").append(spec.targetClass().strip()).append(">");
+    }
+    if (spec.targetNode() != null && !spec.targetNode().isBlank()) {
+      sb.append(" ;\n  sh:targetNode <").append(spec.targetNode().strip()).append(">");
     }
     if (spec.closed()) {
       sb.append(" ;\n  sh:closed true");
@@ -100,6 +124,13 @@ public class ShaclShapeBuilder {
     for (int i = 0; i < props.size(); i++) {
       sb.append("\n");
       appendPropertyShape(sb, propertyIri(shapeIri, i), props.get(i));
+    }
+
+    // sh:PropertyGroup declarations (form sections — BTKVS-B2 / doc 125 §4.2).
+    // Sorted by IRI so reordering the input list cannot change the output.
+    for (GroupSpec g : sortedGroups(spec.groups())) {
+      sb.append("\n");
+      appendGroup(sb, g);
     }
 
     return sb.toString();
@@ -166,7 +197,101 @@ public class ShaclShapeBuilder {
     if (p.in() != null && !p.in().isEmpty()) {
       sb.append(" ;\n  sh:in ").append(renderInList(p.in()));
     }
+    if (p.pattern() != null && !p.pattern().isBlank()) {
+      sb.append(" ;\n  sh:pattern \"").append(escapeLiteral(p.pattern())).append("\"");
+    }
+    appendHints(sb, p.hints());
     sb.append(" .\n");
+  }
+
+  /**
+   * Emit the non-validating hint triples (doc 125 §4) in a fixed,
+   * deterministic order: core SHACL characteristics first, then DASH, then
+   * the minted residue, then the domain-side Excel annotations.
+   */
+  private void appendHints(StringBuilder sb, FormHintSpec h) {
+    if (h == null || h.isEmpty()) {
+      return;
+    }
+    if (notBlank(h.name())) {
+      sb.append(" ;\n  sh:name \"").append(escapeLiteral(h.name())).append("\"");
+    }
+    if (notBlank(h.description())) {
+      sb.append(" ;\n  sh:description \"").append(escapeLiteral(h.description())).append("\"");
+    }
+    if (h.order() != null) {
+      sb.append(" ;\n  sh:order ").append(renderDecimal(h.order()));
+    }
+    if (notBlank(h.group())) {
+      sb.append(" ;\n  sh:group <").append(h.group().strip()).append(">");
+    }
+    if (h.defaultValue() != null) {
+      sb.append(" ;\n  sh:defaultValue \"").append(escapeLiteral(h.defaultValue())).append("\"");
+    }
+    if (notBlank(h.editor())) {
+      sb.append(" ;\n  dash:editor <").append(h.editor().strip()).append(">");
+    }
+    if (h.singleLine() != null) {
+      sb.append(" ;\n  dash:singleLine ").append(h.singleLine());
+    }
+    if (notBlank(h.placeholder())) {
+      sb.append(" ;\n  <").append(FORM_PLACEHOLDER).append("> \"")
+        .append(escapeLiteral(h.placeholder())).append("\"");
+    }
+    if (notBlank(h.visibleWhen())) {
+      sb.append(" ;\n  <").append(FORM_VISIBLE_WHEN).append("> \"")
+        .append(escapeLiteral(h.visibleWhen())).append("\"");
+    }
+    FormHintSpec.CellMappingSpec cm = h.cellMapping();
+    if (cm != null) {
+      if (notBlank(cm.sheet())) {
+        sb.append(" ;\n  <").append(BTKVS_SHEET).append("> \"")
+          .append(escapeLiteral(cm.sheet())).append("\"");
+      }
+      if (notBlank(cm.cell())) {
+        sb.append(" ;\n  <").append(BTKVS_CELL_MAPPING).append("> \"")
+          .append(escapeLiteral(cm.cell())).append("\"");
+      }
+    }
+  }
+
+  /** Emit one {@code sh:PropertyGroup} block. */
+  private void appendGroup(StringBuilder sb, GroupSpec g) {
+    sb.append("<").append(g.iri().strip()).append("> a sh:PropertyGroup");
+    if (notBlank(g.label())) {
+      sb.append(" ;\n  rdfs:label \"").append(escapeLiteral(g.label())).append("\"");
+    }
+    if (g.order() != null) {
+      sb.append(" ;\n  sh:order ").append(renderDecimal(g.order()));
+    }
+    sb.append(" .\n");
+  }
+
+  private static List<GroupSpec> sortedGroups(List<GroupSpec> raw) {
+    var out = new ArrayList<GroupSpec>();
+    if (raw != null) {
+      for (GroupSpec g : raw) {
+        if (g == null) continue;
+        if (g.iri() == null || g.iri().isBlank()) {
+          throw new IllegalArgumentException("every group must carry a non-blank IRI");
+        }
+        out.add(g);
+      }
+    }
+    out.sort(Comparator.comparing(g -> g.iri().strip()));
+    return out;
+  }
+
+  /** Render {@code sh:order}: integral values as integers, else plain decimal. */
+  private static String renderDecimal(double d) {
+    if (d == Math.floor(d) && !Double.isInfinite(d)) {
+      return Long.toString((long) d);
+    }
+    return Double.toString(d);
+  }
+
+  private static boolean notBlank(String s) {
+    return s != null && !s.isBlank();
   }
 
   /** Render {@code sh:in} as an RDF collection: {@code ( a b c )}. */

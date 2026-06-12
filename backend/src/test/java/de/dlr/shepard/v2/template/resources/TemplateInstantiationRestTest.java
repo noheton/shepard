@@ -392,6 +392,125 @@ class TemplateInstantiationRestTest {
     assertTrue(turtle.contains("\\\"hello\\\""), "Double quotes must be escaped in Turtle literals");
   }
 
+  // ---------- FORM-422-FIELDS: structured violations[] + caller attributes ----------
+
+  /**
+   * The BTKVS-B2 acceptance slice: a docket shape authored THROUGH the
+   * {@link de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder} DSL with a
+   * {@code sh:pattern} on the Docket-ID; a pattern-violating submitted value
+   * round-trips as a structured {@code violations[]} entry whose {@code path}
+   * is the bare predicate IRI (dictionary-mappable to the form descriptor's
+   * {@code fields[].path}).
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void returns422WithStructuredViolations_onPatternViolatingDocketId() {
+    allowWrite();
+    var shapeBuilder = new de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder();
+    String docketShape = shapeBuilder.toTurtle(
+      new de.dlr.shepard.v2.shapes.builder.ShapeSpec(
+        "urn:btkvs:shape:docket-general",
+        null,
+        false,
+        List.of(
+          new de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec(
+            TemplateInstantiationRest.ATTR_NS + "docket_id",
+            "http://www.w3.org/2001/XMLSchema#string",
+            1,
+            1,
+            null,
+            null,
+            "^[A-Z][0-9]{3}$",
+            null
+          )
+        ),
+        null,
+        TemplateInstantiationRest.INSTANCE_URI
+      )
+    );
+    String body = "{\"shapeGraph\":" + escapeJson(docketShape) + ",\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Docket — general section", "STRUCTURED_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("docket_id", "123")); // violates ^[A-Z][0-9]{3}$
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(422, r.getStatus());
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    Object raw = entity.extensions().get("violations");
+    assertNotNull(raw, "422 problem must carry the violations[] extension");
+    List<Map<String, Object>> violations = (List<Map<String, Object>>) raw;
+    assertEquals(1, violations.size());
+    Map<String, Object> v = violations.get(0);
+    assertEquals(TemplateInstantiationRest.ATTR_NS + "docket_id", v.get("path"),
+      "violations[].path must be the bare predicate IRI (descriptor-mappable)");
+    assertEquals("123", v.get("value"));
+    assertTrue(String.valueOf(v.get("constraint")).contains("PatternConstraintComponent"),
+      "constraint should carry the SHACL component IRI: " + v.get("constraint"));
+    assertNotNull(v.get("message"));
+    verify(dataObjectService, never()).createDataObject(anyLong(), any());
+  }
+
+  @Test
+  void callerAttributesMergeOverTemplateDefaults_andConformingValuePasses() {
+    allowWrite();
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX/LH2\",\"bench\":\"P8\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(500L);
+    ArgumentCaptor<DataObjectIO> captor = ArgumentCaptor.forClass(DataObjectIO.class);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), captor.capture())).thenReturn(newDo);
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("propellant", "LOX/CH4")); // caller overrides the template default
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(201, r.getStatus());
+    Map<String, String> attrs = captor.getValue().getAttributes();
+    assertEquals("LOX/CH4", attrs.get("propellant"), "caller value must win per key");
+    assertEquals("P8", attrs.get("bench"), "template defaults must survive for untouched keys");
+  }
+
+  @Test
+  void callerAttributesAloneSatisfyTheShape() {
+    allowWrite();
+    // Template carries the shape but NO default attributes — the form submit
+    // supplies everything (the BTKVS-B2 Streamlit path).
+    String body = "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + ",\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(600L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("propellant", "LOX/LH2"));
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  @Test
+  void normalizePathIri_stripsAngleBrackets() {
+    assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("<urn:x:y>"));
+    assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("urn:x:y"));
+    assertEquals(null, TemplateInstantiationRest.normalizePathIri(null));
+  }
+
   // ---------- helpers ----------
 
   private void allowWrite() {

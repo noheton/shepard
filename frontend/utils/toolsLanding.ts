@@ -57,6 +57,13 @@ export const TOOLS_TILES: ToolTile[] = [
     description: "Render URDF / mesh / spatial-shape previews.",
     icon: "mdi-cube-scan",
   },
+  {
+    to: "/tools/form-preview",
+    title: "Form preview",
+    description:
+      "Compile a data-kind template's SHACL shape into its form descriptor (BTKVS-B2).",
+    icon: "mdi-form-select",
+  },
 ];
 
 // UU2 (2026-05-31): `isPlausibleAppId` lives in `utils/idShape.ts` (which
