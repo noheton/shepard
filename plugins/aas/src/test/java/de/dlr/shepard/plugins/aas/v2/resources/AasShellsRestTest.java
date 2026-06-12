@@ -7,6 +7,9 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.plugins.aas.entities.AasConfig;
+import de.dlr.shepard.plugins.aas.services.AasConfigService;
 import de.dlr.shepard.plugins.aas.services.AasShellMappingService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
@@ -40,6 +43,9 @@ class AasShellsRestTest {
   @Mock
   AuthenticationContext authenticationContext;
 
+  @Mock
+  AasConfigService aasConfigService;
+
   AasShellsRest resource;
 
   @BeforeEach
@@ -50,6 +56,10 @@ class AasShellsRestTest {
     resource.dataObjectDAO = dataObjectDAO;
     resource.mappingService = mappingService;
     resource.authenticationContext = authenticationContext;
+    resource.aasConfigService = aasConfigService;
+    AasConfig enabledConfig = new AasConfig();
+    enabledConfig.setEnabled(true);
+    when(aasConfigService.current()).thenReturn(enabledConfig);
     when(authenticationContext.getCurrentUserName()).thenReturn("alice");
     when(dataObjectDAO.findTopLevelByCollectionAppId(any())).thenReturn(List.of());
   }
@@ -294,5 +304,23 @@ class AasShellsRestTest {
     resource.listSubmodels("col-aaa-111");
 
     verify(collectionDAO).findByAppId(eq("col-aaa-111"), eq("carol"));
+  }
+
+  // --- aasDisabledResponse (APISIMP-AAS-SHELLS-DISABLED-ENVELOPE) ---
+
+  @Test
+  void returns501ProblemJsonWhenAasDisabled() {
+    AasConfig disabledConfig = new AasConfig();
+    disabledConfig.setEnabled(false);
+    when(aasConfigService.current()).thenReturn(disabledConfig);
+
+    var r = resource.listShells(null, 100);
+
+    assertEquals(501, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/aas.integration-disabled", body.type());
+    assertEquals("AAS Integration Disabled", body.title());
+    assertEquals(501, body.status());
   }
 }
