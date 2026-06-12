@@ -113,20 +113,101 @@ manifest independently confirms the 1 ms / 1 kHz analog cadence.)
 
 ## What the parser does NOT do
 
-* **TimeseriesReference creation from the binary.** `SvdxBinaryParser`
-  decodes samples in-memory; wiring the decoded channels into a
-  TimeseriesContainer is the `MFFD-PLUGIN-SVDX-CSV-INGEST-1` follow-up
-  (which can now ingest from the binary directly, not only the CSV).
-* **TimeseriesReference creation.** The canonical ingestion path is
-  the operator-driven CSV export from the TwinCAT Scope Export Tool,
-  uploaded as a sibling file; the plugin's role stops at annotation
-  emission. See `MFFD-PLUGIN-SVDX-CSV-INGEST-1`.
+* **TimeseriesReference creation on upload.** Parsing a `.svdx` on
+  upload only emits annotations; it never writes timeseries data. The
+  CSV→TimescaleDB ingest is a *separate, explicit* step driven through
+  a MAPPING_RECIPE — see the **CSV ingest via MAPPING_RECIPE** section
+  below. `SvdxBinaryParser` decodes samples in-memory for validation;
+  wiring those decoded channels into a TimeseriesContainer is the
+  `MFFD-PLUGIN-SVDX-CSV-INGEST-1` follow-up.
 * **DataObject mutation.** Only the parent FileReference's annotation
   bag is touched; no parent or sibling DataObjects are modified.
 * **Channel ↔ acquisition join.** Each `<Channel>` references its
   `<AdsAcquisition>` by GUID; the parser does not resolve the link
   because the cardinality model (multiple acquisitions per chart
   channel) is still being characterised — see byte-layout notes.
+
+## CSV ingest via MAPPING_RECIPE (`SvdxCsvIngestShape`)
+
+The TwinCAT-Scope-Export-Tool `.csv` sibling of a `.svdx` is ingested
+into TimescaleDB through the **generic MAPPING_RECIPE / transform**
+mechanism — **not** a bespoke endpoint. The former
+`POST /v2/svdx/ingest` top-level namespace was dissolved (V2CONV-A7,
+aidocs/platform/191) onto the `TransformExecutor` SPI, exactly mirroring
+the KRL and URScript dissolutions. The plugin ships a
+`SvdxCsvTransformExecutor` that claims the shape IRI:
+
+```
+http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape
+```
+
+(SHACL contract: `backend/src/main/resources/shapes/svdx-csv-ingest.shacl.ttl`.)
+
+### Flow
+
+1. Upload the `.svdx` as a singleton FileReference (FR1b) on a DataObject
+   (`POST /v2/files`). Its manifest is parsed + annotated on upload.
+2. Upload the TwinCAT-Scope-Export-Tool `.csv` sibling the same way, on
+   the **same** DataObject.
+3. Create a `MAPPING_RECIPE` `ShepardTemplate` whose body declares the
+   shape IRI + the source/target appIds:
+
+   ```json
+   {
+     "templateKind": "MAPPING_RECIPE",
+     "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape",
+     "svdxFileReferenceAppId": "<svdx FileReference appId>",
+     "csvFileReferenceAppId":  "<csv FileReference appId>",
+     "targetDataObjectAppId":  "<parent DataObject appId>"
+   }
+   ```
+
+   Optional body fields: `timeseriesContainerAppId` (an existing
+   container; a fresh one is minted in the same Collection when omitted)
+   and `referenceName` (defaults to the deterministic idempotency name).
+
+4. Materialize it:
+
+   ```
+   POST /v2/mappings/{templateAppId}/materialize
+   {
+     "inputReferenceAppIds": {
+       "svdxFileAppId": "<svdx FileReference appId>",
+       "csvFileAppId":  "<csv FileReference appId>"
+     }
+   }
+   ```
+
+   Returns a `REFERENCE` result carrying the derived TimeseriesReference
+   appId:
+
+   ```json
+   { "outputKind": "REFERENCE",
+     "derivedReferenceAppId": "<new TimeseriesReference appId>",
+     "executor": "SvdxCsvTransformExecutor" }
+   ```
+
+### Channel identity & idempotency
+
+Each CSV column becomes a 5-tuple `Timeseries` channel:
+`measurement=projectName`, `device=NetID`, `location=Port`,
+`symbolicName=SymbolName`, `field=display name`. The derived reference
+name is deterministically built from the two source appIds
+(`svdx-ingest:<svdxAppId>+<csvAppId>`); re-materializing the same pair
+short-circuits and returns the existing reference (idempotent replay,
+no duplicate channels or rows).
+
+### Auth & errors
+
+The materialize endpoint requires `@RolesAllowed("authenticated")`; the
+executor additionally gates on **Write** permission on the target
+DataObject. A `404` surfaces when the template/executor is absent (the
+plugin disabled) or a source appId is not found; a `422` when the recipe
+body is malformed, the files don't belong to the DataObject, or the CSV
+is unparseable. If the `fileformat-svdx` plugin is disabled, no executor
+claims the shape IRI and materialize returns a clean `404`
+(`transform.executor.not-registered`) rather than a 500 — the
+registry is fail-soft.
 
 ## Reference type lifecycle (CLAUDE.md §every-reference-type-ships-CREDL)
 
