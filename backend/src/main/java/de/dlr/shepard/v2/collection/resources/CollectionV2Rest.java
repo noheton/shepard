@@ -12,6 +12,7 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.v2.collection.io.CollectionV2IO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -133,9 +134,8 @@ public class CollectionV2Rest {
       "Pagination: omit `page` / `size` to get the first 50; supply both to paginate. " +
       "The server caps `size` at 200 to avoid unbounded result sets.\n\n" +
       "Filtering: `name` does a case-insensitive substring match.\n\n" +
-      "Each returned `CollectionIO` carries both `id` (legacy long) and `appId` " +
-      "(canonical UUID v7); v2 clients should branch on `appId` and use the matching " +
-      "`/v2/...` endpoints for follow-up calls.\n\n" +
+      "Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the " +
+      "stable identifier; use the matching `/v2/...` endpoints for follow-up calls.\n\n" +
       "Auth: no role gate — the result is filtered server-side to entities the caller " +
       "may Read, so an unauthorised caller simply gets a smaller list (not 403).\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific " +
@@ -144,7 +144,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Page of Collections the caller may Read (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400",
     description = "Bean Validation rejected the query — `page` or `size` is negative.")
@@ -163,9 +163,9 @@ public class CollectionV2Rest {
     params = params.withPageAndSize(safePage, safeSize);
 
     var collections = collectionService.getAllCollections(params);
-    var result = new ArrayList<CollectionIO>(collections.size());
+    var result = new ArrayList<CollectionV2IO>(collections.size());
     for (var c : collections) {
-      result.add(new CollectionIO(c));
+      result.add(new CollectionV2IO(c));
     }
     return Response.ok(result)
       .header("Cache-Control", "max-age=300, must-revalidate")
@@ -195,7 +195,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Collection found.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -211,7 +211,7 @@ public class CollectionV2Rest {
     if (gate != null) return gate;
 
     Collection c = collectionService.getCollectionWithDataObjectsAndIncomingReferences(ogmId);
-    return Response.ok(new CollectionIO(c))
+    return Response.ok(new CollectionV2IO(c))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -252,7 +252,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "201",
     description = "Collection created.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body validation failed.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -263,7 +263,7 @@ public class CollectionV2Rest {
     ) @Valid CollectionIO body
   ) {
     Collection created = collectionService.createCollection(body);
-    return Response.status(Response.Status.CREATED).entity(new CollectionIO(created)).build();
+    return Response.status(Response.Status.CREATED).entity(new CollectionV2IO(created)).build();
   }
 
   @PATCH
@@ -293,7 +293,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Collection updated.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body is not a JSON object or validation failed.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -337,7 +337,7 @@ public class CollectionV2Rest {
     }
 
     Collection updated = collectionService.updateCollectionByShepardId(ogmId, merged);
-    return Response.ok(new CollectionIO(updated)).build();
+    return Response.ok(new CollectionV2IO(updated)).build();
   }
 
   @DELETE

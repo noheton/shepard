@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.dataobject.io;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -27,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties({"id"})
 @Schema(name = "DataObjectListItemV2", description = "DataObject list item enriched with per-kind reference counts (v2).")
 @JsonFilter(DataObjectListItemV2IO.FILTER_ID)
 public class DataObjectListItemV2IO extends DataObjectIO {
