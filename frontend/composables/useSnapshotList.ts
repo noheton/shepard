@@ -2,9 +2,9 @@
  * SNAPSHOT-LIST-1-FE — composable wrapping the global snapshot list
  * endpoint shipped 2026-05-31 (backend 1935128eb):
  *
- *   GET /v2/snapshots[?collectionAppId=…][&page=N&size=M]
+ *   GET /v2/snapshots[?collectionAppId=…][&page=N&pageSize=M]
  *
- * Response envelope: `{ items[], total, page, size }` where each item is
+ * Response envelope: `{ items[], total, page, pageSize }` where each item is
  * `{ appId, name, createdAt, collectionAppId, collectionName }`.
  *
  * The `/snapshots/diff` picker fetches a single page (`size=200`) on
@@ -25,7 +25,7 @@ export interface SnapshotListPage {
   items: SnapshotListItem[];
   total: number;
   page: number;
-  size: number;
+  pageSize: number;
 }
 
 function v2BaseUrl(): string {
