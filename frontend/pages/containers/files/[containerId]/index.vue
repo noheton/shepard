@@ -144,11 +144,11 @@ useHead({
           #append
         >
           <AddAnnotationButton
-            :annotated="new AnnotatedFileContainer(containerId)"
+            :annotated="new AnnotatedFileContainer(containerAppId ?? '')"
           />
         </template>
         <SemanticAnnotationList
-          :annotated="new AnnotatedFileContainer(containerId)"
+          :annotated="new AnnotatedFileContainer(containerAppId ?? '')"
           :can-delete="!!containerAccessor.isAllowedToEditData.value"
         />
       </ExpansionPanelItem>

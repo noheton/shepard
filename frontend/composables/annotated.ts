@@ -149,29 +149,76 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-abstract class ContainerAnnotated implements Annotated {
-  abstract readonly basePath: string; // e.g. "timeseries-containers"
-  readonly containerId: number;
+// Wire shape of the AnnotationIO objects returned by GET /v2/annotations
+interface AnnotationV2Wire {
+  appId: string;
+  propertyName?: string;
+  propertyIri?: string;
+  valueName?: string;
+  valueIri?: string;
+  predicateLabel?: string;
+  predicateIri?: string;
+  objectLiteral?: string;
+  objectIri?: string;
+}
 
-  constructor(containerId: number) {
-    this.containerId = containerId;
+function mapAnnotationV2ToLegacy(
+  item: AnnotationV2Wire,
+  fakeId: number,
+): SemanticAnnotation {
+  return {
+    id: fakeId,
+    name: item.propertyName ?? item.predicateLabel ?? "",
+    propertyName: item.propertyName ?? item.predicateLabel ?? "",
+    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
+    valueName: item.valueName ?? item.objectLiteral ?? "",
+    valueIRI: item.valueIri ?? item.objectIri ?? "",
+    propertyRepositoryId: 0,
+    valueRepositoryId: 0,
+  };
+}
+
+// APISIMP-CONTAINER-ANNOTATED-FE-DEAD-ENDPOINTS: the per-kind
+// /v2/{type}-containers/{id}/annotations endpoints were deleted in
+// APISIMP-SA-CONT-DELETE (2026-06-10). Container-level annotations are now
+// addressed via the generic GET|POST|DELETE /v2/annotations surface.
+abstract class ContainerAnnotated implements Annotated {
+  abstract readonly subjectKind: string; // e.g. "TimeseriesContainer"
+  readonly containerAppId: string;
+  // fakeId (sequential integer) → real annotation appId for delete lookup
+  private readonly _appIdMap = new Map<number, string>();
+
+  constructor(containerAppId: string) {
+    this.containerAppId = containerAppId;
   }
 
-  private endpoint(annotationId?: number): string {
-    const base = `${v2BaseUrl()}/v2/${this.basePath}/${this.containerId}/annotations`;
-    return annotationId === undefined ? base : `${base}/${annotationId}`;
+  private annotationsUrl(suffix?: string): string {
+    const base = `${v2BaseUrl()}/v2/annotations`;
+    return suffix ? `${base}/${suffix}` : base;
   }
 
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
+    if (!this.containerAppId) return [];
     const headers = await authHeaders();
-    const response = await fetch(this.endpoint(), { headers });
+    const url =
+      `${this.annotationsUrl()}?subjectAppId=` +
+      `${encodeURIComponent(this.containerAppId)}&pageSize=200`;
+    const response = await fetch(url, { headers });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return (await response.json()) as SemanticAnnotation[];
+    const items = (await response.json()) as AnnotationV2Wire[];
+    this._appIdMap.clear();
+    return items.map((item, idx) => {
+      this._appIdMap.set(idx, item.appId);
+      return mapAnnotationV2ToLegacy(item, idx);
+    });
   }
 
   async deleteAnnotation(annotationId: number): Promise<void> {
+    const annotationAppId = this._appIdMap.get(annotationId);
+    if (!annotationAppId)
+      throw new Error(`Unknown annotation fakeId ${annotationId}`);
     const headers = await authHeaders();
-    const response = await fetch(this.endpoint(annotationId), {
+    const response = await fetch(this.annotationsUrl(annotationAppId), {
       method: "DELETE",
       headers,
     });
@@ -180,26 +227,39 @@ abstract class ContainerAnnotated implements Annotated {
 
   async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
     const headers = await authHeaders();
-    const response = await fetch(this.endpoint(), {
+    const body: Record<string, unknown> = {
+      subjectAppId: this.containerAppId,
+      subjectKind: this.subjectKind,
+      predicateIri: annotation.propertyIRI,
+    };
+    if (annotation.valueIRI) {
+      body.objectIri = annotation.valueIRI;
+    } else {
+      body.objectLiteral = "";
+    }
+    const response = await fetch(this.annotationsUrl(), {
       method: "POST",
       headers,
-      body: JSON.stringify(annotation),
+      body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return (await response.json()) as SemanticAnnotation;
+    const created = (await response.json()) as AnnotationV2Wire;
+    const fakeId = Date.now();
+    this._appIdMap.set(fakeId, created.appId);
+    return mapAnnotationV2ToLegacy(created, fakeId);
   }
 }
 
 export class AnnotatedTimeseriesContainer extends ContainerAnnotated {
-  readonly basePath = "timeseries-containers";
+  readonly subjectKind = "TimeseriesContainer";
 }
 
 export class AnnotatedFileContainer extends ContainerAnnotated {
-  readonly basePath = "file-containers";
+  readonly subjectKind = "FileContainer";
 }
 
 export class AnnotatedStructuredDataContainer extends ContainerAnnotated {
-  readonly basePath = "structured-data-containers";
+  readonly subjectKind = "StructuredDataContainer";
 }
 
 // ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────

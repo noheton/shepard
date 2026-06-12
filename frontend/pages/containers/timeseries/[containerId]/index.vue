@@ -277,11 +277,11 @@ useHead({
             #append
           >
             <AddAnnotationButton
-              :annotated="new AnnotatedTimeseriesContainer(containerId)"
+              :annotated="new AnnotatedTimeseriesContainer(containerAppId ?? '')"
             />
           </template>
           <SemanticAnnotationList
-            :annotated="new AnnotatedTimeseriesContainer(containerId)"
+            :annotated="new AnnotatedTimeseriesContainer(containerAppId ?? '')"
             :can-delete="!!containerAccessor.isAllowedToEditData.value"
           />
         </ExpansionPanelItem>

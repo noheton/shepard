@@ -104,8 +104,11 @@ async function fetchLatest() {
   try {
     const endNs = Date.now() * 1_000_000; // ms → ns
     const startNs = endNs - 60_000 * 1_000_000; // 60 s window
+    // Use containerAppId (appId-keyed) after APISIMP-TSCONT-APPID-KEY;
+    // fall back to containerId for pins stored before the migration.
+    const containerKey = props.channel.containerAppId ?? props.channel.containerId;
     const url =
-      `${v2Base()}/v2/timeseries-containers/${props.channel.containerId}` +
+      `${v2Base()}/v2/timeseries-containers/${containerKey}` +
       `/channels/${props.channel.shepardId}/data` +
       `?start=${startNs}&end=${endNs}&downsample=lttb&maxPoints=60`;
     const res = await fetch(url, { headers: authHeaders() });
