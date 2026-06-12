@@ -46,10 +46,10 @@ function containerLabel(type: string | undefined): string {
     <v-list v-else density="compact" class="pa-0">
       <v-list-item
         v-for="c in containers"
-        :key="c.appId ?? c.id"
+        :key="c.appId"
         :to="containerPath(c)"
         :prepend-icon="containerIcon(c.containerType)"
-        :title="c.name ?? `Container ${c.appId ?? c.id}`"
+        :title="c.name ?? `Container ${c.appId}`"
         :subtitle="containerLabel(c.containerType)"
         rounded
       />
