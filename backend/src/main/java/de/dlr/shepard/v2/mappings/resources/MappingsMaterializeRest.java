@@ -12,6 +12,7 @@ import de.dlr.shepard.spi.transform.TransformRequest;
 import de.dlr.shepard.spi.transform.TransformResult;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.mappings.io.MaterializeRequestIO;
 import de.dlr.shepard.v2.mappings.io.MaterializeResponseIO;
 import io.quarkus.logging.Log;
@@ -261,16 +262,14 @@ public class MappingsMaterializeRest {
   }
 
   private Response problem(Response.StatusType status, String error, String code) {
-    Map<String, Object> entity = new HashMap<>();
-    entity.put("error", error);
-    if (code != null) entity.put("code", code);
-    return Response.status(status.getStatusCode()).entity(entity).build();
+    String type = code != null ? "/problems/" + code : "/problems/transform.error";
+    ProblemJson body = new ProblemJson(type, error, status.getStatusCode(), error, null);
+    return Response.status(status.getStatusCode()).type("application/problem+json").entity(body).build();
   }
 
   private Response problem(int status, String error, String code) {
-    Map<String, Object> entity = new HashMap<>();
-    entity.put("error", error);
-    if (code != null) entity.put("code", code);
-    return Response.status(status).entity(entity).build();
+    String type = code != null ? "/problems/" + code : "/problems/transform.error";
+    ProblemJson body = new ProblemJson(type, error, status, error, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

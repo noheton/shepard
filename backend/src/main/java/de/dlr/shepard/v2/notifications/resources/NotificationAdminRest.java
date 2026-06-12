@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.notifications.resources;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
+import de.dlr.shepard.v2.notifications.io.NotificationTestDeliveryIO;
 import de.dlr.shepard.v2.notifications.io.TestNotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
@@ -21,7 +22,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -70,7 +70,8 @@ public class NotificationAdminRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Test notification delivered via transport (transport path; body: {status, transport})."
+    description = "Test notification delivered via transport.",
+    content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
   @APIResponse(responseCode = "404", description = "transportId does not resolve.")
@@ -158,7 +159,7 @@ public class NotificationAdminRest {
     }
     if (ok) {
       recordTestOutcome(transport, "OK", "delivered");
-      return Response.ok(Map.of("status", "delivered", "transport", transport.getKind())).build();
+      return Response.ok(new NotificationTestDeliveryIO("delivered", transport.getKind())).build();
     }
     recordTestOutcome(transport, "FAIL", "sender returned false (see backend logs)");
     return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send returned false");
