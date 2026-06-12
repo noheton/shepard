@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 45 |
-| `concept` | 30 |
+| `concept` | 31 |
 | `idea` | 13 |
 | `feature-defined` | 130 |
 | `audited-by-personas` | 74 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 74 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **428** |
+| **total docs** | **429** |
 | **UNTAGGED** | **0** |
 
 ## fragment (45)
@@ -93,12 +93,13 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-06-10 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-06-10 |
 
-## concept (30)
+## concept (31)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-10.md`](agent-findings/apisimp-sweep-2026-06-10.md) | APISIMP — v2 surface simplification sweep (2026-06-10) | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-11.md`](agent-findings/apisimp-sweep-2026-06-11.md) | APISIMP — v2 surface simplification sweep (2026-06-11) | 2026-06-11 | 2026-06-11 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-2.md`](agent-findings/apisimp-sweep-2026-06-12-2.md) | APISIMP Sweep — 2026-06-12 (pass 2) | 2026-06-12 | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12.md`](agent-findings/apisimp-sweep-2026-06-12.md) | APISIMP Sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-10 |
@@ -239,7 +240,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-06-10 |
 | [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | 2026-06-10 |
 | [`aidocs/platform/112-v1-sunset-gains-design.md`](platform/112-v1-sunset-gains-design.md) | 112 — What we'd gain by giving up v1 compatibility | 2026-05-31 | 2026-06-10 |
-| [`aidocs/platform/191-v2-surface-convergence.md`](platform/191-v2-surface-convergence.md) | 191 — v2 surface convergence | 2026-06-10 | 2026-06-10 |
+| [`aidocs/platform/191-v2-surface-convergence.md`](platform/191-v2-surface-convergence.md) | 191 — v2 surface convergence | 2026-06-10 | 2026-06-12 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-06-10 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-06-10 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-06-10 |
