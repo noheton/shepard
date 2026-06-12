@@ -98,6 +98,26 @@ wait-for-health:
 	echo "    Check: docker compose logs backend --tail 100"; \
 	exit 1
 
+# Frontend has no Docker healthcheck, and Nuxt SSR takes ~20-40s to accept
+# connections after recreate — smoke-fast racing that warmup produced two
+# false-FAIL redeploys on 2026-06-12 (HTTP 000 on GET / and /login).
+wait-for-frontend:
+	@ip=$$(docker inspect infrastructure-frontend-1 --format '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$v.IPAddress}}{{end}}' 2>/dev/null); \
+	url="http://$${ip:-localhost}:3000/"; \
+	echo "Waiting for frontend at $$url (timeout=90s)..."; \
+	t=90; \
+	while [ $$t -gt 0 ]; do \
+	  code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$$url" 2>/dev/null); \
+	  if [ "$$code" = "200" ] || [ "$$code" = "302" ]; then \
+	    echo "  ✓ frontend responding ($$code)"; \
+	    exit 0; \
+	  fi; \
+	  sleep 3; t=$$((t - 3)); \
+	done; \
+	echo "  ✗ frontend did not respond within 90s"; \
+	echo "    Check: docker compose logs frontend --tail 100"; \
+	exit 1
+
 # Post-deploy smoke test. Defaults to localhost; for prod:
 #   FRONTEND_URL=https://shepard.nuclide.systems BACKEND_URL=https://shepard-api.nuclide.systems make smoke
 #
@@ -139,11 +159,13 @@ redeploy-backend: preflight-env image-backend
 redeploy-frontend: preflight-env image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate frontend
 	@$(MAKE) wait-for-health
+	@$(MAKE) wait-for-frontend
 	@$(MAKE) smoke-fast
 
 redeploy: preflight-env image-backend image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend frontend
 	@$(MAKE) wait-for-health
+	@$(MAKE) wait-for-frontend
 	@$(MAKE) smoke-fast
 
 # Escape hatch: full rebuild + deploy WITHOUT the post-deploy verification. Use
