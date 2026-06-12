@@ -98,14 +98,14 @@ public class GitReferenceRest {
     String caller = securityContext.getUserPrincipal().getName();
     GitArtifactPreviewIO out = gitReferenceService.previewArtifact(gr, caller);
     if (!out.isAvailable() && "unsupported-host".equals(out.getReason())) {
-      var problem = new java.util.LinkedHashMap<String, Object>();
-      problem.put("type", "https://shepard.dlr.de/problems/git.adapter.unsupported-host");
-      problem.put("title", "No GitAdapter is registered for this host.");
-      problem.put("status", 501);
-      problem.put("detail", "v1 ships a GitLab adapter only; GitHub and Gitea ship in G1d.");
       return Response.status(Response.Status.NOT_IMPLEMENTED)
         .type("application/problem+json")
-        .entity(problem)
+        .entity(new ProblemJson(
+            "https://shepard.dlr.de/problems/git.adapter.unsupported-host",
+            "No GitAdapter is registered for this host.",
+            501,
+            "v1 ships a GitLab adapter only; GitHub and Gitea ship in G1d.",
+            null))
         .build();
     }
     return Response.ok(out).build();
