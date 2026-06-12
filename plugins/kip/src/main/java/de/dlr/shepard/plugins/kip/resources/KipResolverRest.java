@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.kip.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.plugins.kip.io.KipRecordIO;
 import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
@@ -16,8 +17,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -218,11 +217,10 @@ public class KipResolverRest {
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("type", type);
-    body.put("title", title);
-    body.put("status", status.getStatusCode());
-    body.put("detail", detail);
-    return Response.status(status).type("application/problem+json").entity(body).build();
+    return Response
+      .status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null))
+      .build();
   }
 }
