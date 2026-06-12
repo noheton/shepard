@@ -6,6 +6,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.context.collection.services.ArchiveStateGuard;
 import de.dlr.shepard.v2.collection.io.PublicationStateIO;
 import io.quarkus.security.Authenticated;
@@ -132,7 +133,10 @@ public class CollectionPublicationStateRest {
   ) {
     if (body == null || body.getState() == null || !VALID_STATES.contains(body.getState())) {
       return Response.status(Response.Status.BAD_REQUEST)
-        .entity(Map.of("error", "state must be one of " + VALID_STATES))
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/publication-state.invalid",
+          "Invalid publication state", 400,
+          "state must be one of " + VALID_STATES, null))
         .build();
     }
 
@@ -148,9 +152,11 @@ public class CollectionPublicationStateRest {
     );
     if (!isInstanceAdmin && !isManager) {
       return Response.status(Response.Status.FORBIDDEN)
-        .entity(Map.of("error",
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/publication-state.forbidden",
+          "Insufficient permission", 403,
           "Only the Collection owner (Manage permission) or an instance-admin " +
-          "may flip publication-state."))
+          "may flip publication-state.", null))
         .build();
     }
 

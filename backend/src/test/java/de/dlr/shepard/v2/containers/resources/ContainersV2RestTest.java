@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
@@ -397,6 +398,10 @@ class ContainersV2RestTest {
     when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.empty());
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
     assertEquals(415, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/containers.versioning-unsupported", body.type());
+    assertEquals(415, body.status());
   }
 
   @Test

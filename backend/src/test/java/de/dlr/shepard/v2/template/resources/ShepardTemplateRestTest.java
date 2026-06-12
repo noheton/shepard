@@ -9,6 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
@@ -232,10 +233,11 @@ class ShepardTemplateRestTest {
     var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson problem = (ProblemJson) r.getEntity();
+    assertEquals("/problems/templates.bad-request", problem.type());
     @SuppressWarnings("unchecked")
-    java.util.Map<String, Object> entity = (java.util.Map<String, Object>) r.getEntity();
-    @SuppressWarnings("unchecked")
-    List<String> errors = (List<String>) entity.get("errors");
+    List<String> errors = (List<String>) problem.extensions().get("errors");
     assertTrue(errors.get(0).contains("not valid JSON"));
   }
 
@@ -244,10 +246,11 @@ class ShepardTemplateRestTest {
     var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null, null, null);
     Response r = resource.create(body, securityContext);
     assertEquals(400, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson problem = (ProblemJson) r.getEntity();
+    assertEquals("/problems/templates.bad-request", problem.type());
     @SuppressWarnings("unchecked")
-    java.util.Map<String, Object> entity = (java.util.Map<String, Object>) r.getEntity();
-    @SuppressWarnings("unchecked")
-    List<String> errors = (List<String>) entity.get("errors");
+    List<String> errors = (List<String>) problem.extensions().get("errors");
     assertTrue(errors.get(0).contains("templateKind=EXPERIMENT_RECIPE"));
   }
 
