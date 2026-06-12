@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -193,11 +194,14 @@ public class DataObjectV2Rest {
       String unknown = DataObjectListFieldFilter.firstUnknownField(fields);
       if (unknown != null) {
         return Response.status(Response.Status.BAD_REQUEST)
-          .entity(Map.of(
-            "title", "Unknown field in ?fields= query parameter",
-            "detail", "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
-            "status", 400
+          .entity(new ProblemJson(
+            "/problems/data-objects.unknown-field",
+            "Unknown field in ?fields= query parameter",
+            400,
+            "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
+            null
           ))
+          .type("application/problem+json")
           .build();
       }
     }
