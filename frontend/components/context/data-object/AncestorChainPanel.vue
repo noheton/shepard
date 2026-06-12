@@ -16,9 +16,9 @@ import { useFetchPredecessorChain } from "~/composables/context/useFetchPredeces
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
 const props = defineProps<{
-  /** UUID v7 of the parent Collection (needed to resolve v1 numeric IDs for NuxtLink). */
+  /** Numeric Neo4j id — kept for callers that haven't migrated to appId routing yet. */
   collectionId: number;
-  /** UUID v7 of the Collection (needed for the predecessor-chain API call). */
+  /** UUID v7 of the Collection — used for the API call and ancestor NuxtLinks. */
   collectionAppId: string;
   /** UUID v7 of the DataObject whose ancestor chain we display. */
   dataObjectAppId: string;
@@ -73,7 +73,7 @@ const { chain, isLoading, hasError } = useFetchPredecessorChain(
       >
         <div class="d-flex align-center flex-wrap ga-2">
           <NuxtLink
-            :to="`${collectionsPath}${collectionId}${dataObjectsPathFragment}${item.id}`"
+            :to="`${collectionsPath}${collectionAppId}${dataObjectsPathFragment}${item.appId}`"
             class="text-body-2 font-weight-medium text-decoration-none ancestor-link"
           >
             {{ item.name }}
