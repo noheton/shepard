@@ -45,12 +45,9 @@ export function useEditDataObject(
   const loading = computed(() => !dataObject && !updatedDataObject);
   watch(dataObject, newDo => {
     if (newDo) {
-      // LIC1: read license / accessRights defensively — the generated client
-      // model may not yet expose them as top-level fields.
-      const rawDo = newDo as unknown as {
-        license?: string | null;
-        accessRights?: string | null;
-      };
+      // LIC1: V2-SWEEP-001-CLIENT-REGEN — the regenerated `DataObject` model
+      // now exposes license / accessRights as typed top-level fields, so the
+      // previous defensive `unknown`-shaped read is gone.
       updatedDataObject.value = {
         name: newDo.name,
         parentId: newDo.parentId,
@@ -58,8 +55,8 @@ export function useEditDataObject(
         description: newDo.description,
         predecessorIds: newDo.predecessorIds ?? [],
         status: newDo.status ?? null,
-        license: rawDo.license ?? null,
-        accessRights: rawDo.accessRights ?? null,
+        license: newDo.license ?? null,
+        accessRights: newDo.accessRights ?? null,
       };
     }
   });

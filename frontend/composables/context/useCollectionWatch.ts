@@ -76,7 +76,7 @@ export function useCollectionWatch(collectionAppId: Ref<string | null | undefine
     loading.value = true;
     try {
       const [watchers, username] = await Promise.all([
-        api.value.listWatchers({ collectionAppId: appId }),
+        api.value.listCollectionWatches({ collectionAppId: appId }),
         resolveUsername(meApi),
       ]);
       if (!username) {

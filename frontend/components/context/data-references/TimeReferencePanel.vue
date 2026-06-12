@@ -18,8 +18,10 @@
  *   updated(patch)   — emitted after a successful PATCH with the new field values
  */
 
-import type { TimeReferenceV2Patch } from "@dlr-shepard/backend-client";
-import { useTimeReference } from "~/composables/context/useTimeReference";
+import {
+  useTimeReference,
+  type TimeReferenceV2Patch,
+} from "~/composables/context/useTimeReference";
 
 interface TimeReferencePanelProps {
   appId: string;

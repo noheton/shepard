@@ -11,9 +11,9 @@ import {
   useTemplateIcon,
   defaultIconForKind,
 } from "../../composables/useTemplateIcon";
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
-function template(iconKey: string | null | undefined = undefined): ShepardTemplateIO {
+function template(iconKey: string | null | undefined = undefined): ShepardTemplate {
   return {
     appId: "tpl-001",
     name: "MFFD AFP Layup",

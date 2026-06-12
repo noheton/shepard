@@ -2,7 +2,7 @@
  * V2-SWEEP Wave 3 — `useFetchDataObjectMapByCollection` is v2-only.
  *
  * The id→name map loads from the v2 appId-keyed list
- * `GET /v2/collections/{collectionAppId}/data-objects` (DataObjectV2Api via
+ * `GET /v2/collections/{collectionAppId}/data-objects` (DataObjectsApi via
  * useV2ShepardApi, paged exhaustive). The collection identifier is the
  * route param string (appId or legacy numeric); the v1
  * `getAllDataObjects({collectionId: Long})` call is gone.

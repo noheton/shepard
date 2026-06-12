@@ -6,13 +6,13 @@
  * context). Design: aidocs/integrations/123 §4.
  */
 import { describe, it, expect } from "vitest";
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
 // ── Logic units (mirror the computed props in AdminTemplateDialog.vue) ──
 
 function forbiddenParentAppIds(
   selfAppId: string | undefined,
-  all: ShepardTemplateIO[],
+  all: ShepardTemplate[],
 ): Set<string> {
   const forbidden = new Set<string>();
   if (!selfAppId) return forbidden;
@@ -37,7 +37,7 @@ function forbiddenParentAppIds(
 function parentCandidates(
   selfAppId: string | undefined,
   templateKind: string,
-  all: ShepardTemplateIO[],
+  all: ShepardTemplate[],
 ): string[] {
   const forbidden = forbiddenParentAppIds(selfAppId, all);
   return all
@@ -47,7 +47,7 @@ function parentCandidates(
     .map((t) => t.appId);
 }
 
-const mk = (overrides: Partial<ShepardTemplateIO>): ShepardTemplateIO => ({
+const mk = (overrides: Partial<ShepardTemplate>): ShepardTemplate => ({
   appId: "a",
   name: "t",
   templateKind: "DATAOBJECT_RECIPE",

@@ -2,34 +2,36 @@
  * PLUGIN-REF-HANDLER-FE-REPOINT — unit tests for the repointed
  * useFetchGitReferences composable.
  *
+ * V2-SWEEP-001-CLIENT-REGEN: the composable now calls the typed
+ * `ReferencesApi.listReferences({ kind: "git", dataObjectAppId })` through
+ * `useV2ShepardApi` (was a raw `fetch` shim). The test mocks the v2 helper.
+ *
  * Verifies that:
- *  - the composable calls GET /v2/references?kind=git&dataObjectAppId=...
+ *  - the composable calls listReferences with kind=git + the dataObjectAppId
  *  - payload fields are mapped correctly to GitReferenceIO
  *  - API errors leave gitReferences empty and clear isLoading
  *  - return type still satisfies the GitReferenceIO shape expected by consumers
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
+}));
 
-// Override the default setup.ts useAuth stub to provide a valid access token.
-(globalThis as unknown as Record<string, unknown>).useAuth = () => ({
-  refresh: vi.fn().mockResolvedValue(undefined),
-  data: ref<{ accessToken: string } | null>({ accessToken: "test-token" }),
-  signIn: vi.fn().mockResolvedValue(undefined),
-});
+const mockListReferences = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
+    ref({ listReferences: mockListReferences }),
+  );
 });
 
 const RAW_GIT_REF = {
   appId: "git-ref-001",
   id: 10,
   name: "My Repo Ref",
-  createdAt: "2026-01-01T00:00:00Z",
-  createdBy: "alice",
   kind: "git",
   payload: {
     repoUrl: "https://github.com/dlr/shepard",
@@ -47,29 +49,11 @@ const RAW_GIT_REF_MINIMAL = {
   },
 };
 
-function okResponse(body: unknown) {
-  return Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve(body),
-    text: () => Promise.resolve(""),
-  } as Response);
-}
-
-function errorResponse(status: number) {
-  return Promise.resolve({
-    ok: false,
-    status,
-    json: () => Promise.reject(new Error("not json")),
-    text: () => Promise.resolve(`HTTP ${status}`),
-  } as unknown as Response);
-}
-
 const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 describe("useFetchGitReferences", () => {
-  it("calls the unified /v2/references?kind=git endpoint", async () => {
-    mockFetch.mockReturnValue(okResponse([RAW_GIT_REF]));
+  it("calls listReferences with kind=git and the dataObjectAppId", async () => {
+    mockListReferences.mockResolvedValue([RAW_GIT_REF]);
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"
@@ -77,14 +61,14 @@ describe("useFetchGitReferences", () => {
     useFetchGitReferences("do-app-001");
     await flush();
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/v2/references?kind=git&dataObjectAppId=do-app-001"),
-      expect.objectContaining({ headers: expect.objectContaining({ Accept: "application/json" }) }),
-    );
+    expect(mockListReferences).toHaveBeenCalledWith({
+      kind: "git",
+      dataObjectAppId: "do-app-001",
+    });
   });
 
   it("maps payload fields to GitReferenceIO correctly", async () => {
-    mockFetch.mockReturnValue(okResponse([RAW_GIT_REF]));
+    mockListReferences.mockResolvedValue([RAW_GIT_REF]);
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"
@@ -101,7 +85,7 @@ describe("useFetchGitReferences", () => {
   });
 
   it("handles a minimal payload (only repoUrl required)", async () => {
-    mockFetch.mockReturnValue(okResponse([RAW_GIT_REF_MINIMAL]));
+    mockListReferences.mockResolvedValue([RAW_GIT_REF_MINIMAL]);
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"
@@ -118,7 +102,7 @@ describe("useFetchGitReferences", () => {
   });
 
   it("leaves gitReferences empty and clears isLoading on API error", async () => {
-    mockFetch.mockReturnValue(errorResponse(500));
+    mockListReferences.mockRejectedValue(new Error("500"));
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"

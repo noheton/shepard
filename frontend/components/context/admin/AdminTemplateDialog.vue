@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {
-  ShepardTemplateApi,
-  type ShepardTemplateIO,
-  type CreateShepardTemplateIO,
+  TemplatesApi,
+  type ShepardTemplate,
+  type CreateShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { editorStateFromTemplateBody } from "~/utils/templateShapeDsl";
@@ -11,13 +11,13 @@ import TemplateShapeEditor from "~/components/shapes/TemplateShapeEditor.vue";
 const props = defineProps<{
   modelValue: boolean;
   /** When set, we are editing an existing template (PATCH). Omit for create (POST). */
-  template?: ShepardTemplateIO | null;
+  template?: ShepardTemplate | null;
   /**
    * The full list of templates (used to scope the parent picker to same-kind,
    * non-retired templates and to exclude self + descendants — cycle prevention
    * in the UI). Design: aidocs/integrations/123.
    */
-  allTemplates?: ShepardTemplateIO[];
+  allTemplates?: ShepardTemplate[];
   /**
    * V2CONV-B6-SHACLPREFILL — when set (from ?targetEntityAppId query param),
    * the visual editor auto-fetches the DataObject's RDF and pre-fills the
@@ -169,7 +169,7 @@ async function refreshInherited() {
   }
   inheritedLoading.value = true;
   try {
-    const api = useV2ShepardApi(ShepardTemplateApi).value;
+    const api = useV2ShepardApi(TemplatesApi).value;
     const flattenedParent = await api.getTemplate({
       appId: parentTemplateAppId.value,
       flatten: true,
@@ -191,8 +191,8 @@ async function save() {
   saveError.value = null;
   isSaving.value = true;
   try {
-    const api = useV2ShepardApi(ShepardTemplateApi).value;
-    const payload: CreateShepardTemplateIO = {
+    const api = useV2ShepardApi(TemplatesApi).value;
+    const payload: CreateShepardTemplate = {
       name: name.value.trim(),
       templateKind: templateKind.value,
       body: body.value.trim(),
@@ -205,12 +205,15 @@ async function save() {
     };
 
     if (isEdit.value && props.template) {
+      // PATCH omits templateKind (immutable across versions — PatchShepardTemplate
+      // has no such field). Everything else mirrors the create payload.
+      const { templateKind: _kind, ...patchPayload } = payload;
       await api.patchTemplate({
         appId: props.template.appId,
-        patchShepardTemplateIO: payload,
+        patchShepardTemplate: patchPayload,
       });
     } else {
-      await api.createTemplate({ createShepardTemplateIO: payload });
+      await api.createTemplate({ createShepardTemplate: payload });
     }
 
     emit("saved");

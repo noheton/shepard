@@ -1,13 +1,13 @@
 import {
-  AdminPermissionAuditApi,
-  type PermissionAuditLogEntryIO,
+  AdminApi,
+  type PermissionAuditLogEntry,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const PAGE_SIZE = 50;
 
 export function useFetchPermissionAuditLog() {
-  const entries = ref<PermissionAuditLogEntryIO[]>([]);
+  const entries = ref<PermissionAuditLogEntry[]>([]);
   const isLoading = ref(false);
   const hasMore = ref(false);
 
@@ -20,7 +20,7 @@ export function useFetchPermissionAuditLog() {
   async function refresh() {
     isLoading.value = true;
     try {
-      const rows = await useV2ShepardApi(AdminPermissionAuditApi).value.listPermissionAuditLog({
+      const rows = await useV2ShepardApi(AdminApi).value.permissionAuditLog({
         entityAppId: filterEntityAppId.value || undefined,
         actor: filterActor.value || undefined,
         from: filterFrom.value || undefined,

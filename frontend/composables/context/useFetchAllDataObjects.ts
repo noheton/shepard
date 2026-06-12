@@ -1,4 +1,4 @@
-import { DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
+import { DataObjectsApi, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
@@ -61,7 +61,7 @@ export function invalidateDataObjectsCache(collectionId?: number): void {
  * via the backend EntityIdResolver on the same appId-keyed endpoint.
  */
 export function useFetchAllDataObjects(collectionId: number, collectionAppId?: Ref<string | null>) {
-  const v2Api = useV2ShepardApi(DataObjectV2Api);
+  const v2Api = useV2ShepardApi(DataObjectsApi);
 
   // Return or create the cache entry for this collectionId.
   function getOrCreateEntry(): CacheEntry {

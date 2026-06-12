@@ -19,7 +19,19 @@
  *   save(appId,patch) — sends the merge-patch; emits success/error toast.
  */
 
-import type { TimeReferenceV2Patch } from "@dlr-shepard/backend-client";
+/**
+ * V2-SWEEP-001-CLIENT-REGEN: the regenerated `@dlr-shepard/backend-client` no
+ * longer exports a `TimeReferenceV2Patch` model (the unified `/v2/references`
+ * PATCH takes an untyped `JsonNode` body whose generated serializer mangles
+ * arbitrary payloads). The merge-patch shape — timeReference / wallClockOffset
+ * / wallClockOffsetSource — is defined locally and sent through the raw `fetch`
+ * shim, which preserves the real payload.
+ */
+export interface TimeReferenceV2Patch {
+  timeReference?: string | null;
+  wallClockOffset?: number | null;
+  wallClockOffsetSource?: string | null;
+}
 
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;

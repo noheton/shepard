@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContainerSummary } from "@dlr-shepard/backend-client";
+import type { ContainerSummaryIO } from "@dlr-shepard/backend-client";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import {
   iconForContainerType,
@@ -14,17 +14,17 @@ const props = defineProps<{
 const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
-function containerPath(c: ContainerSummary): string {
+function containerPath(c: ContainerSummaryIO): string {
   // Detail-page route is `/containers/<segment>/<id>/`.
-  return `/containers/${urlSegmentForContainerType(c.containerType)}${c.id}/`;
+  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.id ?? ""}/`;
 }
 
-function containerIcon(type: string): string {
-  return iconForContainerType(type);
+function containerIcon(type: string | undefined): string {
+  return iconForContainerType(type ?? "");
 }
 
-function containerLabel(type: string): string {
-  return labelForContainerType(type);
+function containerLabel(type: string | undefined): string {
+  return labelForContainerType(type ?? "");
 }
 </script>
 

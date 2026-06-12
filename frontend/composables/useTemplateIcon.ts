@@ -18,7 +18,7 @@
  * is high.
  */
 
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
 /**
  * Per-kind defaults table — used when no template is supplied or the
@@ -72,7 +72,7 @@ export function defaultIconForKind(kindHint: string | null | undefined): string 
  *                 falls back to the generic default.
  */
 export function useTemplateIcon(
-  template: ShepardTemplateIO | null | undefined,
+  template: ShepardTemplate | null | undefined,
   kindHint?: string | null,
 ): string {
   if (template?.iconKey) return template.iconKey;

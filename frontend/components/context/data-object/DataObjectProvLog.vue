@@ -109,7 +109,7 @@
 import { computed, onMounted, ref } from "vue";
 import {
   ProvenanceApi,
-  type ActivityIO,
+  type Activity,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import {
@@ -121,7 +121,7 @@ const props = defineProps<{
   targetAppId: string;
 }>();
 
-const activities = ref<ActivityIO[]>([]);
+const activities = ref<Activity[]>([]);
 const loading = ref(false);
 const filterText = ref("");
 const limit = ref(50);

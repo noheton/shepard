@@ -1,5 +1,5 @@
 import {
-  DataObjectV2Api,
+  DataObjectsApi,
   type DataObjectListItemV2,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
@@ -61,7 +61,7 @@ export function useFetchDataObjectMapByCollection(
   async function fetchAllRows(
     collectionAppId: string,
   ): Promise<DataObjectListItemV2[]> {
-    const api = useV2ShepardApi(DataObjectV2Api);
+    const api = useV2ShepardApi(DataObjectsApi);
     const rows: DataObjectListItemV2[] = [];
     for (let page = 0; page < MAX_PAGES; page++) {
       const batch = await api.value.listDataObjects({

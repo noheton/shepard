@@ -4,7 +4,7 @@ import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { GraphChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
-import type { DataObject, ActivityIO } from "@dlr-shepard/backend-client";
+import type { DataObject, Activity } from "@dlr-shepard/backend-client";
 import { ProvenanceApi } from "@dlr-shepard/backend-client";
 import type { CallbackDataParams } from "echarts/types/dist/shared";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
@@ -42,7 +42,7 @@ const props = defineProps<{
   collectionAppId?: string;
 }>();
 
-const activities = ref<ActivityIO[]>([]);
+const activities = ref<Activity[]>([]);
 const loading = ref(false);
 
 // Pass the collection appId so the list hits /v2/collections/{appId}/data-objects.

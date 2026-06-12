@@ -8,40 +8,24 @@
  * `GET /v2/references?kind=git&dataObjectAppId={appId}` endpoint now that the
  * `git` ReferenceKindHandler is installed (merged in bfab5f04b).
  *
- * The per-kind `payload` map carries: repoUrl, ref, path, mode.
- * These are mapped back to `GitReferenceIO` (from `@dlr-shepard/backend-client`)
- * so consumers (`GitReferencesPane.vue`, `dataTableElementMappingUtil.ts`)
- * require no changes.
+ * V2-SWEEP-001-CLIENT-REGEN: the raw `fetch` shim is now a typed call through
+ * `ReferencesApi.listReferences({ kind: "git", dataObjectAppId })` — the
+ * regenerated client carries the unified `?kind=` operations. The per-kind
+ * `payload` map (repoUrl, ref, path, mode) is mapped back to the local
+ * `GitReferenceIO` shape so consumers (`GitReferencesPane.vue`,
+ * `dataTableElementMappingUtil.ts`) require no changes.
  *
- * Mutation ops (create / patch / delete) are handled by
- * `useManageGitReferences.ts` and stay on the plugin path — do not touch them
- * here.
+ * Mutation ops (create / patch / delete) live in `useManageGitReferences.ts`,
+ * also on the unified `ReferencesApi` surface.
  */
-import type { GitReferenceIO } from "@dlr-shepard/backend-client";
+import { ReferencesApi, type ReferenceV2 } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import type { GitReferenceIO } from "./gitReferenceTypes";
 
-interface ReferenceV2IO {
-  appId: string;
-  id?: number;
-  name?: string | null;
-  createdAt?: string | null;
-  createdBy?: string | null;
-  kind: string;
-  payload: Record<string, unknown>;
-}
-
-function v2BaseUrl(): string {
-  const config = useRuntimeConfig().public;
-  const explicit = config.backendV2ApiUrl as string | undefined;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
-  return (config.backendApiUrl as string)
-    .replace(/\/shepard\/api\/?$/, "")
-    .replace(/\/$/, "");
-}
-
-function toGitReferenceIO(r: ReferenceV2IO): GitReferenceIO {
-  const p = r.payload;
+function toGitReferenceIO(r: ReferenceV2): GitReferenceIO {
+  const p = r.payload ?? {};
   return {
-    appId: r.appId,
+    appId: r.appId ?? "",
     repoUrl: (p.repoUrl as string) ?? "",
     ref: (p.ref as string | undefined) ?? undefined,
     path: (p.path as string | undefined) ?? undefined,
@@ -54,34 +38,11 @@ export function useFetchGitReferences(dataObjectAppId: string) {
 
   async function refresh() {
     isLoading.value = true;
-
-    const { data: session } = useAuth();
-    const accessToken = session.value?.accessToken;
-    if (!accessToken) {
-      isLoading.value = false;
-      return;
-    }
-
-    const url =
-      `${v2BaseUrl()}/v2/references` +
-      `?kind=git&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
-
     try {
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-        },
+      const raw = await useV2ShepardApi(ReferencesApi).value.listReferences({
+        kind: "git",
+        dataObjectAppId,
       });
-      if (!response.ok) {
-        const bodyText = await response.text().catch(() => "");
-        handleError(
-          `Failed to fetch git references (HTTP ${response.status}): ${bodyText.slice(0, 200)}`,
-          "listGitReferences",
-        );
-        return;
-      }
-      const raw = (await response.json()) as ReferenceV2IO[];
       gitReferences.value = raw.map(toGitReferenceIO);
     } catch (error) {
       handleError(error, "listGitReferences");

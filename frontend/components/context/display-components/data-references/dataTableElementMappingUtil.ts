@@ -5,7 +5,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
-import type { GitReferenceIO } from "@dlr-shepard/backend-client";
+import type { GitReferenceIO } from "~/composables/context/gitReferenceTypes";
 import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
 import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
 import type { SpatialReferenceV2IO } from "~/composables/context/useFetchSpatialReferencesV2";

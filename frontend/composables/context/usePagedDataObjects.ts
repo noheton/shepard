@@ -1,5 +1,28 @@
-import { DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
+import { DataObjectsApi, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
+
+/**
+ * Extracts the total count from the list response headers. The backend exposes
+ * the full count via `X-Total-Count`, falling back to the `Content-Range`
+ * "unit 0-24/8514" form. Returns null when neither header is present.
+ *
+ * V2-SWEEP-001-CLIENT-REGEN: the regenerated client dropped the hand-rolled
+ * `listDataObjectsWithCount` wrapper, so the header read lives here now, on top
+ * of the generated `listDataObjectsRaw`.
+ */
+function parseTotalCount(headers: Headers): number | null {
+  const xTotal = headers.get("X-Total-Count");
+  if (xTotal != null) {
+    const parsed = parseInt(xTotal, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  const contentRange = headers.get("Content-Range");
+  if (contentRange != null) {
+    const m = /\/(\d+)\s*$/.exec(contentRange);
+    if (m?.[1] != null) return parseInt(m[1], 10);
+  }
+  return null;
+}
 
 export interface PagedDataObjectsOptions {
   collectionId: number;
@@ -71,7 +94,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const loading = ref(false);
   const hasMore = ref(false);
 
-  const v2Api = useV2ShepardApi(DataObjectV2Api);
+  const v2Api = useV2ShepardApi(DataObjectsApi);
 
   async function fetch() {
     const appId = collectionAppId.value;
@@ -86,7 +109,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
       // EntityIdResolver accepts both shapes). The v1 getAllDataObjects
       // fallback is gone.
       const identifier = appId ?? String(collectionId);
-      const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
+      const raw = await v2Api.value.listDataObjectsRaw({
         collectionAppId: identifier,
         name: nameFilter,
         status: statusFilter,
@@ -95,7 +118,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         include: includeTimeBounds ? 'time-bounds' : undefined,
         fields: DO_LIST_FIELDS,
       });
-      const batch: DataObjectListItemV2[] = fetched;
+      const fetchedTotal = parseTotalCount(raw.raw.headers);
+      const batch: DataObjectListItemV2[] = await raw.value();
       totalItems.value = fetchedTotal;
       items.value = batch;
       hasMore.value = batch.length >= pageSize;
