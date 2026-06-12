@@ -388,7 +388,12 @@ public class ContainersV2Rest {
     var versionsOpt = resolved.get().handler().listVersions(appId, fileName);
     if (versionsOpt.isEmpty()) {
       return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-        .entity("Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning")
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/containers.versioning-unsupported",
+          "Container kind does not support payload versioning",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
+          "Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning",
+          null))
         .build();
     }
     return Response.ok(versionsOpt.get()).build();
