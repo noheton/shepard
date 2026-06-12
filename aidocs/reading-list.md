@@ -263,6 +263,19 @@ not yet pursued.
 | RL-UXSHAPES-KADI-RECORDVIEW | How Kadi4Mat renders record views / extras (generic metadata → auto-rendered record page) — competitor reference for zero-config entity views | The four journeys converge on "view of the entity I'm standing on"; Kadi's record-view is the nearest RDM-world equivalent to benchmark | unread |
 | RL-UXSHAPES-VEGA-LITE-EMBED | Vega-Lite as a declarative view-recipe carrier (JSON spec ≈ VIEW_RECIPE body; vega-embed renders client-side) | If VIEW_RECIPE bodies ever standardise on a declarative grammar instead of bespoke renderer hints, Vega-Lite is the obvious candidate; assess fit vs Trace3D/URDF needs | unread |
 
+### SHACL-form externals (RL-FORMS series, 2026-06-12)
+
+Surfaced during the BTKVS-B1 form-as-SHACL-shape design
+(`aidocs/integrations/125-btkvs-shacl-form-templates.md`); not yet pursued.
+
+| ID | Item | Why | Status |
+|---|---|---|---|
+| RL-FORMS-SHAPERONE-DEEP | Read shaperone's renderer architecture end-to-end (https://github.com/hypermedia-app/shaperone + https://forms.hypermedia.app/) — how it maps `dash:editor` to web components, handles `dash:DetailsEditor` nesting, and wires SPARQL-backed `dash:AutoCompleteEditor` (Wikidata live lookup) | FORM-DESCRIPTOR-1's DASH default-scoring + the `shepard-ui:VocabularyAutocompleteEditor` should match the reference implementation's behaviour, not just the spec prose | skimmed |
+| RL-FORMS-DASH-VALUES | DASH `sh:values` / multi-functions (https://www.datashapes.org/multifunctions.html) — computed/derived field values via property value rules | Could carry the docket's computed fields (`mass_delta_percent` from `mass_before`/`mass_after` in the BT-KVS step templates) declaratively instead of client-side JS | unread |
+| RL-FORMS-CEDAR-WORKFLOW | O'Connor et al. 2024 (Scientific Data) end-to-end: CEDAR template → spreadsheet generation → terminology-validated cells → interactive error-fix loop, as deployed in HuBMAP | The closest published sibling of the doc-125 §6 Excel round-trip; their error-fix UX is the bar for `violations[].cell` reporting | skimmed (abstract) |
+| RL-FORMS-RJSF-LESSONS | The JSON-Schema form ecosystem's failure-mode catalogue (https://dev.to/yanggmtl/schema-driven-forms-in-react-comparing-rjsf-json-forms-uniforms-formio-and-formitiva-2fg2 + https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/) — esp. the data-schema/UI-schema condition-drift problem | Documents the drift trap doc-125 D1 avoids; full read before FORM-DESCRIPTOR-1 hardens the descriptor wire shape | skimmed |
+| RL-FORMS-FDP-SHACL | FAIR Data Point's SHACL-driven metadata form usage (https://fairdatapoint.readthedocs.io/en/latest/usage/usage.html) — production RDM-adjacent SHACL forms | Second production datapoint (besides TopBraid EDG) for shape-driven metadata entry in the FAIR-infrastructure world | unread |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
