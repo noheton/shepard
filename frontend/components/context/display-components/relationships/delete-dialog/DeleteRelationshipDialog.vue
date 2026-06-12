@@ -20,6 +20,7 @@ const {
   deleteCollectionReference,
   deleteDataObjectReference,
   deleteUriReference,
+  deleteUriReferenceV2,
 } = useDeleteReferences(props.collectionId, props.dataObjectId, () => {
   showDialog.value = false;
 });
@@ -40,7 +41,13 @@ async function deleteRelationship() {
 
   switch (props.tableElement.information.type.type) {
     case "Link": {
-      deleteUriReference(referenceId);
+      // V2-SWEEP-004-3: prefer v2 delete (appId-keyed) when the table row has one.
+      const uriAppId = props.tableElement.actions.uriRefAppId;
+      if (uriAppId) {
+        deleteUriReferenceV2(uriAppId);
+      } else {
+        deleteUriReference(referenceId);
+      }
       break;
     }
     case "Collection Reference": {
