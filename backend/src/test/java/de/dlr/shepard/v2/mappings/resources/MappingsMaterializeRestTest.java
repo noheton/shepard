@@ -18,6 +18,7 @@ import de.dlr.shepard.spi.transform.TransformRequest;
 import de.dlr.shepard.spi.transform.TransformResult;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.mappings.io.MaterializeRequestIO;
 import de.dlr.shepard.v2.mappings.io.MaterializeResponseIO;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -114,9 +115,8 @@ class MappingsMaterializeRestTest {
     when(templateDAO.findByAppId("m2")).thenReturn(Optional.of(t));
     Response r = rest.materialize("m2", new MaterializeRequestIO(Map.of("a", "ref-1")), securityContext, requestContext);
     assertThat(r.getStatus()).isEqualTo(404);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> entity = (Map<String, Object>) r.getEntity();
-    assertThat(entity.get("code")).isEqualTo("transform.executor.not-registered");
+    var entity = (ProblemJson) r.getEntity();
+    assertThat(entity.type()).isEqualTo("/problems/transform.executor.not-registered");
   }
 
   // ─── happy path with the built-in identity executor ───────────────────────
@@ -182,9 +182,8 @@ class MappingsMaterializeRestTest {
 
     Response r = rest.materialize("m6", new MaterializeRequestIO(Map.of()), securityContext, requestContext);
     assertThat(r.getStatus()).isEqualTo(422);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> entity = (Map<String, Object>) r.getEntity();
-    assertThat(entity.get("code")).isEqualTo("transform.input.missing");
+    var entity = (ProblemJson) r.getEntity();
+    assertThat(entity.type()).isEqualTo("/problems/transform.input.missing");
   }
 
   @Test
@@ -209,9 +208,8 @@ class MappingsMaterializeRestTest {
 
     Response r = rest.materialize("m8", new MaterializeRequestIO(Map.of("a", "ref-1")), securityContext, requestContext);
     assertThat(r.getStatus()).isEqualTo(500);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> entity = (Map<String, Object>) r.getEntity();
-    assertThat(entity.get("code")).isEqualTo("transform.internal-error");
+    var entity = (ProblemJson) r.getEntity();
+    assertThat(entity.type()).isEqualTo("/problems/transform.internal-error");
   }
 
   @Test

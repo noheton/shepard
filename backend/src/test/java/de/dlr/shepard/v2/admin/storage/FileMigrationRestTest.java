@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.migration.FileMigrationService;
+import de.dlr.shepard.v2.admin.storage.io.FileMigrationRollbackResultIO;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -50,10 +51,9 @@ class FileMigrationRestTest {
     // migrationService.rollbackOne(appId) — no exception → success
     Response r = rest.rollback("APPID-deadbeef");
     assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    var body = (java.util.Map<String, Object>) r.getEntity();
-    assertEquals("APPID-deadbeef", body.get("appId"));
-    assertEquals("ROLLED_BACK", body.get("status"));
+    var body = (FileMigrationRollbackResultIO) r.getEntity();
+    assertEquals("APPID-deadbeef", body.appId());
+    assertEquals("ROLLED_BACK", body.status());
     verify(migrationService).rollbackOne("APPID-deadbeef");
   }
 

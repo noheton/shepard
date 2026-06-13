@@ -4,6 +4,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.migration.FileMigrationService;
 import de.dlr.shepard.storage.migration.FileMigrationState;
+import de.dlr.shepard.v2.admin.storage.io.FileMigrationRollbackResultIO;
 import de.dlr.shepard.v2.admin.storage.io.FileMigrationStateIO;
 import de.dlr.shepard.v2.admin.storage.io.FileMigrationTriggerIO;
 import io.quarkus.logging.Log;
@@ -131,7 +132,8 @@ public class FileMigrationRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Rollback succeeded — providerId restored, bookkeeping cleared."
+    description = "Rollback succeeded — providerId restored, bookkeeping cleared.",
+    content = @Content(schema = @Schema(implementation = FileMigrationRollbackResultIO.class))
   )
   @APIResponse(
     responseCode = "404",
@@ -156,10 +158,7 @@ public class FileMigrationRest {
     try {
       migrationService.rollbackOne(appId);
       Log.infof("FileMigrationRest: per-file rollback succeeded — appId=%s", appId);
-      return Response.ok(java.util.Map.of(
-        "appId", appId,
-        "status", "ROLLED_BACK"
-      )).build();
+      return Response.ok(new FileMigrationRollbackResultIO(appId, "ROLLED_BACK")).build();
     } catch (IllegalArgumentException e) {
       // Unknown appId → 404
       Log.infof("FileMigrationRest: rollback rejected (unknown appId=%s) — %s", appId, e.getMessage());
