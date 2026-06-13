@@ -94,10 +94,10 @@ public class AasShellsRest {
       content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AasShellIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listShells(
-      @Parameter(description = "Zero-based page number. Requires `size`.")
+      @Parameter(description = "Zero-based page number. Requires `pageSize`.")
       @QueryParam("page") Integer page,
       @Parameter(description = "Page size.")
-      @QueryParam("size") @DefaultValue("100") Integer size) {
+      @QueryParam("pageSize") @DefaultValue("100") Integer pageSize) {
 
     if (aasDisabled()) return aasDisabledResponse();
 
@@ -105,7 +105,7 @@ public class AasShellsRest {
 
     var params = new QueryParamHelper();
     if (page != null) {
-      params = params.withPageAndSize(page, size);
+      params = params.withPageAndSize(page, pageSize);
     }
 
     List<AasShellIO> shells = collectionDAO
