@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
@@ -65,6 +66,10 @@ public class NotebookRest {
   /** Canonical IANA media type for Jupyter notebook files. */
   static final String IPYNB_MIME_TYPE = "application/x-ipynb+json";
 
+  private static final String PT_UNAUTHORIZED = "/problems/lab-journal.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/lab-journal.not-found";
+  private static final String PT_FORBIDDEN = "/problems/lab-journal.forbidden";
+
   @Inject
   EntityIdResolver entityIdResolver;
 
@@ -112,21 +117,21 @@ public class NotebookRest {
   public Response listNotebooks(@PathParam("dataObjectAppId") String dataObjectAppId, @Context SecurityContext sc) {
     // Auth gate — 401 if not logged in
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     // Resolve DataObject OGM id — 404 if not found
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(dataObjectAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject with appId: " + dataObjectAppId);
     }
 
     // Permission gate — DataObjects don't have their own :Permissions
     // node; access is inherited from the parent Collection. The walk
     // helper does the Cypher hop. Fail-closed if the DO has no parent.
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the DataObject.");
     }
 
     List<NotebookReferenceIO> result = new ArrayList<>();
@@ -192,5 +197,10 @@ public class NotebookRest {
    */
   static boolean isIpynb(String filename) {
     return filename != null && filename.toLowerCase().endsWith(".ipynb");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
