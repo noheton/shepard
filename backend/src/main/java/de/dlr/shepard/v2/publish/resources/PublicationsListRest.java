@@ -69,6 +69,7 @@ public class PublicationsListRest {
 
   static final String PT_UNAUTHORIZED = "/problems/publish.unauthorized";
   static final String PT_NOT_FOUND = "/problems/publish.not-found";
+  static final String PT_KIND_UNSUPPORTED = "/problems/publish.kind.unsupported";
   static final String PT_FORBIDDEN = "/problems/publish.forbidden";
 
   @Inject
@@ -116,7 +117,7 @@ public class PublicationsListRest {
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
-      return problem(Response.Status.NOT_FOUND, PT_NOT_FOUND, "Unsupported publishable kind",
+      return problem(Response.Status.NOT_FOUND, PT_KIND_UNSUPPORTED, "Unsupported publishable kind",
         "No publishable kind matches URL segment '" + kind + "'. Supported: " +
         String.join(", ", kindRegistry.supportedSegments()) + ".");
     }
