@@ -57,9 +57,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Import")
 public class ImportLockV2Rest {
 
-  private static final String PT_BAD_REQUEST = "/problems/import-lock.bad-request";
-  private static final String PT_NOT_FOUND   = "/problems/import-lock.not-found";
-  private static final String PT_CONFLICT    = "/problems/import-lock.conflict";
+  private static final String PT_BAD_REQUEST  = "/problems/import-lock.bad-request";
+  private static final String PT_NOT_FOUND    = "/problems/import-lock.not-found";
+  private static final String PT_CONFLICT     = "/problems/import-lock.conflict";
+  private static final String PT_UNAUTHORIZED = "/problems/import-lock.unauthorized";
 
   @Inject
   ImportLockService lockService;
@@ -279,6 +280,7 @@ public class ImportLockV2Rest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED,
+      "authentication required");
   }
 }

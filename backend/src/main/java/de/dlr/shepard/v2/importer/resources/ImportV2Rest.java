@@ -77,8 +77,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Import")
 public class ImportV2Rest {
 
-  private static final String PT_NOT_FOUND   = "/problems/import.not-found";
-  private static final String PT_BAD_REQUEST = "/problems/import.bad-request";
+  private static final String PT_NOT_FOUND    = "/problems/import.not-found";
+  private static final String PT_BAD_REQUEST  = "/problems/import.bad-request";
+  private static final String PT_UNAUTHORIZED = "/problems/import.unauthorized";
+  private static final String PT_FORBIDDEN    = "/problems/import.forbidden";
 
   @Inject
   ImportValidationService validationService;
@@ -132,7 +134,8 @@ public class ImportV2Rest {
     }
     if (!permissionsService.isAccessTypeAllowedForUser(
         collOgmId.get(), AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Write permission required", Response.Status.FORBIDDEN,
+        "caller lacks Write permission on the target collection");
     }
 
     ImportPlan plan = validationService.validate(manifest, caller);
@@ -166,7 +169,8 @@ public class ImportV2Rest {
     if (caller(sc) == null) return unauthorized();
 
     ImportPlan plan = importPlanDAO.findByCommitId(commitId);
-    if (plan == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (plan == null) return problem(PT_NOT_FOUND, "Plan not found", Response.Status.NOT_FOUND,
+      "no plan found for commitId: " + commitId);
 
     return Response.ok(toIO(plan, List.of())).build();
   }
@@ -218,7 +222,8 @@ public class ImportV2Rest {
         "Collection not found: " + collectionAppId);
     }
     if (!permissionsService.isAccessTypeAllowedForUser(collOgmId.get(), AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read permission required", Response.Status.FORBIDDEN,
+        "caller lacks Read permission on the target collection");
     }
 
     // Count DataObjects and compute fingerprint (single Cypher round-trip).
@@ -277,7 +282,8 @@ public class ImportV2Rest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED,
+      "authentication required");
   }
 
   private static String epochMillisToIso8601(long epochMillis) {
