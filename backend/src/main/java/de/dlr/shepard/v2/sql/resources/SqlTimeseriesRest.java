@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.sql.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.configuration.feature.toggles.SqlTimeseriesFeatureToggle;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
 import de.dlr.shepard.data.timeseries.sql.SqlQueryCompiler;
@@ -70,6 +71,13 @@ import java.util.Set;
 @Path("/v2/sql/timeseries")
 @RequestScoped
 public class SqlTimeseriesRest {
+
+  private static final String PT_NOT_FOUND = "/problems/sql-timeseries.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   /** Hard cap on the number of container IDs per request. */
   private static final int MAX_CONTAINERS = 1000;
@@ -159,7 +167,7 @@ public class SqlTimeseriesRest {
       @Context HttpServerResponse httpResponse,
       @Context SecurityContext securityContext) {
     if (!SqlTimeseriesFeatureToggle.isActive()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "SQL timeseries feature is disabled; enable via PATCH /v2/admin/config/sql-timeseries");
     }
     return executeQuery(spec, acceptHeader, httpResponse, securityContext);
   }
