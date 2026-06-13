@@ -108,14 +108,14 @@ public class WikiWriterRest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "Collection or DataObject not found");
     }
 
     // Gate: Write permission on the DataObject (inherited from parent Collection).
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
 
     // Guard: LLM provider must be available.
@@ -157,5 +157,20 @@ public class WikiWriterRest {
     } catch (NotFoundException nfe) {
       return null;
     }
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
   }
 }

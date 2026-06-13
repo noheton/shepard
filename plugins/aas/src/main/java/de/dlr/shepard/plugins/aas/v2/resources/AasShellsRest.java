@@ -144,7 +144,7 @@ public class AasShellsRest {
     String appId = resolveAppId(aasId);
     Collection collection = collectionDAO.findByAppId(appId, username);
     if (collection == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
     List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
     return Response.ok(mappingService.toShell(collection, dataObjects)).build();
@@ -179,10 +179,25 @@ public class AasShellsRest {
     String appId = resolveAppId(aasId);
     Collection collection = collectionDAO.findByAppId(appId, username);
     if (collection == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
     List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
     return Response.ok(mappingService.toSubmodelRefs(dataObjects)).build();
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
   }
 
   /**

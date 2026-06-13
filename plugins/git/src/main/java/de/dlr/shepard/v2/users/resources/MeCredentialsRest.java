@@ -70,7 +70,7 @@ public class MeCredentialsRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(@Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     List<GitCredentialIO> result = gitCredentialDAO.findAllByUser(caller).stream().map(GitCredentialIO::new).toList();
     return Response.ok(result).build();
@@ -94,7 +94,7 @@ public class MeCredentialsRest {
     @Context UriInfo uriInfo
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     if (body == null) return problem(Response.Status.BAD_REQUEST, "Request body is required");
     if (body.getHost() == null || body.getHost().isBlank()) {
@@ -134,10 +134,10 @@ public class MeCredentialsRest {
   @APIResponse(responseCode = "404", description = "Not found or not owned by caller.")
   public Response read(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     GitCredential cred = gitCredentialDAO.findByUserAndAppId(caller, appId);
-    if (cred == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (cred == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
     return Response.ok(new GitCredentialIO(cred)).build();
   }
 
@@ -159,7 +159,7 @@ public class MeCredentialsRest {
     @Context SecurityContext securityContext
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     if (body != null && body.getPat() != null && !body.getPat().isBlank()) {
       byte[] key = resolveKey();
@@ -167,7 +167,7 @@ public class MeCredentialsRest {
     }
 
     GitCredential existing = gitCredentialDAO.findByUserAndAppId(caller, appId);
-    if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (existing == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
 
     GitCredential delta = new GitCredential();
     if (body != null) {
@@ -182,7 +182,7 @@ public class MeCredentialsRest {
     }
 
     GitCredential updated = gitCredentialDAO.updateByUserAndAppId(caller, appId, delta);
-    if (updated == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (updated == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
     return Response.ok(new GitCredentialIO(updated)).build();
   }
 
@@ -196,10 +196,10 @@ public class MeCredentialsRest {
   @APIResponse(responseCode = "404", description = "Not found or not owned by caller.")
   public Response delete(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     boolean deleted = gitCredentialDAO.deleteByUserAndAppId(caller, appId);
-    return deleted ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
+    return deleted ? Response.noContent().build() : problem(Response.Status.NOT_FOUND, "Git credential not found");
   }
 
   private String callerOrNull(SecurityContext sc) {
@@ -233,11 +233,13 @@ public class MeCredentialsRest {
 
   private static Response problem(Response.Status status, String detail) {
     String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
       case BAD_REQUEST -> "urn:shepard:error:validation";
       case NOT_FOUND -> "urn:shepard:error:not-found";
       case CONFLICT -> "urn:shepard:error:conflict";
       case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
-      default -> "urn:shepard:error:validation";
+      default -> "urn:shepard:error:internal";
     };
     return Response.status(status)
       .type("application/problem+json")

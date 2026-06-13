@@ -93,7 +93,7 @@ public class GitReferenceRest {
 
     GitReference gr = gitReferenceDAO.findByAppId(gitReferenceAppId);
     if (gr == null || gr.getDataObject() == null || !dataObjectAppId.equals(gr.getDataObject().getAppId())) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "GitReference not found");
     }
 
     String caller = securityContext.getUserPrincipal().getName();
@@ -143,7 +143,7 @@ public class GitReferenceRest {
 
     GitReference gr = gitReferenceDAO.findByAppId(gitReferenceAppId);
     if (gr == null || gr.getDataObject() == null || !dataObjectAppId.equals(gr.getDataObject().getAppId())) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "GitReference not found");
     }
 
     String caller = securityContext.getUserPrincipal().getName();
@@ -166,16 +166,31 @@ public class GitReferenceRest {
 
   private Response checkAccess(String dataObjectAppId, AccessType accessType, SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(dataObjectAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "DataObject not found");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
     return null;
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
   }
 }
