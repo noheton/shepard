@@ -79,6 +79,7 @@ public class SemanticAnnotationV2Rest {
   static final int MAX_PAGE_SIZE = 200;
   static final int DEFAULT_PAGE_SIZE = 50;
 
+  static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/annotations.unauthorized";
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/annotations.bad-request";
   static final String PROBLEM_TYPE_NOT_FOUND = "/problems/annotations.not-found";
   static final String PROBLEM_TYPE_FORBIDDEN = "/problems/annotations.forbidden";
@@ -826,7 +827,8 @@ public class SemanticAnnotationV2Rest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access annotations.");
   }
 
   private static Response notFound(String kind, String id) {

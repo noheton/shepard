@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.quality.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.quality.io.CreateDQRIO;
 import de.dlr.shepard.v2.quality.io.DQRIO;
 import de.dlr.shepard.v2.quality.io.DQRResultIO;
@@ -48,6 +49,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Authenticated
 @Tag(name = "Data quality requirements")
 public class CollectionDQRRest {
+
+  static final String PT_UNAUTHORIZED = "/problems/dqr.unauthorized";
 
   @Inject
   DataQualityRequirementService service;
@@ -184,6 +187,12 @@ public class CollectionDQRRest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access data quality requirements.");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

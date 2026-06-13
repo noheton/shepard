@@ -142,7 +142,8 @@ public class DataObjectBatchV2Rest {
   ) {
     // ── auth gate ──────────────────────────────────────────────────────────
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem("/problems/data-objects.unauthorized", "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to submit a batch create request.");
 
     // ── size validation ────────────────────────────────────────────────────
     if (items == null || items.isEmpty()) {
