@@ -133,7 +133,8 @@ public class CollectionSnapshotRest {
     try {
       snapshot = snapshotService.createSnapshot(collectionAppId, body.name(), body.description(), caller);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     return Response.status(Response.Status.CREATED).entity(new SnapshotIO(snapshot)).build();
@@ -211,17 +212,20 @@ public class CollectionSnapshotRest {
    */
   private Response checkAccess(String collectionAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem("/problems/snapshots.unauthorized", "Unauthorized",
+        Response.Status.UNAUTHORIZED, "Authentication required.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem("/problems/snapshots.forbidden", "Forbidden", Response.Status.FORBIDDEN,
+          "Caller lacks permission on the Collection.");
     }
     return null;
   }

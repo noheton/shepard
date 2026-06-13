@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO.DiffEntry;
@@ -60,6 +61,14 @@ public class SnapshotDiffRest {
   @Inject
   SnapshotService snapshotService;
 
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /**
    * Diff two snapshots.
    *
@@ -95,7 +104,7 @@ public class SnapshotDiffRest {
   ) {
     // Auth gate — must be authenticated
     if (sc.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
     }
 
     // Self-diff guard
@@ -106,11 +115,11 @@ public class SnapshotDiffRest {
     // Resolve both snapshots — 404 if either is missing or soft-deleted
     Snapshot snapshotA = snapshotService.findByAppId(aAppId);
     if (snapshotA == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Snapshot A not found: '" + aAppId + "'.");
     }
     Snapshot snapshotB = snapshotService.findByAppId(bAppId);
     if (snapshotB == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Snapshot B not found: '" + bAppId + "'.");
     }
 
     // Load entry revision maps for both snapshots
