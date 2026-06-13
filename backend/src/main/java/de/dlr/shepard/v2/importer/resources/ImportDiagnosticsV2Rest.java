@@ -69,7 +69,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Import")
 public class ImportDiagnosticsV2Rest {
 
-  private static final String PT_BAD_REQUEST = "/problems/import-diagnostics.bad-request";
+  private static final String PT_BAD_REQUEST  = "/problems/import-diagnostics.bad-request";
+  private static final String PT_UNAUTHORIZED = "/problems/import-diagnostics.unauthorized";
 
   /** Allowed level values for the {@code ?level=} filter. */
   private static final Set<String> VALID_LEVELS = Set.of(
@@ -283,8 +284,7 @@ public class ImportDiagnosticsV2Rest {
   }
 
   private static Response badRequest(String message) {
-    ProblemJson body = new ProblemJson(PT_BAD_REQUEST, "Bad request", 400, message, null);
-    return Response.status(Response.Status.BAD_REQUEST).type("application/problem+json").entity(body).build();
+    return problem(PT_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, message);
   }
 
   private static String caller(SecurityContext sc) {
@@ -292,6 +292,12 @@ public class ImportDiagnosticsV2Rest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED,
+      "authentication required");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

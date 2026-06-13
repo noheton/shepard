@@ -90,6 +90,8 @@ public class ImportJobsV2Rest {
   private static final String PT_GONE           = "/problems/import-jobs.gone";
   private static final String PT_UNPROCESSABLE  = "/problems/import-jobs.unprocessable";
   private static final String PT_INTERNAL_ERROR = "/problems/import-jobs.internal-error";
+  private static final String PT_UNAUTHORIZED   = "/problems/import-jobs.unauthorized";
+  private static final String PT_FORBIDDEN      = "/problems/import-jobs.forbidden";
 
   // ─── POST /v2/import/jobs ─────────────────────────────────────────────────
 
@@ -129,7 +131,8 @@ public class ImportJobsV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = caller(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "authentication required");
 
     // ── 1. Resolve plan ─────────────────────────────────────────────────────
     ImportPlan plan = importPlanDAO.findByCommitId(request.commitId());
@@ -179,7 +182,8 @@ public class ImportJobsV2Rest {
     }
     if (!permissionsService.isAccessTypeAllowedForUser(
         collOgmId.get(), AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Write permission required", Response.Status.FORBIDDEN,
+        "caller lacks Write permission on the target collection");
     }
 
     // ── 6. Fingerprint re-verification ───────────────────────────────────────
