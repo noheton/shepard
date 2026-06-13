@@ -66,6 +66,7 @@ public class WikiWriterRest {
 
   @POST
   @Operation(
+    operationId = "writeWikiJournalEntry",
     summary = "Generate and write an AI lab journal entry for a DataObject.",
     description =
       "Uses the configured LLM TEXT capability to summarise the target DataObject " +

@@ -110,6 +110,7 @@ public class HdfAdminRest {
   @POST
   @Path("/rebuild-acls")
   @Operation(
+    operationId = "rebuildHdfAcls",
     summary = "Rebuild every HSDS domain ACL from shepard's permission graph.",
     description = "Iterates every :HdfContainer in Neo4j, derives the expected HSDS ACL from " +
     "shepard's Permissions graph, and rewrites the HSDS domain ACL from scratch. " +

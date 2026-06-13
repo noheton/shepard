@@ -54,6 +54,7 @@ public class AiAdminRest {
   @GET
   @Path("/capabilities")
   @Operation(
+    operationId = "listAiCapabilities",
     summary = "List all AI capability slot configurations.",
     description = "Returns the runtime config for every known AiCapability slot. " +
     "The raw API key is never returned — the response carries apiKeySet=true/false " +
@@ -76,6 +77,7 @@ public class AiAdminRest {
   @GET
   @Path("/capabilities/{capability}")
   @Operation(
+    operationId = "getAiCapability",
     summary = "Get the config for one AI capability slot.",
     description = "Returns the runtime config for the named capability. If no config " +
     "has been set for this slot yet, a disabled skeleton is seeded and returned. " +
@@ -100,6 +102,7 @@ public class AiAdminRest {
   @PATCH
   @Path("/capabilities/{capability}")
   @Operation(
+    operationId = "patchAiCapability",
     summary = "RFC 7396 merge-patch one AI capability slot.",
     description = "Patchable fields: endpointUrl, model, apiKey, transport, " +
     "guardrailsPrefix, guardrailsSuffix, maxTokens, temperature, enabled. " +

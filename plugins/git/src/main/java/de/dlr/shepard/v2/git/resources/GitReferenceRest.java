@@ -66,6 +66,7 @@ public class GitReferenceRest {
   @GET
   @Path("/{appId}/preview")
   @Operation(
+    operationId = "previewGitReference",
     summary = "Server-side inline preview of a tracked-artifact GitReference (G1b).",
     description = "Resolves the GitReference, picks the caller's PAT for the matching git host (via " +
     "G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to " +
@@ -114,6 +115,7 @@ public class GitReferenceRest {
   @POST
   @Path("/{appId}/check-update")
   @Operation(
+    operationId = "checkGitReferenceUpdate",
     summary = "Check whether the upstream Git ref has moved since last resolution (G1d).",
     description = "Resolves the GitReference's ref via the matching GitAdapter " +
     "(using the caller's stored PAT if present; works without a PAT for public " +

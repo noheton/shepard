@@ -76,6 +76,7 @@ public class AasShellsRest {
 
   @GET
   @Operation(
+      operationId = "listAasShells",
       summary = "List Collections as IDTA AAS v3 Shells (AAS1a).",
       description = "Returns one AssetAdministrationShell per Collection the authenticated caller " +
           "may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), " +
@@ -114,6 +115,7 @@ public class AasShellsRest {
   @GET
   @Path("/{aasId}")
   @Operation(
+      operationId = "getAasShell",
       summary = "Get a single Collection as an IDTA AAS v3 Shell (AAS1b).",
       description = "Accepts `{aasId}` as (a) the base64url-encoded Shell IRI " +
           "(`urn:shepard:collection:{appId}`) per IDTA-01002-3-2 §4.3, or " +
@@ -146,6 +148,7 @@ public class AasShellsRest {
   @GET
   @Path("/{aasId}/submodels")
   @Operation(
+      operationId = "listAasShellSubmodels",
       summary = "List Submodel references for a Shell (AAS1b).",
       description = "Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection " +
           "identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). " +

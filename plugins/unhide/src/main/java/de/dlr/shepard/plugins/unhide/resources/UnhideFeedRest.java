@@ -99,6 +99,7 @@ public class UnhideFeedRest {
   @GET
   @Path("/feed.jsonld")
   @Operation(
+    operationId = "getUnhideFeed",
     summary = "Helmholtz Unhide harvest feed (schema.org + metadata4ing JSON-LD).",
     description = "Lists every Collection on this shepard instance in the schema.org / " +
     "metadata4ing JSON-LD shape that Unhide's inward-mappings consume. Cursor-paginated " +

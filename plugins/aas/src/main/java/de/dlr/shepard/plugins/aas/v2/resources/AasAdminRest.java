@@ -41,6 +41,7 @@ public class AasAdminRest {
   @POST
   @Path("/import-idta-templates")
   @Operation(
+      operationId = "importAasIdtaTemplates",
       summary = "Import bundled IDTA Submodel Templates (AAS1d).",
       description =
           "Idempotently upserts the three bundled IDTA Submodel Templates "

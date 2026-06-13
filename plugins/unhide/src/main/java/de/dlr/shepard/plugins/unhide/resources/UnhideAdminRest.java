@@ -56,6 +56,7 @@ public class UnhideAdminRest {
   @POST
   @Path("/harvest-key/rotate")
   @Operation(
+    operationId = "rotateUnhideHarvestKey",
     summary = "Mint a fresh harvest API key.",
     description = "Generates a UUID v4 (SecureRandom-backed), stores its SHA-256 hex on " +
     ":UnhideConfig.harvestApiKeyHash, and returns the plaintext exactly once. Rotates if a " +
@@ -87,6 +88,7 @@ public class UnhideAdminRest {
   @POST
   @Path("/harvest-key/revoke")
   @Operation(
+    operationId = "revokeUnhideHarvestKey",
     summary = "Revoke the current harvest API key.",
     description = "Clears :UnhideConfig.harvestApiKeyHash. When feedPublic=false (the " +
     "default), the feed becomes reachable only by instance-admin callers until a fresh " +
@@ -112,7 +114,7 @@ public class UnhideAdminRest {
    */
   @DELETE
   @Path("/harvest-key")
-  @Operation(summary = "Revoke the current harvest API key (DELETE-verb variant of revoke).")
+  @Operation(operationId = "deleteUnhideHarvestKey", summary = "Revoke the current harvest API key (DELETE-verb variant of revoke).")
   @APIResponse(
     responseCode = "200",
     description = "Updated config after revoke.",

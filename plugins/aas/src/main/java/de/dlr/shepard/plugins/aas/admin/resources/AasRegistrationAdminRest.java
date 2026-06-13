@@ -48,6 +48,7 @@ public class AasRegistrationAdminRest {
 
   @GET
   @Operation(
+    operationId = "listAasRegistrations",
     summary = "List all AAS registry outbox rows.",
     description = "Returns one row per (shell, registry-url) pair tracked in the " +
     ":AasRegistration outbox. Status is PENDING, SYNCED, or FAILED. " +
@@ -70,6 +71,7 @@ public class AasRegistrationAdminRest {
   @POST
   @Path("/sync")
   @Operation(
+    operationId = "triggerAasRegistrySync",
     summary = "Trigger an on-demand AAS registry sync.",
     description = "Calls AasRegistryOutboxService.syncAll(): seeds PENDING rows for any " +
     "unregistered collections, then pushes all PENDING/FAILED rows to the configured " +

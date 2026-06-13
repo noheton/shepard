@@ -78,6 +78,7 @@ public class VideoStreamReferenceV2Rest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
+    operationId = "uploadVideoStreamReference",
     summary = "Upload a video file and create a VideoStreamReference.",
     description = "Multipart body. The 'file' part carries the video bytes. " +
     "The optional 'name' query parameter sets the Reference name (defaults to the uploaded filename). " +
@@ -151,6 +152,7 @@ public class VideoStreamReferenceV2Rest {
   @Path("/{appId}/download")
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "downloadVideoStreamReference",
     summary = "Download the raw video bytes for a VideoStreamReference (VID1a + MFFD-VIDEOREF-SCALE-1).",
     description =
       "Streams the video bytes stored for the `VideoStreamReference` identified by " +

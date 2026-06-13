@@ -88,6 +88,7 @@ public class KipResolverRest {
   @GET
   @Path("/{suffix:.+}")
   @Operation(
+    operationId = "resolveKipRecord",
     summary = "Resolve a PID minted by this shepard to its HMC Kernel Information Profile record.",
     description = "Public endpoint (no auth). Returns a small JSON-LD-flavoured record per " +
     "aidocs/66 §3.2 — `kernelInformationProfile` envelope with `id`, `landingPage`, " +

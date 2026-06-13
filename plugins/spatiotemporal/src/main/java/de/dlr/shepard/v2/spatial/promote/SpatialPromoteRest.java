@@ -63,6 +63,7 @@ public class SpatialPromoteRest {
   @POST
   @Path("/promote")
   @Operation(
+    operationId = "promoteFileReferenceToSpatial",
     summary = "Promote an eligible FileReference into a spatial reference (in-context, per-file).",
     description =
       "Given the appId of a singleton FileReference holding a pointcloud / " +
