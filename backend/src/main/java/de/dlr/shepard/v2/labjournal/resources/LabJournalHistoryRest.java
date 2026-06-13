@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.daos.LabJournalEntryDAO;
 import de.dlr.shepard.context.labJournal.daos.LabJournalEntryRevisionDAO;
@@ -46,6 +47,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Tag(name = "Lab journal")
 public class LabJournalHistoryRest {
+
+  private static final String PT_UNAUTHORIZED = "/problems/lab-journal.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/lab-journal.not-found";
+  private static final String PT_FORBIDDEN = "/problems/lab-journal.forbidden";
 
   @Inject
   LabJournalEntryDAO labJournalEntryDAO;
@@ -95,17 +100,17 @@ public class LabJournalHistoryRest {
   public Response history(@PathParam("entryAppId") String entryAppId, @Context SecurityContext sc) {
     // 401 if unauthenticated
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     // Resolve entry — null or deleted → 404
     LabJournalEntry entry = labJournalEntryDAO.findByAppId(entryAppId);
-    if (entry == null || entry.isDeleted()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (entry == null || entry.isDeleted()) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No LabJournalEntry with appId: " + entryAppId);
 
     // Permission check via parent DataObject
     var dataObject = entry.getDataObject();
-    if (dataObject == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObject == null) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "LabJournalEntry has no parent DataObject.");
     if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject.");
     }
 
     // Fetch revisions (newest first, already ordered by DAO query)
@@ -116,5 +121,10 @@ public class LabJournalHistoryRest {
       .toList();
 
     return Response.ok(revisions).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -58,6 +59,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection lab journal entries")
 public class CollectionLabJournalEntriesRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/lab-journal.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/lab-journal.not-found";
+  private static final String PT_FORBIDDEN = "/problems/lab-journal.forbidden";
+
   @Inject
   CollectionLabJournalEntriesDAO entriesDAO;
 
@@ -93,17 +98,17 @@ public class CollectionLabJournalEntriesRest {
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection with appId: " + collectionAppId);
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the Collection.");
     }
 
     List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId);
@@ -126,5 +131,10 @@ public class CollectionLabJournalEntriesRest {
       ios.add(new LabJournalEntryIO(e));
     }
     return Response.ok(ios).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
