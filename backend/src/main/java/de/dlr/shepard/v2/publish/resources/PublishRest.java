@@ -8,6 +8,7 @@ import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.minter.MinterException;
 import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.services.PublishService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -24,8 +25,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -103,7 +102,7 @@ public class PublishRest {
     @Context UriInfo uriInfo
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
@@ -124,14 +123,14 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     // Per aidocs/66 §4.1: caller must hold Write OR Manage. AccessType.Write
     // already maps to "Writer or Manager" in PermissionsService#rolesGrantAccess
     // (case Write -> isWriter || isManager). Owner-on-entity counts as
     // manager and is therefore admitted.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     String locatorUrl = absoluteUrl(uriInfo, "/v2/" + k.urlSegment() + "/" + appId);
@@ -194,7 +193,7 @@ public class PublishRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
@@ -215,10 +214,10 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     boolean retired;
@@ -267,11 +266,7 @@ public class PublishRest {
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("type", type);
-    body.put("title", title);
-    body.put("status", status.getStatusCode());
-    body.put("detail", detail);
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
