@@ -58,6 +58,8 @@ import {
   mapSpatialReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
+import type { DataReference } from "~/components/context/display-components/data-references/dataReference";
+import type { RelatedEntity } from "~/components/context/display-components/relationships/relatedEntity";
 
 definePageMeta({ layout: "collection" });
 
@@ -84,10 +86,11 @@ const {
   isAllowedToEditCollection,
   notFound: isCollectionNotFound,
 } = useFetchCollection(collectionIdStr);
-const { dataObject, notFound: isDataObjectNotFound } = useFetchDataObject(
-  collectionIdStr,
-  dataObjectIdStr,
-);
+const {
+  dataObject,
+  isLoading: isDataObjectLoading,
+  notFound: isDataObjectNotFound,
+} = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 
 const collectionNumericId = computed<number | undefined>(() =>
   resolveNumericId(collection.value?.id, routeParams.value.collectionId),
@@ -104,6 +107,37 @@ const { relatedEntities } = useRelatedEntities(
   collectionNumericId,
   dataObjectNumericId,
   dataObjectIdStr, // V2-SWEEP-004-2: route param UUID → v2 endpoint returns referencedCollectionAppId
+);
+
+// BUG-DO-DETAIL-HANG (2026-06-13): the page render gate previously required
+// `dataReferences` AND `relatedEntities` to be non-undefined, but those v1
+// reference composables only flip from `undefined` once the NUMERIC ids
+// resolve from the loaded v2 entities. When a reference sub-fetch 403/404s, or
+// the numeric id never resolves, those refs stayed `undefined` forever → the
+// CenteredLoadingSpinner never cleared (the lone CRITICAL in the 2026-06-12 /
+// -13 UX audits). Reference panels are NOT required entities — a DataObject
+// with zero git/spatial/file references is a normal empty state, not a fatal.
+// The render gate below now requires only `collection && dataObject`; these
+// safe-default views let the per-kind tables render an empty state while their
+// own fetches resolve (or fail soft) independently.
+const dataReferencesSafe = computed<DataReference[]>(
+  () => dataReferences.value ?? [],
+);
+const relatedEntitiesSafe = computed<RelatedEntity[]>(
+  () => relatedEntities.value ?? [],
+);
+
+// BUG-DO-DETAIL-HANG: the only fatal is the required DataObject failing to
+// load with a non-404 status (403 / 500 / network). Previously such a failure
+// left `dataObject` undefined + `notFound` false, so the page hung on the
+// spinner. We surface a settled-but-failed flag so the template can render the
+// EntityNotFound fallback instead of spinning forever. A 404 is already handled
+// by `isDataObjectNotFound`.
+const dataObjectLoadFailed = computed<boolean>(
+  () =>
+    !isDataObjectLoading.value &&
+    !dataObject.value &&
+    !isDataObjectNotFound.value,
 );
 
 // REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.
@@ -521,10 +555,11 @@ async function saveEmbargoEdit() {
 <template>
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
+      <!-- BUG-DO-DETAIL-HANG: render once the REQUIRED entities (collection +
+           dataObject) load. Reference panels (dataReferences / relatedEntities)
+           resolve independently and fail soft — they must NOT gate the page. -->
       <v-row
-        v-if="
-          !!collection && !!dataObject && !!dataReferences && !!relatedEntities
-        "
+        v-if="!!collection && !!dataObject"
         no-gutters
       >
         <v-col cols="12">
@@ -893,7 +928,7 @@ async function saveEmbargoEdit() {
                   <DataObjectDataReferencesTable
                     :collection-id="collection.id"
                     :data-object-id="dataObject.id"
-                    :data-references="dataReferences"
+                    :data-references="dataReferencesSafe"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
@@ -903,7 +938,7 @@ async function saveEmbargoEdit() {
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  :count="relatedEntities.length"
+                  :count="relatedEntitiesSafe.length"
                   title="Relationships"
                 >
                   <DataObjectRelationshipsTable
@@ -913,7 +948,7 @@ async function saveEmbargoEdit() {
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
-                    :related-entities="relatedEntities"
+                    :related-entities="relatedEntitiesSafe"
                     :predecessor-relationship-types="predecessorRelationshipTypesMap"
                   />
                   <template v-if="isAllowedToEditCollection" #append>
@@ -1082,6 +1117,16 @@ async function saveEmbargoEdit() {
         entity-kind="Collection"
         :requested-id="collectionIdStr"
         parent-route="/collections"
+      />
+      <!-- BUG-DO-DETAIL-HANG: a non-404 DataObject load failure (403 / 500 /
+           network) used to leave the page spinning forever. Surface the
+           not-found fallback once the fetch settles unsuccessfully so the user
+           sees an actionable empty state instead of an indeterminate spinner. -->
+      <EntityNotFound
+        v-else-if="dataObjectLoadFailed"
+        entity-kind="DataObject"
+        :requested-id="dataObjectIdStr"
+        :parent-route="`/collections/${collectionIdStr}`"
       />
       <CenteredLoadingSpinner v-else />
     </v-container>
