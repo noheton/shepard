@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.admin.resources;
 
 import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.FeatureToggleIO;
 import de.dlr.shepard.v2.admin.io.PatchFeatureToggleIO;
@@ -34,6 +34,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")
 public class AdminFeaturesRest {
+
+  private static final String PT_NOT_FOUND = "/problems/features.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
 
   @Inject
   FeatureToggleRegistry registry;
@@ -83,9 +90,8 @@ public class AdminFeaturesRest {
       entry.setEnabled(body.getEnabled());
       return Response.ok(new FeatureToggleIO(entry.getName(), entry.isEnabled(), entry.getDescription(), entry.getSource())).build();
     }).orElseGet(() ->
-      Response.status(Status.NOT_FOUND)
-        .entity(new ApiError(Status.NOT_FOUND.getStatusCode(), "NotFound", "No feature toggle registered with name '" + name + "'"))
-        .build()
+      problem(PT_NOT_FOUND, "Not Found", Status.NOT_FOUND,
+        "No feature toggle registered with name '" + name + "'")
     );
   }
 }
