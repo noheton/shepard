@@ -78,10 +78,11 @@ public class TemplateInstantiationRest {
    * for SHACL validation. The URI is local to the validation call and never
    * persisted; it just needs to be stable within one validation invocation.
    */
-  private static final String PT_NOT_FOUND    = "/problems/template-instantiation.not-found";
-  private static final String PT_FORBIDDEN    = "/problems/template-instantiation.forbidden";
-  private static final String PT_CONFLICT     = "/problems/template-instantiation.conflict";
+  private static final String PT_NOT_FOUND     = "/problems/template-instantiation.not-found";
+  private static final String PT_FORBIDDEN     = "/problems/template-instantiation.forbidden";
+  private static final String PT_CONFLICT      = "/problems/template-instantiation.conflict";
   private static final String PT_UNPROCESSABLE = "/problems/template-instantiation.unprocessable";
+  private static final String PT_UNAUTHORIZED  = "/problems/template-instantiation.unauthorized";
 
   static final String INSTANCE_URI = "urn:shepard:instance:candidate";
 
@@ -155,7 +156,7 @@ public class TemplateInstantiationRest {
   ) {
     // Step 1: authentication
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
     // Step 2 + 3: resolve collection and check Write permission

@@ -61,6 +61,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection templates")
 public class CollectionTemplatesRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/collection-templates.unauthorized";
+  private static final String PT_NOT_FOUND    = "/problems/collection-templates.not-found";
+  private static final String PT_FORBIDDEN    = "/problems/collection-templates.forbidden";
+
   @Inject
   ShepardTemplateDAO templateDAO;
 
@@ -198,9 +202,11 @@ public class CollectionTemplatesRest {
   }
 
   private Response forbiddenOrNotFound(String collectionAppId, SecurityContext sc) {
-    if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (sc.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     Optional<Long> ogmId = collectionPropsDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
-    return Response.status(Response.Status.FORBIDDEN).build();
+    if (ogmId.isEmpty()) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "No Collection with appId " + collectionAppId);
+    return problem(PT_FORBIDDEN, "Insufficient permission", Response.Status.FORBIDDEN,
+        "Caller lacks the required permission on Collection " + collectionAppId);
   }
 }

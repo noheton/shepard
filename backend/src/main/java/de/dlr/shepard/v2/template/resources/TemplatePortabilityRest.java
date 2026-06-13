@@ -71,8 +71,9 @@ public class TemplatePortabilityRest {
   static final String MEDIA_TYPE_YAML = "text/yaml";
   static final String MEDIA_TYPE_APPLICATION_YAML = "application/yaml";
 
-  private static final String PT_BAD_REQUEST = "/problems/template-portability.bad-request";
-  private static final String PT_INTERNAL = "/problems/template-portability.internal-error";
+  private static final String PT_BAD_REQUEST  = "/problems/template-portability.bad-request";
+  private static final String PT_INTERNAL     = "/problems/template-portability.internal-error";
+  private static final String PT_UNAUTHORIZED = "/problems/template-portability.unauthorized";
 
   /** Shared YAML mapper — stateless after construction, safe to reuse. */
   private static final ObjectMapper YAML_MAPPER = buildYamlMapper();
@@ -114,7 +115,7 @@ public class TemplatePortabilityRest {
     // @RolesAllowed handles 403; the unauthenticated path needs an explicit guard
     // so unit tests can verify 401 without spinning up a full Quarkus context.
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
     List<ShepardTemplate> templates = dao.list(null, includeRetired);
@@ -166,7 +167,7 @@ public class TemplatePortabilityRest {
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response importTemplates(String yamlBody, @Context SecurityContext securityContext) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
     // Treat null or blank body as an empty document → return 200 with empty list.
@@ -360,5 +361,10 @@ public class TemplatePortabilityRest {
       .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
       .build();
     return new ObjectMapper(factory);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+        .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }
