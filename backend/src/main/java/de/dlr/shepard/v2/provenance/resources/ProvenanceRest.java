@@ -76,6 +76,8 @@ public class ProvenanceRest {
   @Inject
   ProvenanceStatsService statsService;
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/provenance.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/provenance.forbidden";
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/provenance.bad-request";
   private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/provenance.not-found";
 
@@ -106,7 +108,7 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     // Casual users can only see their own activity rows. Asking for someone
@@ -116,7 +118,7 @@ public class ProvenanceRest {
       // narrow with ?agent=.
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
 
     int eff = pageSize == null ? 100 : pageSize;
@@ -161,13 +163,13 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
 
     int eff = pageSize == null ? 100 : pageSize;
@@ -201,13 +203,13 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
 
     Response profileError = enforceJsonLdProfile(acceptHeader);
@@ -243,7 +245,7 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     // Casual users only see their own rows against this entity; admins see all.
@@ -278,7 +280,7 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     String agentFilter = isAdmin ? null : caller;
@@ -309,7 +311,7 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     String agentFilter = isAdmin ? null : caller;
@@ -345,13 +347,13 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
     }
 
     long c = provenance.count(agent, targetKind, targetAppId, since, until);
@@ -381,13 +383,13 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
     }
 
     Response profileError = enforceJsonLdProfile(acceptHeader);
@@ -427,21 +429,21 @@ public class ProvenanceRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
     if (scope == null || scope.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "scope is required");
     }
     boolean isAdmin = securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
 
     if (ProvenanceStatsService.SCOPE_INSTANCE.equals(scope) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "scope=instance requires instance-admin role.");
     }
     if (ProvenanceStatsService.SCOPE_USER.equals(scope)) {
       if (id == null || id.isBlank()) {
         return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "id is required for scope=user");
       }
       if (!id.equals(caller) && !isAdmin) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request stats for their own user without instance-admin role.");
       }
     }
     if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope)) {
@@ -457,7 +459,7 @@ public class ProvenanceRest {
           return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "No Collection with appId " + id);
         }
         if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller, 0L)) {
-          return Response.status(Response.Status.FORBIDDEN).build();
+          return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Read permission required on Collection '" + id + "' to view its stats.");
         }
       }
     }
