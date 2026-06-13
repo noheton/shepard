@@ -2108,7 +2108,7 @@ width caps shipped in this PR; everything else filed below.
 | UI-1920-TS-LEGEND | TS-container chart legend packs 3 very long 5-tuple labels in one row and clips the 3rd (`rpm_fuel_pu…`) with a 1/4 pager — the only place a 1920 user loses *information* (channel identity) to layout. | S–M | queued | MINOR | Screenshot `10-ts-container-*`. Truncate-with-tooltip at a char budget; wrap to 2 rows or vertical legend at ≥1920. |
 | UI-1920-SCENEGRAPH-NAV | `/scene-graphs` is a 404 — only `/scene-graphs/play/{templateAppId}` exists, and there's no Scene-graphs tile in the `/tools` grid. Nav gap surfaced during the 1920 walk (sibling to SCENEGRAPH-NAV-01/02). | S | queued | MINOR | Add a `/scene-graphs` index (picker) + a Tools tile. Cross-ref: SCENEGRAPH-NAV-01. |
 | UI-1920-COLLECTIONS-SPARSE | `/collections`: ~100px vertical void between the page header and the search field reads sparse at 1920. | XS | queued | MINOR | Screenshot `02-collections-list-*`. Tighten header→search spacing. |
-| UI-1920-DO-DETAIL-HANG | TR-004 DataObject detail hangs on a perpetual spinner at 1920 (main pane never renders; CONTENTS sidebar shows only "Publications") — blocked auditing the DO detail layout + the new ActionMenuButton at 1920. **Not a layout bug** (appId/numeric-id seam); already tracked. | M | queued | CRITICAL | **Duplicate of UX-WALK-2026-05-29-06 / 4K-walk C1** — re-flagged because no viewport audit can certify the DO detail page until this is fixed. Owner: the appId/numeric-id seam. |
+| UI-1920-DO-DETAIL-HANG (= BUG-DO-DETAIL-HANG) | TR-004 DataObject detail hangs on a perpetual spinner at 1920 (main pane never renders) — blocked auditing the DO detail layout + the new ActionMenuButton. | M | **✓ shipped 2026-06-13** | CRITICAL | **Root cause confirmed live (mechanism a):** the page render gate `v-if="collection && dataObject && dataReferences && relatedEntities"` required the two v1-keyed reference refs to be non-undefined, but `useDataReferencesByDataObject` / `useRelatedEntities` only flip from `undefined` once a NUMERIC id resolves via `resolveNumericId(dataObject.id, route)`. Post-reset DataObjects carry only an `appId` (DO GET 200 but `id===undefined`; verified TR-004 → all `/v2/references?kind=…&dataObjectAppId=…` return 200/empty, paths correct), so `resolveNumericId` → `undefined`, `ids()` → `undefined`, the v1 fetch never fires, the refs stay `undefined` forever → spinner never clears. **Fix** (`pages/.../[dataObjectId]/index.vue`): (1) render gate now requires only the REQUIRED entities `collection && dataObject`; reference panels bind `dataReferencesSafe`/`relatedEntitiesSafe` (`?? []`) and resolve independently/fail-soft; (2) a non-404 DataObject load failure (403/500/network) now renders `EntityNotFound` via a new `dataObjectLoadFailed` flag instead of spinning (previously only a 404 escaped the spinner). The unified `/v2/references?kind=…` extra-ref composables already fail-soft (own try/catch + `finally`) and were not the gate. Tests: `tests/unit/dataObjectDetailHang.test.ts` (8 cases — fail-soft loading reset on 404/400/reject, correct unified URL+kind+param, old-vs-new gate, `resolveNumericId` undefined for appId-only DO). Gates: typecheck 0, lint 0 (15 pre-existing warns), test 179 files/2015 pass. Live BEFORE proof: `e2e/scripts/verify-do-hang.mjs` → TR-004 `rendered=false` after 25s. AFTER verification post-deploy (orchestrator). Supersedes duplicate UX-WALK-2026-05-29-06 / 4K-walk C1. |
 
 ## UU — UX polish on stale-URL landings (2026-05-31)
 
@@ -3649,3 +3649,61 @@ resources are bespoke `/v2/`.
 | **APISIMP-EMPTY-BODIES-BATCH-14** | Add RFC 7807 `ProblemJson` bodies to 12 empty-body 4xx responses in the misc-small cluster (6 files): `PublicationsListRest.java` (3), `DataObjectRdfRest.java` (3), `DmpSnippetV2Rest.java` (3), `DataObjectBatchV2Rest.java` (1), `SemanticAnnotationV2Rest.java` (1), `CollectionDQRRest.java` (1). Add `problem()` helper + PT constants per file. AC: no empty-body 4xx in these 6 files; `mvn verify -pl backend` green. | S | queued | `v2/publish/resources/PublicationsListRest.java`; `v2/dataobject/resources/DataObjectRdfRest.java`; `v2/fair/resources/DmpSnippetV2Rest.java`; `v2/dataobject/resources/DataObjectBatchV2Rest.java`; `v2/annotations/resources/SemanticAnnotationV2Rest.java`; `v2/quality/resources/CollectionDQRRest.java`; apisimp-sweep-2026-06-13-fire18 §Finding6 |
 | **APISIMP-EMPTY-BODIES-BATCH-15** | Add RFC 7807 `ProblemJson` bodies to 14 empty-body 4xx responses in the admin/me cluster (7 files): `AdminUserGitCredentialRest.java` (4), `MeRoleInRest.java` (3), `MePreferencesRest.java` (2), `NotificationTransportRest.java` (2), `JupyterConfigPublicRest.java` (1), `AdminUserOrcidRest.java` (1), `AiAdminRest.java` (1). Add `problem()` helper + PT constants per file. AC: no empty-body 4xx in these 7 files; `mvn verify -pl backend` green. | S | queued | `v2/admin/users/AdminUserGitCredentialRest.java`; `v2/me/resources/MeRoleInRest.java`; `v2/users/resources/MePreferencesRest.java`; `v2/notifications/transport/resources/NotificationTransportRest.java`; `v2/admin/jupyter/resources/JupyterConfigPublicRest.java`; `v2/admin/users/AdminUserOrcidRest.java`; `plugins/ai/.../AiAdminRest.java`; apisimp-sweep-2026-06-13-fire18 §Finding7 |
 | **APISIMP-EMPTY-BODIES-BATCH-16** | Add RFC 7807 `ProblemJson` bodies to 47 empty-body 4xx responses in the plugin cluster (8 files): `VideoAnnotationRest.java` (12), `VideoStreamReferenceV2Rest.java` (10), `MeCredentialsRest.java` (9), `SpatialPromoteRest.java` (5), `GitReferenceRest.java` (5), `WikiWriterRest.java` (3), `AasShellsRest.java` (2), `AiAdminRest.java` (1). Add `problem()` helper + PT constants per plugin file. AC: no empty-body 4xx in these 8 plugin files; `mvn verify` (full + plugins) green. | M | queued | `plugins/video/.../VideoAnnotationRest.java`; `VideoStreamReferenceV2Rest.java`; `plugins/git/.../MeCredentialsRest.java`; `plugins/spatiotemporal/.../SpatialPromoteRest.java`; `plugins/git/.../GitReferenceRest.java`; `plugins/wiki-writer/.../WikiWriterRest.java`; `plugins/aas/.../AasShellsRest.java`; apisimp-sweep-2026-06-13-fire18 §Finding8 |
+
+### UIVERIFY — feature verification + dual-doc program (2026-06-13)
+
+SSOT inventory: `aidocs/agent-findings/ui-feature-inventory-2026-06-13.md`.
+Four row families per feature: `PLACEHOLDER-*` (replace stub with real UI),
+`UIVERIFY-*` (Playwright 4K+1920 e2e + screenshots proving it works),
+`DOC-BASIC-*` (`docs/help/<f>.md`, researcher/basic mode), `DOC-ADV-*`
+(`docs/reference/<f>.md`, inner workings + API/advanced mode). Hourly dispatcher
+picks these up. Terse by design.
+
+| ID | Scope | Size | First-reference |
+|---|---|---|---|
+| **PLACEHOLDER-sparql** | Replace SPARQL playground impl-status banner with real query editor + result table (backend live, 401/repo-scoped). | M | `frontend/pages/semantic/sparql/index.vue`; `GET/POST /v2/semantic/{repoAppId}/sparql` |
+| **PLACEHOLDER-shapes-render** | Replace shapes/render banner with real binding-projection UI; appId-picker (no urdfUrl). | M | `frontend/pages/shapes/render.vue`; `POST /v2/shapes/render` (405) |
+| **PLACEHOLDER-shapes-validate** | Replace SHACL-validate banner with real data-graph + shape-graph editor + report. | M | `frontend/pages/shapes/validate.vue`; `POST /v2/shapes/validate` (405) |
+| **PLACEHOLDER-form-preview** | Replace full-stub with real template-form preview tool. | M | `frontend/pages/tools/form-preview.vue` |
+| **PLACEHOLDER-materialize-mapping** | Replace full-stub with real mapping-materialize tool. | M | `frontend/pages/tools/materialize-mapping.vue` |
+| **PLACEHOLDER-video-container** | Replace placeholder video container page with real player + annotation surface. | M | `frontend/pages/containers/video/[containerId]/index.vue` |
+| **PLACEHOLDER-hdf-container** | Replace HDF browser stub with real HSDS dataset tree (download already works). | M | `frontend/pages/containers/hdf/[containerId]/index.vue`; A5 |
+| **PLACEHOLDER-channel-annotations** | Replace ChannelAnnotationsPane stub with real per-channel annotation CRUD (backend shipped). | S | `frontend/components/container/timeseries/ChannelAnnotationsPane.vue`; TS-SEMANTIC-REST |
+| **PLACEHOLDER-vocabularies** | Replace vocabularies-browser placeholder with real predicate listing per repo. | S | `frontend/pages/semantic/vocabularies/index.vue`; `GET /v2/admin/semantic/ontologies` |
+| **PLACEHOLDER-mffd-process-chain** | Replace MFFD process-chain admin placeholder with real DAG view. | M | `frontend/pages/admin/mffd-process-chain.vue` |
+| **PLACEHOLDER-afp-thermo-overlay** | Replace AFP-thermo overlay placeholder with real thermal-trail render (JEC demo). | M | `frontend/components/mffd/AfpThermoOverlayPlaceholder.vue` |
+| **PLACEHOLDER-file-migration** | Replace file-migration admin fragment stub with real storage-move UI (backend FS1e shipped). | S | placeholderRegistry `file-migration`; `GET /v2/admin/files/migrate/status` |
+| **PLACEHOLDER-ai-config** | Build admin AI-config pane (designed; blocked on AI1a UI). | M | placeholderRegistry `ai-config`; `/v2/admin/ai/capabilities` |
+| **PLACEHOLDER-ai-settings** | Build per-user AI-settings profile pane (designed). | S | placeholderRegistry `ai-settings` |
+| **PLACEHOLDER-backup-config** | Build backup-config admin pane (designed; PG-COLLAPSE-002). | M | placeholderRegistry `backup` |
+| **PLACEHOLDER-thermography-canvas** | Replace ThermographyCanvas placeholder with real frame renderer. | S | `frontend/components/shapes/ThermographyCanvas.vue` |
+| **MISSING-aas-ui** | Build AAS plugin frontend surface (0 UI files today): reference create+edit+delete+list + submodel view. | M | `plugins/aas/`; `AasShellsRest.java` |
+| **MISSING-scene-graph-index** | Add `/scene-graphs` index route + Tools-grid tile (player exists at deep URL only). | S | `frontend/pages/scene-graphs/`; SCENEGRAPH-NAV-02 |
+| **UIVERIFY-dataobject-detail** | Playwright e2e (4K+1920) for DO detail once the spinner-hang fix lands; proves the most-used page renders. | S | `frontend/pages/.../dataobjects/[dataObjectId]/index.vue`; B1 |
+| **UIVERIFY-ts-container** | Playwright e2e (4K+1920) for TS container; assert chart legend doesn't clip long 5-tuple labels. | S | `frontend/pages/containers/timeseries/[containerId]/index.vue` |
+| **UIVERIFY-collections** | Playwright e2e (4K+1920) + screenshots for collections list + detail. | S | `frontend/pages/collections/` |
+| **UIVERIFY-references-all** | Playwright e2e per reference kind (file/bundle/ts/structured/video/spatial): create+edit+delete+list. | M | data-references components |
+| **UIVERIFY-tools-cluster** | Playwright e2e for sparql/shapes-render/shapes-validate/snapshot-diff once real UIs land. | M | `frontend/pages/tools/`, `/shapes/`, `/semantic/sparql` |
+| **UIVERIFY-admin-panes** | Playwright e2e (4K+1920) for each admin pane (plugins/features/audit/sql-ts/instance-admins/orcid/git/notifications/registry/provenance). | M | `frontend/components/context/admin/` |
+| **UIVERIFY-plugins-authenticated-paths** | Authenticated path-walk resolving the UNKNOWN plugin endpoints (aas/git/spatiotemporal/video/unhide/v1-compat) — confirm live v2 paths + render. | S | `docs/reference/plugins.md`; inventory §UNKNOWN |
+| **DOC-BASIC-sparql** | Write `docs/help/query-with-sparql.md` (researcher basic-mode). | XS | `frontend/pages/semantic/sparql/` |
+| **DOC-BASIC-shapes-render** | Write `docs/help/render-a-view.md`. | XS | `frontend/pages/shapes/render.vue` |
+| **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` |
+| **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` |
+| **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` |
+| **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
+| **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | hdf5 plugin |
+| **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` |
+| **DOC-BASIC-snapshot-diff** | Write `docs/help/compare-snapshots.md`. | XS | `frontend/pages/snapshots/diff.vue` |
+| **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | `frontend/pages/scene-graphs/play/` |
+| **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | `frontend/pages/search/` |
+| **DOC-BASIC-notifications** | Write `docs/help/get-notified.md`. | XS | AdminNotificationsPane |
+| **DOC-ADV-tools-landing** | Write `docs/reference/tools.md` cataloguing every Tools-cluster surface + its endpoint. | S | `frontend/pages/tools/index.vue` |
+| **DOC-ADV-form-preview** | Write `docs/reference/form-preview.md` (template-form materialization internals). | S | `frontend/pages/tools/form-preview.vue` |
+| **DOC-ADV-materialize-mapping** | Write `docs/reference/materialize-mapping.md` (mapping engine + API). | S | `frontend/pages/tools/materialize-mapping.vue` |
+| **DOC-ADV-mffd-process-chain** | Write `docs/reference/mffd-process-chain.md`. | S | `frontend/pages/admin/mffd-process-chain.vue` |
+| **DOC-ADV-aas** | Write `plugins/aas/docs/reference.md` + quickstart + install (three-page rule). | M | `plugins/aas/` |
+| **DOC-ADV-thermography** | Write `plugins/fileformat-thermography/docs/*` (reference+quickstart+install). | M | thermography plugin |
+| **DOC-ADV-ndt-grid** | Write `plugins/vis-ndt-grid/docs/*`. | S | vis-ndt-grid plugin |
+| **DOC-ADV-afp-thermo** | Write `plugins/vis-afp-thermo-overlay/docs/*`. | S | vis-afp-thermo-overlay plugin |
+| **DOC-ADV-spatiotemporal** | Write `plugins/spatiotemporal/docs/*`. | M | spatiotemporal plugin |
