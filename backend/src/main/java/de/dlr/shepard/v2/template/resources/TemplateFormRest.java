@@ -62,9 +62,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Templates")
 public class TemplateFormRest {
 
-  private static final String PT_NOT_FOUND = "/problems/templates.not-found";
-  private static final String PT_CONFLICT = "/problems/templates.conflict";
+  private static final String PT_NOT_FOUND    = "/problems/templates.not-found";
+  private static final String PT_CONFLICT     = "/problems/templates.conflict";
   private static final String PT_UNPROCESSABLE = "/problems/templates.unprocessable";
+  private static final String PT_UNAUTHORIZED = "/problems/templates.unauthorized";
 
   @Inject
   ShepardTemplateDAO templateDAO;
@@ -107,7 +108,7 @@ public class TemplateFormRest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED.getStatusCode(), null);
     }
 
     Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(templateAppId);

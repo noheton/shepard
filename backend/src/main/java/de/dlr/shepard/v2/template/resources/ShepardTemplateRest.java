@@ -57,8 +57,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Templates")
 public class ShepardTemplateRest {
 
-  private static final String PT_BAD_REQUEST = "/problems/templates.bad-request";
-  private static final String PT_NOT_FOUND   = "/problems/templates.not-found";
+  private static final String PT_BAD_REQUEST  = "/problems/templates.bad-request";
+  private static final String PT_NOT_FOUND    = "/problems/templates.not-found";
+  private static final String PT_UNAUTHORIZED = "/problems/templates.unauthorized";
 
   @Inject
   ShepardTemplateDAO dao;
@@ -88,7 +89,7 @@ public class ShepardTemplateRest {
     @DefaultValue("false") @QueryParam("includeRetired") boolean includeRetired,
     @Context SecurityContext securityContext
   ) {
-    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     boolean effInclude = includeRetired && securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
     List<ShepardTemplateIO> rows = dao.list(kind, effInclude).stream().map(ShepardTemplateIO::from).toList();
     return Response.ok(rows).build();
@@ -112,9 +113,9 @@ public class ShepardTemplateRest {
     @DefaultValue("false") @QueryParam("flatten") boolean flatten,
     @Context SecurityContext securityContext
   ) {
-    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     Optional<ShepardTemplate> t = dao.findByAppId(appId);
-    if (t.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (t.isEmpty()) return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND, "No template with appId " + appId);
     ShepardTemplate template = t.get();
     ShepardTemplateIO io = ShepardTemplateIO.from(template);
     if (flatten && template.getParentTemplateAppId() != null && !template.getParentTemplateAppId().isBlank()) {
@@ -195,7 +196,7 @@ public class ShepardTemplateRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   public Response patch(@PathParam("appId") String appId, PatchShepardTemplateIO body, @Context SecurityContext securityContext) {
     Optional<ShepardTemplate> existing = dao.findByAppId(appId);
-    if (existing.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (existing.isEmpty()) return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND, "No template with appId " + appId);
     ShepardTemplate prior = existing.get();
     // Validate the body when one is supplied; null body means "no body change" and is fine.
     if (body != null && body.getBody() != null) {
@@ -267,7 +268,7 @@ public class ShepardTemplateRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   public Response retire(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     Optional<ShepardTemplate> existing = dao.findByAppId(appId);
-    if (existing.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (existing.isEmpty()) return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND, "No template with appId " + appId);
     ShepardTemplate t = existing.get();
     t.setRetired(true);
     t.setUpdatedAt(System.currentTimeMillis());
@@ -291,7 +292,7 @@ public class ShepardTemplateRest {
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
     @Context SecurityContext securityContext
   ) {
-    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     return Response.ok(dao.listDistinctTags(kind)).build();
   }
 

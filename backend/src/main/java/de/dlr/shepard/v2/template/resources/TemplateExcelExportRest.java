@@ -69,9 +69,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Templates")
 public class TemplateExcelExportRest {
 
-  private static final String PT_NOT_FOUND = "/problems/templates.not-found";
-  private static final String PT_CONFLICT = "/problems/templates.conflict";
+  private static final String PT_NOT_FOUND    = "/problems/templates.not-found";
+  private static final String PT_CONFLICT     = "/problems/templates.conflict";
   private static final String PT_UNPROCESSABLE = "/problems/templates.unprocessable";
+  private static final String PT_UNAUTHORIZED = "/problems/templates.unauthorized";
+  private static final String PT_FORBIDDEN    = "/problems/templates.forbidden";
 
   @Inject
   ShepardTemplateDAO templateDAO;
@@ -129,7 +131,7 @@ public class TemplateExcelExportRest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED.getStatusCode(), null);
     }
     String caller = securityContext.getUserPrincipal().getName();
 
@@ -185,7 +187,8 @@ public class TemplateExcelExportRest {
     }
 
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Insufficient permission", Response.Status.FORBIDDEN.getStatusCode(),
+          "Caller lacks Read on the DataObject's Collection");
     }
 
     byte[] workbook = exporter.export(descriptor.fields(), dataObject.getAttributes());
