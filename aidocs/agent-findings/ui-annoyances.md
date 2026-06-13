@@ -131,3 +131,28 @@ Auth: flo/flo-demo, 3840×2160.
 - **`PlaceholderImplStatus` footers with backlog rows + design-doc paths**
   render for regular users on `/shapes/render`. Power-user/debug info in
   the default layer.
+
+## 1920×1080 pass — 2026-06-13 (UI-1920 audit)
+
+- **Single-column tool pages stretch to ~1800px at 1920** (and full-bleed at
+  4K). `/semantic/sparql` and `/tools/form-preview` use a bare `<v-container>`
+  whose xl/xxl breakpoint max-width is ~1800px — query text, prose subtitles
+  and single appId pickers run edge-to-edge at >120 chars/line. Fixed in-PR
+  with a `max-width: 1200px` cap (UI-1920-SPARQL-WIDTH / UI-1920-FORM-PREVIEW-WIDTH).
+- **Inconsistent width strategy across tool pages.** `/shapes/render` + `/tools`
+  cap at `2400px` (4K-tuned, `LAYOUT-4K-CENTERED-EMPTY-001`); sparql/form-preview
+  had no cap at all. No single shared "readable tool page" width token.
+- **`/me` profile: large dead left gutter at 1920.** The 2-column flex (Profile
+  nav + content card) starts the content card at x≈675 with ~480px empty space
+  on the far left; the layout was proportioned for a wider canvas. Filed
+  UI-1920-ME-GUTTER.
+- **Full-bleed list rows on Home.** "Shared with me" rows put the collection
+  name at x≈30 and "View →" at x≈1860 — ~1830px of horizontal eye-travel per
+  row at 1920. Filed UI-1920-HOME-WIDEROWS.
+- **TS-container chart legend clips the 3rd 5-tuple label** (`rpm_fuel_pu…`) and
+  packs 3 very long labels in one row with a 1/4 pager. Width-bound, not
+  1920-specific, but acute at 1920. Filed UI-1920-TS-LEGEND.
+- **TR-004 DataObject detail hangs on a perpetual spinner at 1920** (main pane
+  never renders; CONTENTS sidebar shows only "Publications"). Pre-existing
+  plumbing bug (appId/numeric-id seam, matches prior 4K audit C1) — blocked
+  auditing the DO detail layout + the new ActionMenuButton at 1920.

@@ -70,7 +70,12 @@ const showRaw = ref(false);
 </script>
 
 <template>
-  <v-container>
+  <!-- UI-1920-SPARQL-WIDTH: single-column text + query editor. The default
+       v-container max-width is ~1800px at xl/xxl, which stretches query
+       text, prose and the result table to unreadable line-lengths at 1920
+       (and 4K). Cap to a comfortable reading width, centred. No-op at
+       <=1280 where the breakpoint cap is already narrower. -->
+  <v-container style="max-width: 1200px">
     <div class="d-flex flex-column ga-2 mb-4">
       <NuxtLink to="/semantic" class="text-caption">
         <v-icon size="small">mdi-arrow-left</v-icon> Semantic substrate

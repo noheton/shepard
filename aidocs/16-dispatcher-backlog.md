@@ -2087,6 +2087,29 @@ Live regression-sweep dispatch results. Full report:
 | UX-WALK-2026-05-29-07 | Add "Visualize all in 3D" / Trace3D CTA on the TS container page (one click upstream of the current TimeseriesReference-level entry point per `aidocs/platform/98`). Shortens the path for researchers who land on the container first. NICE — not a regression. | S | queued | NICE | Step 6 evidence: no affordance found via `getByRole("button", { name: /trace3d\|3d\|visualize/i })`. |
 | UX-WALK-2026-05-29-08 | "Access" column on `/collections` shows ambiguous `—` for two of three rows. Replace with a controlled vocabulary chip (Open / Shared / Restricted / Closed) — closes one of the FAIR-A surface gaps surfaced in `research-data-manager.md`. | S | **✓ done (2026-06-03)** | MINOR | `feat(UX-WALK-2026-05-29-08): show PermissionType chip in Collections Access column`. New `PermissionTypeChip.vue` (Public→Open/green, PublicReadable→Shared/blue, Private→Restricted/orange) + Vitest test. |
 
+## UI-1920 — the 1920×1080 layout pass (2026-06-13)
+
+Live authenticated Playwright walk at exactly 1920×1080 (the most common
+real-user desktop width; prior walks were 4K + 1440). Full report:
+`aidocs/agent-findings/ui-1920-pass-2026-06-13.md`. Evidence:
+`aidocs/agent-findings/screenshots/ui-1920-2026-06-13/` (fold-clip + full-page
+per page). Re-runnable: `e2e/scripts/ui-1920-walk-2026-06-13.mjs`.
+**Headline:** zero horizontal overflow anywhere at 1920 — the 1920 problems are
+wasted space / over-wide content, not clipping. Two single-column tool-page
+width caps shipped in this PR; everything else filed below.
+
+| ID | Item | Size | Status | Severity | Notes |
+|---|---|---|---|---|---|
+| UI-1920-SPARQL-WIDTH | `/semantic/sparql`: bare `<v-container>` measured **1800px** wide at 1920 — query editor + prose + result table run edge-to-edge at >120 chars/line. Cap the page-root container to a readable width, centred. | XS | **✓ done (2026-06-13, this PR)** | MAJOR | `<v-container style="max-width:1200px">`. No-op at ≤1280 (breakpoint cap already narrower) so cannot regress 1440; improves 1920 + 4K. File: `frontend/pages/semantic/sparql/index.vue`. |
+| UI-1920-FORM-PREVIEW-WIDTH | `/tools/form-preview`: same uncapped `<v-container>` → 1800px; subtitle prose runs edge-to-edge (trailing glyph clips at the right margin) and the single appId picker is a 1860px-wide box. | XS | **✓ done (2026-06-13, this PR)** | MAJOR | `+ style="max-width:1200px"`. File: `frontend/pages/tools/form-preview.vue`. |
+| UI-1920-TOOL-WIDTH-TOKEN | No shared "readable tool width" token: sparql/form-preview had no cap, `/shapes/render` + `/tools` cap at 2400px (4K-tuned, `LAYOUT-4K-CENTERED-EMPTY-001`). Define one `readable-tool` / `data-heavy-tool` width-token pair and apply consistently so the next tool page doesn't re-introduce the 1800px stretch. Folds in the two caps above. | S | queued | MINOR | The inconsistency is the real root cause, not any one page. |
+| UI-1920-ME-GUTTER | `/me` profile: **~480px dead left gutter** at 1920 — the Profile nav floats at x≈190, the content card starts at x≈675; the 2-col shell was proportioned for a wider canvas. The largest single chunk of wasted horizontal space at 1920, and the only strictly-1920-specific finding (works at 4K). | S–M | queued | MAJOR | Screenshot `18-me-profile-*`. Centre/cap the profile shell so nav+content sum to viewport with no leading void. |
+| UI-1920-WIDEROWS | Full-bleed list rows with label-left / actions-right and a large dead middle band: Home "Shared with me" (name x≈30, "View →" x≈1860 → ~1830px eye-travel), TS-container "Referenced by" (label x≈290, action icons x≈1630+ → ~1300px dead band), and likely the DataObject reference panels. The most-repeated 1920 pattern; highest leverage. | M | queued | MAJOR | Screenshots `01-home-*`, `11-ts-container-scrolled-*`. Introduce a shared list-row inner max-width (~1100–1280px centred) or move metadata into the band so it isn't empty. Audit all `v-list` row patterns. |
+| UI-1920-TS-LEGEND | TS-container chart legend packs 3 very long 5-tuple labels in one row and clips the 3rd (`rpm_fuel_pu…`) with a 1/4 pager — the only place a 1920 user loses *information* (channel identity) to layout. | S–M | queued | MINOR | Screenshot `10-ts-container-*`. Truncate-with-tooltip at a char budget; wrap to 2 rows or vertical legend at ≥1920. |
+| UI-1920-SCENEGRAPH-NAV | `/scene-graphs` is a 404 — only `/scene-graphs/play/{templateAppId}` exists, and there's no Scene-graphs tile in the `/tools` grid. Nav gap surfaced during the 1920 walk (sibling to SCENEGRAPH-NAV-01/02). | S | queued | MINOR | Add a `/scene-graphs` index (picker) + a Tools tile. Cross-ref: SCENEGRAPH-NAV-01. |
+| UI-1920-COLLECTIONS-SPARSE | `/collections`: ~100px vertical void between the page header and the search field reads sparse at 1920. | XS | queued | MINOR | Screenshot `02-collections-list-*`. Tighten header→search spacing. |
+| UI-1920-DO-DETAIL-HANG | TR-004 DataObject detail hangs on a perpetual spinner at 1920 (main pane never renders; CONTENTS sidebar shows only "Publications") — blocked auditing the DO detail layout + the new ActionMenuButton at 1920. **Not a layout bug** (appId/numeric-id seam); already tracked. | M | queued | CRITICAL | **Duplicate of UX-WALK-2026-05-29-06 / 4K-walk C1** — re-flagged because no viewport audit can certify the DO detail page until this is fixed. Owner: the appId/numeric-id seam. |
+
 ## UU — UX polish on stale-URL landings (2026-05-31)
 
 Operator reported on 2026-05-31 that `https://shepard.nuclide.systems/collections/1787/dataobjects/1792` rendered a red toast "Error while getDataObject:" and a blank page. The URL was pre-Neo4j-wipe stale (current entities address by UUID v7 appId; the numeric `1787` / `1792` no longer exist). The toast was technically correct but unhelpful. Two rows bundled:
