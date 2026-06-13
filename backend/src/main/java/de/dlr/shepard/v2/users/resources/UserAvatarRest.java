@@ -47,6 +47,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Tag(name = "Me")
 public class UserAvatarRest {
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/user-avatar.unauthorized";
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/user-avatar.bad-request";
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/user-avatar.internal-error";
 
@@ -68,7 +69,8 @@ public class UserAvatarRest {
       @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     }
     if (upload == null || upload.uploadedFile() == null) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing file part",
@@ -87,7 +89,8 @@ public class UserAvatarRest {
 
     User caller = userService.getCurrentUser();
     if (caller == null || caller.getAppId() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     }
 
     File uploadedFile = upload.uploadedFile().toFile();
@@ -112,12 +115,14 @@ public class UserAvatarRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response deleteAvatar(@Context SecurityContext securityContext) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     }
 
     User caller = userService.getCurrentUser();
     if (caller == null || caller.getAppId() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     }
 
     avatarService.delete(caller.getAppId());
