@@ -81,8 +81,10 @@ local.properties
 cypress/videos/
 cypress/screenshots/
 
-# NPM
+# NPM / package managers
 node_modules
+# pnpm lockfile — project uses npm; prevent accidental pnpm-lock.yaml commits
+pnpm-lock.yaml
 
 # Ignore generated client outputs (openapi-generator overwrites these)
 clients/typescript
