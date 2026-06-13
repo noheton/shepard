@@ -74,27 +74,29 @@ public class VideoAnnotationRest {
     String caller
   ) {
     VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(refAppId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
-    if (ref.getDataObject() == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
+    if (ref.getDataObject() == null) return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
 
     String refParentAppId = ref.getDataObject().getAppId();
     if (refParentAppId != null && !refParentAppId.equals(dataObjectAppId)) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
     }
 
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
     return null;
   }
 
   private static Response problem(Response.Status status, String detail) {
     String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
       case BAD_REQUEST -> "urn:shepard:error:validation";
       case NOT_FOUND -> "urn:shepard:error:not-found";
       case CONFLICT -> "urn:shepard:error:conflict";
       case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
-      default -> "urn:shepard:error:validation";
+      default -> "urn:shepard:error:internal";
     };
     return Response.status(status)
       .type("application/problem+json")
@@ -130,7 +132,7 @@ public class VideoAnnotationRest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -178,7 +180,7 @@ public class VideoAnnotationRest {
     }
 
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
     if (gate != null) return gate;
@@ -222,13 +224,13 @@ public class VideoAnnotationRest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Read, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(Response.Status.NOT_FOUND, "VideoAnnotation not found");
     return Response.ok(new VideoAnnotationIO(a)).build();
   }
 
@@ -261,13 +263,13 @@ public class VideoAnnotationRest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(Response.Status.NOT_FOUND, "VideoAnnotation not found");
 
     if (body.getStartSeconds() != null) a.setStartSeconds(body.getStartSeconds());
     if (body.getEndSeconds() != null) a.setEndSeconds(body.getEndSeconds());
@@ -305,13 +307,13 @@ public class VideoAnnotationRest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(Response.Status.NOT_FOUND, "VideoAnnotation not found");
     annotationDAO.unlinkAndDelete(refAppId, a);
     return Response.noContent().build();
   }

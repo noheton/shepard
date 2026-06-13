@@ -101,7 +101,7 @@ public class VideoStreamReferenceV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     if (upload == null || upload.uploadedFile() == null) {
       return Response.status(Response.Status.BAD_REQUEST)
@@ -116,10 +116,10 @@ public class VideoStreamReferenceV2Rest {
     }
 
     Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
-    if (doOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (doOgmId == null) return problem(Response.Status.NOT_FOUND, "DataObject not found");
 
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
 
     String refName = (name != null && !name.isBlank()) ? name : upload.fileName();
@@ -135,7 +135,7 @@ public class VideoStreamReferenceV2Rest {
       );
       return Response.status(Response.Status.CREATED).entity(new VideoStreamReferenceIO(created)).build();
     } catch (jakarta.ws.rs.NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (StorageNotInstalledException ex) {
       return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(ex.getMessage()).build();
     } catch (StorageException ex) {
@@ -195,10 +195,10 @@ public class VideoStreamReferenceV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
 
     Response gate = checkParentAndAccess(ref, dataObjectAppId, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -282,6 +282,21 @@ public class VideoStreamReferenceV2Rest {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
   }
 
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
+  }
+
   /**
    * Validate that the reference's parent DataObject matches the URL's
    * {@code dataObjectAppId} and that the caller has the required access.
@@ -295,14 +310,14 @@ public class VideoStreamReferenceV2Rest {
     String caller
   ) {
     if (ref.getDataObject() == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
     }
     String refParentAppId = ref.getDataObject().getAppId();
     if (refParentAppId != null && !refParentAppId.equals(dataObjectAppId)) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
     return null;
   }

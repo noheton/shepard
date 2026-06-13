@@ -93,7 +93,7 @@ public class SpatialPromoteRest {
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
     if (fileReferenceAppId == null || fileReferenceAppId.isBlank()) {
       return Response.status(Response.Status.BAD_REQUEST)
         .type("application/problem+json")
@@ -109,14 +109,14 @@ public class SpatialPromoteRest {
     // Permission gate: Write on the parent DataObject of the source FileReference.
     FileReference fileRef = singletonFileReferenceService.getByAppId(fileReferenceAppId);
     if (fileRef == null || fileRef.isDeleted()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "FileReference not found");
     }
     DataObject parent = fileRef.getDataObject();
     if (parent == null || parent.getAppId() == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "DataObject not found");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(parent.getAppId(), AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
 
     try {
@@ -134,7 +134,22 @@ public class SpatialPromoteRest {
           null))
         .build();
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     }
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
+      .build();
   }
 }
