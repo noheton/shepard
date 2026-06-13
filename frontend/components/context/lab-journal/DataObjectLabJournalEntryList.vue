@@ -18,20 +18,31 @@ const entries = ref<LabJournalEntry[] | undefined>(undefined);
 const userRoles = ref<Roles | undefined>(undefined);
 
 async function fetchLabJournalEntries(dataObjectId: number | undefined) {
-  if (dataObjectId) {
-    useShepardApi(LabJournalEntryApi)
-      .value.getLabJournalsByCollection({ dataObjectId })
-      .then(response => {
-        entries.value = response;
-        emit("numberOfEntriesChanged", entries.value.length);
-      })
-      .catch(error => {
-        handleError(error, "getLabJournalsByCollection");
-      });
+  // v1 lab-journal needs the numeric id; appId-only DataObjects (post-reset)
+  // resolve to undefined. Fail soft to an empty panel instead of an infinite
+  // spinner. Proper appId-keyed v2 wiring tracked as UI-DO-LABJOURNAL-V2.
+  if (!dataObjectId) {
+    entries.value = [];
+    return;
   }
+  useShepardApi(LabJournalEntryApi)
+    .value.getLabJournalsByCollection({ dataObjectId })
+    .then(response => {
+      entries.value = response;
+      emit("numberOfEntriesChanged", entries.value.length);
+    })
+    .catch(error => {
+      entries.value = [];
+      handleError(error, "getLabJournalsByCollection");
+    });
 }
 
 async function fetchRoles() {
+  // getCollectionRoles is a v1 numeric-id fallback; skip when the numeric id is
+  // unavailable so the page does not surface a spurious null-collectionId toast.
+  if (!props.collectionId) {
+    return;
+  }
   useShepardApi(CollectionApi)
     .value.getCollectionRoles({ collectionId: props.collectionId })
     .then(response => {
