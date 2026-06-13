@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -85,6 +86,14 @@ public class SnapshotListRest {
   @Inject
   EntityIdResolver entityIdResolver;
 
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /** SNAPSHOT-LIST-1-REST — page envelope. */
   public record SnapshotListPageIO(
     List<SnapshotListItemIO> items,
@@ -125,7 +134,7 @@ public class SnapshotListRest {
   ) {
     String caller = sc != null && sc.getUserPrincipal() != null
       ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 200);
@@ -138,7 +147,8 @@ public class SnapshotListRest {
       try {
         entityIdResolver.resolveLong(collectionAppId);
       } catch (NotFoundException nfe) {
-        return Response.status(Response.Status.NOT_FOUND).build();
+        return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+            "No Collection with appId '" + collectionAppId + "'.");
       }
       rawPage = snapshotService.listByCollection(collectionAppId, safePage, safeSize);
       total = snapshotService.countByCollection(collectionAppId);

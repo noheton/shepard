@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -64,6 +65,15 @@ public class SnapshotRest {
   @Inject
   EntityIdResolver entityIdResolver;
 
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_FORBIDDEN = "/problems/snapshots.forbidden";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /**
    * Read snapshot metadata.
    *
@@ -89,10 +99,10 @@ public class SnapshotRest {
   public Response read(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
     // Auth gate
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -130,10 +140,10 @@ public class SnapshotRest {
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
   public Response manifest(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -171,10 +181,10 @@ public class SnapshotRest {
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
   public Response delete(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Write, caller);
     if (gate != null) return gate;
@@ -195,16 +205,16 @@ public class SnapshotRest {
    */
   private Response checkCollectionAccess(Snapshot snapshot, AccessType accessType, String caller) {
     if (snapshot.getCollection() == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Snapshot has no associated Collection.");
     }
     long collectionOgmId;
     try {
       collectionOgmId = entityIdResolver.resolveLong(snapshot.getCollection().getAppId());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Root Collection for this Snapshot not found.");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(collectionOgmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks permission on the root Collection.");
     }
     return null;
   }

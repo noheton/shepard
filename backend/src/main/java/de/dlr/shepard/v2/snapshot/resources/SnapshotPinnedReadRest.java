@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -68,6 +69,16 @@ public class SnapshotPinnedReadRest {
   @Inject
   EntityIdResolver entityIdResolver;
 
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_FORBIDDEN = "/problems/snapshots.forbidden";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+  private static final String PT_CONFLICT = "/problems/snapshots.ownership-conflict";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /**
    * Returns the DataObject {@code appId} list captured in a snapshot.
    *
@@ -106,7 +117,7 @@ public class SnapshotPinnedReadRest {
   ) {
     // Gate 1 — authentication
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     // Gate 2 — collection exists; Gate 3 — caller has Read permission
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
@@ -114,14 +125,16 @@ public class SnapshotPinnedReadRest {
 
     // Gate 4 — snapshot exists
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+        "No Snapshot with appId '" + snapshotAppId + "'.");
 
     // Gate 5 — snapshot belongs to this collection (ownership check)
     if (
       snapshot.getCollection() == null ||
       !collectionAppId.equals(snapshot.getCollection().getAppId())
     ) {
-      return Response.status(Response.Status.CONFLICT).build();
+      return problem(PT_CONFLICT, "Conflict", Response.Status.CONFLICT,
+          "Snapshot '" + snapshotAppId + "' does not belong to Collection '" + collectionAppId + "'.");
     }
 
     // Load DataObject appIds from the snapshot entries
@@ -141,17 +154,19 @@ public class SnapshotPinnedReadRest {
    */
   private Response checkAccess(String collectionAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+          "Caller lacks Read permission on the Collection.");
     }
     return null;
   }
