@@ -24,13 +24,25 @@ interface DataObjectDataReferencesTableProps {
 const props = defineProps<DataObjectDataReferencesTableProps>();
 const router = useRouter();
 
-// ── Legacy annotation dialog (v1 AnnotatedReference path — numeric id) ───────
-const selectedReferenceId = ref<number>(0);
+// ── Legacy-kind annotation dialog (now v2 appId path) ────────────────────────
+// The "legacy" TimeSeries / File Bundle / Structured Data rows are annotated
+// via the same v2 /v2/annotations surface as the new kinds — keyed by the
+// reference's appId + concrete kind, not the dropped numeric id.
+const selectedReferenceAppId = ref<string>("");
+const selectedReferenceKind = ref<string>("DataObjectReference");
 const showAddAnnotationDialog = ref(false);
 
-function openAddAnnotationDialog(dataTableElementId: number) {
-  selectedReferenceId.value = dataTableElementId;
+function openAddAnnotationDialog(appId: string, kind: string) {
+  selectedReferenceAppId.value = appId;
+  selectedReferenceKind.value = kind;
   showAddAnnotationDialog.value = true;
+}
+
+function legacyKindFor(type: RefKind): string {
+  if (type === "TimeSeries") return "TimeseriesReference";
+  if (type === "File Bundle") return "FileReference";
+  if (type === "Structured Data") return "StructuredDataReference";
+  return "DataObjectReference";
 }
 
 // ── SEMA-V6 annotation dialog (appId path — new kinds) ───────────────────────
@@ -421,11 +433,12 @@ function formatDuration(seconds: number | null | undefined): string {
         <template v-if="!NEW_KINDS.has(item.type)">
           <DataObjectDataMetaCell :meta="value" />
           <SemanticAnnotationList
-            :key="value.id"
+            v-if="value.appId"
+            :key="value.appId"
             :can-delete="isAllowedToEditCollection"
             :limit="4"
             :annotated="
-              new AnnotatedReference(collectionId, dataObjectId, value.id!)
+              new AnnotatedReference(value.appId, legacyKindFor(item.type))
             "
           />
         </template>
@@ -493,11 +506,11 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-eye-outline"
             @click="() => showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
           />
-          <!-- Legacy kinds: legacy annotation dialog -->
+          <!-- Legacy kinds: annotation dialog (v2 appId path) -->
           <ActionButton
-            v-if="isAllowedToEditCollection && !NEW_KINDS.has(item.type) && item.actions.elementId != null"
+            v-if="isAllowedToEditCollection && !NEW_KINDS.has(item.type) && item.meta.appId"
             icon="mdi-tag-outline"
-            @click="() => openAddAnnotationDialog(item.actions.elementId!)"
+            @click="() => openAddAnnotationDialog(item.meta.appId!, legacyKindFor(item.type))"
           />
           <!-- New kinds: SEMA-V6 annotation dialog -->
           <ActionButton
@@ -586,16 +599,12 @@ function formatDuration(seconds: number | null | undefined): string {
     </DataTable>
   </div>
 
-  <!-- Legacy annotation dialog (v1 path, numeric id) -->
+  <!-- Legacy-kind annotation dialog (v2 appId path) -->
   <AddAnnotationDialog
-    v-if="showAddAnnotationDialog"
+    v-if="showAddAnnotationDialog && selectedReferenceAppId"
     v-model:show-dialog="showAddAnnotationDialog"
     :annotated="
-      new AnnotatedReference(
-        props.collectionId,
-        props.dataObjectId,
-        selectedReferenceId,
-      )
+      new AnnotatedReference(selectedReferenceAppId, selectedReferenceKind)
     "
   />
 

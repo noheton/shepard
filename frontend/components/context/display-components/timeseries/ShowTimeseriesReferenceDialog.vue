@@ -410,7 +410,7 @@ const useVirtualScroll = computed(
                   :annotated-type="
                     timeseriesMetrics[getTimeseriesKey(ts)]?.timeseriesObj
                       ? new AnnotatedTimeseries(timeseriesMetrics[getTimeseriesKey(ts)]!.timeseriesObj!)
-                      : new AnnotatedReference(collectionId, dataObjectId, props.timeseriesReferenceId)
+                      : new AnnotatedReference(props.timeseriesReference?.appId ?? '', 'TimeseriesReference')
                   "
                 />
               </div>

@@ -28,7 +28,8 @@ interface DataObjectRelationshipsTable {
 
 const props = defineProps<DataObjectRelationshipsTable>();
 
-const selectedReferenceId = ref<number | undefined>(0);
+const selectedReferenceAppId = ref<string>("");
+const selectedReferenceKind = ref<string>("DataObjectReference");
 const selectedTableElement = ref<RelationshipTableElement | undefined>();
 const showAddAnnotationDialog = ref(false);
 const showDeleteRelationshipDialog = ref<boolean>(false);
@@ -48,7 +49,10 @@ function openAddAnnotationDialog(relationshipElementId: number) {
     case "Link":
     case "Collection Reference":
     case "Data Object Reference":
-      selectedReferenceId.value = relationShipElement.id;
+      selectedReferenceAppId.value =
+        relationShipElement.information.referenceAppId ?? "";
+      selectedReferenceKind.value =
+        relationShipElement.information.referenceKind ?? "DataObjectReference";
       break;
     default:
       throw new Error("Unsupported relationship type");
@@ -188,10 +192,13 @@ const headers = [
     >
       <TypeCell :value="value.type" />
       <SemanticAnnotationList
-        v-if="value.annotatable"
+        v-if="value.annotatable && value.referenceAppId"
         :can-delete="isAllowedToEditCollection"
         :annotated="
-          new AnnotatedReference(collectionId, dataObjectId, value.referenceId)
+          new AnnotatedReference(
+            value.referenceAppId,
+            value.referenceKind ?? 'DataObjectReference',
+          )
         "
       />
     </template>
@@ -243,14 +250,10 @@ const headers = [
   </div>
 
   <AddAnnotationDialog
-    v-if="showAddAnnotationDialog"
+    v-if="showAddAnnotationDialog && selectedReferenceAppId"
     v-model:show-dialog="showAddAnnotationDialog"
     :annotated="
-      new AnnotatedReference(
-        props.collectionId,
-        props.dataObjectId,
-        selectedReferenceId!,
-      )
+      new AnnotatedReference(selectedReferenceAppId, selectedReferenceKind)
     "
   />
 

@@ -554,12 +554,13 @@ useHead({
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
-                  v-if="isAllowedToEditCollection && collection.id"
-                  :annotated="new AnnotatedCollection(collection.id)"
+                  v-if="isAllowedToEditCollection && collection.appId"
+                  :annotated="new AnnotatedCollection(collection.appId)"
                 />
               </div>
               <SemanticAnnotationList
-                :annotated="new AnnotatedCollection(collection.id)"
+                v-if="collection.appId"
+                :annotated="new AnnotatedCollection(collection.appId)"
                 :can-delete="!!isAllowedToEditCollection"
               />
             </section>

@@ -150,6 +150,9 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
   if (instanceOfTimeseriesReference(ref)) {
     return {
       id: ref.id,
+      // V2-only annotation path: the reference's appId drives the v2
+      // /v2/annotations surface (legacy numeric id only used by still-v1 cells).
+      appId: (ref as unknown as { appId?: string }).appId,
       containerId: ref.timeseriesContainerId,
       ...mapNameAndAvailability(ref),
       interval: `${toShortDateTimeString(parseDateFromNanos(ref.start))} - ${toShortDateTimeString(parseDateFromNanos(ref.end))}`,
@@ -160,6 +163,7 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
   if (instanceOfFileReference(ref))
     return {
       id: ref.id,
+      appId: (ref as unknown as { appId?: string }).appId,
       containerId: ref.fileContainerId,
       ...mapNameAndAvailability(ref),
       fileCount: ref.fileOids.length,
@@ -167,6 +171,7 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
   if (instanceOfStructuredDataReference(ref))
     return {
       id: ref.id,
+      appId: (ref as unknown as { appId?: string }).appId,
       containerId: ref.structuredDataContainerId,
       ...mapNameAndAvailability(ref),
       payloadCount: ref.structuredDataOids.length,

@@ -15,6 +15,10 @@ export type RelationshipTableElement = {
       | DataObjectReferenceType
       | CollectionReferenceType;
     referenceId: number;
+    /** V2-only annotation path: the reference node's appId (drives /v2/annotations). */
+    referenceAppId?: string;
+    /** Concrete reference kind for the v2 polymorphic annotation subject. */
+    referenceKind?: string;
     annotatable: boolean;
   };
   created: {
@@ -24,6 +28,10 @@ export type RelationshipTableElement = {
   actions: {
     elementId: number;
     annotatable: boolean;
+    /** V2-only annotation path: the reference node's appId (drives /v2/annotations). */
+    referenceAppId?: string;
+    /** Concrete reference kind for the v2 polymorphic annotation subject. */
+    referenceKind?: string;
     /** REF-EDIT-6: UUID v7 appId, present only for URIReference rows. */
     uriRefAppId?: string;
     /** REF-EDIT-6: Current name / uri / relationship for pre-filling the edit dialog. */

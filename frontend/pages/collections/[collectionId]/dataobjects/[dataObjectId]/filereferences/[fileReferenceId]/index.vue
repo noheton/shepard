@@ -212,9 +212,6 @@ watch(fileReference, () => {
                 />
                 <OpenIn3dViewButton
                   :file-reference-name="fileReference.name"
-                  :collection-id="collectionNumericId ?? 0"
-                  :data-object-id="dataObjectNumericId ?? 0"
-                  :file-reference-id="fileReferenceNumericId ?? 0"
                   :file-reference-app-id="fileReference.appId"
                 />
               </v-col>
@@ -222,12 +219,9 @@ watch(fileReference, () => {
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
+                  v-if="fileReference?.appId"
                   :annotated="
-                    new AnnotatedReference(
-                      collectionNumericId ?? 0,
-                      dataObjectNumericId ?? 0,
-                      fileReferenceNumericId ?? 0,
-                    )
+                    new AnnotatedReference(fileReference.appId, 'FileReference')
                   "
                   :can-delete="!!isAllowedToEditCollection"
                 />
@@ -319,10 +313,10 @@ watch(fileReference, () => {
       @confirmed="deleteFileReference"
     />
     <AddAnnotationDialog
-      v-if="showAddAnnotationDialog"
+      v-if="showAddAnnotationDialog && fileReference?.appId"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
-        new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, fileReferenceNumericId ?? 0)
+        new AnnotatedReference(fileReference.appId, 'FileReference')
       "
     />
     <FileContentViewerDialog

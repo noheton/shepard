@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 32 |
 | `idea` | 13 |
 | `feature-defined` | 131 |
-| `audited-by-personas` | 74 |
+| `audited-by-personas` | 75 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
 | `deployed` | 74 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **438** |
+| **total docs** | **439** |
 | **UNTAGGED** | **0** |
 
 ## fragment (52)
@@ -48,13 +48,13 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/00-synergy-index.md`](agent-findings/00-synergy-index.md) | 00 — Synergy index | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-10.md`](agent-findings/apisimp-sweep-2026-06-12-10.md) | APISIMP Sweep Pass 10 — 2026-06-12 | 2026-06-12 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-10.md`](agent-findings/apisimp-sweep-2026-06-12-10.md) | APISIMP Sweep Pass 10 — 2026-06-12 | 2026-06-12 | 2026-06-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-3.md`](agent-findings/apisimp-sweep-2026-06-12-3.md) | APISIMP sixth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-4.md`](agent-findings/apisimp-sweep-2026-06-12-4.md) | APISIMP seventh-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-5.md`](agent-findings/apisimp-sweep-2026-06-12-5.md) | APISIMP eighth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-6.md`](agent-findings/apisimp-sweep-2026-06-12-6.md) | apisimp-sweep-2026-06-12-6 | 2026-06-12 | — |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-13-12.md`](agent-findings/apisimp-sweep-2026-06-13-12.md) | APISIMP sweep pass 12 — 2026-06-13 | 2026-06-13 | — |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-13.md`](agent-findings/apisimp-sweep-2026-06-13.md) | APISIMP Sweep Pass 11 — 2026-06-13 | 2026-06-13 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-6.md`](agent-findings/apisimp-sweep-2026-06-12-6.md) | apisimp-sweep-2026-06-12-6 | 2026-06-12 | 2026-06-13 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-13-12.md`](agent-findings/apisimp-sweep-2026-06-13-12.md) | APISIMP sweep pass 12 — 2026-06-13 | 2026-06-13 | 2026-06-13 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-13.md`](agent-findings/apisimp-sweep-2026-06-13.md) | APISIMP Sweep Pass 11 — 2026-06-13 | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
@@ -291,7 +291,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (74)
+## audited-by-personas (75)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -361,6 +361,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/v15-review-reluctant-senior.md`](agent-findings/v15-review-reluctant-senior.md) | v15 import — review from the reluctant senior researcher | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15.1-implementation.md`](agent-findings/v15.1-implementation.md) | v15.1 MFFD-import — implementation report | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/v15.2-implementation.md`](agent-findings/v15.2-implementation.md) | v15.2 — Smart warmup phase (IMPORT-W1/W2/W3) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/v2-ui-conformance-2026-06-13.md`](agent-findings/v2-ui-conformance-2026-06-13.md) | Strict v2 UI conformance sweep — 2026-06-13 | 2026-06-13 | — |
 | [`aidocs/agent-findings/vis-plugin-survey-addendum-cad-fem.md`](agent-findings/vis-plugin-survey-addendum-cad-fem.md) | Visualization plugin survey — addendum: CAD + FEM | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/vis-plugin-survey.md`](agent-findings/vis-plugin-survey.md) | Visualization plugin survey | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 | 2026-05-26 |
@@ -401,11 +402,11 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-13 |
-| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-12 |
+| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-13 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-06-04 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-12 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-13 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |

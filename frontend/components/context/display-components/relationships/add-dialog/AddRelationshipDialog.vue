@@ -19,7 +19,15 @@ import {
   type ReferenceData,
 } from "./relationshipTypes";
 
-const props = defineProps<{ collectionId: number; dataObjectId: number }>();
+// `collectionId` / `dataObjectId` are the numeric ids the dispatcher-owned
+// REF-API-MIGRATION relationship calls still require (V2UI-REF-CREATE-V2).
+// `dataObjectAppId` is the v2 handle used for the template-prefill annotation
+// pull (V2-only path).
+const props = defineProps<{
+  collectionId: number;
+  dataObjectId: number;
+  dataObjectAppId?: string;
+}>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -38,8 +46,7 @@ const uriPlaceholder = ref<string | undefined>(undefined);
 
 async function loadUriRelationshipHint(): Promise<void> {
   const annotations = await fetchReferencePrefillAnnotations(
-    props.collectionId,
-    props.dataObjectId,
+    props.dataObjectAppId ?? "",
   );
   const annotation = findAnnotationByPredicate(
     annotations,

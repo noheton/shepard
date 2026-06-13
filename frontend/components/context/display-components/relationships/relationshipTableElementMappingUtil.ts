@@ -34,6 +34,8 @@ export function mapRelatedEntityToRelationshipTableElement(
     name: mapName(relatedEntity, parentCollectionAppId),
     information: {
       referenceId: relatedEntity.id,
+      referenceAppId: readReferenceAppId(relatedEntity),
+      referenceKind: mapReferenceKind(relatedEntity),
       type: mapType(relatedEntity),
       annotatable: isAnnotatable(relatedEntity),
     },
@@ -44,6 +46,8 @@ export function mapRelatedEntityToRelationshipTableElement(
     actions: {
       elementId: relatedEntity.id,
       annotatable: isAnnotatable(relatedEntity),
+      referenceAppId: readReferenceAppId(relatedEntity),
+      referenceKind: mapReferenceKind(relatedEntity),
       uriRefAppId: uriEntity?.appId ?? (isUriV2 ? relatedEntity.appId : undefined),
       uriRefEditData: uriEntity
         ? {
@@ -181,6 +185,30 @@ function mapType(
     id: entity.referencedCollectionId,
     availability: "available",
   };
+}
+
+/**
+ * V2-only annotation path: the reference node's own appId. Annotatable
+ * relationship rows are CollectionReference / DataObjectReference / URIReference
+ * nodes, all of which carry their appId on the wire (the generated types don't
+ * always expose it, so read defensively).
+ */
+function readReferenceAppId(entity: RelatedEntity): string | undefined {
+  return (entity as unknown as { appId?: string }).appId ?? undefined;
+}
+
+/**
+ * Concrete reference kind for the v2 polymorphic annotation subject. Mirrors
+ * the backend `subjectKind` labels (CollectionReference / DataObjectReference /
+ * URIReference). DataObjects are not annotated via this table.
+ */
+function mapReferenceKind(entity: RelatedEntity): string | undefined {
+  if (instanceOfURIReference(entity) || isURIReferenceV2(entity))
+    return "URIReference";
+  if (instanceOfDataObjectReference(entity)) return "DataObjectReference";
+  if (instanceOfCollectionReference(entity) || isCollectionReferenceV2(entity))
+    return "CollectionReference";
+  return undefined;
 }
 
 function isAnnotatable(entity: RelatedEntity): boolean {

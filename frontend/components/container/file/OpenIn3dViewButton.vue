@@ -29,11 +29,8 @@ import {
 interface Props {
   /** FileReference name — used by the filename eligibility fallback. */
   fileReferenceName: string;
-  /** Numeric ids needed to instantiate `AnnotatedReference`. */
-  collectionId: number;
-  dataObjectId: number;
-  fileReferenceId: number;
-  /** Singleton FileReference appId — the handle the MAPPING_RECIPE binds. */
+  /** Singleton FileReference appId — the handle the MAPPING_RECIPE binds and
+   *  the v2 annotation subject. */
   fileReferenceAppId?: string | null;
 }
 const props = defineProps<Props>();
@@ -46,19 +43,18 @@ const viewDescription = ref("");
 const submitError = ref<string | null>(null);
 const { loading: submitting, createTemplate } = useSceneGraphPlay();
 
-const annotated = computed(
-  () =>
-    new AnnotatedReference(
-      props.collectionId,
-      props.dataObjectId,
-      props.fileReferenceId,
-    ),
+const annotated = computed(() =>
+  props.fileReferenceAppId
+    ? new AnnotatedReference(props.fileReferenceAppId, "FileReference")
+    : null,
 );
 
 async function refreshAnnotations() {
   isLoading.value = true;
   try {
-    annotations.value = await annotated.value.fetchAnnotations();
+    annotations.value = annotated.value
+      ? await annotated.value.fetchAnnotations()
+      : [];
   } catch (e) {
     handleError(e, "fetching 3D-view annotations");
     annotations.value = [];

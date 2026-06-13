@@ -74,7 +74,9 @@ const collectionAppId = computed<string | null>(() => {
 // hides this because it's fired in render scope where the auth
 // data is typically already settled — our card lives slightly
 // earlier in the page composition.
-const annotatedCollection = new AnnotatedCollection(props.collection.id);
+const annotatedCollection = new AnnotatedCollection(
+  (props.collection as unknown as { appId?: string }).appId ?? "",
+);
 const semanticAnnotationCount = ref<number | null>(null);
 async function fetchAnnotationCount() {
   try {
