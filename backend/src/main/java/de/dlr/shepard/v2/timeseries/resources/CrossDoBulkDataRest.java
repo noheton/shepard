@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.timeseries.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -59,6 +60,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Timeseries cross-DataObject view")
 public class CrossDoBulkDataRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/timeseries-cross-do.unauthorized";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /** Default LTTB target rows per series (per request body), per the GAP-2 brief. */
   static final int DEFAULT_DOWNSAMPLE_TO = 500;
 
@@ -108,7 +116,7 @@ public class CrossDoBulkDataRest {
     final String caller = sc != null && sc.getUserPrincipal() != null
       ? sc.getUserPrincipal().getName()
       : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required");
 
     final int downsampleTo = clampDownsample(body.downsampleTo());
     final long start = body.start();

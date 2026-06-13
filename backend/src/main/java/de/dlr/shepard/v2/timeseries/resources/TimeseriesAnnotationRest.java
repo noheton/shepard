@@ -56,6 +56,10 @@ public class TimeseriesAnnotationRest {
 
   // ─── helpers ─────────────────────────────────────────────────────────────
 
+  private static final String PT_UNAUTHORIZED = "/problems/timeseries-annotations.unauthorized";
+  private static final String PT_NOT_FOUND    = "/problems/timeseries-annotations.not-found";
+  private static final String PT_FORBIDDEN    = "/problems/timeseries-annotations.forbidden";
+
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
@@ -67,14 +71,14 @@ public class TimeseriesAnnotationRest {
 
   private Response checkAccess(String refAppId, AccessType type, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required");
     TimeseriesReference ref = resolveRef(refAppId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "TimeseriesReference not found: " + refAppId);
     var dataObject = ref.getDataObject();
-    if (dataObject == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObject == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Parent DataObject of reference not found");
     // DataObjects have no own :Permissions node — walk up to the parent Collection.
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObject.getAppId(), type, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Insufficient permission on parent DataObject");
     }
     return null;
   }
@@ -212,7 +216,7 @@ public class TimeseriesAnnotationRest {
     var gate = checkAccess(refAppId, AccessType.Read, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
     return Response.ok(new TimeseriesAnnotationIO(a)).build();
   }
 
@@ -253,7 +257,7 @@ public class TimeseriesAnnotationRest {
     var gate = checkAccess(refAppId, AccessType.Write, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
 
     if (body.getStartNs() != null) a.setStartNs(body.getStartNs());
     if (body.getEndNs() != null) a.setEndNs(body.getEndNs());
@@ -296,7 +300,7 @@ public class TimeseriesAnnotationRest {
     var gate = checkAccess(refAppId, AccessType.Write, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
     annotationDAO.unlinkAndDelete(refAppId, a);
     return Response.noContent().build();
   }

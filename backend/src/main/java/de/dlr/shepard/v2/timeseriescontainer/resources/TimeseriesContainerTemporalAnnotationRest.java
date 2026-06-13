@@ -63,6 +63,8 @@ public class TimeseriesContainerTemporalAnnotationRest {
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
+  private static final String PT_NOT_FOUND = "/problems/timeseries-container-annotations.not-found";
+
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
@@ -177,7 +179,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
   ) {
     containerService.getContainerByAppId(containerAppId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
     return Response.ok(new TimeseriesAnnotationIO(a)).build();
   }
 
@@ -209,7 +211,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
 
     if (body.getStartNs() != null) a.setStartNs(body.getStartNs());
     if (body.getEndNs() != null) a.setEndNs(body.getEndNs());
@@ -247,7 +249,7 @@ public class TimeseriesContainerTemporalAnnotationRest {
     long containerId = containerService.getContainerByAppId(containerAppId).getId();
     containerService.assertIsAllowedToEditContainer(containerId);
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
-    if (a == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
     annotationDAO.unlinkAndDeleteFromContainer(containerId, a);
     return Response.noContent().build();
   }
