@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -447,6 +449,57 @@ class CollectionV2RestTest {
 
     assertEquals(204, r.getStatus());
     verify(collectionService).deleteCollection(COLL_OGM_ID);
+  }
+
+  // ── RFC 7807 problem bodies ───────────────────────────────────────────────
+
+  @Test
+  void getReturns404WithProblemBody() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.get(COLL_APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+    ProblemJson p = assertInstanceOf(ProblemJson.class, r.getEntity());
+    assertEquals(404, p.status());
+    assertNotNull(p.detail());
+  }
+
+  @Test
+  void getReturns401WithProblemBody() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    Response r = resource.get(COLL_APP_ID, securityContext);
+    assertEquals(401, r.getStatus());
+    ProblemJson p = assertInstanceOf(ProblemJson.class, r.getEntity());
+    assertEquals(401, p.status());
+  }
+
+  @Test
+  void getReturns403WithProblemBody() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+      .thenReturn(false);
+    Response r = resource.get(COLL_APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+    ProblemJson p = assertInstanceOf(ProblemJson.class, r.getEntity());
+    assertEquals(403, p.status());
+  }
+
+  @Test
+  void patchReturns404WithProblemBody() {
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.put("description", "new desc");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+    assertEquals(404, r.getStatus());
+    assertInstanceOf(ProblemJson.class, r.getEntity());
+  }
+
+  @Test
+  void deleteReturns404WithProblemBody() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.delete(COLL_APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+    assertInstanceOf(ProblemJson.class, r.getEntity());
   }
 
   // ── route-pinning ─────────────────────────────────────────────────────────

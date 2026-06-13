@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -99,12 +100,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * policy" — every new endpoint lands under {@code /v2/}.
  */
 @Path("/v2/collections")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({ MediaType.APPLICATION_JSON, "application/problem+json" })
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
 @Tag(name = "Collections (v2)")
 public class CollectionV2Rest {
+
+  private static final String PT_NOT_FOUND = "/problems/collection-v2.not-found";
+  private static final String PT_UNAUTHORIZED = "/problems/collection-v2.unauthorized";
+  private static final String PT_FORBIDDEN = "/problems/collection-v2.forbidden";
 
   @Inject
   CollectionService collectionService;
@@ -203,7 +208,7 @@ public class CollectionV2Rest {
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "no Collection with that appId");
 
     Response gate = enforceAccess(ogmId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -312,7 +317,7 @@ public class CollectionV2Rest {
     }
 
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "no Collection with that appId");
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -362,7 +367,7 @@ public class CollectionV2Rest {
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "no Collection with that appId");
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -383,10 +388,15 @@ public class CollectionV2Rest {
 
   private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication required");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN, "caller lacks " + accessType + " permission");
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

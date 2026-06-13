@@ -3360,6 +3360,22 @@ lockstep). `/shepard/api/` upstream byte-compat untouched.
 | **V2CONV-B6-POLISH** | Template editor polish: nested-node-shape picker (compose a `sh:node` child inline rather than pasting an IRI); palette grouping by substrate/ontology; per-row datatype inference from a palette term's range; pre-fill the validate data graph from a real DataObject's RDF (reuse `shaclPrefill`); in-context entry from a Collection/DataObject "create template" affordance (TOOLS-CONTEXT). | M | **✓ shipped 2026-06-04** | Items 1–4 shipped: (1) palette grouped by URI namespace with sticky section headers (`groupPaletteByNamespace`/`paletteGroupLabel` helpers in `useShapePalette.ts`); (2) substrate→datatype heuristic inference on palette pick (`substrateToDatatype`, maps `timescaledb`→`xsd:decimal`, `neo4j`/`postgres`→`xsd:string`) — `garage` stays null (IRI object); (3) sh:node field upgraded to `v-combobox` suggesting shape IRIs from loaded SHAPE_CONSTRAINT templates (`loadNodeShapeOptions` in editor); (4) "Create template" entry added to both `COLLECTION_CONTEXT_TOOLS` and `DATA_OBJECT_CONTEXT_TOOLS` in `toolsContext.ts`, routing to `/admin/templates?newTemplate=1&targetEntityAppId=…&scope=…`. 23 new Vitest tests; toolsContext tests updated. Note: `shaclPrefill` pre-fill not shipped (NICE-TO-HAVE, deferred). |
 | **V2CONV-B7-KIND-DECLARED-SHAPES** | Kinds/formats declare their data + view shapes via the builder (replaces hand-authored `.ttl` for new kinds); ontology-driven create-form generation reads the shape. | M | **✓ shipped 2026-06-04** | `PayloadKind.shapeDescriptor()` default method (returns `ShapeSpec`, null = opt-out); `KindShapeSeeder` (`@ApplicationScoped` StartupEvent observer) iterates `ServiceLoader<PayloadKind>`, compiles non-null specs via `ShaclShapeBuilder.toTurtle()`, seeds idempotent `DATAOBJECT_RECIPE` templates (system tag guards admin-edit, copy-on-write versioning on change); `UrdfKindShapeExample` in-tree proof-of-concept; 7 unit tests in `KindShapeSeederTest`. View-shape seeding deferred to V2CONV-B8. |
 
+## API simplification pipeline — APISIMP (filed 2026-06-13)
+
+Systematic pass adding RFC 7807 `application/problem+json` bodies to every
+`/v2/` endpoint that currently returns a bare `Response.status(…).build()`
+on 4xx. Each batch groups the endpoints by functional cluster (collection,
+import, snapshot, etc.) so the diff is reviewable and each PR is CI-green
+independently. Priority order: collection CRUD (highest traffic) → import
+diagnostics → snapshot → admin config → pagination unify.
+
+Design SSOT: issue #1791 (live pipeline status tracker).
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| **APISIMP-COLLECTION-V2-EMPTY-BODIES** | RFC 7807 bodies for 5 empty 4xx responses in `CollectionV2Rest`: `GET/{PATCH/DELETE}` → 404 (no Collection with that appId); `enforceAccess()` → 401 (unauthenticated) + 403 (lacks permission). Adds `problem()` static helper + 3 problem-type constants + `ProblemJson` import. Test: 5 new `*WithProblemBody` assertions in `CollectionV2RestTest`. | S | **done (2026-06-13)** | This PR. Follows established pattern from `CollectionSceneGraphRest` + `ImportDiagnosticsV2Rest`. No new endpoints, no migration, no config keys. `/v2/` surface only (not frozen v1). |
+| **APISIMP-EMPTY-BODIES-BATCH-6** | Next RFC 7807 sweep — target cluster TBD (data-objects, references, or admin config endpoints). | S | queued | Follows APISIMP-COLLECTION-V2-EMPTY-BODIES. |
+
 ## CI-BASELINE — quarantined pre-existing test failures (filed 2026-06-03)
 
 Pre-existing red baseline on `main` from task #132 ("53 backend test
