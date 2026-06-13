@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.admin.jupyter.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
 import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
 import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
@@ -48,6 +49,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Jupyter")
 public class JupyterConfigPublicRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/jupyter.config.unauthorized";
+
   @Inject
   JupyterConfigService service;
 
@@ -70,9 +73,15 @@ public class JupyterConfigPublicRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getConfig(@Context SecurityContext sc) {
     if (sc.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required",
+          Response.Status.UNAUTHORIZED, "Authentication is required to read the JupyterHub config.");
     }
     JupyterConfig cfg = service.current();
     return Response.ok(JupyterConfigIO.from(cfg, service.getDefaultHubUrl())).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

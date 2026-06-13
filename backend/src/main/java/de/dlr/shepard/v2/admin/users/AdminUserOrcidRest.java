@@ -45,6 +45,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Admin — user ORCID preseed")
 public class AdminUserOrcidRest {
 
+  private static final String PT_NOT_FOUND = "/problems/admin-user-orcid.not-found";
+
   @Inject
   UserService userService;
 
@@ -83,11 +85,17 @@ public class AdminUserOrcidRest {
     }
     var optionalUser = userService.getUserOptional(username);
     if (optionalUser.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + username + "'.");
     }
     User user = optionalUser.get();
     user.setOrcid(patch.orcid());
     userService.createOrUpdateUser(user);
     return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

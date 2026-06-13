@@ -58,6 +58,9 @@ public class NotificationTransportRest {
   /** RFC 7807 type URI for a missing required field on POST. */
   static final String PROBLEM_TYPE_MISSING_FIELD = "/problems/notifications.transport.missing-field";
 
+  /** RFC 7807 type URI for an unknown transport appId. */
+  static final String PROBLEM_TYPE_NOT_FOUND = "/problems/notifications.transport.not-found";
+
   @Inject
   NotificationTransportService service;
 
@@ -157,7 +160,8 @@ public class NotificationTransportRest {
   public Response patch(@PathParam("appId") String appId, NotificationTransportWriteIO body) {
     Optional<NotificationTransport> found = service.findByAppId(appId);
     if (found.isEmpty()) {
-      return Response.status(Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found",
+          Status.NOT_FOUND, "No notification transport with appId '" + appId + "'.");
     }
     NotificationTransportWriteIO patch = body == null ? new NotificationTransportWriteIO() : body;
 
@@ -192,7 +196,8 @@ public class NotificationTransportRest {
   public Response delete(@PathParam("appId") String appId) {
     boolean deleted = service.deleteByAppId(appId);
     if (!deleted) {
-      return Response.status(Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found",
+          Status.NOT_FOUND, "No notification transport with appId '" + appId + "'.");
     }
     Log.infof("NTF1: DELETE /v2/admin/notifications/transports/%s", appId);
     return Response.noContent().build();
