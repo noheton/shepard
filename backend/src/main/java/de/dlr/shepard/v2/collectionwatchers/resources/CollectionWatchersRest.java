@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.collectionwatchers.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.collectionwatchers.io.CollectionWatcherIO;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
 import io.quarkus.security.Authenticated;
@@ -107,8 +108,8 @@ public class CollectionWatchersRest {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
     Optional<CollectionWatcherIO> result = service.getMe(collectionAppId, caller);
-    return result.map(Response::ok).orElse(Response.status(Response.Status.NOT_FOUND))
-      .build();
+    return result.map(r -> Response.ok(r).build())
+      .orElseGet(() -> notFound("caller is not watching collection " + collectionAppId));
   }
 
   @POST
@@ -165,6 +166,17 @@ public class CollectionWatchersRest {
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem("/problems/collection-watches.unauthorized", "Authentication required",
+      Response.Status.UNAUTHORIZED, "authentication required");
+  }
+
+  private static Response notFound(String detail) {
+    return problem("/problems/collection-watches.not-found", "Not found",
+      Response.Status.NOT_FOUND, detail);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
