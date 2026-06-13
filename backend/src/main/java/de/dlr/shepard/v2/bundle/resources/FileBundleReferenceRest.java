@@ -107,6 +107,8 @@ public class FileBundleReferenceRest {
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-bundle-references.bad-request";
   private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/file-bundle-references.unprocessable-entity";
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-bundle-references.internal-error";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-bundle-references.unauthorized";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-bundle-references.not-found";
 
   // ─── bundle ───────────────────────────────────────────────────────────────
 
@@ -142,7 +144,7 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
@@ -185,7 +187,7 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
@@ -233,7 +235,7 @@ public class FileBundleReferenceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing field", Response.Status.BAD_REQUEST, "name is required and must be non-blank");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
@@ -243,7 +245,7 @@ public class FileBundleReferenceRest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     }
   }
 
@@ -278,14 +280,14 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
     FileGroup group = fileGroupService.getByAppId(groupAppId);
-    if (group == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
     return Response.ok(new FileGroupIO(group)).build();
   }
 
@@ -328,12 +330,12 @@ public class FileBundleReferenceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     try {
       Map<String, Object> patch = jsonNodeToMap(body);
@@ -342,7 +344,7 @@ public class FileBundleReferenceRest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     }
   }
 
@@ -378,12 +380,12 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     try {
       fileGroupService.deleteGroup(groupAppId, force);
@@ -391,7 +393,7 @@ public class FileBundleReferenceRest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     }
   }
 
@@ -432,14 +434,14 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
     FileGroup group = fileGroupService.getByAppId(groupAppId);
-    if (group == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     // Clamp page + size to sensible defaults. Out-of-range hints are
     // clamped, never rejected — surfacing a 400 here would be hostile to
@@ -508,12 +510,12 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     if (upload == null || upload.uploadedFile() == null) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
@@ -544,11 +546,11 @@ public class FileBundleReferenceRest {
    */
   private Response checkAccess(FileBundleReference bundle, AccessType accessType, SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided.");
     if (bundle.getDataObject() == null) {
       // Inconsistent graph — treat as 404 (caller can't tell whether
       // the bundle exists for this DataObject anyway).
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle has no parent DataObject", Response.Status.NOT_FOUND, "No DataObject is associated with this bundle (graph inconsistency).");
     }
     // DataObjects have no own :Permissions node — walk up to the parent
     // Collection via the perm-walk helper. Falls back to the long-id
