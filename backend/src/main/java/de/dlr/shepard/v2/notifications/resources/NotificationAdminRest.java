@@ -74,9 +74,21 @@ public class NotificationAdminRest {
     content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
-  @APIResponse(responseCode = "404", description = "transportId does not resolve.")
-  @APIResponse(responseCode = "502", description = "Transport returned failure.")
-  @APIResponse(responseCode = "503", description = "No sender registered for this transport kind.")
+  @APIResponse(
+    responseCode = "404",
+    description = "transportId does not resolve.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "502",
+    description = "Transport returned failure.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "503",
+    description = "No sender registered for this transport kind.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   public Response sendTest(
     @RequestBody(
       required = true,
@@ -133,7 +145,7 @@ public class NotificationAdminRest {
     String appId = body.getTransportId();
     Optional<NotificationTransport> found = transportService.findByAppId(appId);
     if (found.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found", Response.Status.NOT_FOUND, "no transport with appId=" + appId);
     }
     NotificationTransport transport = found.get();
     var sender = transportRegistry.resolve(transport);

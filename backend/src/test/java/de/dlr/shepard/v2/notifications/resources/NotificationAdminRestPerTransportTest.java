@@ -109,7 +109,7 @@ class NotificationAdminRestPerTransportTest {
   // ─── transportId branch ────────────────────────────────────────────────
 
   @Test
-  void sendTest_unknownTransportId_returns404() {
+  void sendTest_unknownTransportId_returns404WithProblemBody() {
     TestNotificationIO body = new TestNotificationIO();
     body.setTransportId("missing");
     body.setTitle("hi");
@@ -118,6 +118,9 @@ class NotificationAdminRestPerTransportTest {
 
     Response r = rest.sendTest(body, sc);
     assertEquals(404, r.getStatus());
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    assertEquals("/problems/notifications.not-found", entity.type());
+    assertTrue(entity.detail().contains("missing"), "detail should include the unknown appId");
     verify(registry, never()).resolve(any());
   }
 
