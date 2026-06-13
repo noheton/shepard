@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.fair.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -59,6 +60,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Authenticated
 @Tag(name = "FAIR DMP snippet")
 public class DmpSnippetV2Rest {
+
+  static final String PT_UNAUTHORIZED = "/problems/fair.dmp-snippet.unauthorized";
+  static final String PT_NOT_FOUND = "/problems/fair.dmp-snippet.not-found";
+  static final String PT_FORBIDDEN = "/problems/fair.dmp-snippet.forbidden";
 
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
@@ -123,18 +128,21 @@ public class DmpSnippetV2Rest {
     // ── 401 ──────────────────────────────────────────────────────────────
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(Response.Status.UNAUTHORIZED, PT_UNAUTHORIZED, "Authentication required",
+          "Authentication is required to generate a DMP snippet.");
     }
 
     // ── 404 ──────────────────────────────────────────────────────────────
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, PT_NOT_FOUND, "Collection not found",
+          "No Collection with appId '" + collectionAppId + "' exists.");
     }
 
     // ── 403 ──────────────────────────────────────────────────────────────
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, PT_FORBIDDEN, "Access denied",
+          "Caller '" + caller + "' lacks Read permission on Collection '" + collectionAppId + "'.");
     }
 
     // ── Load + generate ───────────────────────────────────────────────────
@@ -147,5 +155,10 @@ public class DmpSnippetV2Rest {
       return Response.ok(io, MediaType.APPLICATION_JSON).build();
     }
     return Response.ok(io.getSnippet(), "text/markdown").build();
+  }
+
+  private static Response problem(Response.Status status, String type, String title, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

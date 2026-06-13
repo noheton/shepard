@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.publish.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.PublishableKind;
@@ -20,9 +21,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -68,6 +67,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Publish")
 public class PublicationsListRest {
 
+  static final String PT_UNAUTHORIZED = "/problems/publish.unauthorized";
+  static final String PT_NOT_FOUND = "/problems/publish.not-found";
+  static final String PT_KIND_UNSUPPORTED = "/problems/publish.kind.unsupported";
+  static final String PT_FORBIDDEN = "/problems/publish.forbidden";
+
   @Inject
   PublishableKindRegistry kindRegistry;
 
@@ -108,20 +112,14 @@ public class PublicationsListRest {
     @Context UriInfo uriInfo
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, PT_UNAUTHORIZED, "Authentication required",
+        "Authentication is required to list publications.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
-      return problem(
-        Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.kind.unsupported",
-        "Unsupported publishable kind",
-        "No publishable kind matches URL segment '" +
-        kind +
-        "'. Supported: " +
-        String.join(", ", kindRegistry.supportedSegments()) +
-        "."
-      );
+      return problem(Response.Status.NOT_FOUND, PT_KIND_UNSUPPORTED, "Unsupported publishable kind",
+        "No publishable kind matches URL segment '" + kind + "'. Supported: " +
+        String.join(", ", kindRegistry.supportedSegments()) + ".");
     }
     // Resolve the OGM id so we can check permissions via PermissionsService.
     // The EntityIdResolver throws NotFoundException when the entity doesn't
@@ -130,12 +128,14 @@ public class PublicationsListRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, PT_NOT_FOUND, "Entity not found",
+          "No entity with appId '" + appId + "' found.");
     }
     // Read permission is sufficient for listing Publications — a researcher
     // who can see the entity should be able to see its PID history.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, PT_FORBIDDEN, "Access denied",
+          "Caller '" + caller + "' lacks Read permission on entity '" + appId + "'.");
     }
 
     List<Publication> rows = publicationDAO.findByEntityAppId(appId);
@@ -177,11 +177,7 @@ public class PublicationsListRest {
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("type", type);
-    body.put("title", title);
-    body.put("status", status.getStatusCode());
-    body.put("detail", detail);
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
