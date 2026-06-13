@@ -48,7 +48,7 @@ section and the `upgrade-overlay` section.
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/00-synergy-index.md`](agent-findings/00-synergy-index.md) | 00 — Synergy index | 2026-05-23 | 2026-06-11 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-10.md`](agent-findings/apisimp-sweep-2026-06-12-10.md) | APISIMP Sweep Pass 10 — 2026-06-12 | 2026-06-12 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-10.md`](agent-findings/apisimp-sweep-2026-06-12-10.md) | APISIMP Sweep Pass 10 — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-3.md`](agent-findings/apisimp-sweep-2026-06-12-3.md) | APISIMP sixth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-4.md`](agent-findings/apisimp-sweep-2026-06-12-4.md) | APISIMP seventh-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-5.md`](agent-findings/apisimp-sweep-2026-06-12-5.md) | APISIMP eighth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
