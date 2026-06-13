@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.admin.ledger;
 
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.ledger.io.LedgerAnchorJobIO;
 import de.dlr.shepard.v2.admin.ledger.io.LedgerAnchorRequestIO;
@@ -49,6 +49,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @LookupIfProperty(name = "shepard.ledger.enabled", stringValue = "true", lookupIfMissing = false)
 public class LedgerAnchorRest {
 
+  private static final String PT_NOT_IMPLEMENTED = "/problems/ledger.not-implemented";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
+
   // -----------------------------------------------------------------------
   // POST /v2/admin/ledger/anchor
   // -----------------------------------------------------------------------
@@ -76,17 +83,10 @@ public class LedgerAnchorRest {
       content = @Content(schema = @Schema(implementation = LedgerAnchorRequestIO.class))
     ) @Valid LedgerAnchorRequestIO body
   ) {
-    return Response
-      .status(Status.NOT_IMPLEMENTED)
-      .entity(
-        new ApiError(
-          Status.NOT_IMPLEMENTED.getStatusCode(),
-          "NotImplemented",
-          "Ledger anchor client not yet implemented (TPL17a). " +
-          "See aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md."
-        )
-      )
-      .build();
+    return problem(PT_NOT_IMPLEMENTED, "Not Implemented",
+      Status.NOT_IMPLEMENTED,
+      "Ledger anchor client not yet implemented (TPL17a). " +
+      "See aidocs/integrations/111-tpl17-distributed-ledger-anchoring.md.");
   }
 
   // -----------------------------------------------------------------------
@@ -109,16 +109,8 @@ public class LedgerAnchorRest {
   @APIResponse(responseCode = "404", description = "No job found for the given jobId.")
   @APIResponse(responseCode = "501", description = "Ledger client not yet implemented (Phase 1 skeleton).")
   public Response getJob(@PathParam("jobId") String jobId) {
-    return Response
-      .status(Status.NOT_IMPLEMENTED)
-      .entity(
-        new ApiError(
-          Status.NOT_IMPLEMENTED.getStatusCode(),
-          "NotImplemented",
-          "Ledger anchor job store not yet implemented (TPL17a)."
-        )
-      )
-      .build();
+    return problem(PT_NOT_IMPLEMENTED, "Not Implemented",
+      Status.NOT_IMPLEMENTED, "Ledger anchor job store not yet implemented (TPL17a).");
   }
 
   // -----------------------------------------------------------------------
@@ -142,15 +134,7 @@ public class LedgerAnchorRest {
   @APIResponse(responseCode = "404", description = "No DataObject found with the given appId.")
   @APIResponse(responseCode = "501", description = "Ledger query not yet implemented (Phase 1 skeleton).")
   public Response getAnchorsForDataObject(@PathParam("appId") String appId) {
-    return Response
-      .status(Status.NOT_IMPLEMENTED)
-      .entity(
-        new ApiError(
-          Status.NOT_IMPLEMENTED.getStatusCode(),
-          "NotImplemented",
-          "Ledger anchor query not yet implemented (TPL17a)."
-        )
-      )
-      .build();
+    return problem(PT_NOT_IMPLEMENTED, "Not Implemented",
+      Status.NOT_IMPLEMENTED, "Ledger anchor query not yet implemented (TPL17a).");
   }
 }

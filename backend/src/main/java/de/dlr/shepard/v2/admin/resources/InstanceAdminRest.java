@@ -1,8 +1,8 @@
 package de.dlr.shepard.v2.admin.resources;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
-import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.GrantInstanceAdminIO;
 import de.dlr.shepard.v2.admin.io.InstanceAdminGrantIO;
@@ -60,6 +60,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/admin")
 @RequestScoped
 public class InstanceAdminRest {
+
+  private static final String PT_NOT_FOUND = "/problems/instance-admin.not-found";
+  private static final String PT_BAD_REQUEST = "/problems/instance-admin.bad-request";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
 
   @Inject
   InstanceAdminService instanceAdminService;
@@ -154,9 +162,8 @@ public class InstanceAdminRest {
     requireInstanceAdmin(securityContext);
     boolean revoked = instanceAdminService.revokeInstanceAdmin(username);
     if (!revoked) {
-      return Response.status(Status.NOT_FOUND)
-        .entity(new ApiError(Status.NOT_FOUND.getStatusCode(), "NotFound", "No Neo4j-side instance-admin grant for user '" + username + "'"))
-        .build();
+      return problem(PT_NOT_FOUND, "Not Found", Status.NOT_FOUND,
+        "No Neo4j-side instance-admin grant for user '" + username + "'");
     }
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -231,12 +238,8 @@ public class InstanceAdminRest {
       if (from != null && !from.isBlank()) fromInstant = Instant.parse(from);
       if (to != null && !to.isBlank()) toInstant = Instant.parse(to);
     } catch (DateTimeParseException e) {
-      return Response.status(Status.BAD_REQUEST)
-        .entity(new de.dlr.shepard.common.exceptions.ApiError(
-          Status.BAD_REQUEST.getStatusCode(), "BadRequest",
-          "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage()
-        ))
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad Request", Status.BAD_REQUEST,
+        "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage());
     }
 
     List<PermissionAuditLogEntryIO> rows = permissionAuditLogQueryService.query(
@@ -301,10 +304,8 @@ public class InstanceAdminRest {
   ) {
     requireInstanceAdmin(securityContext);
     if (!nukeService.confirmPhraseValid(body.getConfirmPhrase())) {
-      return Response.status(Status.BAD_REQUEST)
-        .entity(new ApiError(Status.BAD_REQUEST.getStatusCode(), "BadRequest",
-          "confirmPhrase must be exactly \"" + NukeService.CONFIRM_PHRASE + "\""))
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad Request", Status.BAD_REQUEST,
+        "confirmPhrase must be exactly \"" + NukeService.CONFIRM_PHRASE + "\"");
     }
     NukeResultIO result = nukeService.nuke();
     return Response.ok(result).build();

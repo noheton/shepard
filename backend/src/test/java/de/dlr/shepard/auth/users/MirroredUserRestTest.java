@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.daos.MirroredUserDAO;
 import de.dlr.shepard.auth.users.entities.MirroredUser;
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.users.MirroredUserRest;
 import de.dlr.shepard.v2.admin.users.io.MirroredUserCreateIO;
@@ -148,8 +148,8 @@ class MirroredUserRestTest {
     Response r = rest.post(body);
 
     assertEquals(400, r.getStatus());
-    ApiError err = (ApiError) r.getEntity();
-    assertNotNull(err.getMessage());
+    ProblemJson err = (ProblemJson) r.getEntity();
+    assertNotNull(err.detail());
     verify(dao, never()).createOrUpdateBySourceKey(any());
   }
 
@@ -170,8 +170,8 @@ class MirroredUserRestTest {
     Response r = rest.post(body);
 
     assertEquals(400, r.getStatus());
-    ApiError err = (ApiError) r.getEntity();
-    assertNotNull(err.getMessage());
+    ProblemJson err = (ProblemJson) r.getEntity();
+    assertNotNull(err.detail());
     verify(dao, never()).createOrUpdateBySourceKey(any());
   }
 
