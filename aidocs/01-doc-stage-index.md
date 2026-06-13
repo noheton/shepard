@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 52 |
+| `fragment` | 53 |
 | `concept` | 32 |
 | `idea` | 13 |
 | `feature-defined` | 131 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 75 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **440** |
+| **total docs** | **441** |
 | **UNTAGGED** | **0** |
 
-## fragment (52)
+## fragment (53)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -54,6 +54,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-5.md`](agent-findings/apisimp-sweep-2026-06-12-5.md) | APISIMP eighth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-6.md`](agent-findings/apisimp-sweep-2026-06-12-6.md) | apisimp-sweep-2026-06-12-6 | 2026-06-12 | 2026-06-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-12.md`](agent-findings/apisimp-sweep-2026-06-13-12.md) | APISIMP sweep pass 12 — 2026-06-13 | 2026-06-13 | 2026-06-13 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire18.md`](agent-findings/apisimp-sweep-2026-06-13-fire18.md) | APISIMP fire-18 sweep — 2026-06-13 | 2026-06-13 | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13.md`](agent-findings/apisimp-sweep-2026-06-13.md) | APISIMP Sweep Pass 11 — 2026-06-13 | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-11 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-11 |
