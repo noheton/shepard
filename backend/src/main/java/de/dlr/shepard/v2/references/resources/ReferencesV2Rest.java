@@ -75,6 +75,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class ReferencesV2Rest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/references.bad-request";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/references.unauthorized";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/references.not-found";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/references.forbidden";
 
   @Inject
   ReferencesV2Service referencesService;
@@ -112,7 +115,7 @@ public class ReferencesV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to create a reference");
     if (kind == null || kind.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
@@ -120,7 +123,7 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "dataObjectAppId query parameter is required");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks Write access on the parent DataObject");
     }
     Map<String, Object> map = body == null ? Map.of() : JsonNodeMaps.toMap(body);
     try {
@@ -129,7 +132,7 @@ public class ReferencesV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no DataObject found with appId: " + dataObjectAppId);
     }
   }
 
@@ -156,9 +159,9 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "404", description = "No reference with that appId.")
   public Response get(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to get a reference");
     var resolved = referencesService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Read, caller);
     if (gate != null) return gate;
     return Response.ok(resolved.get().handler().toIO(resolved.get().reference())).build();
@@ -195,9 +198,9 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to patch a reference");
     var resolved = referencesService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Write, caller);
     if (gate != null) return gate;
     try {
@@ -206,7 +209,7 @@ public class ReferencesV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     }
   }
 
@@ -225,16 +228,16 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "404", description = "No reference with that appId.")
   public Response delete(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to delete a reference");
     var resolved = referencesService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Write, caller);
     if (gate != null) return gate;
     try {
       referencesService.deleteByAppId(appId);
       return Response.noContent().build();
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     }
   }
 
@@ -269,7 +272,7 @@ public class ReferencesV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to list references");
     if (kind == null || kind.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
@@ -277,7 +280,7 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "dataObjectAppId query parameter is required");
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks Read access on the parent DataObject");
     }
     try {
       List<ReferenceV2IO> refs = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
@@ -285,7 +288,7 @@ public class ReferencesV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no DataObject found with appId: " + dataObjectAppId);
     }
   }
 
@@ -308,18 +311,18 @@ public class ReferencesV2Rest {
     DataObject parent = ref.getDataObject();
     if (parent == null) {
       // Graph inconsistency — treat as 404.
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "reference parent DataObject is missing (graph inconsistency)");
     }
     String doAppId = parent.getAppId();
     if (doAppId == null) {
       // Pre-L2a DataObject without appId — fail closed on its own OGM id.
       if (!permissionsService.isAccessTypeAllowedForUser(parent.getId(), accessType, caller)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks required access on the parent DataObject");
       }
       return null;
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks required access on the parent DataObject");
     }
     return null;
   }
