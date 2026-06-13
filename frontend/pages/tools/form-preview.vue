@@ -82,7 +82,11 @@ async function downloadExcel() {
 </script>
 
 <template>
-  <v-container class="py-6">
+  <!-- UI-1920-FORM-PREVIEW-WIDTH: single-column prose + single-field form.
+       Default v-container caps at ~1800px (xl/xxl), stretching the subtitle
+       prose and the single appId picker edge-to-edge at 1920/4K. Cap to a
+       readable width, centred. No-op at <=1280. -->
+  <v-container class="py-6" style="max-width: 1200px">
     <PlaceholderPageHeader
       title="Form preview (shape → form descriptor)"
       subtitle="A form is the write-direction projection of a data-kind template's SHACL shape: the same shapeGraph the instantiation endpoint validates is compiled into a renderable descriptor. Submit-leg 422s carry violations[] keyed by field path."
