@@ -90,6 +90,8 @@ public class FileReferenceV2Rest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-references.bad-request";
   private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-references.not-found";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-references.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/file-references.forbidden";
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-references.internal-error";
 
   // ─── upload ───────────────────────────────────────────────────────────────
@@ -133,7 +135,7 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (parentDataObjectAppId == null || parentDataObjectAppId.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "parentDataObjectAppId query parameter is required");
     }
@@ -147,10 +149,10 @@ public class FileReferenceV2Rest {
     // appId via the service's resolver helper.
     Long parentOgmId = singletonService.getDataObjectOgmId(parentDataObjectAppId);
     if (parentOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for parentDataObjectAppId");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks Write permission on the parent DataObject");
     }
 
     String referenceName = (name != null && !name.isBlank()) ? name : upload.fileName();
@@ -168,7 +170,7 @@ public class FileReferenceV2Rest {
       );
       return Response.status(Response.Status.CREATED).entity(new FileReferenceV2IO(created)).build();
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "Parent DataObject not found");
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (IOException ioe) {
@@ -236,7 +238,7 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing path parameter", Response.Status.BAD_REQUEST, "dataObjectAppId is required");
     }
@@ -244,11 +246,11 @@ public class FileReferenceV2Rest {
     // Resolve parent DO existence — 404 when missing.
     Long parentOgmId = singletonService.getDataObjectOgmId(dataObjectAppId);
     if (parentOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
     }
     // Permission gate — inherit from Collection via the appId-aware helper.
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject");
     }
 
     List<FileReference> singletons = singletonService.listByDataObject(dataObjectAppId);
@@ -294,7 +296,7 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
     Response gate = checkAccess(ref, AccessType.Read, securityContext);
     if (gate != null) return gate;
     return Response.ok(new FileReferenceV2IO(ref)).build();
@@ -346,7 +348,7 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
     Response gate = checkAccess(ref, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
@@ -354,7 +356,7 @@ public class FileReferenceV2Rest {
     try {
       payload = singletonService.getPayload(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Backing bytes not found for this FileReference");
     }
 
     long total = payload.getSize();
@@ -429,7 +431,7 @@ public class FileReferenceV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
     Response gate = checkAccess(ref, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
@@ -440,7 +442,7 @@ public class FileReferenceV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "FileReference not found");
     }
   }
 
@@ -473,14 +475,14 @@ public class FileReferenceV2Rest {
     @Context SecurityContext securityContext
   ) {
     FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
     Response gate = checkAccess(ref, AccessType.Write, securityContext);
     if (gate != null) return gate;
     try {
       singletonService.deleteSingleton(appId);
       return Response.noContent().build();
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "FileReference not found during deletion");
     }
   }
 
@@ -503,10 +505,10 @@ public class FileReferenceV2Rest {
    */
   private Response checkAccess(FileReference ref, AccessType accessType, SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (ref.getDataObject() == null) {
       // Graph inconsistency — treat as 404.
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Parent DataObject link is missing (graph inconsistency)");
     }
     // DataObjects have no own :Permissions node — walk up to the parent
     // Collection via the perm-walk helper. Gating on doOgmId directly
@@ -519,12 +521,12 @@ public class FileReferenceV2Rest {
       // run the L2b backfill to populate appIds and unblock this path).
       long doOgmId = ref.getDataObject().getId();
       if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on the parent DataObject");
       }
       return null;
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on the parent DataObject");
     }
     return null;
   }

@@ -85,6 +85,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class ContainersV2Rest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/containers.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/containers.not-found";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/containers.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/containers.forbidden";
   private static final String PROBLEM_TYPE_UNSUPPORTED = "/problems/containers.unsupported-media-type";
 
   @Inject
@@ -115,7 +118,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response create(@QueryParam("kind") String kind, JsonNode body, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (kind == null || kind.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
@@ -150,9 +153,9 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   public Response get(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
     return Response.ok(resolved.get().handler().toIO(resolved.get().container())).build();
@@ -184,9 +187,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
@@ -268,9 +271,9 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
     try {
@@ -279,7 +282,7 @@ public class ContainersV2Rest {
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "Container not found");
     }
   }
 
@@ -298,16 +301,16 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   public Response delete(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
     try {
       containersService.deleteByAppId(appId);
       return Response.noContent().build();
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Container not found during deletion");
     }
   }
 
@@ -338,7 +341,7 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (kind == null || kind.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
@@ -379,9 +382,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
@@ -419,14 +422,14 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   public Response getPermissions(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Manage, caller);
     if (gate != null) return gate;
     Long id = resolved.get().container().getId();
     var perms = permissionsService.getPermissionsOfEntityOptional(id);
-    if (perms.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (perms.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No permissions found for this container");
     return Response.ok(new PermissionsIO(perms.get())).build();
   }
 
@@ -458,14 +461,14 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Manage, caller);
     if (gate != null) return gate;
     Long id = resolved.get().container().getId();
     var existing = permissionsService.getPermissionsOfEntityOptional(id);
-    if (existing.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (existing.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No permissions found for this container");
     // Merge-patch: apply only the fields present in the body onto the current PermissionsIO
     PermissionsIO current = new PermissionsIO(existing.get());
     Map<String, Object> patch = JsonNodeMaps.toMap(body);
@@ -521,9 +524,9 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   public Response getRoles(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
     Long id = resolved.get().container().getId();
@@ -548,10 +551,10 @@ public class ContainersV2Rest {
   private Response gate(BasicContainer container, AccessType accessType, String caller) {
     Long id = container.getId();
     if (id == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Container has no id (graph inconsistency)");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(id, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this container");
     }
     return null;
   }
