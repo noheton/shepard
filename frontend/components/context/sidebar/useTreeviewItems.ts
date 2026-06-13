@@ -53,7 +53,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
         // route or link.
         fields: "id,appId,name,parentId,childrenIds",
         page,
-        size: PAGE_SIZE,
+        pageSize: PAGE_SIZE,
       });
       rows.push(...batch);
       if (batch.length < PAGE_SIZE) break;

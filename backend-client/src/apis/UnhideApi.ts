@@ -48,7 +48,7 @@ export class UnhideApi extends runtime.BaseAPI {
         }
 
         if (requestParameters['pageSize'] != null) {
-            queryParameters['page-size'] = requestParameters['pageSize'];
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['validate'] != null) {

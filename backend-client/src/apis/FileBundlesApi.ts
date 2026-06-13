@@ -61,7 +61,7 @@ export interface ListGroupFilesRequest {
     bundleAppId: string;
     groupAppId: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
 }
 
 export interface ListGroupsRequest {
@@ -325,8 +325,8 @@ export class FileBundlesApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

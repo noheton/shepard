@@ -228,7 +228,7 @@ public class InstanceAdminRest {
     @QueryParam("from") String from,
     @QueryParam("to") String to,
     @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("size") @DefaultValue("50") int size
+    @QueryParam("pageSize") @DefaultValue("50") int pageSize
   ) {
     requireInstanceAdmin(securityContext);
 
@@ -243,7 +243,7 @@ public class InstanceAdminRest {
     }
 
     List<PermissionAuditLogEntryIO> rows = permissionAuditLogQueryService.query(
-      entityAppId, actor, fromInstant, toInstant, page, size
+      entityAppId, actor, fromInstant, toInstant, page, pageSize
     );
     return Response.ok(rows).build();
   }

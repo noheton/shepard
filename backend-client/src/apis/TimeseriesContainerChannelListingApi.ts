@@ -61,7 +61,7 @@ export interface IngestChannelDataRequest {
 export interface ListChannelsRequest {
     containerAppId: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
 }
 
 /**
@@ -338,8 +338,8 @@ export class TimeseriesContainerChannelListingApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

@@ -128,7 +128,7 @@ public class UnhideFeedRest {
   )
   public Response feed(
     @QueryParam("page") Integer page,
-    @QueryParam("page-size") Integer pageSize,
+    @QueryParam("pageSize") Integer pageSize,
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
     @Context UriInfo uriInfo,
