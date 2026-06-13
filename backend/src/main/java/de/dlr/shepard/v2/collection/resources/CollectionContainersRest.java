@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.collection.daos.CollectionContainersDAO;
@@ -43,6 +44,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection referenced containers")
 public class CollectionContainersRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/collection-containers.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/collection-containers.not-found";
+  private static final String PT_FORBIDDEN = "/problems/collection-containers.forbidden";
+
   @Inject
   CollectionContainersDAO containersDAO;
 
@@ -75,20 +80,28 @@ public class CollectionContainersRest {
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Collection not found",
+        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     List<ContainerSummaryIO> containers = containersDAO.findByCollectionAppId(collectionAppId);
     return Response.ok(containers).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

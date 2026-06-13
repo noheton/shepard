@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.collection.daos.CollectionTimelineDAO;
@@ -66,6 +67,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection timeline")
 public class CollectionTimelineRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/collection-timeline.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/collection-timeline.not-found";
+  private static final String PT_FORBIDDEN = "/problems/collection-timeline.forbidden";
+
   @Inject
   CollectionTimelineDAO timelineDAO;
 
@@ -118,17 +123,20 @@ public class CollectionTimelineRest {
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Collection not found",
+        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     var aggregate = timelineDAO.aggregate(collectionAppId);
@@ -137,5 +145,10 @@ public class CollectionTimelineRest {
     return Response.ok(body)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }
