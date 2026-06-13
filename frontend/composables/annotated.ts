@@ -1,5 +1,6 @@
 import {
   SemanticAnnotationsApi,
+  TimeseriesChannelAnnotationsApi,
   TimeseriesContainerApi,
   type AnnotationV2,
   type SemanticAnnotation,
@@ -148,84 +149,70 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
   readonly subjectKind = "StructuredDataContainer";
 }
 
-// ─── v2 base URL helper (channel-annotation raw fetch only) ─────────────────
-
-function v2BaseUrl(): string {
-  const config = useRuntimeConfig().public;
-  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
-  return (config.backendApiUrl as string)
-    .replace(/\/shepard\/api\/?$/, "")
-    .replace(/\/$/, "");
-}
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const { data: session } = useAuth();
-  const accessToken = session.value?.accessToken;
-  if (!accessToken) throw new Error("Not authenticated");
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-}
-
 // ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────
 //
-// Wraps `/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations`
-// (TimeseriesChannelAnnotationRest). This is the named v1-fallback exception:
-// the generated client has no typed class for this nested channel-annotation
-// resource yet, so it is hit by raw fetch against the /v2/ surface (NOT the v1
-// `/shepard/api/` surface). Backlog: V2UI-CHANNEL-ANNO-CLIENT in aidocs/16.
-// Channels created before TS-SEMANTIC-01 dual-write shipped will GET an empty
-// list and POST will 404 — surface that to the user as "no annotations yet".
+// Wraps `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`
+// via the typed `TimeseriesChannelAnnotationsApi` (V2UI-CHANNEL-ANNO-CLIENT).
+// Channels created before TS-SEMANTIC-01 dual-write shipped will return 404 on
+// GET/POST — treated as "no annotations yet" (empty list).
+//
+// Delete uses the UUID `appId` returned in the annotation payload
+// (added to SemanticAnnotationIO in the same commit). The `_appIdMap` caches
+// numeric-id → appId so the `Annotated` interface's numeric-id delete handle
+// keeps working without changing callers.
 
 export class AnnotatedChannel implements Annotated {
   readonly containerAppId: string;
   readonly channelShepardId: string;
+  channelAnnotationsApi = useV2ShepardApi(TimeseriesChannelAnnotationsApi);
+  private readonly _appIdMap = new Map<number, string>();
 
   constructor(containerAppId: string, channelShepardId: string) {
     this.containerAppId = containerAppId;
     this.channelShepardId = channelShepardId;
   }
 
-  private endpoint(annotationId?: number): string {
-    const base =
-      `${v2BaseUrl()}/v2/timeseries-containers/${this.containerAppId}` +
-      `/channels/${encodeURIComponent(this.channelShepardId)}/annotations`;
-    return annotationId === undefined ? base : `${base}/${annotationId}`;
-  }
-
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    const headers = await authHeaders();
-    const response = await fetch(this.endpoint(), { headers });
-    if (!response.ok) {
-      // 404 = channel has no AnnotatableTimeseries node yet (pre-TS-SEMANTIC-01
-      // channel) — treat as "no annotations" rather than an error.
-      if (response.status === 404) return [];
-      throw new Error(`HTTP ${response.status}`);
+    try {
+      const items = await this.channelAnnotationsApi.value.listChannelAnnotations({
+        containerAppId: this.containerAppId,
+        channelShepardId: this.channelShepardId,
+      });
+      this._appIdMap.clear();
+      for (const item of items) {
+        // `appId` is present in the wire response (SemanticAnnotationIO) but not
+        // yet in the generated TS model (awaiting client regen after this backend
+        // change). Cast until the next regen cycle.
+        const appId = (item as SemanticAnnotation & { appId?: string }).appId;
+        if (appId) this._appIdMap.set(item.id, appId);
+      }
+      return items;
+    } catch (err: unknown) {
+      // 404 = channel has no AnnotatableTimeseries node yet (pre-TS-SEMANTIC-01)
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return [];
+      throw err;
     }
-    return (await response.json()) as SemanticAnnotation[];
   }
 
   async deleteAnnotation(annotationId: number): Promise<void> {
-    const headers = await authHeaders();
-    const response = await fetch(this.endpoint(annotationId), {
-      method: "DELETE",
-      headers,
+    const annotationAppId = this._appIdMap.get(annotationId);
+    if (!annotationAppId)
+      throw new Error(`No appId cached for channel annotation id=${annotationId}; call fetchAnnotations() first`);
+    await this.channelAnnotationsApi.value.deleteChannelAnnotation({
+      containerAppId: this.containerAppId,
+      channelShepardId: this.channelShepardId,
+      annotationAppId,
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    this._appIdMap.delete(annotationId);
   }
 
   async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    const headers = await authHeaders();
-    const response = await fetch(this.endpoint(), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(annotation),
+    return this.channelAnnotationsApi.value.createChannelAnnotation({
+      containerAppId: this.containerAppId,
+      channelShepardId: this.channelShepardId,
+      semanticAnnotation: annotation,
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return (await response.json()) as SemanticAnnotation;
   }
 }
 
