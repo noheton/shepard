@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 48 |
+| `fragment` | 52 |
 | `concept` | 32 |
 | `idea` | 13 |
 | `feature-defined` | 131 |
@@ -40,17 +40,21 @@ section and the `upgrade-overlay` section.
 | `deployed` | 74 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **434** |
+| **total docs** | **438** |
 | **UNTAGGED** | **0** |
 
-## fragment (48)
+## fragment (52)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/00-synergy-index.md`](agent-findings/00-synergy-index.md) | 00 — Synergy index | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-10.md`](agent-findings/apisimp-sweep-2026-06-12-10.md) | APISIMP Sweep Pass 10 — 2026-06-12 | 2026-06-12 | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-3.md`](agent-findings/apisimp-sweep-2026-06-12-3.md) | APISIMP sixth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-4.md`](agent-findings/apisimp-sweep-2026-06-12-4.md) | APISIMP seventh-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-5.md`](agent-findings/apisimp-sweep-2026-06-12-5.md) | APISIMP eighth-pass sweep — 2026-06-12 | 2026-06-12 | 2026-06-12 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-12-6.md`](agent-findings/apisimp-sweep-2026-06-12-6.md) | apisimp-sweep-2026-06-12-6 | 2026-06-12 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-13-12.md`](agent-findings/apisimp-sweep-2026-06-13-12.md) | APISIMP sweep pass 12 — 2026-06-13 | 2026-06-13 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-13.md`](agent-findings/apisimp-sweep-2026-06-13.md) | APISIMP Sweep Pass 11 — 2026-06-13 | 2026-06-13 | — |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
@@ -178,7 +182,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`](agent-findings/no-ui-gap-survey-2026-05-24.md) | No-UI gap survey + placeholder roll-out — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/plugin-design-audit-2026-05-24.md`](agent-findings/plugin-design-audit-2026-05-24.md) | Plugin design audit — Spatial + Tables + HDF5, 2026-05-24 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/plugin-v2-only-audit.md`](agent-findings/plugin-v2-only-audit.md) | Plugin backends build on /v2/ — audit | 2026-06-13 | 2026-06-03 |
+| [`aidocs/agent-findings/plugin-v2-only-audit.md`](agent-findings/plugin-v2-only-audit.md) | Plugin backends build on /v2/ — audit | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md`](agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md) | Postgres + PgBouncer substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md`](agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md) | RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md`](agent-findings/rdm-scrutinizer-2026-05-24.md) | RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -396,7 +400,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-12 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-13 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-12 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |

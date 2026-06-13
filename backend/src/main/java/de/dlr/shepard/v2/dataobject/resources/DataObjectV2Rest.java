@@ -105,6 +105,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "DataObjects")
 public class DataObjectV2Rest {
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/data-objects.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/data-objects.not-found";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/data-objects.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/data-objects.forbidden";
+
   @Inject
   DataObjectService dataObjectService;
 
@@ -206,7 +211,7 @@ public class DataObjectV2Rest {
       }
     }
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     Response gate = enforceAccess(collectionOgmId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -339,7 +344,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     // DataObjects don't have their own :Permissions node — access is
@@ -446,7 +451,7 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     Response gate = enforceAccess(collectionOgmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -515,7 +520,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
@@ -569,7 +574,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
@@ -604,13 +609,13 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
     List<DataObjectSummaryIO> result = new ArrayList<>();
@@ -670,7 +675,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
@@ -707,13 +712,13 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
     List<DataObjectSummaryIO> result = new ArrayList<>();
@@ -746,13 +751,13 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
     List<DataObjectSummaryIO> result = new ArrayList<>();
@@ -788,7 +793,7 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -825,7 +830,7 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -848,9 +853,9 @@ public class DataObjectV2Rest {
 
   private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this resource");
     }
     return null;
   }
@@ -859,11 +864,16 @@ public class DataObjectV2Rest {
    *  via the permissions service helper because DOs have no own perms node. */
   private Response enforceDataObjectAccess(String dataObjectAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this DataObject");
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**

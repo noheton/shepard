@@ -10,6 +10,7 @@ import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.provenance.services.ProvenanceStatsService;
+import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -330,7 +331,11 @@ public class ProvenanceRest {
     summary = "Count provenance activities matching the same filter set.",
     description = "Cheap variant of /activities that returns only the row count, for dashboard tiles."
   )
-  @APIResponse(responseCode = "200", description = "Row count.")
+  @APIResponse(
+    responseCode = "200",
+    description = "Row count.",
+    content = @Content(schema = @Schema(implementation = ActivityCountIO.class))
+  )
   public Response countActivities(
     @QueryParam("agent") String agent,
     @QueryParam("targetKind") String targetKind,
@@ -350,7 +355,7 @@ public class ProvenanceRest {
     }
 
     long c = provenance.count(agent, targetKind, targetAppId, since, until);
-    return Response.ok(java.util.Map.of("count", c)).build();
+    return Response.ok(new ActivityCountIO(c)).build();
   }
 
   @GET

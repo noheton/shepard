@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.notifications.resources;
 
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.notifications.io.NotificationCountIO;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
@@ -33,6 +33,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Notifications")
 public class NotificationRest {
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/notifications.unauthorized";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/notifications.not-found";
+
   @Inject
   NotificationService service;
 
@@ -52,7 +55,8 @@ public class NotificationRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(@Context SecurityContext sc) {
     String username = resolveUsername(sc);
-    if (username == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
     List<NotificationIO> result = service.listForUser(username, isAdmin)
       .stream()
@@ -76,7 +80,8 @@ public class NotificationRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response count(@Context SecurityContext sc) {
     String username = resolveUsername(sc);
-    if (username == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
     long unread = service.countUnread(username, isAdmin);
     return Response.ok(new NotificationCountIO(unread)).build();
@@ -98,15 +103,15 @@ public class NotificationRest {
   @APIResponse(responseCode = "404", description = "Notification not found or not visible to caller.")
   public Response markRead(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String username = resolveUsername(sc);
-    if (username == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
     try {
       var updated = service.markRead(appId, username, isAdmin);
       return Response.ok(NotificationIO.from(updated)).build();
     } catch (NotFoundException e) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity(new ApiError(404, "NotFound", e.getMessage()))
-        .build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Notification not found",
+        Response.Status.NOT_FOUND, e.getMessage());
     }
   }
 
@@ -122,19 +127,24 @@ public class NotificationRest {
   @APIResponse(responseCode = "404", description = "Notification not found or not visible to caller.")
   public Response dismiss(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String username = resolveUsername(sc);
-    if (username == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
     try {
       service.dismiss(appId, username, isAdmin);
       return Response.noContent().build();
     } catch (NotFoundException e) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity(new ApiError(404, "NotFound", e.getMessage()))
-        .build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Notification not found",
+        Response.Status.NOT_FOUND, e.getMessage());
     }
   }
 
   private String resolveUsername(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

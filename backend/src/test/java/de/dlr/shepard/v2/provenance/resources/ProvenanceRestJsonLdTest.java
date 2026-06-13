@@ -18,6 +18,7 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -379,10 +380,9 @@ class ProvenanceRestJsonLdTest {
     Response r = resource.countActivities(null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertEquals(42L, body.get("count"));
-    assertFalse(body.containsKey("@context"));
+    var body = (ActivityCountIO) r.getEntity();
+    assertEquals(42L, body.count());
+    // ActivityCountIO carries only 'count' — no @context field by definition
   }
 
   @Test

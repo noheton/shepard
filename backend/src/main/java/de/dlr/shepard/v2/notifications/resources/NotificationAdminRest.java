@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.notifications.resources;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
+import de.dlr.shepard.v2.notifications.io.NotificationTestDeliveryIO;
 import de.dlr.shepard.v2.notifications.io.TestNotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
@@ -21,7 +22,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -70,12 +70,25 @@ public class NotificationAdminRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Test notification delivered via transport (transport path; body: {status, transport})."
+    description = "Test notification delivered via transport.",
+    content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
-  @APIResponse(responseCode = "404", description = "transportId does not resolve.")
-  @APIResponse(responseCode = "502", description = "Transport returned failure.")
-  @APIResponse(responseCode = "503", description = "No sender registered for this transport kind.")
+  @APIResponse(
+    responseCode = "404",
+    description = "transportId does not resolve.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "502",
+    description = "Transport returned failure.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "503",
+    description = "No sender registered for this transport kind.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   public Response sendTest(
     @RequestBody(
       required = true,
@@ -132,7 +145,7 @@ public class NotificationAdminRest {
     String appId = body.getTransportId();
     Optional<NotificationTransport> found = transportService.findByAppId(appId);
     if (found.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found", Response.Status.NOT_FOUND, "no transport with appId=" + appId);
     }
     NotificationTransport transport = found.get();
     var sender = transportRegistry.resolve(transport);
@@ -158,7 +171,7 @@ public class NotificationAdminRest {
     }
     if (ok) {
       recordTestOutcome(transport, "OK", "delivered");
-      return Response.ok(Map.of("status", "delivered", "transport", transport.getKind())).build();
+      return Response.ok(new NotificationTestDeliveryIO("delivered", transport.getKind())).build();
     }
     recordTestOutcome(transport, "FAIL", "sender returned false (see backend logs)");
     return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send returned false");
