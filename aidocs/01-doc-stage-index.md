@@ -244,7 +244,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-26 |
-| [`aidocs/ops/50-feature-verification-and-dual-doc-standard.md`](ops/50-feature-verification-and-dual-doc-standard.md) | Feature Verification & Dual-Doc Standard | 2026-06-13 | — |
+| [`aidocs/ops/50-feature-verification-and-dual-doc-standard.md`](ops/50-feature-verification-and-dual-doc-standard.md) | Feature Verification & Dual-Doc Standard | 2026-06-13 | 2026-06-13 |
 | [`aidocs/ops/88-helm-deployment.md`](ops/88-helm-deployment.md) | 88 — Helm chart for Kubernetes deployment | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
@@ -352,10 +352,10 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/trace3d-spike.md`](agent-findings/trace3d-spike.md) | Trace3D view — spike: library shortlist + view-shape input contract | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ui-1920-pass-2026-06-13.md`](agent-findings/ui-1920-pass-2026-06-13.md) | UI audit 2026-06-13 — the 1920×1080 pass | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/ui-annoyances.md`](agent-findings/ui-annoyances.md) | UI annoyances — running log | 2026-05-23 | 2026-06-13 |
-| [`aidocs/agent-findings/ui-feature-inventory-2026-06-13.md`](agent-findings/ui-feature-inventory-2026-06-13.md) | UI feature inventory 2026-06-13 — the master SSOT | 2026-06-13 | — |
+| [`aidocs/agent-findings/ui-feature-inventory-2026-06-13.md`](agent-findings/ui-feature-inventory-2026-06-13.md) | UI feature inventory 2026-06-13 — the master SSOT | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-24.md`](agent-findings/ui-scrutinizer-2026-05-24.md) | UI Scrutinizer — live-shepard systematic walk, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-auditor.md`](agent-findings/ux-auditor.md) | UX Auditor — Discovery Report | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md`](agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md) | UX consult 2026-06-13 — personas, journeys, and the dual-doc IA for the docs+verification program | 2026-06-13 | — |
+| [`aidocs/agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md`](agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md) | UX consult 2026-06-13 — personas, journeys, and the dual-doc IA for the docs+verification program | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/ux-progress-indicators-sweep.md`](agent-findings/ux-progress-indicators-sweep.md) | UX progress indicators — Playwright-driven sweep (task #136) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md`](agent-findings/ux-survey-collections-containers-2026-05-24.md) | UX survey — collections + containers pages (barely-usable triage) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-walk-2026-05-29.md`](agent-findings/ux-walk-2026-05-29.md) | UX Walk 2026-05-29 — Live 4K regression sweep | 2026-05-29 | 2026-05-29 |
