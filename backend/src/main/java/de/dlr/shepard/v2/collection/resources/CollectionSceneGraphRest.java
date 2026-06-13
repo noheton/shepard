@@ -72,6 +72,8 @@ public class CollectionSceneGraphRest {
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/scene-graph.bad-request";
   private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/scene-graph.not-found";
   private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/scene-graph.unprocessable-entity";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/scene-graph.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/scene-graph.forbidden";
 
   @Inject CollectionHeroViewLinkDAO linkDAO;
   @Inject PermissionsService permissionsService;
@@ -99,17 +101,21 @@ public class CollectionSceneGraphRest {
   @APIResponse(responseCode = "404", description = "Collection not found or no hero view linked.")
   public Response get(@PathParam("appId") String collectionAppId, @Context SecurityContext sc) {
     String caller = callerOf(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     Optional<Long> ogmId = linkDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     Optional<String> linkedTemplateAppId = linkDAO.findLinkedTemplateAppId(collectionAppId);
     if (linkedTemplateAppId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "No hero view linked",
+        Response.Status.NOT_FOUND, "Collection '" + collectionAppId + "' has no hero view linked");
     }
 
     CollectionHeroViewLinkIO body = new CollectionHeroViewLinkIO();
@@ -150,7 +156,8 @@ public class CollectionSceneGraphRest {
     @Context SecurityContext sc
   ) {
     String caller = callerOf(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     String templateAppId = body == null ? null : body.getSceneGraphAppId();
     if (templateAppId == null || templateAppId.isBlank()) {
@@ -159,9 +166,11 @@ public class CollectionSceneGraphRest {
     }
 
     Optional<Long> ogmId = linkDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Write access required",
+        Response.Status.FORBIDDEN, "caller lacks Write on Collection '" + collectionAppId + "'");
     }
 
     Optional<ShepardTemplate> template = templateDAO.findByAppId(templateAppId);
@@ -176,7 +185,8 @@ public class CollectionSceneGraphRest {
     }
 
     boolean ok = linkDAO.link(collectionAppId, templateAppId);
-    if (!ok) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!ok) return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
 
     return get(collectionAppId, sc);
   }
@@ -196,12 +206,15 @@ public class CollectionSceneGraphRest {
   @APIResponse(responseCode = "404", description = "Collection not found.")
   public Response unlink(@PathParam("appId") String collectionAppId, @Context SecurityContext sc) {
     String caller = callerOf(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     Optional<Long> ogmId = linkDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Write access required",
+        Response.Status.FORBIDDEN, "caller lacks Write on Collection '" + collectionAppId + "'");
     }
 
     linkDAO.unlink(collectionAppId);

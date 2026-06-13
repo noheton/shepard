@@ -57,6 +57,9 @@ import org.neo4j.ogm.model.Result;
 @Tag(name = "Collection lifecycle")
 public class CollectionPublicationStateRest {
 
+  private static final String PT_NOT_FOUND = "/problems/publication-state.not-found";
+  private static final String PT_UNAUTHORIZED = "/problems/publication-state.unauthorized";
+
   private static final Set<String> VALID_STATES = Set.of(
     "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"
   );
@@ -90,12 +93,19 @@ public class CollectionPublicationStateRest {
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return Response.status(Response.Status.FORBIDDEN)
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/publication-state.forbidden",
+          "Read access required", 403,
+          "caller lacks Read on Collection '" + collectionAppId + "'", null))
+        .build();
     }
 
     String status = readCollectionStatus(ogmId);
@@ -141,10 +151,12 @@ public class CollectionPublicationStateRest {
     }
 
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     boolean isInstanceAdmin = sc.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
     boolean isManager = permissionsService.isAccessTypeAllowedForUser(
@@ -193,5 +205,10 @@ public class CollectionPublicationStateRest {
       "MATCH (c:Collection) WHERE id(c) = $id SET c.status = $state, c.updatedAt = timestamp()",
       params
     );
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

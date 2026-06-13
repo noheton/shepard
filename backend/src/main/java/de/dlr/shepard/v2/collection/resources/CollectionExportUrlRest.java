@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.export.ExportSelection;
@@ -64,6 +65,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collection export URL")
 public class CollectionExportUrlRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/collection-export-url.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/collection-export-url.not-found";
+  private static final String PT_FORBIDDEN = "/problems/collection-export-url.forbidden";
+
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
 
@@ -114,17 +119,20 @@ public class CollectionExportUrlRest {
     ExportSelection selection
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "caller identity unknown");
     }
     String caller = securityContext.getUserPrincipal().getName();
 
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Collection not found",
+        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     FileStorage storage = fileStorageRegistry.activeStorage().orElse(null);
@@ -166,5 +174,10 @@ public class CollectionExportUrlRest {
 
   private static String sanitizeFileName(String name) {
     return name.replaceAll("[^a-zA-Z0-9._-]", "_");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }
