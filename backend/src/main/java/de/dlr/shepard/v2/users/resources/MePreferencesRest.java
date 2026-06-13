@@ -47,6 +47,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Me")
 public class MePreferencesRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/me.preferences.unauthorized";
+
   @Inject
   UserService userService;
 
@@ -68,7 +70,8 @@ public class MePreferencesRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getPreferences(@Context SecurityContext sc) {
-    if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (sc.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access user preferences.");
     String username = sc.getUserPrincipal().getName();
     Map<String, String> prefs = userService.getPreferences(username);
     return Response.ok(prefs).build();
@@ -114,7 +117,8 @@ public class MePreferencesRest {
     ) JsonNode patch,
     @Context SecurityContext sc
   ) {
-    if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (sc.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access user preferences.");
     if (patch == null || !patch.isObject()) {
       return problem("/problems/me.preferences.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
           "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");

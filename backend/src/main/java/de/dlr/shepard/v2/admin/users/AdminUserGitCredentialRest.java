@@ -56,6 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class AdminUserGitCredentialRest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/admin-git-credentials.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/admin-git-credentials.not-found";
   private static final String PROBLEM_TYPE_SERVICE_UNAVAILABLE = "/problems/admin-git-credentials.service-unavailable";
 
   @Inject
@@ -148,7 +149,8 @@ public class AdminUserGitCredentialRest {
     }
 
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
 
     byte[] key = resolveKey();
@@ -223,7 +225,8 @@ public class AdminUserGitCredentialRest {
   @APIResponse(responseCode = "404", description = "No user with that username.")
   public Response list(@PathParam(Constants.USERNAME) String targetUsername) {
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
     List<GitCredential> stored = gitCredentialDAO.findAllByUser(targetUsername);
     List<AdminGitCredentialListItemIO> items = new ArrayList<>(stored == null ? 0 : stored.size());
@@ -267,11 +270,13 @@ public class AdminUserGitCredentialRest {
         Response.Status.BAD_REQUEST, "newPat is required");
     }
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
     GitCredential existing = gitCredentialDAO.findByUserAndAppId(targetUsername, credAppId);
     if (existing == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Credential not found",
+          Response.Status.NOT_FOUND, "No git credential with appId '" + credAppId + "' under user '" + targetUsername + "'.");
     }
     byte[] key = resolveKey();
     if (key == null) {
