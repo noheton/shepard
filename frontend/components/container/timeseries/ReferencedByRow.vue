@@ -94,7 +94,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
          scanning the linked-by list can spot tagged datasets at a glance. -->
     <div class="dataobject-annotations">
       <SemanticAnnotationList
-        :annotated="new AnnotatedDataObject(dataObject.collectionId, dataObject.id)"
+        v-if="doAppId"
+        :annotated="new AnnotatedDataObject(doAppId)"
         :can-delete="false"
       />
     </div>
@@ -172,7 +173,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
         <!-- Semantic annotations attached to this TimeseriesReference -->
         <div class="annotation-row">
           <SemanticAnnotationList
-            :annotated="new AnnotatedReference(dataObject.collectionId, dataObject.id, ref.id)"
+            v-if="ref.appId"
+            :annotated="new AnnotatedReference(ref.appId, 'TimeseriesReference')"
             :can-delete="false"
           />
         </div>

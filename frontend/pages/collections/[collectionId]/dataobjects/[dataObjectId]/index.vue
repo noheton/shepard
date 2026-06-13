@@ -815,14 +815,13 @@ async function saveEmbargoEdit() {
                 v-model:show-dialog="showAnnotationDialog"
                 :subject-app-id="dataObject?.appId ?? undefined"
                 subject-kind="DataObject"
-                :annotated="new AnnotatedDataObject(collection.id, dataObject.id)"
+                :annotated="new AnnotatedDataObject(dataObject.appId ?? '')"
                 @annotation-created="handleAnnotationListUpdate"
               />
 
               <SemanticAnnotationList
-                :annotated="
-                  new AnnotatedDataObject(collection.id, dataObject.id)
-                "
+                v-if="dataObject.appId"
+                :annotated="new AnnotatedDataObject(dataObject.appId)"
                 :can-delete="!!isAllowedToEditCollection"
                 @annotations="onAnnotationsLoaded"
               />
@@ -883,6 +882,7 @@ async function saveEmbargoEdit() {
                       v-model:show-dialog="showCreateDataReferenceDialog"
                       :collection-id="collection.id"
                       :data-object-id="dataObject.id"
+                      :data-object-app-id="dataObject.appId ?? undefined"
                     />
                   </template>
                   <DataObjectFileUpload
@@ -927,6 +927,7 @@ async function saveEmbargoEdit() {
                       v-model:show-dialog="showAddRelationshipDialog"
                       :collection-id="collection.id"
                       :data-object-id="dataObject.id"
+                      :data-object-app-id="dataObject.appId ?? undefined"
                     />
                   </template>
                 </ExpansionPanelItem>

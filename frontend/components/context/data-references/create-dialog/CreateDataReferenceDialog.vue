@@ -20,7 +20,15 @@ import {
 } from "~/composables/references/useReferenceTemplatePrefill";
 import { toShortDateString } from "~/utils/helpers";
 import type { FileRef, TimeseriesRef } from "./DataRef";
-const props = defineProps<{ collectionId: number; dataObjectId: number }>();
+// `collectionId` / `dataObjectId` are the numeric ids the dispatcher-owned
+// REF-API-MIGRATION reference-creation calls still require (V2UI-REF-CREATE-V2).
+// `dataObjectAppId` is the v2 handle used for the template-prefill annotation
+// pull (V2-only path).
+const props = defineProps<{
+  collectionId: number;
+  dataObjectId: number;
+  dataObjectAppId?: string;
+}>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -53,8 +61,7 @@ async function applyFileNamingPrefill(): Promise<void> {
   if (fileNamingPrefillApplied.value) return;
   if (dataReferenceName.value.trim().length > 0) return;
   const annotations = await fetchReferencePrefillAnnotations(
-    props.collectionId,
-    props.dataObjectId,
+    props.dataObjectAppId ?? "",
   );
   const annotation = findAnnotationByPredicate(
     annotations,

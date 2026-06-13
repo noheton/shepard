@@ -1,10 +1,12 @@
 import {
-  SemanticAnnotationApi,
+  SemanticAnnotationsApi,
   TimeseriesContainerApi,
+  type AnnotationV2,
   type SemanticAnnotation,
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "./common/api/useShepardApi";
+import { useV2ShepardApi } from "./common/api/useV2ShepardApi";
 
 export type AnnotationToAdd = Omit<
   SemanticAnnotation,
@@ -19,115 +21,134 @@ export interface Annotated {
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation>;
 }
 
-export class AnnotatedCollection implements Annotated {
-  collectionId: number;
-  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
-
-  constructor(collectionId: number) {
-    this.collectionId = collectionId;
-  }
-
-  fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.semanticAnnotationApi.value.getAllCollectionAnnotations({
-      collectionId: this.collectionId,
-    });
-  }
-
-  deleteAnnotation(annotationId: number): Promise<void> {
-    return this.semanticAnnotationApi.value.deleteCollectionAnnotation({
-      collectionId: this.collectionId,
-      semanticAnnotationId: annotationId,
-    });
-  }
-
-  addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.semanticAnnotationApi.value.createCollectionAnnotation({
-      collectionId: this.collectionId,
-      semanticAnnotation: annotation,
-    });
-  }
-}
-
-export class AnnotatedDataObject implements Annotated {
-  collectionId: number;
-  dataObjectId: number;
-  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
-
-  constructor(collectionId: number, dataObjectId: number) {
-    this.collectionId = collectionId;
-    this.dataObjectId = dataObjectId;
-  }
-
-  fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.semanticAnnotationApi.value.getAllDataObjectAnnotations({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-    });
-  }
-
-  deleteAnnotation(annotationId: number): Promise<void> {
-    return this.semanticAnnotationApi.value.deleteDataObjectAnnotation({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-      semanticAnnotationId: annotationId,
-    });
-  }
-
-  addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.semanticAnnotationApi.value.createDataObjectAnnotation({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-      semanticAnnotation: annotation,
-    });
-  }
-}
-
-export class AnnotatedReference implements Annotated {
-  collectionId: number;
-  dataObjectId: number;
-  referenceId: number;
-  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
-
-  constructor(collectionId: number, dataobjectId: number, referenceId: number) {
-    this.collectionId = collectionId;
-    this.dataObjectId = dataobjectId;
-    this.referenceId = referenceId;
-  }
-
-  fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.semanticAnnotationApi.value.getAllReferenceAnnotations({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-      referenceId: this.referenceId,
-    });
-  }
-
-  deleteAnnotation(annotationId: number): Promise<void> {
-    return this.semanticAnnotationApi.value.deleteReferenceAnnotation({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-      referenceId: this.referenceId,
-      semanticAnnotationId: annotationId,
-    });
-  }
-
-  addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.semanticAnnotationApi.value.createReferenceAnnotation({
-      collectionId: this.collectionId,
-      dataObjectId: this.dataObjectId,
-      referenceId: this.referenceId,
-      semanticAnnotation: annotation,
-    });
-  }
-}
-
-// ─── SA-CONT: container-level annotations via /v2/ endpoints ────────────────
+// ─── v2 polymorphic annotation surface (SEMA-V6-004) ────────────────────────
 //
-// Shared raw-fetch wiring. The generated SemanticAnnotationApi only covers the
-// upstream /shepard/api/ targets (collection, data-object, reference,
-// timeseries-channel); the /v2/{type}-containers/{id}/annotations endpoints
-// are new on this fork, so we hit them directly until the OpenAPI client is
-// regenerated.
+// The frontend addresses every entity by `appId`. The v2 `/v2/annotations`
+// surface (SemanticAnnotationsApi: listAnnotations / createAnnotation /
+// deleteAnnotation, keyed by `subjectAppId` + `subjectKind`) is the single
+// canonical annotation API. AnnotatedCollection / AnnotatedDataObject /
+// AnnotatedReference / the container variants are all thin subclasses of
+// {@link SubjectAnnotated} that differ only in their `subjectKind`.
+//
+// The numeric Neo4j `.id` was dropped from v2 entities, so the old v1
+// `SemanticAnnotationApi` (singular, keyed on numeric collectionId /
+// dataObjectId) could no longer be addressed — it crashed with
+// "Required parameter collectionId was null or undefined". This surface
+// replaces it entirely.
+
+/**
+ * Maps the v6 {@link AnnotationV2} wire shape onto the legacy
+ * {@link SemanticAnnotation} the UI chips / lists still consume. `fakeId`
+ * is a sequential integer the UI uses as a v-for key and delete handle; the
+ * real `appId` is kept in the owning class's `_appIdMap` for the v2 delete.
+ */
+function mapAnnotationV2ToLegacy(
+  item: AnnotationV2,
+  fakeId: number,
+): SemanticAnnotation {
+  return {
+    id: fakeId,
+    name: item.propertyName ?? item.predicateLabel ?? "",
+    propertyName: item.propertyName ?? item.predicateLabel ?? "",
+    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
+    valueName: item.valueName ?? item.objectLiteral ?? "",
+    valueIRI: item.valueIri ?? item.objectIri ?? "",
+    propertyRepositoryId: 0,
+    valueRepositoryId: 0,
+  };
+}
+
+/**
+ * Base class for every entity-scoped annotation accessor. Routes through the
+ * typed {@link SemanticAnnotationsApi} via {@link useV2ShepardApi} (so the URL
+ * is `/v2/annotations`, never the v1-helper `/shepard/api/v2/...` 404 shape),
+ * keyed by `subjectAppId` (a v7 UUID string) + `subjectKind`.
+ */
+abstract class SubjectAnnotated implements Annotated {
+  abstract readonly subjectKind: string; // e.g. "DataObject", "Collection"
+  readonly subjectAppId: string;
+  annotationsApi = useV2ShepardApi(SemanticAnnotationsApi);
+  // fakeId (sequential integer) → real annotation appId for delete lookup
+  private readonly _appIdMap = new Map<number, string>();
+
+  constructor(subjectAppId: string) {
+    this.subjectAppId = subjectAppId;
+  }
+
+  async fetchAnnotations(): Promise<SemanticAnnotation[]> {
+    if (!this.subjectAppId) return [];
+    const items = await this.annotationsApi.value.listAnnotations({
+      subjectAppId: this.subjectAppId,
+      subjectKind: this.subjectKind,
+      pageSize: 200,
+    });
+    this._appIdMap.clear();
+    return items.map((item, idx) => {
+      this._appIdMap.set(idx, item.appId);
+      return mapAnnotationV2ToLegacy(item, idx);
+    });
+  }
+
+  async deleteAnnotation(annotationId: number): Promise<void> {
+    const annotationAppId = this._appIdMap.get(annotationId);
+    if (!annotationAppId)
+      throw new Error(`Unknown annotation fakeId ${annotationId}`);
+    await this.annotationsApi.value.deleteAnnotation({ appId: annotationAppId });
+  }
+
+  async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
+    const created = await this.annotationsApi.value.createAnnotation({
+      createAnnotationV2: {
+        subjectAppId: this.subjectAppId,
+        subjectKind: this.subjectKind,
+        predicateIri: annotation.propertyIRI,
+        ...(annotation.valueIRI
+          ? { objectIri: annotation.valueIRI }
+          : { objectLiteral: "" }),
+      },
+    });
+    const fakeId = Date.now();
+    this._appIdMap.set(fakeId, created.appId);
+    return mapAnnotationV2ToLegacy(created, fakeId);
+  }
+}
+
+export class AnnotatedCollection extends SubjectAnnotated {
+  readonly subjectKind = "Collection";
+}
+
+export class AnnotatedDataObject extends SubjectAnnotated {
+  readonly subjectKind = "DataObject";
+}
+
+/**
+ * Reference annotations. `subjectKind` is the concrete reference kind so the
+ * backend's polymorphic permission walk and SHACL constraints resolve the
+ * right shape; callers that don't know the concrete kind may pass the generic
+ * default `"Reference"`.
+ */
+export class AnnotatedReference extends SubjectAnnotated {
+  readonly subjectKind: string;
+
+  constructor(referenceAppId: string, referenceKind = "Reference") {
+    super(referenceAppId);
+    this.subjectKind = referenceKind;
+  }
+}
+
+export class AnnotatedTimeseriesContainer extends SubjectAnnotated {
+  readonly subjectKind = "TimeseriesContainer";
+}
+
+export class AnnotatedFileContainer extends SubjectAnnotated {
+  readonly subjectKind = "FileContainer";
+}
+
+export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
+  readonly subjectKind = "StructuredDataContainer";
+}
+
+// ─── v2 base URL helper (channel-annotation raw fetch only) ─────────────────
 
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
@@ -149,124 +170,13 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-// Wire shape of the AnnotationIO objects returned by GET /v2/annotations
-interface AnnotationV2Wire {
-  appId: string;
-  propertyName?: string;
-  propertyIri?: string;
-  valueName?: string;
-  valueIri?: string;
-  predicateLabel?: string;
-  predicateIri?: string;
-  objectLiteral?: string;
-  objectIri?: string;
-}
-
-function mapAnnotationV2ToLegacy(
-  item: AnnotationV2Wire,
-  fakeId: number,
-): SemanticAnnotation {
-  return {
-    id: fakeId,
-    name: item.propertyName ?? item.predicateLabel ?? "",
-    propertyName: item.propertyName ?? item.predicateLabel ?? "",
-    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
-    valueName: item.valueName ?? item.objectLiteral ?? "",
-    valueIRI: item.valueIri ?? item.objectIri ?? "",
-    propertyRepositoryId: 0,
-    valueRepositoryId: 0,
-  };
-}
-
-// APISIMP-CONTAINER-ANNOTATED-FE-DEAD-ENDPOINTS: the per-kind
-// /v2/{type}-containers/{id}/annotations endpoints were deleted in
-// APISIMP-SA-CONT-DELETE (2026-06-10). Container-level annotations are now
-// addressed via the generic GET|POST|DELETE /v2/annotations surface.
-abstract class ContainerAnnotated implements Annotated {
-  abstract readonly subjectKind: string; // e.g. "TimeseriesContainer"
-  readonly containerAppId: string;
-  // fakeId (sequential integer) → real annotation appId for delete lookup
-  private readonly _appIdMap = new Map<number, string>();
-
-  constructor(containerAppId: string) {
-    this.containerAppId = containerAppId;
-  }
-
-  private annotationsUrl(suffix?: string): string {
-    const base = `${v2BaseUrl()}/v2/annotations`;
-    return suffix ? `${base}/${suffix}` : base;
-  }
-
-  async fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    if (!this.containerAppId) return [];
-    const headers = await authHeaders();
-    const url =
-      `${this.annotationsUrl()}?subjectAppId=` +
-      `${encodeURIComponent(this.containerAppId)}&pageSize=200`;
-    const response = await fetch(url, { headers });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const items = (await response.json()) as AnnotationV2Wire[];
-    this._appIdMap.clear();
-    return items.map((item, idx) => {
-      this._appIdMap.set(idx, item.appId);
-      return mapAnnotationV2ToLegacy(item, idx);
-    });
-  }
-
-  async deleteAnnotation(annotationId: number): Promise<void> {
-    const annotationAppId = this._appIdMap.get(annotationId);
-    if (!annotationAppId)
-      throw new Error(`Unknown annotation fakeId ${annotationId}`);
-    const headers = await authHeaders();
-    const response = await fetch(this.annotationsUrl(annotationAppId), {
-      method: "DELETE",
-      headers,
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    const headers = await authHeaders();
-    const body: Record<string, unknown> = {
-      subjectAppId: this.containerAppId,
-      subjectKind: this.subjectKind,
-      predicateIri: annotation.propertyIRI,
-    };
-    if (annotation.valueIRI) {
-      body.objectIri = annotation.valueIRI;
-    } else {
-      body.objectLiteral = "";
-    }
-    const response = await fetch(this.annotationsUrl(), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const created = (await response.json()) as AnnotationV2Wire;
-    const fakeId = Date.now();
-    this._appIdMap.set(fakeId, created.appId);
-    return mapAnnotationV2ToLegacy(created, fakeId);
-  }
-}
-
-export class AnnotatedTimeseriesContainer extends ContainerAnnotated {
-  readonly subjectKind = "TimeseriesContainer";
-}
-
-export class AnnotatedFileContainer extends ContainerAnnotated {
-  readonly subjectKind = "FileContainer";
-}
-
-export class AnnotatedStructuredDataContainer extends ContainerAnnotated {
-  readonly subjectKind = "StructuredDataContainer";
-}
-
 // ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────
 //
 // Wraps `/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations`
-// (TimeseriesChannelAnnotationRest). Distinct from {@link AnnotatedTimeseries}
-// which still hits the upstream numeric-id-keyed `/shepard/api/...` route.
+// (TimeseriesChannelAnnotationRest). This is the named v1-fallback exception:
+// the generated client has no typed class for this nested channel-annotation
+// resource yet, so it is hit by raw fetch against the /v2/ surface (NOT the v1
+// `/shepard/api/` surface). Backlog: V2UI-CHANNEL-ANNO-CLIENT in aidocs/16.
 // Channels created before TS-SEMANTIC-01 dual-write shipped will GET an empty
 // list and POST will 404 — surface that to the user as "no annotations yet".
 
@@ -320,6 +230,12 @@ export class AnnotatedChannel implements Annotated {
 }
 
 // ─── Per-Timeseries-channel annotations (covered by upstream API) ───────────
+//
+// V1 FALLBACK (named exception): the upstream numeric-id-keyed
+// `/shepard/api/.../timeseries/{id}/annotations` route. The `TimeseriesEntity`
+// here carries its own numeric `id` + `containerId` from the v1 timeseries
+// content surface (parts of timeseries channel content have no v2 twin yet —
+// see CLAUDE.md named-fallback set). Backlog: V2UI-TS-ANNO-V2 in aidocs/16.
 
 export class AnnotatedTimeseries implements Annotated {
   api = useShepardApi(TimeseriesContainerApi);

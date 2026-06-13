@@ -617,7 +617,7 @@ watch(
                     :annotation="ann"
                     :can-delete="false"
                     :annotated-type="
-                      new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)
+                      new AnnotatedReference(timeseriesReferenceAppId ?? '', 'TimeseriesReference')
                     "
                   />
                 </div>
@@ -637,12 +637,13 @@ watch(
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
-                  v-if="isAllowedToEditCollection"
-                  :annotated="new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)"
+                  v-if="isAllowedToEditCollection && timeseriesReferenceAppId"
+                  :annotated="new AnnotatedReference(timeseriesReferenceAppId, 'TimeseriesReference')"
                 />
               </div>
               <SemanticAnnotationList
-                :annotated="new AnnotatedReference(collectionNumericId ?? 0, dataObjectNumericId ?? 0, timeseriesReferenceNumericId ?? 0)"
+                v-if="timeseriesReferenceAppId"
+                :annotated="new AnnotatedReference(timeseriesReferenceAppId, 'TimeseriesReference')"
                 :can-delete="!!isAllowedToEditCollection"
               />
             </section>

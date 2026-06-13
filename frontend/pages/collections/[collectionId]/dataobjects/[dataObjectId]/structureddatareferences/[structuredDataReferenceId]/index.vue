@@ -205,12 +205,12 @@ watch(structuredDataReference, () => {
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
+                  v-if="structuredDataReference?.appId"
                   :can-delete="!!isAllowedToEditCollection"
                   :annotated="
                     new AnnotatedReference(
-                      collectionNumericId ?? 0,
-                      dataObjectNumericId ?? 0,
-                      structuredDataReferenceNumericId ?? 0,
+                      structuredDataReference.appId,
+                      'StructuredDataReference',
                     )
                   "
                 />
@@ -316,13 +316,12 @@ watch(structuredDataReference, () => {
       @confirmed="deleteStructuredDataReference"
     />
     <AddAnnotationDialog
-      v-if="showAddAnnotationDialog"
+      v-if="showAddAnnotationDialog && structuredDataReference?.appId"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
         new AnnotatedReference(
-          collectionNumericId ?? 0,
-          dataObjectNumericId ?? 0,
-          structuredDataReferenceNumericId ?? 0,
+          structuredDataReference.appId,
+          'StructuredDataReference',
         )
       "
     />

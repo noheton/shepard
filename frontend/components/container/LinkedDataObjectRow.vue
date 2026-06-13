@@ -48,7 +48,8 @@ const dataObjectHref = computed(() =>
          dominate the row otherwise. Click "+N more" to expand inline. -->
     <div class="dataobject-annotations">
       <SemanticAnnotationList
-        :annotated="new AnnotatedDataObject(dataObject.collectionId, dataObject.id)"
+        v-if="doAppId"
+        :annotated="new AnnotatedDataObject(doAppId)"
         :can-delete="false"
         :limit="3"
       />
