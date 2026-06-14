@@ -10,7 +10,7 @@ class PermissionAuditEntryIOTest {
   @Test
   void allArgsConstructor_setsAllFields() {
     var io = new PermissionAuditEntryIO(42L, "uuid-7", List.of("Collection", "BasicEntity"), "thing");
-    assertEquals(42L, io.getId());
+    assertEquals(42L, io.getNeo4jNodeId());
     assertEquals("uuid-7", io.getAppId());
     assertEquals(List.of("Collection", "BasicEntity"), io.getLabels());
     assertEquals("thing", io.getName());
@@ -19,7 +19,7 @@ class PermissionAuditEntryIOTest {
   @Test
   void noArgsConstructor_yieldsDefaults() {
     var io = new PermissionAuditEntryIO();
-    assertEquals(0L, io.getId());
+    org.junit.jupiter.api.Assertions.assertNull(io.getNeo4jNodeId());
     org.junit.jupiter.api.Assertions.assertNull(io.getAppId());
     org.junit.jupiter.api.Assertions.assertNull(io.getLabels());
     org.junit.jupiter.api.Assertions.assertNull(io.getName());

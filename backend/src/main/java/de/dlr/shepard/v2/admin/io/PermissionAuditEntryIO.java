@@ -17,8 +17,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "PermissionAuditEntry")
 public class PermissionAuditEntryIO {
 
-  @Schema(required = true, description = "Neo4j-side numeric id of the orphan entity.")
-  private long id;
+  @Schema(
+    required = true,
+    nullable = true,
+    description =
+      "Neo4j internal node id of the orphan entity — exposed here as a triage handle when appId is null (pre-migration rows)."
+  )
+  private Long neo4jNodeId;
 
   @Schema(required = false, nullable = true, description = "appId (UUID v7) if populated by L2a/L2b.")
   private String appId;
