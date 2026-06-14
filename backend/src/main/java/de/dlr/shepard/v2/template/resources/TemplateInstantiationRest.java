@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.shapes.validator.JenaShaclValidator;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import io.quarkus.logging.Log;
@@ -27,6 +30,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -63,6 +67,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>Create the DataObject with attributes extracted from the template body
  *       ({@code dataobjects[0].attributes}).</li>
  *   <li>Record the {@code :CREATED_FROM_TEMPLATE} relationship.</li>
+ *   <li>Seed {@code :SemanticAnnotation} nodes from {@code dataObject.annotations[]}
+ *       in the flattened template body (fire-and-forget secondary writes per CLAUDE.md).
+ *       UI-GAP-4 / TPL-INSTANTIATE-ANNOTATIONS-1.</li>
  *   <li>Return 201 + the new {@link DataObjectIO}.</li>
  * </ol>
  */
@@ -115,6 +122,9 @@ public class TemplateInstantiationRest {
 
   @Inject
   JenaShaclValidator shaclValidator;
+
+  @Inject
+  SemanticAnnotationV2DAO annotationDAO;
 
   @POST
   @Path("/{templateAppId}")
@@ -272,6 +282,28 @@ public class TemplateInstantiationRest {
     // Step 11: record :CREATED_FROM_TEMPLATE edge
     templateDAO.recordCreatedFrom(created.getShepardId(), template);
 
+    // Step 12: seed :SemanticAnnotation nodes from dataObject.annotations[] in the
+    // (flattened) template body. Fire-and-forget — a secondary write must not block
+    // or fail the primary DataObject creation (CLAUDE.md: secondary writes are fail-soft).
+    List<Map.Entry<String, String>> annotationSeeds = extractAnnotationSeeds(effectiveBody);
+    for (Map.Entry<String, String> seed : annotationSeeds) {
+      try {
+        SemanticAnnotation ann = new SemanticAnnotation();
+        ann.setAppId(AppIdGenerator.next());
+        ann.setSubjectKind("DataObject");
+        ann.setSubjectAppId(created.getAppId());
+        ann.setPropertyIRI(seed.getKey());
+        ann.setValueName(seed.getValue());
+        ann.setSourceMode("system");
+        ann.setAgentUsername(caller);
+        ann.setConfidence(1.0);
+        annotationDAO.createOrUpdate(ann);
+      } catch (Exception ex) {
+        Log.warnf("Failed to seed annotation predicate=%s for DataObject %s: %s",
+          seed.getKey(), created.getShepardId(), ex.getMessage());
+      }
+    }
+
     return Response.status(Response.Status.CREATED).entity(new DataObjectIO(created)).build();
   }
 
@@ -406,6 +438,49 @@ public class TemplateInstantiationRest {
       }
     }
     return template.getName() + "-" + System.currentTimeMillis();
+  }
+
+  /**
+   * Extract {@code dataObject.annotations[]} from the (flattened) template body as
+   * a list of predicate → value pairs. Each entry must carry both {@code predicate}
+   * and {@code value} (non-null, non-blank). Returns an empty list when the path is
+   * absent, the body is null, or parsing fails.
+   *
+   * <p>Template body shape (from V100 MFFD migration, UI-GAP-4):
+   * <pre>{@code
+   * {
+   *   "dataObject": {
+   *     "annotations": [
+   *       { "predicate": "urn:shepard:domain", "value": "aerospace-manufacturing" }
+   *     ]
+   *   }
+   * }
+   * }</pre>
+   *
+   * <p>Note: {@code dataObject} (singular) is the schema description key; distinct
+   * from {@code dataobjects} (plural) which carries per-instance attribute defaults.
+   */
+  List<Map.Entry<String, String>> extractAnnotationSeeds(String body) {
+    if (body == null || body.isBlank()) return List.of();
+    JsonNode root;
+    try {
+      root = objectMapper.readTree(body);
+    } catch (JsonProcessingException e) {
+      Log.warnf("Could not parse template body for annotation seed extraction: %s", e.getMessage());
+      return List.of();
+    }
+    JsonNode annotations = root.path("dataObject").path("annotations");
+    if (annotations.isMissingNode() || annotations.isNull() || !annotations.isArray()) return List.of();
+
+    List<Map.Entry<String, String>> result = new ArrayList<>();
+    for (JsonNode entry : annotations) {
+      JsonNode predNode = entry.path("predicate");
+      JsonNode valNode = entry.path("value");
+      if (!predNode.isTextual() || predNode.textValue().isBlank()) continue;
+      if (!valNode.isTextual() || valNode.textValue().isBlank()) continue;
+      result.add(Map.entry(predNode.textValue(), valNode.textValue()));
+    }
+    return result;
   }
 
   /**

@@ -20,9 +20,11 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.shapes.validator.JenaShaclValidator;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import jakarta.ws.rs.core.Response;
@@ -73,6 +75,9 @@ class TemplateInstantiationRestTest {
   DataObjectService dataObjectService;
 
   @Mock
+  SemanticAnnotationV2DAO annotationDAO;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -91,6 +96,7 @@ class TemplateInstantiationRestTest {
     resource.objectMapper = new ObjectMapper();
     resource.inheritanceResolver = new TemplateInheritanceResolver(templateDAO);
     resource.shaclValidator = new JenaShaclValidator();
+    resource.annotationDAO = annotationDAO;
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -509,6 +515,103 @@ class TemplateInstantiationRestTest {
     assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("<urn:x:y>"));
     assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("urn:x:y"));
     assertEquals(null, TemplateInstantiationRest.normalizePathIri(null));
+  }
+
+  // ---------- extractAnnotationSeeds unit tests (UI-GAP-4) ----------
+
+  @Test
+  void extractAnnotationSeeds_returnsEmptyWhenBodyIsNull() {
+    assertTrue(resource.extractAnnotationSeeds(null).isEmpty());
+  }
+
+  @Test
+  void extractAnnotationSeeds_returnsEmptyWhenAnnotationsAbsent() {
+    assertTrue(resource.extractAnnotationSeeds("{\"dataobjects\":[{}]}").isEmpty());
+  }
+
+  @Test
+  void extractAnnotationSeeds_returnsAnnotationsFromTemplateBody() {
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"aerospace-manufacturing\"}," +
+      "{\"predicate\":\"urn:shepard:mffd:step-number\",\"value\":\"1\"}" +
+      "]}}";
+    List<Map.Entry<String, String>> seeds = resource.extractAnnotationSeeds(body);
+    assertEquals(2, seeds.size());
+    assertEquals("urn:shepard:domain", seeds.get(0).getKey());
+    assertEquals("aerospace-manufacturing", seeds.get(0).getValue());
+    assertEquals("urn:shepard:mffd:step-number", seeds.get(1).getKey());
+    assertEquals("1", seeds.get(1).getValue());
+  }
+
+  @Test
+  void extractAnnotationSeeds_skipsEntriesWithBlankPredicateOrValue() {
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"\",\"value\":\"v1\"}," +
+      "{\"predicate\":\"urn:ok\",\"value\":\"\"}," +
+      "{\"predicate\":\"urn:good\",\"value\":\"good-value\"}" +
+      "]}}";
+    List<Map.Entry<String, String>> seeds = resource.extractAnnotationSeeds(body);
+    assertEquals(1, seeds.size());
+    assertEquals("urn:good", seeds.get(0).getKey());
+  }
+
+  @Test
+  void annotationSeedsAreWrittenOnCreate() {
+    allowWrite();
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"aerospace-manufacturing\"}," +
+      "{\"predicate\":\"urn:shepard:mffd:process-type\",\"value\":\"AFP Layup\"}" +
+      "]}," +
+      "\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("MFFD AFP Layup", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(700L);
+    newDo.setAppId("do-uuid-1234");
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+    ArgumentCaptor<SemanticAnnotation> annCaptor = ArgumentCaptor.forClass(SemanticAnnotation.class);
+    verify(annotationDAO, org.mockito.Mockito.times(2)).createOrUpdate(annCaptor.capture());
+    List<SemanticAnnotation> written = annCaptor.getAllValues();
+    assertEquals("DataObject", written.get(0).getSubjectKind());
+    assertEquals("do-uuid-1234", written.get(0).getSubjectAppId());
+    assertEquals("urn:shepard:domain", written.get(0).getPropertyIRI());
+    assertEquals("aerospace-manufacturing", written.get(0).getValueName());
+    assertEquals("system", written.get(0).getSourceMode());
+    assertEquals(CALLER, written.get(0).getAgentUsername());
+    assertEquals("urn:shepard:mffd:process-type", written.get(1).getPropertyIRI());
+    assertEquals("AFP Layup", written.get(1).getValueName());
+  }
+
+  @Test
+  void annotationSeedFailureDoesNotBlockCreation() {
+    allowWrite();
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"test\"}" +
+      "]}," +
+      "\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(800L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+    org.mockito.Mockito.doThrow(new RuntimeException("DB error")).when(annotationDAO).createOrUpdate(any());
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    // Secondary write failure must not block the 201
+    assertEquals(201, r.getStatus());
   }
 
   // ---------- helpers ----------
