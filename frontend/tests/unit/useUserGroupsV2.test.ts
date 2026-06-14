@@ -168,4 +168,62 @@ describe("useUserGroupsV2", () => {
 
     await expect(getUserGroup("missing")).rejects.toThrow("404");
   });
+
+  it("gets caller roles via GET /v2/user-groups/{appId}/roles", async () => {
+    const mockRoles = { owner: true, manager: false, writer: false, reader: true };
+    mockFetch.mockReturnValue(okResponse(mockRoles));
+    const { getUserGroupRoles } = await importComposable();
+
+    const result = await getUserGroupRoles("ug-app-001");
+
+    const [url, opts] = mockFetch.mock.calls[0]!;
+    expect(url).toBe("http://localhost:8080/v2/user-groups/ug-app-001/roles");
+    expect((opts as RequestInit).method).toBeUndefined(); // GET
+    expect(result.owner).toBe(true);
+    expect(result.manager).toBe(false);
+  });
+
+  it("gets permissions via GET /v2/user-groups/{appId}/permissions", async () => {
+    const mockPerms = {
+      owner: "alice",
+      permissionType: "PRIVATE",
+      reader: ["bob"],
+      writer: [],
+      manager: [],
+      readerGroupIds: [],
+      writerGroupIds: [],
+    };
+    mockFetch.mockReturnValue(okResponse(mockPerms));
+    const { getUserGroupPermissions } = await importComposable();
+
+    const result = await getUserGroupPermissions("ug-app-001");
+
+    const [url] = mockFetch.mock.calls[0]!;
+    expect(url).toBe("http://localhost:8080/v2/user-groups/ug-app-001/permissions");
+    expect(result.owner).toBe("alice");
+    expect(result.reader).toContain("bob");
+  });
+
+  it("patches permissions via PATCH /v2/user-groups/{appId}/permissions with merge-patch+json", async () => {
+    const patch = { reader: ["carol"], writer: [], manager: [] };
+    mockFetch.mockReturnValue(okResponse({ owner: "alice", ...patch }));
+    const { patchUserGroupPermissions } = await importComposable();
+
+    await patchUserGroupPermissions("ug-app-001", patch);
+
+    const [url, opts] = mockFetch.mock.calls[0]!;
+    expect(url).toBe("http://localhost:8080/v2/user-groups/ug-app-001/permissions");
+    expect((opts as RequestInit).method).toBe("PATCH");
+    expect((opts as RequestInit).headers).toMatchObject({
+      "Content-Type": "application/merge-patch+json",
+    });
+    expect(JSON.parse((opts as RequestInit).body as string)).toEqual(patch);
+  });
+
+  it("patchUserGroupPermissions throws on non-2xx", async () => {
+    mockFetch.mockReturnValue(errorResponse(403));
+    const { patchUserGroupPermissions } = await importComposable();
+
+    await expect(patchUserGroupPermissions("ug-app-001", {})).rejects.toThrow("403");
+  });
 });

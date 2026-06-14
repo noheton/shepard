@@ -35,6 +35,25 @@ export interface PatchUserGroupV2Body {
   usernames?: string[];
 }
 
+/** Wire shape of GET /v2/user-groups/{appId}/roles */
+export interface UserGroupRolesV2 {
+  owner: boolean;
+  manager: boolean;
+  writer: boolean;
+  reader: boolean;
+}
+
+/** Wire shape of GET|PATCH /v2/user-groups/{appId}/permissions */
+export interface UserGroupPermissionsV2 {
+  owner?: string | null;
+  permissionType?: string | null;
+  reader?: string[] | null;
+  writer?: string[] | null;
+  manager?: string[] | null;
+  readerGroupIds?: number[] | null;
+  writerGroupIds?: number[] | null;
+}
+
 function getV2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -136,6 +155,41 @@ export function useUserGroupsV2() {
     });
   }
 
+  async function getUserGroupRoles(appId: string): Promise<UserGroupRolesV2> {
+    const res = await fetch(
+      `${base()}/${encodeURIComponent(appId)}/roles`,
+      { headers: { ...authHeaders() }, credentials: 'include' },
+    );
+    if (!res.ok) throw new Error(`getUserGroupRoles failed: ${res.status}`);
+    return (await res.json()) as UserGroupRolesV2;
+  }
+
+  async function getUserGroupPermissions(appId: string): Promise<UserGroupPermissionsV2> {
+    const res = await fetch(
+      `${base()}/${encodeURIComponent(appId)}/permissions`,
+      { headers: { ...authHeaders() }, credentials: 'include' },
+    );
+    if (!res.ok) throw new Error(`getUserGroupPermissions failed: ${res.status}`);
+    return (await res.json()) as UserGroupPermissionsV2;
+  }
+
+  async function patchUserGroupPermissions(
+    appId: string,
+    permissions: UserGroupPermissionsV2,
+  ): Promise<UserGroupPermissionsV2> {
+    const res = await fetch(
+      `${base()}/${encodeURIComponent(appId)}/permissions`,
+      {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/merge-patch+json' },
+        credentials: 'include',
+        body: JSON.stringify(permissions),
+      },
+    );
+    if (!res.ok) throw new Error(`patchUserGroupPermissions failed: ${res.status}`);
+    return (await res.json()) as UserGroupPermissionsV2;
+  }
+
   return {
     listUserGroups,
     getUserGroup,
@@ -144,5 +198,8 @@ export function useUserGroupsV2() {
     deleteUserGroup,
     addMember,
     removeMember,
+    getUserGroupRoles,
+    getUserGroupPermissions,
+    patchUserGroupPermissions,
   };
 }
