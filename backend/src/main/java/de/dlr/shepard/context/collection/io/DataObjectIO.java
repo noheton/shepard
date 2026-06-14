@@ -8,6 +8,7 @@ import de.dlr.shepard.context.references.structureddata.entities.StructuredDataR
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
+import java.util.Arrays;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,29 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private long[] successorIds;
 
   private long[] predecessorIds;
+
+  /**
+   * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — appId (UUID v7) companion for
+   * {@link #predecessorIds}. On GET responses, populated in parallel with
+   * {@code predecessorIds} (nulls filtered for pre-L2b rows that lack appIds).
+   *
+   * <p>On PATCH bodies: when non-null and non-empty, overrides {@code predecessorIds}
+   * as the authoritative predecessor source. Callers on post-L2b instances (UUID v7
+   * only, no numeric shepardId) MUST use this field instead of {@code predecessorIds}.
+   *
+   * <p>Back-compat: callers that only send {@code predecessorIds} are unaffected —
+   * if this field is absent / null in the request, the service falls back to
+   * {@code predecessorIds}. If both are present, this field wins.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    description =
+      "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor " +
+      "DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. " +
+      "On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows."
+  )
+  private String[] predecessorAppIds;
 
   @Schema(readOnly = true, required = true)
   private long[] childrenIds;
@@ -135,6 +159,10 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.referenceIds = extractShepardIds(dataObject.getReferences());
     this.successorIds = extractShepardIds(dataObject.getSuccessors());
     this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
+    this.predecessorAppIds = dataObject.getPredecessors().stream()
+        .map(DataObject::getAppId)
+        .filter(Objects::nonNull)
+        .toArray(String[]::new);
     this.childrenIds = extractShepardIds(dataObject.getChildren());
     this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
     this.incomingIds = extractShepardIds(dataObject.getIncoming());
@@ -160,6 +188,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
       HasId.areEqualSets(referenceIds, other.referenceIds) &&
       HasId.areEqualSets(successorIds, other.successorIds) &&
       HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
+      Arrays.equals(predecessorAppIds, other.predecessorAppIds) &&
       HasId.areEqualSets(childrenIds, other.childrenIds) &&
       Objects.equals(parentId, other.parentId) &&
       HasId.areEqualSets(incomingIds, other.incomingIds) &&
@@ -177,6 +206,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(childrenIds);
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + HasId.hashcodeHelper(predecessorIds);
+    result = prime * result + Arrays.hashCode(predecessorAppIds);
     result = prime * result + Objects.hashCode(parentId);
     result = prime * result + Objects.hashCode(attachedTemplateAppId);
 

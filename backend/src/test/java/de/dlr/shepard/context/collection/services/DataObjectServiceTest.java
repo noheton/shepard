@@ -538,6 +538,120 @@ public class DataObjectServiceTest {
   }
 
   @Test
+  public void updateDataObject_predecessorAppIds_resolvesViaAppId() {
+    // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: PATCH body with predecessorAppIds[]
+    // must resolve predecessors by appId without requiring numeric shepardId.
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
+    String predecessorAppId = "01910000-0000-7000-8000-000000000042";
+    DataObject predecessor = aDataObject()
+      .id(4L).shepardId(45L).appId(predecessorAppId).inCollection(collection).build();
+    List<DataObject> predecessors = List.of(predecessor);
+
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setId(1L);
+        setName("myName");
+        setAttributes(Map.of());
+        setPredecessorAppIds(new String[] { predecessorAppId });
+      }
+    };
+    DataObject old = aDataObject()
+      .id(1L).shepardId(1L).named("old").inCollection(collection)
+      .ownedBy(defaultUser).build();
+    DataObject updated = aDataObject()
+      .id(1L).shepardId(1L).named("myName").inCollection(collection)
+      .withPredecessors(predecessors).ownedBy(defaultUser).build();
+
+    when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+    when(dao.findByAppId(predecessorAppId)).thenReturn(predecessor);
+    when(dao.createOrUpdate(old)).thenReturn(updated);
+    when(dateHelper.getDate()).thenReturn(new Date(0));
+    when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+
+    DataObject actual = service.updateDataObject(
+      collection.getShepardId(), old.getShepardId(), input);
+
+    verify(dao).findByAppId(predecessorAppId);
+    verify(dao, never()).findByCollectionAndShepardIds(anyLong(), anyList());
+    assertEquals(updated, actual);
+  }
+
+  @Test
+  public void updateDataObject_predecessorAppIds_selfRefThrows() {
+    // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: self-reference guard via appId path.
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
+    String selfAppId = "01910000-0000-7000-8000-000000000099";
+    DataObject old = aDataObject()
+      .id(1L).shepardId(1L).appId(selfAppId).named("old").inCollection(collection)
+      .ownedBy(defaultUser).build();
+
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setId(1L);
+        setName("old");
+        setAttributes(Map.of());
+        setPredecessorAppIds(new String[] { selfAppId });
+      }
+    };
+
+    when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+    when(dao.findByAppId(selfAppId)).thenReturn(old);
+    when(dateHelper.getDate()).thenReturn(new Date(0));
+    when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+
+    assertThrows(InvalidBodyException.class, () ->
+      service.updateDataObject(collection.getShepardId(), old.getShepardId(), input));
+  }
+
+  @Test
+  public void updateDataObject_predecessorAppIds_notFoundThrows() {
+    // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: missing predecessor → 400.
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
+    String missingAppId = "01910000-0000-7000-8000-0000000000ff";
+    DataObject old = aDataObject()
+      .id(1L).shepardId(1L).named("old").inCollection(collection)
+      .ownedBy(defaultUser).build();
+
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setId(1L);
+        setName("old");
+        setAttributes(Map.of());
+        setPredecessorAppIds(new String[] { missingAppId });
+      }
+    };
+
+    when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+    when(dao.findByAppId(missingAppId)).thenReturn(null);
+    when(dateHelper.getDate()).thenReturn(new Date(0));
+    when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(old.getShepardId()), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong()))
+      .thenReturn(true);
+
+    assertThrows(InvalidBodyException.class, () ->
+      service.updateDataObject(collection.getShepardId(), old.getShepardId(), input));
+  }
+
+  @Test
   public void updateDataObjectByShepardIdTest_UpdateParent() {
     Collection collection = aCollection().id(100L).shepardId(1005L).build();
     Date date = new Date(23);
