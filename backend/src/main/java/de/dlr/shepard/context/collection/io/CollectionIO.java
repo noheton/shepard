@@ -24,9 +24,27 @@ public class CollectionIO extends AbstractDataObjectIO {
    * Id of a default file container.
    * This value can be nullable.
    * The default value is null.
+   *
+   * @deprecated Use {@link #defaultFileContainerAppId} (UUID v7). Kept for
+   *     backward-compatibility until the L2e deprecation window closes.
+   *     Will not be removed before that window.
    */
   @Schema(nullable = true)
+  @Deprecated
   private Long defaultFileContainerId = null;
+
+  /**
+   * AppId (UUID v7) of the default file container. Nullable when none is set.
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * {@link CollectionIO} is shared with the v1 {@code /shepard/api/} surface.
+   * Without this annotation a null value leaks onto v1 as
+   * {@code "defaultFileContainerAppId": null}, violating the upstream-5.2.0
+   * byte-fidelity guarantee.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, readOnly = true)
+  private String defaultFileContainerAppId;
 
   /**
    * Optional hero/banner image URL displayed at the top of the Collection
@@ -122,8 +140,10 @@ public class CollectionIO extends AbstractDataObjectIO {
 
     if (collection.getFileContainer() == null) {
       this.defaultFileContainerId = null;
+      this.defaultFileContainerAppId = null;
     } else {
       this.defaultFileContainerId = collection.getFileContainer().getId();
+      this.defaultFileContainerAppId = collection.getFileContainer().getAppId();
     }
 
     this.heroImageUrl = collection.getHeroImageUrl();
@@ -142,6 +162,7 @@ public class CollectionIO extends AbstractDataObjectIO {
       HasId.areEqualSets(dataObjectIds, other.dataObjectIds) &&
       HasId.areEqualSets(incomingIds, other.incomingIds) &&
       Objects.equals(defaultFileContainerId, other.defaultFileContainerId) &&
+      Objects.equals(defaultFileContainerAppId, other.defaultFileContainerAppId) &&
       Objects.equals(heroImageUrl, other.heroImageUrl) &&
       Objects.equals(importedFrom, other.importedFrom) &&
       Objects.equals(promptLogMode, other.promptLogMode) &&
@@ -156,6 +177,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(dataObjectIds);
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + Objects.hashCode(defaultFileContainerId);
+    result = prime * result + Objects.hashCode(defaultFileContainerAppId);
     result = prime * result + Objects.hashCode(heroImageUrl);
     result = prime * result + Objects.hashCode(importedFrom);
     result = prime * result + Objects.hashCode(promptLogMode);
