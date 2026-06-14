@@ -417,7 +417,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-06-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire15.md`](agent-findings/apisimp-sweep-2026-06-13-fire15.md) | APISIMP Sweep — 2026-06-13 (fire #N+15) | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire23.md`](agent-findings/apisimp-sweep-2026-06-14-fire23.md) | APISIMP Sweep — 2026-06-14 (fire 23) | 2026-06-14 | 2026-06-14 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire26.md`](agent-findings/apisimp-sweep-2026-06-14-fire26.md) | APISIMP Sweep — 2026-06-14 fire-26 | 2026-06-14 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire26.md`](agent-findings/apisimp-sweep-2026-06-14-fire26.md) | APISIMP Sweep — 2026-06-14 fire-26 | 2026-06-14 | 2026-06-14 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-12 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-12 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-06-12 |

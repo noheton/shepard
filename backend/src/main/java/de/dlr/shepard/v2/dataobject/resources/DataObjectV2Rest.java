@@ -902,13 +902,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number tsId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             timeseries.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              tsId.longValue(),
               (String) ref.get("refAppId")
             ));
           }
@@ -922,13 +919,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number fileId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             files.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              fileId.longValue(),
               (String) ref.get("refAppId")
             ));
           }
@@ -942,13 +936,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number sdId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             structuredData.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              sdId.longValue(),
               (String) ref.get("refAppId")
             ));
           }

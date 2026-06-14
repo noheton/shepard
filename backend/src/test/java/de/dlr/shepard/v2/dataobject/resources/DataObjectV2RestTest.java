@@ -577,8 +577,7 @@ class DataObjectV2RestTest {
       "refShepardId", 55L,
       "refAppId", tsRefAppId,
       "containerAppId", tsContainerAppId,
-      "containerName", "vibration-ts",
-      "containerId", 66L
+      "containerName", "vibration-ts"
     );
     when(dataObjectDAO.findContainersByDataObjectAppId(DO_APP_ID))
       .thenReturn(Map.of("tsRefs", List.of(tsRef), "fileRefs", List.of(), "sdRefs", List.of()));
