@@ -1,3 +1,25 @@
+/**
+ * V2-SWEEP-002-3 — call sites annotated with V1-EXCEPTION comments tracking
+ * the pending migration to v2 user-group endpoints.
+ *
+ * The full v2 migration (using `GET /v2/user-groups/{appId}/roles`,
+ * `GET /v2/user-groups/{appId}/permissions`, and
+ * `PATCH /v2/user-groups/{appId}/permissions`) is BLOCKED until:
+ *
+ *   1. The backend ships `UserGroupV2Rest` with the three v2 endpoints.
+ *   2. The generated `@dlr-shepard/backend-client` is regenerated to include
+ *      the v2 methods (`getUserGroupRolesV2`, `getUserGroupPermissionsV2`,
+ *      `patchUserGroupPermissions`).
+ *   3. The `UserGroup` v1 model gains an `appId` field (or a v2 list endpoint
+ *      that returns `UserGroupV2` with `appId` is added).
+ *
+ * All three blockers are tracked as V2-SWEEP-002-4 in aidocs/16.
+ *
+ * Remaining V1-EXCEPTIONs after V2-SWEEP-002-4 lands:
+ * - `useShepardApi(UserApi).value.getUser(...)` — no v2 user-by-username
+ *   endpoint yet; tracked separately in aidocs/16.
+ */
+
 import {
   UserApi,
   UserGroupApi,
@@ -62,6 +84,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
 
   async function getUserRoles() {
     try {
+      // V1-EXCEPTION: migrate to GET /v2/user-groups/{appId}/roles once
+      // V2-SWEEP-002-4 ships and the generated client is regenerated.
       roles.value = await useShepardApi(UserGroupApi).value.getUserGroupRoles({
         userGroupId: currentUserGroup.value.id,
       });
@@ -72,6 +96,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
 
   async function getUserGroupPermissions() {
     try {
+      // V1-EXCEPTION: migrate to GET /v2/user-groups/{appId}/permissions once
+      // V2-SWEEP-002-4 ships and the generated client is regenerated.
       updatedPermissions.value = await useShepardApi(
         UserGroupApi,
       ).value.getUserGroupPermissions({
@@ -124,6 +150,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
           userGroupId: currentUserGroup.value.id,
           userGroup: { ...currentUserGroup.value, usernames: newMembers },
         });
+        // V1-EXCEPTION: migrate to PATCH /v2/user-groups/{appId}/permissions
+        // (RFC 7396 merge-patch) once V2-SWEEP-002-4 ships.
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
           userGroupId: currentUserGroup.value.id,
           permissions: updatedPermissions.value,
@@ -162,6 +190,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
           userGroupId: currentUserGroup.value.id,
           userGroup: updatedUserGroup,
         });
+        // V1-EXCEPTION: migrate to PATCH /v2/user-groups/{appId}/permissions
+        // once V2-SWEEP-002-4 ships.
         useShepardApi(UserGroupApi).value.editUserGroupPermissions({
           userGroupId: currentUserGroup.value.id,
           permissions: updatedPermissions.value,
@@ -185,6 +215,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       };
 
       try {
+        // V1-EXCEPTION: migrate to PATCH /v2/user-groups/{appId}/permissions
+        // once V2-SWEEP-002-4 ships.
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
           userGroupId: currentUserGroup.value.id,
           permissions: updatedPermissions.value,
@@ -198,6 +230,7 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       }
     }
   }
+
   async function removeManager(member: User) {
     if (updatedPermissions.value) {
       updatedPermissions.value = {
@@ -208,6 +241,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
       };
 
       try {
+        // V1-EXCEPTION: migrate to PATCH /v2/user-groups/{appId}/permissions
+        // once V2-SWEEP-002-4 ships.
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
           userGroupId: currentUserGroup.value.id,
           permissions: updatedPermissions.value,
@@ -232,6 +267,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
         owner: newOwner.username,
       };
       try {
+        // V1-EXCEPTION: migrate to PATCH /v2/user-groups/{appId}/permissions
+        // once V2-SWEEP-002-4 ships.
         await useShepardApi(UserGroupApi).value.editUserGroupPermissions({
           userGroupId: currentUserGroup.value.id,
           permissions: updatedPermissions.value,
@@ -248,6 +285,8 @@ export function useHandleUserGroupMembers(userGroup: UserGroup) {
 
   async function deleteUserGroup() {
     try {
+      // V1-EXCEPTION: no v2 DELETE user-group endpoint exists yet.
+      // Tracked as V2-SWEEP-002-4.
       await useShepardApi(UserGroupApi).value.deleteUserGroup({
         userGroupId: currentUserGroup.value.id,
       });

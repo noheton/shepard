@@ -104,6 +104,10 @@ async function fetchUser(username: string) {
   return user;
 }
 async function fetchUserGroup(groupId: number) {
+  // V1-EXCEPTION: the permission payload carries numeric group IDs (readerGroupIds/writerGroupIds).
+  // The v2 permissions surface (V2-SWEEP-002-PERMISSIONS) still returns these as numeric ids
+  // in PermissionsIO — there is no v2 user-group-by-numeric-id endpoint. This stays a V1-EXCEPTION
+  // until permissions payload is redesigned to carry group appIds (V2-SWEEP-002-4).
   const userGroup = await useShepardApi(UserGroupApi).value.getUserGroup({
     userGroupId: groupId,
   });
