@@ -35,7 +35,7 @@ function handleUploadedImages(files: ShepardFile[], filecontainerId: number) {
 
 async function handleUploadedImage(file: ShepardFile, filecontainerId: number) {
   // todo: only allow images
-  if (!collectionAccessor.collection.value?.defaultFileContainerId) {
+  if (!collectionAccessor.collection.value?.defaultFileContainerAppId) {
     try {
       await collectionAccessor.fetchData();
     } catch (error) {

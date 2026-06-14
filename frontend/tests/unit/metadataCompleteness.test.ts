@@ -44,6 +44,7 @@ function buildFullCollection(overrides: Partial<Collection> = {}): Collection {
     dataObjectIds: [1, 2, 3, 4, 5],
     incomingIds: [],
     defaultFileContainerId: null,
+    defaultFileContainerAppId: null,
     license: "CC-BY-4.0",
     accessRights: "OPEN",
     ...overrides,
