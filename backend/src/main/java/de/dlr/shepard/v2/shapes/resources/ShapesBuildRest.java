@@ -86,7 +86,11 @@ public class ShapesBuildRest {
     description = "Compiled shape graph. Inspect shapeGraph + shapeIri.",
     content = @Content(schema = @Schema(implementation = ShapeBuildResponseIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Request body missing, or the DSL was structurally invalid.")
+  @APIResponse(
+    responseCode = "400",
+    description = "Request body missing, or the DSL was structurally invalid.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ShapeBuildResponseIO.class))
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response build(
     @RequestBody(
@@ -98,6 +102,7 @@ public class ShapesBuildRest {
   ) {
     if (body == null) {
       return Response.status(Response.Status.BAD_REQUEST)
+        .type("application/problem+json")
         .entity(ShapeBuildResponseIO.invalid("request body required"))
         .build();
     }
@@ -110,6 +115,7 @@ public class ShapesBuildRest {
       // so the editor can highlight the offending row inline.
       Log.debugf("ShapesBuildRest: invalid DSL (%s).", ex.getMessage());
       return Response.status(Response.Status.BAD_REQUEST)
+        .type("application/problem+json")
         .entity(ShapeBuildResponseIO.invalid(ex.getMessage()))
         .build();
     }
