@@ -102,7 +102,7 @@ public class GitReferenceRest {
       return Response.status(Response.Status.NOT_IMPLEMENTED)
         .type("application/problem+json")
         .entity(new ProblemJson(
-            "https://shepard.dlr.de/problems/git.adapter.unsupported-host",
+            "/problems/git.adapter.unsupported-host",
             "No GitAdapter is registered for this host.",
             501,
             "v1 ships a GitLab adapter only; GitHub and Gitea ship in G1d.",
