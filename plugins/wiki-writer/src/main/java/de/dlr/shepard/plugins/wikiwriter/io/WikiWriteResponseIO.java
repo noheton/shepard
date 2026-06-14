@@ -17,8 +17,19 @@ public class WikiWriteResponseIO {
    * The Neo4j OGM id of the {@code LabJournalEntry} that was created.
    * Clients can use this with the upstream
    * {@code GET /shepard/api/.../labJournalEntries/{id}} endpoint.
+   *
+   * @deprecated Use {@link #labJournalEntryAppId} (UUID v7 stable identifier).
+   *             This field will be removed in the L2e deprecation window.
    */
+  @Deprecated
   private long labJournalEntryId;
+
+  /**
+   * The {@code appId} (UUID v7) of the {@code LabJournalEntry} that was created.
+   * Use {@code GET /v2/data-objects/{dataObjectAppId}} and inspect the lab journal
+   * entries panel, or reference this appId in semantic annotations.
+   */
+  private String labJournalEntryAppId;
 
   /**
    * The generated Markdown summary that was written as the journal entry content.
