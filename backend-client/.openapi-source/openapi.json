@@ -936,10 +936,6 @@
           "containerAppId" : {
             "type" : "string"
           },
-          "containerOgmId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
           "containerName" : {
             "type" : "string"
           },
