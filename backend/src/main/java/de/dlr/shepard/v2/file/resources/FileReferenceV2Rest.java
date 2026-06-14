@@ -93,6 +93,7 @@ public class FileReferenceV2Rest {
   private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-references.unauthorized";
   private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/file-references.forbidden";
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-references.internal-error";
+  private static final String PROBLEM_TYPE_RANGE = "/problems/file-references.range-not-satisfiable";
 
   // ─── upload ───────────────────────────────────────────────────────────────
 
@@ -341,7 +342,11 @@ public class FileReferenceV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId, or its backing bytes are missing.")
-  @APIResponse(responseCode = "416", description = "Range not satisfiable — start offset is beyond the file size; `Content-Range: bytes */TOTAL` is included.")
+  @APIResponse(
+    responseCode = "416",
+    description = "Range not satisfiable — start offset is beyond the file size; `Content-Range: bytes */TOTAL` is included.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   public Response getContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
@@ -375,8 +380,17 @@ public class FileReferenceV2Rest {
     // suffix-range ("bytes=-N") not supported in FR1b.
     long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
     if (range == null) {
+      ProblemJson rangeBody = new ProblemJson(
+        PROBLEM_TYPE_RANGE,
+        "Range Not Satisfiable",
+        Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE.getStatusCode(),
+        "Byte range start exceeds file size",
+        null
+      );
       return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
+        .type("application/problem+json")
         .header("Content-Range", "bytes */" + total)
+        .entity(rangeBody)
         .build();
     }
     long start = range[0];

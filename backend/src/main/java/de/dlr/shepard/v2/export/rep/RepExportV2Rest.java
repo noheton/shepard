@@ -90,17 +90,17 @@ public class RepExportV2Rest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
+      return problem(Response.Status.UNAUTHORIZED, "/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
     }
     String caller = securityContext.getUserPrincipal().getName();
 
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
+      return problem(Response.Status.NOT_FOUND, "/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
-      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Write permission on collection '" + collectionAppId + "'.");
+      return problem(Response.Status.FORBIDDEN, "/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Write permission on collection '" + collectionAppId + "'.");
     }
 
     Log.infof("TPL14 REP export requested: collection=%s caller=%s", collectionAppId, caller);
@@ -131,20 +131,20 @@ public class RepExportV2Rest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
+      return problem(Response.Status.UNAUTHORIZED, "/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
     }
     String caller = securityContext.getUserPrincipal().getName();
 
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
+      return problem(Response.Status.NOT_FOUND, "/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
     }
 
     // GET stays on Read — fetching a previously-built REP is a read operation
     // (no Activity recorded, no state mutated). Only the POST build flipped
     // to Write per MCP-PERMS-AUDIT-2.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Read permission on collection '" + collectionAppId + "'.");
+      return problem(Response.Status.FORBIDDEN, "/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Read permission on collection '" + collectionAppId + "'.");
     }
 
     // TPL14b: export persistence not yet implemented — return 404 with informative message.

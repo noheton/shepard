@@ -102,13 +102,13 @@ public class PublishRest {
     @Context UriInfo uriInfo
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.kind.unsupported",
+        "/problems/publish.kind.unsupported",
         "Unsupported publishable kind",
         "No publishable kind matches URL segment '" +
         kind +
@@ -123,14 +123,14 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
+      return problem(Response.Status.NOT_FOUND, "/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     // Per aidocs/66 §4.1: caller must hold Write OR Manage. AccessType.Write
     // already maps to "Writer or Manager" in PermissionsService#rolesGrantAccess
     // (case Write -> isWriter || isManager). Owner-on-entity counts as
     // manager and is therefore admitted.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
+      return problem(Response.Status.FORBIDDEN, "/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     String locatorUrl = absoluteUrl(uriInfo, "/v2/" + k.urlSegment() + "/" + appId);
@@ -142,7 +142,7 @@ public class PublishRest {
       // Entity exists at appId-level but isn't of the requested kind.
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
+        "/problems/publish.entity.wrong-kind",
         "Entity is not of the requested kind",
         nfe.getMessage()
       );
@@ -152,14 +152,14 @@ public class PublishRest {
       // hint pointing at plugins/minter-local/.
       return problem(
         Response.Status.SERVICE_UNAVAILABLE,
-        "https://shepard.dlr.de/problems/publish.minter.not-installed",
+        "/problems/publish.minter.not-installed",
         "No minter installed",
         mnie.getMessage()
       );
     } catch (MinterException me) {
       return problem(
         Response.Status.INTERNAL_SERVER_ERROR,
-        "https://shepard.dlr.de/problems/publish.minter.failed",
+        "/problems/publish.minter.failed",
         "Active minter failed",
         me.getMessage()
       );
@@ -193,13 +193,13 @@ public class PublishRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "https://shepard.dlr.de/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.kind.unsupported",
+        "/problems/publish.kind.unsupported",
         "Unsupported publishable kind",
         "No publishable kind matches URL segment '" +
         kind +
@@ -214,10 +214,10 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return problem(Response.Status.NOT_FOUND, "https://shepard.dlr.de/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
+      return problem(Response.Status.NOT_FOUND, "/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return problem(Response.Status.FORBIDDEN, "https://shepard.dlr.de/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
+      return problem(Response.Status.FORBIDDEN, "/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     boolean retired;
@@ -226,7 +226,7 @@ public class PublishRest {
     } catch (NotFoundException nfe) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
+        "/problems/publish.entity.wrong-kind",
         "Entity is not of the requested kind",
         nfe.getMessage()
       );
@@ -235,7 +235,7 @@ public class PublishRest {
     if (!retired) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.publication.not-found",
+        "/problems/publish.publication.not-found",
         "No Publication for this entity",
         "Entity with appId '" + appId + "' has no Publication attached — publish first."
       );
