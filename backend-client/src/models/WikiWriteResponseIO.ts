@@ -20,13 +20,20 @@ import { mapValues } from '../runtime';
  */
 export interface WikiWriteResponseIO {
     /**
-     * 
+     * Neo4j OGM id of the created LabJournalEntry. Deprecated — use labJournalEntryAppId.
      * @type {number}
      * @memberof WikiWriteResponseIO
+     * @deprecated
      */
     labJournalEntryId?: number;
     /**
-     * 
+     * UUID v7 appId of the created LabJournalEntry.
+     * @type {string}
+     * @memberof WikiWriteResponseIO
+     */
+    labJournalEntryAppId?: string | null;
+    /**
+     *
      * @type {string}
      * @memberof WikiWriteResponseIO
      */
@@ -69,6 +76,7 @@ export function WikiWriteResponseIOFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'labJournalEntryId': json['labJournalEntryId'] == null ? undefined : json['labJournalEntryId'],
+        'labJournalEntryAppId': json['labJournalEntryAppId'] == null ? undefined : json['labJournalEntryAppId'],
         'generatedSummary': json['generatedSummary'] == null ? undefined : json['generatedSummary'],
         'activityAppId': json['activityAppId'] == null ? undefined : json['activityAppId'],
         'inputTokens': json['inputTokens'] == null ? undefined : json['inputTokens'],
@@ -83,6 +91,7 @@ export function WikiWriteResponseIOToJSON(value?: WikiWriteResponseIO | null): a
     return {
         
         'labJournalEntryId': value['labJournalEntryId'],
+        'labJournalEntryAppId': value['labJournalEntryAppId'],
         'generatedSummary': value['generatedSummary'],
         'activityAppId': value['activityAppId'],
         'inputTokens': value['inputTokens'],

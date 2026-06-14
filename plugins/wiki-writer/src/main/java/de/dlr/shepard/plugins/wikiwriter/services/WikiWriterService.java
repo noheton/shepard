@@ -136,6 +136,7 @@ public class WikiWriterService {
 
     return new WikiWriteResponseIO(
       entry.getId(),
+      entry.getAppId(),
       generatedSummary,
       llmResponse.activityAppId(),
       llmResponse.inputTokens(),
