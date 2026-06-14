@@ -17,13 +17,13 @@ interface DataObjectRelationshipsTable {
   relatedEntities: RelatedEntity[];
   isAllowedToEditCollection: boolean;
   /**
-   * PROV1k — optional map of predecessor numeric id → PROV-O / FAIR²R
+   * PROV1k — optional map of predecessor appId (UUID v7) → PROV-O / FAIR²R
    * relationship type. When provided, the typed relationship chip is shown
    * next to the "Predecessor" label in the Relationship column.
    * Omit (undefined) for backward-compat with callers that don't yet have
    * typed predecessor info.
    */
-  predecessorRelationshipTypes?: Map<number, string>;
+  predecessorRelationshipTypes?: Map<string, string>;
 }
 
 const props = defineProps<DataObjectRelationshipsTable>();
@@ -112,8 +112,12 @@ const tableItems = computed(() =>
       props.collectionAppId,
     );
     // PROV1k: attach typed predecessor relationship type when available.
+    // Join on appId (UUID v7) — predecessorId (numeric) is deprecated.
     if (item.relationship === "Predecessor" && props.predecessorRelationshipTypes) {
-      item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(entity.id);
+      const appId = (entity as { appId?: string | null }).appId;
+      if (appId) {
+        item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(appId);
+      }
     }
     return item;
   }),

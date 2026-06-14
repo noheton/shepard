@@ -24,7 +24,14 @@ public record TypedPredecessorSummaryIO(
   @Schema(readOnly = true, description = "appId (UUID v7) of the predecessor DataObject.")
   String predecessorAppId,
 
-  @Schema(readOnly = true, description = "Numeric shepardId of the predecessor DataObject.")
+  @Deprecated
+  @Schema(
+    readOnly = true,
+    deprecated = true,
+    description =
+      "Deprecated — join on predecessorAppId (UUID v7) instead. " +
+      "Numeric Neo4j shepardId of the predecessor DataObject."
+  )
   long predecessorId,
 
   @Schema(readOnly = true, description = "Display name of the predecessor DataObject.")
