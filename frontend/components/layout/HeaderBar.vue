@@ -223,6 +223,10 @@
     </div>
 
     <template #append>
+      <!-- Persistent contextual help: a visible "?" that opens the doc for the
+           current page (UX finding 2026-06-13 — Help was reachable only behind
+           the overflow menu, so a first-time researcher couldn't find it). -->
+      <ContextualHelpButton />
       <!-- Desktop: secondary nav behind overflow menu -->
       <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">

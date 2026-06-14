@@ -40,10 +40,16 @@ Five facts the docs+verification program must absorb up front:
 
 1. **`/help` exists and is genuinely comprehensive** (≈55 entries spanning both tracks
    — Overview, Getting started, every help task, every reference primitive, plugin
-   quickstarts) **but it is NOT in the top-nav.** It is reachable only by typing
-   `/help`. By the repo's own "top-nav reachable before beta" rule, the in-app docs
-   feature is itself stuck at `alpha`. The single highest-leverage docs fix is a
-   top-nav (or avatar-menu) **Help** entry + a context "?" affordance per page (D1g).
+   quickstarts). **CORRECTION (2026-06-14):** the earlier claim that it was "URL-only
+   / not in the top-nav" was wrong — Help *is* in the top-nav, inside the overflow
+   ("…") menu (`HeaderBar.vue:232`, plus the mobile drawer at `:382`). So the docs
+   feature is reachable, not `alpha`-by-nav-rule. The real (smaller) gap was
+   *discoverability*: it sat behind the kebab and there was no per-screen context
+   link. **FIXED (2026-06-14, UI-HELP-CONTEXTBUTTON):** a persistent "?" affordance
+   now sits in the header on every page (`components/common/ContextualHelpButton.vue`
+   + `composables/useContextualHelp.ts`), resolving the current route → the matching
+   `docs/{help,reference}` page via `/help?page=…`. The overflow "Help" entry stays as
+   the index fallback.
 2. **`/snapshots` 404s** (`[nuxt] error … Page not found: /snapshots`) — a Tools
    concept (Snapshot diff) has a dangling top-level route. Snapshots are reachable
    in-context (collection `SnapshotsPane`) but the bare route is a dead end.
