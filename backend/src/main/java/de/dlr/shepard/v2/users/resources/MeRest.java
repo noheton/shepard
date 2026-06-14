@@ -53,6 +53,7 @@ public class MeRest {
   @Inject
   CollectionWatcherDAO collectionWatcherDAO;
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/me.unauthorized";
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/me.bad-request";
 
   // ─── GET /v2/users/me ──────────────────────────────────────────────────────
@@ -75,7 +76,8 @@ public class MeRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getMe(@Context SecurityContext securityContext) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED,
+          "Authentication is required to access this endpoint.");
     }
     User current = userService.getCurrentUser();
     UserIO userIO = new UserIO(current);
@@ -106,7 +108,8 @@ public class MeRest {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = de.dlr.shepard.v2.users.io.PatchMeIO.class))) JsonNode patch,
     @Context SecurityContext securityContext
   ) {
-    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (securityContext.getUserPrincipal() == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Unauthorized",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access this endpoint.");
     if (patch == null || !patch.isObject()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body",
         Response.Status.BAD_REQUEST, "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");

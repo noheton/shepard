@@ -108,6 +108,7 @@ public class FileBundleReferenceRest {
   private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/file-bundle-references.unprocessable-entity";
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-bundle-references.internal-error";
   private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-bundle-references.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/file-bundle-references.forbidden";
   private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-bundle-references.not-found";
 
   // ─── bundle ───────────────────────────────────────────────────────────────
@@ -559,12 +560,14 @@ public class FileBundleReferenceRest {
     if (doAppId == null) {
       long dataObjectOgmId = bundle.getDataObject().getId();
       if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+            "Caller does not have " + accessType + " access to the parent DataObject.");
       }
       return null;
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+          "Caller does not have " + accessType + " access to the parent DataObject.");
     }
     return null;
   }
