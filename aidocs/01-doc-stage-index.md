@@ -58,7 +58,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire20.md`](agent-findings/apisimp-sweep-2026-06-13-fire20.md) | API Simplification Sweep Report — 2026-06-13 (FIRE-20) | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13.md`](agent-findings/apisimp-sweep-2026-06-13.md) | APISIMP Sweep Pass 11 — 2026-06-13 | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire32.md`](agent-findings/apisimp-sweep-2026-06-14-fire32.md) | APISIMP Sweep — fire-32 (2026-06-14) | 2026-06-14 | 2026-06-14 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire34.md`](agent-findings/apisimp-sweep-2026-06-14-fire34.md) | APISIMP Sweep — fire-34 (2026-06-14) | 2026-06-14 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-14-fire34.md`](agent-findings/apisimp-sweep-2026-06-14-fire34.md) | APISIMP Sweep — fire-34 (2026-06-14) | 2026-06-14 | 2026-06-14 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-12 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-12 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-06-12 |
@@ -358,7 +358,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ui-feature-inventory-2026-06-13.md`](agent-findings/ui-feature-inventory-2026-06-13.md) | UI feature inventory 2026-06-13 — the master SSOT | 2026-06-13 | 2026-06-13 |
 | [`aidocs/agent-findings/ui-scrutinizer-2026-05-24.md`](agent-findings/ui-scrutinizer-2026-05-24.md) | UI Scrutinizer — live-shepard systematic walk, 2026-05-24 | 2026-05-24 | 2026-06-12 |
 | [`aidocs/agent-findings/ux-auditor.md`](agent-findings/ux-auditor.md) | UX Auditor — Discovery Report | 2026-05-23 | 2026-06-12 |
-| [`aidocs/agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md`](agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md) | UX consult 2026-06-13 — personas, journeys, and the dual-doc IA for the docs+verification program | 2026-06-13 | 2026-06-13 |
+| [`aidocs/agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md`](agent-findings/ux-journeys-personas-dualdoc-2026-06-13.md) | UX consult 2026-06-13 — personas, journeys, and the dual-doc IA for the docs+verification program | 2026-06-13 | 2026-06-14 |
 | [`aidocs/agent-findings/ux-progress-indicators-sweep.md`](agent-findings/ux-progress-indicators-sweep.md) | UX progress indicators — Playwright-driven sweep (task #136) | 2026-05-23 | 2026-06-12 |
 | [`aidocs/agent-findings/ux-survey-collections-containers-2026-05-24.md`](agent-findings/ux-survey-collections-containers-2026-05-24.md) | UX survey — collections + containers pages (barely-usable triage) | 2026-05-24 | 2026-06-12 |
 | [`aidocs/agent-findings/ux-walk-2026-05-29.md`](agent-findings/ux-walk-2026-05-29.md) | UX Walk 2026-05-29 — Live 4K regression sweep | 2026-05-29 | 2026-06-12 |
