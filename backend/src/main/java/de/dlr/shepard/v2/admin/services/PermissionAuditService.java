@@ -42,7 +42,7 @@ public class PermissionAuditService {
     List<PermissionAuditEntryIO> out = new ArrayList<>();
     for (Map<String, Object> row : result.queryResults()) {
       Object idObj = row.get("id");
-      long id = idObj instanceof Number n ? n.longValue() : -1L;
+      Long neo4jNodeId = idObj instanceof Number n ? n.longValue() : null;
       String appId = Objects.toString(row.get("appId"), null);
       String name = Objects.toString(row.get("name"), null);
       List<String> labels = new ArrayList<>();
@@ -56,7 +56,7 @@ public class PermissionAuditService {
           if (item != null) labels.add(item.toString());
         }
       }
-      out.add(new PermissionAuditEntryIO(id, appId, labels, name));
+      out.add(new PermissionAuditEntryIO(neo4jNodeId, appId, labels, name));
     }
     return out;
   }
