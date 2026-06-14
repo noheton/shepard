@@ -137,12 +137,12 @@ public class VideoStreamReferenceV2Rest {
     } catch (jakarta.ws.rs.NotFoundException nfe) {
       return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (StorageNotInstalledException ex) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(ex.getMessage()).build();
+      return problem(Response.Status.SERVICE_UNAVAILABLE, ex.getMessage());
     } catch (StorageException ex) {
       Log.errorf("VID1a upload: storage error — %s", ex.getMessage());
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
+      return problem(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
     } catch (IOException ex) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
+      return problem(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
   }
 
@@ -207,12 +207,12 @@ public class VideoStreamReferenceV2Rest {
     try {
       payload = videoStreamReferenceService.getPayload(ref);
     } catch (jakarta.ws.rs.NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).entity(nfe.getMessage()).build();
+      return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (StorageNotInstalledException ex) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(ex.getMessage()).build();
+      return problem(Response.Status.SERVICE_UNAVAILABLE, ex.getMessage());
     } catch (StorageException ex) {
       Log.errorf("VID1a download: storage error — %s", ex.getMessage());
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
+      return problem(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     String filename = payload.fileName();

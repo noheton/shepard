@@ -94,7 +94,11 @@ public class SnapshotDiffRest {
     description = "Diff result.",
     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = SnapshotDiffIO.class))
   )
-  @APIResponse(responseCode = "400", description = "aAppId and bAppId are the same (self-diff is not useful).")
+  @APIResponse(
+    responseCode = "400",
+    description = "aAppId and bAppId are the same (self-diff is not useful).",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "Snapshot A or snapshot B not found or deleted.")
   public Response diff(
@@ -109,7 +113,8 @@ public class SnapshotDiffRest {
 
     // Self-diff guard
     if (aAppId.equals(bAppId)) {
-      return Response.status(Response.Status.BAD_REQUEST).build();
+      return problem("/problems/snapshots.self-diff", "Bad Request", Response.Status.BAD_REQUEST,
+          "aAppId and bAppId are the same; self-diff is not useful.");
     }
 
     // Resolve both snapshots — 404 if either is missing or soft-deleted

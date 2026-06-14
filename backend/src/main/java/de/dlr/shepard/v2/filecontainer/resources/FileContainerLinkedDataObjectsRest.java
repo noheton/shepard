@@ -94,7 +94,7 @@ public class FileContainerLinkedDataObjectsRest {
   @APIResponse(
     responseCode = "409",
     description = "Container has active references; retry with ?force=true to delete anyway.",
-    content = @Content(schema = @Schema(implementation = SafeDeleteConflict.class))
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = SafeDeleteConflict.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
@@ -113,6 +113,7 @@ public class FileContainerLinkedDataObjectsRest {
           .limit(SafeDeleteConflict.SAMPLE_LIMIT)
           .toList();
         return Response.status(Status.CONFLICT)
+          .type("application/problem+json")
           .entity(new SafeDeleteConflict(linked.size(), sample))
           .build();
       }
