@@ -104,9 +104,12 @@ async function fetchUser(username: string) {
   return user;
 }
 async function fetchUserGroup(groupId: number) {
-  // V1-EXCEPTION: permission payloads reference groups by numeric id; the v2
-  // permissions surface (V2-SWEEP-002-PERMISSIONS) does not exist yet, so this
-  // shared permission-mapping helper stays on the v1 getUserGroup by id.
+  // V1-EXCEPTION (V2-SWEEP-002-4): the permissions payload carries numeric group
+  // IDs in `readerGroupIds`/`writerGroupIds` (PermissionsIO wire shape). The v2
+  // permissions endpoint (GET /v2/user-groups/{appId}/permissions, shipped in
+  // V2-SWEEP-002-PERMISSIONS) still returns numeric ids here — there is no
+  // v2 "get group by numeric id" endpoint. Stays until the permissions payload
+  // is redesigned to carry group appIds instead.
   const userGroup = await useShepardApi(UserGroupApi).value.getUserGroup({
     userGroupId: groupId,
   });
