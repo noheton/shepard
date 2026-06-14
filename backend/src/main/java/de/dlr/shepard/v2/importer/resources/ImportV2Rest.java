@@ -143,7 +143,7 @@ public class ImportV2Rest {
     ImportPlanIO io = toIO(plan, errors);
 
     if (!errors.isEmpty()) {
-      return Response.status(422).entity(io).build();
+      return Response.status(422).type("application/problem+json").entity(io).build();
     }
     return Response.ok(io).build();
   }
