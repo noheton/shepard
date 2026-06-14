@@ -36,8 +36,15 @@ public record TimeseriesChannelV2IO(
   @Schema(description = "Legacy numeric channel id (Postgres serial).", required = true)
   int id,
 
-  /** Owning container id (Postgres FK). */
-  @Schema(required = true)
+  /**
+   * Owning container id (Postgres serial FK).
+   *
+   * <p>DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK on the
+   * v2 wire violates the "no numeric internal IDs" contract. Use {@code containerAppId}
+   * once available — requires a TS-IDb/c Postgres migration adding
+   * {@code container_app_id UUID} to the {@code timeseries} table.
+   */
+  @Schema(description = "DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK exposed on wire. Use containerAppId once available — requires TS-IDb/c migration.", required = true)
   long containerId,
 
   @Schema(required = true, example = "turbopump_vibration")
