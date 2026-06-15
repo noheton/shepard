@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
@@ -49,6 +50,9 @@ public class TimeseriesMcpTools {
 
   @Inject
   AnnotatableTimeseriesService annotatableTimeseriesService;
+
+  @Inject
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
   @Inject
   McpContextBridge contextBridge;
@@ -484,28 +488,33 @@ public class TimeseriesMcpTools {
       "(TS-SEMANTIC-01 dual-write). Channels that pre-date that service (created before " +
       "TS-SEMANTIC-01 shipped) do not have an AnnotatableTimeseries node and will return " +
       "an error.\n\n" +
-      "Use `list_vocabularies` to find a vocabulary id, then `search_predicates` to find " +
+      "Use `list_vocabularies` to find a vocabulary appId, then `search_predicates` to find " +
       "the propertyIRI, and `search_values` to find the valueIRI. Both " +
-      "propertyRepositoryId and valueRepositoryId must be valid vocabulary IDs.\n\n" +
+      "propertyVocabAppId and valueVocabAppId must be UUID v7 appIds from `list_vocabularies`.\n\n" +
       "Response: the newly created annotation object."
   )
   public String createChannelAnnotation(
     @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
     @ToolArg(description = "UUID v7 channelShepardId of the channel to annotate.") String channelShepardId,
     @ToolArg(description = "IRI of the property (predicate). Get from `search_predicates`.") String propertyIRI,
-    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the property IRI. Get from `list_vocabularies`.") Long propertyRepositoryId,
+    @ToolArg(description = "UUID v7 appId of the vocabulary that owns the property IRI. Get `appId` from `list_vocabularies`.") String propertyVocabAppId,
     @ToolArg(description = "IRI of the value (object). Get from `search_values`.") String valueIRI,
-    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the value IRI. Get from `list_vocabularies`.") Long valueRepositoryId
+    @ToolArg(description = "UUID v7 appId of the vocabulary that owns the value IRI. Get `appId` from `list_vocabularies`.") String valueVocabAppId
   ) {
     return support.run("create_channel_annotation", () -> {
       contextBridge.bind();
       long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
 
+      var propRepo = semanticRepositoryDAO.findByAppId(propertyVocabAppId);
+      if (propRepo == null) throw new IllegalArgumentException("unknown propertyVocabAppId: " + propertyVocabAppId);
+      var valRepo = semanticRepositoryDAO.findByAppId(valueVocabAppId);
+      if (valRepo == null) throw new IllegalArgumentException("unknown valueVocabAppId: " + valueVocabAppId);
+
       var io = new SemanticAnnotationIO();
       io.setPropertyIRI(propertyIRI);
-      io.setPropertyRepositoryId(propertyRepositoryId);
+      io.setPropertyRepositoryId(propRepo.getId());
       io.setValueIRI(valueIRI);
-      io.setValueRepositoryId(valueRepositoryId);
+      io.setValueRepositoryId(valRepo.getId());
 
       SemanticAnnotation created =
         annotatableTimeseriesService.createAnnotationForChannel(containerOgmId, channelShepardId, io);
