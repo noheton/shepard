@@ -13,11 +13,20 @@ import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -32,6 +41,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -494,6 +504,230 @@ public class ContainersV2Rest {
         .build();
     }
     return Response.ok(linkedOpt.get()).build();
+  }
+
+  // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
+
+  @GET
+  @Path("/{appId}/channels")
+  @Operation(
+    operationId = "listContainerChannels",
+    summary = "List all channels of a TimeseriesContainer by appId.",
+    description =
+      "Returns one entry per channel in the container, each carrying its stable single-field " +
+      "identity (shepardId) plus the legacy 5-tuple. Non-timeseries container kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
+      "`GET /v2/timeseries-containers/{id}/channels`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Per-channel listing.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesChannelV2IO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
+  public Response listChannels(
+    @PathParam("appId") String appId,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("200") @PositiveOrZero int pageSize,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var result = resolved.get().handler().listChannels(appId, page, pageSize);
+    if (result.isEmpty()) {
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
+    }
+    return Response.ok(result.get()).build();
+  }
+
+  @GET
+  @Path("/{appId}/channels/spatial-roles")
+  @Operation(
+    operationId = "getContainerChannelSpatialRoles",
+    summary = "Return per-axis channel assignments for the Trace3D view recipe.",
+    description =
+      "Scans the container's channels for axis-role annotations and returns one shepardId per " +
+      "role. Non-timeseries container kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
+      "`GET /v2/timeseries-containers/{id}/channels/spatial-roles`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Spatial role map.",
+    content = @Content(schema = @Schema(implementation = SpatialRolesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
+  public Response getChannelSpatialRoles(
+    @PathParam("appId") String appId,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var result = resolved.get().handler().getChannelSpatialRoles(appId);
+    if (result.isEmpty()) {
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
+    }
+    return Response.ok(result.get()).build();
+  }
+
+  @GET
+  @Path("/{appId}/channels/{shepardId}/data")
+  @Operation(
+    operationId = "getContainerChannelData",
+    summary = "Fetch data points for a channel by shepardId.",
+    description =
+      "Resolves the single-field shepardId to the legacy 5-tuple internally and returns data " +
+      "points for the requested time window. Accepts optional LTTB downsampling via " +
+      "?downsample=lttb&max_points=N. Non-timeseries container kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
+      "`GET /v2/timeseries-containers/{id}/channels/{shepardId}/data`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Data points for the channel.",
+    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+  )
+  @APIResponse(responseCode = "400", description = "start or end missing / negative.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container or channel with that id.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
+  public Response getChannelData(
+    @PathParam("appId") String appId,
+    @PathParam("shepardId") UUID shepardId,
+    @QueryParam("start") @NotNull @PositiveOrZero Long start,
+    @QueryParam("end")   @NotNull @PositiveOrZero Long end,
+    @QueryParam("downsample") String downsample,
+    @QueryParam("max_points") Integer maxPoints,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    try {
+      var result = resolved.get().handler().getChannelData(appId, shepardId, start, end, downsample, maxPoints);
+      if (result.isEmpty()) {
+        return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
+            Response.Status.UNSUPPORTED_MEDIA_TYPE,
+            "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
+      }
+      return Response.ok(result.get()).build();
+    } catch (NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND,
+          nfe.getMessage() != null ? nfe.getMessage() : "Channel not found");
+    }
+  }
+
+  @POST
+  @Path("/{appId}/channels/data/bulk")
+  @Operation(
+    operationId = "getContainerBulkChannelData",
+    summary = "Fetch raw data for multiple channels in one call.",
+    description =
+      "Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data " +
+      "points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are " +
+      "silently skipped. Non-timeseries container kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
+      "`POST /v2/timeseries-containers/{id}/channels/data/bulk`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Raw data for all resolved channels.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesWithDataPoints.class))
+  )
+  @APIResponse(responseCode = "400", description = "Validation error on request body.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
+  public Response getBulkChannelData(
+    @PathParam("appId") String appId,
+    @NotNull @Valid BulkChannelDataRequestIO body,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var result = resolved.get().handler().getBulkChannelData(appId, body);
+    if (result.isEmpty()) {
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
+    }
+    return Response.ok(result.get()).build();
+  }
+
+  @POST
+  @Path("/{appId}/channels/{shepardId}/data/ingest")
+  @Operation(
+    operationId = "ingestContainerChannelData",
+    summary = "High-throughput COPY ingest for a single channel.",
+    description =
+      "Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by " +
+      "shepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
+      "unique within the batch. Non-timeseries container kinds answer 415.\n\n" +
+      "Auth: Write on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
+      "`POST /v2/timeseries-containers/{id}/channels/{shepardId}/data/ingest`.)"
+  )
+  @APIResponse(responseCode = "204", description = "Data ingested successfully.")
+  @APIResponse(responseCode = "400", description = "Validation error or duplicate timestamp.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container or channel with that id.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
+  public Response ingestChannelData(
+    @PathParam("appId") String appId,
+    @PathParam("shepardId") UUID shepardId,
+    @NotNull @Valid CopyIngestRequestIO body,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+
+    try {
+      boolean handled = resolved.get().handler().ingestChannelData(appId, shepardId, body);
+      if (!handled) {
+        return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
+            Response.Status.UNSUPPORTED_MEDIA_TYPE,
+            "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
+      }
+      return Response.noContent().build();
+    } catch (NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND,
+          nfe.getMessage() != null ? nfe.getMessage() : "Channel not found");
+    }
   }
 
   // ─── permissions ───────────────────────────────────────────────────────

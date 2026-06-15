@@ -3,7 +3,7 @@
  * `/shapes/render`.
  *
  * Pre-fix `render.vue` guarded on `isFinite(Number(containerId))` and built
- * `/v2/timeseries-containers/{numericId}/channels` URLs — 404 against the
+ * `/v2/containers/{numericId}/channels` URLs — 404 against the
  * appId-keyed endpoint (APISIMP-TSCONT-APPID-KEY), so no Trace3D render
  * could succeed. The helpers go through the typed
  * `TimeseriesContainerChannelListingApi` client keyed on the container appId.

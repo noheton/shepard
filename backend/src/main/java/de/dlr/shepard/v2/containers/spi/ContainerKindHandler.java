@@ -2,12 +2,17 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * V2CONV-A3 — the dispatch seam behind the unified {@code /v2/containers}
@@ -228,5 +233,81 @@ public interface ContainerKindHandler {
    */
   default Optional<List<DataObjectIO>> listLinkedDataObjects(String appId) {
     return Optional.empty();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-2: channel endpoints ──────────────────────────
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-2 — list channels of a timeseries container.
+   * Default returns {@link Optional#empty()} (→ 415 for non-timeseries kinds).
+   *
+   * @param containerAppId appId of the container.
+   * @param page           zero-based page index.
+   * @param pageSize       page size (clamped to 1–1000 by the handler).
+   * @return the channel listing, or empty when this kind has no channels.
+   */
+  default Optional<List<TimeseriesChannelV2IO>> listChannels(
+      String containerAppId, int page, int pageSize) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-2 — spatial role assignments for the Trace3D recipe
+   * builder. Default returns {@link Optional#empty()} (→ 415 for non-timeseries
+   * kinds).
+   *
+   * @param containerAppId appId of the container.
+   * @return the spatial roles map, or empty when this kind has no channels.
+   */
+  default Optional<SpatialRolesIO> getChannelSpatialRoles(String containerAppId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-2 — fetch data points for a single channel by
+   * {@code shepardId}. Default returns {@link Optional#empty()} (→ 415 for
+   * non-timeseries kinds).
+   *
+   * @param containerAppId appId of the container.
+   * @param shepardId      UUID of the channel.
+   * @param start          start time in nanoseconds since Unix epoch.
+   * @param end            end time in nanoseconds since Unix epoch.
+   * @param downsample     optional downsample algorithm name (e.g. "lttb").
+   * @param maxPoints      optional max-points cap for downsampling.
+   * @return the channel data, or empty when this kind has no channels.
+   */
+  default Optional<TimeseriesWithDataPoints> getChannelData(
+      String containerAppId, UUID shepardId,
+      Long start, Long end, String downsample, Integer maxPoints) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-2 — bulk channel data fetch.
+   * Default returns {@link Optional#empty()} (→ 415 for non-timeseries kinds).
+   *
+   * @param containerAppId appId of the container.
+   * @param body           the bulk request carrying shepardIds and time window.
+   * @return the list of per-channel data, or empty when this kind has no channels.
+   */
+  default Optional<List<TimeseriesWithDataPoints>> getBulkChannelData(
+      String containerAppId, BulkChannelDataRequestIO body) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-2 — COPY-protocol ingest for a single channel.
+   * Returns {@code true} if the ingest was handled (→ 204), {@code false} when
+   * this kind has no channels (→ 415).
+   *
+   * @param containerAppId appId of the container.
+   * @param shepardId      UUID of the channel.
+   * @param body           the ingest payload.
+   * @return true when the ingest was performed; false when unsupported.
+   */
+  default boolean ingestChannelData(
+      String containerAppId, UUID shepardId,
+      de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO body) {
+    return false;
   }
 }

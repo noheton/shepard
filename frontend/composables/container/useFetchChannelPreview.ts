@@ -10,7 +10,7 @@ import { useShepardApi } from "../common/api/useShepardApi";
  *
  * When the caller knows the channel's {@code shepardId} (single-field UUID,
  * minted by the V1.11.0 substrate migration), we prefer the
- * {@code /v2/timeseries-containers/{cid}/channels/{shepardId}/data} path
+ * {@code /v2/containers/{cid}/channels/{shepardId}/data} path
  * over the legacy 5-tuple {@code /timeseriesContainers/.../timeseries}
  * lookup. This trades five string-equality SQL predicates for one
  * index-only B-tree probe — the planning vs. execution ratio drops from
@@ -116,7 +116,7 @@ async function fetchPreviewData(
         qs.set("max_points", String(maxPoints));
       }
       const url =
-        `${v2Base(publicConfig as Record<string, unknown>)}/v2/timeseries-containers/${containerAppId}` +
+        `${v2Base(publicConfig as Record<string, unknown>)}/v2/containers/${containerAppId}` +
         `/channels/${channelShepardId}/data?${qs.toString()}`;
 
       const res = await fetch(url, { headers });
@@ -154,7 +154,7 @@ export interface UseFetchChannelPreviewOptions {
   maxPoints?: number;
   /**
    * TS-IDc — single-field channel identity. When supplied, the composable
-   * hits {@code /v2/timeseries-containers/{cid}/channels/{shepardId}/data}
+   * hits {@code /v2/containers/{cid}/channels/{shepardId}/data}
    * instead of the legacy 5-tuple endpoint. Source: the v2 channels
    * listing populated by {@link useFetchV2Channels}.
    */

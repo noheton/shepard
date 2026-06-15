@@ -1,7 +1,7 @@
 /**
  * UX612-C2 — appId-keyed channel fetches for the /shapes/render page.
  *
- * `GET /v2/timeseries-containers/{containerAppId}/channels` and the bulk
+ * `GET /v2/containers/{containerAppId}/channels` and the bulk
  * data endpoint are keyed on the container *appId*
  * (APISIMP-TSCONT-APPID-KEY). The render page previously guarded on
  * `isFinite(Number(containerId))` and built numeric-keyed URLs, so every

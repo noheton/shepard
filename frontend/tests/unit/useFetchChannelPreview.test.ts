@@ -257,7 +257,7 @@ describe("TS-LTTB-VIS-TOGGLE-01 — Raw / LTTB toggle: correct downsample param"
 //
 // When the caller supplies a {@code channelShepardId}, the composable must
 // hit the v2 path-param endpoint
-//   /v2/timeseries-containers/{containerId}/channels/{shepardId}/data
+//   /v2/containers/{containerId}/channels/{shepardId}/data
 // instead of the legacy 5-tuple {@code getTimeseries} client call.
 // ─────────────────────────────────────────────────────────────────────────────
 describe("TS-IDc — channelShepardId path", () => {
@@ -292,7 +292,7 @@ describe("TS-IDc — channelShepardId path", () => {
     // The raw fetch was hit with the canonical v2 path.
     expect(fetch).toHaveBeenCalledTimes(1);
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
-    expect(url).toContain(`/v2/timeseries-containers/1772/channels/${SHEPARD_ID}/data`);
+    expect(url).toContain(`/v2/containers/1772/channels/${SHEPARD_ID}/data`);
     expect(url).toContain("downsample=lttb");
     expect(url).toContain("max_points=60");
 

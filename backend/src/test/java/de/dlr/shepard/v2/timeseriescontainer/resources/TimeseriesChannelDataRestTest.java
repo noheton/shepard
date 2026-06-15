@@ -2,6 +2,8 @@ package de.dlr.shepard.v2.timeseriescontainer.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -19,7 +21,8 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import jakarta.ws.rs.core.Response;
+import de.dlr.shepard.v2.containers.handlers.TimeseriesContainerKindHandler;
+import jakarta.ws.rs.NotFoundException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
@@ -28,17 +31,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit coverage for the TS-IDc data endpoint:
- * {@code GET /v2/timeseries-containers/{containerId}/channels/{shepardId}/data}.
+ * Unit coverage for the TS-IDc data endpoint (APISIMP-CONT-NS-COLLAPSE-2):
+ * {@code GET /v2/containers/{containerAppId}/channels/{shepardId}/data}.
  *
- * <p>Tests the routing logic (404 on unknown shepardId, 200 on known) and
- * the LTTB opt-in path. The Panache JPA query paths inside the resolver are
- * exercised by the integration suite; these tests cover the REST resource's
- * decision branches without a live database.
+ * <p>Migrated from TimeseriesContainerChannelsRest (deleted in APISIMP-CONT-NS-COLLAPSE-2)
+ * to {@link TimeseriesContainerKindHandler}. Tests the routing logic
+ * (NotFoundException on unknown shepardId, Optional.of(data) on known) and
+ * the LTTB opt-in path.
  */
 public class TimeseriesChannelDataRestTest {
 
-  private TimeseriesContainerChannelsRest resource;
+  private TimeseriesContainerKindHandler handler;
   private TsChannelResolver resolverMock;
   private TimeseriesService serviceMock;
   private TimeseriesContainerService containerServiceMock;
@@ -52,14 +55,14 @@ public class TimeseriesChannelDataRestTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    resource             = new TimeseriesContainerChannelsRest();
+    handler              = new TimeseriesContainerKindHandler();
     resolverMock         = mock(TsChannelResolver.class);
     serviceMock          = mock(TimeseriesService.class);
     containerServiceMock = mock(TimeseriesContainerService.class);
 
-    inject(resource, "tsChannelResolver",        resolverMock);
-    inject(resource, "timeseriesService",         serviceMock);
-    inject(resource, "timeseriesContainerService", containerServiceMock);
+    inject(handler, "tsChannelResolver",  resolverMock);
+    inject(handler, "timeseriesService",  serviceMock);
+    inject(handler, "service",            containerServiceMock);
 
     var mockContainer = mock(TimeseriesContainer.class);
     when(mockContainer.getId()).thenReturn(CONTAINER_ID);
@@ -77,31 +80,31 @@ public class TimeseriesChannelDataRestTest {
     return new Timeseries("vibration", "AFP-1", "head", "ts1", "g_rms");
   }
 
-  // ── 404 on unknown shepardId ────────────────────────────────────────────────
+  // ── NotFoundException on unknown shepardId ─────────────────────────────────
 
   @Test
-  void returnsNotFound_whenShepardIdUnknown() {
+  void throwsNotFound_whenShepardIdUnknown() {
     when(resolverMock.resolveTuple(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
-
-    assertEquals(Response.Status.NOT_FOUND.getStatusCode(), resp.getStatus());
+    assertThrows(NotFoundException.class,
+        () -> handler.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null));
   }
 
-  // ── 200 with data on known shepardId ───────────────────────────────────────
+  // ── Optional.of(data) on known shepardId ──────────────────────────────────
 
   @Test
-  void returnsOk_whenShepardIdKnown() {
+  void returnsPresent_whenShepardIdKnown() {
     Timeseries tuple = aTuple();
     when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
     when(serviceMock.getDataPointsByTimeseries(
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(List.of());
 
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Optional<TimeseriesWithDataPoints> result =
+        handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
-    assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
-    assertNotNull(resp.getEntity());
+    assertTrue(result.isPresent());
+    assertNotNull(result.get());
   }
 
   @Test
@@ -112,16 +115,18 @@ public class TimeseriesChannelDataRestTest {
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(List.of());
 
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Optional<TimeseriesWithDataPoints> result =
+        handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
-    assertEquals(TimeseriesWithDataPoints.class, resp.getEntity().getClass(),
+    assertTrue(result.isPresent());
+    assertEquals(TimeseriesWithDataPoints.class, result.get().getClass(),
       "entity must be TimeseriesWithDataPoints so it serialises like the v1 shape");
   }
 
   // ── LTTB opt-in ────────────────────────────────────────────────────────────
 
   @Test
-  void lttbDownsample_isSilentlySkipped_whenPointListIsNull() {
+  void lttbDownsample_returnsPresentEvenWhenPointListIsNull() {
     Timeseries tuple = aTuple();
     when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
     // With downsample=lttb, the optimised path is taken — stub that, not the raw fetch.
@@ -129,10 +134,11 @@ public class TimeseriesChannelDataRestTest {
         anyLong(), eq(tuple), anyLong(), anyLong(), anyInt()))
       .thenReturn(null);
 
-    // should not NPE even when points == null and downsample requested
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 500);
+    // Should not NPE even when points == null
+    Optional<TimeseriesWithDataPoints> result =
+        handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 500);
 
-    assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
+    assertTrue(result.isPresent());
   }
 
   @Test
@@ -148,11 +154,12 @@ public class TimeseriesChannelDataRestTest {
         CONTAINER_ID, tuple, new TimeseriesDataPointsQueryParams(START_NS, END_NS, null, null, null)))
       .thenReturn(pts);
 
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    Optional<TimeseriesWithDataPoints> result =
+        handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
-    @SuppressWarnings("unchecked")
-    TimeseriesWithDataPoints body = (TimeseriesWithDataPoints) resp.getEntity();
-    assertEquals(3, body.getPoints().size(), "points must be unmodified when downsample is absent");
+    assertTrue(result.isPresent());
+    assertEquals(3, result.get().getPoints().size(),
+        "points must be unmodified when downsample is absent");
   }
 
   // ── LTTB optimised path (TS-OPT1) ─────────────────────────────────────────
@@ -169,9 +176,10 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), anyInt()))
       .thenReturn(pts);
 
-    Response resp = resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 200);
+    Optional<TimeseriesWithDataPoints> result =
+        handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 200);
 
-    assertEquals(Response.Status.OK.getStatusCode(), resp.getStatus());
+    assertTrue(result.isPresent());
     // Verify LTTB-optimised path was used
     verify(serviceMock).getDataPointsLttbOptimised(
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), anyInt());
@@ -187,7 +195,7 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000)))
       .thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 99_999);
+    handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", 99_999);
 
     verify(serviceMock).getDataPointsLttbOptimised(
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(5000));
@@ -201,7 +209,7 @@ public class TimeseriesChannelDataRestTest {
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000)))
       .thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", null);
+    handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, "lttb", null);
 
     verify(serviceMock).getDataPointsLttbOptimised(
         eq(CONTAINER_ID), eq(tuple), eq(START_NS), eq(END_NS), eq(2000));
@@ -213,7 +221,7 @@ public class TimeseriesChannelDataRestTest {
     when(resolverMock.resolveTuple(KNOWN_ID)).thenReturn(Optional.of(tuple));
     when(serviceMock.getDataPointsByTimeseries(anyLong(), any(), any())).thenReturn(List.of());
 
-    resource.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
+    handler.getChannelData(CONTAINER_APP_ID, KNOWN_ID, START_NS, END_NS, null, null);
 
     verify(serviceMock, never()).getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt());
   }
@@ -224,7 +232,9 @@ public class TimeseriesChannelDataRestTest {
   void alwaysChecksContainerPermission() {
     when(resolverMock.resolveTuple(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-    resource.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null);
+    // NotFoundException thrown — but permission is checked before throw
+    assertThrows(NotFoundException.class,
+        () -> handler.getChannelData(CONTAINER_APP_ID, UNKNOWN_ID, START_NS, END_NS, null, null));
 
     verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
