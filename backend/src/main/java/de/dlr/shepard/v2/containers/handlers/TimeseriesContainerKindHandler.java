@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
@@ -16,6 +17,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * V2CONV-A3 — in-tree {@link ContainerKindHandler} for {@code kind=timeseries}.
@@ -94,5 +96,12 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     var params = new QueryParamHelper();
     if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
     return service.getAllContainers(params).stream().map(c -> (ContainerV2IO) toIO(c)).toList();
+  }
+
+  @Override
+  public Optional<List<DataObjectIO>> listLinkedDataObjects(String appId) {
+    return Optional.of(
+      service.findLinkedDataObjectsByAppId(appId).stream().map(DataObjectIO::new).toList()
+    );
   }
 }

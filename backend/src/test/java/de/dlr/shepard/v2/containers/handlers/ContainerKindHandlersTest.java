@@ -114,6 +114,15 @@ class ContainerKindHandlersTest {
     return c;
   }
 
+  private de.dlr.shepard.context.collection.entities.DataObject linkedDataObject(String appId) {
+    var col = new de.dlr.shepard.context.collection.entities.Collection();
+    col.setShepardId(1L);
+    var d = new de.dlr.shepard.context.collection.entities.DataObject();
+    d.setAppId(appId);
+    d.setCollection(col);
+    return d;
+  }
+
   // ─── file handler ────────────────────────────────────────────────────────
 
   @Test
@@ -192,6 +201,16 @@ class ContainerKindHandlersTest {
     assertEquals("file", out.get(0).getKind());
   }
 
+  @Test
+  void file_listLinkedDataObjects_delegatesToService() {
+    var d = linkedDataObject("do-1");
+    when(fileService.findLinkedDataObjectsByAppId("file-1")).thenReturn(List.of(d));
+    var out = fileHandler.listLinkedDataObjects("file-1");
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(fileService).findLinkedDataObjectsByAppId("file-1");
+  }
+
   // ─── timeseries handler ────────────────────────────────────────────────────
 
   @Test
@@ -254,6 +273,16 @@ class ContainerKindHandlersTest {
     deleted.setDeleted(true);
     when(tsDao.findByAppId("ts-del")).thenReturn(Optional.of(deleted));
     org.junit.jupiter.api.Assertions.assertNull(tsHandler.findByAppId("ts-del"));
+  }
+
+  @Test
+  void ts_listLinkedDataObjects_delegatesToService() {
+    var d = linkedDataObject("do-1");
+    when(tsService.findLinkedDataObjectsByAppId("ts-1")).thenReturn(List.of(d));
+    var out = tsHandler.listLinkedDataObjects("ts-1");
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(tsService).findLinkedDataObjectsByAppId("ts-1");
   }
 
   // ─── structured-data handler ────────────────────────────────────────────────
@@ -322,6 +351,16 @@ class ContainerKindHandlersTest {
     var existing = sdContainer("sd-1");
     when(sdDao.findByAppId("sd-1")).thenReturn(Optional.of(existing));
     org.junit.jupiter.api.Assertions.assertEquals(existing, sdHandler.findByAppId("sd-1"));
+  }
+
+  @Test
+  void sd_listLinkedDataObjects_delegatesToService() {
+    var d = linkedDataObject("do-1");
+    when(sdService.findLinkedDataObjectsByAppId("sd-1")).thenReturn(List.of(d));
+    var out = sdHandler.listLinkedDataObjects("sd-1");
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(sdService).findLinkedDataObjectsByAppId("sd-1");
   }
 
   // ─── patch support validation ──────────────────────────────────────────────

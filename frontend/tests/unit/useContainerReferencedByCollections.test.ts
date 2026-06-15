@@ -86,12 +86,12 @@ describe("useContainerReferencedByCollections — FILE container", () => {
     expect(collectionIds.value).toContain(200);
   });
 
-  it("calls the correct FILE endpoint URL", async () => {
+  it("calls the unified container endpoint URL for FILE", async () => {
     mockFetchOk([]);
     useContainerReferencedByCollections(42, "FILE");
     await flush();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
-    expect(url).toContain("/v2/file-containers/42/linked-data-objects");
+    expect(url).toContain("/v2/containers/42/linked-data-objects");
   });
 
   it("sends Authorization header with Bearer token", async () => {
@@ -122,12 +122,12 @@ describe("useContainerReferencedByCollections — FILE container", () => {
 const TIMESERIES_APP_ID = "01901234-5678-7abc-def0-abcdef012345";
 
 describe("useContainerReferencedByCollections — TIMESERIES container", () => {
-  it("calls the correct TIMESERIES endpoint URL using containerAppId string", async () => {
+  it("calls the unified container endpoint URL using containerAppId string", async () => {
     mockFetchOk([]);
     useContainerReferencedByCollections(TIMESERIES_APP_ID, "TIMESERIES");
     await flush();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
-    expect(url).toContain(`/v2/timeseries-containers/${TIMESERIES_APP_ID}/linked-data-objects`);
+    expect(url).toContain(`/v2/containers/${TIMESERIES_APP_ID}/linked-data-objects`);
   });
 
   it("deduplicates when the same collection references the container multiple times", async () => {
@@ -144,11 +144,11 @@ describe("useContainerReferencedByCollections — TIMESERIES container", () => {
 });
 
 describe("useContainerReferencedByCollections — STRUCTUREDDATA container", () => {
-  it("calls the correct STRUCTUREDDATA endpoint URL", async () => {
+  it("calls the unified container endpoint URL for STRUCTUREDDATA", async () => {
     mockFetchOk([]);
     useContainerReferencedByCollections(77, "STRUCTUREDDATA");
     await flush();
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
-    expect(url).toContain("/v2/structured-data-containers/77/linked-data-objects");
+    expect(url).toContain("/v2/containers/77/linked-data-objects");
   });
 });

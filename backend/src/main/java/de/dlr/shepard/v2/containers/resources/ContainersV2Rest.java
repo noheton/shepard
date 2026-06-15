@@ -7,6 +7,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
@@ -400,6 +401,53 @@ public class ContainersV2Rest {
         .build();
     }
     return Response.ok(versionsOpt.get()).build();
+  }
+
+  // ─── linked DataObjects ──────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/linked-data-objects")
+  @Operation(
+    operationId = "getContainerLinkedDataObjects",
+    summary = "List DataObjects linked to a container by appId.",
+    description =
+      "Returns the distinct DataObjects whose references point at the container at " +
+      "`appId`, as DataObjectIO[]. Supported for `file`, `structured-data` and " +
+      "`timeseries` kind containers; other kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-LDO-UNIFY — replaces the per-kind " +
+      "`/v2/file-containers/{appId}/linked-data-objects`, " +
+      "`/v2/structured-data-containers/{appId}/linked-data-objects` and " +
+      "`/v2/timeseries-containers/{appId}/linked-data-objects` endpoints.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "List of linked DataObjects (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no linked-DataObject concept.")
+  public Response getLinkedDataObjects(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var linkedOpt = resolved.get().handler().listLinkedDataObjects(appId);
+    if (linkedOpt.isEmpty()) {
+      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/containers.linked-data-objects-unsupported",
+          "Container kind does not support linked DataObjects",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
+          "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept",
+          null))
+        .build();
+    }
+    return Response.ok(linkedOpt.get()).build();
   }
 
   // ─── permissions ───────────────────────────────────────────────────────

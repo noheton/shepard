@@ -6,6 +6,7 @@ import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
@@ -124,6 +125,13 @@ public class FileContainerKindHandler implements ContainerKindHandler {
           v.getSha256(), v.getSizeBytes(), v.getUploadedBy(), v.getUploadedAt()
         ))
         .toList()
+    );
+  }
+
+  @Override
+  public Optional<List<DataObjectIO>> listLinkedDataObjects(String appId) {
+    return Optional.of(
+      service.findLinkedDataObjectsByAppId(appId).stream().map(DataObjectIO::new).toList()
     );
   }
 }

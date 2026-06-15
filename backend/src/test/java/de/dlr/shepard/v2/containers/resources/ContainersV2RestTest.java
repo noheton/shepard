@@ -427,6 +427,66 @@ class ContainersV2RestTest {
     assertEquals(401, r.getStatus());
   }
 
+  // ─── linked DataObjects (APISIMP-CONT-LDO-UNIFY) ───────────────────────────
+
+  @Test
+  void getLinkedDataObjects_returns200WithList() {
+    allowRead();
+    var col = new de.dlr.shepard.context.collection.entities.Collection();
+    col.setShepardId(1L);
+    var dataObject = new de.dlr.shepard.context.collection.entities.DataObject();
+    dataObject.setAppId("do-app-1");
+    dataObject.setCollection(col);
+    var doIo = new de.dlr.shepard.context.collection.io.DataObjectIO(dataObject);
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of(doIo)));
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void getLinkedDataObjects_returns200WithEmptyList() {
+    allowRead();
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of()));
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void getLinkedDataObjects_returns415WhenKindHasNoLinkedConcept() {
+    allowRead();
+    when(handler.kind()).thenReturn("hdf");
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.empty());
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(415, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/containers.linked-data-objects-unsupported", body.type());
+    assertEquals(415, body.status());
+  }
+
+  @Test
+  void getLinkedDataObjects_returns404WhenUnknown() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void getLinkedDataObjects_returns403WhenNoRead() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void getLinkedDataObjects_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
   // ─── getRoles (V2-SWEEP-003-1) ─────────────────────────────────────────────
 
   @Test
