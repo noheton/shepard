@@ -313,7 +313,7 @@ useHead({
           />
         </ExpansionPanelItem>
       </ExpansionPanels>
-      <!-- CC1b: Referenced by — wired to GET /v2/timeseries-containers/{id}/linked-data-objects -->
+      <!-- CC1b: Referenced by — wired to GET /v2/containers/{appId}/linked-data-objects (APISIMP-CONT-LDO-UNIFY) -->
       <ExpansionPanels class="mt-4" :default-open="[0]">
         <ExpansionPanelItem
           title="Referenced by"

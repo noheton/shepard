@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import java.util.List;
@@ -178,6 +179,33 @@ public interface ContainerKindHandler {
    *         this kind has no file-payload versioning (→ 415).
    */
   default Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-LDO-UNIFY — optionally return the distinct DataObjects that
+   * link to the container at {@code appId} via their references, projected to
+   * {@link DataObjectIO}. This is the converged home for the per-kind
+   * {@code linked-data-objects} sub-resources behind the generic
+   * {@code GET /v2/containers/{appId}/linked-data-objects} route, replacing the
+   * three identical {@code FileContainerLinkedDataObjectsRest},
+   * {@code StructuredDataContainerLinkedDataObjectsRest} and
+   * {@code TimeseriesContainerLinkedDataObjectsRest} GET endpoints.
+   *
+   * <p>Default returns {@link Optional#empty()} — a kind that does not model
+   * linked DataObjects (e.g. a future plugin kind) leaves the dispatcher to
+   * answer 415. All three core kinds override this to query their per-kind
+   * container service's {@code findLinkedDataObjectsByAppId(...)}.
+   *
+   * <p>The dispatching resource has already gated Read on the container before
+   * calling this method (mirrors the per-kind resources, which gated via
+   * {@code getContainerByAppId(...)} first).
+   *
+   * @param appId UUID v7 of the container.
+   * @return the linked DataObjects (may be empty), or {@link Optional#empty()}
+   *         when this kind has no linked-DataObject concept (→ 415).
+   */
+  default Optional<List<DataObjectIO>> listLinkedDataObjects(String appId) {
     return Optional.empty();
   }
 }

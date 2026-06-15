@@ -6,8 +6,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.common.exceptions.InvalidPathException;
-import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.services.FileContainerService;
@@ -19,10 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for APISIMP-FC-SDC-LINKED-DO-APPID:
- * {@code GET    /v2/file-containers/{containerAppId}/linked-data-objects}
+ * Unit tests for the FileContainer DI1 safe-delete:
  * {@code DELETE /v2/file-containers/{containerAppId}}
- * — now keyed on appId (UUID string) rather than the numeric Neo4j OGM id.
+ * — keyed on appId (UUID string). The {@code linked-data-objects} GET was
+ * collapsed onto {@code GET /v2/containers/{appId}/linked-data-objects}
+ * (APISIMP-CONT-LDO-UNIFY); its coverage now lives in {@code ContainersV2RestTest}.
  */
 public class FileContainerLinkedDataObjectsRestTest {
 
@@ -37,47 +36,6 @@ public class FileContainerLinkedDataObjectsRestTest {
     resource             = new FileContainerLinkedDataObjectsRest();
     containerServiceMock = mock(FileContainerService.class);
     inject(resource, "fileContainerService", containerServiceMock);
-  }
-
-  // ── GET linked-data-objects ──────────────────────────────────────────────
-
-  @Test
-  void getLinkedDataObjects_unknownAppId_propagates() {
-    when(containerServiceMock.getContainerByAppId(APP_ID))
-      .thenThrow(new InvalidPathException("not found"));
-
-    try {
-      resource.getLinkedDataObjects(APP_ID);
-    } catch (InvalidPathException e) {
-      assertEquals("not found", e.getMessage());
-    }
-    verify(containerServiceMock, never()).findLinkedDataObjectsByAppId(APP_ID);
-  }
-
-  @Test
-  void getLinkedDataObjects_emptyList_returns200EmptyBody() {
-    FileContainer c = containerWithOgmId(OGM_ID);
-    when(containerServiceMock.getContainerByAppId(APP_ID)).thenReturn(c);
-    when(containerServiceMock.findLinkedDataObjectsByAppId(APP_ID)).thenReturn(List.of());
-
-    Response resp = resource.getLinkedDataObjects(APP_ID);
-
-    assertEquals(200, resp.getStatus());
-    verify(containerServiceMock).getContainerByAppId(APP_ID);
-    verify(containerServiceMock).findLinkedDataObjectsByAppId(APP_ID);
-  }
-
-  @Test
-  void getLinkedDataObjects_withEntries_returnsAll() {
-    FileContainer c = containerWithOgmId(OGM_ID);
-    DataObject d = dataObjectWithCollection("do-1-appid");
-    d.setName("do-1");
-    when(containerServiceMock.getContainerByAppId(APP_ID)).thenReturn(c);
-    when(containerServiceMock.findLinkedDataObjectsByAppId(APP_ID)).thenReturn(List.of(d));
-
-    Response resp = resource.getLinkedDataObjects(APP_ID);
-
-    assertEquals(200, resp.getStatus());
   }
 
   // ── DELETE (safe delete) ─────────────────────────────────────────────────
@@ -129,15 +87,6 @@ public class FileContainerLinkedDataObjectsRestTest {
     FileContainer c = new FileContainer();
     c.setId(id);
     return c;
-  }
-
-  private static DataObject dataObjectWithCollection(String appId) {
-    Collection col = new Collection();
-    col.setShepardId(1L);
-    DataObject d = new DataObject();
-    d.setAppId(appId);
-    d.setCollection(col);
-    return d;
   }
 
   private static void inject(Object target, String fieldName, Object value) throws Exception {

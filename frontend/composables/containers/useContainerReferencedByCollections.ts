@@ -2,10 +2,13 @@
  * CC1e — for a container row on the /containers list page, resolve the
  * distinct collection IDs that reference the container via their DataObjects.
  *
- * Strategy: call the appropriate CC1b `linked-data-objects` endpoint for
- * FILE / TIMESERIES / STRUCTUREDDATA containers and derive unique collectionIds
- * from the returned DataObject list.  Container types without a CC1b endpoint
- * (BASIC, SPATIALDATA) return `null` to signal "unsupported".
+ * Strategy: call the unified `GET /v2/containers/{appId}/linked-data-objects`
+ * endpoint (APISIMP-CONT-LDO-UNIFY — collapses the former per-kind file- /
+ * timeseries- / structured-data-containers paths) for FILE / TIMESERIES /
+ * STRUCTUREDDATA containers and derive unique collectionIds from the returned
+ * DataObject list. Container types without linked-data-objects support
+ * (BASIC, SPATIALDATA — the unified endpoint answers 415) return `null` to
+ * signal "unsupported".
  *
  * This is intentionally lazy/per-row: callers mount only when the row is
  * visible (v-for in a real table body), so the 20 concurrent requests on one
@@ -32,18 +35,11 @@ function v2BaseUrl(): string {
 }
 
 function linkedDataObjectsUrl(containerId: string | number, type: string): string | null {
-  switch (type) {
-    case "FILE":
-      return `${v2BaseUrl()}/v2/file-containers/${containerId}/linked-data-objects`;
-    case "TIMESERIES":
-      // All three v2 endpoints are keyed by containerAppId (UUID v7 string);
-      // numeric ids will 404 — callers must pass the appId (APISIMP-FC-SDC-LINKED-DO-APPID).
-      return `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/linked-data-objects`;
-    case "STRUCTUREDDATA":
-      return `${v2BaseUrl()}/v2/structured-data-containers/${containerId}/linked-data-objects`;
-    default:
-      return null;
-  }
+  // APISIMP-CONT-LDO-UNIFY — one unified container path for every kind. The
+  // endpoint is keyed by containerAppId (UUID v7 string); numeric ids will 404 —
+  // callers must pass the appId.
+  if (!SUPPORTED_TYPES.has(type)) return null;
+  return `${v2BaseUrl()}/v2/containers/${containerId}/linked-data-objects`;
 }
 
 export function useContainerReferencedByCollections(

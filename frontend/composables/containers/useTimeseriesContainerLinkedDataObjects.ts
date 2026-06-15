@@ -1,7 +1,9 @@
 /**
  * CC1b — fetch DataObjects linked to a TimeseriesContainer via their references.
  *
- * Calls GET /v2/timeseries-containers/{containerAppId}/linked-data-objects.
+ * Calls GET /v2/containers/{containerAppId}/linked-data-objects
+ * (APISIMP-CONT-LDO-UNIFY — the per-kind timeseries-containers path was
+ * collapsed onto the unified container surface).
  * Uses raw fetch (same pattern as usePublishEntity / FileContainerAccessor)
  * because the v2 endpoints are not in the generated backend-client base path.
  *
@@ -42,7 +44,7 @@ export function useTimeseriesContainerLinkedDataObjects(containerAppId: string |
     }
 
     try {
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${encodeURIComponent(id)}/linked-data-objects`;
+      const url = `${v2BaseUrl()}/v2/containers/${encodeURIComponent(id)}/linked-data-objects`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
