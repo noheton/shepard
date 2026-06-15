@@ -8,12 +8,14 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
@@ -22,6 +24,8 @@ import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
@@ -818,6 +822,358 @@ public class ContainersV2Rest {
         "Container kind '" + resolved.get().handler().kind() + "' has no chart-view");
     }
     return Response.ok(chartViewOpt.get()).build();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: live-window ────────────────────────────────
+
+  @GET
+  @Path("/{appId}/channels/live-window")
+  @Operation(
+    operationId = "getLiveWindow",
+    summary = "Fetch the most recent N seconds of a timeseries channel.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`GET /v2/timeseries-containers/{containerAppId}/channels/live-window`. " +
+      "Returns the last `windowSeconds` of data for a single channel. " +
+      "Channel lookup: `shepardId` (preferred) or 5-tuple filter. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "Window data for the channel.",
+    content = @Content(schema = @Schema(
+      implementation = de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowResponseIO.class)))
+  @APIResponse(responseCode = "400", description = "Channel address is ambiguous.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId, or no matching channel.")
+  @APIResponse(responseCode = "415", description = "This container kind has no live-window concept.")
+  public Response getLiveWindow(
+      @PathParam("appId") String appId,
+      @QueryParam("shepardId") UUID shepardId,
+      @QueryParam("measurement") String measurement,
+      @QueryParam("device") String device,
+      @QueryParam("location") String location,
+      @QueryParam("symbolicName") String symbolicName,
+      @QueryParam("field") String field,
+      @QueryParam("windowSeconds") @DefaultValue("300") @Min(1) @Max(3600) int windowSeconds,
+      @QueryParam("withBoundaryPoints") @DefaultValue("true") boolean withBoundaryPoints,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().getLiveWindow(
+        appId, shepardId, measurement, device, location, symbolicName, field,
+        windowSeconds, withBoundaryPoints);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED, "No live-window concept",
+        Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no live-window concept");
+    return result.get();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: channel annotations ────────────────────────
+
+  @GET
+  @Path("/{appId}/channels/{channelShepardId}/annotations")
+  @Operation(
+    operationId = "listChannelAnnotations",
+    summary = "List semantic annotations on a timeseries channel.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`GET /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "List of annotations (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY,
+      implementation = SemanticAnnotationIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
+  public Response listChannelAnnotations(
+      @PathParam("appId") String appId,
+      @PathParam("channelShepardId") String channelShepardId,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().listChannelAnnotations(appId, channelShepardId);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
+    return result.get();
+  }
+
+  @POST
+  @Path("/{appId}/channels/{channelShepardId}/annotations")
+  @Operation(
+    operationId = "createChannelAnnotation",
+    summary = "Attach a semantic annotation to a timeseries channel.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`POST /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "201", description = "Annotation created.",
+    content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
+  @APIResponse(responseCode = "400", description = "Invalid annotation body.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
+  public Response createChannelAnnotation(
+      @PathParam("appId") String appId,
+      @PathParam("channelShepardId") String channelShepardId,
+      @RequestBody(required = true,
+        content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
+      @Valid SemanticAnnotationIO body,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().createChannelAnnotation(appId, channelShepardId, body);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
+    return result.get();
+  }
+
+  @DELETE
+  @Path("/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}")
+  @Operation(
+    operationId = "deleteChannelAnnotation",
+    summary = "Remove a semantic annotation from a timeseries channel.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`DELETE /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations/{annotationAppId}`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "204", description = "Annotation deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId or annotation not found.")
+  @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
+  public Response deleteChannelAnnotation(
+      @PathParam("appId") String appId,
+      @PathParam("channelShepardId") String channelShepardId,
+      @PathParam("annotationAppId") @NotNull String annotationAppId,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().deleteChannelAnnotation(
+        appId, channelShepardId, annotationAppId);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
+    return result.get();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: temporal annotations ───────────────────────
+
+  @GET
+  @Path("/{appId}/temporal-annotations")
+  @Operation(
+    operationId = "listTemporalAnnotations",
+    summary = "List all temporal annotations on a container.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`GET /v2/timeseries-containers/{containerAppId}/temporal-annotations`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200",
+    description = "JSON array of TimeseriesAnnotationIO records; may be empty.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY,
+      implementation = TimeseriesAnnotationIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
+  public Response listTemporalAnnotations(
+      @PathParam("appId") String appId,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().listTemporalAnnotations(appId);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
+    return result.get();
+  }
+
+  @POST
+  @Path("/{appId}/temporal-annotations")
+  @Operation(
+    operationId = "createTemporalAnnotation",
+    summary = "Create a temporal annotation on a container.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`POST /v2/timeseries-containers/{containerAppId}/temporal-annotations`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "201", description = "Annotation created.",
+    content = @Content(schema = @Schema(implementation = TimeseriesAnnotationIO.class)))
+  @APIResponse(responseCode = "400", description = "`startNs` is null, or `label` is null or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
+  public Response createTemporalAnnotation(
+      @PathParam("appId") String appId,
+      TimeseriesAnnotationIO body,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().createTemporalAnnotation(appId, body);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
+    return result.get();
+  }
+
+  @GET
+  @Path("/{appId}/temporal-annotations/{annotationAppId}")
+  @Operation(
+    operationId = "getTemporalAnnotation",
+    summary = "Read a single container temporal annotation by appId.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`GET /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "TimeseriesAnnotationIO for the requested annotation.",
+    content = @Content(schema = @Schema(implementation = TimeseriesAnnotationIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container or annotation with those appIds.")
+  @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
+  public Response getTemporalAnnotation(
+      @PathParam("appId") String appId,
+      @PathParam("annotationAppId") String annotationAppId,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().getTemporalAnnotation(appId, annotationAppId);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
+    return result.get();
+  }
+
+  @PATCH
+  @Path("/{appId}/temporal-annotations/{annotationAppId}")
+  @Operation(
+    operationId = "updateTemporalAnnotation",
+    summary = "Update a container temporal annotation (merge-patch).",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`PATCH /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "200", description = "TimeseriesAnnotationIO reflecting the patched state.",
+    content = @Content(schema = @Schema(implementation = TimeseriesAnnotationIO.class)))
+  @APIResponse(responseCode = "400", description = "`label` is provided but blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container or annotation with those appIds.")
+  @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
+  public Response updateTemporalAnnotation(
+      @PathParam("appId") String appId,
+      @PathParam("annotationAppId") String annotationAppId,
+      TimeseriesAnnotationIO body,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().updateTemporalAnnotation(appId, annotationAppId, body);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
+    return result.get();
+  }
+
+  @DELETE
+  @Path("/{appId}/temporal-annotations/{annotationAppId}")
+  @Operation(
+    operationId = "deleteTemporalAnnotation",
+    summary = "Delete a container temporal annotation.",
+    description =
+      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
+      "`DELETE /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
+      "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "204", description = "Annotation deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container or annotation with those appIds.")
+  @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
+  public Response deleteTemporalAnnotation(
+      @PathParam("appId") String appId,
+      @PathParam("annotationAppId") String annotationAppId,
+      @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
+        Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    var result = resolved.get().handler().deleteTemporalAnnotation(appId, annotationAppId);
+    if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
+        "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
+    return result.get();
   }
 
   // ─── permissions ───────────────────────────────────────────────────────

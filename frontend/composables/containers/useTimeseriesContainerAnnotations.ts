@@ -1,11 +1,13 @@
 /**
  * TS-ANNOT-B — container-scoped temporal annotations.
  *
+ * APISIMP-CONT-NS-COLLAPSE-4: migrated from per-kind paths to unified /v2/containers surface.
+ *
  * Wraps the raw-fetch CRUD surface at:
- *   GET    /v2/timeseries-containers/{containerAppId}/temporal-annotations
- *   POST   /v2/timeseries-containers/{containerAppId}/temporal-annotations
- *   PATCH  /v2/timeseries-containers/{containerAppId}/temporal-annotations/{appId}
- *   DELETE /v2/timeseries-containers/{containerAppId}/temporal-annotations/{appId}
+ *   GET    /v2/containers/{containerAppId}/temporal-annotations
+ *   POST   /v2/containers/{containerAppId}/temporal-annotations
+ *   PATCH  /v2/containers/{containerAppId}/temporal-annotations/{appId}
+ *   DELETE /v2/containers/{containerAppId}/temporal-annotations/{appId}
  *
  * The OpenAPI generator hasn't been re-run since this endpoint shipped, so we
  * use raw fetch — matching the pattern in useTimeseriesReferenceAnnotations.ts.
@@ -65,7 +67,7 @@ export function useTimeseriesContainerAnnotations(containerId: Ref<string | null
     loading.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId.value}/temporal-annotations`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerId.value}/temporal-annotations`;
       const response = await fetch(url, { headers });
       if (response.ok) {
         annotations.value = (await response.json()) as ContainerAnnotationDto[];
@@ -84,7 +86,7 @@ export function useTimeseriesContainerAnnotations(containerId: Ref<string | null
     saving.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId.value}/temporal-annotations`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerId.value}/temporal-annotations`;
       const response = await fetch(url, {
         method: "POST",
         headers,
@@ -108,7 +110,7 @@ export function useTimeseriesContainerAnnotations(containerId: Ref<string | null
     saving.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId.value}/temporal-annotations/${appId}`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerId.value}/temporal-annotations/${appId}`;
       const response = await fetch(url, {
         method: "PATCH",
         headers,
@@ -131,7 +133,7 @@ export function useTimeseriesContainerAnnotations(containerId: Ref<string | null
     if (!containerId.value) return;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId.value}/temporal-annotations/${appId}`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerId.value}/temporal-annotations/${appId}`;
       const response = await fetch(url, { method: "DELETE", headers });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       annotations.value = annotations.value.filter(a => a.appId !== appId);
