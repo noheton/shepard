@@ -8,6 +8,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
@@ -401,6 +402,51 @@ public class ContainersV2Rest {
         .build();
     }
     return Response.ok(versionsOpt.get()).build();
+  }
+
+  // ─── stats ───────────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/stats")
+  @Operation(
+    operationId = "getContainerStats",
+    summary = "Storage and ingestion statistics for a container by appId.",
+    description =
+      "Returns point count, channel count, estimated uncompressed size, and recent " +
+      "ingest rate for the container at `appId`. Supported for `timeseries` kind; " +
+      "other kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-1 — replaces the per-kind " +
+      "`/v2/timeseries-containers/{appId}/stats` endpoint.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Stats for the container.",
+    content = @Content(schema = @Schema(implementation = ContainerStatsIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no stats concept.")
+  public Response getStats(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var statsOpt = resolved.get().handler().getStats(appId);
+    if (statsOpt.isEmpty()) {
+      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/containers.stats-unsupported",
+          "Container kind does not support stats",
+          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
+          "Container kind '" + resolved.get().handler().kind() + "' has no stats concept",
+          null))
+        .build();
+    }
+    return Response.ok(statsOpt.get()).build();
   }
 
   // ─── linked DataObjects ──────────────────────────────────────────────────
