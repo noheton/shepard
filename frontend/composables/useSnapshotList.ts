@@ -46,7 +46,7 @@ export function useSnapshotList() {
   async function fetchPage(opts: {
     collectionAppId?: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
   } = {}): Promise<SnapshotListItem[]> {
     isLoading.value = true;
     error.value = null;
@@ -54,7 +54,7 @@ export function useSnapshotList() {
       const params = new URLSearchParams();
       if (opts.collectionAppId) params.set("collectionAppId", opts.collectionAppId);
       params.set("page", String(opts.page ?? 0));
-      params.set("size", String(opts.size ?? 200));
+      params.set("pageSize", String(opts.pageSize ?? 200));
       const { data: auth } = useAuth();
       const token = auth.value?.accessToken;
       const headers: Record<string, string> = { Accept: "application/json" };

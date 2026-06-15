@@ -26,7 +26,7 @@ export function useFetchPermissionAuditLog() {
         from: filterFrom.value || undefined,
         to: filterTo.value || undefined,
         page: page.value,
-        size: PAGE_SIZE,
+        pageSize: PAGE_SIZE,
       });
       entries.value = rows;
       hasMore.value = rows.length === PAGE_SIZE;

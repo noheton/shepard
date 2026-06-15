@@ -68,7 +68,7 @@ export function useFetchDataObjectMapByCollection(
         collectionAppId,
         fields: "id,appId,name",
         page,
-        size: PAGE_SIZE,
+        pageSize: PAGE_SIZE,
       });
       rows.push(...batch);
       if (batch.length < PAGE_SIZE) break;

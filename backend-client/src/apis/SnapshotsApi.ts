@@ -60,13 +60,13 @@ export interface GetSnapshotRequest {
 export interface ListCollectionSnapshotsRequest {
     collectionAppId: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
 }
 
 export interface ListSnapshotsRequest {
     collectionAppId?: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
 }
 
 export interface ManifestRequest {
@@ -354,8 +354,8 @@ export class SnapshotsApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -406,8 +406,8 @@ export class SnapshotsApi extends runtime.BaseAPI {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

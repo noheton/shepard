@@ -375,7 +375,7 @@ watch(
     try {
       const data = await channelListingApi.value.listChannels({
         containerAppId: appId,
-        size: 1000,
+        pageSize: 1000,
       });
       channelsV2.value = data ?? [];
     } catch {

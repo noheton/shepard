@@ -431,7 +431,7 @@ public class FileBundleReferenceRest {
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
     @QueryParam("page") Integer page,
-    @QueryParam("size") Integer size,
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
@@ -444,21 +444,21 @@ public class FileBundleReferenceRest {
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
     if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
-    // Clamp page + size to sensible defaults. Out-of-range hints are
+    // Clamp page + pageSize to sensible defaults. Out-of-range hints are
     // clamped, never rejected — surfacing a 400 here would be hostile to
     // a UI that may just have a stale slider value while the bundle's
     // file count is fluctuating.
     int pageIdx = (page == null || page < 0) ? 0 : page;
-    int pageSize = (size == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, size));
+    int effectiveSize = (pageSize == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, pageSize));
 
     List<ShepardFile> all = group.getFiles() != null ? group.getFiles() : List.of();
     long total = all.size();
-    int totalPages = pageSize == 0 ? 0 : (int) ((total + pageSize - 1) / pageSize);
-    int from = Math.min((int) total, pageIdx * pageSize);
-    int to = Math.min((int) total, from + pageSize);
+    int totalPages = effectiveSize == 0 ? 0 : (int) ((total + effectiveSize - 1) / effectiveSize);
+    int from = Math.min((int) total, pageIdx * effectiveSize);
+    int to = Math.min((int) total, from + effectiveSize);
     List<ShepardFile> slice = from >= to ? List.of() : new ArrayList<>(all.subList(from, to));
 
-    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, pageSize, total, totalPages);
+    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, effectiveSize, total, totalPages);
     return Response.ok(envelope).build();
   }
 
