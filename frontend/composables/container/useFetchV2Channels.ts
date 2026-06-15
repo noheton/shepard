@@ -1,7 +1,7 @@
 /**
  * UX-PIN1 — Fetch the v2 channel listing for a TimeseriesContainer.
  *
- * The v2 endpoint (`/v2/timeseries-containers/{id}/channels`) returns
+ * The v2 endpoint (`/v2/containers/{id}/channels`) returns
  * `TimeseriesChannelV2IO` which includes `shepardId` alongside the legacy
  * 5-tuple.  The v1 `getTimeseriesOfContainer` endpoint does NOT include
  * `shepardId` (frozen by V1WireFidelityTest).
@@ -59,7 +59,7 @@ export function useFetchV2Channels(containerAppId: string) {
     loading.value = true;
     try {
       const res = await fetch(
-        `${v2Base()}/v2/timeseries-containers/${containerAppId}/channels?size=2000`,
+        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=2000`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;

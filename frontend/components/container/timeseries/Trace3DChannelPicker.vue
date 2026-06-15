@@ -124,7 +124,7 @@ async function autoPopulateFromAnnotations() {
   if (!props.channels.length) return;
   try {
     const data = await $fetch<Record<RoleKey, string | null>>(
-      `/v2/timeseries-containers/${props.containerAppId}/channels/spatial-roles`,
+      `/v2/containers/${props.containerAppId}/channels/spatial-roles`,
     );
     const roleToRef: Record<RoleKey, typeof xKey> = {
       x: xKey, y: yKey, z: zKey, rot_a: rotAKey, rot_b: rotBKey, rot_c: rotCKey,
