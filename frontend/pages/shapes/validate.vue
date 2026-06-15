@@ -332,7 +332,7 @@ async function validate() {
           :items-per-page="25"
           data-testid="shacl-findings-table"
         >
-          <template #item.severity="{ item }">
+          <template #[`item.severity`]="{ item }">
             <v-chip
               :color="severityColor(item.severity)"
               :prepend-icon="severityIcon(item.severity)"
@@ -340,14 +340,14 @@ async function validate() {
               variant="tonal"
             >{{ item.severity }}</v-chip>
           </template>
-          <template #item.focusNode="{ item }">
+          <template #[`item.focusNode`]="{ item }">
             <code class="text-caption">{{ item.focusNode ?? "—" }}</code>
           </template>
-          <template #item.resultPath="{ item }">
+          <template #[`item.resultPath`]="{ item }">
             <code v-if="item.resultPath" class="text-caption">{{ item.resultPath }}</code>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
-          <template #item.value="{ item }">
+          <template #[`item.value`]="{ item }">
             <code v-if="item.value" class="text-caption">{{ item.value }}</code>
             <span v-else class="text-medium-emphasis">—</span>
           </template>

@@ -21,7 +21,6 @@ import {
   formatSpeedSetpoint,
   formatTimeWindow,
   lastIriSegment,
-  type TileMatch,
 } from "../../utils/afpThermoOverlay";
 
 // ── tileMatchColor ────────────────────────────────────────────────────────
