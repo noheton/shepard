@@ -93,12 +93,12 @@ class PathTargetParserTest {
 
   @Test
   void verbTailLandsOnDeepestPair() {
-    // /v2/timeseries-references/<UUID>/detect-anomalies — "detect-anomalies"
-    // is a verb segment with no id; walk left, take the timeseries-references
-    // pair.
-    var r = PathTargetParser.parse("/v2/timeseries-references/" + UUID_R + "/detect-anomalies");
+    // /v2/references/<UUID>/detect-anomalies — "detect-anomalies"
+    // is a verb segment with no id; walk left, take the references pair.
+    // After APISIMP-TSREF-NS-COLLAPSE the endpoint lives on /v2/references/{appId}/...
+    var r = PathTargetParser.parse("/v2/references/" + UUID_R + "/detect-anomalies");
     assertTrue(r.isPresent());
-    assertEquals("TimeseriesReference", r.get().kind());
+    assertEquals("BasicReference", r.get().kind());
     assertEquals(UUID_R, r.get().idString());
   }
 
