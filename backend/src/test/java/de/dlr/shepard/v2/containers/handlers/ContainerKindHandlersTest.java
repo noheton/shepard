@@ -363,6 +363,50 @@ class ContainerKindHandlersTest {
     verify(sdService).findLinkedDataObjectsByAppId("sd-1");
   }
 
+  // ─── findLinkedDataObjectAppIds ────────────────────────────────────────────
+
+  @Test
+  void file_findLinkedDataObjectAppIds_returnsAppIds() {
+    var container = fileContainer("file-1");
+    when(fileDao.findByAppId("file-1")).thenReturn(Optional.of(container));
+    var linkedDo = org.mockito.Mockito.mock(de.dlr.shepard.context.collection.entities.DataObject.class);
+    when(linkedDo.getAppId()).thenReturn("do-app-1");
+    when(fileService.findLinkedDataObjectsById(5L)).thenReturn(List.of(linkedDo));
+    var result = fileHandler.findLinkedDataObjectAppIds("file-1");
+    assertTrue(result.isPresent());
+    assertEquals(List.of("do-app-1"), result.get());
+  }
+
+  @Test
+  void file_findLinkedDataObjectAppIds_unknownContainer_returnsEmpty() {
+    when(fileDao.findByAppId("missing")).thenReturn(Optional.empty());
+    assertFalse(fileHandler.findLinkedDataObjectAppIds("missing").isPresent());
+  }
+
+  @Test
+  void ts_findLinkedDataObjectAppIds_returnsAppIds() {
+    var container = tsContainer("ts-1");
+    when(tsDao.findByAppId("ts-1")).thenReturn(Optional.of(container));
+    var linkedDo = org.mockito.Mockito.mock(de.dlr.shepard.context.collection.entities.DataObject.class);
+    when(linkedDo.getAppId()).thenReturn("do-app-2");
+    when(tsService.findLinkedDataObjectsById(7L)).thenReturn(List.of(linkedDo));
+    var result = tsHandler.findLinkedDataObjectAppIds("ts-1");
+    assertTrue(result.isPresent());
+    assertEquals(List.of("do-app-2"), result.get());
+  }
+
+  @Test
+  void sd_findLinkedDataObjectAppIds_returnsAppIds() {
+    var container = sdContainer("sd-1");
+    when(sdDao.findByAppId("sd-1")).thenReturn(Optional.of(container));
+    var linkedDo = org.mockito.Mockito.mock(de.dlr.shepard.context.collection.entities.DataObject.class);
+    when(linkedDo.getAppId()).thenReturn("do-app-3");
+    when(sdService.findLinkedDataObjectsById(8L)).thenReturn(List.of(linkedDo));
+    var result = sdHandler.findLinkedDataObjectAppIds("sd-1");
+    assertTrue(result.isPresent());
+    assertEquals(List.of("do-app-3"), result.get());
+  }
+
   // ─── patch support validation ──────────────────────────────────────────────
 
   @Test

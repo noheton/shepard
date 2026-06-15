@@ -635,4 +635,15 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     annotationDAO.unlinkAndDeleteFromContainer(containerId, a);
     return Optional.of(Response.noContent().build());
   }
+
+  @Override
+  public Optional<List<String>> findLinkedDataObjectAppIds(String appId) {
+    TimeseriesContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
+    if (c == null) return Optional.empty();
+    return Optional.of(
+        service.findLinkedDataObjectsById(c.getId()).stream()
+            .map(d -> d.getAppId())
+            .toList()
+    );
+  }
 }
