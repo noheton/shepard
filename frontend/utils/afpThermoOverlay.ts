@@ -111,8 +111,9 @@ export function formatTimeWindow(
 /**
  * Extract the last segment of an IRI for compact display.
  * E.g. "urn:shepard:mffd:material-batch:B2024-03" → "B2024-03".
+ * Also handles fragment IRIs: "https://example.org/vocab/material#lot42" → "lot42".
  */
 export function lastIriSegment(iri: string | undefined | null): string {
   if (!iri) return "—";
-  return iri.split(/[:/]/).pop() ?? iri;
+  return iri.split(/[:#/]/).pop() ?? iri;
 }
