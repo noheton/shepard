@@ -9,6 +9,7 @@ import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -309,5 +310,39 @@ public interface ContainerKindHandler {
       String containerAppId, UUID shepardId,
       de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO body) {
     return false;
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-3: chart-view endpoints ───────────────────────
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-3 — optionally return the persisted chart-view
+   * configuration for the container at {@code appId}. Only timeseries containers
+   * carry a chart-view; other kinds return {@link Optional#empty()} (→ 415).
+   *
+   * <p>The dispatching resource has already gated Read on the container before
+   * calling this method.
+   *
+   * @param appId UUID v7 of the container.
+   * @return the chart-view IO, or empty when this kind has no chart-view (→ 415).
+   */
+  default Optional<TimeseriesContainerChartViewIO> getChartView(String appId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-3 — optionally apply a merge-patch to the
+   * chart-view configuration for the container at {@code appId}. Only timeseries
+   * containers carry a chart-view; other kinds return {@link Optional#empty()} (→ 415).
+   *
+   * <p>The dispatching resource has already gated Write on the container before
+   * calling this method.
+   *
+   * @param appId UUID v7 of the container.
+   * @param patch the merge-patch body (RFC 7396 semantics on {@code selectedChannels}).
+   * @return the updated chart-view IO, or empty when this kind has no chart-view (→ 415).
+   */
+  default Optional<TimeseriesContainerChartViewIO> patchChartView(
+      String appId, TimeseriesContainerChartViewIO patch) {
+    return Optional.empty();
   }
 }

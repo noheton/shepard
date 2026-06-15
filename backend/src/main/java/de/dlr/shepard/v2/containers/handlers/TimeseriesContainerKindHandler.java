@@ -28,6 +28,8 @@ import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
+import de.dlr.shepard.v2.timeseriescontainer.services.TimeseriesContainerChartViewService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -57,6 +59,9 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Inject
   TimeseriesContainerDAO dao;
+
+  @Inject
+  TimeseriesContainerChartViewService chartViewService;
 
   @Inject
   UserService userService;
@@ -314,5 +319,26 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
     timeseriesService.ingestDataPointsCopy(containerId, entity, body.dataPoints());
     return true;
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-3: chart-view overrides ──────────────────────
+
+  @Override
+  public Optional<TimeseriesContainerChartViewIO> getChartView(String appId) {
+    TimeseriesContainer c = dao.findByAppId(appId)
+      .filter(x -> !x.isDeleted())
+      .orElseThrow(() -> new NotFoundException("No timeseries container with appId " + appId));
+    return Optional.of(TimeseriesContainerChartViewIO.from(chartViewService.find(c.getId())));
+  }
+
+  @Override
+  public Optional<TimeseriesContainerChartViewIO> patchChartView(
+      String appId, TimeseriesContainerChartViewIO patch) {
+    TimeseriesContainer c = dao.findByAppId(appId)
+      .filter(x -> !x.isDeleted())
+      .orElseThrow(() -> new NotFoundException("No timeseries container with appId " + appId));
+    return Optional.of(
+      TimeseriesContainerChartViewIO.from(chartViewService.patch(c.getId(), patch))
+    );
   }
 }
