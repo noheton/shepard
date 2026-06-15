@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/timeseries-references/{refAppId}/detect-anomalies")
+@Path("/v2/references/{appId}/detect-anomalies")
 @RequestScoped
 @Tag(name = "Timeseries annotations")
 public class AnomalyDetectionRest {
@@ -153,7 +153,7 @@ public class AnomalyDetectionRest {
     summary = "Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.",
     description =
       "Fetches the timeseries data linked to the `:TimeseriesReference` identified by " +
-      "`refAppId`, selects one channel series, applies the rolling-median Median Absolute " +
+      "`appId`, selects one channel series, applies the rolling-median Median Absolute " +
       "Deviation (MAD) algorithm, and returns detected anomaly intervals as an " +
       "`AnomalyDetectResultIO` response.\n\n" +
       "Series selection rules:\n" +
@@ -185,7 +185,7 @@ public class AnomalyDetectionRest {
   @APIResponse(responseCode = "403", description = "Caller lacks the required permission on the parent DataObject (Read for detection, Write when createAnnotations=true).")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
   public Response detect(
-    @PathParam("refAppId") String refAppId,
+    @PathParam("appId") String appId,
     AnomalyDetectRequestIO body,
     @Context SecurityContext sc
   ) {
@@ -206,11 +206,11 @@ public class AnomalyDetectionRest {
 
     // Auth: Read always; Write additionally if createAnnotations
     AccessType required = body.isCreateAnnotations() ? AccessType.Write : AccessType.Read;
-    var gate = checkAccess(refAppId, required, sc);
+    var gate = checkAccess(appId, required, sc);
     if (gate != null) return gate;
 
     // Resolve reference
-    TimeseriesReference ref = resolveRef(refAppId);
+    TimeseriesReference ref = resolveRef(appId);
     // checkAccess already validated existence; ref is non-null here
 
     // Check the reference has a non-deleted container

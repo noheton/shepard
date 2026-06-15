@@ -1,10 +1,10 @@
 /**
- * Frontend wrapper for the TA1a + AI1b endpoints:
+ * Frontend wrapper for the TA1a + AI1b endpoints (APISIMP-TSREF-NS-COLLAPSE):
  *
- *   GET    /v2/timeseries-references/{refAppId}/annotations
- *   POST   /v2/timeseries-references/{refAppId}/annotations
- *   DELETE /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}
- *   POST   /v2/timeseries-references/{refAppId}/detect-anomalies
+ *   GET    /v2/references/{appId}/annotations
+ *   POST   /v2/references/{appId}/annotations
+ *   DELETE /v2/references/{appId}/annotations/{annotationAppId}
+ *   POST   /v2/references/{appId}/detect-anomalies
  *
  * The OpenAPI generator hasn't been re-run since TA1a / AI1b shipped, so we
  * talk these endpoints with raw fetch — matching the pattern used for
@@ -81,7 +81,7 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
     loading.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-references/${refAppId.value}/annotations`;
+      const url = `${v2BaseUrl()}/v2/references/${refAppId.value}/annotations`;
       const response = await fetch(url, { headers });
       if (response.ok) {
         annotations.value = (await response.json()) as TimeseriesAnnotationDto[];
@@ -99,7 +99,7 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
     if (!refAppId.value) return;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-references/${refAppId.value}/annotations/${annotationAppId}`;
+      const url = `${v2BaseUrl()}/v2/references/${refAppId.value}/annotations/${annotationAppId}`;
       const response = await fetch(url, { method: "DELETE", headers });
       if (response.ok) {
         annotations.value = annotations.value.filter(a => a.appId !== annotationAppId);
@@ -113,7 +113,7 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
   }
 
   /**
-   * POST /v2/timeseries-references/{refAppId}/detect-anomalies
+   * POST /v2/references/{refAppId}/detect-anomalies
    *
    * Sends the detection parameters as a JSON body (the endpoint accepts an
    * optional body — empty {} uses server defaults). Returns the full
@@ -131,7 +131,7 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
     try {
       const headers = await authHeaders();
       const url =
-        `${v2BaseUrl()}/v2/timeseries-references/${refAppId.value}/detect-anomalies`;
+        `${v2BaseUrl()}/v2/references/${refAppId.value}/detect-anomalies`;
       const response = await fetch(url, {
         method: "POST",
         headers,

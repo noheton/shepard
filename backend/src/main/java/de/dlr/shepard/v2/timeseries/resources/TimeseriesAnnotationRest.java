@@ -40,7 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/timeseries-references/{refAppId}/annotations")
+@Path("/v2/references/{appId}/annotations")
 @RequestScoped
 @Tag(name = "Timeseries annotations")
 public class TimeseriesAnnotationRest {
@@ -101,8 +101,8 @@ public class TimeseriesAnnotationRest {
       "annotations in timeline order.\n\n" +
       "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
       "Returns 404 when the `refAppId` does not resolve to a known `:TimeseriesReference`.\n\n" +
-      "Next step: `POST /v2/timeseries-references/{refAppId}/annotations` to add " +
-      "an annotation, or `GET /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` " +
+      "Next step: `POST /v2/references/{appId}/annotations` to add " +
+      "an annotation, or `GET /v2/references/{appId}/annotations/{annotationAppId}` " +
       "to fetch a single one."
   )
   @APIResponse(
@@ -113,11 +113,11 @@ public class TimeseriesAnnotationRest {
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
-  public Response list(@PathParam("refAppId") String refAppId, @Context SecurityContext sc) {
-    var gate = checkAccess(refAppId, AccessType.Read, sc);
+  public Response list(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    var gate = checkAccess(appId, AccessType.Read, sc);
     if (gate != null) return gate;
     List<TimeseriesAnnotationIO> rows = annotationDAO
-      .findByTimeseriesReferenceAppId(refAppId)
+      .findByTimeseriesReferenceAppId(appId)
       .stream()
       .map(TimeseriesAnnotationIO::new)
       .toList();
@@ -157,7 +157,7 @@ public class TimeseriesAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
   public Response create(
-    @PathParam("refAppId") String refAppId,
+    @PathParam("appId") String appId,
     TimeseriesAnnotationIO body,
     @Context SecurityContext sc
   ) {
@@ -167,7 +167,7 @@ public class TimeseriesAnnotationRest {
     if (body.getLabel() == null || body.getLabel().isBlank()) {
       return problem("timeseries-annotations.bad-request", "Bad Request", Response.Status.BAD_REQUEST, "label is required and must be non-blank");
     }
-    var gate = checkAccess(refAppId, AccessType.Write, sc);
+    var gate = checkAccess(appId, AccessType.Write, sc);
     if (gate != null) return gate;
 
     TimeseriesAnnotation a = new TimeseriesAnnotation();
@@ -179,7 +179,7 @@ public class TimeseriesAnnotationRest {
     a.setConfidence(body.getConfidence());
 
     annotationDAO.createOrUpdate(a);
-    annotationDAO.linkToReference(refAppId, a.getAppId());
+    annotationDAO.linkToReference(appId, a.getAppId());
 
     return Response.status(Response.Status.CREATED).entity(new TimeseriesAnnotationIO(a)).build();
   }
@@ -197,7 +197,7 @@ public class TimeseriesAnnotationRest {
       "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
       "The access check is performed against the `refAppId` parent reference; the " +
       "annotation lookup is not independently permission-gated.\n\n" +
-      "Next step: `PATCH /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` " +
+      "Next step: `PATCH /v2/references/{appId}/annotations/{annotationAppId}` " +
       "to update, or `DELETE ...` to remove."
   )
   @APIResponse(
@@ -209,11 +209,11 @@ public class TimeseriesAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with `refAppId`, or no annotation with `annotationAppId`.")
   public Response read(
-    @PathParam("refAppId") String refAppId,
+    @PathParam("appId") String appId,
     @PathParam("annotationAppId") String annotationAppId,
     @Context SecurityContext sc
   ) {
-    var gate = checkAccess(refAppId, AccessType.Read, sc);
+    var gate = checkAccess(appId, AccessType.Read, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
@@ -249,12 +249,12 @@ public class TimeseriesAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with `refAppId`, or no annotation with `annotationAppId`.")
   public Response update(
-    @PathParam("refAppId") String refAppId,
+    @PathParam("appId") String appId,
     @PathParam("annotationAppId") String annotationAppId,
     TimeseriesAnnotationIO body,
     @Context SecurityContext sc
   ) {
-    var gate = checkAccess(refAppId, AccessType.Write, sc);
+    var gate = checkAccess(appId, AccessType.Write, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
@@ -293,15 +293,15 @@ public class TimeseriesAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with `refAppId`, or no annotation with `annotationAppId`.")
   public Response delete(
-    @PathParam("refAppId") String refAppId,
+    @PathParam("appId") String appId,
     @PathParam("annotationAppId") String annotationAppId,
     @Context SecurityContext sc
   ) {
-    var gate = checkAccess(refAppId, AccessType.Write, sc);
+    var gate = checkAccess(appId, AccessType.Write, sc);
     if (gate != null) return gate;
     TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
     if (a == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Annotation not found: " + annotationAppId);
-    annotationDAO.unlinkAndDelete(refAppId, a);
+    annotationDAO.unlinkAndDelete(appId, a);
     return Response.noContent().build();
   }
 }

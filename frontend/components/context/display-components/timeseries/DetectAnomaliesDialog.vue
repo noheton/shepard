@@ -4,7 +4,7 @@
  *
  * Opens from the "Detect anomalies" button on the TimeseriesReference detail
  * page. Lets the user tune window size / threshold / createAnnotations, calls
- * POST /v2/timeseries-references/{refAppId}/detect-anomalies, and displays the
+ * POST /v2/references/{appId}/detect-anomalies, and displays the
  * per-interval result table inline.
  */
 import {
