@@ -86,7 +86,7 @@ describe("useFetchPayloadVersions", () => {
     expect(error.value).toBeNull();
 
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain("/v2/file-containers/container-app-id/files/");
+    expect(url).toContain("/v2/containers/container-app-id/files/");
     expect(url).toContain(encodeURIComponent("my file.csv"));
     expect(url).toContain("/versions");
     expect((opts.headers as Record<string, string>)["Authorization"]).toBe(`Bearer ${ACCESS_TOKEN}`);

@@ -1,6 +1,6 @@
 /**
  * TS_STATS1 — fetches storage + ingest stats for a TimeseriesContainer.
- * Calls GET /v2/timeseries-containers/{containerAppId}/stats.
+ * Calls GET /v2/containers/{containerAppId}/stats.
  *
  * Accepts a static string or a Ref<string | null> so callers that resolve
  * appId asynchronously (via a container accessor) can pass a computed ref and
