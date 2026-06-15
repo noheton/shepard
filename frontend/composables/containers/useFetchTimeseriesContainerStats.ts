@@ -39,7 +39,8 @@ export function useFetchTimeseriesContainerStats(containerAppId: string | Ref<st
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       if (!accessToken) return;
-      const url = `${getV2BaseUrl()}/v2/timeseries-containers/${encodeURIComponent(id)}/stats`;
+      // APISIMP-CONT-NS-COLLAPSE-1: migrated from /v2/timeseries-containers/{id}/stats
+      const url = `${getV2BaseUrl()}/v2/containers/${encodeURIComponent(id)}/stats`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
         credentials: "include",

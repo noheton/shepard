@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import java.util.List;
@@ -179,6 +180,26 @@ public interface ContainerKindHandler {
    *         this kind has no file-payload versioning (→ 415).
    */
   default Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-1 — optionally return storage statistics for the
+   * container at {@code appId}. Converged home for the per-kind stats sub-resource
+   * behind the generic {@code GET /v2/containers/{appId}/stats} route, replacing
+   * the bespoke {@code TimeseriesContainerStatsRest} resource.
+   *
+   * <p>Default returns {@link Optional#empty()} — kinds without a stats concept
+   * (file, structured-data) leave the dispatcher to answer 415.
+   *
+   * <p>The dispatching resource has already gated Read on the container before
+   * calling this method.
+   *
+   * @param appId UUID v7 of the container.
+   * @return the stats body, or {@link Optional#empty()} when this kind has no
+   *         stats concept (→ 415).
+   */
+  default Optional<ContainerStatsIO> getStats(String appId) {
     return Optional.empty();
   }
 

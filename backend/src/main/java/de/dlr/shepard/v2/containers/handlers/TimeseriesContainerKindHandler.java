@@ -10,10 +10,13 @@ import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,9 @@ import java.util.Optional;
 @ApplicationScoped
 public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
+  private static final int BYTES_PER_POINT = 28;
+  private static final long WINDOW_NS = 10_000_000_000L;
+
   @Inject
   TimeseriesContainerService service;
 
@@ -40,6 +46,9 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Inject
   DateHelper dateHelper;
+
+  @PersistenceContext
+  EntityManager entityManager;
 
   @Override
   public String kind() {
@@ -96,6 +105,42 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     var params = new QueryParamHelper();
     if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
     return service.getAllContainers(params).stream().map(c -> (ContainerV2IO) toIO(c)).toList();
+  }
+
+  @Override
+  public Optional<ContainerStatsIO> getStats(String appId) {
+    var container = service.getContainerByAppId(appId);
+    long containerId = container.getId();
+
+    Object[] totals = (Object[]) entityManager.createNativeQuery(
+      "SELECT COUNT(dp.timeseries_id) AS point_count, COUNT(DISTINCT dp.timeseries_id) AS channel_count " +
+      "FROM timeseries_data_points dp " +
+      "JOIN timeseries t ON dp.timeseries_id = t.id " +
+      "WHERE t.container_id = :cid"
+    ).setParameter("cid", containerId).getSingleResult();
+
+    long pointCount = ((Number) totals[0]).longValue();
+    long channelCount = ((Number) totals[1]).longValue();
+
+    long nowNs = System.currentTimeMillis() * 1_000_000L;
+    Number recent = (Number) entityManager.createNativeQuery(
+      "SELECT COUNT(*) " +
+      "FROM timeseries_data_points dp " +
+      "JOIN timeseries t ON dp.timeseries_id = t.id " +
+      "WHERE t.container_id = :cid AND dp.time > :windowStart"
+    )
+      .setParameter("cid", containerId)
+      .setParameter("windowStart", nowNs - WINDOW_NS)
+      .getSingleResult();
+
+    long recentPoints = recent.longValue();
+    return Optional.of(new ContainerStatsIO(
+      pointCount,
+      channelCount,
+      pointCount * BYTES_PER_POINT,
+      recentPoints,
+      recentPoints * BYTES_PER_POINT / 10
+    ));
   }
 
   @Override
