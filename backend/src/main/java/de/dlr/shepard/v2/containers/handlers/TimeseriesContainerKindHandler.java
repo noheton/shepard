@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.containers.handlers;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
@@ -11,21 +12,31 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
+import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
+import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowPointIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowResponseIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
@@ -35,11 +46,14 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * V2CONV-A3 — in-tree {@link ContainerKindHandler} for {@code kind=timeseries}.
@@ -47,12 +61,28 @@ import java.util.UUID;
  * {@link TimeseriesContainerService} and resolves/renames via
  * {@link TimeseriesContainerDAO}. The frozen v1
  * {@code /shepard/api/timeseriesContainers} surface is untouched.
+ *
+ * <p>APISIMP-CONT-NS-COLLAPSE-4 — also overrides the 9 new default methods for
+ * live-window, channel annotations, and temporal annotations, replacing the
+ * deleted per-kind REST classes {@code TimeseriesLiveWindowRest},
+ * {@code TimeseriesChannelAnnotationRest}, and
+ * {@code TimeseriesContainerTemporalAnnotationRest}.
  */
 @ApplicationScoped
 public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   private static final int BYTES_PER_POINT = 28;
   private static final long WINDOW_NS = 10_000_000_000L;
+  private static final long NS_PER_MS = 1_000_000L;
+
+  private static final String PT_NOT_FOUND =
+      "/problems/timeseries-container-annotations.not-found";
+
+  private static Response problem(
+      String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @Inject
   TimeseriesContainerService service;
@@ -86,6 +116,19 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
   private static final int MAX_PAGE_SIZE    = 1000;
   private static final int DEFAULT_MAX_POINTS = 2000;
   private static final int HARD_MAX_POINTS    = 5000;
+
+  // APISIMP-CONT-NS-COLLAPSE-4: additional injections for live-window + annotations
+  @Inject
+  TsChannelResolver channelResolver;
+
+  @Inject
+  TimeseriesDataPointRepository dataPointRepository;
+
+  @Inject
+  AnnotatableTimeseriesService annotatableTimeseriesService;
+
+  @Inject
+  TimeseriesAnnotationDAO annotationDAO;
 
   @Override
   public String kind() {
@@ -340,5 +383,256 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     return Optional.of(
       TimeseriesContainerChartViewIO.from(chartViewService.patch(c.getId(), patch))
     );
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: live-window ──────────────────────────────
+
+  @Override
+  public Optional<Response> getLiveWindow(
+      String appId, UUID shepardId, String measurement, String device,
+      String location, String symbolicName, String field,
+      int windowSeconds, boolean withBoundaryPoints) {
+
+    // Resolves the container by appId and enforces Read permission.
+    var container = service.getContainerByAppId(appId);
+    long containerId = container.getId();
+
+    // Build the window boundaries in nanoseconds (storage unit) and milliseconds (response unit).
+    long nowNs = System.currentTimeMillis() * NS_PER_MS;
+    long windowNs = (long) windowSeconds * 1_000_000_000L;
+    long startNs = nowNs - windowNs;
+    long windowStartMs = startNs / NS_PER_MS;
+    long windowEndMs = nowNs / NS_PER_MS;
+
+    // TS-IDc — shepardId wins when both shapes are supplied.
+    TimeseriesEntity entity;
+    if (shepardId != null) {
+      Optional<TimeseriesEntity> byShepardId =
+          channelResolver.findByContainerAndShepardId(containerId, shepardId);
+      if (byShepardId.isEmpty()) {
+        return Optional.of(problem("timeseries-live-window.not-found", "Not Found",
+            Response.Status.NOT_FOUND,
+            "No channel with shepardId " + shepardId + " in container " + appId));
+      }
+      entity = byShepardId.get();
+    } else {
+      List<TimeseriesEntity> matched = channelResolver.findByContainerAndPartialTuple(
+          containerId, measurement, device, location, symbolicName, field);
+
+      if (matched.isEmpty()) {
+        return Optional.of(problem("timeseries-live-window.not-found", "Not Found",
+            Response.Status.NOT_FOUND,
+            "No channel matches the supplied filter fields in container " + appId));
+      }
+      if (matched.size() > 1) {
+        return Optional.of(problem("timeseries-live-window.bad-request", "Bad Request",
+            Response.Status.BAD_REQUEST,
+            "Channel address is ambiguous — " + matched.size() +
+                " channels match. Provide more specific filter fields."));
+      }
+      entity = matched.get(0);
+    }
+    int tsId = entity.getId();
+    DataPointValueType valueType = entity.getValueType();
+
+    // Fetch the raw data points in the window.
+    var queryParams = new TimeseriesDataPointsQueryParams(startNs, nowNs, null, null, null);
+    List<TimeseriesDataPoint> raw = dataPointRepository.queryDataPoints(tsId, valueType, queryParams);
+
+    List<LiveWindowPointIO> points = buildPoints(
+        raw, tsId, valueType, startNs, nowNs, withBoundaryPoints);
+
+    return Optional.of(
+        Response.ok(new LiveWindowResponseIO(windowStartMs, windowEndMs, points)).build());
+  }
+
+  /**
+   * Assembles the final point list, optionally prepending/appending interpolated boundary points.
+   */
+  private List<LiveWindowPointIO> buildPoints(
+      List<TimeseriesDataPoint> raw,
+      int tsId,
+      DataPointValueType valueType,
+      long startNs,
+      long endNs,
+      boolean withBoundaryPoints) {
+
+    List<LiveWindowPointIO> result = new ArrayList<>(raw.size() + 2);
+
+    boolean canInterpolate = withBoundaryPoints &&
+        (valueType == DataPointValueType.Double || valueType == DataPointValueType.Integer);
+
+    if (canInterpolate && !raw.isEmpty()) {
+      TimeseriesDataPoint first = raw.get(0);
+      if (first.getTimestamp() > startNs) {
+        Optional<TimeseriesDataPoint> before =
+            dataPointRepository.findLatestBefore(tsId, valueType, startNs);
+        if (before.isPresent()) {
+          double interpolated = lerp(before.get(), first, startNs);
+          result.add(new LiveWindowPointIO(startNs / 1_000_000L, interpolated, true));
+        }
+      }
+    }
+
+    for (TimeseriesDataPoint dp : raw) {
+      result.add(new LiveWindowPointIO(dp.getTimestamp() / 1_000_000L, dp.getValue(), false));
+    }
+
+    if (canInterpolate && !raw.isEmpty()) {
+      TimeseriesDataPoint last = raw.get(raw.size() - 1);
+      if (last.getTimestamp() < endNs) {
+        Optional<TimeseriesDataPoint> after =
+            dataPointRepository.findEarliestAfter(tsId, valueType, endNs);
+        if (after.isPresent()) {
+          double interpolated = lerp(last, after.get(), endNs);
+          result.add(new LiveWindowPointIO(endNs / 1_000_000L, interpolated, true));
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Linear interpolation between two data points at a target nanosecond timestamp.
+   */
+  private double lerp(TimeseriesDataPoint a, TimeseriesDataPoint b, long targetNs) {
+    long tA = a.getTimestamp();
+    long tB = b.getTimestamp();
+    double vA = toDouble(a.getValue());
+    double vB = toDouble(b.getValue());
+    if (tA == tB) return vA;
+    double ratio = (double) (targetNs - tA) / (tB - tA);
+    return vA + ratio * (vB - vA);
+  }
+
+  private double toDouble(Object v) {
+    return ((Number) v).doubleValue();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: channel annotations ──────────────────────
+
+  @Override
+  public Optional<Response> listChannelAnnotations(String appId, String channelShepardId) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    List<SemanticAnnotation> annotations =
+        annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerId, channelShepardId);
+    List<SemanticAnnotationIO> result = annotations.stream()
+        .map(SemanticAnnotationIO::new)
+        .collect(Collectors.toList());
+    return Optional.of(Response.ok(result).build());
+  }
+
+  @Override
+  public Optional<Response> createChannelAnnotation(
+      String appId, String channelShepardId, SemanticAnnotationIO body) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    SemanticAnnotation created =
+        annotatableTimeseriesService.createAnnotationForChannel(containerId, channelShepardId, body);
+    return Optional.of(Response.status(Response.Status.CREATED)
+        .entity(new SemanticAnnotationIO(created))
+        .build());
+  }
+
+  @Override
+  public Optional<Response> deleteChannelAnnotation(
+      String appId, String channelShepardId, String annotationAppId) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    annotatableTimeseriesService.deleteAnnotationForChannel(
+        containerId, channelShepardId, annotationAppId);
+    return Optional.of(Response.noContent().build());
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: temporal annotations ─────────────────────
+
+  @Override
+  public Optional<Response> listTemporalAnnotations(String appId) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    List<TimeseriesAnnotationIO> rows = annotationDAO
+        .findByContainerId(containerId)
+        .stream()
+        .map(TimeseriesAnnotationIO::new)
+        .toList();
+    return Optional.of(Response.ok(rows).build());
+  }
+
+  @Override
+  public Optional<Response> createTemporalAnnotation(String appId, TimeseriesAnnotationIO body) {
+    if (body == null || body.getStartNs() == null) {
+      return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
+          Response.Status.BAD_REQUEST, "startNs is required"));
+    }
+    if (body.getLabel() == null || body.getLabel().isBlank()) {
+      return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
+          Response.Status.BAD_REQUEST, "label is required and must be non-blank"));
+    }
+    long containerId = service.getContainerByAppId(appId).getId();
+    service.assertIsAllowedToEditContainer(containerId);
+
+    TimeseriesAnnotation a = new TimeseriesAnnotation();
+    a.setAppId(AppIdGenerator.next());
+    a.setStartNs(body.getStartNs());
+    a.setEndNs(body.getEndNs());
+    a.setLabel(body.getLabel().strip());
+    a.setDescription(body.getDescription());
+    a.setAiGenerated(body.isAiGenerated());
+    a.setConfidence(body.getConfidence());
+
+    annotationDAO.createOrUpdate(a);
+    annotationDAO.linkToContainer(containerId, a.getAppId());
+
+    return Optional.of(Response.status(Response.Status.CREATED)
+        .entity(new TimeseriesAnnotationIO(a)).build());
+  }
+
+  @Override
+  public Optional<Response> getTemporalAnnotation(String appId, String annotationAppId) {
+    service.getContainerByAppId(appId);
+    TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
+    if (a == null) {
+      return Optional.of(problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+          "Annotation not found: " + annotationAppId));
+    }
+    return Optional.of(Response.ok(new TimeseriesAnnotationIO(a)).build());
+  }
+
+  @Override
+  public Optional<Response> updateTemporalAnnotation(
+      String appId, String annotationAppId, TimeseriesAnnotationIO body) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    service.assertIsAllowedToEditContainer(containerId);
+    TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
+    if (a == null) {
+      return Optional.of(problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+          "Annotation not found: " + annotationAppId));
+    }
+
+    if (body.getStartNs() != null) a.setStartNs(body.getStartNs());
+    if (body.getEndNs() != null) a.setEndNs(body.getEndNs());
+    if (body.getLabel() != null) {
+      if (body.getLabel().isBlank()) {
+        return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
+            Response.Status.BAD_REQUEST, "label must be non-blank"));
+      }
+      a.setLabel(body.getLabel().strip());
+    }
+    if (body.getDescription() != null) a.setDescription(body.getDescription());
+    if (body.getConfidence() != null) a.setConfidence(body.getConfidence());
+
+    annotationDAO.createOrUpdate(a);
+    return Optional.of(Response.ok(new TimeseriesAnnotationIO(a)).build());
+  }
+
+  @Override
+  public Optional<Response> deleteTemporalAnnotation(String appId, String annotationAppId) {
+    long containerId = service.getContainerByAppId(appId).getId();
+    service.assertIsAllowedToEditContainer(containerId);
+    TimeseriesAnnotation a = annotationDAO.findByAppId(annotationAppId);
+    if (a == null) {
+      return Optional.of(problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+          "Annotation not found: " + annotationAppId));
+    }
+    annotationDAO.unlinkAndDeleteFromContainer(containerId, a);
+    return Optional.of(Response.noContent().build());
   }
 }

@@ -89,7 +89,7 @@ export class TimeseriesChannelAnnotationsApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`.replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
+            path: `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations`.replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -151,7 +151,7 @@ export class TimeseriesChannelAnnotationsApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
+            path: `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -204,7 +204,7 @@ export class TimeseriesChannelAnnotationsApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`.replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
+            path: `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations`.replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))).replace(`{${"containerAppId"}}`, encodeURIComponent(String(requestParameters['containerAppId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

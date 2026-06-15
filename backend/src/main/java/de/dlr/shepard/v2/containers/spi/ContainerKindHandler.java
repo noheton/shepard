@@ -2,14 +2,17 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
+import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -343,6 +346,135 @@ public interface ContainerKindHandler {
    */
   default Optional<TimeseriesContainerChartViewIO> patchChartView(
       String appId, TimeseriesContainerChartViewIO patch) {
+    return Optional.empty();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-4: live-window + channel-annotations + temporal-annotations ──
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — live-window endpoint behind the unified
+   * {@code GET /v2/containers/{appId}/channels/live-window} route.
+   *
+   * <p>Default returns {@link Optional#empty()} — kinds without a timeseries channel
+   * concept (file, structured-data) leave the dispatcher to answer 415.
+   * The timeseries handler overrides this to return live windowed data.
+   *
+   * @param appId             UUID v7 of the container.
+   * @param shepardId         optional channel identity (preferred, TS-IDc).
+   * @param measurement       optional 5-tuple field.
+   * @param device            optional 5-tuple field.
+   * @param location          optional 5-tuple field.
+   * @param symbolicName      optional 5-tuple field.
+   * @param field             optional 5-tuple field.
+   * @param windowSeconds     window size in seconds (1–3600).
+   * @param withBoundaryPoints whether to add interpolated boundary points.
+   * @return the response, or empty when this kind has no live-window concept (→ 415).
+   */
+  default Optional<Response> getLiveWindow(
+      String appId, UUID shepardId, String measurement, String device,
+      String location, String symbolicName, String field,
+      int windowSeconds, boolean withBoundaryPoints) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — list channel annotations behind the unified
+   * {@code GET /v2/containers/{appId}/channels/{channelShepardId}/annotations} route.
+   *
+   * @param appId            UUID v7 of the container.
+   * @param channelShepardId UUID v7 of the timeseries channel.
+   * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
+   */
+  default Optional<Response> listChannelAnnotations(String appId, String channelShepardId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — create channel annotation behind the unified
+   * {@code POST /v2/containers/{appId}/channels/{channelShepardId}/annotations} route.
+   *
+   * @param appId            UUID v7 of the container.
+   * @param channelShepardId UUID v7 of the timeseries channel.
+   * @param body             the annotation to create.
+   * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
+   */
+  default Optional<Response> createChannelAnnotation(
+      String appId, String channelShepardId, SemanticAnnotationIO body) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — delete channel annotation behind the unified
+   * {@code DELETE /v2/containers/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}} route.
+   *
+   * @param appId             UUID v7 of the container.
+   * @param channelShepardId  UUID v7 of the timeseries channel.
+   * @param annotationAppId   UUID v7 of the annotation to delete.
+   * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
+   */
+  default Optional<Response> deleteChannelAnnotation(
+      String appId, String channelShepardId, String annotationAppId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — list temporal annotations behind the unified
+   * {@code GET /v2/containers/{appId}/temporal-annotations} route.
+   *
+   * @param appId UUID v7 of the container.
+   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   */
+  default Optional<Response> listTemporalAnnotations(String appId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — create temporal annotation behind the unified
+   * {@code POST /v2/containers/{appId}/temporal-annotations} route.
+   *
+   * @param appId UUID v7 of the container.
+   * @param body  the annotation to create.
+   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   */
+  default Optional<Response> createTemporalAnnotation(String appId, TimeseriesAnnotationIO body) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — get a single temporal annotation behind the unified
+   * {@code GET /v2/containers/{appId}/temporal-annotations/{annotationAppId}} route.
+   *
+   * @param appId           UUID v7 of the container.
+   * @param annotationAppId UUID v7 of the annotation.
+   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   */
+  default Optional<Response> getTemporalAnnotation(String appId, String annotationAppId) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — update a temporal annotation behind the unified
+   * {@code PATCH /v2/containers/{appId}/temporal-annotations/{annotationAppId}} route.
+   *
+   * @param appId           UUID v7 of the container.
+   * @param annotationAppId UUID v7 of the annotation.
+   * @param body            the merge-patch body.
+   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   */
+  default Optional<Response> updateTemporalAnnotation(
+      String appId, String annotationAppId, TimeseriesAnnotationIO body) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-4 — delete a temporal annotation behind the unified
+   * {@code DELETE /v2/containers/{appId}/temporal-annotations/{annotationAppId}} route.
+   *
+   * @param appId           UUID v7 of the container.
+   * @param annotationAppId UUID v7 of the annotation.
+   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   */
+  default Optional<Response> deleteTemporalAnnotation(String appId, String annotationAppId) {
     return Optional.empty();
   }
 }
