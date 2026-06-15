@@ -118,11 +118,11 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "admin",
     title: "AI configuration",
     subtitle:
-      "Per-instance LLM provider fallback (base URL, model, API key). Resolution rule: user-key → admin-fallback → hidden. Designed; not yet shipped.",
-    endpoint: null,
-    backlogRow: "AI1a",
+      "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, IMAGE_GEN, VISION, EMBEDDING, STRUCTURED, TRANSCRIPTION, MODERATION). PATCH body keyed by capability name.",
+    endpoint: "/v2/admin/config/ai",
+    backlogRow: "APISIMP-AI-ADMIN-REST",
     designDoc: "aidocs/integrations/97-shepard-plugin-ai-design.md",
-    backend: "designed",
+    backend: "partial",
   },
   {
     slug: "backup",
