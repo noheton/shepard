@@ -432,6 +432,7 @@ public class DataObjectService {
 
     List<DataObject> newPredecessors;
     String newTypedPredecessorsJson = null;
+    String[] predecessorAppIds = dataObject.getPredecessorAppIds();
     if (updateTypedPredecessors != null && !updateTypedPredecessors.isEmpty()) {
       for (TypedPredecessorIO tp : updateTypedPredecessors) {
         tp.validate();
@@ -442,6 +443,16 @@ public class DataObjectService {
         dataObjectShepardId
       );
       newTypedPredecessorsJson = serialiseTypedPredecessors(updateTypedPredecessors);
+    } else if (predecessorAppIds != null && predecessorAppIds.length > 0) {
+      // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId-keyed predecessor list.
+      // Used by v2 callers on post-L2b instances where targets have no numeric shepardId.
+      // Overrides predecessorIds when non-null and non-empty.
+      newPredecessors = findRelatedDataObjectsByAppId(
+        old.getCollection().getShepardId(),
+        predecessorAppIds,
+        dataObjectShepardId
+      );
+      newTypedPredecessorsJson = null;
     } else {
       newPredecessors = findRelatedDataObjects(
         old.getCollection().getShepardId(),
@@ -602,6 +613,40 @@ public class DataObjectService {
         );
       }
       result.add(dataObject);
+    }
+    return result;
+  }
+
+  /**
+   * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — resolve a String[] of appIds
+   * to {@link DataObject} instances. Used when the caller supplies
+   * {@code predecessorAppIds} instead of the legacy {@code predecessorIds} long[].
+   */
+  private List<DataObject> findRelatedDataObjectsByAppId(
+    long collectionShepardId,
+    String[] appIds,
+    Long dataObjectShepardId
+  ) {
+    List<DataObject> result = new ArrayList<>(appIds.length);
+    for (String appId : appIds) {
+      if (appId == null || appId.isBlank()) {
+        throw new InvalidBodyException("predecessorAppIds contains a null or blank entry.");
+      }
+      DataObject predecessor = dataObjectDAO.findByAppId(appId);
+      if (predecessor == null || predecessor.isDeleted()) {
+        throw new InvalidBodyException(
+          "DataObject with appId '%s' could not be found.".formatted(appId)
+        );
+      }
+      if (dataObjectShepardId != null && dataObjectShepardId.equals(predecessor.getShepardId())) {
+        throw new InvalidBodyException("Self references are not allowed.");
+      }
+      if (!predecessor.getCollection().getShepardId().equals(collectionShepardId)) {
+        throw new InvalidBodyException(
+          "Related data objects must belong to the same collection as the new data object"
+        );
+      }
+      result.add(predecessor);
     }
     return result;
   }
