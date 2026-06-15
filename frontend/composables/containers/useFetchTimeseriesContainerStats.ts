@@ -1,6 +1,7 @@
 /**
  * TS_STATS1 — fetches storage + ingest stats for a TimeseriesContainer.
- * Calls GET /v2/timeseries-containers/{containerAppId}/stats.
+ * Calls GET /v2/containers/{containerAppId}/stats.
+ * (APISIMP-CONT-NS-COLLAPSE-7 — migrated from /v2/timeseries-containers/)
  *
  * Accepts a static string or a Ref<string | null> so callers that resolve
  * appId asynchronously (via a container accessor) can pass a computed ref and
@@ -39,7 +40,7 @@ export function useFetchTimeseriesContainerStats(containerAppId: string | Ref<st
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       if (!accessToken) return;
-      const url = `${getV2BaseUrl()}/v2/timeseries-containers/${encodeURIComponent(id)}/stats`;
+      const url = `${getV2BaseUrl()}/v2/containers/${encodeURIComponent(id)}/stats`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
         credentials: "include",

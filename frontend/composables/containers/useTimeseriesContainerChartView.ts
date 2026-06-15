@@ -1,9 +1,10 @@
 /**
  * TS_CHART_VIEW1 — fetch and PATCH the per-container chart-view config.
+ * (APISIMP-CONT-NS-COLLAPSE-7 — migrated from /v2/timeseries-containers/)
  *
  * Wire endpoints:
- *   GET   /v2/timeseries-containers/{containerAppId}/chart-view
- *   PATCH /v2/timeseries-containers/{containerAppId}/chart-view
+ *   GET   /v2/containers/{containerAppId}/chart-view
+ *   PATCH /v2/containers/{containerAppId}/chart-view
  *
  * Returns:
  *   selectedChannelKeys (ref) — current persisted curated selection;
@@ -53,7 +54,7 @@ export function useTimeseriesContainerChartView(containerAppId: Ref<string | nul
     loading.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerAppId.value}/chart-view`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerAppId.value}/chart-view`;
       const response = await fetch(url, { headers });
       if (response.ok) {
         const data = (await response.json()) as ChartViewDto;
@@ -77,7 +78,7 @@ export function useTimeseriesContainerChartView(containerAppId: Ref<string | nul
     saving.value = true;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerAppId.value}/chart-view`;
+      const url = `${v2BaseUrl()}/v2/containers/${containerAppId.value}/chart-view`;
       const response = await fetch(url, {
         method: "PATCH",
         headers,
