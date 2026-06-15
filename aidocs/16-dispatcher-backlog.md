@@ -1892,6 +1892,25 @@ Design ref: [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-i
 | MFFD-MULTIPLAYER-LIVE-1 | **Real-time / live mode.** Pin the cursor to "now" and have every tile follow incoming samples; deferred until at least one payload kind ships a live stream channel (`ThermographyStreamReference` from `MFFD-NDT-LIVE-1`, video LL-HLS, etc.). | L | queued | MAJOR | Spawned from MFFD-MULTIPLAYER-1 (2026-06-02). |
 | MFFD-MULTIPLAYER-PLAYWRIGHT-1 | **Playwright 4K cross-tile sync test.** Real-browser test that loads a TS+video DO, hits play, asserts that the TS marker and video playhead advance together over 2 seconds wall-clock. Out of scope for the v1 vitest suite since jsdom doesn't implement `HTMLMediaElement.currentTime` correctly. | S | queued | MINOR | Spawned from MFFD-MULTIPLAYER-1 (2026-06-02). |
 
+### MFFD-RENDER-AFP-THERMO-OVERLAY — AFP process trajectory vs NDT inspection dual-pane overlay
+
+Synced dual-pane VIEW envelope materialised by a MAPPING_RECIPE `TransformExecutor`
+(`AfpThermoOverlayShape` IRI). Left pane: AFP robot-head course metadata (tile
+coordinates, ply/course IDs, TCP setpoints, TCP timeseries ref). Right pane: NDT
+inspection metadata (OTvis source FileRef, section/module/layer/frame). Header:
+tile-match verdict chip (MATCHED / MISMATCHED / UNVERIFIED). Phase 2 (deferred):
+Trace3DCanvas + ThermographyCanvas live embeds once TCP timeseries live-fetch
+composable + OTVIS-PARSE-2 / OTVIS-VIEW-1 tier-2 ship.
+Plugin: `plugins/vis-afp-thermo-overlay/`.
+Design: `plugins/vis-afp-thermo-overlay/docs/reference.md`.
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| MFFD-RENDER-AFP-THERMO-OVERLAY-1 | **Plugin manifest + SHACL shape + placeholder Vue stub.** `plugins/vis-afp-thermo-overlay/` skeleton: `PluginManifest`, `AfpThermoOverlayShape` IRI constant, `AfpThermoOverlayShape.ttl` SHACL allow-list extension, `AfpThermoOverlayPlaceholder.vue` (uses placeholder kit — PlaceholderImplStatus chip "executor pending"). Plugin docs trio (`reference.md` / `quickstart.md` / `install.md`). | S | **✓ shipped 2026-06-10** | Slice 1. |
+| MFFD-RENDER-AFP-THERMO-OVERLAY-2 | **`AfpThermoOverlayTransformExecutor` — VIEW envelope producer.** Java `TransformExecutor` implementation: reads `afpDataObjectAppId` + `ndtDataObjectAppId` from request body, loads each DataObject's `urn:shepard:mffd:*` + `urn:shepard:thermography:*` + `urn:shepard:afp:*` annotations, infers `tileMatch` (MATCHED / MISMATCHED / UNVERIFIED) from `section`+`module` co-location, emits a typed VIEW envelope JSON. Registered via `META-INF/services/de.dlr.shepard.spi.transform.TransformExecutor`. 22 JUnit tests. | M | **✓ shipped 2026-06-14** (PR #1914 merged) | Slice 2. Produces the VIEW envelope consumed by slice 3's Canvas component. |
+| MFFD-RENDER-AFP-THERMO-OVERLAY-3 | **`AfpThermoOverlayCanvas.vue` — real dual-pane metadata UI.** Replaces the slice-1 placeholder. Consumes the `AfpThermoOverlayEnvelope` VIEW envelope. Left pane: AFP DataObject link, plyId, courseId, laser temp setpoint, tape speed setpoint, material batch IRI (last segment), time window, TCP channel + phase-2 Trace3D placeholder alert. Right pane: NDT DataObject link, section/module/layer/frame, OTvis source FileRef + phase-2 OTvis heatmap placeholder alert. Header: tile-match verdict chip (colour-coded via `tileMatchColor`/`tileMatchLabel`/`tileMatchIcon`), tile coords chip. Footer: syncMode + colourMap. Pure TypeScript helpers in `frontend/utils/afpThermoOverlay.ts` (7 helpers). 23 Vitest test cases. All `data-testid` attributes for Playwright. | S | **🚧 in-flight 2026-06-14** | Slice 3. Phase-2 Trace3DCanvas + ThermographyCanvas embeds tracked as MFFD-RENDER-AFP-THERMO-OVERLAY-4. |
+| MFFD-RENDER-AFP-THERMO-OVERLAY-4 | **Phase 2 live embeds.** Swap phase-2 placeholder alerts for real `Trace3DCanvas` (AFP TCP timeseries → 3D trajectory) + `ThermographyCanvas` (OTvis frame → IR heatmap) in the same mount. Gated on: TCP timeseries live-fetch composable (TCP channel → `TracePoint[]`) + OTVIS-PARSE-2 / OTVIS-VIEW-1 tier-2. | L | queued | Slice 4. |
+
 ### MFFD-AF-TRACK-MAPPING — cross-process Predecessor edge infrastructure (2026-06-02)
 
 Closes GAP-4 in `aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md`. Ships
