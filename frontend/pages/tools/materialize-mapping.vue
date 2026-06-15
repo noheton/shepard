@@ -1,21 +1,16 @@
 <script setup lang="ts">
 /**
- * /tools/materialize-mapping — V2CONV-B3-FE MAPPING_RECIPE materialize stub.
+ * /tools/materialize-mapping — V2CONV-B3-FE MAPPING_RECIPE materializer.
  *
- * Placeholder-grade Tools page that lets a user pick a MAPPING_RECIPE template
- * (by appId) + supply input-reference appId bindings, then POSTs to
- * {@code /v2/mappings/{templateAppId}/materialize} and renders the derived
- * output (a derived reference appId, or a played/rendered view-model).
+ * UI-GAP-1 slice 1: replaced bare templateAppId text-field with
+ * TemplateAutocomplete scoped to MAPPING_RECIPE kind. Route query param
+ * `templateAppId` pre-populates from the in-context "Materialize" action
+ * on DataObject detail pages (do-materialize toolsContext entry).
  *
- * Per the CLAUDE.md rules this surface addresses entities by appId only, targets
- * /v2/ exclusively, and never asks the user for a path or URL — only reference
- * appIds. The in-context entry point (a "Materialize…" action on a FileReference
- * / DataObject detail page) is the eventual canonical entry per the
- * "tool entry points are in-context first" rule; this Tools page is the
- * entry-less fallback while the SPI consumers (scene-graph, KRL) are built in
- * V2CONV-B4/B5.
+ * Per the CLAUDE.md rules this surface addresses entities by appId only,
+ * targets /v2/ exclusively, and never asks the user for a path or URL.
  *
- * Design: aidocs/platform/191 §4. Backlog: V2CONV-B3.
+ * Design: aidocs/platform/191 §4. Backlog: V2CONV-B3, UI-GAP-1.
  */
 
 import {
@@ -25,12 +20,17 @@ import {
 
 useHead({ title: "Materialize mapping | shepard" });
 
+const route = useRoute();
+
 interface BindingRow {
   role: string;
   appId: string;
 }
 
-const templateAppId = ref<string>("");
+// Pre-populate templateAppId from in-context route query (do-materialize entry).
+const templateAppId = ref<string>(
+  typeof route.query.templateAppId === "string" ? route.query.templateAppId : "",
+);
 const bindings = ref<BindingRow[]>([{ role: "srcFileAppId", appId: "" }]);
 const submitting = ref<boolean>(false);
 const result = ref<MaterializeResponse | null>(null);
@@ -97,14 +97,12 @@ async function submit() {
     <v-card class="mb-6">
       <v-card-title>Inputs</v-card-title>
       <v-card-text>
-        <v-text-field
-          v-model="templateAppId"
-          label="MAPPING_RECIPE template appId"
-          density="comfortable"
-          variant="outlined"
-          prepend-inner-icon="mdi-shape-outline"
-          placeholder="019e7243-f995-7914-be80-…"
-          spellcheck="false"
+        <!-- UI-GAP-1: TemplateAutocomplete replaces the bare appId text field. -->
+        <TemplateAutocomplete
+          kind="MAPPING_RECIPE"
+          label="MAPPING_RECIPE template"
+          v-model:appId="templateAppId"
+          data-testid="template-autocomplete"
         />
 
         <div class="text-subtitle-2 mb-2 mt-2">Input reference bindings</div>

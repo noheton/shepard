@@ -216,6 +216,23 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
       scope: "data-object",
     }),
   },
+  {
+    // UI-GAP-1 — in-context "Materialize" entry for DataObjects whose attached
+    // template is a MAPPING_RECIPE (V2CONV-B3). Only visible when the kind is
+    // MAPPING_RECIPE so the button doesn't clutter DataObjects with VIEW_RECIPE /
+    // DATAOBJECT_RECIPE templates that this executor cannot handle.
+    id: "do-materialize",
+    title: "Materialize mapping recipe",
+    subtitle: "Run the attached MAPPING_RECIPE template and derive a new reference or view.",
+    icon: "mdi-cog-play-outline",
+    path: "/tools/materialize-mapping",
+    buildQuery: (appId, ctx) => {
+      const out: Record<string, string> = { focusDataObjectAppId: appId };
+      if (ctx?.attachedTemplateAppId) out.templateAppId = ctx.attachedTemplateAppId;
+      return out;
+    },
+    enabledWhen: (ctx) => ctx.attachedTemplateKind === "MAPPING_RECIPE",
+  },
 ];
 
 /**

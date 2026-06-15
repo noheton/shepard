@@ -69,11 +69,13 @@ describe("COLLECTION_CONTEXT_TOOLS", () => {
 // ── DATA_OBJECT_CONTEXT_TOOLS ──────────────────────────────────────────────
 
 describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
-  it("exposes the four DataObject-scope tool entries (do-render absorbed by ActionMenuButton)", () => {
+  it("exposes the five DataObject-scope tool entries (do-render absorbed by ActionMenuButton)", () => {
     // FORM-UX-ACTIONBUTTON — the former "do-render" entry moved into the
     // unified ActionMenuButton ("View as …", fed by /v2/shapes/applicable).
+    // UI-GAP-1 added "do-materialize" gated on MAPPING_RECIPE kind.
     expect(DATA_OBJECT_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
       "do-create-template",
+      "do-materialize",
       "do-shacl",
       "do-sparql",
       "do-vocab",
@@ -157,6 +159,44 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
   it("do-create-template has no enabledWhen gate (always visible)", () => {
     const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-create-template")!;
     expect(t.enabledWhen).toBeUndefined();
+  });
+
+  // ── UI-GAP-1 — do-materialize ──────────────────────────────────────────
+
+  it("do-materialize routes to /tools/materialize-mapping", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.path).toBe("/tools/materialize-mapping");
+  });
+
+  it("do-materialize is hidden when attachedTemplateKind is not MAPPING_RECIPE", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.enabledWhen).toBeDefined();
+    expect(t.enabledWhen!({})).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: null })).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: "VIEW_RECIPE" })).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: "DATAOBJECT_RECIPE" })).toBe(false);
+  });
+
+  it("do-materialize is visible when attachedTemplateKind is MAPPING_RECIPE", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.enabledWhen!({ attachedTemplateKind: "MAPPING_RECIPE" })).toBe(true);
+  });
+
+  it("do-materialize buildQuery carries focusDataObjectAppId", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.focusDataObjectAppId).toBe(SAMPLE_APP_ID);
+    expect(q.templateAppId).toBeUndefined();
+  });
+
+  it("do-materialize buildQuery prefills templateAppId when ctx has attachedTemplateAppId", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    const q = t.buildQuery(SAMPLE_APP_ID, {
+      attachedTemplateAppId: "tpl-mapping-001",
+      attachedTemplateKind: "MAPPING_RECIPE",
+    });
+    expect(q.focusDataObjectAppId).toBe(SAMPLE_APP_ID);
+    expect(q.templateAppId).toBe("tpl-mapping-001");
   });
 });
 
