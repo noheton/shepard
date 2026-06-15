@@ -127,4 +127,15 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
       service.findLinkedDataObjectsByAppId(appId).stream().map(DataObjectIO::new).toList()
     );
   }
+
+  @Override
+  public Optional<List<String>> findLinkedDataObjectAppIds(String appId) {
+    StructuredDataContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
+    if (c == null) return Optional.empty();
+    return Optional.of(
+        service.findLinkedDataObjectsById(c.getId()).stream()
+            .map(d -> d.getAppId())
+            .toList()
+    );
+  }
 }

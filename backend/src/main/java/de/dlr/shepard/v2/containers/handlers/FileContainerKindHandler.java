@@ -249,4 +249,15 @@ public class FileContainerKindHandler implements ContainerKindHandler {
       new PresignedDownloadUrlIO(downloadUrl.toString(), java.time.Instant.now().plus(ttlValidator.effectiveDownloadTtl()))
     ).build());
   }
+
+  @Override
+  public Optional<List<String>> findLinkedDataObjectAppIds(String appId) {
+    FileContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
+    if (c == null) return Optional.empty();
+    return Optional.of(
+        service.findLinkedDataObjectsById(c.getId()).stream()
+            .map(d -> d.getAppId())
+            .toList()
+    );
+  }
 }

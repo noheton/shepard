@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static org.mockito.Mockito.never;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
@@ -20,6 +22,7 @@ import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.containers.spi.ContainerFileDownload;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
+import de.dlr.shepard.v2.integrity.SafeDeleteConflict;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.InputStream;
 import java.security.Principal;
@@ -168,11 +171,48 @@ class ContainersV2RestTest {
   // ─── delete ──────────────────────────────────────────────────────────────
 
   @Test
-  void delete_returns204WhenAllowed() {
+  void delete_returns204WhenAllowed_noLinkedDOs() {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
     when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
-    var r = resource.delete(APP_ID, securityContext);
+    // handler.findLinkedDataObjectAppIds returns Optional.empty() by default → kind has no linked-DO concept → safe to delete
+    var r = resource.delete(APP_ID, false, securityContext);
+    assertEquals(204, r.getStatus());
+    verify(containersService).deleteByAppId(APP_ID);
+  }
+
+  @Test
+  void delete_returns204WhenNoActiveRefs() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.findLinkedDataObjectAppIds(APP_ID)).thenReturn(Optional.of(List.of()));
+    var r = resource.delete(APP_ID, false, securityContext);
+    assertEquals(204, r.getStatus());
+    verify(containersService).deleteByAppId(APP_ID);
+  }
+
+  @Test
+  void delete_returns409WhenActiveRefsAndNoForce() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.findLinkedDataObjectAppIds(APP_ID)).thenReturn(Optional.of(List.of("linked-do-app-1")));
+    var r = resource.delete(APP_ID, false, securityContext);
+    assertEquals(409, r.getStatus());
+    SafeDeleteConflict body = (SafeDeleteConflict) r.getEntity();
+    assertEquals(1, body.referenceCount());
+    assertEquals(List.of("linked-do-app-1"), body.sampleDataObjectAppIds());
+    verify(containersService, never()).deleteByAppId(APP_ID);
+  }
+
+  @Test
+  void delete_returns204WhenForceIgnoresActiveRefs() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    // With force=true, findLinkedDataObjectAppIds is NOT consulted
+    var r = resource.delete(APP_ID, true, securityContext);
     assertEquals(204, r.getStatus());
     verify(containersService).deleteByAppId(APP_ID);
   }
@@ -180,7 +220,7 @@ class ContainersV2RestTest {
   @Test
   void delete_returns404WhenUnknown() {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
-    var r = resource.delete(APP_ID, securityContext);
+    var r = resource.delete(APP_ID, false, securityContext);
     assertEquals(404, r.getStatus());
   }
 

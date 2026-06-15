@@ -562,4 +562,24 @@ public interface ContainerKindHandler {
   default Optional<Response> deleteTemporalAnnotation(String appId, String annotationAppId) {
     return Optional.empty();
   }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-6 — return the {@code appId} strings of the
+   * distinct DataObjects that link to the container at {@code appId} via their
+   * references. Used by the unified {@code DELETE /v2/containers/{appId}}
+   * safe-delete check (returns 409 when active references exist and
+   * {@code ?force} is not set).
+   *
+   * <p>Default returns {@link Optional#empty()} — a kind that does not model
+   * linked DataObjects leaves the dispatcher to skip the conflict check and
+   * delete immediately. All three core kinds override this.
+   *
+   * @param appId UUID v7 of the container.
+   * @return the linked DataObject appIds (may be empty), or
+   *         {@link Optional#empty()} when this kind has no
+   *         linked-DataObject concept.
+   */
+  default Optional<List<String>> findLinkedDataObjectAppIds(String appId) {
+    return Optional.empty();
+  }
 }
