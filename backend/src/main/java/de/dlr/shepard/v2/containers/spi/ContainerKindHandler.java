@@ -7,6 +7,8 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
+import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
+import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
@@ -296,6 +298,89 @@ public interface ContainerKindHandler {
    */
   default Optional<List<TimeseriesWithDataPoints>> getBulkChannelData(
       String containerAppId, BulkChannelDataRequestIO body) {
+    return Optional.empty();
+  }
+
+  // ── APISIMP-CONT-NS-COLLAPSE-5: thumbnail + presigned-url endpoints ─────────
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-5 — optionally return a PNG thumbnail for the file
+   * payload at {@code oid} within the container at {@code appId}. This is the
+   * converged home for the thumbnail endpoint behind the generic
+   * {@code GET /v2/containers/{appId}/payload/{oid}/thumbnail} route, replacing
+   * {@code ThumbnailRest}.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415) for kinds that don't
+   * support thumbnails (timeseries, structured-data, hdf). The file kind handler
+   * overrides this to call {@code ThumbnailService.getThumbnail(...)}.
+   *
+   * @param appId      UUID v7 of the container.
+   * @param oid        object id (UUID) of the file within the container.
+   * @param sizeParam  requested thumbnail size in pixels; null or invalid values
+   *                   are normalised to 400.
+   * @return a {@code Response} carrying the PNG bytes, or {@link Optional#empty()}
+   *         when this kind has no thumbnail concept (→ 415).
+   */
+  default Optional<Response> getThumbnail(String appId, String oid, Integer sizeParam) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-5 — optionally obtain a presigned PUT URL to upload a
+   * file directly to the active storage backend (S3). This is the converged home
+   * for the presigned-upload endpoint behind the generic
+   * {@code POST /v2/containers/{appId}/upload-url} route, replacing the
+   * {@code FileContainerPresignedUrlRest#getUploadUrl} method.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415) for kinds that don't
+   * support presigned uploads (timeseries, structured-data, hdf). The file kind
+   * handler overrides this to call {@code FileContainerService.presignedUploadUrl(...)}.
+   *
+   * @param appId   UUID v7 of the container.
+   * @param request the upload request body (fileName required).
+   * @return a {@code Response} carrying the presigned upload URL, or
+   *         {@link Optional#empty()} when this kind has no presigned upload concept (→ 415).
+   */
+  default Optional<Response> getUploadUrl(String appId, PresignedUploadRequestIO request) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-5 — optionally register a file uploaded via presigned
+   * PUT. This is the converged home for the commit endpoint behind the generic
+   * {@code POST /v2/containers/{appId}/upload-url/commit} route, replacing the
+   * {@code FileContainerPresignedUrlRest#commitUpload} method.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415) for kinds that don't
+   * support presigned uploads (timeseries, structured-data, hdf). The file kind
+   * handler overrides this to call {@code FileContainerService.commitUpload(...)}.
+   *
+   * @param appId  UUID v7 of the container.
+   * @param commit the commit body (oid + fileName required).
+   * @return a {@code Response} carrying the created ShepardFile, or
+   *         {@link Optional#empty()} when this kind has no presigned upload concept (→ 415).
+   */
+  default Optional<Response> commitUpload(String appId, UploadCommitIO commit) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-CONT-NS-COLLAPSE-5 — optionally obtain a presigned GET URL to download
+   * a file directly from the active storage backend (S3). This is the converged home
+   * for the download-url endpoint behind the generic
+   * {@code GET /v2/containers/{appId}/files/{oid}/download-url} route, replacing
+   * the {@code FileContainerPresignedUrlRest#getDownloadUrl} method.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415) for kinds that don't
+   * support presigned downloads (timeseries, structured-data, hdf). The file kind
+   * handler overrides this to call {@code FileContainerService.presignedDownloadUrl(...)}.
+   *
+   * @param appId UUID v7 of the container.
+   * @param oid   object id (UUID) of the file within the container.
+   * @return a {@code Response} carrying the presigned download URL, or
+   *         {@link Optional#empty()} when this kind has no presigned download concept (→ 415).
+   */
+  default Optional<Response> getDownloadUrl(String appId, String oid) {
     return Optional.empty();
   }
 

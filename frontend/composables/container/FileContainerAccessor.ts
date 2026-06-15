@@ -240,7 +240,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
     // Step 1 — obtain presigned PUT URL.
     const urlResp = await fetch(
-      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url`,
+      `${base}/v2/containers/${encodeURIComponent(containerAppId)}/upload-url`,
       {
         method: "POST",
         headers: authJson,
@@ -267,7 +267,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
     // Step 3 — register the file in shepard.
     const commitResp = await fetch(
-      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url/commit`,
+      `${base}/v2/containers/${encodeURIComponent(containerAppId)}/upload-url/commit`,
       {
         method: "POST",
         headers: authJson,

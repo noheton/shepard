@@ -6,6 +6,10 @@ import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
+import de.dlr.shepard.v2.filecontainer.io.PresignedDownloadUrlIO;
+import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
+import de.dlr.shepard.v2.filecontainer.io.PresignedUploadUrlIO;
+import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
@@ -1307,6 +1311,137 @@ public class ContainersV2Rest {
     return Response.ok(permissionsService.getUserRolesOnEntity(id, caller)).build();
   }
 
+
+  // ─── thumbnail ─────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/payload/{oid}/thumbnail")
+  @Produces("image/png")
+  @Operation(
+    summary = "Get a PNG thumbnail for a file payload.",
+    description =
+      "Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. " +
+      "Valid sizes: 64, 200, 400; any other value is normalised to 400. " +
+      "Returns 415 when the container kind does not support thumbnails.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "PNG thumbnail.",
+    content = @Content(schema = @Schema(type = SchemaType.STRING, format = "binary")))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "Container or file not found, or thumbnail unavailable.")
+  @APIResponse(responseCode = "415", description = "Container kind does not support thumbnails.")
+  @APIResponse(responseCode = "503", description = "Thumbnail generation temporarily unavailable.")
+  public Response getThumbnail(
+    @PathParam("appId") String appId,
+    @PathParam("oid") String oid,
+    @QueryParam("size") Integer sizeParam,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    return resolved.get().handler().getThumbnail(appId, oid, sizeParam)
+      .orElse(unsupportedKind("thumbnails"));
+  }
+
+  // ─── presigned upload ──────────────────────────────────────────────────
+
+  @POST
+  @Path("/{appId}/upload-url")
+  @Operation(
+    summary = "Obtain a presigned PUT URL to upload a file directly to storage.",
+    description =
+      "Returns a short-lived PUT URL and the assigned oid. Upload file bytes with a single " +
+      "HTTP PUT to uploadUrl, then call POST .../upload-url/commit with the oid. " +
+      "Returns 415 when the container kind does not support presigned uploads.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "200", description = "Presigned upload URL + oid.",
+    content = @Content(schema = @Schema(implementation = PresignedUploadUrlIO.class)))
+  @APIResponse(responseCode = "400", description = "Missing fileName.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "Container kind does not support presigned uploads.")
+  @APIResponse(responseCode = "503", description = "Active storage provider does not support presigned uploads.")
+  public Response getUploadUrl(
+    @PathParam("appId") String appId,
+    PresignedUploadRequestIO request,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    return resolved.get().handler().getUploadUrl(appId, request)
+      .orElse(unsupportedKind("presigned uploads"));
+  }
+
+  @POST
+  @Path("/{appId}/upload-url/commit")
+  @Operation(
+    summary = "Register a file uploaded via presigned PUT.",
+    description =
+      "After the PUT upload completes, call this to create the ShepardFile record and attach it " +
+      "to the container. Returns 415 when the kind does not support presigned uploads.\n\nAuth: Write on the container."
+  )
+  @APIResponse(responseCode = "201", description = "File registered.")
+  @APIResponse(responseCode = "400", description = "Missing oid or fileName.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "Container kind does not support presigned uploads.")
+  public Response commitUpload(
+    @PathParam("appId") String appId,
+    UploadCommitIO commit,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    return resolved.get().handler().commitUpload(appId, commit)
+      .orElse(unsupportedKind("presigned uploads"));
+  }
+
+  // ─── presigned download ────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/files/{oid}/download-url")
+  @Operation(
+    summary = "Obtain a presigned GET URL to download a file directly from storage.",
+    description =
+      "Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the " +
+      "download itself. Returns 415 when the kind does not support presigned downloads.\n\nAuth: Read on the container."
+  )
+  @APIResponse(responseCode = "200", description = "Presigned download URL.",
+    content = @Content(schema = @Schema(implementation = PresignedDownloadUrlIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container or file with that id.")
+  @APIResponse(responseCode = "415", description = "Container kind does not support presigned downloads.")
+  @APIResponse(responseCode = "503", description = "Active storage provider does not support presigned downloads.")
+  public Response getDownloadUrl(
+    @PathParam("appId") String appId,
+    @PathParam("oid") String oid,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    return resolved.get().handler().getDownloadUrl(appId, oid)
+      .orElse(unsupportedKind("presigned downloads"));
+  }
+
   // ─── helpers ───────────────────────────────────────────────────────────
 
   private static Response problem(String type, String title, Response.Status status, String detail) {
@@ -1331,5 +1466,18 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this container");
     }
     return null;
+  }
+
+  private Response unsupportedKind(String capability) {
+    return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+      .type("application/problem+json")
+      .entity(new ProblemJson(
+        PROBLEM_TYPE_UNSUPPORTED,
+        "Unsupported container kind",
+        415,
+        "This container kind does not support " + capability + ".",
+        null
+      ))
+      .build();
   }
 }
