@@ -1,4 +1,4 @@
-import { type PermissionType } from "@dlr-shepard/backend-client";
+import type { PermissionType } from "@dlr-shepard/backend-client";
 import {
   useUserGroupsV2,
   type UserGroupV2,

@@ -9,6 +9,10 @@ import {
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import {
+  useUserGroupsV2,
+  type UserGroupV2,
+} from "~/composables/context/useUserGroupsV2";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
@@ -35,11 +39,13 @@ export async function mapPermissions(
   );
   await mapPermissionRoleUserGroups(
     permissions?.readerGroupIds,
+    permissions?.readerGroupAppIds ?? undefined,
     UserRole.reader,
     memberPermissions,
   );
   await mapPermissionRoleUserGroups(
     permissions?.writerGroupIds,
+    permissions?.writerGroupAppIds ?? undefined,
     UserRole.writer,
     memberPermissions,
   );
@@ -74,27 +80,50 @@ async function mapPermissionRoleUsers(
 
 async function mapPermissionRoleUserGroups(
   roleUserGroupIds: number[] | undefined,
+  roleGroupAppIds: (string | null)[] | undefined,
   groupRole: UserRole,
   userPermissions: MemberPermissions[],
 ) {
   if (!roleUserGroupIds) return;
   await Promise.all(
-    roleUserGroupIds.map(async roleUserGroupId => {
+    roleUserGroupIds.map(async (roleUserGroupId, idx) => {
       const existing = userPermissions.find(
         userPermission =>
           instanceOfUserGroup(userPermission.member) &&
           userPermission.member.id === roleUserGroupId,
       );
-      if (existing) existing.roleList.push(groupRole);
-      else {
-        const userGroup: UserGroup = await fetchUserGroup(roleUserGroupId);
-        userPermissions.push({
-          member: userGroup,
-          roleList: [groupRole],
-        });
+      if (existing) {
+        existing.roleList.push(groupRole);
+        return;
       }
+      const appId = roleGroupAppIds?.[idx] ?? null;
+      const userGroup: UserGroup = appId
+        ? await fetchUserGroupByAppId(appId, roleUserGroupId)
+        : await fetchUserGroup(roleUserGroupId);
+      userPermissions.push({ member: userGroup, roleList: [groupRole] });
     }),
   );
+}
+
+function v2ToUserGroup(v2: UserGroupV2, numericId: number): UserGroup {
+  return {
+    id: numericId,
+    name: v2.name,
+    appId: v2.appId,
+    createdAt: v2.createdAt ? new Date(v2.createdAt) : new Date(0),
+    createdBy: v2.createdBy ?? "",
+    updatedAt: v2.updatedAt != null ? new Date(v2.updatedAt) : null,
+    updatedBy: v2.updatedBy ?? null,
+    usernames: v2.usernames ?? [],
+  };
+}
+
+async function fetchUserGroupByAppId(
+  appId: string,
+  numericId: number,
+): Promise<UserGroup> {
+  const v2Group = await useUserGroupsV2().getUserGroup(appId);
+  return v2ToUserGroup(v2Group, numericId);
 }
 
 async function fetchUser(username: string) {
@@ -104,12 +133,10 @@ async function fetchUser(username: string) {
   return user;
 }
 async function fetchUserGroup(groupId: number) {
-  // V1-EXCEPTION (V2-SWEEP-002-4): the permissions payload carries numeric group
-  // IDs in `readerGroupIds`/`writerGroupIds` (PermissionsIO wire shape). The v2
-  // permissions endpoint (GET /v2/user-groups/{appId}/permissions, shipped in
-  // V2-SWEEP-002-PERMISSIONS) still returns numeric ids here — there is no
-  // v2 "get group by numeric id" endpoint. Stays until the permissions payload
-  // is redesigned to carry group appIds instead.
+  // V1-EXCEPTION (legacy fallback only): used only when `readerGroupAppIds` /
+  // `writerGroupAppIds` is absent or null for this index (groups without a UUID
+  // backfill). Servers running V2-SWEEP-002-4 always populate the appId arrays,
+  // so this path is exercised only against older server versions.
   const userGroup = await useShepardApi(UserGroupApi).value.getUserGroup({
     userGroupId: groupId,
   });
