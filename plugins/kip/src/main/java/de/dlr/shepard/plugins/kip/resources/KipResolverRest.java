@@ -114,7 +114,7 @@ public class KipResolverRest {
     if (suffix == null || suffix.isBlank()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/kip.pid.not-found",
+        "/problems/kip.pid.not-found",
         "No publication with that PID suffix",
         "PID suffix must not be empty."
       );
@@ -123,7 +123,7 @@ public class KipResolverRest {
     if (publication.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/kip.pid.not-found",
+        "/problems/kip.pid.not-found",
         "No publication with that PID suffix",
         "No :Publication row at this shepard has pid=" + suffix + "."
       );
