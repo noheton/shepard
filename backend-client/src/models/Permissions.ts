@@ -57,19 +57,31 @@ export interface Permissions {
      */
     writer: Array<string>;
     /**
-     * 
+     *
      * @type {Array<number>}
      * @memberof Permissions
      */
     readerGroupIds?: Array<number>;
     /**
-     * 
+     *
      * @type {Array<number>}
      * @memberof Permissions
      */
     writerGroupIds?: Array<number>;
     /**
-     * 
+     * Application identifiers (UUID v7) of reader groups, parallel to readerGroupIds.
+     * @type {Array<string | null>}
+     * @memberof Permissions
+     */
+    readonly readerGroupAppIds?: Array<string | null>;
+    /**
+     * Application identifiers (UUID v7) of writer groups, parallel to writerGroupIds.
+     * @type {Array<string | null>}
+     * @memberof Permissions
+     */
+    readonly writerGroupAppIds?: Array<string | null>;
+    /**
+     *
      * @type {Array<string>}
      * @memberof Permissions
      */
@@ -107,6 +119,8 @@ export function PermissionsFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'writer': json['writer'],
         'readerGroupIds': json['readerGroupIds'] == null ? undefined : json['readerGroupIds'],
         'writerGroupIds': json['writerGroupIds'] == null ? undefined : json['writerGroupIds'],
+        'readerGroupAppIds': json['readerGroupAppIds'] == null ? undefined : json['readerGroupAppIds'],
+        'writerGroupAppIds': json['writerGroupAppIds'] == null ? undefined : json['writerGroupAppIds'],
         'manager': json['manager'],
     };
 }

@@ -35,6 +35,20 @@ public class PermissionsIO {
 
   private long[] writerGroupIds = {};
 
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description = "Application identifiers (UUID v7) of reader groups, parallel to readerGroupIds."
+  )
+  private String[] readerGroupAppIds = {};
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description = "Application identifiers (UUID v7) of writer groups, parallel to writerGroupIds."
+  )
+  private String[] writerGroupAppIds = {};
+
   @NotNull
   @Schema(required = true)
   private String[] manager;
@@ -52,6 +66,12 @@ public class PermissionsIO {
     this.writerGroupIds = ArrayUtils.toPrimitive(
       permissions.getWriterGroups().stream().map(UserGroup::getId).toArray(Long[]::new)
     );
+    this.readerGroupAppIds = permissions.getReaderGroups().stream()
+      .map(UserGroup::getAppId)
+      .toArray(String[]::new);
+    this.writerGroupAppIds = permissions.getWriterGroups().stream()
+      .map(UserGroup::getAppId)
+      .toArray(String[]::new);
     this.manager = permissions.getManager().stream().map(User::getUsername).toArray(String[]::new);
   }
 }
