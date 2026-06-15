@@ -15,6 +15,7 @@ import { ref } from "vue";
 interface ChannelV2 {
   shepardId: string;
   id: number;
+  /** @deprecated Numeric Postgres FK on the v2 wire — APISIMP-TSCHANNEL-CONTAINER-ID. Use containerAppId once available. Currently unused by this composable. */
   containerId: number;
   measurement: string;
   device: string;
