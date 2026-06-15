@@ -79,7 +79,7 @@ class VideoAnnotationRestTest {
   void list_returns200WithAnnotations() {
     var a = annotation(ANN_APP_ID, 0.0, 5.0, "ignition");
     when(annotationDAO.findByVideoReferenceAppId(REF_APP_ID)).thenReturn(List.of(a));
-    var r = resource.list(DO_APP_ID, REF_APP_ID, sc);
+    var r = resource.list(REF_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var rows = (List<VideoAnnotationIO>) r.getEntity();
@@ -90,19 +90,19 @@ class VideoAnnotationRestTest {
   @Test
   void list_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertThat(resource.list(DO_APP_ID, REF_APP_ID, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.list(REF_APP_ID, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void list_returns404WhenRefMissing() {
     when(videoStreamReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(null);
-    assertThat(resource.list(DO_APP_ID, REF_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.list(REF_APP_ID, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void list_returns403WhenNoReadPermission() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
-    assertThat(resource.list(DO_APP_ID, REF_APP_ID, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.list(REF_APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
   // ── create ──────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ class VideoAnnotationRestTest {
     body.setEndSeconds(5.0);
     body.setLabel("ignition");
 
-    var r = resource.create(DO_APP_ID, REF_APP_ID, body, sc);
+    var r = resource.create(REF_APP_ID, body, sc);
     assertThat(r.getStatus()).isEqualTo(201);
     verify(annotationDAO).createOrUpdate(any(VideoAnnotation.class));
     verify(annotationDAO).linkToReference(eq(REF_APP_ID), any());
@@ -124,7 +124,7 @@ class VideoAnnotationRestTest {
   void create_returns400WhenStartSecondsMissing() {
     var body = new VideoAnnotationIO();
     body.setLabel("ignition");
-    assertThat(resource.create(DO_APP_ID, REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -132,7 +132,7 @@ class VideoAnnotationRestTest {
   void create_returns400WhenLabelMissing() {
     var body = new VideoAnnotationIO();
     body.setStartSeconds(0.0);
-    assertThat(resource.create(DO_APP_ID, REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -141,7 +141,7 @@ class VideoAnnotationRestTest {
     var body = new VideoAnnotationIO();
     body.setStartSeconds(0.0);
     body.setLabel("   ");
-    assertThat(resource.create(DO_APP_ID, REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -151,7 +151,7 @@ class VideoAnnotationRestTest {
     var body = new VideoAnnotationIO();
     body.setStartSeconds(0.0);
     body.setLabel("ignition");
-    assertThat(resource.create(DO_APP_ID, REF_APP_ID, body, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.create(REF_APP_ID, body, sc).getStatus()).isEqualTo(403);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -161,7 +161,7 @@ class VideoAnnotationRestTest {
   void read_returns200() {
     var a = annotation(ANN_APP_ID, 5.0, 35.0, "burn");
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(a);
-    var r = resource.read(DO_APP_ID, REF_APP_ID, ANN_APP_ID, sc);
+    var r = resource.read(REF_APP_ID, ANN_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (VideoAnnotationIO) r.getEntity();
     assertThat(io.getLabel()).isEqualTo("burn");
@@ -171,7 +171,7 @@ class VideoAnnotationRestTest {
   @Test
   void read_returns404WhenAnnotationMissing() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(null);
-    assertThat(resource.read(DO_APP_ID, REF_APP_ID, ANN_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.read(REF_APP_ID, ANN_APP_ID, sc).getStatus()).isEqualTo(404);
   }
 
   // ── update ──────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ class VideoAnnotationRestTest {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(a);
     var body = new VideoAnnotationIO();
     body.setLabel("new-label");
-    var r = resource.update(DO_APP_ID, REF_APP_ID, ANN_APP_ID, body, sc);
+    var r = resource.update(REF_APP_ID, ANN_APP_ID, body, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((VideoAnnotationIO) r.getEntity()).getLabel()).isEqualTo("new-label");
     verify(annotationDAO).createOrUpdate(a);
@@ -194,7 +194,7 @@ class VideoAnnotationRestTest {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(a);
     var body = new VideoAnnotationIO();
     body.setLabel("  ");
-    assertThat(resource.update(DO_APP_ID, REF_APP_ID, ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.update(REF_APP_ID, ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -204,7 +204,7 @@ class VideoAnnotationRestTest {
   void delete_returns204AndUnlinks() {
     var a = annotation(ANN_APP_ID, 35.0, 50.0, "cooldown");
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(a);
-    var r = resource.delete(DO_APP_ID, REF_APP_ID, ANN_APP_ID, sc);
+    var r = resource.delete(REF_APP_ID, ANN_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(204);
     verify(annotationDAO).unlinkAndDelete(REF_APP_ID, a);
   }
@@ -212,7 +212,7 @@ class VideoAnnotationRestTest {
   @Test
   void delete_returns404WhenMissing() {
     when(annotationDAO.findByAppId(ANN_APP_ID)).thenReturn(null);
-    assertThat(resource.delete(DO_APP_ID, REF_APP_ID, ANN_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.delete(REF_APP_ID, ANN_APP_ID, sc).getStatus()).isEqualTo(404);
     verify(annotationDAO, never()).unlinkAndDelete(any(), any());
   }
 
