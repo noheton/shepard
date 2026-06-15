@@ -48,13 +48,15 @@ interface FileGroupIO {
 interface FileBundleIO {
   appId?: string | null;
   containerMongoId?: string | null;
+  /** appId of the underlying FileContainer — used for unified payload URLs. */
+  containerAppId?: string | null;
   groups?: FileGroupIO[];
 }
 
 interface ResolvedBundle {
   bundleAppId: string;
   groupAppId: string;
-  containerMongoId: string | null;
+  containerAppId: string | null;
   groupName: string | null;
 }
 
@@ -107,7 +109,7 @@ async function detectImageBundle(): Promise<void> {
       resolvedBundle.value = {
         bundleAppId,
         groupAppId: firstGroup.appId,
-        containerMongoId: bundle.containerMongoId ?? null,
+        containerAppId: bundle.containerAppId ?? null,
         groupName: firstGroup.name ?? null,
       };
       return;
@@ -133,7 +135,7 @@ watch(
     <ImageBundleViewer
       :bundle-app-id="resolvedBundle.bundleAppId"
       :group-app-id="resolvedBundle.groupAppId"
-      :container-mongo-id="resolvedBundle.containerMongoId"
+      :container-app-id="resolvedBundle.containerAppId"
       :group-name="resolvedBundle.groupName"
     />
   </div>

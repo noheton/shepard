@@ -1,7 +1,8 @@
 /**
  * PV1a — fetches the byte-level version history for a single file in a FileContainer.
  *
- * Endpoint: GET /v2/file-containers/{containerAppId}/files/{fileName}/versions
+ * Endpoint: GET /v2/containers/{containerAppId}/files/{fileName}/versions
+ * (APISIMP-CONT-NS-COLLAPSE: migrated off the per-kind /v2/file-containers/ path)
  *
  * Lazy: call load() explicitly (e.g. when the history dialog opens).
  * Not called on composable construction to avoid network traffic for every
@@ -48,7 +49,7 @@ export function useFetchPayloadVersions(
     }
 
     const url =
-      `${v2BaseUrl()}/v2/file-containers/` +
+      `${v2BaseUrl()}/v2/containers/` +
       `${encodeURIComponent(containerAppId)}/files/` +
       `${encodeURIComponent(fileName)}/versions`;
 

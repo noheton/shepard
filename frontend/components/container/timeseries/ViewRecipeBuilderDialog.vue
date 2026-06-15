@@ -73,7 +73,7 @@ async function saveAnnotations() {
     );
     if (!ch?.shepardId) continue;
     await $fetch(
-      `/v2/timeseries-containers/${props.containerAppId}/channels/${ch.shepardId}/annotations`,
+      `/v2/containers/${props.containerAppId}/channels/${ch.shepardId}/annotations`,
       { method: "POST", body: { value: role } },
     ).catch(() => {});
   }

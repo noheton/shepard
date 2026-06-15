@@ -30,11 +30,11 @@ const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 function makeBundle(
   groupFiles: Array<{ filename: string }>,
-  opts?: { bundleAppId?: string; groupAppId?: string; containerMongoId?: string },
+  opts?: { bundleAppId?: string; groupAppId?: string; containerAppId?: string },
 ) {
   return {
     appId: opts?.bundleAppId ?? "bundle-app-id-1",
-    containerMongoId: opts?.containerMongoId ?? "mongo-123",
+    containerAppId: opts?.containerAppId ?? "container-app-id-1",
     groups: [
       {
         appId: opts?.groupAppId ?? "group-app-id-1",
@@ -214,7 +214,7 @@ describe("firstGroupHasImageFile — pane detection predicate", () => {
   it("only inspects the FIRST group — even if a later group has image files", () => {
     const bundle = {
       appId: "b1",
-      containerMongoId: "m1",
+      containerAppId: "c1",
       groups: [
         { appId: "g1", name: "Raw data", files: [{ filename: "data.csv" }] },
         { appId: "g2", name: "Frames", files: [{ filename: "frame.png" }] },
@@ -231,7 +231,7 @@ describe("firstGroupHasImageFile — pane detection predicate", () => {
 
 interface TestFileBundleIO {
   appId?: string | null;
-  containerMongoId?: string | null;
+  containerAppId?: string | null;
   groups?: Array<{
     appId?: string | null;
     name?: string | null;
@@ -242,7 +242,7 @@ interface TestFileBundleIO {
 interface TestResolvedBundle {
   bundleAppId: string;
   groupAppId: string;
-  containerMongoId: string | null;
+  containerAppId: string | null;
   groupName: string | null;
 }
 
@@ -277,7 +277,7 @@ async function detectImageBundle(
     return {
       bundleAppId,
       groupAppId: firstGroup.appId,
-      containerMongoId: bundle.containerMongoId ?? null,
+      containerAppId: bundle.containerAppId ?? null,
       groupName: firstGroup.name ?? null,
     };
   }
@@ -324,7 +324,7 @@ describe("detectImageBundle — async detection loop", () => {
     const imageBundle = makeBundle([{ filename: "frame.png" }], {
       bundleAppId: "bundle-b",
       groupAppId: "g-b",
-      containerMongoId: "mongo-b",
+      containerAppId: "container-b",
     });
 
     (fetch as ReturnType<typeof vi.fn>)
@@ -340,7 +340,7 @@ describe("detectImageBundle — async detection loop", () => {
     expect(result).toEqual({
       bundleAppId: "bundle-b",
       groupAppId: "g-b",
-      containerMongoId: "mongo-b",
+      containerAppId: "container-b",
       groupName: "Group 1",
     });
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -449,7 +449,7 @@ describe("detectImageBundle — async detection loop", () => {
   it("returns null when bundle has no groups (empty FileBundleIO)", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
-      json: async () => ({ appId: "b1", containerMongoId: null, groups: [] }),
+      json: async () => ({ appId: "b1", containerAppId: null, groups: [] }),
     });
 
     const result = await detectImageBundle(["b1"], "http://localhost", null);

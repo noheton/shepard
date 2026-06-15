@@ -14,7 +14,7 @@
  * caches one page at a time — moving the slider triggers a refetch
  * only when crossing a page boundary.
  *
- * Auth: the thumbnail/content endpoints under `/v2/file-containers/.../payload/...`
+ * Auth: the thumbnail/content endpoints under `/v2/containers/{appId}/payload/...`
  * are JWT-protected. The `<img src>` element cannot send a custom
  * Authorization header, so the URLs carry `?access_token=…` per
  * MFFD-VIDEOREF-SCALE-1 (JWTFilter reads it as a fallback).
@@ -46,8 +46,13 @@ interface PagedFiles {
 const props = defineProps<{
   bundleAppId: string;
   groupAppId: string;
-  /** mongoId of the FileContainer backing this bundle — used for thumbnail/payload URLs. */
-  containerMongoId?: string | null;
+  /**
+   * appId of the FileContainer backing this bundle — used for thumbnail/payload
+   * URLs via the unified /v2/containers/{appId}/payload/... endpoints
+   * (APISIMP-CONT-NS-COLLAPSE; the per-kind /v2/file-containers/{mongoId}/...
+   * routes were removed).
+   */
+  containerAppId?: string | null;
   /** Display name (shown above the slider). */
   groupName?: string | null;
   /** Override the default page size (default 200). */
@@ -138,18 +143,18 @@ const selectedFile = computed<ShepardFile | null>(() => {
 // ── URLs ──────────────────────────────────────────────────────────────────
 
 function thumbnailUrl(oid: string | null | undefined): string {
-  if (!props.containerMongoId || !oid) return "";
+  if (!props.containerAppId || !oid) return "";
   // TH1a — PNG thumbnail at <= 200 px longest side.
   const url =
-    `${v2BaseUrl()}/v2/file-containers/${encodeURIComponent(props.containerMongoId)}` +
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(props.containerAppId)}` +
     `/payload/${encodeURIComponent(oid)}/thumbnail?size=200`;
   return withAccessTokenQueryParam(url, accessToken.value);
 }
 
 function fullSizeUrl(oid: string | null | undefined): string {
-  if (!props.containerMongoId || !oid) return "";
+  if (!props.containerAppId || !oid) return "";
   const url =
-    `${v2BaseUrl()}/v2/file-containers/${encodeURIComponent(props.containerMongoId)}` +
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(props.containerAppId)}` +
     `/payload/${encodeURIComponent(oid)}`;
   return withAccessTokenQueryParam(url, accessToken.value);
 }
@@ -157,7 +162,7 @@ function fullSizeUrl(oid: string | null | undefined): string {
 // ── lifecycle / watchers ──────────────────────────────────────────────────
 
 watch(
-  () => [props.bundleAppId, props.groupAppId, props.containerMongoId],
+  () => [props.bundleAppId, props.groupAppId, props.containerAppId],
   () => {
     totalFrames.value = 0;
     cachedPage.value = null;

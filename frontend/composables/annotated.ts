@@ -151,7 +151,7 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
 
 // ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────
 //
-// Wraps `/v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`
+// Wraps `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations`
 // via the typed `TimeseriesChannelAnnotationsApi` (V2UI-CHANNEL-ANNO-CLIENT).
 // Channels created before TS-SEMANTIC-01 dual-write shipped will return 404 on
 // GET/POST — treated as "no annotations yet" (empty list).

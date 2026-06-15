@@ -47,6 +47,15 @@ public class FileBundleReferenceIO extends BasicReferenceV2IO {
 
   @Schema(
     readOnly = true,
+    nullable = true,
+    description =
+      "appId (UUID v7) of the underlying FileContainer. Use this to address payload bytes " +
+      "via the unified /v2/containers/{appId}/payload/... endpoints (APISIMP-CONT-NS-COLLAPSE)."
+  )
+  private String containerAppId;
+
+  @Schema(
+    readOnly = true,
     description = "Sub-Reference grouping — at least one (the default group, named 'default') for every bundle."
   )
   private List<FileGroupIO> groups = new ArrayList<>();
@@ -55,6 +64,7 @@ public class FileBundleReferenceIO extends BasicReferenceV2IO {
     super(src);
     this.appId = src.getAppId();
     this.containerMongoId = src.getFileContainer() != null ? src.getFileContainer().getMongoId() : null;
+    this.containerAppId = src.getFileContainer() != null ? src.getFileContainer().getAppId() : null;
     if (src.getGroups() != null) {
       this.groups = src.getGroups().stream()
         .sorted(Comparator.comparingInt((FileGroup g) -> g.getIndex() == null ? 0 : g.getIndex()))

@@ -21,7 +21,7 @@ function isFormValid(name: string, uri: string): boolean {
 }
 
 /**
- * Build the PATCH body for PATCH /v2/uri-references/{appId}.
+ * Build the PATCH body for PATCH /v2/references/{appId} (unified surface).
  * Returns null when the form is invalid.
  */
 function buildPatchBody(
