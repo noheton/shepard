@@ -194,10 +194,11 @@ check "GET /v2/users/me/preferences (no auth → 401)" \
       "$BACKEND_URL/v2/users/me/preferences" \
       "401,403"
 
-# /v2/timeseries-containers/{id}/linked-data-objects — CC1b
+# /v2/containers/{id}/linked-data-objects — CC1b (APISIMP-CONT-LDO-UNIFY: collapsed
+# off the per-kind /v2/timeseries-containers path onto the unified /v2/containers).
 # Need any container id; the ID doesn't have to exist (the auth filter runs first).
-check "GET /v2/timeseries-containers/1/linked-data-objects (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/linked-data-objects" \
+check "GET /v2/containers/1/linked-data-objects (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/linked-data-objects" \
       "401,403"
 
 # /v2/admin/features — A3b
@@ -228,11 +229,12 @@ check "GET /v2/instance/identity (no auth → 401)" \
       "401,403"
 
 # TS_CHART_VIEW1 — per-container persisted chart-overview selection
-check "GET /v2/timeseries-containers/1/chart-view (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+# (APISIMP-CONT-NS-COLLAPSE-3: collapsed onto the unified /v2/containers path).
+check "GET /v2/containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/chart-view" \
       "401,403"
-check "PATCH /v2/timeseries-containers/1/chart-view (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+check "PATCH /v2/containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/chart-view" \
       "401,403" "" PATCH
 
 # WATCH1 — Collection -> Container watch links
