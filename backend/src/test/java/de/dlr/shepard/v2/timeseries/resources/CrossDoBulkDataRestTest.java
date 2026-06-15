@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * TS-CROSS-DO-VIEW-1 — unit coverage for
- * {@code POST /v2/timeseries/cross-data-object-bulk-data}.
+ * {@code POST /v2/data-objects/cross-timeseries-bulk}.
  *
  * <p>Mirrors the {@code TimeseriesBulkChannelDataRestTest} mocking shape:
  * boundary mocks for DAO + service + permissions + resolver; LTTB step

@@ -130,7 +130,7 @@ Collections where only some DOs participate in the same process. The
 view caps at 100 DataObjects per request; if the Collection holds
 more, a banner reports the truncation.
 
-Backend: `POST /v2/timeseries/cross-data-object-bulk-data` (one
+Backend: `POST /v2/data-objects/cross-timeseries-bulk` (one
 predicate, many DOs, one time window → one LTTB-downsampled series
 per DO). The endpoint is the canonical entry point for any
 "compare this channel across these tracks" question; callers can

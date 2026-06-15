@@ -36,7 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * TS-CROSS-DO-VIEW-1 — cross-DataObject timeseries bulk-data endpoint.
  *
- * <p>Route: {@code POST /v2/timeseries/cross-data-object-bulk-data}
+ * <p>Route: {@code POST /v2/data-objects/cross-timeseries-bulk}
  *
  * <p>Takes a list of DataObject appIds + one channel-predicate IRI, and
  * returns LTTB-downsampled series — one entry per DataObject — for the
@@ -55,7 +55,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/timeseries/cross-data-object-bulk-data")
+@Path("/v2/data-objects/cross-timeseries-bulk")
 @RequestScoped
 @Tag(name = "Timeseries cross-DataObject view")
 public class CrossDoBulkDataRest {
