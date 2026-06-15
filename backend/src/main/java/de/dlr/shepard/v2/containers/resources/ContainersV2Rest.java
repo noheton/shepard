@@ -18,6 +18,7 @@ import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -728,6 +729,95 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND,
           nfe.getMessage() != null ? nfe.getMessage() : "Channel not found");
     }
+  }
+
+  // ─── chart-view ────────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/chart-view")
+  @Operation(
+    operationId = "getChartView",
+    summary = "Read the persisted chart-view configuration for a timeseries container.",
+    description =
+      "Returns the curated channel-selection list shared by all users viewing this " +
+      "timeseries container. An empty list means \"no curated view — show all channels\" " +
+      "(the frontend default). Only `timeseries` kind containers support this; other " +
+      "kinds answer 415.\n\n" +
+      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-3 — replaces " +
+      "`GET /v2/timeseries-containers/{id}/chart-view`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Current chart-view (empty selectedChannels when never configured).",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerChartViewIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no chart-view.")
+  public Response getChartView(@PathParam("appId") String appId, @Context SecurityContext sc) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Read, caller);
+    if (gate != null) return gate;
+
+    var chartViewOpt = resolved.get().handler().getChartView(appId);
+    if (chartViewOpt.isEmpty()) {
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No chart-view", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no chart-view");
+    }
+    return Response.ok(chartViewOpt.get()).build();
+  }
+
+  @PATCH
+  @Path("/{appId}/chart-view")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    operationId = "patchChartView",
+    summary = "RFC 7396 merge-patch the chart-view configuration for a timeseries container.",
+    description =
+      "Replaces the persisted selectedChannels list. Write permission required. " +
+      "Only `timeseries` kind containers support this; other kinds answer 415.\n\n" +
+      "Auth: Write on the container. (APISIMP-CONT-NS-COLLAPSE-3 — replaces " +
+      "`PATCH /v2/timeseries-containers/{id}/chart-view`.)"
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Updated chart-view.",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerChartViewIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing or invalid body.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  @APIResponse(responseCode = "415", description = "This container kind has no chart-view.")
+  public Response patchChartView(
+    @PathParam("appId") String appId,
+    @RequestBody(
+      required = true,
+      content = @Content(
+        mediaType = "application/merge-patch+json",
+        schema = @Schema(implementation = TimeseriesContainerChartViewIO.class)
+      )
+    ) TimeseriesContainerChartViewIO body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing body", Response.Status.BAD_REQUEST, "PATCH body is required");
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+
+    var chartViewOpt = resolved.get().handler().patchChartView(appId, body);
+    if (chartViewOpt.isEmpty()) {
+      return problem(PROBLEM_TYPE_UNSUPPORTED, "No chart-view", Response.Status.UNSUPPORTED_MEDIA_TYPE,
+        "Container kind '" + resolved.get().handler().kind() + "' has no chart-view");
+    }
+    return Response.ok(chartViewOpt.get()).build();
   }
 
   // ─── permissions ───────────────────────────────────────────────────────
