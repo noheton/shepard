@@ -171,23 +171,15 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
   // Use the per-type API; SPATIALDATA + BASIC + HDF5/VIDEO are
   // excluded above by the orphan-check rule, but be defensive here too.
   switch (container.type as ContainerType) {
-    case "FILE": {
-      // V2-SWEEP-003: v2 safe-delete (replaces v1 FileContainerApi.deleteFileContainer)
-      const r = await safeDeleteContainer("file", container.id);
-      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
-      return;
-    }
-    case "TIMESERIES": {
-      // APISIMP-TSCONT-APPID-KEY: DELETE is keyed on containerAppId; appId is
-      // carried by the wire even though BasicContainer's TS type omits it.
-      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
-      const r = await safeDeleteContainer("timeseries", containerAppId);
-      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
-      return;
-    }
+    case "FILE":
+    case "TIMESERIES":
     case "STRUCTUREDDATA": {
-      // V2-SWEEP-003: v2 safe-delete (replaces v1 StructuredDataContainerApi.deleteStructuredDataContainer)
-      const r = await safeDeleteContainer("structured-data", container.id);
+      // APISIMP-CONT-NS-COLLAPSE-6: all three kinds now go through the unified
+      // DELETE /v2/containers/{appId}. appId is on the wire even though
+      // BasicContainer's TS type omits it; fall back to numeric id only as a
+      // last resort (will 404 on the server if the container predates appId seeding).
+      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
+      const r = await safeDeleteContainer(container.type as string, containerAppId);
       if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
     }

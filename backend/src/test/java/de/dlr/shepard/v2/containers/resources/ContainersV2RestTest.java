@@ -165,14 +165,24 @@ class ContainersV2RestTest {
     assertEquals(403, r.getStatus());
   }
 
-  // ─── delete ──────────────────────────────────────────────────────────────
+  // ─── delete (DI1 safe-delete) ─────────────────────────────────────────────
+
+  private de.dlr.shepard.context.collection.io.DataObjectIO linkedDo(String appId) {
+    var col = new de.dlr.shepard.context.collection.entities.Collection();
+    col.setShepardId(1L);
+    var dataObject = new de.dlr.shepard.context.collection.entities.DataObject();
+    dataObject.setAppId(appId);
+    dataObject.setCollection(col);
+    return new de.dlr.shepard.context.collection.io.DataObjectIO(dataObject);
+  }
 
   @Test
   void delete_returns204WhenAllowed() {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
     when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
-    var r = resource.delete(APP_ID, securityContext);
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of()));
+    var r = resource.delete(APP_ID, false, securityContext);
     assertEquals(204, r.getStatus());
     verify(containersService).deleteByAppId(APP_ID);
   }
@@ -180,8 +190,40 @@ class ContainersV2RestTest {
   @Test
   void delete_returns404WhenUnknown() {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
-    var r = resource.delete(APP_ID, securityContext);
+    var r = resource.delete(APP_ID, false, securityContext);
     assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void delete_returns409WhenHasLinkedRefsAndNoForce() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.listLinkedDataObjects(eq(APP_ID)))
+      .thenReturn(Optional.of(List.of(linkedDo("do-app-1"), linkedDo("do-app-2"))));
+    var r = resource.delete(APP_ID, false, securityContext);
+    assertEquals(409, r.getStatus());
+  }
+
+  @Test
+  void delete_returns204WithForceEvenWhenHasLinkedRefs() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    var r = resource.delete(APP_ID, true, securityContext);
+    assertEquals(204, r.getStatus());
+    verify(containersService).deleteByAppId(APP_ID);
+  }
+
+  @Test
+  void delete_returns204WhenKindHasNoLinkedConcept() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.empty());
+    var r = resource.delete(APP_ID, false, securityContext);
+    assertEquals(204, r.getStatus());
+    verify(containersService).deleteByAppId(APP_ID);
   }
 
   // ─── file download (V2CONV-A7-HDF) ─────────────────────────────────────────

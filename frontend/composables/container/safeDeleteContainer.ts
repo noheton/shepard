@@ -1,5 +1,5 @@
 /**
- * DI1 — call the /v2/{kind}-containers/{id} safe-delete endpoint.
+ * DI1 — call the unified /v2/containers/{id} safe-delete endpoint.
  *
  * Returns:
  *   - { ok: true } if the container was deleted (HTTP 204)
@@ -17,14 +17,6 @@ export interface SafeDeleteConflictInfo {
   sampleDataObjectAppIds: string[];
 }
 
-export type SafeDeleteKind = "timeseries" | "file" | "structured-data";
-
-const pathByKind: Record<SafeDeleteKind, string> = {
-  timeseries: "timeseries-containers",
-  file: "file-containers",
-  "structured-data": "structured-data-containers",
-};
-
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -35,7 +27,7 @@ function v2BaseUrl(): string {
 }
 
 export async function safeDeleteContainer(
-  kind: SafeDeleteKind,
+  _kind: string,
   containerId: string | number,
   options: { force?: boolean } = {},
 ): Promise<
@@ -48,7 +40,7 @@ export async function safeDeleteContainer(
 
   const force = options.force ?? false;
   const url =
-    `${v2BaseUrl()}/v2/${pathByKind[kind]}/${containerId}` +
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(String(containerId))}` +
     (force ? "?force=true" : "");
 
   const response = await fetch(url, {
@@ -64,7 +56,6 @@ export async function safeDeleteContainer(
     const conflict = (await response.json()) as SafeDeleteConflictInfo;
     return { ok: false, conflict };
   }
-  // Anything else: bubble up the standard handleError flow.
   const text = await response.text().catch(() => "");
   throw new Error(`HTTP ${response.status} ${text}`);
 }

@@ -9,6 +9,7 @@ import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import de.dlr.shepard.v2.integrity.SafeDeleteConflict;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
@@ -17,6 +18,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -28,9 +30,12 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -294,19 +299,45 @@ public class ContainersV2Rest {
   @Operation(
     operationId = "deleteContainer",
     summary = "Delete any container by appId; dispatched by kind.",
-    description = "Deletes the container at `appId` via the owning kind's deleter.\n\nAuth: Write on the container."
+    description =
+      "DI1 — safe delete. Refuses with 409 if the container has active DataObject references " +
+      "unless `?force=true` is supplied.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "204", description = "Deleted.")
+  @APIResponse(
+    responseCode = "409",
+    description = "Container has active references; retry with ?force=true to delete anyway.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = SafeDeleteConflict.class))
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
-  public Response delete(@PathParam("appId") String appId, @Context SecurityContext sc) {
+  public Response delete(
+    @PathParam("appId") String appId,
+    @QueryParam("force") @DefaultValue("false") boolean force,
+    @Context SecurityContext sc
+  ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
+    if (!force) {
+      var linkedOpt = resolved.get().handler().listLinkedDataObjects(appId);
+      if (linkedOpt.isPresent() && !linkedOpt.get().isEmpty()) {
+        var linked = linkedOpt.get();
+        List<String> sample = linked.stream()
+          .map(DataObjectIO::getAppId)
+          .filter(Objects::nonNull)
+          .limit(SafeDeleteConflict.SAMPLE_LIMIT)
+          .collect(Collectors.toList());
+        return Response.status(Status.CONFLICT)
+          .type("application/problem+json")
+          .entity(new SafeDeleteConflict(linked.size(), sample))
+          .build();
+      }
+    }
     try {
       containersService.deleteByAppId(appId);
       return Response.noContent().build();
