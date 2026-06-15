@@ -302,7 +302,8 @@ const typedPredecessorsRef = computed(() => {
 const typedPredecessors = ref<
   Array<{
     predecessorAppId: string;
-    predecessorId: number;
+    /** @deprecated Join on predecessorAppId instead. */
+    predecessorId?: number;
     predecessorName: string;
     predecessorStatus: string | null;
     relationshipType: string;
@@ -321,20 +322,13 @@ watch(
   { immediate: true },
 );
 
-/** Look up the stored relationship type for a predecessor by its numeric id. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function predecessorRelationshipType(predecessorId: number): string | null {
-  const match = typedPredecessors.value.find(tp => tp.predecessorId === predecessorId);
-  return match?.relationshipType ?? null;
-}
-
-/** PROV1k: Map of predecessor id → relationship type, passed to DataObjectRelationshipsTable. */
-const predecessorRelationshipTypesMap = computed<Map<number, string>>(() => {
-  const map = new Map<number, string>();
+/** PROV1k: Map of predecessor appId (UUID v7) → relationship type, passed to DataObjectRelationshipsTable. */
+const predecessorRelationshipTypesMap = computed<Map<string, string>>(() => {
+  const map = new Map<string, string>();
   for (const tp of typedPredecessors.value) {
     // Only add non-default types to keep the map sparse; the chip component handles null gracefully.
-    if (tp.relationshipType && tp.relationshipType !== "prov:wasInformedBy") {
-      map.set(tp.predecessorId, tp.relationshipType);
+    if (tp.predecessorAppId && tp.relationshipType && tp.relationshipType !== "prov:wasInformedBy") {
+      map.set(tp.predecessorAppId, tp.relationshipType);
     }
   }
   return map;
