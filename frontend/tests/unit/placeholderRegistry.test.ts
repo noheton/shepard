@@ -46,8 +46,8 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
 
   it("designed-not-shipped entries carry the correct backend status", () => {
     const designed = PLACEHOLDER_ENTRIES.filter((e) => e.backend === "designed");
-    // AI1a admin + profile + PG-COLLAPSE-002 backup
-    expect(designed.length).toBeGreaterThanOrEqual(3);
+    // ai-settings (profile) + PG-COLLAPSE-002 backup (ai-config admin moved to partial)
+    expect(designed.length).toBeGreaterThanOrEqual(2);
     for (const e of designed) {
       expect(e.endpoint, `designed entry ${e.slug} should not have endpoint`).toBeNull();
     }
@@ -57,7 +57,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const ai = findPlaceholder("ai-config");
     expect(ai).toBeDefined();
     expect(ai?.surface).toBe("admin");
-    expect(ai?.backend).toBe("designed");
+    expect(ai?.backend).toBe("partial");
   });
 
   it("findPlaceholder returns undefined for unknown slugs", () => {
