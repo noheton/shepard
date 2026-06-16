@@ -281,12 +281,14 @@ canonical entry for data-kind templates.
 ## 7. Materialize mapping (in-context only)
 
 **Route:** `/tools/materialize-mapping`  
-**Entry point:** DataObject detail page → "Materialize" action (V2CONV-B3)
+**Entry point:** DataObject detail page → "Materialize" action (V2CONV-B3)  
+**Full reference:** `docs/reference/materialize-mapping.md`
 
 Not a standalone Tools-menu entry — always pre-populated from the source
 DataObject's `appId`. A `MAPPING_RECIPE` template defines the transform;
-the endpoint (`POST /v2/shapes/render` with a MAPPING_RECIPE template) derives
-output references from existing references on the focus DataObject.
+the endpoint `POST /v2/mappings/{templateAppId}/materialize` derives a new
+output reference (or an ephemeral view-model) from existing references bound
+at run time via the `TransformExecutor` SPI.
 
 ---
 
