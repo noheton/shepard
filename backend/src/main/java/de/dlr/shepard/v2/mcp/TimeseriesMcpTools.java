@@ -462,7 +462,7 @@ public class TimeseriesMcpTools {
       for (SemanticAnnotation a : annotations) {
         var io = new SemanticAnnotationIO(a);
         Map<String, Object> row = new LinkedHashMap<>();
-        row.put("id", io.getId());
+        row.put("appId", io.getAppId());
         row.put("propertyIRI", io.getPropertyIRI());
         row.put("propertyName", io.getPropertyName());
         row.put("valueIRI", io.getValueIRI());
@@ -511,7 +511,7 @@ public class TimeseriesMcpTools {
         annotatableTimeseriesService.createAnnotationForChannel(containerOgmId, channelShepardId, io);
       var resultIO = new SemanticAnnotationIO(created);
       Map<String, Object> row = new LinkedHashMap<>();
-      row.put("id", resultIO.getId());
+      row.put("appId", resultIO.getAppId());
       row.put("propertyIRI", resultIO.getPropertyIRI());
       row.put("propertyName", resultIO.getPropertyName());
       row.put("valueIRI", resultIO.getValueIRI());
