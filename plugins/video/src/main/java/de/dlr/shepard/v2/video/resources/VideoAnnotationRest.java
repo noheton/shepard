@@ -34,14 +34,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * VID1b-annotation — CRUD for {@link VideoAnnotation} nodes attached to a
  * {@link VideoStreamReference}.
  *
- * <p>Auth: resolves the parent {@link VideoStreamReference} and verifies it
- * belongs to the DataObject named in the URL, then delegates to
- * {@link PermissionsService#isAccessAllowedForDataObjectAppId} — same method
- * as the list endpoint in {@link VideoStreamReferenceV2Rest}.
+ * <p>Auth: resolves the parent DataObject from the reference itself and
+ * delegates to {@link PermissionsService#isAccessAllowedForDataObjectAppId}
+ * — same pattern as {@code TimeseriesAnnotationRest}.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/data-objects/{dataObjectAppId}/video-stream-references/{refAppId}/annotations")
+@Path("/v2/references/{refAppId}/annotations")
 @RequestScoped
 @Tag(name = "Video annotations")
 public class VideoAnnotationRest {
@@ -62,27 +61,18 @@ public class VideoAnnotationRest {
   }
 
   /**
-   * Resolve the reference, verify it belongs to {@code dataObjectAppId}, and
-   * check that {@code caller} has the requested access level.
+   * Resolve the reference and check that {@code caller} has the requested access level
+   * on the parent DataObject (resolved from the reference itself).
    *
    * @return {@code null} when access is granted; a short-circuit {@link Response} otherwise.
    */
-  private Response checkParentAndAccess(
-    String refAppId,
-    String dataObjectAppId,
-    AccessType accessType,
-    String caller
-  ) {
+  private Response checkAccess(String refAppId, AccessType accessType, String caller) {
     VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(refAppId);
     if (ref == null) return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
     if (ref.getDataObject() == null) return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
 
-    String refParentAppId = ref.getDataObject().getAppId();
-    if (refParentAppId != null && !refParentAppId.equals(dataObjectAppId)) {
-      return problem(Response.Status.NOT_FOUND, "VideoStreamReference not found");
-    }
-
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
+    String parentAppId = ref.getDataObject().getAppId();
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(parentAppId, accessType, caller)) {
       return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
     return null;
@@ -127,14 +117,13 @@ public class VideoAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with that appId, or DataObject mismatch.")
   public Response list(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("refAppId") String refAppId,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Read, caller);
+    Response gate = checkAccess(refAppId, AccessType.Read, caller);
     if (gate != null) return gate;
 
     List<VideoAnnotationIO> rows = annotationDAO
@@ -167,7 +156,6 @@ public class VideoAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with that appId, or DataObject mismatch.")
   public Response create(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("refAppId") String refAppId,
     VideoAnnotationIO body,
     @Context SecurityContext sc
@@ -182,7 +170,7 @@ public class VideoAnnotationRest {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
+    Response gate = checkAccess(refAppId, AccessType.Write, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = new VideoAnnotation();
@@ -218,7 +206,6 @@ public class VideoAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with refAppId, or no annotation with annotationAppId.")
   public Response read(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("refAppId") String refAppId,
     @PathParam("annotationAppId") String annotationAppId,
     @Context SecurityContext sc
@@ -226,7 +213,7 @@ public class VideoAnnotationRest {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Read, caller);
+    Response gate = checkAccess(refAppId, AccessType.Read, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
@@ -256,7 +243,6 @@ public class VideoAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with refAppId, or no annotation with annotationAppId.")
   public Response update(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("refAppId") String refAppId,
     @PathParam("annotationAppId") String annotationAppId,
     VideoAnnotationIO body,
@@ -265,7 +251,7 @@ public class VideoAnnotationRest {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
+    Response gate = checkAccess(refAppId, AccessType.Write, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
@@ -301,7 +287,6 @@ public class VideoAnnotationRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No VideoStreamReference with refAppId, or no annotation with annotationAppId.")
   public Response delete(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
     @PathParam("refAppId") String refAppId,
     @PathParam("annotationAppId") String annotationAppId,
     @Context SecurityContext sc
@@ -309,7 +294,7 @@ public class VideoAnnotationRest {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    Response gate = checkParentAndAccess(refAppId, dataObjectAppId, AccessType.Write, caller);
+    Response gate = checkAccess(refAppId, AccessType.Write, caller);
     if (gate != null) return gate;
 
     VideoAnnotation a = annotationDAO.findByAppId(annotationAppId);
