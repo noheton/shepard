@@ -2,6 +2,7 @@
 import RelationshipInput from "~/components/context/input-components/relationship/RelationshipInput.vue";
 
 import { useCreateReferences } from "~/composables/references/useCreateReferences";
+import { useCreateReferencesV2 } from "~/composables/references/useCreateReferencesV2";
 import { useUpdateDataObjectRelationship } from "~/composables/references/useUpdateDataObjectPredecessor";
 import {
   REFERENCE_PREDICATE,
@@ -83,6 +84,17 @@ const { addCollectionReference, addDataObjectReference, addUriReference } =
     loading,
   );
 
+// APISIMP-REF-CREATE-NUMERIC-IDS: v2 path uses appId strings via POST /v2/references?kind=...
+// Falls back to the v1 path when dataObjectAppId is absent (pre-L2a DataObjects without appId).
+const {
+  addCollectionReference: addCollectionReferenceV2,
+  addDataObjectReference: addDataObjectReferenceV2,
+} = useCreateReferencesV2(
+  props.dataObjectAppId ?? "",
+  () => (showDialog.value = false),
+  loading,
+);
+
 function validateRelationship(newRelationship: ReferenceData | undefined) {
   if (!newRelationship) isValid.value = false;
   else {
@@ -122,26 +134,40 @@ const onSubmit = () => {
 
   if (
     relationshipModel.value.type === CustomRelationshipType.COLLECTION &&
-    relationshipModel.value.referenceName &&
-    relationshipModel.value.referencedCollectionId
+    relationshipModel.value.referenceName
   ) {
-    addCollectionReference(
-      relationshipModel.value.referencedCollectionId,
-      relationshipModel.value.referenceName,
-      relationshipModel.value.relationshipName,
-    );
+    if (props.dataObjectAppId && relationshipModel.value.referencedCollectionAppId) {
+      addCollectionReferenceV2(
+        relationshipModel.value.referencedCollectionAppId,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    } else if (relationshipModel.value.referencedCollectionId !== undefined) {
+      addCollectionReference(
+        relationshipModel.value.referencedCollectionId,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    }
   }
 
   if (
     relationshipModel.value.type === CustomRelationshipType.DATA_OBJECT &&
-    relationshipModel.value.referencedDataObjectId &&
     relationshipModel.value.referenceName
   ) {
-    addDataObjectReference(
-      relationshipModel.value.referencedDataObjectId,
-      relationshipModel.value.referenceName,
-      relationshipModel.value.relationshipName,
-    );
+    if (props.dataObjectAppId && relationshipModel.value.referencedDataObjectAppId) {
+      addDataObjectReferenceV2(
+        relationshipModel.value.referencedDataObjectAppId,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    } else if (relationshipModel.value.referencedDataObjectId !== undefined) {
+      addDataObjectReference(
+        relationshipModel.value.referencedDataObjectId,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    }
   }
 
   if (

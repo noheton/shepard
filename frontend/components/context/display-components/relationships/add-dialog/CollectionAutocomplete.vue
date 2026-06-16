@@ -11,7 +11,7 @@ interface AutoCompleteItem {
 }
 
 const emit = defineEmits<{
-  (e: "searchEnded", value: { id: number; name: string } | null): void;
+  (e: "searchEnded", value: { id: number; appId: string | null; name: string } | null): void;
 }>();
 
 const searchString = ref<string>("");
@@ -37,6 +37,7 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
     autoCompleteModel.value = selectedItem;
     emit("searchEnded", {
       id: selectedItem.value.collectionId,
+      appId: selectedItem.value.collectionAppId ?? null,
       name: selectedItem.value.collectionName,
     });
   } else {

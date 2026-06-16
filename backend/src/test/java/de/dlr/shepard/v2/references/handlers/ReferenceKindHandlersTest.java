@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -53,6 +54,9 @@ class ReferenceKindHandlersTest {
   DataObjectDAO dataObjectDAO;
 
   @Mock
+  CollectionDAO collectionDAO;
+
+  @Mock
   TimeseriesReferenceService timeseriesReferenceService;
 
   @Mock
@@ -88,6 +92,7 @@ class ReferenceKindHandlersTest {
     collectionHandler = new CollectionReferenceKindHandler();
     collectionHandler.collectionReferenceService = collectionReferenceService;
     collectionHandler.dataObjectDAO = dataObjectDAO;
+    collectionHandler.collectionDAO = collectionDAO;
     dataObjectRefHandler = new DataObjectReferenceKindHandler();
     dataObjectRefHandler.dataObjectReferenceService = dataObjectReferenceService;
     dataObjectRefHandler.dataObjectDAO = dataObjectDAO;
@@ -376,6 +381,32 @@ class ReferenceKindHandlersTest {
     assertEquals("collection", out.get(0).getKind());
   }
 
+  @Test
+  void collection_create_usesAppId() {
+    Collection referencedColl = new Collection(99L);
+    referencedColl.setShepardId(99L);
+    referencedColl.setAppId("coll-app-99");
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(collectionDAO.findByAppId("coll-app-99")).thenReturn(referencedColl);
+    when(collectionReferenceService.createReference(eq(1L), eq(101L), any())).thenReturn(collRef());
+    var io = collectionHandler.create(DO_APP_ID, Map.of("name", "link", "referencedCollectionAppId", "coll-app-99"));
+    assertEquals("collection", io.getKind());
+    verify(collectionReferenceService).createReference(eq(1L), eq(101L), any());
+  }
+
+  @Test
+  void collection_create_missingAppId_throws400() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    assertThrows(BadRequestException.class, () -> collectionHandler.create(DO_APP_ID, Map.of("name", "link")));
+  }
+
+  @Test
+  void collection_create_unknownCollection_throws404() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(collectionDAO.findByAppId("no-such")).thenReturn(null);
+    assertThrows(NotFoundException.class, () -> collectionHandler.create(DO_APP_ID, Map.of("name", "x", "referencedCollectionAppId", "no-such")));
+  }
+
   // ─── dataobject handler ────────────────────────────────────────────────────
 
   private DataObjectReference doRef() {
@@ -450,5 +481,31 @@ class ReferenceKindHandlersTest {
     var out = dataObjectRefHandler.listByDataObject(DO_APP_ID, null);
     assertEquals(1, out.size());
     assertEquals("dataobject", out.get(0).getKind());
+  }
+
+  @Test
+  void dataobject_create_usesAppId() {
+    DataObject referencedDO = new DataObject(200L);
+    referencedDO.setShepardId(200L);
+    referencedDO.setAppId("do-app-200");
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(dataObjectDAO.findByAppId("do-app-200")).thenReturn(referencedDO);
+    when(dataObjectReferenceService.createReference(eq(1L), eq(101L), any())).thenReturn(doRef());
+    var io = dataObjectRefHandler.create(DO_APP_ID, Map.of("name", "link", "referencedDataObjectAppId", "do-app-200"));
+    assertEquals("dataobject", io.getKind());
+    verify(dataObjectReferenceService).createReference(eq(1L), eq(101L), any());
+  }
+
+  @Test
+  void dataobject_create_missingAppId_throws400() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    assertThrows(BadRequestException.class, () -> dataObjectRefHandler.create(DO_APP_ID, Map.of("name", "link")));
+  }
+
+  @Test
+  void dataobject_create_unknownDataObject_throws404() {
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(dataObjectDAO.findByAppId("no-such")).thenReturn(null);
+    assertThrows(NotFoundException.class, () -> dataObjectRefHandler.create(DO_APP_ID, Map.of("name", "x", "referencedDataObjectAppId", "no-such")));
   }
 }

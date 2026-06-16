@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.references.handlers;
 
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -36,6 +37,9 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
   @Inject
   DataObjectDAO dataObjectDAO;
 
+  @Inject
+  CollectionDAO collectionDAO;
+
   @Override
   public String kind() {
     return "collection";
@@ -69,15 +73,18 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
     if (body == null) throw new BadRequestException("create body is required for kind=collection");
     DataObject parent = resolveParent(dataObjectAppId);
 
-    Object rawId = body.get("referencedCollectionId");
-    if (rawId == null) {
-      throw new BadRequestException("referencedCollectionId is required for kind=collection");
+    Object rawAppId = body.get("referencedCollectionAppId");
+    if (rawAppId == null) {
+      throw new BadRequestException("referencedCollectionAppId is required for kind=collection");
     }
-    long referencedCollectionId = toLong(rawId, "referencedCollectionId");
+    Collection referenced = collectionDAO.findByAppId(rawAppId.toString());
+    if (referenced == null) {
+      throw new NotFoundException("No Collection with appId " + rawAppId);
+    }
 
     CollectionReferenceIO ioIn = new CollectionReferenceIO();
     ioIn.setName(asString(body.get("name")));
-    ioIn.setReferencedCollectionId(referencedCollectionId);
+    ioIn.setReferencedCollectionId(referenced.getShepardId());
     ioIn.setRelationship(asString(body.get("relationship")));
 
     CollectionReference created = collectionReferenceService.createReference(
@@ -137,14 +144,5 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
 
   private static String asString(Object v) {
     return v == null ? null : v.toString();
-  }
-
-  private static long toLong(Object v, String field) {
-    if (v instanceof Number n) return n.longValue();
-    try {
-      return Long.parseLong(v.toString());
-    } catch (NumberFormatException e) {
-      throw new BadRequestException(field + " must be a numeric id");
-    }
   }
 }
