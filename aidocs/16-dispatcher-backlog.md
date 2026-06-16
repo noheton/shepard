@@ -3752,7 +3752,7 @@ picks these up. Terse by design.
 | **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | `frontend/pages/search/` |
 | **DOC-BASIC-notifications** | Write `docs/help/get-notified.md`. | XS | AdminNotificationsPane |
 | **DOC-ADV-tools-landing** | Write `docs/reference/tools.md` cataloguing every Tools-cluster surface + its endpoint. | S | `frontend/pages/tools/index.vue` | **✓ shipped fire-65** — `docs/reference/tools.md` (7 surfaces: vocabularies, SPARQL, shape-validate, snapshot-diff, shapes-render, form-preview, materialize-mapping). |
-| **DOC-ADV-form-preview** | Write `docs/reference/form-preview.md` (template-form materialization internals). | S | `frontend/pages/tools/form-preview.vue` |
+| **DOC-ADV-form-preview** | Write `docs/reference/form-preview.md` (template-form materialization internals). | S | `frontend/pages/tools/form-preview.vue` | **✓ shipped fire-67** — `docs/reference/form-preview.md` (endpoint, descriptor shape, DASH editor scoring, submit block, Excel export, ETag caching, worked examples). |
 | **DOC-ADV-materialize-mapping** | Write `docs/reference/materialize-mapping.md` (mapping engine + API). | S | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-66** — `docs/reference/materialize-mapping.md` |
 | **DOC-ADV-mffd-process-chain** | Write `docs/reference/mffd-process-chain.md`. | S | `frontend/pages/admin/mffd-process-chain.vue` |
 | **DOC-ADV-aas** | Write `plugins/aas/docs/reference.md` + quickstart + install (three-page rule). | M | `plugins/aas/` | **✓ already done** — `plugins/aas/docs/{reference,quickstart,install}.md` exist. |
