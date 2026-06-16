@@ -201,9 +201,148 @@ content. Re-saving an entry with identical content produces no revision. Entries
 with a `null` content field that receive their first content also produce no
 revision (the entry goes directly from `null` to the new value without a snapshot).
 
+## Notebooks list (J1b)
+
+Lists every `.ipynb` Jupyter notebook file attached to a DataObject — a
+combined view across FR1b singleton `FileReference` nodes and files inside
+FR1a `FileBundleReference` nodes. The frontend uses this to decide which
+notebook tabs to render inline via nbviewer-js.
+
+```
+GET /v2/lab-journal/{dataObjectAppId}/notebooks
+```
+
+**Permission:** Read on the parent DataObject.
+
+### Path parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `dataObjectAppId` | `string` | Application-level identifier (UUID v7) of the DataObject. |
+
+### Response body
+
+`200 OK` — `application/json` array of notebook-reference objects, singletons
+first (ordered by `createdAt` ascending), then bundle files:
+
+```json
+[
+  {
+    "appId": "01957000-0000-7000-8000-000000000055",
+    "fileName": "analysis.ipynb",
+    "fileSize": 24567,
+    "mimeType": "application/x-ipynb+json",
+    "createdAt": "2026-05-17T09:00:00.000Z",
+    "createdBy": "alice",
+    "referenceKind": "SINGLETON"
+  },
+  {
+    "appId": "01957000-0000-7000-8000-000000000066",
+    "fileName": "visualisation.ipynb",
+    "fileSize": null,
+    "mimeType": "application/x-ipynb+json",
+    "createdAt": "2026-05-18T11:00:00.000Z",
+    "createdBy": "bob",
+    "referenceKind": "BUNDLE_FILE"
+  }
+]
+```
+
+Returns an empty array when no `.ipynb` files are attached (case-insensitive
+match — `Analysis.IPYNB` is included).
+
+#### Field reference
+
+| Field | Type | Description |
+|---|---|---|
+| `appId` | `string` | AppId of the parent Reference (singleton or bundle). |
+| `fileName` | `string` | Filename of the notebook. |
+| `fileSize` | `integer \| null` | Payload size in bytes; null for pre-FR1b uploads. |
+| `mimeType` | `string` | Always `"application/x-ipynb+json"`. |
+| `createdAt` | `string (ISO 8601) \| null` | Creation time of the parent Reference. |
+| `createdBy` | `string \| null` | Display name of the creator of the parent Reference. |
+| `referenceKind` | `"SINGLETON" \| "BUNDLE_FILE"` | Backing storage shape. |
+
+#### Downloading the bytes
+
+- **`SINGLETON`** — use `GET /v2/files/{appId}/content` with the `appId` field directly.
+- **`BUNDLE_FILE`** — `appId` is the bundle's appId; reach the specific file via
+  `GET /v2/bundles/{appId}` or the upstream bundle download surface.
+
+#### Response codes
+
+| Code | Meaning |
+|---|---|
+| 200 | Array of notebooks (may be empty). |
+| 401 | Authentication required. |
+| 403 | Caller lacks Read permission on the DataObject. |
+| 404 | No DataObject with that `appId`. |
+
+---
+
+## Bulk collection entries (UI-020)
+
+Fetches every `LabJournalEntry` across all DataObjects in a Collection in a
+single Cypher walk, eliminating the N+1 fan-out that produced 8 500+ requests
+on MFFD-Dropbox (8 514 DataObjects → 8 514 concurrent legacy requests).
+
+```
+GET /v2/collections/{collectionAppId}/lab-journal-entries
+```
+
+**Permission:** Read on the Collection.
+
+### Path parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `collectionAppId` | `string` | Application-level identifier (UUID v7) of the Collection. |
+
+### Response body
+
+`200 OK` — `application/json` array of `LabJournalEntryIO` objects, sorted by
+`createdAt` descending (newest first). Each entry carries its `dataObjectId`
+(the DataObject's numeric shepardId used by the v1 surface), allowing the
+frontend to group entries client-side without a second round-trip. Returns an
+empty array when the Collection has no DataObjects with journal entries.
+
+```json
+[
+  {
+    "id": 42,
+    "appId": "01957000-0000-7000-8000-000000000099",
+    "journalContent": "# Observation\n\nVibration spike at t=8s.",
+    "contentFormat": "MARKDOWN",
+    "dataObjectId": 17,
+    "createdAt": "2026-05-17T14:30:00.000Z",
+    "createdBy": "alice"
+  }
+]
+```
+
+### Response codes
+
+| Code | Meaning |
+|---|---|
+| 200 | All journal entries in the collection (may be empty). |
+| 401 | Authentication required. |
+| 403 | Caller lacks Read permission on the Collection. |
+| 404 | No Collection with that `appId`. |
+
+### Example
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+     https://shepard.example.dlr.de/v2/collections/<collectionAppId>/lab-journal-entries
+```
+
+---
+
 ## Related
 
 - `aidocs/data/37-lab-journal-and-jupyter-design.md` — design doc for the J1 series.
-- J1b (shipped) — inline `.ipynb` static render (`GET /v2/lab-journal/{appId}/notebook`).
-- J1c (queued) — "Open in Jupyter" deep link.
+- J1a (shipped) — markdown render endpoint (`GET /v2/lab-journal/{appId}/render`).
+- J1b (shipped) — notebooks list (`GET /v2/lab-journal/{dataObjectAppId}/notebooks`).
+- J1c (shipped) — "Open in Jupyter" deep link (`DataObjectNotebooksPane.vue`).
 - J1d (shipped) — append-only edit history (`GET /v2/lab-journal/{entryAppId}/history`).
+- UI-020 (shipped) — bulk collection entries (`GET /v2/collections/{collectionAppId}/lab-journal-entries`).
