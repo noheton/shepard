@@ -67,15 +67,18 @@ public class DataObjectReferenceKindHandler implements ReferenceKindHandler {
     if (body == null) throw new BadRequestException("create body is required for kind=dataobject");
     DataObject parent = resolveParent(dataObjectAppId);
 
-    Object rawId = body.get("referencedDataObjectId");
-    if (rawId == null) {
-      throw new BadRequestException("referencedDataObjectId is required for kind=dataobject");
+    Object rawAppId = body.get("referencedDataObjectAppId");
+    if (rawAppId == null) {
+      throw new BadRequestException("referencedDataObjectAppId is required for kind=dataobject");
     }
-    long referencedDataObjectId = toLong(rawId, "referencedDataObjectId");
+    DataObject referenced = dataObjectDAO.findByAppId(rawAppId.toString());
+    if (referenced == null) {
+      throw new NotFoundException("No DataObject with appId " + rawAppId);
+    }
 
     DataObjectReferenceIO ioIn = new DataObjectReferenceIO();
     ioIn.setName(asString(body.get("name")));
-    ioIn.setReferencedDataObjectId(referencedDataObjectId);
+    ioIn.setReferencedDataObjectId(referenced.getShepardId());
     ioIn.setRelationship(asString(body.get("relationship")));
 
     DataObjectReference created = dataObjectReferenceService.createReference(
@@ -135,14 +138,5 @@ public class DataObjectReferenceKindHandler implements ReferenceKindHandler {
 
   private static String asString(Object v) {
     return v == null ? null : v.toString();
-  }
-
-  private static long toLong(Object v, String field) {
-    if (v instanceof Number n) return n.longValue();
-    try {
-      return Long.parseLong(v.toString());
-    } catch (NumberFormatException e) {
-      throw new BadRequestException(field + " must be a numeric id");
-    }
   }
 }

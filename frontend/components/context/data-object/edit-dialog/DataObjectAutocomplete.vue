@@ -33,7 +33,7 @@ interface DataObjectAutocompleteProps {
 
 const props = defineProps<DataObjectAutocompleteProps>();
 const emit = defineEmits<{
-  (e: "searchEnded", value: { id: number; name: string } | null): void;
+  (e: "searchEnded", value: { id: number; appId: string | null; name: string } | null): void;
 }>();
 defineExpose({
   clearInput,
@@ -63,6 +63,7 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
     autoCompleteModel.value = selectedItem;
     emit("searchEnded", {
       id: selectedItem.value.dataObjectId,
+      appId: selectedItem.value.dataObjectAppId ?? null,
       name: selectedItem.value.dataObjectName,
     });
   } else {

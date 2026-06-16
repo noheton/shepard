@@ -6,6 +6,7 @@ const dataObjectModel = defineModel<DataObjectReferenceData>({
   required: true,
 });
 const collectionId = ref<number | undefined>();
+const collectionAppId = ref<string | undefined>();
 
 // get reference of dataobject autocomplete field to clear its input
 const dataObjectSearchField =
@@ -21,8 +22,10 @@ const dataObjectSearchField =
         @search-ended="
           value => {
             collectionId = value?.id;
+            collectionAppId = value?.appId ?? undefined;
             // Reset data object values after selecting collection
             dataObjectModel.referencedDataObjectId = undefined;
+            dataObjectModel.referencedDataObjectAppId = undefined;
             dataObjectModel.referenceName = undefined;
             if (dataObjectSearchField) {
               dataObjectSearchField.clearInput();
@@ -40,6 +43,7 @@ const dataObjectSearchField =
         @search-ended="
           value => {
             dataObjectModel.referencedDataObjectId = value?.id;
+            dataObjectModel.referencedDataObjectAppId = value?.appId ?? undefined;
             dataObjectModel.referenceName = value?.name;
           }
         "
