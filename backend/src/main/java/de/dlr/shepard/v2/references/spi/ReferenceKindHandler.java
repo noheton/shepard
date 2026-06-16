@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.spi;
 
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -124,4 +125,31 @@ public interface ReferenceKindHandler {
    * @return the unified IOs (possibly empty, never null).
    */
   List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind);
+
+  /**
+   * APISIMP-KIND-DISCRIMINATOR — Option C content companion.
+   *
+   * <p>Upload binary content to an existing reference node identified by
+   * {@code appId}. Called by {@code PUT /v2/references/{appId}/content}
+   * after the reference metadata node was created via
+   * {@code POST /v2/references?kind=file}. The two-step shape keeps JSON
+   * creation on the unified surface while isolating binary streaming to a
+   * single purpose-built path.
+   *
+   * <p>Default implementation throws {@link UnsupportedOperationException}
+   * so existing non-binary kind handlers (uri, timeseries, git, video
+   * metadata) inherit a safe "not supported" posture without implementing
+   * this method.
+   *
+   * @param appId UUID v7 of the reference (must already exist).
+   * @param input raw binary body stream (caller is responsible for closing).
+   * @param filename original filename; used for MIME / fileKind detection and
+   *   GridFS storage. Must not be null/blank.
+   * @param declaredSize caller-declared size in bytes from {@code Content-Length};
+   *   {@code <= 0} skips the upload size cap pre-check.
+   * @return the updated unified ReferenceV2IO reflecting the attached content.
+   */
+  default ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support binary content upload via PUT …/content");
+  }
 }

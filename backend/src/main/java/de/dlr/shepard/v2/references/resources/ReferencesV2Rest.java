@@ -15,9 +15,11 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -26,6 +28,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -46,13 +49,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * <p>Kind-specific binary / special operations stay at their own paths and
  * are NOT converged here: {@code GET /v2/files/{appId}/content}, video
  * {@code /download}, git {@code /preview} + {@code /check-update}, and the
- * multipart {@code POST /v2/files} upload entry.
+ * (deprecated) multipart {@code POST /v2/files} upload entry.
  *
  * <h2>Routes</h2>
  * <ul>
  *   <li>{@code POST   /v2/references?kind=…&dataObjectAppId=…} — create a
- *       non-binary reference of {@code kind}. Body is the per-kind create
- *       payload. Binary {@code kind=file} rejects here (use POST /v2/files).</li>
+ *       reference of {@code kind}. For {@code kind=file} this is now the
+ *       APISIMP-KIND-DISCRIMINATOR Option C phase-1: creates a metadata-only
+ *       node (name required in body; no bytes). Follow up with PUT …/content.</li>
+ *   <li>{@code PUT    /v2/references/{appId}/content} — APISIMP-KIND-DISCRIMINATOR
+ *       Option C phase-2: upload binary content to a reference node that supports
+ *       it ({@code kind=file}). Takes {@code ?filename=} query param.</li>
  *   <li>{@code GET    /v2/references/{appId}} — the entity self-describes its
  *       kind; returns the unified {@link ReferenceV2IO}.</li>
  *   <li>{@code PATCH  /v2/references/{appId}} — RFC 7396 merge-patch, dispatched
@@ -95,8 +102,9 @@ public class ReferencesV2Rest {
       "Creates a reference of `kind` attached to the DataObject identified by " +
       "`dataObjectAppId`. The body is the per-kind create payload (e.g. `{uri, " +
       "relationship}` for kind=uri; `{start, end, timeseriesContainerId, timeseries}` " +
-      "for kind=timeseries). Binary kinds are NOT created here — `kind=file` rejects " +
-      "with 400 directing the caller to the multipart `POST /v2/files` entry point.\n\n" +
+      "for kind=timeseries; `{name}` for kind=file — APISIMP-KIND-DISCRIMINATOR " +
+      "Option C phase-1: creates a metadata-only node, then call " +
+      "`PUT /v2/references/{appId}/content` to upload bytes).\n\n" +
       "Auth: Write on the parent DataObject."
   )
   @APIResponse(
@@ -236,6 +244,73 @@ public class ReferencesV2Rest {
     try {
       referencesService.deleteByAppId(appId);
       return Response.noContent().build();
+    } catch (NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    }
+  }
+
+  // ─── upload-content ────────────────────────────────────────────────────────
+
+  @PUT
+  @Path("/{appId}/content")
+  @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+  @Operation(
+    operationId = "uploadReferenceContent",
+    summary = "APISIMP-KIND-DISCRIMINATOR Option C phase-2: upload binary content to an existing reference node.",
+    description =
+      "Attaches binary content to the reference at `appId`. The reference must already " +
+      "exist (created via `POST /v2/references?kind=file`). The body is the raw binary " +
+      "payload (`application/octet-stream`). The `filename` query parameter provides the " +
+      "original filename for MIME/fileKind detection and GridFS storage (required).\n\n" +
+      "For references that do not support binary content (`kind=uri`, `kind=timeseries`, " +
+      "`kind=git`, etc.) this returns 400.\n\n" +
+      "Re-uploading (calling PUT a second time on the same appId) replaces the previous " +
+      "content — the old GridFS blob is deleted after the new one is written.\n\n" +
+      "Auth: Write on the parent DataObject."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Content attached; body is the updated ReferenceV2IO.",
+    content = @Content(schema = @Schema(implementation = ReferenceV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing filename, empty body, or kind does not support content upload.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No reference with that appId.")
+  public Response uploadContent(
+    @PathParam("appId") String appId,
+    @QueryParam("filename") String filename,
+    @HeaderParam("Content-Length") String contentLengthHeader,
+    InputStream body,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to upload reference content");
+    if (filename == null || filename.isBlank()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "filename query parameter is required");
+    }
+    if (body == null) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing body", Response.Status.BAD_REQUEST, "binary body is required");
+    }
+    var resolved = referencesService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    Response gate = gateOnParent(resolved.get().reference(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    long declaredSize = -1L;
+    if (contentLengthHeader != null && !contentLengthHeader.isBlank()) {
+      try {
+        declaredSize = Long.parseLong(contentLengthHeader.trim());
+      } catch (NumberFormatException ignored) {
+        // non-numeric Content-Length — skip cap check
+      }
+    }
+    try {
+      ReferenceV2IO updated = resolved.get().handler().uploadContent(appId, body, filename, declaredSize);
+      return Response.ok(updated).build();
+    } catch (UnsupportedOperationException uoe) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Not supported", Response.Status.BAD_REQUEST, uoe.getMessage());
+    } catch (BadRequestException bre) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
     }

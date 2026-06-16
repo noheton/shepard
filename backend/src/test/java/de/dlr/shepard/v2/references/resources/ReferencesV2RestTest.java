@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,7 @@ import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -187,6 +189,60 @@ class ReferencesV2RestTest {
   @Test
   void list_returns400WhenMissingParams() {
     var r = resource.list("file", null, null, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  // ─── uploadContent ─────────────────────────────────────────────────────────
+
+  @Test
+  void uploadContent_returns200WhenAllowed() {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.uploadContent(eq(REF_APP_ID), any(), eq("doc.pdf"), anyLong()))
+      .thenReturn(new ReferenceV2IO());
+
+    var body = new ByteArrayInputStream(new byte[] { 1, 2, 3 });
+    var r = resource.uploadContent(REF_APP_ID, "doc.pdf", "3", body, securityContext);
+    assertEquals(200, r.getStatus());
+    verify(handler).uploadContent(eq(REF_APP_ID), any(), eq("doc.pdf"), eq(3L));
+  }
+
+  @Test
+  void uploadContent_returns400WhenFilenameBlank() {
+    var body = new ByteArrayInputStream(new byte[] { 1 });
+    var r = resource.uploadContent(REF_APP_ID, "  ", null, body, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void uploadContent_returns404WhenUnknown() {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.empty());
+    var body = new ByteArrayInputStream(new byte[] { 1 });
+    var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void uploadContent_returns403WhenNoWrite() {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    var body = new ByteArrayInputStream(new byte[] { 1 });
+    var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void uploadContent_returns400WhenUnsupportedKind() {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(handler.uploadContent(any(), any(), any(), anyLong()))
+      .thenThrow(new UnsupportedOperationException("kind=uri does not support content upload"));
+
+    var body = new ByteArrayInputStream(new byte[] { 1 });
+    var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
     assertEquals(400, r.getStatus());
   }
 }

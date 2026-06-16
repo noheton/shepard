@@ -116,6 +116,133 @@ public class SingletonFileReferenceService {
   }
 
   /**
+   * APISIMP-KIND-DISCRIMINATOR Option C — phase 1 of the two-step file create.
+   *
+   * <p>Creates a metadata-only {@link FileReference} node (no bytes, no GridFS
+   * doc) attached to the given DataObject. The caller follows up with
+   * {@link #attachContent} ({@code PUT /v2/references/{appId}/content}) to
+   * store the binary payload and complete the reference.
+   *
+   * @param dataObjectAppId parent DataObject's appId. Required.
+   * @param name human-readable name for the reference. Required, non-blank.
+   * @return the persisted, content-less singleton (file field is null).
+   * @throws NotFoundException when no DataObject with that appId exists.
+   * @throws BadRequestException when {@code name} is missing/blank.
+   */
+  public FileReference createSingletonMetadata(String dataObjectAppId, String name) {
+    if (name == null || name.isBlank()) {
+      throw new BadRequestException("name must not be null or blank");
+    }
+    DataObject parent = resolveDataObjectByAppId(dataObjectAppId);
+    if (parent == null) {
+      throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
+    }
+    User user = userService.getCurrentUser();
+
+    FileReference singleton = new FileReference();
+    singleton.setName(name);
+    singleton.setDataObject(parent);
+    singleton.setCreatedAt(dateHelper.getDate());
+    singleton.setCreatedBy(user);
+
+    FileReference created = singletonFileReferenceDAO.createOrUpdate(singleton);
+    created.setShepardId(created.getId());
+    created = singletonFileReferenceDAO.createOrUpdate(created);
+
+    Log.debugf(
+      "FR1b/phase-1: created metadata-only singleton FileReference appId=%s under DataObject appId=%s",
+      created.getAppId(),
+      dataObjectAppId
+    );
+    return created;
+  }
+
+  /**
+   * APISIMP-KIND-DISCRIMINATOR Option C — phase 2 of the two-step file create.
+   *
+   * <p>Attaches binary content to the content-less {@link FileReference} node
+   * identified by {@code appId}. If the reference already has an attached file
+   * (re-upload scenario), the old GridFS blob is deleted and replaced.
+   *
+   * @param appId the singleton's appId (must exist).
+   * @param filename original filename; used for MIME / fileKind detection. Required.
+   * @param payload byte stream of the file body. Required, non-null.
+   * @param declaredSize caller-declared size in bytes; {@code <= 0} skips size cap.
+   * @return the updated singleton with its attached file.
+   * @throws NotFoundException when no singleton with that appId exists.
+   * @throws BadRequestException when {@code filename} or {@code payload} are missing.
+   */
+  public FileReference attachContent(String appId, String filename, InputStream payload, long declaredSize) {
+    if (filename == null || filename.isBlank()) {
+      throw new BadRequestException("filename must not be null or blank");
+    }
+    if (payload == null) {
+      throw new BadRequestException("file payload must not be null");
+    }
+    FileReference ref = singletonFileReferenceDAO.findByAppId(appId);
+    if (ref == null) {
+      throw new NotFoundException("No singleton FileReference with appId " + appId);
+    }
+
+    ensureSharedNamespace();
+
+    // Replace an existing file blob if this is a re-upload.
+    String oldOid = ref.getFile() != null ? ref.getFile().getOid() : null;
+
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+      }
+      if (parseBuf != null) {
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+      } else {
+        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      }
+    } else {
+      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    }
+
+    // Delete old GridFS blob after writing the new one (write-then-delete avoids data loss on failure).
+    if (oldOid != null) {
+      try {
+        fileService.deleteFile(SHARED_FILES_NAMESPACE, oldOid);
+      } catch (NotFoundException nfe) {
+        Log.warnf("FR1b/attachContent: old GridFS blob oid=%s already missing for appId=%s", oldOid, appId);
+      }
+    }
+
+    ref.setFile(saved);
+    ref.setFileKind(detectFileKind(filename, saved));
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(userService.getCurrentUser());
+    FileReference updated = singletonFileReferenceDAO.createOrUpdate(ref);
+
+    Log.debugf(
+      "FR1b/phase-2: attached content to singleton FileReference appId=%s (oid=%s)",
+      appId,
+      saved.getOid()
+    );
+
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      DataObject parent = ref.getDataObject();
+      String dataObjectAppId = parent != null ? parent.getAppId() : null;
+      try {
+        parserRegistry.runAll(buf, filename, appId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, appId);
+      }
+    }
+
+    return updated;
+  }
+
+  /**
    * Create a new singleton attached to a parent DataObject with an explicit size cap check.
    *
    * <p>MONGO-AUDIT-2026-05-24-012: when {@code declaredSize > 0} and exceeds

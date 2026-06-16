@@ -373,6 +373,129 @@ class SingletonFileReferenceServiceTest {
     assertThrows(NotFoundException.class, () -> service.getPayload(SINGLETON_APP_ID));
   }
 
+  // ─── createSingletonMetadata ─────────────────────────────────────────────
+
+  @Test
+  void createSingletonMetadata_createsNodeWithoutFile() {
+    var parent = new DataObject(DO_OGM_ID);
+    parent.setAppId(DO_APP_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> {
+      FileReference r = inv.getArgument(0);
+      if (r.getAppId() == null) r.setAppId(SINGLETON_APP_ID);
+      r.setShepardId(42L);
+      return r;
+    });
+
+    FileReference created = service.createSingletonMetadata(DO_APP_ID, "my-doc");
+    assertNotNull(created);
+    assertEquals("my-doc", created.getName());
+    assertNull(created.getFile());
+    verify(fileService, never()).createFile(anyString(), anyString(), any(InputStream.class));
+    verify(singletonDao, times(2)).createOrUpdate(any(FileReference.class));
+  }
+
+  @Test
+  void createSingletonMetadata_throwsBadRequestOnBlankName() {
+    assertThrows(BadRequestException.class, () ->
+      service.createSingletonMetadata(DO_APP_ID, "  ")
+    );
+  }
+
+  @Test
+  void createSingletonMetadata_throwsNotFoundWhenDataObjectMissing() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException("nope"));
+    assertThrows(NotFoundException.class, () ->
+      service.createSingletonMetadata(DO_APP_ID, "name")
+    );
+  }
+
+  // ─── attachContent ────────────────────────────────────────────────────────
+
+  @Test
+  void attachContent_storesFileOnExistingNode() {
+    var existing = new FileReference(1L);
+    existing.setAppId(SINGLETON_APP_ID);
+    existing.setName("my-doc");
+    when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
+
+    var savedFile = new ShepardFile(new Date(), "report.pdf", "abc");
+    savedFile.setOid("new-oid");
+    when(fileService.createFile(
+      eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
+      eq("report.pdf"),
+      any(InputStream.class),
+      eq(3L)
+    )).thenReturn(savedFile);
+    when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    InputStream payload = new ByteArrayInputStream(new byte[] { 1, 2, 3 });
+    FileReference updated = service.attachContent(SINGLETON_APP_ID, "report.pdf", payload, 3L);
+    assertNotNull(updated);
+    assertEquals(savedFile, updated.getFile());
+    assertEquals("pdf", updated.getFileKind());
+    verify(fileService).createFile(
+      eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
+      eq("report.pdf"),
+      any(InputStream.class),
+      eq(3L)
+    );
+  }
+
+  @Test
+  void attachContent_replacesExistingBlob() {
+    var existing = new FileReference(1L);
+    existing.setAppId(SINGLETON_APP_ID);
+    var oldFile = new ShepardFile(new Date(), "old.pdf", "old");
+    oldFile.setOid("old-oid");
+    existing.setFile(oldFile);
+    when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
+
+    var newFile = new ShepardFile(new Date(), "new.pdf", "new");
+    newFile.setOid("new-oid");
+    when(fileService.createFile(
+      eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
+      eq("new.pdf"),
+      any(InputStream.class),
+      eq(-1L)
+    )).thenReturn(newFile);
+    when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    InputStream payload = new ByteArrayInputStream(new byte[] { 7, 8 });
+    service.attachContent(SINGLETON_APP_ID, "new.pdf", payload, -1L);
+    // old blob must be deleted after the new one is written
+    verify(fileService).deleteFile(SingletonFileReferenceService.SHARED_FILES_NAMESPACE, "old-oid");
+  }
+
+  @Test
+  void attachContent_throwsNotFoundWhenMissing() {
+    when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(null);
+    InputStream payload = new ByteArrayInputStream(new byte[] { 1 });
+    assertThrows(NotFoundException.class, () ->
+      service.attachContent(SINGLETON_APP_ID, "doc.pdf", payload, -1L)
+    );
+  }
+
+  @Test
+  void attachContent_throwsBadRequestOnBlankFilename() {
+    var existing = new FileReference(1L);
+    when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
+    InputStream payload = new ByteArrayInputStream(new byte[] { 1 });
+    assertThrows(BadRequestException.class, () ->
+      service.attachContent(SINGLETON_APP_ID, "  ", payload, -1L)
+    );
+  }
+
+  @Test
+  void attachContent_throwsBadRequestOnNullPayload() {
+    var existing = new FileReference(1L);
+    when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
+    assertThrows(BadRequestException.class, () ->
+      service.attachContent(SINGLETON_APP_ID, "doc.pdf", null, -1L)
+    );
+  }
+
   // ─── getDataObjectOgmId ───────────────────────────────────────────────────
 
   @Test
