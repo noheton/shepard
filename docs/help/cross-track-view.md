@@ -56,7 +56,7 @@ annotation or ask an admin to seed a new VIEW_RECIPE template.
 ## Behind the scenes
 
 The cross-track view is the user-facing surface of the
-`POST /v2/timeseries/cross-data-object-bulk-data` endpoint. The same
+`POST /v2/data-objects/cross-timeseries-bulk` endpoint. The same
 endpoint is available to any caller (Python notebook, MCP tool,
 external script) — see `docs/reference/collections.md` for the
 request/response shape.

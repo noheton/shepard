@@ -11,7 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * TS-CROSS-DO-VIEW-1 — request body for the cross-DataObject bulk-data endpoint.
  *
- * <p>Route: {@code POST /v2/timeseries/cross-data-object-bulk-data}
+ * <p>Route: {@code POST /v2/data-objects/cross-timeseries-bulk}
  *
  * <p>Resolves each {@code dataObjectAppId} to its {@link
  * de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}s,

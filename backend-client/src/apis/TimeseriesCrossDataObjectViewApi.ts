@@ -65,7 +65,7 @@ export class TimeseriesCrossDataObjectViewApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/timeseries/cross-data-object-bulk-data`,
+            path: `/v2/data-objects/cross-timeseries-bulk`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
