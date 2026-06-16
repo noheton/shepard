@@ -1,4 +1,5 @@
 ---
+title: Anomaly detection — reference
 audience: researcher, data-scientist
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: Materialize mapping — reference
 stage: deployed
 last-stage-change: 2026-06-16
 audience: advanced

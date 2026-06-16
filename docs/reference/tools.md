@@ -1,4 +1,5 @@
 ---
+title: Tools cluster — reference
 audience: user
 ---
 

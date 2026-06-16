@@ -1,4 +1,5 @@
 ---
+title: Admin config registry — reference
 audience: operator
 ---
 

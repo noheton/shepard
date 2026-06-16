@@ -1,4 +1,5 @@
 ---
+title: Git references — reference
 audience: user
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: Channel annotations — reference
 audience: user
 ---
 

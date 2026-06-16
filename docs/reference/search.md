@@ -1,3 +1,8 @@
+---
+title: Search — reference
+audience: user
+---
+
 # Search
 
 Shepard exposes three complementary search surfaces: a **header quick-search** for instant
