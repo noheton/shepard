@@ -3751,12 +3751,12 @@ picks these up. Terse by design.
 | **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | `frontend/pages/scene-graphs/play/` |
 | **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | `frontend/pages/search/` |
 | **DOC-BASIC-notifications** | Write `docs/help/get-notified.md`. | XS | AdminNotificationsPane |
-| **DOC-ADV-tools-landing** | Write `docs/reference/tools.md` cataloguing every Tools-cluster surface + its endpoint. | S | `frontend/pages/tools/index.vue` |
+| **DOC-ADV-tools-landing** | Write `docs/reference/tools.md` cataloguing every Tools-cluster surface + its endpoint. | S | `frontend/pages/tools/index.vue` | **✓ shipped fire-65** — `docs/reference/tools.md` (7 surfaces: vocabularies, SPARQL, shape-validate, snapshot-diff, shapes-render, form-preview, materialize-mapping). |
 | **DOC-ADV-form-preview** | Write `docs/reference/form-preview.md` (template-form materialization internals). | S | `frontend/pages/tools/form-preview.vue` |
 | **DOC-ADV-materialize-mapping** | Write `docs/reference/materialize-mapping.md` (mapping engine + API). | S | `frontend/pages/tools/materialize-mapping.vue` |
 | **DOC-ADV-mffd-process-chain** | Write `docs/reference/mffd-process-chain.md`. | S | `frontend/pages/admin/mffd-process-chain.vue` |
-| **DOC-ADV-aas** | Write `plugins/aas/docs/reference.md` + quickstart + install (three-page rule). | M | `plugins/aas/` |
-| **DOC-ADV-thermography** | Write `plugins/fileformat-thermography/docs/*` (reference+quickstart+install). | M | thermography plugin |
-| **DOC-ADV-ndt-grid** | Write `plugins/vis-ndt-grid/docs/*`. | S | vis-ndt-grid plugin |
-| **DOC-ADV-afp-thermo** | Write `plugins/vis-afp-thermo-overlay/docs/*`. | S | vis-afp-thermo-overlay plugin |
-| **DOC-ADV-spatiotemporal** | Write `plugins/spatiotemporal/docs/*`. | M | spatiotemporal plugin |
+| **DOC-ADV-aas** | Write `plugins/aas/docs/reference.md` + quickstart + install (three-page rule). | M | `plugins/aas/` | **✓ already done** — `plugins/aas/docs/{reference,quickstart,install}.md` exist. |
+| **DOC-ADV-thermography** | Write `plugins/fileformat-thermography/docs/*` (reference+quickstart+install). | M | thermography plugin | **✓ already done** — `plugins/fileformat-thermography/docs/{reference,quickstart,install}.md` exist. |
+| **DOC-ADV-ndt-grid** | Write `plugins/vis-ndt-grid/docs/*`. | S | vis-ndt-grid plugin | **✓ already done** — `plugins/vis-ndt-grid/docs/{reference,quickstart,install}.md` exist. |
+| **DOC-ADV-afp-thermo** | Write `plugins/vis-afp-thermo-overlay/docs/*`. | S | vis-afp-thermo-overlay plugin | **✓ already done** — `plugins/vis-afp-thermo-overlay/docs/{reference,quickstart,install}.md` exist. |
+| **DOC-ADV-spatiotemporal** | Write `plugins/spatiotemporal/docs/*`. | M | spatiotemporal plugin | **✓ already done** — `plugins/spatiotemporal/docs/{reference,quickstart,install}.md` exist. |
