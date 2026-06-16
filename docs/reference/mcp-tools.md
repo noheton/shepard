@@ -3,8 +3,6 @@ layout: default
 title: MCP tools reference
 permalink: /reference/mcp-tools/
 audience: advanced
-stage: deployed
-last-stage-change: 2026-06-16
 ---
 # MCP tools reference
 
