@@ -80,12 +80,12 @@ public class UserGroupV2Rest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = Constants.QP_PAGE)
-  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = "pageSize")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response listUserGroups(
     @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
-    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
+    @QueryParam("pageSize") @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
