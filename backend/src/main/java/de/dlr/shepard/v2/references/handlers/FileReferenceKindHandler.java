@@ -9,20 +9,28 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * V2CONV-A2 — in-tree {@link ReferenceKindHandler} for {@code kind=file}
- * (FR1b singletons). Delegates to {@link SingletonFileReferenceService}.
+ * V2CONV-A2 / APISIMP-KIND-DISCRIMINATOR — in-tree {@link ReferenceKindHandler}
+ * for {@code kind=file} (FR1b singletons). Delegates to
+ * {@link SingletonFileReferenceService}.
  *
  * <p>Sets {@code referenceShape="singleton"} and surfaces {@code fileKind}.
- * Binary creation does NOT route through the unified
- * {@code POST /v2/references} — it keeps the multipart
- * {@code POST /v2/files} entry point, so {@link #create} here rejects with
- * 400 directing the caller to the upload endpoint. Payload key set:
- * {@code {file}}.
+ *
+ * <p>Option C two-step file creation (APISIMP-KIND-DISCRIMINATOR):
+ * <ol>
+ *   <li>{@code POST /v2/references?kind=file} with JSON body {@code {name}}
+ *       calls {@link #create} here, which creates a metadata-only node (no bytes).
+ *   <li>{@code PUT /v2/references/{appId}/content} calls {@link #uploadContent},
+ *       which stores the binary payload and attaches it to the node.
+ * </ol>
+ *
+ * <p>The legacy {@code POST /v2/files} multipart entry point remains active
+ * for backwards-compatibility until slice 2 retires it.
  */
 @RequestScoped
 public class FileReferenceKindHandler implements ReferenceKindHandler {
@@ -57,11 +65,20 @@ public class FileReferenceKindHandler implements ReferenceKindHandler {
 
   @Override
   public ReferenceV2IO create(String dataObjectAppId, Map<String, Object> body) {
-    // FR1b singletons carry binary bytes — they are created via the
-    // multipart POST /v2/files upload entry, not the JSON unified create.
-    throw new BadRequestException(
-      "kind=file is a binary upload — use multipart POST /v2/files?parentDataObjectAppId=… instead of POST /v2/references"
-    );
+    // APISIMP-KIND-DISCRIMINATOR Option C phase 1: create the metadata node.
+    // The binary payload is attached in a follow-up PUT …/content call.
+    Object nameVal = body != null ? body.get("name") : null;
+    if (nameVal == null || nameVal.toString().isBlank()) {
+      throw new BadRequestException("kind=file create body must include a non-blank 'name' field");
+    }
+    FileReference created = singletonService.createSingletonMetadata(dataObjectAppId, nameVal.toString().trim());
+    return toIO(created);
+  }
+
+  @Override
+  public ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
+    FileReference updated = singletonService.attachContent(appId, filename, input, declaredSize);
+    return toIO(updated);
   }
 
   @Override
