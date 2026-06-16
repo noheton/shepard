@@ -207,7 +207,6 @@ public class LabJournalMcpTools {
   private static Map<String, Object> toRow(LabJournalEntry e) {
     Map<String, Object> row = new LinkedHashMap<>();
     row.put("appId", e.getAppId());
-    row.put("id", e.getId());
     row.put("content", e.getContent());
     row.put("createdAt", e.getCreatedAt());
     row.put(
