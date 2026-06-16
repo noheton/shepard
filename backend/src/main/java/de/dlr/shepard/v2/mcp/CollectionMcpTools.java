@@ -59,7 +59,6 @@ public class CollectionMcpTools {
       "Returns a JSON array of rows. Each row:\n" +
       "  appId (UUID v7) — pass this to `list_data_objects` to enumerate the " +
       "                    Collection's contents\n" +
-      "  id (long) — legacy numeric ID (for the upstream /shepard/api/… endpoints)\n" +
       "  name, description (free-text from the Collection owner)\n" +
       "  status (lifecycle: DRAFT|IN_REVIEW|READY|PUBLISHED|ARCHIVED|FAILED|NCR_OPEN|ON_HOLD|REJECTED|CERTIFIED, or null)\n\n" +
       "Filtering: `name` does a case-insensitive substring match. With no " +
@@ -87,7 +86,6 @@ public class CollectionMcpTools {
       for (Collection c : collections) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("appId", c.getAppId());
-        row.put("id", c.getId());
         row.put("name", c.getName());
         row.put("description", c.getDescription());
         row.put("status", c.getStatus());
@@ -106,7 +104,7 @@ public class CollectionMcpTools {
       "to follow the chain).\n\n" +
       "Each row has:\n" +
       "  appId (UUID v7) — feed to `get_data_object` for full detail + containers\n" +
-      "  id (long), name, status\n" +
+      "  name, status\n" +
       "  timeseriesCount, fileCount, structuredDataCount — per-payload-kind counts.\n" +
       "  Non-zero `timeseriesCount` means the DataObject references at least one " +
       "  TimeseriesContainer; drill in via `get_data_object` and then `list_channels`.\n\n" +
@@ -152,7 +150,6 @@ public class CollectionMcpTools {
         var item = new DataObjectListItemV2IO(d, c[0], c[1], c[2]);
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("appId", item.getAppId());
-        row.put("id", item.getId());
         row.put("name", item.getName());
         row.put("status", item.getStatus());
         row.put("timeseriesCount", item.getTimeseriesCount());
