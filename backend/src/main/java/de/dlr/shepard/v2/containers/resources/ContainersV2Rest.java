@@ -1368,9 +1368,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
     return resolved.get().handler().getThumbnail(appId, oid, sizeParam)
@@ -1402,9 +1402,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
     return resolved.get().handler().getUploadUrl(appId, request)
@@ -1431,9 +1431,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
     return resolved.get().handler().commitUpload(appId, commit)
@@ -1463,9 +1463,9 @@ public class ContainersV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
-    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
     return resolved.get().handler().getDownloadUrl(appId, oid)
