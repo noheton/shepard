@@ -3,9 +3,12 @@
  * /tools/materialize-mapping — V2CONV-B3-FE MAPPING_RECIPE materializer.
  *
  * UI-GAP-1 slice 1: replaced bare templateAppId text-field with
- * TemplateAutocomplete scoped to MAPPING_RECIPE kind. Route query param
- * `templateAppId` pre-populates from the in-context "Materialize" action
- * on DataObject detail pages (do-materialize toolsContext entry).
+ * TemplateAutocomplete scoped to MAPPING_RECIPE kind.
+ * UI-GAP-1 slice 2: replaced free-text appId field in each binding row with a
+ * v-combobox backed by useFetchReferenceOptions. When the page arrives with a
+ * focusDataObjectAppId route query param (set by the in-context do-materialize
+ * entry), references from that DataObject are offered as picker suggestions;
+ * the combobox still accepts raw appId text so the flow works without context.
  *
  * Per the CLAUDE.md rules this surface addresses entities by appId only,
  * targets /v2/ exclusively, and never asks the user for a path or URL.
@@ -17,6 +20,7 @@ import {
   materializeMapping,
   type MaterializeResponse,
 } from "~/composables/useMaterializeMapping";
+import { useFetchReferenceOptions } from "~/composables/useFetchReferenceOptions";
 
 useHead({ title: "Materialize mapping | shepard" });
 
@@ -27,14 +31,24 @@ interface BindingRow {
   appId: string;
 }
 
-// Pre-populate templateAppId from in-context route query (do-materialize entry).
+// Pre-populate from in-context route query params (do-materialize entry).
 const templateAppId = ref<string>(
   typeof route.query.templateAppId === "string" ? route.query.templateAppId : "",
 );
+const focusDataObjectAppId = ref<string | undefined>(
+  typeof route.query.focusDataObjectAppId === "string"
+    ? route.query.focusDataObjectAppId
+    : undefined,
+);
+
 const bindings = ref<BindingRow[]>([{ role: "srcFileAppId", appId: "" }]);
 const submitting = ref<boolean>(false);
 const result = ref<MaterializeResponse | null>(null);
 const error = ref<string | null>(null);
+
+// Reference options for the binding comboboxes — populated from focusDataObjectAppId.
+const { options: referenceOptions, isLoading: refOptionsLoading } =
+  useFetchReferenceOptions(focusDataObjectAppId);
 
 function addBinding() {
   bindings.value.push({ role: "", appId: "" });
@@ -106,6 +120,20 @@ async function submit() {
         />
 
         <div class="text-subtitle-2 mb-2 mt-2">Input reference bindings</div>
+
+        <!-- Context chip: shown when arriving from a DataObject's do-materialize action. -->
+        <v-chip
+          v-if="focusDataObjectAppId"
+          class="mb-3"
+          color="primary"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-link-variant"
+          data-testid="focus-do-chip"
+        >
+          References from DataObject {{ focusDataObjectAppId.slice(0, 8) }}…
+        </v-chip>
+
         <v-row
           v-for="(row, idx) in bindings"
           :key="`binding-${idx}`"
@@ -123,13 +151,24 @@ async function submit() {
             />
           </v-col>
           <v-col cols="6">
-            <v-text-field
+            <!--
+              UI-GAP-1 slice 2: v-combobox shows references from the focused
+              DataObject as suggestions; free-text entry still accepted so the
+              flow works without an in-context DataObject.
+            -->
+            <v-combobox
               v-model="row.appId"
-              label="Reference appId"
+              :items="referenceOptions"
+              :loading="refOptionsLoading"
+              item-value="appId"
+              item-title="label"
+              label="Reference"
               density="compact"
               variant="outlined"
-              placeholder="reference appId (UUID v7)"
+              placeholder="pick a reference or paste an appId"
               spellcheck="false"
+              clearable
+              data-testid="reference-combobox"
             />
           </v-col>
           <v-col cols="1">
