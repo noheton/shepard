@@ -29,8 +29,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.StreamingOutput;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -54,10 +52,12 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
  *
  * <p>Routes:
  * <ul>
- *   <li>{@code POST   /v2/files} — upload one file. Multipart body
- *       with a single {@code file} part; requires a
- *       {@code parentDataObjectAppId} query parameter so the new
- *       Reference attaches to a DataObject.</li>
+ *   <li>{@code POST   /v2/files} — <b>RETIRED (APISIMP-KIND-DISCRIMINATOR-2).</b>
+ *       Returns 410 Gone. Migrate to:
+ *       (1) {@code POST /v2/references?kind=file&dataObjectAppId=...} with JSON
+ *       body {@code {"name":"..."}} to create the metadata node, then
+ *       (2) {@code PUT /v2/references/{appId}/content?filename=...} with
+ *       {@code application/octet-stream} body to upload bytes.</li>
  *   <li>{@code GET    /v2/files/{appId}} — singleton metadata.</li>
  *   <li>{@code GET    /v2/files/{appId}/content} — the byte stream.
  *       Range-request capable ({@code Range: bytes=...}).</li>
@@ -95,88 +95,50 @@ public class FileReferenceV2Rest {
   private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-references.internal-error";
   private static final String PROBLEM_TYPE_RANGE = "/problems/file-references.range-not-satisfiable";
 
-  // ─── upload ───────────────────────────────────────────────────────────────
+  // ─── upload (RETIRED APISIMP-KIND-DISCRIMINATOR-2) ────────────────────────
 
+  /**
+   * APISIMP-KIND-DISCRIMINATOR-2: this endpoint is retired.
+   *
+   * <p>Migrate to the two-step pattern:
+   * <ol>
+   *   <li>POST /v2/references?kind=file&amp;dataObjectAppId=&lt;doAppId&gt; with JSON body
+   *       {@code {"name":"..."}} — creates the metadata node and returns its appId.</li>
+   *   <li>PUT /v2/references/{appId}/content?filename=&lt;original-name&gt; with
+   *       {@code Content-Type: application/octet-stream} body — stores the bytes.</li>
+   * </ol>
+   */
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
-    summary = "Upload one file and create a singleton FileReference attached to a DataObject.",
+    operationId = "createFileReferenceMultipartRetired",
+    summary = "RETIRED — use POST /v2/references?kind=file + PUT /v2/references/{appId}/content.",
     description =
-      "Accepts a `multipart/form-data` body with a single `file` part and creates a " +
-      "`:FileReference` (FR1b singleton shape) in the active storage backend. The " +
-      "Reference is immediately linked to the DataObject identified by the required " +
-      "`parentDataObjectAppId` query parameter (UUID v7 of the DataObject).\n\n" +
-      "Query parameters: `parentDataObjectAppId` (required, UUID v7) — the DataObject " +
-      "to attach the new Reference to. `name` (optional, string) — the human-readable " +
-      "display name for the Reference; defaults to the uploaded filename when omitted.\n\n" +
-      "Form field: `file` (required, binary) — the file bytes.\n\n" +
-      "Auth: Write permission on the parent DataObject (inherited from its Collection). " +
-      "Permission is checked against the DataObject OGM id resolved from `parentDataObjectAppId` " +
-      "before any bytes are stored.\n\n" +
-      "Side effects: bytes are stored in the active storage backend " +
-      "(GridFS or S3 depending on `shepard.storage.provider`). A `:FileReference` node " +
-      "and its relationship to the DataObject are written to Neo4j. " +
-      "`ProvenanceCaptureFilter` records a `CREATE` Activity.\n\n" +
-      "Next step: `GET /v2/files/{appId}` to read metadata, or " +
-      "`GET /v2/files/{appId}/content` to download the bytes."
+      "This multipart upload endpoint was retired in APISIMP-KIND-DISCRIMINATOR-2. " +
+      "Migrate to the two-step pattern: (1) POST /v2/references?kind=file&dataObjectAppId=<doAppId> " +
+      "with JSON body {\"name\":\"...\"} to create the metadata node, then (2) " +
+      "PUT /v2/references/{appId}/content?filename=<original-name> with " +
+      "application/octet-stream body to upload bytes."
   )
-  @APIResponse(
-    responseCode = "201",
-    description = "FileReference created; body contains the new entity including its minted appId.",
-    content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
-  )
-  @APIResponse(responseCode = "400", description = "Missing required `file` form part, or `parentDataObjectAppId` is absent or blank.")
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  @APIResponse(responseCode = "410", description = "Gone — see POST /v2/references?kind=file + PUT /v2/references/{appId}/content.")
   public Response createSingleton(
     @QueryParam("parentDataObjectAppId") String parentDataObjectAppId,
     @QueryParam("name") String name,
     @RestForm("file") FileUpload upload,
     @Context SecurityContext securityContext
   ) {
-    String caller = callerOrNull(securityContext);
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
-    if (parentDataObjectAppId == null || parentDataObjectAppId.isBlank()) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "parentDataObjectAppId query parameter is required");
-    }
-    if (upload == null || upload.uploadedFile() == null) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
-    }
-
-    // Permission check against the parent DataObject — same shape as
-    // the bundle Rest. The singleton entity doesn't exist yet (we're
-    // about to create it), so we resolve the parent OGM id from the
-    // appId via the service's resolver helper.
-    Long parentOgmId = singletonService.getDataObjectOgmId(parentDataObjectAppId);
-    if (parentOgmId == null) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for parentDataObjectAppId");
-    }
-    if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller)) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks Write permission on the parent DataObject");
-    }
-
-    String referenceName = (name != null && !name.isBlank()) ? name : upload.fileName();
-    File uploaded = upload.uploadedFile().toFile();
-    // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
-    // FileService can enforce the upload cap before writing to GridFS.
-    long declaredSize = uploaded.length();
-    try (InputStream is = new FileInputStream(uploaded)) {
-      FileReference created = singletonService.createSingleton(
-        parentDataObjectAppId,
-        referenceName,
-        upload.fileName(),
-        is,
-        declaredSize
-      );
-      return Response.status(Response.Status.CREATED).entity(new FileReferenceV2IO(created)).build();
-    } catch (NotFoundException nfe) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "Parent DataObject not found");
-    } catch (BadRequestException bre) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
-    } catch (IOException ioe) {
-      return problem(PROBLEM_TYPE_INTERNAL, "Upload failed", Response.Status.INTERNAL_SERVER_ERROR, ioe.getMessage());
-    }
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("status", 410);
+    body.put("title", "Gone");
+    body.put("type", "/problems/file-references.multipart-upload-retired");
+    body.put("detail",
+      "POST /v2/files multipart upload retired (APISIMP-KIND-DISCRIMINATOR-2). " +
+      "Step 1: POST /v2/references?kind=file&dataObjectAppId=<doAppId> " +
+      "with JSON body {\"name\":\"<name>\"}. " +
+      "Step 2: PUT /v2/references/<appId>/content?filename=<original-name> " +
+      "with Content-Type: application/octet-stream body."
+    );
+    return Response.status(Response.Status.GONE).entity(body).build();
   }
 
   // ─── list-by-DataObject ───────────────────────────────────────────────────

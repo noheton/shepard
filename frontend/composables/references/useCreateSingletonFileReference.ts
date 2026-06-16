@@ -1,18 +1,13 @@
 /**
- * SINGLETON-FILE-04 — POST /v2/files (FR1b singleton) wrapper.
+ * APISIMP-KIND-DISCRIMINATOR-2 — two-step singleton FileReference upload.
  *
- * One File → one :SingletonFileReference. This is the singleton-default
- * path the upload dialog picks when the user hasn't opted into the
- * multi-file bundle shape. The endpoint takes a multipart `file` part
- * plus query params `parentDataObjectAppId` + `name`, returns 201 with
- * a `FileReferenceV2IO` body shape that mirrors `useFetchSingletonFileReferences.ts`.
- *
- * Why a thin fetch wrapper and not a backend-client method:
- *   - the v2/files singleton endpoint is fork-only — the generated
- *     `@dlr-shepard/backend-client` doesn't expose it
- *   - the request shape is multipart + query-string, not the
- *     standard JSON body the generated client wires up
- *   - this matches the existing pattern in `useFetchSingletonFileReferences`
+ * Replaces the retired multipart `POST /v2/files` with the Option-C pattern:
+ *   Step 1: POST /v2/references?kind=file&dataObjectAppId=<doAppId>
+ *           body: JSON {"name": "..."}
+ *           → 201 with ReferenceV2IO (contains appId)
+ *   Step 2: PUT /v2/references/<appId>/content?filename=<original-name>
+ *           Content-Type: application/octet-stream
+ *           → 200 with updated ReferenceV2IO
  *
  * Caller usage:
  *   const { createSingleton } = useCreateSingletonFileReference();
@@ -33,16 +28,8 @@ export interface CreateSingletonFileRequest {
 export interface CreatedSingletonFile {
   appId: string;
   name: string;
-  dataObjectId?: number;
   createdAt: string;
   createdBy: string;
-  type?: string;
-  file?: {
-    filename?: string;
-    fileSize?: number | null;
-    md5?: string;
-    oid?: string;
-  } | null;
 }
 
 function v2BaseUrl(): string {
@@ -52,6 +39,13 @@ function v2BaseUrl(): string {
   return (config.backendApiUrl as string)
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
+}
+
+function httpErrorDetail(status: number, text: string): string {
+  if (status === 400) return "Bad request — check parent DataObject appId and file.";
+  if (status === 401) return "Not authenticated — sign in again.";
+  if (status === 403) return "Not authorised on this DataObject.";
+  return `HTTP ${status}` + (text ? `: ${text}` : "");
 }
 
 export function useCreateSingletonFileReference() {
@@ -66,40 +60,56 @@ export function useCreateSingletonFileReference() {
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const qs = new URLSearchParams({
-        parentDataObjectAppId: req.parentDataObjectAppId,
-        name: req.name,
+      const base = v2BaseUrl();
+
+      // Step 1: create metadata node
+      const createQs = new URLSearchParams({
+        kind: "file",
+        dataObjectAppId: req.parentDataObjectAppId,
       }).toString();
-      const url = `${v2BaseUrl()}/v2/files?${qs}`;
-      const form = new FormData();
-      form.append("file", req.file, req.file.name);
-      const response = await fetch(url, {
+      const createResp = await fetch(`${base}/v2/references?${createQs}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
           Accept: "application/json",
-          // Content-Type intentionally omitted so the browser sets the
-          // multipart boundary automatically.
         },
-        body: form,
+        body: JSON.stringify({ name: req.name }),
       });
-      if (!response.ok) {
-        const txt = await response.text().catch(() => "");
-        const detail =
-          response.status === 400
-            ? "Bad request — check parent DataObject appId and file."
-            : response.status === 401
-              ? "Not authenticated — sign in again."
-              : response.status === 403
-                ? "Not authorised on this DataObject."
-                : `HTTP ${response.status}` + (txt ? `: ${txt}` : "");
+      if (!createResp.ok) {
+        const txt = await createResp.text().catch(() => "");
+        const detail = httpErrorDetail(createResp.status, txt);
         error.value = detail;
-        handleError(new Error(detail), "createSingletonFileReference");
+        handleError(new Error(detail), "createSingletonFileReference/step1");
         return null;
       }
-      const payload = (await response.json()) as CreatedSingletonFile;
+      const meta = (await createResp.json()) as CreatedSingletonFile;
+      const refAppId = meta.appId;
+
+      // Step 2: upload bytes
+      const uploadQs = new URLSearchParams({ filename: req.file.name }).toString();
+      const uploadResp = await fetch(
+        `${base}/v2/references/${encodeURIComponent(refAppId)}/content?${uploadQs}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/octet-stream",
+            Accept: "application/json",
+          },
+          body: req.file,
+        },
+      );
+      if (!uploadResp.ok) {
+        const txt = await uploadResp.text().catch(() => "");
+        const detail = httpErrorDetail(uploadResp.status, txt);
+        error.value = detail;
+        handleError(new Error(detail), "createSingletonFileReference/step2");
+        return null;
+      }
+      const result = (await uploadResp.json()) as CreatedSingletonFile;
       emitSuccess(`Uploaded "${req.name}" as a singleton FileReference.`);
-      return payload;
+      return result;
     } catch (e) {
       error.value = (e as Error).message ?? "Singleton upload failed";
       handleError(e, "createSingletonFileReference");

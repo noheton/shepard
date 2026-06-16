@@ -332,7 +332,7 @@ class ContentMcpToolsTest {
     McpException ex = assertThrows(McpException.class,
       () -> tools.fileUpload(DO_APP_ID, "n", "big.bin", b64(big), null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
-    assertTrue(ex.getMessage().contains("POST /v2/files"));
+    assertTrue(ex.getMessage().contains("POST /v2/references?kind=file"));
   }
 
   @Test
