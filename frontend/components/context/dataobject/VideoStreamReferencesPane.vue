@@ -16,7 +16,7 @@
  */
 import VideoPlayer from "~/components/common/VideoPlayer.vue";
 import UploadFilesButton from "~/components/container/UploadFilesButton.vue";
-import { xhrUploadMultipart, type XhrUploadOptions } from "~/composables/container/xhrUpload";
+import { xhrUploadRawPut, type XhrUploadOptions } from "~/composables/container/xhrUpload";
 import {
   type VideoStreamReferenceIO,
   useFetchVideoStreamReferences,
@@ -40,6 +40,14 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
+/**
+ * APISIMP-VIDEO-STREAMREF-PATH — two-step video upload.
+ *
+ * Step 1: POST /v2/references?kind=video&dataObjectAppId=… (JSON) → get appId.
+ * Step 2: PUT /v2/references/{appId}/content?filename=… (raw bytes, XHR for progress).
+ *
+ * The old multipart POST /v2/data-objects/{doId}/video-stream-references returns 410.
+ */
 async function uploadVideo(
   file: File,
   options?: XhrUploadOptions,
@@ -48,12 +56,35 @@ async function uploadVideo(
   const accessToken = session.value?.accessToken;
   if (!accessToken) throw new Error("Not authenticated");
 
-  const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/video-stream-references`;
-  // Task #135 — route through XHR so the upload dialog can show progress + cancel.
-  await xhrUploadMultipart<unknown>({
-    url,
-    fieldName: "file",
+  // Step 1: create metadata node (JSON POST, no bytes yet).
+  const createUrl =
+    `${v2BaseUrl()}/v2/references` +
+    `?kind=video&dataObjectAppId=${encodeURIComponent(props.dataObjectAppId)}`;
+  const createResp = await fetch(createUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ name: file.name }),
+  });
+  if (!createResp.ok) {
+    const body = await createResp.text().catch(() => "");
+    throw new Error(`Video reference create failed (HTTP ${createResp.status}): ${body.slice(0, 200)}`);
+  }
+  const created = (await createResp.json()) as { appId?: string };
+  const refAppId = created.appId;
+  if (!refAppId) throw new Error("Video reference creation did not return appId");
+
+  // Step 2: upload bytes via XHR for progress tracking.
+  const contentUrl =
+    `${v2BaseUrl()}/v2/references/${encodeURIComponent(refAppId)}/content` +
+    `?filename=${encodeURIComponent(file.name)}`;
+  await xhrUploadRawPut<unknown>({
+    url: contentUrl,
     file,
+    contentType: file.type || "application/octet-stream",
     authorization: `Bearer ${accessToken}`,
     options,
   });
