@@ -10,11 +10,14 @@ import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesRef
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
+import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +48,9 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
   ObjectMapper objectMapper;
+
+  @Inject
+  TimeseriesAnnotationDAO tsAnnotationDAO;
 
   @Override
   public String kind() {
@@ -153,6 +159,117 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     }
     return out;
   }
+
+  // ─── annotation sub-resource (APISIMP-ANNOTATION-SUBRESOURCE-COLLISION) ──
+
+  @Override
+  public boolean supportsAnnotations() { return true; }
+
+  @Override
+  public List<Map<String, Object>> listAnnotations(String refAppId) {
+    return tsAnnotationDAO.findByTimeseriesReferenceAppId(refAppId).stream()
+      .map(TimeseriesReferenceKindHandler::annotationToMap)
+      .toList();
+  }
+
+  @Override
+  public Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
+    if (body == null || !body.containsKey("startNs") || body.get("startNs") == null) {
+      throw new BadRequestException("startNs is required for timeseries annotations");
+    }
+    String label = requireLabel(body);
+    TimeseriesAnnotation a = new TimeseriesAnnotation();
+    a.setStartNs(toLong(body.get("startNs"), "startNs"));
+    if (body.containsKey("endNs") && body.get("endNs") != null) {
+      a.setEndNs(toLong(body.get("endNs"), "endNs"));
+    }
+    a.setLabel(label);
+    if (body.containsKey("description")) a.setDescription(asString(body.get("description")));
+    if (Boolean.TRUE.equals(body.get("aiGenerated"))) a.setAiGenerated(true);
+    if (body.containsKey("confidence") && body.get("confidence") != null) {
+      a.setConfidence(toDouble(body.get("confidence"), "confidence"));
+    }
+    tsAnnotationDAO.createOrUpdate(a);
+    tsAnnotationDAO.linkToReference(refAppId, a.getAppId());
+    return annotationToMap(a);
+  }
+
+  @Override
+  public Map<String, Object> getAnnotation(String refAppId, String annotationAppId) {
+    TimeseriesAnnotation a = tsAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    return annotationToMap(a);
+  }
+
+  @Override
+  public Map<String, Object> patchAnnotation(String refAppId, String annotationAppId, Map<String, Object> patch) {
+    TimeseriesAnnotation a = tsAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    if (patch == null) return annotationToMap(a);
+    if (patch.containsKey("startNs") && patch.get("startNs") != null) {
+      a.setStartNs(toLong(patch.get("startNs"), "startNs"));
+    }
+    if (patch.containsKey("endNs")) {
+      a.setEndNs(patch.get("endNs") == null ? null : toLong(patch.get("endNs"), "endNs"));
+    }
+    if (patch.containsKey("label")) {
+      String lbl = patch.get("label") instanceof String s ? s : null;
+      if (lbl == null || lbl.isBlank()) throw new BadRequestException("label must be non-blank when provided");
+      a.setLabel(lbl.strip());
+    }
+    if (patch.containsKey("description")) a.setDescription(asString(patch.get("description")));
+    if (patch.containsKey("confidence")) {
+      a.setConfidence(patch.get("confidence") == null ? null : toDouble(patch.get("confidence"), "confidence"));
+    }
+    tsAnnotationDAO.createOrUpdate(a);
+    return annotationToMap(a);
+  }
+
+  @Override
+  public void deleteAnnotation(String refAppId, String annotationAppId) {
+    TimeseriesAnnotation a = tsAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    tsAnnotationDAO.unlinkAndDelete(refAppId, a);
+  }
+
+  private static Map<String, Object> annotationToMap(TimeseriesAnnotation a) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("appId", a.getAppId());
+    m.put("startNs", a.getStartNs());
+    m.put("endNs", a.getEndNs());
+    m.put("label", a.getLabel());
+    m.put("description", a.getDescription());
+    m.put("aiGenerated", a.isAiGenerated());
+    m.put("confidence", a.getConfidence());
+    return m;
+  }
+
+  private static String requireLabel(Map<String, Object> body) {
+    Object v = body.get("label");
+    if (!(v instanceof String s) || s.isBlank()) {
+      throw new BadRequestException("label is required and must be non-blank");
+    }
+    return s.strip();
+  }
+
+  private static Long toLong(Object v, String field) {
+    if (v instanceof Number n) return n.longValue();
+    if (v instanceof String s) {
+      try { return Long.parseLong(s); } catch (NumberFormatException e) { /* fall through */ }
+    }
+    throw new BadRequestException("'" + field + "' must be a long integer, got: " + v);
+  }
+
+  private static Double toDouble(Object v, String field) {
+    if (v instanceof Number n) return n.doubleValue();
+    throw new BadRequestException("'" + field + "' must be a number, got: " + v);
+  }
+
+  private static String asString(Object v) {
+    return v == null ? null : String.valueOf(v);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   private DataObject resolveParent(String dataObjectAppId) {
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {

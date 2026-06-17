@@ -6,6 +6,7 @@ import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * V2CONV-A2 — the dispatch seam behind the unified {@code /v2/references}
@@ -158,22 +159,74 @@ public interface ReferenceKindHandler {
    * APISIMP-VIDEO-STREAMREF-PATH — download binary content for the reference
    * identified by {@code appId}. Called by {@code GET /v2/references/{appId}/content}.
    *
-   * <p>The handler builds and returns the full JAX-RS Response, including
-   * range-partial (206) and range-unsatisfiable (416) variants when the caller
-   * supplies a {@code Range} header. This gives each binary kind full control
-   * over streaming semantics without the REST layer needing to know the kind's
-   * storage shape.
-   *
    * <p>Default implementation throws {@link UnsupportedOperationException} so
    * non-binary kind handlers (uri, timeseries, git) inherit a safe
    * "not supported" posture.
    *
    * @param appId UUID v7 of the reference (must already exist).
    * @param rangeHeader value of the HTTP {@code Range} header (may be null/blank for full download).
-   * @return a JAX-RS Response carrying the binary payload (200 or 206), or an
-   *         error Response (404/416/503) when the content is unavailable.
+   * @return a JAX-RS Response carrying the binary payload (200 or 206), or an error Response.
    */
   default Response downloadContent(String appId, String rangeHeader) {
     throw new UnsupportedOperationException("kind=" + kind() + " does not support binary content download via GET …/content");
+  }
+
+  /**
+   * APISIMP-ANNOTATION-SUBRESOURCE-COLLISION — whether this kind supports
+   * sub-resource annotations at {@code /v2/references/{appId}/annotations}.
+   * Kinds that support annotations override this to return {@code true} and
+   * implement the five annotation CRUD methods below.
+   */
+  default boolean supportsAnnotations() { return false; }
+
+  /**
+   * List all annotations on the reference identified by {@code refAppId}.
+   * Each map uses the kind's canonical field names (e.g. {@code startNs} /
+   * {@code endNs} for timeseries, {@code startSeconds} / {@code endSeconds}
+   * for video). Common fields: {@code appId}, {@code label},
+   * {@code description}, {@code aiGenerated}, {@code confidence}.
+   */
+  default List<Map<String, Object>> listAnnotations(String refAppId) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support annotations");
+  }
+
+  /**
+   * Create an annotation on the reference {@code refAppId} from {@code body}.
+   * The handler validates required fields (e.g. {@code startNs} for timeseries,
+   * {@code startSeconds} for video) and throws {@link jakarta.ws.rs.BadRequestException}
+   * on missing or invalid input.
+   *
+   * @return the newly created annotation as a field map (same shape as {@link #listAnnotations}).
+   */
+  default Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support annotations");
+  }
+
+  /**
+   * Fetch a single annotation by {@code annotationAppId} within {@code refAppId}.
+   * Throws {@link jakarta.ws.rs.NotFoundException} when not found.
+   */
+  default Map<String, Object> getAnnotation(String refAppId, String annotationAppId) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support annotations");
+  }
+
+  /**
+   * Apply a merge-patch to the annotation {@code annotationAppId} within
+   * {@code refAppId}. Only non-null fields in {@code patch} are applied.
+   * Throws {@link jakarta.ws.rs.BadRequestException} for invalid values,
+   * {@link jakarta.ws.rs.NotFoundException} when the annotation is not found.
+   *
+   * @return the post-patch annotation as a field map.
+   */
+  default Map<String, Object> patchAnnotation(String refAppId, String annotationAppId, Map<String, Object> patch) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support annotations");
+  }
+
+  /**
+   * Delete the annotation {@code annotationAppId} from reference {@code refAppId}.
+   * Throws {@link jakarta.ws.rs.NotFoundException} when not found.
+   */
+  default void deleteAnnotation(String refAppId, String annotationAppId) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support annotations");
   }
 }

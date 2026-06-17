@@ -31,8 +31,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * AI1b — rolling-median MAD anomaly detection endpoint.
  *
- * <p>Auth pattern mirrors {@link TimeseriesAnnotationRest}: Read on the
- * parent DataObject to run detection; Write additionally required when
+ * <p>Auth pattern mirrors {@link de.dlr.shepard.v2.references.resources.ReferenceAnnotationRest}:
+ * Read on the parent DataObject to run detection; Write additionally required when
  * {@code createAnnotations=true}.
  *
  * <p>Series selection:
@@ -82,7 +82,7 @@ public class AnomalyDetectionRest {
    * <p>DataObjects do not have their own {@code :Permissions} node; access is inherited
    * from the parent Collection. {@link PermissionsService#isAccessAllowedForDataObjectAppId}
    * performs the one-hop walk Collection←DataObject and gates on the Collection's
-   * Permissions node — same pattern as {@link de.dlr.shepard.v2.video.resources.VideoAnnotationRest}.
+   * Permissions node — same pattern as {@link de.dlr.shepard.v2.references.resources.ReferenceAnnotationRest}.
    */
   private Response checkAccess(String refAppId, AccessType type, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
