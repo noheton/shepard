@@ -23,9 +23,6 @@ class GitReferenceRestTest {
   @Mock
   SecurityContext securityContext;
 
-  @Mock
-  Principal principal;
-
   GitReferenceRest resource;
 
   @BeforeEach
