@@ -65,7 +65,7 @@ DEFAULT_SOURCE = "/mnt/pve/unas/dump/dataset/wiki/MFFD"
 CONFLUENCE_BASE = "https://wiki.dlr.de"  # the dump's data-base-url
 MIRROR_SOURCE_INSTANCE = "confluence-dlr"
 
-PROJECT_APPID = "019e8c48-e7bc-760b-b870-e7aab5527e1a"
+PROJECT_APPID = "019ed455-62cd-75b5-951e-b837ffdace16"  # MFFD Project (2026-06-17 reset); override via MFFD_PROJECT_APPID
 
 # predicate namespaces (per aidocs/integrations/120)
 PRED_WIKI_SOURCE_PAGE_ID = "urn:shepard:wiki:source-page-id"
@@ -533,7 +533,15 @@ class Client:
                     json=json_body if json_body is not None else None,
                     params=params, files=files, data=data, headers=headers,
                 )
-                if resp.status_code in _RETRY_STATUSES and time.time() < deadline:
+                # Bounded retry on 403 for mutating writes: a just-created
+                # DataObject's :Permissions record can lag, transiently 403-ing
+                # the immediately-following annotation/entry write (BUG-148
+                # class). Capped at 12 tries so a genuinely permanent 403 still
+                # surfaces rather than spinning for the full deadline.
+                transient_403 = (
+                    resp.status_code == 403 and mutating and attempt <= 12
+                )
+                if (resp.status_code in _RETRY_STATUSES or transient_403) and time.time() < deadline:
                     backoff = min(2 ** min(attempt, 6), 30)
                     warn(f"{method} {path} → {resp.status_code}; retry {attempt} in {backoff}s")
                     time.sleep(backoff)
@@ -564,9 +572,22 @@ class Client:
         if app_id in self._coll_v1id_cache:
             return self._coll_v1id_cache[app_id]
         c = self.get_collection_v2(app_id)
-        if c and "id" in c:
+        if c and c.get("id") is not None:
             self._coll_v1id_cache[app_id] = int(c["id"])
             return int(c["id"])
+        # V2-convergence dropped the numeric `id` from /v2/collections (appId-
+        # native). Fall back to the frozen v1 list, which still carries both
+        # `id` and `appId`; cache every entry while we're here.
+        r = self._request("GET", "/shepard/api/collections", mutating=False)
+        if r is not None and r.status_code == 200:
+            body = r.json()
+            items = body if isinstance(body, list) else body.get("content", [])
+            for it in items:
+                aid, nid = it.get("appId"), it.get("id")
+                if aid and nid is not None:
+                    self._coll_v1id_cache[aid] = int(nid)
+            if app_id in self._coll_v1id_cache:
+                return self._coll_v1id_cache[app_id]
         return None
 
     def sub_collections(self, project_app_id: str) -> list[dict]:
