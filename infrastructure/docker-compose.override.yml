@@ -88,14 +88,14 @@ services:
       # applies it and registers it. Safe to keep permanently; subsequent
       # starts just see it as already-applied.
       QUARKUS_FLYWAY_OUT_OF_ORDER: "true"
-      # C3: backfill orphan-permission edges for nodes created before the
-      # has_permissions constraint was enforced. Set to the instance-admin sub.
-      # UNSET after the 2026-06-17 full-instance reset: Neo4j is empty, so there
-      # are no orphan-permission edges to backfill and the referenced user no
-      # longer exists. A non-empty value here makes the OrphanPermissionsBackfill
-      # guard abort startup ("no User with that username exists in Neo4j").
-      # Re-set to a real instance-admin sub only if a future backfill is needed.
-      # SHEPARD_PERMISSIONS_DEFAULT_OWNER: ""
+      # C3: backfill orphan-permission edges for nodes created without a
+      # :has_permissions edge. Set to the instance-admin :User username.
+      # Was unset during the 2026-06-17 empty-DB reset; RE-SET 2026-06-17 after
+      # the MFFD import populated ~27k entities (many imported via v1 paths that
+      # don't seed Permissions) — the guard aborts startup if orphans exist and
+      # this is unset. Value = the admin :User username (Keycloak sub; admin was
+      # deliberately NOT re-keyed in the username-claim flip, so this stays valid).
+      SHEPARD_PERMISSIONS_DEFAULT_OWNER: "7eead942-63a5-4cfc-aea9-b1d0f0a291ea"
       # OAS1 — public base URL surfaced in the OpenAPI `servers` list so
       # OpenAPI-Generator clients downloading the spec get an absolute URL.
       SHEPARD_PUBLIC_BASE_URL: "https://shepard-api.nuclide.systems"
