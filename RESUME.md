@@ -171,3 +171,11 @@ Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not 
   - UserGroups: mffd-afp-team, mffd-welding-team, mffd-ndt-team, mffd-cell-team
 - BRIDGE WAVE (user picked "bridge first/validate"): source = LOCAL /mnt/pve/unas/dump/dataset/4-Brückenschweißen/{bridgewelding/,manifest.json}. manifest = {collections.bridgewelding:{id:163811, dos:{<1031 DOs>}}}; each DO has ts_refs/file_refs/structured_refs[{ref_id,ref_name,file}]; payloads in bridgewelding/<DO>/{structured,...}; 3.7GB total.
 - BLOCKER/FINDING: README's `shepard-importer --source shepard-export-manifest` CLI is FICTIONAL. import-mffd.py = thermography-frame importer (no manifest replay); mffd-import-v15.py LOCAL MODE = 0-byte TS placeholders. The bridge manifest-replay importer must be BUILT (read manifest -> create DO per entry in mffd-bridge-welding -> recreate file/ts/structured refs + upload payloads -> annotate urn:shepard:source:provenance; completeness-non-negotiable retry-forever).
+
+## 2026-06-17 — MFFD waves W3/W8a/W6 done (one-after-another)
+- W3 bridge: 1031 DOs / 3930 file / 1031 struct refs. merged 87a7492f4.
+- W8a spot-welding: 21 DOs / 21 file refs / 4260 svdx parser annos (20/21; 651MB file parsed 0 — parser edge case). merged 08c534891.
+- W6 thermography: 744 DOs / 744 file refs / parser 744/744 / scope+layer+phase+status annos. merged d7854e942. Importer self-fixed 10 empty-payload uploads + 50 partial-anno backfills.
+- GRAPH CRUFT (post-import prune needed, MFFD-GRAPH-PRUNE): iterative imports left 3178 soft-deleted DataObjects + orphan annotations (1088 otvis-file annos point at dead DOs). LIVE data is correct (deleted=false queries exact); tombstones are cruft. Prune after all waves.
+- Backlog filed: P24 (v2 structured-data surface), P25 (bulk DO+ref create), F9 (reference-annotation 403 — confirmed PERMANENT not lag).
+- Next: W2 tapelaying (TS-export, coll 48297, real timeseries — heaviest), then W5 cell (rdk→urdf), W8b stringer (247GB zip).
