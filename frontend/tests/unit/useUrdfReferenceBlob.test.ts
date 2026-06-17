@@ -40,24 +40,24 @@ describe("v2FileContentUrl", () => {
   it("strips a trailing /shepard/api carrier base", () => {
     expect(
       v2FileContentUrl("http://localhost:8080/shepard/api", appId),
-    ).toBe(`http://localhost:8080/v2/files/${appId}/content`);
+    ).toBe(`http://localhost:8080/v2/references/${appId}/content`);
   });
 
   it("handles a bare host with no carrier suffix", () => {
     expect(v2FileContentUrl("http://localhost:8080", appId)).toBe(
-      `http://localhost:8080/v2/files/${appId}/content`,
+      `http://localhost:8080/v2/references/${appId}/content`,
     );
   });
 
   it("strips a trailing slash", () => {
     expect(v2FileContentUrl("http://localhost:8080/", appId)).toBe(
-      `http://localhost:8080/v2/files/${appId}/content`,
+      `http://localhost:8080/v2/references/${appId}/content`,
     );
   });
 
   it("URL-encodes a hostile appId", () => {
     expect(v2FileContentUrl("http://x", "bad/id")).toBe(
-      "http://x/v2/files/bad%2Fid/content",
+      "http://x/v2/references/bad%2Fid/content",
     );
   });
 });
@@ -106,7 +106,7 @@ describe("useUrdfReferenceBlob — resolve", () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [hitUrl, init] = fetchSpy.mock.calls[0]!;
-    expect(hitUrl).toBe(`http://localhost:8080/v2/files/${appId}/content`);
+    expect(hitUrl).toBe(`http://localhost:8080/v2/references/${appId}/content`);
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer test-token");
     expect(url).toBe("blob:fake-url");
