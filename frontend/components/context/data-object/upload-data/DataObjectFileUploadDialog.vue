@@ -20,10 +20,11 @@ interface FileUploadDialogProps {
   collectionId: number;
   dataobjectId: number;
   /**
-   * When non-null, the dialog can call POST /v2/files in singleton mode.
+   * When non-null, the dialog can use the two-step singleton upload in singleton mode
+   * (POST /v2/references?kind=file + PUT /v2/references/{appId}/content).
    * When undefined the dialog auto-fetches the appId from the v1 endpoint
    * the first time singleton mode is needed.
-   * SINGLETON-FILE-04.
+   * SINGLETON-FILE-04 / APISIMP-KIND-DISCRIMINATOR-2.
    */
   dataObjectAppId?: string;
   createReference: boolean;
@@ -53,17 +54,17 @@ const { addFileReference } = useCreateFileReference(
   () => {},
 );
 
-// SINGLETON-FILE-04 — POST /v2/files wrapper. Used when uploadMode === "singleton".
+// APISIMP-KIND-DISCRIMINATOR-2 — two-step singleton upload. Used when uploadMode === "singleton".
 const { createSingleton } = useCreateSingletonFileReference();
 
 // SINGLETON-FILE-04 — default mode is FR1b singleton-per-file when
 // `createReference === true`. When the parent only wants bytes uploaded
 // (lab-journal markdown embed: `:create-reference="false"`), the
-// singleton path is wrong — POST /v2/files *always* mints a
+// singleton path is wrong — the two-step pattern always mints a
 // :SingletonFileReference. Force bundle mode in that case so the dialog
 // falls back to the bytes-only FileContainer upload path.
 //
-//   "singleton" → one POST /v2/files per file (one :SingletonFileReference each).
+//   "singleton" → two-step per file (POST /v2/references?kind=file + PUT .../content).
 //   "bundle"    → legacy FR1a path (one :FileBundleReference holding N files,
 //                 OR — when createReference is false — bytes only, no reference).
 const uploadMode = ref<"singleton" | "bundle">(
@@ -306,14 +307,17 @@ async function handleFileUpload(): Promise<ShepardFile[]> {
 }
 
 /**
- * SINGLETON-FILE-04 — singleton upload path.
+ * APISIMP-KIND-DISCRIMINATOR-2 — singleton upload path.
  *
- * For each selected File, POST /v2/files?parentDataObjectAppId=…&name=…
- * with a multipart `file=…` body. Each call mints one
- * :SingletonFileReference whose appId resolves directly to bytes via
- * GET /v2/files/{appId}/content. The Reference name is derived from
- * the filename (with the standard yyyy-MM-dd date prefix matching the
- * existing bundle-mode `updateReferenceNameByFileName` heuristic).
+ * For each selected File, uses the two-step pattern:
+ * (1) POST /v2/references?kind=file&dataObjectAppId=… (JSON body {name})
+ *     → creates the metadata node and returns its appId.
+ * (2) PUT /v2/references/{appId}/content?filename=… (octet-stream body)
+ *     → uploads the bytes.
+ * Each pair mints one :SingletonFileReference whose appId resolves
+ * directly to bytes via GET /v2/files/{appId}/content. The Reference
+ * name is derived from the filename (with the standard yyyy-MM-dd date
+ * prefix matching the existing bundle-mode heuristic).
  *
  * No FileContainer is involved — singletons live in the shared
  * `_shepard_files` Mongo namespace.

@@ -1,13 +1,14 @@
 /**
- * SINGLETON-FILE-04 — Vitest cases for the singleton-upload composable's
- * URL + form shape. We can't exercise the Vue lifecycle here without
- * spinning up the auto-imports stack, but the URL-shape contract is
- * mechanical enough to mock-test directly.
+ * APISIMP-KIND-DISCRIMINATOR-2 — Vitest cases for the two-step singleton-upload
+ * composable URL + body shapes.
  *
- * The composable's contract:
- *   - POST <v2BaseUrl>/v2/files?parentDataObjectAppId=<appId>&name=<name>
- *   - Content-Type set by FormData (multipart boundary auto-derived)
- *   - body is a FormData with a single `file` part carrying the File bytes
+ * The composable's contract after retiring POST /v2/files (multipart):
+ *   Step 1: POST <v2BaseUrl>/v2/references?kind=file&dataObjectAppId=<doAppId>
+ *           Content-Type: application/json
+ *           body: {"name": "<name>"}
+ *   Step 2: PUT <v2BaseUrl>/v2/references/<refAppId>/content?filename=<original-name>
+ *           Content-Type: application/octet-stream
+ *           body: file bytes
  */
 
 import { describe, it, expect } from "vitest";
@@ -25,7 +26,7 @@ function v2BaseUrlFor(public_: { backendV2ApiUrl?: string; backendApiUrl?: strin
     .replace(/\/$/, "");
 }
 
-describe("singleton FileReference URL shape", () => {
+describe("singleton FileReference URL shape — step 1 (create metadata)", () => {
   it("derives the v2 base URL by stripping /shepard/api from backendApiUrl", () => {
     expect(
       v2BaseUrlFor({ backendApiUrl: "https://shepard-api.nuclide.systems/shepard/api" }),
@@ -47,41 +48,55 @@ describe("singleton FileReference URL shape", () => {
     ).toBe("https://special.test");
   });
 
-  it("builds the singleton POST URL with both query params", () => {
+  it("builds the step-1 POST URL with kind=file and dataObjectAppId", () => {
     const base = v2BaseUrlFor({ backendApiUrl: "https://shepard-api.nuclide.systems/shepard/api" });
     const qs = new URLSearchParams({
-      parentDataObjectAppId: "019e7244-0000-7000-8000-000000000001",
-      name: "kr210-r2700-urdf",
+      kind: "file",
+      dataObjectAppId: "019e7244-0000-7000-8000-000000000001",
     }).toString();
-    expect(`${base}/v2/files?${qs}`).toBe(
-      "https://shepard-api.nuclide.systems/v2/files?" +
-        "parentDataObjectAppId=019e7244-0000-7000-8000-000000000001&" +
-        "name=kr210-r2700-urdf",
+    expect(`${base}/v2/references?${qs}`).toBe(
+      "https://shepard-api.nuclide.systems/v2/references?" +
+        "kind=file&" +
+        "dataObjectAppId=019e7244-0000-7000-8000-000000000001",
     );
   });
 
-  it("URL-encodes special characters in the reference name", () => {
-    const qs = new URLSearchParams({
-      parentDataObjectAppId: "019e7244-0000-7000-8000-000000000001",
-      name: "2026-06-03/calibration with spaces & symbols+",
-    }).toString();
-    // URLSearchParams uses application/x-www-form-urlencoded — space → "+".
-    expect(qs).toContain("name=2026-06-03%2Fcalibration+with+spaces+%26+symbols%2B");
+  it("builds a JSON body with the name field", () => {
+    const body = JSON.stringify({ name: "kr210-r2700-urdf" });
+    expect(JSON.parse(body)).toEqual({ name: "kr210-r2700-urdf" });
   });
 
-  it("FormData carries exactly one `file` part with the source filename", () => {
+  it("URL-encodes special characters in the dataObjectAppId param", () => {
+    const qs = new URLSearchParams({
+      kind: "file",
+      dataObjectAppId: "019e7244-0000-7000-8000-000000000001",
+    }).toString();
+    expect(qs).toBe("kind=file&dataObjectAppId=019e7244-0000-7000-8000-000000000001");
+  });
+});
+
+describe("singleton FileReference URL shape — step 2 (upload bytes)", () => {
+  it("builds the PUT URL with refAppId and filename", () => {
+    const base = v2BaseUrlFor({ backendApiUrl: "https://shepard-api.nuclide.systems/shepard/api" });
+    const refAppId = "019e7244-0000-7000-8000-000000000002";
+    const uploadQs = new URLSearchParams({ filename: "kr210.urdf" }).toString();
+    expect(`${base}/v2/references/${encodeURIComponent(refAppId)}/content?${uploadQs}`).toBe(
+      "https://shepard-api.nuclide.systems/v2/references/019e7244-0000-7000-8000-000000000002/content?filename=kr210.urdf",
+    );
+  });
+
+  it("URL-encodes spaces and special characters in the filename param", () => {
+    const qs = new URLSearchParams({ filename: "AFP layup Ply 5.src" }).toString();
+    expect(qs).toContain("filename=AFP+layup+Ply+5.src");
+  });
+
+  it("step-2 body is the raw File object (octet-stream), not a FormData", () => {
     const file = new File(["urdf-bytes"], "kr210.urdf", { type: "application/xml" });
-    const fd = new FormData();
-    fd.append("file", file, file.name);
-    // FormData.get returns the most-recently-appended value for the key.
-    const got = fd.get("file");
-    expect(got).toBeInstanceOf(File);
-    expect((got as File).name).toBe("kr210.urdf");
-    expect((got as File).type).toBe("application/xml");
-    // Per the multipart-form-data contract there's exactly one entry under
-    // `file` after a single append. No leakage from prior tests because
-    // `fd` is freshly minted per case.
-    expect(Array.from(fd.entries()).filter(([k]) => k === "file")).toHaveLength(1);
+    // The body is the File directly — not wrapped in FormData.
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe("kr210.urdf");
+    // A File sent as fetch body is an octet-stream; no multipart boundary.
+    expect(file instanceof FormData).toBe(false);
   });
 });
 
