@@ -251,128 +251,13 @@ class FileReferenceV2RestTest {
     assertEquals(9L, actual[1]);
   }
 
-  // ─── POST /v2/files (upload) ──────────────────────────────────────────────
+  // ─── POST /v2/files (upload) — RETIRED APISIMP-KIND-DISCRIMINATOR-2 ─────────
 
   @Test
-  void createSingleton_returns400WhenParentMissing() {
-    var r = resource.createSingleton(null, "name", null, securityContext);
-    assertEquals(400, r.getStatus());
-  }
-
-  @Test
-  void createSingleton_returns400WhenBlankParent() {
-    var r = resource.createSingleton("  ", "name", null, securityContext);
-    assertEquals(400, r.getStatus());
-  }
-
-  @Test
-  void createSingleton_returns400WhenNoUpload() {
+  void createSingleton_returns410Gone() {
+    // The endpoint is retired; any call returns 410 regardless of arguments.
     var r = resource.createSingleton(PARENT_DO_APP_ID, "name", null, securityContext);
-    assertEquals(400, r.getStatus());
-  }
-
-  @Test
-  void createSingleton_returns401Unauthenticated() {
-    when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = resource.createSingleton(PARENT_DO_APP_ID, "name", null, securityContext);
-    assertEquals(401, r.getStatus());
-  }
-
-  @Test
-  void createSingleton_happyPath_returns201() throws Exception {
-    // FileUpload mock backed by a real tmp file (the resource opens
-    // a FileInputStream over it).
-    var tmp = java.nio.file.Files.createTempFile("fr1b-test-upload-", ".bin");
-    java.nio.file.Files.write(tmp, new byte[] { 1, 2, 3, 4 });
-    try {
-      var fileUpload = org.mockito.Mockito.mock(org.jboss.resteasy.reactive.multipart.FileUpload.class);
-      when(fileUpload.uploadedFile()).thenReturn(tmp);
-      when(fileUpload.fileName()).thenReturn("doc.pdf");
-
-      when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      var created = existing();
-      when(singletonService.createSingleton(eq(PARENT_DO_APP_ID), anyString(), eq("doc.pdf"), any(), anyLong()))
-        .thenReturn(created);
-
-      var r = resource.createSingleton(PARENT_DO_APP_ID, "custom name", fileUpload, securityContext);
-      assertEquals(201, r.getStatus());
-      assertEquals(SINGLETON_APP_ID, ((FileReferenceV2IO) r.getEntity()).getAppId());
-    } finally {
-      java.nio.file.Files.deleteIfExists(tmp);
-    }
-  }
-
-  @Test
-  void createSingleton_returns404WhenParentDataObjectMissing() throws Exception {
-    var tmp = java.nio.file.Files.createTempFile("fr1b-test-upload-", ".bin");
-    java.nio.file.Files.write(tmp, new byte[] { 1 });
-    try {
-      var fileUpload = org.mockito.Mockito.mock(org.jboss.resteasy.reactive.multipart.FileUpload.class);
-      when(fileUpload.uploadedFile()).thenReturn(tmp);
-      when(fileUpload.fileName()).thenReturn("doc.pdf");
-      when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(null);
-
-      var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
-      assertEquals(404, r.getStatus());
-    } finally {
-      java.nio.file.Files.deleteIfExists(tmp);
-    }
-  }
-
-  @Test
-  void createSingleton_returns403WhenNoWritePermission() throws Exception {
-    var tmp = java.nio.file.Files.createTempFile("fr1b-test-upload-", ".bin");
-    java.nio.file.Files.write(tmp, new byte[] { 1 });
-    try {
-      var fileUpload = org.mockito.Mockito.mock(org.jboss.resteasy.reactive.multipart.FileUpload.class);
-      when(fileUpload.uploadedFile()).thenReturn(tmp);
-      when(fileUpload.fileName()).thenReturn("doc.pdf");
-      when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
-
-      var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
-      assertEquals(403, r.getStatus());
-    } finally {
-      java.nio.file.Files.deleteIfExists(tmp);
-    }
-  }
-
-  @Test
-  void createSingleton_returns400WhenServiceRejects() throws Exception {
-    var tmp = java.nio.file.Files.createTempFile("fr1b-test-upload-", ".bin");
-    java.nio.file.Files.write(tmp, new byte[] { 1 });
-    try {
-      var fileUpload = org.mockito.Mockito.mock(org.jboss.resteasy.reactive.multipart.FileUpload.class);
-      when(fileUpload.uploadedFile()).thenReturn(tmp);
-      when(fileUpload.fileName()).thenReturn("doc.pdf");
-      when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any(), anyLong()))
-        .thenThrow(new BadRequestException("bad"));
-
-      var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
-      assertEquals(400, r.getStatus());
-    } finally {
-      java.nio.file.Files.deleteIfExists(tmp);
-    }
-  }
-
-  @Test
-  void createSingleton_returns404WhenServiceRaisesNotFound() throws Exception {
-    var tmp = java.nio.file.Files.createTempFile("fr1b-test-upload-", ".bin");
-    java.nio.file.Files.write(tmp, new byte[] { 1 });
-    try {
-      var fileUpload = org.mockito.Mockito.mock(org.jboss.resteasy.reactive.multipart.FileUpload.class);
-      when(fileUpload.uploadedFile()).thenReturn(tmp);
-      when(fileUpload.fileName()).thenReturn("doc.pdf");
-      when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(singletonService.createSingleton(anyString(), anyString(), anyString(), any(), anyLong()))
-        .thenThrow(new NotFoundException("race"));
-
-      var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
-      assertEquals(404, r.getStatus());
-    } finally {
-      java.nio.file.Files.deleteIfExists(tmp);
-    }
+    assertEquals(410, r.getStatus());
   }
 
   // ─── PATCH /v2/files/{appId} ──────────────────────────────────────────────

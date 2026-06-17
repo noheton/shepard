@@ -241,7 +241,10 @@ public class ContentMcpTools {
       "bytes via `file_content`.\n\n" +
       "Bytes travel as a **base64-encoded string** inside the JSON-RPC envelope. The " +
       "decoded payload is capped at " + FILE_UPLOAD_MAX_BYTES + " bytes (~10 MiB); " +
-      "anything larger must use the multipart REST endpoint `POST /v2/files` directly — " +
+      "anything larger must use the two-step REST API directly: " +
+      "`POST /v2/references?kind=file&dataObjectAppId=...` with JSON body `{\"name\":\"...\"}` " +
+      "to create the metadata node, then " +
+      "`PUT /v2/references/{appId}/content?filename=...` with `application/octet-stream` body — " +
       "JSON-RPC is not a streaming transport.\n\n" +
       "Parameters:\n" +
       "  parentDataObjectAppId — UUID v7 of the DataObject the new Reference attaches to.\n" +
@@ -285,7 +288,9 @@ public class ContentMcpTools {
       if (decoded.length > FILE_UPLOAD_MAX_BYTES) {
         throw McpToolSupport.invalidParams(
           "Decoded payload is " + decoded.length + " bytes; max " + FILE_UPLOAD_MAX_BYTES +
-          " for MCP. Use the multipart REST endpoint POST /v2/files for larger uploads."
+          " for MCP. For larger uploads use the two-step REST API: " +
+          "POST /v2/references?kind=file&dataObjectAppId=... (JSON body {name}) " +
+          "then PUT /v2/references/{appId}/content?filename=... (octet-stream body)."
         );
       }
 
