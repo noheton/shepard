@@ -88,7 +88,9 @@ class State:
       dos(do_id INTEGER PK, do_appid TEXT, do_numeric_id INTEGER, annotated INTEGER)
       struct_refs(do_id INT, ref_name TEXT, file TEXT, container_id INTEGER,
                   oid TEXT, ref_id INTEGER, annotated INTEGER, PK(do_id,ref_name,file))
-      file_refs(ref_id INTEGER PK, ref_appid TEXT, uploaded INTEGER, annotated INTEGER)
+      file_refs(ref_id INTEGER, file TEXT, ref_appid TEXT, uploaded INTEGER,
+                annotated INTEGER, PK(ref_id, file))   -- one cube3 fref_id can
+                fan out to N physical files (.0/.1/.2/.3 multi-file bundle)
       ts_refs(ref_id INTEGER PK, recorded TEXT)   -- unhandled-format log
     """
 
@@ -108,8 +110,9 @@ class State:
               annotated INTEGER DEFAULT 0,
               PRIMARY KEY(do_id, ref_name, file));
             CREATE TABLE IF NOT EXISTS file_refs(
-              ref_id INTEGER PRIMARY KEY, ref_appid TEXT,
-              uploaded INTEGER DEFAULT 0, annotated INTEGER DEFAULT 0);
+              ref_id INTEGER, file TEXT, ref_appid TEXT,
+              uploaded INTEGER DEFAULT 0, annotated INTEGER DEFAULT 0,
+              PRIMARY KEY(ref_id, file));
             CREATE TABLE IF NOT EXISTS ts_refs(
               ref_id INTEGER PRIMARY KEY, recorded TEXT);
             """
@@ -167,31 +170,34 @@ class State:
             )
             self._conn.commit()
 
-    # -- file refs
-    def get_file(self, ref_id: int):
+    # -- file refs (keyed by (ref_id, file): a cube3 fref_id may fan out to N files)
+    def get_file(self, ref_id: int, file: str):
         with self._lock:
             return self._conn.execute(
-                "SELECT ref_appid, uploaded, annotated FROM file_refs WHERE ref_id=?", (ref_id,)
+                "SELECT ref_appid, uploaded, annotated FROM file_refs "
+                "WHERE ref_id=? AND file=?", (ref_id, file)
             ).fetchone()
 
-    def put_file(self, ref_id, ref_appid, uploaded=0):
+    def put_file(self, ref_id, file, ref_appid, uploaded=0):
         with self._lock:
             self._conn.execute(
-                "INSERT INTO file_refs(ref_id,ref_appid,uploaded) VALUES(?,?,?) "
-                "ON CONFLICT(ref_id) DO UPDATE SET ref_appid=excluded.ref_appid, "
+                "INSERT INTO file_refs(ref_id,file,ref_appid,uploaded) VALUES(?,?,?,?) "
+                "ON CONFLICT(ref_id,file) DO UPDATE SET ref_appid=excluded.ref_appid, "
                 "uploaded=MAX(file_refs.uploaded, excluded.uploaded)",
-                (ref_id, ref_appid, uploaded),
+                (ref_id, file, ref_appid, uploaded),
             )
             self._conn.commit()
 
-    def mark_file_uploaded(self, ref_id):
+    def mark_file_uploaded(self, ref_id, file):
         with self._lock:
-            self._conn.execute("UPDATE file_refs SET uploaded=1 WHERE ref_id=?", (ref_id,))
+            self._conn.execute(
+                "UPDATE file_refs SET uploaded=1 WHERE ref_id=? AND file=?", (ref_id, file))
             self._conn.commit()
 
-    def mark_file_annotated(self, ref_id):
+    def mark_file_annotated(self, ref_id, file):
         with self._lock:
-            self._conn.execute("UPDATE file_refs SET annotated=1 WHERE ref_id=?", (ref_id,))
+            self._conn.execute(
+                "UPDATE file_refs SET annotated=1 WHERE ref_id=? AND file=?", (ref_id, file))
             self._conn.commit()
 
     def record_ts(self, ref_id, note):
@@ -473,7 +479,7 @@ class Replayer:
         if not os.path.exists(abspath):
             raise FileNotFoundError(f"file payload missing on disk: {abspath}")
 
-        cached = self.st.get_file(ref_id)
+        cached = self.st.get_file(ref_id, relfile)
         ref_appid = None
         uploaded = annotated = 0
         if cached:
@@ -481,16 +487,19 @@ class Replayer:
 
         size = os.path.getsize(abspath)
 
-        # Single-file → singleton FileReference (FR1b): multipart POST /v2/files
-        # creates the reference AND uploads the bytes in one call (the unified
-        # /v2/references?kind=file path rejects binary kinds by design). This is
-        # the project-preferred shape — no pointless bundle/selection layer.
+        # Single physical file → singleton FileReference (FR1b): multipart
+        # POST /v2/files creates the reference AND uploads the bytes in one call
+        # (the unified /v2/references?kind=file path rejects binary kinds by
+        # design). A cube3 fref_id that fanned out to .0/.1/.2/.3 yields one
+        # singleton per physical file — no pointless bundle/selection layer.
+        # Disambiguate the per-file ref name with the file's basename suffix.
         if not ref_appid or not uploaded:
             filename = os.path.basename(relfile)
+            ref_label = ref_name if filename == ref_name else f"{ref_name}/{filename}"
             with open(abspath, "rb") as fh:
                 resp = self.c.request(
                     "POST",
-                    f"/v2/files?name={requests.utils.quote(ref_name)}"
+                    f"/v2/files?name={requests.utils.quote(ref_label)}"
                     f"&parentDataObjectAppId={do_appid}",
                     files={"file": (filename, fh, "application/octet-stream")},
                     expect=(200, 201),
@@ -498,7 +507,7 @@ class Replayer:
                 )
             created = resp.json()
             ref_appid = created["appId"]
-            self.st.put_file(ref_id, ref_appid, uploaded=1)
+            self.st.put_file(ref_id, relfile, ref_appid, uploaded=1)
             self.n.add(bytes_uploaded=size)
 
         self.n.add(file_refs=1)
@@ -506,7 +515,7 @@ class Replayer:
         # 3. provenance annotation on the file reference
         if not annotated:
             self._annotate(ref_appid, "Reference", self._prov_path(relfile))
-            self.st.mark_file_annotated(ref_id)
+            self.st.mark_file_annotated(ref_id, relfile)
 
     def _replay_ts(self, do_appid, r):
         # The bridge corpus has no ts_refs; if one appears the payload format is
