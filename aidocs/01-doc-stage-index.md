@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 61 |
+| `fragment` | 62 |
 | `concept` | 32 |
 | `idea` | 13 |
 | `feature-defined` | 132 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 86 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **464** |
+| **total docs** | **465** |
 | **UNTAGGED** | **0** |
 
-## fragment (61)
+## fragment (62)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -63,6 +63,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-16-fire64.md`](agent-findings/apisimp-sweep-2026-06-16-fire64.md) | APISIMP Sweep — 2026-06-16 (fire-64) | 2026-06-16 | 2026-06-16 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-16-fire71.md`](agent-findings/apisimp-sweep-2026-06-16-fire71.md) | APISIMP Sweep — 2026-06-16 (fire-71) | 2026-06-16 | 2026-06-16 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-16-fire73.md`](agent-findings/apisimp-sweep-2026-06-16-fire73.md) | APISIMP Sweep — 2026-06-16 (fire-73) | 2026-06-16 | 2026-06-16 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire97.md`](agent-findings/apisimp-sweep-2026-06-17-fire97.md) | APISIMP surface sweep — fire-97 (2026-06-17) | 2026-06-17 | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17.md`](agent-findings/apisimp-sweep-2026-06-17.md) | APISIMP sweep — 2026-06-17 (fire-89) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-15 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-15 |
@@ -433,7 +434,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-15-fire61.md`](agent-findings/apisimp-sweep-2026-06-15-fire61.md) | APISIMP Sweep — fire-61 (2026-06-15) | 2026-06-15 | 2026-06-15 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-15.md`](agent-findings/apisimp-sweep-2026-06-15.md) | APISIMP Sweep — fire-45 (2026-06-15) | 2026-06-15 | 2026-06-15 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire91.md`](agent-findings/apisimp-sweep-2026-06-17-fire91.md) | APISIMP sweep — fire-91 (2026-06-17) | 2026-06-17 | 2026-06-17 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire93.md`](agent-findings/apisimp-sweep-2026-06-17-fire93.md) | APISIMP sweep — fire-93 (2026-06-17) | 2026-06-17 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire93.md`](agent-findings/apisimp-sweep-2026-06-17-fire93.md) | APISIMP sweep — fire-93 (2026-06-17) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-15 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-15 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-06-15 |
