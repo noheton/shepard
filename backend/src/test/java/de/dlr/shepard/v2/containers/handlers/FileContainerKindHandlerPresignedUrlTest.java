@@ -16,9 +16,11 @@ import de.dlr.shepard.v2.filecontainer.io.PresignedDownloadUrlIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadUrlIO;
 import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.time.Duration;
@@ -96,6 +98,23 @@ class FileContainerKindHandlerPresignedUrlTest {
 
     assertTrue(result.isPresent());
     verify(thumbnailService).getThumbnail(APP_ID, "file-oid", 400);
+  }
+
+  @Test
+  void getThumbnail_returns503ProblemJsonWhenServiceUnavailable() {
+    when(thumbnailService.getThumbnail(APP_ID, "file-oid", 400))
+      .thenThrow(new ServiceUnavailableException("cache miss"));
+
+    Optional<Response> result = handler.getThumbnail(APP_ID, "file-oid", null);
+
+    assertTrue(result.isPresent());
+    Response r = result.get();
+    assertEquals(503, r.getStatus());
+    assertEquals("5", r.getHeaderString("Retry-After"));
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    var body = (ProblemJson) r.getEntity();
+    assertEquals("/problems/files.thumbnail-unavailable", body.type());
+    assertEquals(503, body.status());
   }
 
   // ─── getUploadUrl ────────────────────────────────────────────────────────
