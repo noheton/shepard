@@ -339,6 +339,7 @@ class Counts:
     dos_reused: int = 0
     file_refs: int = 0
     file_refs_reused: int = 0
+    file_short_uploads: int = 0
     bytes_uploaded: int = 0
     annotations: int = 0
     annotation_failures: int = 0
@@ -504,7 +505,12 @@ class Importer:
             "sourceMode": "ai",
         }
         try:
-            self.c.post_json("/v2/annotations", body)
+            # retry_on_403: the :Permissions wiring for a freshly-created
+            # DataObject can briefly lag, so an annotation POST issued right
+            # after the DO create occasionally 403s. Bounded-retry it rather
+            # than dropping the annotation (the 50 failures observed on the
+            # 2026-06-17 clean run were exactly this transient 403).
+            self.c.post_json("/v2/annotations", body, retry_on_403=True)
             self.n.add(**{count_field: 1})
             return True
         except RuntimeError as e:
@@ -550,14 +556,25 @@ class Importer:
                 if self.live:
                     self.live.by_name[basename] = do_appid
 
-        # 2. annotations on the DataObject. Guarded by the live source-id index
-        # (source:otvis-file written last) so a re-run writes ZERO annotations.
-        already_annotated = self.live and basename in self.live.by_source_id
-        if not annotated and not already_annotated:
-            self._do_annotations(do_appid, fc)
-            if self.live:
-                self.live.by_source_id[basename] = do_appid
-            self.st.mark_do_annotated(basename)
+        # 2. annotations on the DataObject. The fast path: a DO whose
+        # source:otvis-file is already in the live index AND whose sqlite row is
+        # marked annotated has its full set — skip with ZERO writes. Otherwise
+        # run the DIFF-BASED writer, which fetches the DO's existing predicates
+        # and writes only the missing ones. This makes a re-run BOTH backfill any
+        # gaps (the 50 transient-403 failures on the clean run) AND converge to
+        # zero writes once complete.
+        fully = (annotated and self.live and basename in self.live.by_source_id)
+        if not fully:
+            reused_do = bool(annotated or
+                             (self.live and basename in self.live.by_source_id))
+            wrote, complete = self._do_annotations(do_appid, fc, reused=reused_do)
+            # 'complete' is True when, after this pass, the full set (incl. the
+            # source:otvis-file marker) is present — i.e. either we wrote it or it
+            # was already there. Only then do we record the fast-path markers.
+            if complete:
+                if self.live:
+                    self.live.by_source_id[basename] = do_appid
+                self.st.mark_do_annotated(basename)
 
         # 3. singleton FileReference (FR1b). The server-side fileformat-thermography
         # parser fires automatically and emits urn:shepard:thermography:* (+ mffd
@@ -577,68 +594,145 @@ class Importer:
                 return
 
         if not ref_appid or not uploaded:
-            with open(fc.abspath, "rb") as fh:
-                resp = self.c.request(
-                    "POST",
-                    f"/v2/files?name={requests.utils.quote(ref_label)}"
-                    f"&parentDataObjectAppId={do_appid}",
-                    files={"file": (basename, fh, "application/octet-stream")},
-                    expect=(200, 201),
-                    retry_on_403=True,  # tolerate :Permissions wiring lag post-DO-create
-                )
-            created = resp.json()
-            ref_appid = created["appId"]
+            # Upload, then VERIFY the stored content length matches the source.
+            # Observed 2026-06-17: 10 of 744 multipart uploads returned 201 but
+            # stored a 0-byte payload (server-side upload gap; the parser then
+            # no-op'd for lack of content). Completeness is non-negotiable, so we
+            # re-upload until the stored size matches — never accept a truncated
+            # payload silently.
+            attempt = 0
+            while True:
+                attempt += 1
+                with open(fc.abspath, "rb") as fh:
+                    resp = self.c.request(
+                        "POST",
+                        f"/v2/files?name={requests.utils.quote(ref_label)}"
+                        f"&parentDataObjectAppId={do_appid}",
+                        files={"file": (basename, fh, "application/octet-stream")},
+                        expect=(200, 201),
+                        retry_on_403=True,  # :Permissions wiring lag post-DO-create
+                    )
+                new_ref = resp.json()["appId"]
+                stored = self._content_length(new_ref)
+                if stored == size or size == 0:
+                    ref_appid = new_ref
+                    break
+                # truncated/empty store — delete the bad ref and retry
+                self.n.add(file_short_uploads=1)
+                print(f"  [short-upload] {basename}: stored {stored}/{size} bytes "
+                      f"(attempt {attempt}) — deleting + re-uploading",
+                      file=sys.stderr, flush=True)
+                try:
+                    self.c.request("DELETE", f"/v2/files/{new_ref}",
+                                   expect=(200, 204), retry_on_403=True)
+                except RuntimeError:
+                    pass
             self.st.put_file(basename, ref_appid, uploaded=1)
             self._note_live_file(do_appid, ref_label)
             self.n.add(bytes_uploaded=size)
 
         self.n.add(file_refs=1)
 
-    def _do_annotations(self, do_appid: str, fc: FileClass):
-        # provenance + stable source id
-        self._annotate(do_appid, PROVENANCE_PREDICATE, fc.relpath)
+    def _content_length(self, ref_appid: str) -> int:
+        """Stored byte length of a FileReference's content (best effort; -1 on
+        failure so the caller treats it as a mismatch and re-uploads)."""
+        try:
+            resp = self.c.request("GET", f"/v2/files/{ref_appid}/content",
+                                  expect=(200, 206), stream=True)
+            cl = resp.headers.get("content-length")
+            if cl is not None:
+                n = int(cl)
+                resp.close()
+                return n
+            data = resp.content
+            return len(data)
+        except (RuntimeError, ValueError, requests.RequestException):
+            return -1
+
+    def _existing_predicates(self, do_appid: str) -> set:
+        """Fetch the set of MY annotation predicate IRIs already present on this
+        DataObject (so a backfill/re-run writes only the missing ones). Best
+        effort — on a read failure we treat the DO as having none, which at worst
+        re-writes annotations we own (idempotent in intent; a duplicate-free
+        write is preferred so we only call this for reused DOs)."""
+        preds: set = set()
+        try:
+            page = 0
+            while True:
+                batch = self.c.get_json(
+                    f"/v2/annotations?subjectAppId={do_appid}&page={page}&pageSize=200")
+                if not batch:
+                    break
+                for a in batch:
+                    p = a.get("predicateIri")
+                    if p:
+                        preds.add(p)
+                page += 1
+        except RuntimeError as e:
+            if self.verbose:
+                print(f"  [pred-fetch WARN] DO {do_appid}: {e}",
+                      file=sys.stderr, flush=True)
+        return preds
+
+    def _do_annotations(self, do_appid: str, fc: FileClass,
+                        reused: bool = False) -> tuple[int, bool]:
+        """Write my annotation set on the DataObject, skipping any predicate that
+        already exists (diff-based). Returns ``(wrote, complete)`` where ``wrote``
+        is the number of annotations written this pass and ``complete`` is True
+        when the full set — including the source:otvis-file completeness marker —
+        is present afterwards (so the caller can record the fast-path markers).
+        For a freshly-created DO ``reused`` is False and we skip the existence
+        fetch (nothing can exist yet)."""
+        existing = self._existing_predicates(do_appid) if reused else set()
+        wrote = 0
+
+        def w(pred, val, count_field="annotations"):
+            nonlocal wrote
+            if pred in existing:
+                return
+            if self._annotate(do_appid, pred, val, count_field=count_field):
+                wrote += 1
+                existing.add(pred)
+
+        # provenance
+        w(PROVENANCE_PREDICATE, fc.relpath)
         # scope + layer
         if fc.scope == "process":
-            self._annotate(do_appid, PRED_SCOPE, "process")
+            w(PRED_SCOPE, "process")
             if fc.layer:
-                self._annotate(do_appid, PRED_LAYER, fc.layer)
-            # measurement-phase from CreationDate clustering (process only)
-            if self.derive_phase:
+                w(PRED_LAYER, fc.layer)
+            if self.derive_phase and PRED_PHASE not in existing:
                 phase = self._phase_for(fc)
                 if phase == "pre":
-                    self._annotate(do_appid, PRED_PHASE, "pre")
-                    self.n.add(phase_pre=1)
+                    w(PRED_PHASE, "pre"); self.n.add(phase_pre=1)
                 elif phase == "post":
-                    self._annotate(do_appid, PRED_PHASE, "post")
-                    self.n.add(phase_post=1)
+                    w(PRED_PHASE, "post"); self.n.add(phase_post=1)
                 else:
                     self.n.add(phase_undeterminable=1)
                     if self.verbose:
                         print(f"  [phase] undeterminable for {fc.basename} "
-                              f"(no readable CreationDate) — skipping phase annotation",
+                              f"(no readable CreationDate) — skipping",
                               file=sys.stderr, flush=True)
         else:
-            self._annotate(do_appid, PRED_SCOPE, fc.scope)
-            # reference-scope files have no plan grid → no phase (logged, not guessed)
+            w(PRED_SCOPE, fc.scope)
             if self.verbose:
                 print(f"  [phase] reference-scope {fc.basename} — phase not "
                       f"derivable, skipped", file=sys.stderr, flush=True)
 
         # status flags
         if fc.status == "incomplete":
-            self._annotate(do_appid, PRED_CAPTURE_INCOMPLETE, "true",
-                           count_field="status_incomplete")
+            w(PRED_CAPTURE_INCOMPLETE, "true", count_field="status_incomplete")
         elif fc.status == "substitution":
-            self._annotate(do_appid, PRED_CAPTURE_SUBSTITUTION, "true",
-                           count_field="status_substitution")
+            w(PRED_CAPTURE_SUBSTITUTION, "true", count_field="status_substitution")
         # typo correction
         if fc.typo_original and fc.typo_corrected:
-            self._annotate(do_appid, PRED_TYPO_CORRECTED, "true",
-                           count_field="typo_flagged")
-            self._annotate(do_appid, PRED_TYPO_ORIGINAL, fc.typo_original)
+            w(PRED_TYPO_CORRECTED, "true", count_field="typo_flagged")
+            w(PRED_TYPO_ORIGINAL, fc.typo_original)
 
-        # stable source id LAST (its presence proves the rest were issued)
-        self._annotate(do_appid, SOURCE_OTVIS_FILE_PREDICATE, fc.basename)
+        # stable source id LAST (its presence is the fast-path completeness proof)
+        w(SOURCE_OTVIS_FILE_PREDICATE, fc.basename)
+        complete = SOURCE_OTVIS_FILE_PREDICATE in existing
+        return wrote, complete
 
     def _phase_for(self, fc: FileClass) -> Optional[str]:
         """Cluster pre/post on the file's CreationDate calendar day. The campaign
@@ -844,6 +938,7 @@ def _print_summary(c: Counts, dry: bool):
     print(f"  file refs                 : {c.file_refs}")
     if not dry:
         print(f"  file refs reused          : {c.file_refs_reused}")
+        print(f"  short-upload re-uploads   : {c.file_short_uploads}")
     print(f"  payload bytes             : {c.bytes_uploaded} ({c.bytes_uploaded/1e9:.2f} GB)")
     if not dry:
         print(f"  provenance/scope/layer/phase/status annotations : {c.annotations}")
