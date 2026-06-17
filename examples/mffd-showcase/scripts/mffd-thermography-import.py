@@ -370,6 +370,7 @@ class LiveIndex:
         page = 0
         n = 0
         do_appids: list[str] = []
+        live_do_appids: set[str] = set()
         while True:
             batch = self.c.get_json(
                 f"/v2/collections/{self.col}/data-objects?page={page}&pageSize=500"
@@ -379,6 +380,7 @@ class LiveIndex:
             for d in batch:
                 self.by_name[d["name"]] = d["appId"]
                 do_appids.append(d["appId"])
+                live_do_appids.add(d["appId"])
             n += len(batch)
             page += 1
 
@@ -395,8 +397,15 @@ class LiveIndex:
                 for appid, names in ex.map(_fetch, do_appids):
                     self.file_refs_by_do[appid] = names
 
+        # Source-id annotations: the /v2/annotations endpoint returns annotations
+        # whose subject DataObject may be soft-deleted (a tombstone). Reusing such
+        # a subject 404s on the subsequent file upload (observed 2026-06-17 — 4
+        # files tried to reuse 4 deleted test DOs). So keep ONLY annotations whose
+        # subject is in the LIVE DataObject set; a stale tombstone falls through to
+        # a fresh create.
         page = 0
         anns = 0
+        stale = 0
         while True:
             batch = self.c.get_json(
                 f"/v2/annotations?predicateIri={requests.utils.quote(SOURCE_OTVIS_FILE_PREDICATE)}"
@@ -408,11 +417,15 @@ class LiveIndex:
                 lit = a.get("objectLiteral")
                 subj = a.get("subjectAppId")
                 if lit and subj:
-                    self.by_source_id[lit] = subj
+                    if subj in live_do_appids:
+                        self.by_source_id[lit] = subj
+                    else:
+                        stale += 1
             anns += len(batch)
             page += 1
         if verbose:
-            print(f"live index    : {n} existing DOs, {anns} source-id annotations",
+            print(f"live index    : {n} existing DOs, {anns} source-id annotations "
+                  f"({len(self.by_source_id)} live, {stale} stale/tombstone dropped)",
                   file=sys.stderr, flush=True)
 
     def find_do(self, basename: str) -> Optional[str]:
