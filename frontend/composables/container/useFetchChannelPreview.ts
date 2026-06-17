@@ -113,7 +113,7 @@ async function fetchPreviewData(
       qs.set("end", String(endNs));
       if (downsample) {
         qs.set("downsample", "lttb");
-        qs.set("max_points", String(maxPoints));
+        qs.set("maxPoints", String(maxPoints));
       }
       const url =
         `${v2Base(publicConfig as Record<string, unknown>)}/v2/containers/${containerAppId}` +

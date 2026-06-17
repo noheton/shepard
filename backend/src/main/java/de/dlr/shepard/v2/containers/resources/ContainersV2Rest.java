@@ -629,7 +629,7 @@ public class ContainersV2Rest {
     description =
       "Resolves the single-field shepardId to the legacy 5-tuple internally and returns data " +
       "points for the requested time window. Accepts optional LTTB downsampling via " +
-      "?downsample=lttb&max_points=N. Non-timeseries container kinds answer 415.\n\n" +
+      "?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Read on the container."
   )
   @APIResponse(
@@ -648,7 +648,7 @@ public class ContainersV2Rest {
     @QueryParam("start") @NotNull @PositiveOrZero Long start,
     @QueryParam("end")   @NotNull @PositiveOrZero Long end,
     @QueryParam("downsample") String downsample,
-    @QueryParam("max_points") Integer maxPoints,
+    @QueryParam("maxPoints") Integer maxPoints,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
