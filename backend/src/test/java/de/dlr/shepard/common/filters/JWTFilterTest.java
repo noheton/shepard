@@ -375,7 +375,7 @@ public class JWTFilterTest extends BaseTestCase {
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
     var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
-    assertEquals("Bob", captured.getUsername());
+    assertEquals("MyUserName", captured.getUsername());
     assertEquals(keyId.toString(), captured.getKeyId());
   }
 
