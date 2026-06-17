@@ -464,10 +464,15 @@ def run_pass_b(client, counts, col_appid, col_numeric, sources, workers,
     numeric_map = imp.build_numeric_map()
     print(f"  resolved {len(numeric_map)}/{len(imp.id_to_appid)} numeric ids", flush=True)
 
-    # sub-pass 2: wire lineage
-    print(f"── pass B / sub-pass 2: wire lineage for {total} DataObjects ──", flush=True)
+    # sub-pass 2: wire lineage — SERIALIZED (max_workers=1).
+    # Predecessor/parent edges are bidirectional: setting a node's predecessor
+    # auto-writes the inverse has_successor on the target. Running this in
+    # parallel races those inverse writes and the backend's merge-patch rejects
+    # with 400 "the given list of successors does not match the current list"
+    # mid-write. Serial wiring is correct and still fast (one PATCH per DO).
+    print(f"── pass B / sub-pass 2: wire lineage for {total} DataObjects (serial) ──", flush=True)
     done = 0
-    with ThreadPoolExecutor(max_workers=workers) as ex:
+    with ThreadPoolExecutor(max_workers=1) as ex:
         futs = {ex.submit(imp.wire_lineage, s, numeric_map): s for s in sources}
         for fut in as_completed(futs):
             s = futs[fut]
