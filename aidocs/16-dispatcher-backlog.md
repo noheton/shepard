@@ -742,6 +742,12 @@ A batch API on the dest reduces N round-trips to N/B (B = batch size, e.g. 100).
 |---|---|---|---|---|
 | DEADCODE-BULKTRACE | **Remove orphaned BulkTrace IO classes** — `BulkTraceRequestIO`, `BulkTraceResultIO`, `BulkTraceChannelIO` all carry javadoc referencing `POST /v2/timeseries-containers/{id}/channels/bulk` but no `@Path` annotation wires this path. The shipped bulk read endpoint is `/channels/data/bulk` using `BulkChannelDataRequestIO`. Delete or wire. Confirmed by `grep -rn 'channels/bulk' backend/src/main/java/` returning only javadoc strings. | XS | **done** (2026-05-27) | All three files deleted; dead imports removed from `TimeseriesContainerChannelsRest.java`. Surfaced by BATCH-API-4 audit (2026-05-27). |
 
+### W2-TPS-RAW-PAYLOADS — 2026-06-17 (deferred raw TPS file payloads)
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| W2-TPS-RAW-1 | Retain the **355 GB raw TPS file payloads** for the AFP tapelaying wave (`cube3-export/mffd-export/ts-export/tapelaying/*/files/TPS raw data.*`) as FileReferences on each Track DO. | XL | **deferred — disk-gated** | W2 imported as **B-then-A** on 2026-06-17: 8458 Track/Ply DOs + predecessor/successor lineage (B), then TPS raw data parsed → BrushTrace spatial in PostGIS (A, compact). The raw 355 GB binaries were **NOT stored** — they exceed the 344 GB free on the shared root volume and the parsed BrushTrace supersedes them for the demonstrator. Unblock when the root volume is grown (operator infra action) or a separate large volume / object store is mounted for file payloads; then re-run with raw-payload upload enabled. The Track metadata carries `urn:shepard:source:cube3-do-id` so a later payload pass is idempotent. |
+
 ### V16-PRESERVE-HIERARCHY — 2026-05-23 (replace v15's flat shape with full source-DO tree replication)
 
 User directive 2026-05-23 after v15 hit steady-state ingest: *"so under one DO many DOs could be and then another... DOs to the bottom — along the way references ... is the script doing this"* + decision **B** when offered the trade-off. v15 flattens cube3's hierarchical DO tree (Step → Layer → Ply Group → Track) into a single step DO with thousands of refs whose names encode the source-DO identity. v16 ships the proper-fidelity design: replicate the source tree as actual dest DOs with parent/child + predecessor/successor edges + per-DO attributes.
