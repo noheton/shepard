@@ -46,10 +46,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * {@code /v2/timeseries-references}, the JSON portions of {@code /v2/files},
  * and the plugin reference resources).
  *
- * <p>Kind-specific binary / special operations stay at their own paths and
- * are NOT converged here: {@code GET /v2/files/{appId}/content}, video
- * {@code /download}, git {@code /preview} + {@code /check-update}, and the
- * (deprecated) multipart {@code POST /v2/files} upload entry.
+ * <p>Kind-specific special operations that live at their own paths: git
+ * {@code /preview} + {@code /check-update}. The file content GET
+ * ({@code GET /v2/files/{appId}/content}) and the now-tombstoned video
+ * {@code /download} path are both superseded by the generic
+ * {@code GET /v2/references/{appId}/content} endpoint on this class.
  *
  * <h2>Routes</h2>
  * <ul>
@@ -59,7 +60,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       node (name required in body; no bytes). Follow up with PUT …/content.</li>
  *   <li>{@code PUT    /v2/references/{appId}/content} — APISIMP-KIND-DISCRIMINATOR
  *       Option C phase-2: upload binary content to a reference node that supports
- *       it ({@code kind=file}). Takes {@code ?filename=} query param.</li>
+ *       it ({@code kind=file}, {@code kind=video}). Takes {@code ?filename=} query param.</li>
+ *   <li>{@code GET    /v2/references/{appId}/content} — APISIMP-VIDEO-STREAMREF-PATH:
+ *       download binary content for {@code kind=video} (range-aware) and
+ *       {@code kind=file}. Takes optional {@code Range} header.</li>
  *   <li>{@code GET    /v2/references/{appId}} — the entity self-describes its
  *       kind; returns the unified {@link ReferenceV2IO}.</li>
  *   <li>{@code PATCH  /v2/references/{appId}} — RFC 7396 merge-patch, dispatched
@@ -313,6 +317,59 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
       return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    }
+  }
+
+  // ─── download-content ─────────────────────────────────────────────────────
+
+  @GET
+  @Path("/{appId}/content")
+  @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
+  @Operation(
+    operationId = "downloadReferenceContent",
+    summary = "APISIMP-VIDEO-STREAMREF-PATH: download binary content for a reference that supports it.",
+    description =
+      "Streams the binary payload for the reference at `appId`. Only binary reference kinds " +
+      "(`kind=video`, `kind=file`) support this endpoint; non-binary kinds return 400.\n\n" +
+      "**Range requests:** a single `Range: bytes=START-END` header is honoured for kinds " +
+      "whose handler implements range-aware streaming (e.g. `kind=video` returns 206 Partial " +
+      "Content + `Content-Range` for browser-native video scrubbing). An unsatisfiable range " +
+      "returns 416.\n\n" +
+      "**Auth:** Read permission on the parent DataObject. The JWT may be supplied via the " +
+      "`?access_token=…` query param fallback (RFC 6750 §2.3) for HTML5 `<video src>` usage."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Full binary payload.",
+    content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)
+  )
+  @APIResponse(
+    responseCode = "206",
+    description = "Partial content — Range header was honoured."
+  )
+  @APIResponse(responseCode = "400", description = "Reference kind does not support binary content download.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No reference with that appId, or content not yet uploaded.")
+  @APIResponse(responseCode = "416", description = "Range not satisfiable.")
+  @APIResponse(responseCode = "503", description = "No active file storage adapter configured.")
+  public Response downloadContent(
+    @PathParam("appId") String appId,
+    @HeaderParam("Range") String rangeHeader,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to download reference content");
+    var resolved = referencesService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    Response gate = gateOnParent(resolved.get().reference(), AccessType.Read, caller);
+    if (gate != null) return gate;
+    try {
+      return resolved.get().handler().downloadContent(appId, rangeHeader);
+    } catch (UnsupportedOperationException uoe) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Not supported", Response.Status.BAD_REQUEST, uoe.getMessage());
+    } catch (NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage());
     }
   }
 

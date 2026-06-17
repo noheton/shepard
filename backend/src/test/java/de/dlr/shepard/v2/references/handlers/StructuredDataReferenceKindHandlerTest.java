@@ -26,6 +26,9 @@ import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -288,13 +291,51 @@ class StructuredDataReferenceKindHandlerTest {
     assertThrows(NotFoundException.class, () -> handler.listByDataObject(DO_APP_ID, null));
   }
 
-  // ─── uploadContent (unsupported) ────────────────────────────────────────────
+  // ─── uploadContent ──────────────────────────────────────────────────────────
 
   @Test
-  void uploadContent_throwsUnsupported() {
-    assertThrows(
-      UnsupportedOperationException.class,
-      () -> handler.uploadContent(REF_APP_ID, null, "file.json", 0L)
-    );
+  void uploadContent_success() {
+    var ref = sdRef();
+    var sd = new StructuredData();
+    sd.setOid("oid-new");
+    when(structuredDataReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(structuredDataContainerService.createStructuredData(eq(99L), any())).thenReturn(sd);
+
+    InputStream body = new ByteArrayInputStream("{\"key\":\"val\"}".getBytes(StandardCharsets.UTF_8));
+    var io = handler.uploadContent(REF_APP_ID, body, "entry.json", 13L);
+
+    assertEquals("structured-data", io.getKind());
+    verify(structuredDataContainerService).createStructuredData(eq(99L), any());
+    verify(structuredDataReferenceDAO).createOrUpdate(ref);
+  }
+
+  @Test
+  void uploadContent_missing_throws404() {
+    when(structuredDataReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(null);
+    InputStream body = new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8));
+    assertThrows(NotFoundException.class, () -> handler.uploadContent(REF_APP_ID, body, "x.json", 2L));
+  }
+
+  @Test
+  void uploadContent_nullContainer_throws400() {
+    var ref = sdRef();
+    ref.setStructuredDataContainer(null);
+    when(structuredDataReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
+    InputStream body = new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8));
+    assertThrows(BadRequestException.class, () -> handler.uploadContent(REF_APP_ID, body, "x.json", 2L));
+  }
+
+  @Test
+  void uploadContent_nullInput_throws400() {
+    when(structuredDataReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(sdRef());
+    assertThrows(BadRequestException.class, () -> handler.uploadContent(REF_APP_ID, null, "x.json", 0L));
+  }
+
+  @Test
+  void uploadContent_emptyBody_throws400() {
+    when(structuredDataReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(sdRef());
+    InputStream body = new ByteArrayInputStream("   ".getBytes(StandardCharsets.UTF_8));
+    assertThrows(BadRequestException.class, () -> handler.uploadContent(REF_APP_ID, body, "x.json", 3L));
   }
 }

@@ -414,9 +414,7 @@ public class ContainersV2Rest {
       "Returns the complete upload history for the file identified by `fileName` within " +
       "the container at `appId`, ordered by `versionNumber` ascending (oldest first). " +
       "Supported for `file` and `structured-data` kind containers. Other kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-PV-UNIFY — replaces per-kind " +
-      "`/v2/file-containers/{appId}/files/{name}/versions` and " +
-      "`/v2/structured-data-containers/{appId}/files/{name}/versions`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -464,8 +462,7 @@ public class ContainersV2Rest {
       "Returns point count, channel count, estimated uncompressed size, and recent " +
       "ingest rate for the container at `appId`. Supported for `timeseries` kind; " +
       "other kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-1 — replaces the per-kind " +
-      "`/v2/timeseries-containers/{appId}/stats` endpoint.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -509,10 +506,7 @@ public class ContainersV2Rest {
       "Returns the distinct DataObjects whose references point at the container at " +
       "`appId`, as DataObjectIO[]. Supported for `file`, `structured-data` and " +
       "`timeseries` kind containers; other kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-LDO-UNIFY — replaces the per-kind " +
-      "`/v2/file-containers/{appId}/linked-data-objects`, " +
-      "`/v2/structured-data-containers/{appId}/linked-data-objects` and " +
-      "`/v2/timeseries-containers/{appId}/linked-data-objects` endpoints.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -555,8 +549,7 @@ public class ContainersV2Rest {
     description =
       "Returns one entry per channel in the container, each carrying its stable single-field " +
       "identity (shepardId) plus the legacy 5-tuple. Non-timeseries container kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
-      "`GET /v2/timeseries-containers/{id}/channels`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -597,8 +590,7 @@ public class ContainersV2Rest {
     description =
       "Scans the container's channels for axis-role annotations and returns one shepardId per " +
       "role. Non-timeseries container kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
-      "`GET /v2/timeseries-containers/{id}/channels/spatial-roles`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -638,8 +630,7 @@ public class ContainersV2Rest {
       "Resolves the single-field shepardId to the legacy 5-tuple internally and returns data " +
       "points for the requested time window. Accepts optional LTTB downsampling via " +
       "?downsample=lttb&max_points=N. Non-timeseries container kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
-      "`GET /v2/timeseries-containers/{id}/channels/{shepardId}/data`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -690,8 +681,7 @@ public class ContainersV2Rest {
       "Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data " +
       "points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are " +
       "silently skipped. Non-timeseries container kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
-      "`POST /v2/timeseries-containers/{id}/channels/data/bulk`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -733,8 +723,7 @@ public class ContainersV2Rest {
       "Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by " +
       "shepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
       "unique within the batch. Non-timeseries container kinds answer 415.\n\n" +
-      "Auth: Write on the container. (APISIMP-CONT-NS-COLLAPSE-2 — replaces " +
-      "`POST /v2/timeseries-containers/{id}/channels/{shepardId}/data/ingest`.)"
+      "Auth: Write on the container."
   )
   @APIResponse(responseCode = "204", description = "Data ingested successfully.")
   @APIResponse(responseCode = "400", description = "Validation error or duplicate timestamp.")
@@ -781,8 +770,7 @@ public class ContainersV2Rest {
       "timeseries container. An empty list means \"no curated view — show all channels\" " +
       "(the frontend default). Only `timeseries` kind containers support this; other " +
       "kinds answer 415.\n\n" +
-      "Auth: Read on the container. (APISIMP-CONT-NS-COLLAPSE-3 — replaces " +
-      "`GET /v2/timeseries-containers/{id}/chart-view`.)"
+      "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -818,8 +806,7 @@ public class ContainersV2Rest {
     description =
       "Replaces the persisted selectedChannels list. Write permission required. " +
       "Only `timeseries` kind containers support this; other kinds answer 415.\n\n" +
-      "Auth: Write on the container. (APISIMP-CONT-NS-COLLAPSE-3 — replaces " +
-      "`PATCH /v2/timeseries-containers/{id}/chart-view`.)"
+      "Auth: Write on the container."
   )
   @APIResponse(
     responseCode = "200",
@@ -866,8 +853,6 @@ public class ContainersV2Rest {
     operationId = "getLiveWindow",
     summary = "Fetch the most recent N seconds of a timeseries channel.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`GET /v2/timeseries-containers/{containerAppId}/channels/live-window`. " +
       "Returns the last `windowSeconds` of data for a single channel. " +
       "Channel lookup: `shepardId` (preferred) or 5-tuple filter. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
@@ -917,8 +902,6 @@ public class ContainersV2Rest {
     operationId = "listChannelAnnotations",
     summary = "List semantic annotations on a timeseries channel.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`GET /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200", description = "List of annotations (may be empty).",
@@ -954,8 +937,6 @@ public class ContainersV2Rest {
     operationId = "createChannelAnnotation",
     summary = "Attach a semantic annotation to a timeseries channel.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`POST /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "201", description = "Annotation created.",
@@ -994,8 +975,6 @@ public class ContainersV2Rest {
     operationId = "deleteChannelAnnotation",
     summary = "Remove a semantic annotation from a timeseries channel.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`DELETE /v2/timeseries-containers/{containerAppId}/channels/{channelShepardId}/annotations/{annotationAppId}`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
@@ -1033,8 +1012,6 @@ public class ContainersV2Rest {
     operationId = "listTemporalAnnotations",
     summary = "List all temporal annotations on a container.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`GET /v2/timeseries-containers/{containerAppId}/temporal-annotations`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
@@ -1070,8 +1047,6 @@ public class ContainersV2Rest {
     operationId = "createTemporalAnnotation",
     summary = "Create a temporal annotation on a container.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`POST /v2/timeseries-containers/{containerAppId}/temporal-annotations`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "201", description = "Annotation created.",
@@ -1107,8 +1082,6 @@ public class ContainersV2Rest {
     operationId = "getTemporalAnnotation",
     summary = "Read a single container temporal annotation by appId.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`GET /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200", description = "TimeseriesAnnotationIO for the requested annotation.",
@@ -1143,8 +1116,6 @@ public class ContainersV2Rest {
     operationId = "updateTemporalAnnotation",
     summary = "Update a container temporal annotation (merge-patch).",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`PATCH /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "200", description = "TimeseriesAnnotationIO reflecting the patched state.",
@@ -1181,8 +1152,6 @@ public class ContainersV2Rest {
     operationId = "deleteTemporalAnnotation",
     summary = "Delete a container temporal annotation.",
     description =
-      "APISIMP-CONT-NS-COLLAPSE-4 — replaces " +
-      "`DELETE /v2/timeseries-containers/{containerAppId}/temporal-annotations/{annotationAppId}`. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")

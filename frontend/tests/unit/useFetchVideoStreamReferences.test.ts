@@ -6,7 +6,7 @@
  *  - the composable calls GET /v2/references?kind=video&dataObjectAppId=...
  *  - payload fields are mapped correctly to VideoStreamReferenceIO
  *  - API errors leave references empty and clear isLoading
- *  - downloadUrl still points to the plugin-specific binary path
+ *  - downloadUrl points to the unified /v2/references/{appId}/content path (APISIMP-VIDEO-STREAMREF-PATH)
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -119,7 +119,7 @@ describe("useFetchVideoStreamReferences", () => {
     expect(isLoading.value).toBe(false);
   });
 
-  it("downloadUrl uses the plugin-specific binary path, not /v2/references", async () => {
+  it("downloadUrl uses the unified /v2/references/{appId}/content path", async () => {
     mockFetch.mockReturnValue(okResponse([]));
 
     const { useFetchVideoStreamReferences } = await import(
@@ -129,7 +129,7 @@ describe("useFetchVideoStreamReferences", () => {
     await flush();
 
     const url = downloadUrl("vid-ref-001");
-    expect(url).toContain("/v2/data-objects/do-app-001/video-stream-references/vid-ref-001/download");
-    expect(url).not.toContain("/v2/references");
+    expect(url).toContain("/v2/references/vid-ref-001/content");
+    expect(url).not.toContain("/video-stream-references");
   });
 });

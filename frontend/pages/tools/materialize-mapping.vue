@@ -9,6 +9,9 @@
  * focusDataObjectAppId route query param (set by the in-context do-materialize
  * entry), references from that DataObject are offered as picker suggestions;
  * the combobox still accepts raw appId text so the flow works without context.
+ * UI-GAP-1 slice 3: output dispatch — REFERENCE outputs show a CopyableAppIdChip
+ * + "Reference created" badge; VIEW outputs dispatch to the appropriate renderer
+ * (scene-graph play page for URDF envelopes, collapsible raw dump otherwise).
  *
  * Per the CLAUDE.md rules this surface addresses entities by appId only,
  * targets /v2/ exclusively, and never asks the user for a path or URL.
@@ -79,6 +82,18 @@ async function submit() {
   } finally {
     submitting.value = false;
   }
+}
+
+/**
+ * Returns true when the VIEW result's viewModel is a SceneGraphPlay envelope
+ * (produced by the vis-trace3d SceneGraphPlayTransformExecutor). Discriminates
+ * by urdfFileReferenceAppId presence — the only executor that writes this
+ * field is SceneGraphPlayTransformExecutor, so any URDF-bound executor
+ * (including third-party ones) routes to the play page automatically.
+ */
+function hasSceneGraphPlay(r: MaterializeResponse): boolean {
+  const vm = r.viewModel as Record<string, unknown> | null | undefined;
+  return r.outputKind === "VIEW" && typeof vm?.urdfFileReferenceAppId === "string";
 }
 </script>
 
@@ -232,16 +247,76 @@ async function submit() {
 
         <v-divider class="my-4" />
 
+        <!--
+          UI-GAP-1 slice 3: output dispatch.
+          REFERENCE → copyable chip + badge.
+          VIEW → scene-graph play page (URDF envelope) or generic alert + raw dump.
+        -->
         <div v-if="result.outputKind === 'REFERENCE'">
-          <div class="text-subtitle-2 mb-1">Derived reference appId</div>
-          <code data-test="derived-ref-appid">{{ result.derivedReferenceAppId }}</code>
+          <div class="text-subtitle-2 mb-2">Derived reference</div>
+          <div class="d-flex align-center flex-wrap ga-2">
+            <CopyableAppIdChip
+              :app-id="result.derivedReferenceAppId ?? ''"
+              testid="derived-ref-appid"
+            />
+            <v-chip
+              size="small"
+              color="success"
+              variant="tonal"
+              prepend-icon="mdi-check-circle-outline"
+            >
+              Reference created
+            </v-chip>
+          </div>
+          <div class="text-caption text-medium-emphasis mt-2">
+            Click the chip to copy the appId. Use this reference as an input binding in another recipe.
+          </div>
         </div>
+
+        <div v-else-if="result.outputKind === 'VIEW'">
+          <div class="text-subtitle-2 mb-2">View output</div>
+          <!--
+            Scene-graph dispatch: when the viewModel carries urdfFileReferenceAppId
+            the vis-trace3d executor produced a play envelope — navigate to the
+            /scene-graphs/play page which re-materializes and renders via UrdfCanvas.
+          -->
+          <v-btn
+            v-if="hasSceneGraphPlay(result)"
+            color="primary"
+            variant="elevated"
+            prepend-icon="mdi-cube-scan"
+            :to="`/scene-graphs/play/${result.templateAppId}`"
+            data-testid="open-in-scene-graph-btn"
+            class="mb-3"
+          >
+            Open 3D view
+          </v-btn>
+          <v-alert
+            v-else
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            No dedicated renderer registered for executor
+            <code>{{ result.executor }}</code>. Raw view model below.
+          </v-alert>
+          <v-expansion-panels variant="accordion">
+            <v-expansion-panel>
+              <v-expansion-panel-title class="text-caption text-medium-emphasis">
+                Raw view model (debug)
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <pre class="text-body-2" data-testid="view-model-dump">{{ JSON.stringify(result.viewModel ?? {}, null, 2) }}</pre>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </div>
+
         <div v-else>
-          <div class="text-subtitle-2 mb-1">View-model</div>
-          <pre
-            class="text-body-2"
-            data-test="view-model-dump"
-          >{{ JSON.stringify(result.viewModel ?? {}, null, 2) }}</pre>
+          <v-alert type="warning" variant="tonal" density="compact">
+            Unknown output kind: <code>{{ result.outputKind }}</code>
+          </v-alert>
         </div>
       </v-card-text>
     </v-card>
