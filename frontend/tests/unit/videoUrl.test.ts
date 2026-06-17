@@ -11,14 +11,14 @@ import { withAccessTokenQueryParam } from "~/utils/videoUrl";
 
 describe("withAccessTokenQueryParam", () => {
   it("returns the URL unchanged when no token is given", () => {
-    expect(withAccessTokenQueryParam("/v2/files/abc/content", null)).toBe(
-      "/v2/files/abc/content",
+    expect(withAccessTokenQueryParam("/v2/references/abc/content", null)).toBe(
+      "/v2/references/abc/content",
     );
-    expect(withAccessTokenQueryParam("/v2/files/abc/content", undefined)).toBe(
-      "/v2/files/abc/content",
+    expect(withAccessTokenQueryParam("/v2/references/abc/content", undefined)).toBe(
+      "/v2/references/abc/content",
     );
-    expect(withAccessTokenQueryParam("/v2/files/abc/content", "")).toBe(
-      "/v2/files/abc/content",
+    expect(withAccessTokenQueryParam("/v2/references/abc/content", "")).toBe(
+      "/v2/references/abc/content",
     );
   });
 
@@ -35,7 +35,7 @@ describe("withAccessTokenQueryParam", () => {
 
   it("preserves existing query parameters", () => {
     const out = withAccessTokenQueryParam(
-      "/v2/files/abc/content?inline=1",
+      "/v2/references/abc/content?inline=1",
       "tok123",
       "http://shep.local",
     );
@@ -45,18 +45,18 @@ describe("withAccessTokenQueryParam", () => {
 
   it("preserves absolute URLs", () => {
     const out = withAccessTokenQueryParam(
-      "https://shep.example.com/v2/files/abc/content",
+      "https://shep.example.com/v2/references/abc/content",
       "tok123",
       "http://shep.local",
     );
     expect(out).toBe(
-      "https://shep.example.com/v2/files/abc/content?access_token=tok123",
+      "https://shep.example.com/v2/references/abc/content?access_token=tok123",
     );
   });
 
   it("URL-encodes a token containing reserved characters", () => {
     const out = withAccessTokenQueryParam(
-      "/v2/files/abc/content",
+      "/v2/references/abc/content",
       "tok+ /=ABC",
       "http://shep.local",
     );

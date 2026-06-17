@@ -1,199 +1,81 @@
 package de.dlr.shepard.v2.file.resources;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.mongoDB.NamedInputStream;
-import de.dlr.shepard.common.util.AccessType;
-import de.dlr.shepard.context.collection.entities.DataObject;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
-import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.v2.file.io.FileReferenceV2IO;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.core.StreamingOutput;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.security.Principal;
-import java.util.Date;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 /**
- * Plain-Mockito unit tests for {@link FileReferenceV2Rest} (FR1b, see
- * {@code aidocs/53 §1.8.4}). Same shape as
- * {@code FileBundleReferenceRestTest} — wires the resource by hand
- * and exercises every endpoint plus its 400 / 401 / 403 / 404 branches.
+ * Unit tests for {@link FileReferenceV2Rest} after APISIMP-FILE-PATH-RETIRE-2.
+ *
+ * <p>All REST endpoints now return 410 Gone — the live-endpoint tests are
+ * replaced with tombstone-verification tests asserting exactly that. The
+ * {@code parseRange} and {@code jsonNodeToMap} helper tests are retained
+ * verbatim because those methods are kept for test-compat.
  */
 class FileReferenceV2RestTest {
-
-  private static final String SINGLETON_APP_ID = "singleton-app-1";
-  private static final String PARENT_DO_APP_ID = "parent-do-app";
-  private static final long PARENT_DO_OGM_ID = 42L;
-  private static final String CALLER = "alice";
-
-  @Mock
-  SingletonFileReferenceService singletonService;
-
-  @Mock
-  PermissionsService permissionsService;
-
-  @Mock
-  SecurityContext securityContext;
-
-  @Mock
-  Principal principal;
 
   FileReferenceV2Rest resource;
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.openMocks(this);
     resource = new FileReferenceV2Rest();
-    resource.singletonService = singletonService;
-    resource.permissionsService = permissionsService;
-    resource.objectMapper = new ObjectMapper();
-    when(securityContext.getUserPrincipal()).thenReturn(principal);
-    when(principal.getName()).thenReturn(CALLER);
-    // Production resolves access via the 3-arg overload (no jwtIat) and the
-    // appId-based check; stub both positively so happy-path tests pass the gate.
-    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), any(AccessType.class), eq(CALLER)))
-      .thenReturn(true);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), any(AccessType.class), eq(CALLER)))
-      .thenReturn(true);
   }
 
-  private FileReference existing() {
-    var parent = new DataObject(PARENT_DO_OGM_ID);
-    parent.setAppId(PARENT_DO_APP_ID);
-    parent.setShepardId(101L);
-    var ref = new FileReference(7L);
-    ref.setAppId(SINGLETON_APP_ID);
-    ref.setName("doc");
-    ref.setDataObject(parent);
-    var file = new ShepardFile(new Date(), "doc.pdf", "deadbeef");
-    file.setOid("file-oid-1");
-    file.setFileSize(1024L);
-    ref.setFile(file);
-    return ref;
-  }
-
-  // ─── GET /v2/files/{appId} ────────────────────────────────────────────────
+  // ─── POST /v2/files — tombstone (APISIMP-KIND-DISCRIMINATOR-2) ───────────
 
   @Test
-  void getSingleton_returns200() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    var r = resource.getSingleton(SINGLETON_APP_ID, securityContext);
-    assertEquals(200, r.getStatus());
-    var io = (FileReferenceV2IO) r.getEntity();
-    assertEquals(SINGLETON_APP_ID, io.getAppId());
-    assertEquals("doc.pdf", io.getFile().getFilename());
+  void createSingleton_returns410() {
+    assertEquals(410, resource.createSingleton(null, null, null, null).getStatus());
+  }
+
+  // ─── GET /v2/files/by-data-object/{id} — tombstone ───────────────────────
+
+  @Test
+  void listByDataObject_returns410() {
+    assertEquals(410, resource.listByDataObject("any-do-id", null).getStatus());
+  }
+
+  // ─── GET /v2/files/{appId} — tombstone ───────────────────────────────────
+
+  @Test
+  void getSingleton_returns410() {
+    assertEquals(410, resource.getSingleton("any-id", null).getStatus());
+  }
+
+  // ─── GET /v2/files/{appId}/content — tombstone ───────────────────────────
+
+  @Test
+  void getContent_returns410() {
+    assertEquals(410, resource.getContent("any-id", null, null).getStatus());
   }
 
   @Test
-  void getSingleton_returns404WhenMissing() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(null);
-    assertEquals(404, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
+  void getContent_returns410WithRangeHeader() {
+    assertEquals(410, resource.getContent("any-id", "bytes=0-1023", null).getStatus());
   }
+
+  // ─── PATCH /v2/files/{appId} — tombstone ─────────────────────────────────
 
   @Test
-  void getSingleton_returns401Unauthenticated() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(securityContext.getUserPrincipal()).thenReturn(null);
-    assertEquals(401, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
+  void patchSingleton_returns410() {
+    assertEquals(410, resource.patchSingleton("any-id", null, null).getStatus());
   }
+
+  // ─── DELETE /v2/files/{appId} — tombstone ────────────────────────────────
 
   @Test
-  void getSingleton_returns403WhenNoRead() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(false);
-    assertEquals(403, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
+  void deleteSingleton_returns410() {
+    assertEquals(410, resource.deleteSingleton("any-id", null).getStatus());
   }
 
-  @Test
-  void getSingleton_returns404WhenNoDataObject() {
-    var orphan = existing();
-    orphan.setDataObject(null);
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(orphan);
-    assertEquals(404, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
-  }
-
-  // ─── GET /v2/files/{appId}/content (no range) ─────────────────────────────
-
-  @Test
-  void getContent_returns200FullBody() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    var nis = new NamedInputStream("file-oid-1", new ByteArrayInputStream(new byte[] { 1, 2, 3, 4 }), "doc.pdf", 4L);
-    when(singletonService.getPayload(SINGLETON_APP_ID)).thenReturn(nis);
-    var r = resource.getContent(SINGLETON_APP_ID, null, securityContext);
-    assertEquals(200, r.getStatus());
-    assertEquals(4L, r.getHeaderString("Content-Length") == null ? null : Long.parseLong(r.getHeaderString("Content-Length")));
-    assertEquals("bytes", r.getHeaderString("Accept-Ranges"));
-  }
-
-  @Test
-  void getContent_returns404WhenMissing() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(null);
-    assertEquals(404, resource.getContent(SINGLETON_APP_ID, null, securityContext).getStatus());
-  }
-
-  @Test
-  void getContent_returns404WhenPayloadMissing() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(singletonService.getPayload(SINGLETON_APP_ID)).thenThrow(new NotFoundException("gone"));
-    assertEquals(404, resource.getContent(SINGLETON_APP_ID, null, securityContext).getStatus());
-  }
-
-  // ─── GET /v2/files/{appId}/content (with range) ───────────────────────────
-
-  @Test
-  void getContent_returns206PartialContent() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    byte[] body = new byte[] { 10, 20, 30, 40, 50 };
-    var nis = new NamedInputStream("file-oid-1", new ByteArrayInputStream(body), "doc.pdf", 5L);
-    when(singletonService.getPayload(SINGLETON_APP_ID)).thenReturn(nis);
-
-    var r = resource.getContent(SINGLETON_APP_ID, "bytes=1-3", securityContext);
-    assertEquals(206, r.getStatus());
-    assertEquals("bytes 1-3/5", r.getHeaderString("Content-Range"));
-    assertEquals(3L, Long.parseLong(r.getHeaderString("Content-Length")));
-
-    // Drain the StreamingOutput and verify the bytes.
-    StreamingOutput so = (StreamingOutput) r.getEntity();
-    var baos = new ByteArrayOutputStream();
-    so.write(baos);
-    assertArrayEquals(new byte[] { 20, 30, 40 }, baos.toByteArray());
-  }
-
-  @Test
-  void getContent_returns416OutOfRange() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    var nis = new NamedInputStream("file-oid-1", new ByteArrayInputStream(new byte[] { 1, 2 }), "doc.pdf", 2L);
-    when(singletonService.getPayload(SINGLETON_APP_ID)).thenReturn(nis);
-    var r = resource.getContent(SINGLETON_APP_ID, "bytes=10-20", securityContext);
-    assertEquals(416, r.getStatus());
-    assertEquals("bytes */2", r.getHeaderString("Content-Range"));
-  }
-
-  // ─── parseRange (helper unit tests) ───────────────────────────────────────
+  // ─── parseRange (static helper, kept for test-compat) ────────────────────
 
   @Test
   void parseRange_acceptsClosedRange() {
@@ -251,99 +133,7 @@ class FileReferenceV2RestTest {
     assertEquals(9L, actual[1]);
   }
 
-  // ─── POST /v2/files (upload) — RETIRED APISIMP-KIND-DISCRIMINATOR-2 ─────────
-
-  @Test
-  void createSingleton_returns410Gone() {
-    // The endpoint is retired; any call returns 410 regardless of arguments.
-    var r = resource.createSingleton(PARENT_DO_APP_ID, "name", null, securityContext);
-    assertEquals(410, r.getStatus());
-  }
-
-  // ─── PATCH /v2/files/{appId} ──────────────────────────────────────────────
-
-  @Test
-  void patchSingleton_returns200WithUpdated() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    var updated = existing();
-    updated.setName("new-name");
-    when(singletonService.patchSingleton(eq(SINGLETON_APP_ID), any())).thenReturn(updated);
-
-    JsonNode body = new ObjectMapper().readTree("{\"name\": \"new-name\"}");
-    var r = resource.patchSingleton(SINGLETON_APP_ID, body, securityContext);
-    assertEquals(200, r.getStatus());
-    var io = (FileReferenceV2IO) r.getEntity();
-    assertEquals("new-name", io.getName());
-  }
-
-  @Test
-  void patchSingleton_returns400OnNullBody() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    assertEquals(400, resource.patchSingleton(SINGLETON_APP_ID, null, securityContext).getStatus());
-  }
-
-  @Test
-  void patchSingleton_returns400OnArrayBody() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    JsonNode body = new ObjectMapper().readTree("[1,2,3]");
-    assertEquals(400, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
-  }
-
-  @Test
-  void patchSingleton_returns404WhenMissing() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(null);
-    JsonNode body = new ObjectMapper().readTree("{\"name\":\"x\"}");
-    assertEquals(404, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
-  }
-
-  @Test
-  void patchSingleton_returns403WhenNoWrite() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
-    JsonNode body = new ObjectMapper().readTree("{\"name\":\"x\"}");
-    assertEquals(403, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
-  }
-
-  @Test
-  void patchSingleton_returns400WhenServiceRejects() throws Exception {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(singletonService.patchSingleton(eq(SINGLETON_APP_ID), any()))
-      .thenThrow(new BadRequestException("name must not be null or blank"));
-    JsonNode body = new ObjectMapper().readTree("{\"name\":\"  \"}");
-    assertEquals(400, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
-  }
-
-  // ─── DELETE /v2/files/{appId} ─────────────────────────────────────────────
-
-  @Test
-  void deleteSingleton_returns204() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    var r = resource.deleteSingleton(SINGLETON_APP_ID, securityContext);
-    assertEquals(204, r.getStatus());
-    verify(singletonService).deleteSingleton(SINGLETON_APP_ID);
-  }
-
-  @Test
-  void deleteSingleton_returns404WhenMissing() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(null);
-    assertEquals(404, resource.deleteSingleton(SINGLETON_APP_ID, securityContext).getStatus());
-  }
-
-  @Test
-  void deleteSingleton_returns403WhenNoWrite() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
-    assertEquals(403, resource.deleteSingleton(SINGLETON_APP_ID, securityContext).getStatus());
-  }
-
-  @Test
-  void deleteSingleton_returns404WhenServiceRaisesAfterGate() {
-    when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    doThrow(new NotFoundException("race")).when(singletonService).deleteSingleton(SINGLETON_APP_ID);
-    assertEquals(404, resource.deleteSingleton(SINGLETON_APP_ID, securityContext).getStatus());
-  }
-
-  // ─── jsonNodeToMap (helper) ────────────────────────────────────────────────
+  // ─── jsonNodeToMap (package-private helper, kept for test-compat) ─────────
 
   @Test
   void jsonNodeToMap_preservesScalars() throws Exception {
@@ -361,95 +151,5 @@ class FileReferenceV2RestTest {
     Map<String, Object> sub = (Map<String, Object>) out.get("obj");
     assertEquals("v", sub.get("k"));
     assertNull(sub.get("e"));
-  }
-
-  // ─── GET /v2/files/by-data-object/{dataObjectAppId} (REF-UNIFIED-TABLE-FR1B) ──
-
-  @Test
-  void listByDataObject_returns200WithSingletons() {
-    var ref1 = existing();
-    var ref2 = new FileReference(8L);
-    ref2.setAppId("singleton-app-2");
-    ref2.setName("notes");
-    var parent = new DataObject(PARENT_DO_OGM_ID);
-    parent.setAppId(PARENT_DO_APP_ID);
-    ref2.setDataObject(parent);
-    ref2.setFile(new ShepardFile(new Date(), "notes.ipynb", "abcd1234"));
-
-    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of(ref1, ref2));
-
-    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
-
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals(SINGLETON_APP_ID, body.get(0).getAppId());
-    assertEquals("singleton-app-2", body.get(1).getAppId());
-  }
-
-  @Test
-  void listByDataObject_filtersSoftDeleted() {
-    var ref = existing();
-    ref.setDeleted(true);
-
-    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of(ref));
-
-    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
-
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
-    assertTrue(body.isEmpty());
-  }
-
-  @Test
-  void listByDataObject_emptyListWhenNoSingletons() {
-    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    when(singletonService.listByDataObject(PARENT_DO_APP_ID)).thenReturn(java.util.List.of());
-
-    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
-
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.List<FileReferenceV2IO> body = (java.util.List<FileReferenceV2IO>) r.getEntity();
-    assertTrue(body.isEmpty());
-  }
-
-  @Test
-  void listByDataObject_returns401WhenNoPrincipal() {
-    when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
-    assertEquals(401, r.getStatus());
-  }
-
-  @Test
-  void listByDataObject_returns400WhenAppIdBlank() {
-    var r = resource.listByDataObject("  ", securityContext);
-    assertEquals(400, r.getStatus());
-  }
-
-  @Test
-  void listByDataObject_returns404WhenDoUnknown() {
-    when(singletonService.getDataObjectOgmId("missing")).thenReturn(null);
-    var r = resource.listByDataObject("missing", securityContext);
-    assertEquals(404, r.getStatus());
-  }
-
-  @Test
-  void listByDataObject_returns403WhenNoReadPermission() {
-    when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(false);
-    var r = resource.listByDataObject(PARENT_DO_APP_ID, securityContext);
-    assertEquals(403, r.getStatus());
   }
 }

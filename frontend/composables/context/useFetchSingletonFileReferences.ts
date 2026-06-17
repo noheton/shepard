@@ -3,9 +3,10 @@
  * attached to a DataObject so the unified data-references table can
  * render them alongside FR1a bundles + timeseries + structured-data.
  *
- * V2CONV-A2: now backed by the unified list endpoint
- * `GET /v2/references?kind=file&dataObjectAppId={appId}` (was the per-kind
- * `GET /v2/files/by-data-object/{dataObjectAppId}`). The unified response is
+ * V2CONV-A2: backed by the unified list endpoint
+ * `GET /v2/references?kind=file&dataObjectAppId={appId}` (the legacy
+ * `GET /v2/files/by-data-object/{dataObjectAppId}` returns 410 since
+ * APISIMP-FILE-PATH-RETIRE-2). The unified response is
  * `ReferenceV2IO[]`: the embedded `ShepardFile` lives under `payload.file`,
  * the FR1b discriminator is `referenceShape === "singleton"`, and the
  * file-kind is `fileKind`. This composable normalises that envelope back to
