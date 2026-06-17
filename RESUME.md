@@ -155,3 +155,19 @@ Update at every pivot:
 - Session ending → save final state; next /resume reads this file
 
 Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not append-only journal.
+
+## 2026-06-17 — Full instance reset COMPLETE + MFFD scaffolding seeded
+- Reset done: all substrates wiped (Neo4j fresh, TS 0 rows, mongo/garage fresh), Keycloak preserved. Backend+frontend healthy.
+- Fixed 3 fresh-DB boot bugs (commit on main, rebased d1df38676): pgcrypto/pg_stat_statements extension privilege (init script pre-creates as superuser); V1.17.0 refresh_continuous_aggregate-in-txn (sidecar .sql.conf executeInTransaction=false); stale SHEPARD_PERMISSIONS_DEFAULT_OWNER unset. Runbook 13 corrected (host bind mounts, not named volumes).
+- Auth bootstrap: admin user (username=7eead942..., appId 019ed455-...) materialized via Keycloak password grant (admin/admin-demo, scope=openid profile email). Granted instance-admin via :HAS_ROLE Cypher. Minted import key -> /root/.claude/uploads/mffd-import-key-2026-06-17.txt (X-API-KEY, instance-admin, verified 200).
+- v2 base is /v2/... (root-path /), NOT /shepard/api/v2/... (that 404s).
+- MFFD scaffolding seeded (seed-mffd-collections.py, ONLY mffd, no other examples):
+  - Project "MFFD Upper Shell — Project" = 019ed455-62cd-75b5-951e-b837ffdace16
+  - mffd-afp-tapelaying  = 019ed455-66f4-7aea-8cb3-5c0b34a737df
+  - mffd-bridge-welding  = 019ed455-6781-755e-87dd-eb3f2f3dbba3   (W3 target)
+  - mffd-spot-welding    = 019ed455-67f7-7725-bf2d-7cd1b67aca9f
+  - mffd-ndt-thermography= 019ed455-6866-71f1-b0bf-0f83a3e3aaa9
+  - mffd-cell            = 019ed455-68d9-7e00-8aa0-0191e99fc117
+  - UserGroups: mffd-afp-team, mffd-welding-team, mffd-ndt-team, mffd-cell-team
+- BRIDGE WAVE (user picked "bridge first/validate"): source = LOCAL /mnt/pve/unas/dump/dataset/4-Brückenschweißen/{bridgewelding/,manifest.json}. manifest = {collections.bridgewelding:{id:163811, dos:{<1031 DOs>}}}; each DO has ts_refs/file_refs/structured_refs[{ref_id,ref_name,file}]; payloads in bridgewelding/<DO>/{structured,...}; 3.7GB total.
+- BLOCKER/FINDING: README's `shepard-importer --source shepard-export-manifest` CLI is FICTIONAL. import-mffd.py = thermography-frame importer (no manifest replay); mffd-import-v15.py LOCAL MODE = 0-byte TS placeholders. The bridge manifest-replay importer must be BUILT (read manifest -> create DO per entry in mffd-bridge-welding -> recreate file/ts/structured refs + upload payloads -> annotate urn:shepard:source:provenance; completeness-non-negotiable retry-forever).
