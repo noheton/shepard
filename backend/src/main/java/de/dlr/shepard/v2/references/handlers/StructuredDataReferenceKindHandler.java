@@ -11,6 +11,7 @@ import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferen
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
+import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
@@ -18,6 +19,9 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -168,6 +172,41 @@ public class StructuredDataReferenceKindHandler implements ReferenceKindHandler 
       parent.getShepardId(),
       ref.getShepardId()
     );
+  }
+
+  @Override
+  public ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
+    StructuredDataReference ref = structuredDataReferenceDAO.findByAppId(appId);
+    if (ref == null || ref.isDeleted()) {
+      throw new NotFoundException("No StructuredDataReference with appId " + appId);
+    }
+    StructuredDataContainer container = ref.getStructuredDataContainer();
+    if (container == null) {
+      throw new BadRequestException(
+        "StructuredDataReference " + appId + " has no linked container — cannot upload content"
+      );
+    }
+    if (input == null) {
+      throw new BadRequestException("upload body is required for kind=structured-data");
+    }
+    String jsonPayload;
+    try {
+      jsonPayload = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new BadRequestException("failed to read upload body: " + e.getMessage());
+    }
+    if (jsonPayload.isBlank()) {
+      throw new BadRequestException("upload body must not be empty");
+    }
+    StructuredData meta = filename != null && !filename.isBlank()
+      ? new StructuredData(filename.trim(), dateHelper.getDate())
+      : new StructuredData();
+    StructuredData created = structuredDataContainerService.createStructuredData(
+      container.getId(), new StructuredDataPayload(meta, jsonPayload)
+    );
+    ref.addStructuredData(created);
+    structuredDataReferenceDAO.createOrUpdate(ref);
+    return toIO(ref);
   }
 
   @Override
