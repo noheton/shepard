@@ -3750,7 +3750,7 @@ picks these up. Terse by design.
 | **DOC-BASIC-shapes-render** | Write `docs/help/render-a-view.md`. | XS | `frontend/pages/shapes/render.vue` |
 | **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` |
 | **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` |
-| **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` |
+| **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-88** direct-to-main |
 | **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
 | **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | hdf5 plugin |
 | **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` |
