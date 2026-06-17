@@ -294,7 +294,7 @@ describe("TS-IDc — channelShepardId path", () => {
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     expect(url).toContain(`/v2/containers/1772/channels/${SHEPARD_ID}/data`);
     expect(url).toContain("downsample=lttb");
-    expect(url).toContain("max_points=60");
+    expect(url).toContain("maxPoints=60");
 
     expect(data.value).toEqual([[1500, 7]]);
   });
