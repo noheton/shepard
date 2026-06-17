@@ -179,3 +179,11 @@ Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not 
 - GRAPH CRUFT (post-import prune needed, MFFD-GRAPH-PRUNE): iterative imports left 3178 soft-deleted DataObjects + orphan annotations (1088 otvis-file annos point at dead DOs). LIVE data is correct (deleted=false queries exact); tombstones are cruft. Prune after all waves.
 - Backlog filed: P24 (v2 structured-data surface), P25 (bulk DO+ref create), F9 (reference-annotation 403 — confirmed PERMANENT not lag).
 - Next: W2 tapelaying (TS-export, coll 48297, real timeseries — heaviest), then W5 cell (rdk→urdf), W8b stringer (247GB zip).
+
+## 2026-06-17 — W2 pass B DONE; pass A pending; W5 done
+- W5 cell: MFZ DO + MFZ.rdk FileReference + 10 rdk parser annos. merged f612b1cbf.
+- W2 pass B (structure+lineage): 8457 Track/Ply DOs + 8400 predecessor (has_successor) + 8450 parent (has_child) edges, graph-verified, idempotent. merged d9235b885. Importer: examples/mffd-showcase/scripts/mffd-tapelaying-import.py. Lineage sub-pass SERIALIZED (workers=1) — parallel bidirectional-edge writes raced backend's successor-list validation (400); 5 manual serial retries cleared them; fix committed.
+- W2 pass A (TPS->BrushTrace): NOT blocked by infra. spatiotemporal v6 plugin IS enabled (/v2/containers?kind=spatial -> 400=exists). Script's --pass A falsely STOPPED probing the DISABLED v1 path /shepard/api/spatialDataContainers (404). Needs rework to v2 kind=spatial + BrushTrace ingest. Backlog: W2-PASS-A-SPATIAL.
+- Raw 355GB TPS payloads deferred (W2-TPS-RAW-1, disk-gated: 344GB free < 355GB).
+- MFFD import status: W3 bridge ✓, W8a spot-welding ✓, W6 thermography ✓, W5 cell ✓, W2 pass B ✓. REMAINING: W2 pass A (spatial rework), W8b stringer (247GB zip, disk+parser). Wiki transform also pending.
+- Graph cruft to prune post-import (MFFD-GRAPH-PRUNE): ~3178+ soft-deleted DOs + orphan annotations from iterative imports; live (deleted=false) data is correct.
