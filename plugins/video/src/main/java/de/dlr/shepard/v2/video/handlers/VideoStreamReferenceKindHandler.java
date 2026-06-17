@@ -7,12 +7,17 @@ import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import de.dlr.shepard.context.references.videostreamreference.services.VideoStreamReferenceService;
+import de.dlr.shepard.storage.StorageException;
+import de.dlr.shepard.storage.StorageNotInstalledException;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,9 +29,9 @@ import java.util.Map;
  * {@code ReferencesV2Service} dispatcher. Delegates CRUD to the existing
  * {@link VideoStreamReferenceService}.
  *
- * <p>Video references are binary (multipart upload via
- * {@code POST /v2/video-stream-references}) — the {@link #create} method
- * always rejects with 400, matching the {@code FileReferenceKindHandler} shape.
+ * <p>APISIMP-VIDEO-STREAMREF-PATH: creates use Option C two-step shape —
+ * {@link #create} mints a metadata-only node; {@link #uploadContent} attaches
+ * the binary payload via {@code PUT /v2/references/{appId}/content}.
  *
  * <p>Payload key set: {@code storageLocator, mimeType, fileSizeBytes,
  * durationSeconds, width, height, frameRate, videoCodec, audioCodec,
@@ -81,16 +86,40 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
   }
 
   /**
-   * Video references are binary — they are created via the multipart
-   * {@code POST /v2/video-stream-references} upload endpoint, not the
-   * JSON unified create. Rejects with 400.
+   * APISIMP-VIDEO-STREAMREF-PATH Option C phase 1 — create a metadata-only
+   * VideoStreamReference node. The caller must follow up with
+   * {@code PUT /v2/references/{appId}/content} to store the binary bytes.
+   *
+   * <p>Body must include a non-blank {@code name} field.
    */
   @Override
   public ReferenceV2IO create(String dataObjectAppId, Map<String, Object> body) {
-    throw new BadRequestException(
-      "kind=video is a binary upload — use multipart POST /v2/video-stream-references?dataObjectAppId=… " +
-      "instead of POST /v2/references"
+    Object nameVal = body != null ? body.get("name") : null;
+    if (nameVal == null || nameVal.toString().isBlank()) {
+      throw new BadRequestException("kind=video create body must include a non-blank 'name' field");
+    }
+    VideoStreamReference created = videoStreamReferenceService.createMetadata(
+      dataObjectAppId, nameVal.toString().trim()
     );
+    return toIO(created);
+  }
+
+  /**
+   * APISIMP-VIDEO-STREAMREF-PATH Option C phase 2 — attach binary content to
+   * an existing VideoStreamReference via {@code PUT /v2/references/{appId}/content}.
+   */
+  @Override
+  public ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
+    try {
+      VideoStreamReference updated = videoStreamReferenceService.attachPayload(
+        appId, filename, null, declaredSize, input
+      );
+      return toIO(updated);
+    } catch (StorageNotInstalledException ex) {
+      throw new WebApplicationException(ex.getMessage(), Response.Status.SERVICE_UNAVAILABLE);
+    } catch (StorageException ex) {
+      throw new WebApplicationException(ex.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Override

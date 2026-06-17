@@ -129,6 +129,144 @@ public class VideoStreamReferenceService {
   // ── create ────────────────────────────────────────────────────────────────
 
   /**
+   * APISIMP-VIDEO-STREAMREF-PATH Option C phase 1 — create a metadata-only
+   * {@link VideoStreamReference} node (no bytes stored yet).
+   *
+   * <p>Called by the unified {@code POST /v2/references?kind=video} path via
+   * {@link de.dlr.shepard.v2.video.handlers.VideoStreamReferenceKindHandler#create}.
+   * The caller must follow up with
+   * {@link #attachPayload} to store the binary content.
+   *
+   * @param dataObjectAppId parent DataObject's appId
+   * @param name            human-readable name for the reference (required, non-blank)
+   * @return the persisted metadata-only node
+   * @throws NotFoundException when no DataObject with that appId exists
+   */
+  public VideoStreamReference createMetadata(String dataObjectAppId, String name) {
+    DataObject parent = resolveDataObjectByAppId(dataObjectAppId);
+    if (parent == null) {
+      throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
+    }
+    if (name == null || name.isBlank()) {
+      name = "video";
+    }
+
+    User user = userService.getCurrentUser();
+    VideoStreamReference ref = new VideoStreamReference();
+    ref.setName(name);
+    ref.setDataObject(parent);
+    ref.setCreatedAt(dateHelper.getDate());
+    ref.setCreatedBy(user);
+
+    VideoStreamReference created = videoStreamReferenceDAO.createOrUpdate(ref);
+    created.setShepardId(created.getId());
+    return videoStreamReferenceDAO.createOrUpdate(created);
+  }
+
+  /**
+   * APISIMP-VIDEO-STREAMREF-PATH Option C phase 2 — attach binary content to
+   * an existing {@link VideoStreamReference} node.
+   *
+   * <p>Called by the unified {@code PUT /v2/references/{appId}/content} path via
+   * {@link de.dlr.shepard.v2.video.handlers.VideoStreamReferenceKindHandler#uploadContent}.
+   * Re-uploading replaces the previous content (old blob is deleted after the new one is written).
+   *
+   * @param appId         the reference's appId (must already exist)
+   * @param fileName      original filename (for storage metadata and MIME detection)
+   * @param mimeType      MIME type hint (nullable; derived from fileName if absent)
+   * @param contentLength file size from HTTP Content-Length ({@code <= 0} skips size cap)
+   * @param payload       the video byte stream
+   * @return the updated reference entity
+   * @throws NotFoundException            when no VideoStreamReference with that appId exists
+   * @throws StorageNotInstalledException when no storage adapter is active
+   * @throws StorageException             on storage-tier write failure
+   */
+  public VideoStreamReference attachPayload(
+    String appId,
+    String fileName,
+    String mimeType,
+    long contentLength,
+    InputStream payload
+  ) throws StorageException {
+    VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
+    if (ref == null) {
+      throw new NotFoundException("No VideoStreamReference with appId " + appId);
+    }
+    if (fileName == null || fileName.isBlank()) {
+      fileName = ref.getName();
+    }
+
+    Optional<FileStorage> storageOpt = fileStorageRegistry.activeStorage();
+    if (storageOpt.isEmpty()) {
+      throw new StorageNotInstalledException("No active file storage adapter configured");
+    }
+    FileStorage storage = storageOpt.get();
+
+    long declaredSize = contentLength > 0 ? contentLength : -1L;
+    if (mongoFileMaxBytes > 0 && declaredSize > 0 && declaredSize > mongoFileMaxBytes) {
+      throw new InvalidRequestException(
+        "File exceeds the maximum allowed size of " + mongoFileMaxBytes + " bytes"
+      );
+    }
+
+    // Delete old blob if re-uploading.
+    String oldLocatorRaw = ref.getStorageLocator();
+    if (oldLocatorRaw != null && !oldLocatorRaw.isBlank()) {
+      int colon = oldLocatorRaw.indexOf(':');
+      if (colon > 0) {
+        try {
+          storage.delete(new StorageLocator(oldLocatorRaw.substring(0, colon), oldLocatorRaw.substring(colon + 1)));
+        } catch (Exception ex) {
+          Log.warnf("VID/attachPayload: old blob delete failed for locator %s — %s (ignored)", oldLocatorRaw, ex.getMessage());
+        }
+      }
+    }
+
+    Long sizeHint = declaredSize > 0 ? declaredSize : null;
+    StorageLocator locator;
+    if (sizeHint == null || sizeHint <= DEDUP_MAX_SIZE_BYTES) {
+      locator = storeWithDedup(storage, fileName, mimeType, sizeHint, payload);
+    } else {
+      StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, payload, sizeHint, null);
+      locator = storage.put(req);
+    }
+
+    // Probe stored bytes for codec metadata (best-effort).
+    VideoProbeResult probe = VideoProbeResult.empty();
+    try {
+      StorageGetResponse getResp = storage.get(locator);
+      try (InputStream videoStream = getResp.stream()) {
+        probe = videoProbeService.probe(videoStream, mimeType);
+      }
+    } catch (Exception ex) {
+      Log.warnf("VID/attachPayload: probe failed after upload (locator=%s): %s", locator, ex.getMessage());
+    }
+
+    Long fileSizeBytes = probe.fileSizeBytes() != null ? probe.fileSizeBytes() : sizeHint;
+
+    User user = userService.getCurrentUser();
+    ref.setStorageLocator(locator.providerId() + ":" + locator.locator());
+    ref.setMimeType(mimeType);
+    ref.setFileSizeBytes(fileSizeBytes);
+    ref.setDurationSeconds(probe.durationSeconds());
+    ref.setWidth(probe.width());
+    ref.setHeight(probe.height());
+    ref.setFrameRate(probe.frameRate());
+    ref.setVideoCodec(probe.videoCodec());
+    ref.setAudioCodec(probe.audioCodec());
+    ref.setWallClockTimestamp(probe.wallClockTimestamp());
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(user);
+
+    VideoStreamReference updated = videoStreamReferenceDAO.createOrUpdate(ref);
+    Log.debugf(
+      "VID/attachPayload: attached content to VideoStreamReference appId=%s (locator=%s)",
+      appId, locator
+    );
+    return updated;
+  }
+
+  /**
    * Create a new {@link VideoStreamReference} and store the file payload.
    *
    * <p>Steps:

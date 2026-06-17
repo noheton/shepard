@@ -123,11 +123,11 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
 
   /**
    * Builds the direct-download URL for a VideoStreamReference.
-   * Stays on the plugin-specific path — `/download` is a binary op outside
-   * the unified `/v2/references` surface (PLUGIN-REF-HANDLER-* in aidocs/16).
+   * APISIMP-VIDEO-STREAMREF-PATH: moved from the per-DataObject path to the
+   * unified `/v2/references/{appId}/download` surface.
    */
   function downloadUrl(appId: string): string {
-    return `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/video-stream-references/${encodeURIComponent(appId)}/download`;
+    return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/download`;
   }
 
   refresh();

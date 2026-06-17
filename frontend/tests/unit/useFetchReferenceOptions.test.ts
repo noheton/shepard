@@ -28,7 +28,7 @@ describe("mapToReferenceOptions", () => {
   it("falls back to appId in label when name is absent", () => {
     const refs = [{ appId: "ref-abc" }];
     const opts = mapToReferenceOptions(refs, "uri");
-    expect(opts[0].label).toBe("ref-abc (uri)");
+    expect(opts[0]!.label).toBe("ref-abc (uri)");
   });
 
   it("skips entries without an appId field", () => {
@@ -36,10 +36,10 @@ describe("mapToReferenceOptions", () => {
       { name: "no-appid" },
       { appId: "ref-ok", name: "fine" },
     ];
-    // @ts-expect-error — intentionally missing appId to test guard
+    // appId is optional in the type — passing a name-only entry is valid TS
     const opts = mapToReferenceOptions(refs, "git");
     expect(opts).toHaveLength(1);
-    expect(opts[0].appId).toBe("ref-ok");
+    expect(opts[0]!.appId).toBe("ref-ok");
   });
 
   it("returns an empty array for an empty input list", () => {

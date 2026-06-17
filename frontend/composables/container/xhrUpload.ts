@@ -185,3 +185,27 @@ export async function xhrUploadPresignedPut(args: {
     ...args.options,
   });
 }
+
+/**
+ * Authenticated octet-stream PUT — uploads raw file bytes with a Bearer token.
+ * Used for the APISIMP-VIDEO-STREAMREF-PATH two-step upload phase 2:
+ * `PUT /v2/references/{appId}/content?filename=<name>`.
+ */
+export async function xhrUploadOctetPut<T = unknown>(args: {
+  url: string;
+  file: File;
+  authorization: string;
+  options?: XhrUploadOptions;
+}): Promise<T> {
+  return runXhr<T>({
+    method: "PUT",
+    url: args.url,
+    body: args.file,
+    headers: {
+      Authorization: args.authorization,
+      "Content-Type": args.file.type || "application/octet-stream",
+    },
+    responseType: "json",
+    ...args.options,
+  });
+}

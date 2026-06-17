@@ -16,7 +16,7 @@
  */
 import VideoPlayer from "~/components/common/VideoPlayer.vue";
 import UploadFilesButton from "~/components/container/UploadFilesButton.vue";
-import { xhrUploadMultipart, type XhrUploadOptions } from "~/composables/container/xhrUpload";
+import { xhrUploadOctetPut, type XhrUploadOptions } from "~/composables/container/xhrUpload";
 import {
   type VideoStreamReferenceIO,
   useFetchVideoStreamReferences,
@@ -48,11 +48,32 @@ async function uploadVideo(
   const accessToken = session.value?.accessToken;
   if (!accessToken) throw new Error("Not authenticated");
 
-  const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/video-stream-references`;
-  // Task #135 — route through XHR so the upload dialog can show progress + cancel.
-  await xhrUploadMultipart<unknown>({
-    url,
-    fieldName: "file",
+  // APISIMP-VIDEO-STREAMREF-PATH two-step upload:
+  // Step 1: create metadata node — plain JSON POST, no file bytes.
+  const metaResp = await fetch(
+    `${v2BaseUrl()}/v2/references?kind=video&dataObjectAppId=${encodeURIComponent(props.dataObjectAppId)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ name: file.name }),
+    },
+  );
+  if (!metaResp.ok) {
+    const bodyText = await metaResp.text().catch(() => "");
+    throw new Error(`Failed to create video reference (HTTP ${metaResp.status}): ${bodyText.slice(0, 200)}`);
+  }
+  const meta = (await metaResp.json()) as { appId: string };
+
+  // Step 2: upload bytes via authenticated PUT with progress reporting.
+  const contentUrl =
+    `${v2BaseUrl()}/v2/references/${encodeURIComponent(meta.appId)}/content` +
+    `?filename=${encodeURIComponent(file.name)}`;
+  await xhrUploadOctetPut<unknown>({
+    url: contentUrl,
     file,
     authorization: `Bearer ${accessToken}`,
     options,

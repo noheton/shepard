@@ -119,7 +119,7 @@ describe("useFetchVideoStreamReferences", () => {
     expect(isLoading.value).toBe(false);
   });
 
-  it("downloadUrl uses the plugin-specific binary path, not /v2/references", async () => {
+  it("downloadUrl uses the unified /v2/references/{appId}/download path", async () => {
     mockFetch.mockReturnValue(okResponse([]));
 
     const { useFetchVideoStreamReferences } = await import(
@@ -129,7 +129,7 @@ describe("useFetchVideoStreamReferences", () => {
     await flush();
 
     const url = downloadUrl("vid-ref-001");
-    expect(url).toContain("/v2/data-objects/do-app-001/video-stream-references/vid-ref-001/download");
-    expect(url).not.toContain("/v2/references");
+    expect(url).toContain("/v2/references/vid-ref-001/download");
+    expect(url).not.toContain("/v2/data-objects");
   });
 });

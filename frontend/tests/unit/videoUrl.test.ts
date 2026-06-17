@@ -24,12 +24,12 @@ describe("withAccessTokenQueryParam", () => {
 
   it("appends ?access_token to a relative URL with no existing query", () => {
     const out = withAccessTokenQueryParam(
-      "/v2/data-objects/x/video-stream-references/y/download",
+      "/v2/references/vid-ref-001/download",
       "tok123",
       "http://shep.local",
     );
     expect(out).toBe(
-      "/v2/data-objects/x/video-stream-references/y/download?access_token=tok123",
+      "/v2/references/vid-ref-001/download?access_token=tok123",
     );
   });
 
