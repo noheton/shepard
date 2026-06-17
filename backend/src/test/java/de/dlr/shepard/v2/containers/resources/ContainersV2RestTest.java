@@ -10,6 +10,10 @@ import static org.mockito.Mockito.never;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import jakarta.ws.rs.QueryParam;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.UUID;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
@@ -584,5 +588,22 @@ class ContainersV2RestTest {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     var r = resource.list("file", null, securityContext);
     assertEquals(401, r.getStatus());
+  }
+
+  // ─── APISIMP-MAX-POINTS-PARAM-CASE regression ──────────────────────────────
+
+  @Test
+  void getChannelData_maxPointsAnnotationIsCamelCase() throws NoSuchMethodException {
+    // Regression guard: @QueryParam on maxPoints parameter must be "maxPoints" (camelCase),
+    // not "max_points" (snake_case). All other v2 query params use camelCase.
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    String actual = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && p.getAnnotation(QueryParam.class).value().contains("oint"))
+        .map(p -> p.getAnnotation(QueryParam.class).value())
+        .findFirst().orElse("NOT_FOUND");
+    assertEquals("maxPoints", actual);
   }
 }
