@@ -129,6 +129,109 @@ public class VideoStreamReferenceService {
   // ── create ────────────────────────────────────────────────────────────────
 
   /**
+   * APISIMP-VIDEO-STREAMREF-PATH — two-step create, step 1.
+   *
+   * <p>Creates a {@link VideoStreamReference} metadata node with no bytes
+   * attached yet. The caller must follow up with {@link #attachBytes} to
+   * store the video payload.
+   *
+   * @param dataObjectAppId parent DataObject's appId
+   * @param name            human-readable reference name (required, non-blank)
+   * @return the persisted entity (storageLocator is null)
+   * @throws jakarta.ws.rs.NotFoundException when no DataObject with that appId exists
+   */
+  public VideoStreamReference createMetadataNode(String dataObjectAppId, String name) {
+    if (name == null || name.isBlank()) name = "video";
+    DataObject parent = resolveDataObjectByAppId(dataObjectAppId);
+    if (parent == null) {
+      throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
+    }
+    User user = userService.getCurrentUser();
+    VideoStreamReference ref = new VideoStreamReference();
+    ref.setName(name);
+    ref.setDataObject(parent);
+    ref.setCreatedAt(dateHelper.getDate());
+    ref.setCreatedBy(user);
+    VideoStreamReference created = videoStreamReferenceDAO.createOrUpdate(ref);
+    created.setShepardId(created.getId());
+    return videoStreamReferenceDAO.createOrUpdate(created);
+  }
+
+  /**
+   * APISIMP-VIDEO-STREAMREF-PATH — two-step create, step 2.
+   *
+   * <p>Stores the video bytes for an existing (possibly bytes-free) reference
+   * node, runs ffprobe best-effort, and updates the Neo4j fields.
+   *
+   * @param ref           the VideoStreamReference to attach bytes to (must not be null)
+   * @param fileName      original filename (used for MIME detection and GridFS)
+   * @param mimeType      caller-supplied MIME type hint (nullable; probed if absent)
+   * @param contentLength declared byte count from Content-Length (≤0 = unknown)
+   * @param payload       raw video bytes (consumed by this method)
+   * @return the updated entity
+   * @throws StorageNotInstalledException when no storage adapter is active
+   * @throws StorageException             on storage-tier write failure
+   */
+  public VideoStreamReference attachBytes(
+    VideoStreamReference ref,
+    String fileName,
+    String mimeType,
+    long contentLength,
+    InputStream payload
+  ) throws StorageException {
+    if (fileName == null || fileName.isBlank()) fileName = ref.getName();
+
+    Optional<FileStorage> storageOpt = fileStorageRegistry.activeStorage();
+    if (storageOpt.isEmpty()) {
+      throw new StorageNotInstalledException("No active file storage adapter configured");
+    }
+    FileStorage storage = storageOpt.get();
+
+    if (mongoFileMaxBytes > 0 && contentLength > 0 && contentLength > mongoFileMaxBytes) {
+      throw new InvalidRequestException(
+        "File exceeds the maximum allowed size of " + mongoFileMaxBytes + " bytes"
+      );
+    }
+
+    Long sizeHint = contentLength > 0 ? contentLength : null;
+    StorageLocator locator;
+    if (sizeHint == null || sizeHint <= DEDUP_MAX_SIZE_BYTES) {
+      locator = storeWithDedup(storage, fileName, mimeType, sizeHint, payload);
+    } else {
+      StoragePutRequest req = new StoragePutRequest(VIDEO_CONTAINER, fileName, mimeType, payload, sizeHint, null);
+      locator = storage.put(req);
+    }
+
+    VideoProbeResult probe = VideoProbeResult.empty();
+    try {
+      StorageGetResponse getResp = storage.get(locator);
+      try (InputStream videoStream = getResp.stream()) {
+        probe = videoProbeService.probe(videoStream, mimeType);
+      }
+    } catch (Exception ex) {
+      Log.warnf("VID1a/attachBytes: probe failed (locator=%s): %s", locator, ex.getMessage());
+    }
+
+    Long fileSizeBytes = probe.fileSizeBytes() != null ? probe.fileSizeBytes() : sizeHint;
+    User user = userService.getCurrentUser();
+    ref.setMimeType(mimeType);
+    ref.setFileSizeBytes(fileSizeBytes);
+    ref.setStorageLocator(locator.providerId() + ":" + locator.locator());
+    ref.setDurationSeconds(probe.durationSeconds());
+    ref.setWidth(probe.width());
+    ref.setHeight(probe.height());
+    ref.setFrameRate(probe.frameRate());
+    ref.setVideoCodec(probe.videoCodec());
+    ref.setAudioCodec(probe.audioCodec());
+    if (probe.wallClockTimestamp() != null) ref.setWallClockTimestamp(probe.wallClockTimestamp());
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(user);
+    VideoStreamReference updated = videoStreamReferenceDAO.createOrUpdate(ref);
+    Log.debugf("VID1a/attachBytes: attached content to VideoStreamReference appId=%s (locator=%s)", ref.getAppId(), locator);
+    return updated;
+  }
+
+  /**
    * Create a new {@link VideoStreamReference} and store the file payload.
    *
    * <p>Steps:

@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.spi;
 
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -151,5 +152,28 @@ public interface ReferenceKindHandler {
    */
   default ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
     throw new UnsupportedOperationException("kind=" + kind() + " does not support binary content upload via PUT …/content");
+  }
+
+  /**
+   * APISIMP-VIDEO-STREAMREF-PATH — download binary content for the reference
+   * identified by {@code appId}. Called by {@code GET /v2/references/{appId}/content}.
+   *
+   * <p>The handler builds and returns the full JAX-RS Response, including
+   * range-partial (206) and range-unsatisfiable (416) variants when the caller
+   * supplies a {@code Range} header. This gives each binary kind full control
+   * over streaming semantics without the REST layer needing to know the kind's
+   * storage shape.
+   *
+   * <p>Default implementation throws {@link UnsupportedOperationException} so
+   * non-binary kind handlers (uri, timeseries, git) inherit a safe
+   * "not supported" posture.
+   *
+   * @param appId UUID v7 of the reference (must already exist).
+   * @param rangeHeader value of the HTTP {@code Range} header (may be null/blank for full download).
+   * @return a JAX-RS Response carrying the binary payload (200 or 206), or an
+   *         error Response (404/416/503) when the content is unavailable.
+   */
+  default Response downloadContent(String appId, String rangeHeader) {
+    throw new UnsupportedOperationException("kind=" + kind() + " does not support binary content download via GET …/content");
   }
 }
