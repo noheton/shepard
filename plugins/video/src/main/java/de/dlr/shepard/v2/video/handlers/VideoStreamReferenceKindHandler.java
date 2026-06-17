@@ -9,11 +9,14 @@ import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamR
 import de.dlr.shepard.context.references.videostreamreference.services.VideoStreamReferenceService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
+import de.dlr.shepard.v2.video.daos.VideoAnnotationDAO;
+import de.dlr.shepard.v2.video.model.VideoAnnotation;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +49,9 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
   DateHelper dateHelper;
+
+  @Inject
+  VideoAnnotationDAO videoAnnotationDAO;
 
   @Override
   public String kind() {
@@ -135,5 +141,106 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
       if (ref != null && !ref.isDeleted()) out.add(toIO(ref));
     }
     return out;
+  }
+
+  // ─── annotation sub-resource (APISIMP-ANNOTATION-SUBRESOURCE-COLLISION) ──
+
+  @Override
+  public boolean supportsAnnotations() { return true; }
+
+  @Override
+  public List<Map<String, Object>> listAnnotations(String refAppId) {
+    return videoAnnotationDAO.findByVideoReferenceAppId(refAppId).stream()
+      .map(VideoStreamReferenceKindHandler::annotationToMap)
+      .toList();
+  }
+
+  @Override
+  public Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
+    if (body == null || !body.containsKey("startSeconds") || body.get("startSeconds") == null) {
+      throw new BadRequestException("startSeconds is required for video annotations");
+    }
+    String label = requireLabel(body);
+    VideoAnnotation a = new VideoAnnotation();
+    a.setStartSeconds(toDouble(body.get("startSeconds"), "startSeconds"));
+    if (body.containsKey("endSeconds") && body.get("endSeconds") != null) {
+      a.setEndSeconds(toDouble(body.get("endSeconds"), "endSeconds"));
+    }
+    a.setLabel(label);
+    if (body.containsKey("description")) a.setDescription(asString(body.get("description")));
+    if (Boolean.TRUE.equals(body.get("aiGenerated"))) a.setAiGenerated(true);
+    if (body.containsKey("confidence") && body.get("confidence") != null) {
+      a.setConfidence(toDouble(body.get("confidence"), "confidence"));
+    }
+    videoAnnotationDAO.createOrUpdate(a);
+    videoAnnotationDAO.linkToReference(refAppId, a.getAppId());
+    return annotationToMap(a);
+  }
+
+  @Override
+  public Map<String, Object> getAnnotation(String refAppId, String annotationAppId) {
+    VideoAnnotation a = videoAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    return annotationToMap(a);
+  }
+
+  @Override
+  public Map<String, Object> patchAnnotation(String refAppId, String annotationAppId, Map<String, Object> patch) {
+    VideoAnnotation a = videoAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    if (patch == null) return annotationToMap(a);
+    if (patch.containsKey("startSeconds") && patch.get("startSeconds") != null) {
+      a.setStartSeconds(toDouble(patch.get("startSeconds"), "startSeconds"));
+    }
+    if (patch.containsKey("endSeconds")) {
+      a.setEndSeconds(patch.get("endSeconds") == null ? null : toDouble(patch.get("endSeconds"), "endSeconds"));
+    }
+    if (patch.containsKey("label")) {
+      String lbl = patch.get("label") instanceof String s ? s : null;
+      if (lbl == null || lbl.isBlank()) throw new BadRequestException("label must be non-blank when provided");
+      a.setLabel(lbl.strip());
+    }
+    if (patch.containsKey("description")) a.setDescription(asString(patch.get("description")));
+    if (patch.containsKey("confidence")) {
+      a.setConfidence(patch.get("confidence") == null ? null : toDouble(patch.get("confidence"), "confidence"));
+    }
+    videoAnnotationDAO.createOrUpdate(a);
+    return annotationToMap(a);
+  }
+
+  @Override
+  public void deleteAnnotation(String refAppId, String annotationAppId) {
+    VideoAnnotation a = videoAnnotationDAO.findByAppId(annotationAppId);
+    if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
+    videoAnnotationDAO.unlinkAndDelete(refAppId, a);
+  }
+
+  private static Map<String, Object> annotationToMap(VideoAnnotation a) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("appId", a.getAppId());
+    m.put("startSeconds", a.getStartSeconds());
+    m.put("endSeconds", a.getEndSeconds());
+    m.put("label", a.getLabel());
+    m.put("description", a.getDescription());
+    m.put("aiGenerated", a.isAiGenerated());
+    m.put("confidence", a.getConfidence());
+    return m;
+  }
+
+  private static String requireLabel(Map<String, Object> body) {
+    Object v = body.get("label");
+    if (!(v instanceof String s) || s.isBlank()) {
+      throw new BadRequestException("label is required and must be non-blank");
+    }
+    return s.strip();
+  }
+
+  private static Double toDouble(Object v, String field) {
+    if (v instanceof Number n) return n.doubleValue();
+    throw new BadRequestException("'" + field + "' must be a number, got: " + v);
+  }
+
+  private static String asString(Object v) {
+    return v == null ? null : String.valueOf(v);
   }
 }
