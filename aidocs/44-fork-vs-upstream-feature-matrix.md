@@ -633,3 +633,4 @@ namespace; core enforces the shape.
 
 - **Companion docs:** `aidocs/34` (admin-facing upgrade path), `aidocs/16` (live backlog), `aidocs/42` (researcher-facing vision), `aidocs/00-index` (full design corpus index).
 - **Standing rules** in `CLAUDE.md`: API-version policy, vision-currency, upstream-upgrade-path tracking, this matrix.
+| `POST /v2/references?kind=structured-data`, `GET\|PATCH\|DELETE /v2/references/{appId}`, `GET /v2/references?kind=structured-data&dataObjectAppId=<uuid>` — `StructuredDataReferenceKindHandler` now registered in the CDI `ReferenceKindHandler` registry; `StructuredDataReferenceDAO.findByAppId(String)` added; v1 paths **unchanged** | APISIMP-STRUCTURED-DATA-KIND slice 1 — 🚧 PR open (fire-94) | `aidocs/16` APISIMP-STRUCTURED-DATA-KIND; `aidocs/34` APISIMP-STRUCTURED-DATA-KIND row |
