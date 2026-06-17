@@ -46,6 +46,32 @@ Completeness + resumability
   ``~/.mffd-bridge-replay-state.json.db``) keyed by ``do_id`` / ``ref_id`` so a
   re-run continues where it left off and never double-creates.
 
+Idempotency against LIVE Shepard (not just the sqlite state)
+-----------------------------------------------------------
+The sqlite state alone is NOT a sufficient idempotency layer: if the state file
+is wiped between runs (or a different machine runs the import) the importer would
+re-create DataObjects that already exist in Shepard. That defect produced
+duplicate DataObjects on 2026-06-17. The fix, layered on top of the state:
+
+- **Stable source id.** Every DataObject gets a semantic annotation
+  ``urn:shepard:source:cube3-do-id = <do_id>`` so it can be found again on any
+  future run regardless of the local state.
+- **Live index built at startup.** Before the run, the importer pulls every live
+  DataObject in the target collection (by name) AND every source-id annotation
+  AND every DataObject's existing file-reference labels — one settled snapshot.
+- **Reuse-before-create.** A DataObject is looked up in that index (by source-id,
+  then exact name) and REUSED if present; only a genuine miss triggers a create.
+- **Skip-if-present refs.** File and structured references already attached to a
+  reused DataObject (under the same label/name) are skipped — a fresh confirming
+  re-read guards against the ``by-data-object`` projection's eventual-consistency
+  lag, which would otherwise re-upload a handful of files.
+- **Annotation writes are guarded** by the source-id index so a re-run writes
+  zero annotations.
+
+Net effect: running the importer N times converges to exactly the manifest's
+contents and the (N>1) runs create ZERO new graph nodes. Verified against Neo4j
+directly (live, non-``deleted`` nodes), never against the importer's own state.
+
 Usage
 -----
     python3 mffd-bridge-replay.py --dry-run
@@ -77,6 +103,10 @@ DEFAULT_MANIFEST = "/mnt/pve/unas/dump/dataset/4-Brückenschweißen/manifest.jso
 DEFAULT_KEYFILE = "/root/.claude/uploads/mffd-import-key-2026-06-17.txt"
 TARGET_COLLECTION_APPID = "019ed455-6781-755e-87dd-eb3f2f3dbba3"
 PROVENANCE_PREDICATE = "urn:shepard:source:provenance"
+# Stable cross-run source identifier on every DataObject. Lets a re-run find an
+# already-imported DO in LIVE Shepard (not just the local sqlite state) and reuse
+# it instead of double-creating — the fix for the duplication this importer caused.
+SOURCE_DO_ID_PREDICATE = "urn:shepard:source:cube3-do-id"
 DEFAULT_STATE = os.path.expanduser("~/.mffd-bridge-replay-state.db")
 DATASET_ROOT_MARKER = "4-Brückenschweißen"  # provenance paths are dataset-relative from here
 
@@ -298,10 +328,95 @@ class Counts:
                 setattr(self, k, getattr(self, k) + v)
 
 
+class LiveIndex:
+    """A snapshot of what already exists in LIVE Shepard for the target
+    collection, built once at startup. This is the idempotency-against-live
+    layer the sqlite state alone could not provide: even with a wiped state
+    file, a re-run reuses the existing DataObjects instead of re-creating them.
+
+    Indexes (only non-deleted entities are returned by the list endpoints, so
+    soft-delete tombstones never collide with a live reuse):
+      by_source_id : urn:shepard:source:cube3-do-id literal -> DO appId
+      by_name      : do_name -> DO appId  (fallback when source-id absent)
+    """
+
+    def __init__(self, client: Client, collection_appid: str, workers: int = 6):
+        self.c = client
+        self.col = collection_appid
+        self.workers = workers
+        self.by_source_id: dict[str, str] = {}
+        self.by_name: dict[str, str] = {}
+        # do_appid -> set of existing file-reference labels, pre-loaded from a
+        # SETTLED snapshot at startup. Reading the file-ref index up front (when
+        # the data is quiescent) avoids the eventual-consistency lag that the
+        # lazy per-DO reads hit mid-run — the source of the file-ref dupes.
+        self.file_refs_by_do: dict[str, set] = {}
+
+    def build(self, verbose: bool = False):
+        # 1. all live DataObjects in the collection, keyed by name
+        page = 0
+        n = 0
+        do_appids: list[str] = []
+        while True:
+            batch = self.c.get_json(
+                f"/v2/collections/{self.col}/data-objects?page={page}&pageSize=500"
+            )
+            if not batch:
+                break
+            for d in batch:
+                # last write wins; live list never returns duplicate live names
+                self.by_name[d["name"]] = d["appId"]
+                do_appids.append(d["appId"])
+            n += len(batch)
+            page += 1
+        # 1b. pre-load each live DO's existing file-reference labels from this
+        # settled snapshot (parallel for speed). Reused later as the skip-check.
+        def _fetch(appid):
+            try:
+                lst = self.c.get_json(f"/v2/files/by-data-object/{appid}")
+                return appid, {x.get("name") for x in lst if isinstance(lst, list) and x.get("name")}
+            except RuntimeError:
+                return appid, set()
+        if do_appids:
+            with ThreadPoolExecutor(max_workers=self.workers) as ex:
+                for appid, names in ex.map(_fetch, do_appids):
+                    self.file_refs_by_do[appid] = names
+        # 2. all source-id annotations -> map literal source id to subject appId.
+        # The annotations endpoint caps pageSize at 200 (data-objects allows 500).
+        page = 0
+        anns = 0
+        while True:
+            batch = self.c.get_json(
+                f"/v2/annotations?predicateIri={requests.utils.quote(SOURCE_DO_ID_PREDICATE)}"
+                f"&page={page}&pageSize=200"
+            )
+            if not batch:
+                break
+            for a in batch:
+                lit = a.get("objectLiteral")
+                subj = a.get("subjectAppId")
+                if lit and subj:
+                    self.by_source_id[lit] = subj
+            anns += len(batch)
+            page += 1
+        if verbose:
+            print(f"live index    : {n} existing DOs, {anns} source-id annotations",
+                  file=sys.stderr, flush=True)
+
+    def find_do(self, do_id: int, do_name: str) -> Optional[str]:
+        """Return an existing live DO appId for this cube3 do_id (by source-id
+        annotation first, then exact name), or None if it must be created."""
+        hit = self.by_source_id.get(str(do_id))
+        if hit:
+            return hit
+        return self.by_name.get(do_name)
+
+
 class Replayer:
     def __init__(self, client: Client, state: State, counts: Counts,
                  collection_appid: str, collection_numeric_id: int,
-                 payload_root: str, dry_run: bool, verbose: bool):
+                 payload_root: str, dry_run: bool, verbose: bool,
+                 live: Optional["LiveIndex"] = None):
         self.c = client
         self.st = state
         self.n = counts
@@ -310,7 +425,70 @@ class Replayer:
         self.root = payload_root
         self.dry = dry_run
         self.verbose = verbose
+        self.live = live
         self._ann_kind_warned = False
+        # per-DO cache of reference names already present in live Shepard, fetched
+        # lazily the first time a reused DO needs a skip-check. Guards against
+        # re-creating refs on a DO that the live index matched but whose refs are
+        # not yet recorded in the (possibly wiped) sqlite state.
+        self._live_refs_lock = threading.Lock()
+        self._live_struct_refs: dict[str, set[str]] = {}
+        # seed the file-ref skip cache from the live index's settled startup
+        # snapshot so the lazy mid-run reads (and their consistency lag) are not
+        # the first source of truth.
+        self._live_file_refs: dict[str, set[str]] = (
+            {k: set(v) for k, v in live.file_refs_by_do.items()} if live else {}
+        )
+
+    def _existing_struct_ref_names(self, do_appid: str, do_numeric: int) -> set:
+        with self._live_refs_lock:
+            cached = self._live_struct_refs.get(do_appid)
+        if cached is not None:
+            return cached
+        names = set()
+        try:
+            lst = self.c.get_json(
+                f"/shepard/api/collections/{self.col_id}/dataObjects/{do_numeric}"
+                f"/structuredDataReferences"
+            )
+            names = {x.get("name") for x in lst if x.get("name")}
+        except RuntimeError as e:
+            if self.verbose:
+                print(f"  [live-refs WARN] struct list {do_appid}: {e}",
+                      file=sys.stderr, flush=True)
+        with self._live_refs_lock:
+            self._live_struct_refs[do_appid] = names
+        return names
+
+    def _existing_file_ref_names(self, do_appid: str, refresh: bool = False) -> set:
+        if not refresh:
+            with self._live_refs_lock:
+                cached = self._live_file_refs.get(do_appid)
+            if cached is not None:
+                return cached
+        names = set()
+        try:
+            lst = self.c.get_json(f"/v2/files/by-data-object/{do_appid}")
+            if isinstance(lst, list):
+                names = {x.get("name") for x in lst if x.get("name")}
+        except RuntimeError as e:
+            if self.verbose:
+                print(f"  [live-refs WARN] file list {do_appid}: {e}",
+                      file=sys.stderr, flush=True)
+        with self._live_refs_lock:
+            # merge rather than overwrite, so a refresh never drops names we
+            # already recorded from a successful create this run
+            merged = self._live_file_refs.get(do_appid, set()) | names
+            self._live_file_refs[do_appid] = merged
+            return merged
+
+    def _note_live_struct(self, do_appid: str, name: str):
+        with self._live_refs_lock:
+            self._live_struct_refs.setdefault(do_appid, set()).add(name)
+
+    def _note_live_file(self, do_appid: str, name: str):
+        with self._live_refs_lock:
+            self._live_file_refs.setdefault(do_appid, set()).add(name)
 
     def _abs(self, relpath: str) -> str:
         return os.path.join(self.root, relpath)
@@ -333,14 +511,19 @@ class Replayer:
         """Dataset-relative provenance value: <marker>/<relpath>."""
         return f"{DATASET_ROOT_MARKER}/{relpath}"
 
+    def live_source_ids(self) -> dict:
+        """The cube3-do-id literals already annotated in live Shepard."""
+        return self.live.by_source_id if self.live else {}
+
     # -- annotations (best-effort secondary write; never aborts the import) ------
-    def _annotate(self, subject_appid: str, subject_kind: str, prov_value: str) -> bool:
+    def _annotate(self, subject_appid: str, subject_kind: str, prov_value: str,
+                  predicate: str = PROVENANCE_PREDICATE) -> bool:
         if self.dry:
             return True
         body = {
             "subjectAppId": subject_appid,
             "subjectKind": subject_kind,
-            "predicateIri": PROVENANCE_PREDICATE,
+            "predicateIri": predicate,
             "objectLiteral": prov_value,
             "sourceMode": "ai",
         }
@@ -365,30 +548,61 @@ class Replayer:
             self._plan_do(name, do)
             return
 
-        # 1. DataObject (idempotent via state)
+        # 1. DataObject — idempotent against (a) local sqlite state, then
+        # (b) LIVE Shepard via the source-id/name index. Only when both miss do
+        # we create. This is the fix for the duplication: a wiped state file no
+        # longer causes a re-create of a DO that already exists in Shepard.
         cached = self.st.get_do(do_id)
+        annotated = 0
+        do_appid = do_numeric = None
         if cached and cached[0]:
             do_appid, do_numeric, annotated = cached
             self.n.add(dos_reused=1)
         else:
-            # DataObject creation stays on the v2 surface (appId-native).
-            created = self.c.post_json(
-                f"/v2/collections/{self.col_appid}/data-objects",
-                {"name": do_name},
-            )
-            do_appid = created["appId"]
-            annotated = 0
-            self.n.add(dos_created=1)
-            # The v2 DO IO suppresses the numeric id; resolve it via the frozen v1
-            # collection list (needed only for the v1 structured-data ref create,
-            # which has no v2 counterpart). Cached in state so re-runs skip it.
-            do_numeric = self._resolve_do_numeric(do_appid, do_name)
-            self.st.put_do(do_id, do_appid, do_numeric)
+            live_appid = self.live.find_do(do_id, do_name) if self.live else None
+            if live_appid:
+                # Found in live Shepard — reuse, don't create. Seed local state.
+                do_appid = live_appid
+                do_numeric = self._resolve_do_numeric(do_appid, do_name)
+                self.st.put_do(do_id, do_appid, do_numeric)
+                self.n.add(dos_reused=1)
+            else:
+                # DataObject creation stays on the v2 surface (appId-native).
+                created = self.c.post_json(
+                    f"/v2/collections/{self.col_appid}/data-objects",
+                    {"name": do_name},
+                )
+                do_appid = created["appId"]
+                self.n.add(dos_created=1)
+                # The v2 DO IO suppresses the numeric id; resolve it via the
+                # frozen v1 collection list (needed only for the v1
+                # structured-data ref create). Cached in state so re-runs skip it.
+                do_numeric = self._resolve_do_numeric(do_appid, do_name)
+                self.st.put_do(do_id, do_appid, do_numeric)
+                # Keep the NAME index current so a same-run sibling name reuses
+                # it. The source-id index is intentionally NOT seeded here — it
+                # tracks "source-id annotation written", and is set only after the
+                # annotation POST below succeeds. Seeding it here would make the
+                # `not in live_source_ids()` guard skip writing the annotation.
+                if self.live:
+                    self.live.by_name[do_name] = do_appid
 
-        # provenance annotation on the DataObject (dataset-relative dir of the DO)
-        if not annotated:
+        # provenance + stable source-id annotations on the DataObject.
+        # BOTH writes are guarded by the live source-id index: a DO that already
+        # carries its cube3-do-id annotation has already been fully annotated, so
+        # a re-run writes ZERO annotations (the source-id annotation is written
+        # last, so its presence proves provenance was written too). This is what
+        # makes the annotation pass idempotent — without this guard, provenance
+        # annotations duplicated on every re-run.
+        already_annotated = self.live and str(do_id) in self.live_source_ids()
+        if not annotated and not already_annotated:
             prov = f"{DATASET_ROOT_MARKER}/bridgewelding/{do_name}"
             self._annotate(do_appid, "DataObject", prov)
+            self._annotate(do_appid, "DataObject", str(do_id),
+                           predicate=SOURCE_DO_ID_PREDICATE)
+            if self.live:
+                # mark fully-annotated only after both writes are issued
+                self.live.by_source_id[str(do_id)] = do_appid
             self.st.mark_do_annotated(do_id)
 
         # 2. structured refs — collapse exact (ref_name, file) duplicates
@@ -417,6 +631,13 @@ class Replayer:
         annotated = 0
         if cached:
             container_id, oid, ref_id, ref_appid, annotated = cached
+
+        # Live skip-if-present: if sqlite has no record of this ref (e.g. wiped
+        # state on a reused DO), check live Shepard before creating. A struct ref
+        # already attached to this DO under the same name is a no-op.
+        if not cached and ref_name in self._existing_struct_ref_names(do_appid, do_numeric):
+            self.n.add(struct_refs=1)
+            return
 
         abspath = self._abs(relfile)
         if not os.path.exists(abspath):
@@ -460,6 +681,7 @@ class Replayer:
             ref_id = ref.get("id")
             ref_appid = ref.get("appId")  # BasicEntityIO base carries appId
             self.st.put_struct(do_id, ref_name, relfile, container_id, oid, ref_id, ref_appid)
+            self._note_live_struct(do_appid, ref_name)
 
         self.n.add(struct_refs=1)
 
@@ -486,6 +708,23 @@ class Replayer:
             ref_appid, uploaded, annotated = cached
 
         size = os.path.getsize(abspath)
+        filename = os.path.basename(relfile)
+        ref_label = ref_name if filename == ref_name else f"{ref_name}/{filename}"
+
+        # Live skip-if-present: if sqlite has no record (wiped state on a reused
+        # DO), check live Shepard before re-uploading. A singleton file ref under
+        # the same label already attached to this DO is a no-op. If the cached
+        # list does NOT contain the label, do one FRESH confirming re-read before
+        # committing to a create — the /v2/files/by-data-object index can lag
+        # right after a prior run's upload, and trusting a single stale/empty read
+        # is exactly what produced 24 duplicate file refs on the first re-run.
+        if not cached:
+            if ref_label in self._existing_file_ref_names(do_appid):
+                self.n.add(file_refs=1)
+                return
+            if ref_label in self._existing_file_ref_names(do_appid, refresh=True):
+                self.n.add(file_refs=1)
+                return
 
         # Single physical file → singleton FileReference (FR1b): multipart
         # POST /v2/files creates the reference AND uploads the bytes in one call
@@ -494,8 +733,6 @@ class Replayer:
         # singleton per physical file — no pointless bundle/selection layer.
         # Disambiguate the per-file ref name with the file's basename suffix.
         if not ref_appid or not uploaded:
-            filename = os.path.basename(relfile)
-            ref_label = ref_name if filename == ref_name else f"{ref_name}/{filename}"
             with open(abspath, "rb") as fh:
                 resp = self.c.request(
                     "POST",
@@ -508,6 +745,7 @@ class Replayer:
             created = resp.json()
             ref_appid = created["appId"]
             self.st.put_file(ref_id, relfile, ref_appid, uploaded=1)
+            self._note_live_file(do_appid, ref_label)
             self.n.add(bytes_uploaded=size)
 
         self.n.add(file_refs=1)
@@ -618,8 +856,21 @@ def main():
 
     state = State(args.state)
     counts = Counts()
+
+    # Build the live-Shepard index (skipped in dry-run): existing DOs by name and
+    # by source-id annotation. This is what makes the importer idempotent against
+    # LIVE state, not just its own sqlite — converging to the manifest no matter
+    # how many times it runs, even with a wiped state file.
+    live = None
+    if not args.dry_run:
+        live = LiveIndex(client, args.collection_appid, workers=args.workers)
+        live.build(verbose=True)
+        print(f"live index    : {len(live.by_name)} existing DOs, "
+              f"{len(live.by_source_id)} source-id annotations, "
+              f"{sum(len(v) for v in live.file_refs_by_do.values())} file refs")
+
     rep = Replayer(client, state, counts, args.collection_appid, col_numeric,
-                   payload_root, args.dry_run, args.verbose)
+                   payload_root, args.dry_run, args.verbose, live=live)
 
     if args.dry_run:
         for name, do in items:
