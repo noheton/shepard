@@ -108,7 +108,7 @@ public class CollectionStreamExportRest {
   }
 
   private static String sanitizeFileName(String name) {
-    return name.replaceAll("[^a-zA-Z0-9._-]", "_");
+    return name.replaceAll("[^a-zA-Z0-9_-]", "_");
   }
 
   private static Response problem(String type, String title, Response.Status status, String detail) {
