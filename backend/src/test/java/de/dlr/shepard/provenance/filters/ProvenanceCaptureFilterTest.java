@@ -159,6 +159,23 @@ class ProvenanceCaptureFilterTest {
     );
   }
 
+  /**
+   * PROV-CAPTURE-READS-FLIP: even when {@code captureReads=true} (the new default),
+   * reads on v1 {@code /shepard/api/...} paths must NOT produce an :Activity row.
+   * The operator decision is "v2 paths only" for read capture.
+   */
+  @Test
+  void getDoesNotCapture_onV1Path_whenCaptureReadsOn() throws IOException {
+    filter.captureReads = true;
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("shepard/api/collections/42");
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
+  }
+
   @Test
   void failedRequestDoesNotCapture() throws IOException {
     when(request.getMethod()).thenReturn("POST");
