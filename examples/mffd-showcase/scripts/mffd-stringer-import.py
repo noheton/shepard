@@ -640,6 +640,14 @@ class Importer:
             self.n.add(file_refs=1, file_refs_reused=1)
             return None
         size = path.stat().st_size
+        # Backend hard cap: the file-content PUT rejects >2 GiB with a 400
+        # ("File exceeds 2147483648 bytes"). Some GoPro .MP4 siblings exceed it.
+        # A 400 is not transient, so skip-and-record (don't retry-forever or
+        # fail the whole run). Tracked in aidocs/16 as IMPORT-FILESIZE-2GB.
+        if size > 2_147_483_648:
+            self._log(f"  [skip >2GiB] {fname} ({size/1e9:.1f} GB) exceeds the "
+                      f"backend 2 GiB content cap — deferred (IMPORT-FILESIZE-2GB)")
+            return None
         attempt = 0
         while True:
             attempt += 1
