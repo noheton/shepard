@@ -26,6 +26,7 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -127,8 +128,16 @@ public class SnapshotListRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "collectionAppId supplied but does not resolve to an existing Collection.")
   public Response list(
+    @Parameter(description =
+      "Optional. When supplied, scopes the result to snapshots belonging to the "
+      + "Collection with this appId. When absent, all snapshots the caller can "
+      + "read are returned regardless of Collection.")
     @QueryParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") int page,
+    @Parameter(description =
+      "Page size (default 50). Server-side clamp: [1, 200] — values outside this "
+      + "range are silently clamped to the nearest boundary.")
     @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {
