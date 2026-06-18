@@ -228,9 +228,21 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
+  // SEMANTIC-ANNOTATE-BULK-REST-1: bulk annotation REST endpoint (2026-06-03)
+  {
+    slug: "bulk-annotate",
+    surface: "route",
+    title: "Bulk Annotate",
+    subtitle:
+      "Mass-annotation via POST /v2/annotations/bulk — create up to 100 semantic annotations in a single REST call. For UI sweeps and CLI import pipelines.",
+    endpoint: "/v2/annotations/bulk",
+    backlogRow: "SEMANTIC-ANNOTATE-BULK-REST-1",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
 ];
 
-// TS-SEMANTIC-REST: +1 for ts-channel-annotations (2026-05-27)
+// SEMANTIC-ANNOTATE-BULK-REST-1: +1 for bulk-annotate (2026-06-03)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

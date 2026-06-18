@@ -12,6 +12,10 @@ import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationEntryIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationErrorIO;
+import de.dlr.shepard.v2.annotations.io.BulkCreateAnnotationsIO;
+import de.dlr.shepard.v2.annotations.io.BulkCreateAnnotationsResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints;
@@ -35,6 +39,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -419,6 +424,152 @@ public class SemanticAnnotationV2Rest {
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
+  }
+
+  // ─── BULK CREATE ───────────────────────────────────────────────────────────
+
+  /** Maximum entries accepted per bulk-create call (mirrors MCP cap). */
+  static final int MAX_BULK_ENTRIES = 100;
+
+  /**
+   * SEMANTIC-ANNOTATE-BULK-REST-1 — bulk-create REST endpoint mirroring the
+   * {@code semantic_annotate_bulk} MCP tool.
+   *
+   * <p>Accepts up to {@value #MAX_BULK_ENTRIES} entries per call. Each entry is
+   * processed independently; a failure on one entry does not abort the others
+   * (per-row error isolation). The response reports {@code created}, {@code failed},
+   * and per-entry {@code errors[]}.
+   *
+   * <p>This endpoint lets non-MCP callers (UI mass-annotation, CLI sweeps)
+   * share the same semantics as the MCP bulk tool without going through the
+   * MCP transport layer.
+   *
+   * <p>Auth: caller must hold Write permission on each referenced DataObject
+   * (checked per entry — entries that fail permission are counted in
+   * {@code failed}).
+   */
+  @POST
+  @Path("/bulk")
+  @Operation(
+    summary = "Bulk-create semantic annotations (SEMANTIC-ANNOTATE-BULK-REST-1).",
+    description =
+      "Creates up to " + MAX_BULK_ENTRIES + " `:SemanticAnnotation` nodes in a single call. " +
+      "Each entry in the request array is processed independently — a failure on one entry " +
+      "does not roll back successful entries. The response enumerates `created`, `failed`, " +
+      "and per-entry error details.\n\n" +
+      "Each entry annotates a `DataObject` (subjectKind is fixed to `'DataObject'` for this " +
+      "endpoint — use `POST /v2/annotations` for other subject kinds).\n\n" +
+      "Auth: the caller must hold Write permission on each referenced DataObject.\n\n" +
+      "Returns `200 OK` when at least one entry was attempted (even if all failed). " +
+      "Returns `400` for structural errors (null/empty entries, > " + MAX_BULK_ENTRIES + " entries)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Bulk create completed (check created/failed counters).",
+    content = @Content(schema = @Schema(implementation = BulkCreateAnnotationsResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Null/empty entries list or > " + MAX_BULK_ENTRIES + " entries (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response bulkCreate(
+    BulkCreateAnnotationsIO body,
+    @Context SecurityContext sc
+  ) {
+    long startedAtMillis = System.currentTimeMillis();
+    String caller = callerName(sc);
+    if (caller == null) return unauthorized();
+
+    // Validate structural preconditions
+    if (body == null || body.entries() == null) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing request body", Response.Status.BAD_REQUEST,
+        "Request body with non-null 'entries' list is required");
+    }
+    if (body.entries().isEmpty()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Empty entries", Response.Status.BAD_REQUEST,
+        "entries must contain at least one item");
+    }
+    if (body.entries().size() > MAX_BULK_ENTRIES) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Too many entries", Response.Status.BAD_REQUEST,
+        "max " + MAX_BULK_ENTRIES + " entries per call — received " + body.entries().size());
+    }
+
+    int created = 0;
+    int failed = 0;
+    List<BulkAnnotationErrorIO> errors = new ArrayList<>();
+
+    for (int i = 0; i < body.entries().size(); i++) {
+      BulkAnnotationEntryIO entry = body.entries().get(i);
+      if (entry == null) {
+        errors.add(new BulkAnnotationErrorIO(i, null, null, "Entry is null"));
+        failed++;
+        continue;
+      }
+      try {
+        // Build a synthetic CreateAnnotationIO and delegate to the single-create path.
+        CreateAnnotationIO req = new CreateAnnotationIO();
+        req.setSubjectAppId(entry.dataObjectAppId());
+        req.setSubjectKind("DataObject");
+        req.setPredicateIri(entry.predicate());
+        req.setObjectLiteral(entry.value());
+        req.setVocabularyId(entry.vocabularyId());
+
+        // create() performs all validation + permission checks + provenance capture.
+        // We pass null for aiAgentHeader — callers that want AI-mode use X-AI-Agent header
+        // at the transport layer which is not propagated here; per-entry sourceMode override
+        // is not supported in the v0 bulk shape (use single-create for that).
+        Response singleResult = create(req, sc, null);
+
+        if (singleResult.getStatus() == 201) {
+          created++;
+        } else {
+          // Extract error detail when available
+          String msg = "HTTP " + singleResult.getStatus();
+          try {
+            Object entity = singleResult.getEntity();
+            if (entity != null) msg = entity.toString();
+          } catch (RuntimeException ignored) { /* best-effort */ }
+          errors.add(new BulkAnnotationErrorIO(i, entry.dataObjectAppId(), entry.predicate(), msg));
+          failed++;
+        }
+      } catch (RuntimeException e) {
+        Log.debugf(e, "SEMANTIC-ANNOTATE-BULK-REST-1: entry[%d] dataObjectAppId=%s failed", i, entry.dataObjectAppId());
+        errors.add(new BulkAnnotationErrorIO(i, entry.dataObjectAppId(), entry.predicate(), e.getMessage()));
+        failed++;
+      }
+    }
+
+    // Record one batch-level Activity for the entire bulk call (per CLAUDE.md:
+    // "handlers that record their own Activity hand off skip-capture").
+    // The single-create calls above each record their own Activity; this batch
+    // Activity captures the aggregate for audit trail completeness.
+    // PROP_SKIP_CAPTURE is already set by create() for each entry — the filter
+    // won't emit a duplicate for the outer POST.
+    try {
+      long endedAtMillis = System.currentTimeMillis();
+      provenanceService.record(
+        "BULK_CREATE",
+        "SemanticAnnotationBatch",
+        null,
+        caller,
+        "POST /v2/annotations/bulk — created=" + created + " failed=" + failed + " total=" + body.entries().size(),
+        "POST",
+        "v2/annotations/bulk",
+        200,
+        startedAtMillis,
+        endedAtMillis
+      );
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEMANTIC-ANNOTATE-BULK-REST-1: batch provenance capture failed");
+    } finally {
+      try {
+        if (requestContext != null) {
+          requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+        }
+      } catch (RuntimeException ignored) { /* best-effort */ }
+    }
+
+    Log.infof("SemanticAnnotationV2Rest: bulk-create by %s: created=%d failed=%d total=%d",
+      caller, created, failed, body.entries().size());
+    return Response.ok(new BulkCreateAnnotationsResultIO(created, failed, errors)).build();
   }
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────
