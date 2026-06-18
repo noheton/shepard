@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -25,9 +26,11 @@ public record TypedPredecessorSummaryIO(
   String predecessorAppId,
 
   @Deprecated
+  @JsonIgnore
   @Schema(
     readOnly = true,
     deprecated = true,
+    hidden = true,
     description =
       "Deprecated — join on predecessorAppId (UUID v7) instead. " +
       "Numeric Neo4j shepardId of the predecessor DataObject."
