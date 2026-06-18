@@ -145,7 +145,9 @@ public class CollectionLabJournalEntriesRest {
         return Response.ok(List.of()).build();
       }
       int from = (int) fromL;
-      ios = ios.subList(from, Math.min(from + pageSize, ios.size()));
+      // Long arithmetic prevents overflow when pageSize is near Integer.MAX_VALUE.
+      int to = (int) Math.min((long) from + pageSize, ios.size());
+      ios = ios.subList(from, to);
     }
     return Response.ok(ios).build();
   }
