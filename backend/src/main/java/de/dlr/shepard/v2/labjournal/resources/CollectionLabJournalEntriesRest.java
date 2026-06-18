@@ -12,7 +12,6 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -139,10 +138,13 @@ public class CollectionLabJournalEntriesRest {
       ios.add(new LabJournalEntryIO(e));
     }
     if (pageSize != null && pageSize > 0) {
-      int from = (page != null ? page : 0) * pageSize;
-      if (from >= ios.size()) {
+      // Use long arithmetic to avoid int overflow when page and pageSize are both large.
+      // The downcast back to int is safe: fromL < ios.size() which always fits in int.
+      long fromL = (long) (page != null ? page : 0) * pageSize;
+      if (fromL >= ios.size()) {
         return Response.ok(List.of()).build();
       }
+      int from = (int) fromL;
       ios = ios.subList(from, Math.min(from + pageSize, ios.size()));
     }
     return Response.ok(ios).build();
