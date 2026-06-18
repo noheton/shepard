@@ -62,7 +62,7 @@
     "@nuxt/eslint": "1.15.2",
     "@types/chart.js": "4.0.1",
     "@types/marked": "^6.0.0",
-    "@types/node": "24.11.0",
+    "@types/node": "25.9.1",
     "@vueuse/core": "14.2.1",
     "eslint": "^9.18.0",
     "happy-dom": "^15.11.7",
