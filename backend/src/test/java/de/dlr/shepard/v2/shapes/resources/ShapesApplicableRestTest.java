@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.shapes.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -234,5 +235,21 @@ class ShapesApplicableRestTest {
     assertFalse(ShapesApplicableRest.hasShapeGraph("not json"));
     assertFalse(ShapesApplicableRest.hasShapeGraph("{\"shapeGraph\":\"\"}"));
     assertTrue(ShapesApplicableRest.hasShapeGraph("{\"shapeGraph\":\"@prefix sh: <x> .\"}"));
+  }
+
+  // ─── APISIMP-SHAPES-FOCUS-APPID-REQUIRED regression ──────────────────────
+
+  @Test
+  void listApplicable_focusAppIdParam_isMarkedRequired() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ShapesApplicableRest.class.getMethod(
+        "listApplicable", String.class);
+    java.lang.reflect.Parameter param = method.getParameters()[0];
+    var qp = param.getAnnotation(jakarta.ws.rs.QueryParam.class);
+    assertNotNull(qp, "first param must carry @QueryParam");
+    assertEquals("focusAppId", qp.value());
+    var oapiParam = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(oapiParam, "focusAppId must carry @Parameter annotation");
+    assertTrue(oapiParam.required(), "@Parameter.required must be true for focusAppId");
   }
 }
