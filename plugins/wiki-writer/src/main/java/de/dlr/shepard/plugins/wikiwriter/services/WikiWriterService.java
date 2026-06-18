@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.wikiwriter.services;
 
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
@@ -16,6 +17,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Map;
 
 /**
@@ -66,6 +68,9 @@ public class WikiWriterService {
   DataObjectService dataObjectService;
 
   @Inject
+  DataObjectDAO dataObjectDAO;
+
+  @Inject
   LabJournalEntryService labJournalEntryService;
 
   /**
@@ -75,6 +80,28 @@ public class WikiWriterService {
   public boolean isAvailable() {
     if (!llmProvider.isResolvable()) return false;
     return llmProvider.get().isAvailable(AiCapability.TEXT);
+  }
+
+  /**
+   * Convenience overload: resolves the parent collection from the DataObject
+   * appId so callers don't need to supply the collection separately.
+   *
+   * @param dataObjectAppId UUID v7 appId of the target DataObject
+   * @param request         optional caller overrides (extraInstruction, maxTokens)
+   * @return a populated {@link WikiWriteResponseIO} with entry id + provenance
+   * @throws NotFoundException if no DataObject with that appId exists
+   */
+  public WikiWriteResponseIO wikiWriteByDataObjectAppId(
+    String dataObjectAppId,
+    WikiWriteRequestIO request
+  ) {
+    DataObject target = dataObjectDAO.findByAppId(dataObjectAppId);
+    if (target == null) {
+      throw new NotFoundException("DataObject not found: " + dataObjectAppId);
+    }
+    long collectionOgmId = target.getCollection().getId();
+    long dataObjectOgmId = target.getId();
+    return wikiWrite(collectionOgmId, dataObjectOgmId, request);
   }
 
   /**
