@@ -5,13 +5,13 @@
  * Honours the "UI never asks for paths/URLs — pulls from references" rule:
  * the caller passes a singleton FileReference `appId` (the scene's
  * `sourceFileAppId`), and this composable fetches the bytes from the
- * authenticated v2 content endpoint `GET /v2/files/{appId}/content`,
+ * authenticated v2 content endpoint `GET /v2/references/{appId}/content`,
  * wrapping them in an `ObjectURL`. The frontend never constructs a Garage
  * signed URL or a storage path itself.
  *
  * Why an object URL (vs. handing `urdf-loader` the content endpoint
  * directly): `urdf-loader` issues a bare `fetch`/XHR with no Authorization
- * header, so a protected `/v2/files/{appId}/content` would 401. Fetching
+ * header, so a protected `/v2/references/{appId}/content` would 401. Fetching
  * here with the bearer token and materialising a `blob:` URL lets the
  * loader read the bytes with zero auth knowledge. Mesh assets bundled in
  * the same FileReference are NOT object-URL-rewritten (a future
@@ -34,7 +34,7 @@ export function v2FileContentUrl(backendApiUrl: string, appId: string): string {
   const base = backendApiUrl
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
-  return `${base}/v2/files/${encodeURIComponent(appId)}/content`;
+  return `${base}/v2/references/${encodeURIComponent(appId)}/content`;
 }
 
 export interface UrdfBlobError {

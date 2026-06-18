@@ -1,23 +1,12 @@
 package de.dlr.shepard.v2.file.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.common.mongoDB.NamedInputStream;
-import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.HttpRangeUtil;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
-import de.dlr.shepard.v2.file.io.FileReferenceV2IO;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -28,49 +17,41 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 /**
- * {@code /v2/files/...} REST surface for the FR1b singleton
- * {@link FileReference} (see {@code aidocs/53 §1.8.4}).
+ * {@code /v2/files/...} REST surface — ALL ENDPOINTS RETIRED
+ * (APISIMP-FILE-PATH-RETIRE-2).
  *
- * <p>Routes:
+ * <p>The {@code POST /v2/files} multipart upload was retired first in
+ * APISIMP-KIND-DISCRIMINATOR-2 (PR&nbsp;#1966). The remaining CRUD
+ * endpoints are retired here in APISIMP-FILE-PATH-RETIRE-2. Every
+ * method now returns HTTP 410 Gone with a {@code detail} field that
+ * points to the unified {@code /v2/references/...} replacement.
+ *
+ * <p>Migration map:
  * <ul>
- *   <li>{@code POST   /v2/files} — <b>RETIRED (APISIMP-KIND-DISCRIMINATOR-2).</b>
- *       Returns 410 Gone. Migrate to:
- *       (1) {@code POST /v2/references?kind=file&dataObjectAppId=...} with JSON
- *       body {@code {"name":"..."}} to create the metadata node, then
- *       (2) {@code PUT /v2/references/{appId}/content?filename=...} with
- *       {@code application/octet-stream} body to upload bytes.</li>
- *   <li>{@code GET    /v2/files/{appId}} — singleton metadata.</li>
- *   <li>{@code GET    /v2/files/{appId}/content} — the byte stream.
- *       Range-request capable ({@code Range: bytes=...}).</li>
- *   <li>{@code PATCH  /v2/files/{appId}} — RFC 7396 merge-patch on
- *       the {@code name} field. Other fields are immutable in FR1b.</li>
- *   <li>{@code DELETE /v2/files/{appId}} — hard-delete the Reference
- *       and its underlying bytes.</li>
+ *   <li>{@code POST   /v2/files} →
+ *       {@code POST /v2/references?kind=file&dataObjectAppId=<doAppId>}
+ *       then {@code PUT /v2/references/{appId}/content}</li>
+ *   <li>{@code GET    /v2/files/by-data-object/{doAppId}} →
+ *       {@code GET /v2/references?kind=file&dataObjectAppId={doAppId}}</li>
+ *   <li>{@code GET    /v2/files/{appId}} →
+ *       {@code GET /v2/references/{appId}}</li>
+ *   <li>{@code GET    /v2/files/{appId}/content} →
+ *       {@code GET /v2/references/{appId}/content}</li>
+ *   <li>{@code PATCH  /v2/files/{appId}} →
+ *       {@code PATCH /v2/references/{appId}}</li>
+ *   <li>{@code DELETE /v2/files/{appId}} →
+ *       {@code DELETE /v2/references/{appId}}</li>
  * </ul>
- *
- * <p>Permissions: every endpoint resolves the parent DataObject from
- * the singleton, then asks {@link PermissionsService} (same code
- * path as the upstream API). Returns 401 unauthenticated, 403 on
- * permission denied, 404 on missing singleton.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -79,46 +60,17 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Tag(name = "File references")
 public class FileReferenceV2Rest {
 
-  @Inject
-  SingletonFileReferenceService singletonService;
+  // ─── POST /v2/files — RETIRED APISIMP-KIND-DISCRIMINATOR-2 ───────────────
 
-  @Inject
-  PermissionsService permissionsService;
-
-  @Inject
-  ObjectMapper objectMapper;
-
-  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-references.bad-request";
-  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-references.not-found";
-  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-references.unauthorized";
-  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/file-references.forbidden";
-  private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-references.internal-error";
-  private static final String PROBLEM_TYPE_RANGE = "/problems/file-references.range-not-satisfiable";
-
-  // ─── upload (RETIRED APISIMP-KIND-DISCRIMINATOR-2) ────────────────────────
-
-  /**
-   * APISIMP-KIND-DISCRIMINATOR-2: this endpoint is retired.
-   *
-   * <p>Migrate to the two-step pattern:
-   * <ol>
-   *   <li>POST /v2/references?kind=file&amp;dataObjectAppId=&lt;doAppId&gt; with JSON body
-   *       {@code {"name":"..."}} — creates the metadata node and returns its appId.</li>
-   *   <li>PUT /v2/references/{appId}/content?filename=&lt;original-name&gt; with
-   *       {@code Content-Type: application/octet-stream} body — stores the bytes.</li>
-   * </ol>
-   */
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
     operationId = "createFileReferenceMultipartRetired",
     summary = "RETIRED — use POST /v2/references?kind=file + PUT /v2/references/{appId}/content.",
     description =
-      "This multipart upload endpoint was retired in APISIMP-KIND-DISCRIMINATOR-2. " +
-      "Migrate to the two-step pattern: (1) POST /v2/references?kind=file&dataObjectAppId=<doAppId> " +
-      "with JSON body {\"name\":\"...\"} to create the metadata node, then (2) " +
-      "PUT /v2/references/{appId}/content?filename=<original-name> with " +
-      "application/octet-stream body to upload bytes."
+      "Retired in APISIMP-KIND-DISCRIMINATOR-2 (PR #1966). Migrate: " +
+      "(1) POST /v2/references?kind=file&dataObjectAppId=<doAppId> with JSON body {\"name\":\"...\"}; " +
+      "(2) PUT /v2/references/<appId>/content?filename=<name> with application/octet-stream body."
   )
   @APIResponse(responseCode = "410", description = "Gone — see POST /v2/references?kind=file + PUT /v2/references/{appId}/content.")
   public Response createSingleton(
@@ -127,407 +79,124 @@ public class FileReferenceV2Rest {
     @RestForm("file") FileUpload upload,
     @Context SecurityContext securityContext
   ) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("status", 410);
-    body.put("title", "Gone");
-    body.put("type", "/problems/file-references.multipart-upload-retired");
-    body.put("detail",
+    return gone(
+      "/problems/file-references.multipart-upload-retired",
       "POST /v2/files multipart upload retired (APISIMP-KIND-DISCRIMINATOR-2). " +
-      "Step 1: POST /v2/references?kind=file&dataObjectAppId=<doAppId> " +
-      "with JSON body {\"name\":\"<name>\"}. " +
-      "Step 2: PUT /v2/references/<appId>/content?filename=<original-name> " +
-      "with Content-Type: application/octet-stream body."
+      "Step 1: POST /v2/references?kind=file&dataObjectAppId=<doAppId> with JSON body {\"name\":\"<name>\"}. " +
+      "Step 2: PUT /v2/references/<appId>/content?filename=<original-name> with Content-Type: application/octet-stream body."
     );
-    return Response.status(Response.Status.GONE).entity(body).build();
   }
 
-  // ─── list-by-DataObject ───────────────────────────────────────────────────
+  // ─── GET /v2/files/by-data-object/{doAppId} — RETIRED APISIMP-FILE-PATH-RETIRE-2 ──
 
-  /**
-   * J1e + REF-UNIFIED-TABLE-FR1B — list the singleton FileReferences
-   * attached to a DataObject identified by its {@code appId} (UUID v7).
-   *
-   * <p>This is the additive read path the unified data-references
-   * frontend table consumes when displaying FR1b rows alongside FR1a
-   * bundles, timeseries refs, and structured-data refs. The upstream
-   * v1 list endpoint ({@code GET /shepard/api/collections/{collId}/
-   * dataObjects/{doId}/fileReferences}) returns only FR1a bundle shapes
-   * and is byte-frozen; this endpoint is its FR1b sibling.
-   *
-   * <p>Path: {@code GET /v2/data-objects/{dataObjectAppId}/files}.
-   * Matches the {@code /v2/data-objects/{appId}/<kind>} convention
-   * established by {@code video-stream-references} and friends.
-   *
-   * <p>Permission: Read on the parent DataObject (inherited from its
-   * Collection — same gate as {@link #getSingleton}). 404 when no
-   * DataObject with that appId exists.
-   *
-   * @param dataObjectAppId UUID v7 of the parent DataObject.
-   * @param securityContext caller identity.
-   * @return 200 with the (possibly empty) list of singletons.
-   */
   @GET
   @Path("/by-data-object/{dataObjectAppId}")
   @Operation(
-    summary = "List singleton FileReferences (FR1b) attached to a DataObject.",
-    description =
-      "Returns every FR1b `:FileReference` (singleton shape) currently attached to the " +
-      "DataObject identified by `dataObjectAppId` (UUID v7). Soft-deleted singletons are " +
-      "filtered out at the service layer. Each list element carries the same shape as " +
-      "`GET /v2/files/{appId}` — `FileReferenceV2IO` with the embedded `ShepardFile` " +
-      "metadata.\n\n" +
-      "This is the additive sibling of the upstream v1 list endpoint " +
-      "(`GET /shepard/api/collections/{collectionId}/dataObjects/{dataObjectId}/fileReferences`), " +
-      "which returns only FR1a `FileBundleReference` shapes. The two endpoints together " +
-      "cover both file-reference shapes for a DataObject.\n\n" +
-      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
-      "Returns an empty array — not 404 — when the DataObject exists but has no singleton " +
-      "FileReferences."
+    summary = "RETIRED — use GET /v2/references?kind=file&dataObjectAppId={dataObjectAppId}.",
+    description = "Retired in APISIMP-FILE-PATH-RETIRE-2. Migrate to: GET /v2/references?kind=file&dataObjectAppId={dataObjectAppId}."
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "List of singleton FileReferences (may be empty).",
-    content = @Content(
-      mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = org.eclipse.microprofile.openapi.annotations.enums.SchemaType.ARRAY,
-                       implementation = FileReferenceV2IO.class)
-    )
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  @APIResponse(responseCode = "410", description = "Gone — use GET /v2/references?kind=file&dataObjectAppId={dataObjectAppId}.")
   public Response listByDataObject(
     @PathParam("dataObjectAppId") String dataObjectAppId,
     @Context SecurityContext securityContext
   ) {
-    String caller = callerOrNull(securityContext);
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
-    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing path parameter", Response.Status.BAD_REQUEST, "dataObjectAppId is required");
-    }
-
-    // Resolve parent DO existence — 404 when missing.
-    Long parentOgmId = singletonService.getDataObjectOgmId(dataObjectAppId);
-    if (parentOgmId == null) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
-    }
-    // Permission gate — inherit from Collection via the appId-aware helper.
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject");
-    }
-
-    List<FileReference> singletons = singletonService.listByDataObject(dataObjectAppId);
-    List<FileReferenceV2IO> result = new ArrayList<>(singletons.size());
-    for (FileReference ref : singletons) {
-      if (ref == null || ref.isDeleted()) continue;
-      result.add(new FileReferenceV2IO(ref));
-    }
-    return Response.ok(result).build();
+    return gone(
+      "/problems/file-references.list-by-do-retired",
+      "GET /v2/files/by-data-object/" + dataObjectAppId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
+      "Migrate to: GET /v2/references?kind=file&dataObjectAppId=" + dataObjectAppId
+    );
   }
 
-  // ─── metadata ─────────────────────────────────────────────────────────────
+  // ─── GET /v2/files/{appId} — RETIRED APISIMP-FILE-PATH-RETIRE-2 ──────────
 
   @GET
   @Path("/{appId}")
   @Operation(
-    summary = "Get singleton FileReference metadata by appId.",
-    description =
-      "Returns the `FileReferenceV2IO` metadata record for the FR1b singleton `:FileReference` " +
-      "identified by `appId` (UUID v7). The response includes: `appId` (UUID v7), `name` " +
-      "(human-readable display name), `dataObjectId` (OGM id of the parent DataObject), " +
-      "`type`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `revision`; and an " +
-      "embedded `file` object (nullable for degenerate rows) containing `filename` " +
-      "(original upload name), `md5` checksum, and `fileSize` (bytes, nullable for files " +
-      "uploaded before the FB1a size-capture migration).\n\n" +
-      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
-      "The parent DataObject is resolved from the Reference's graph relationship; 404 is " +
-      "returned both when the Reference is unknown and when its DataObject link is missing " +
-      "(graph inconsistency treated as not-found).\n\n" +
-      "Next step: `GET /v2/files/{appId}/content` to download the file bytes, or " +
-      "`PATCH /v2/files/{appId}` to rename the Reference."
+    summary = "RETIRED — use GET /v2/references/{appId}.",
+    description = "Retired in APISIMP-FILE-PATH-RETIRE-2. Migrate to: GET /v2/references/{appId}."
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "FileReferenceV2IO metadata record for the singleton Reference.",
-    content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
+  @APIResponse(responseCode = "410", description = "Gone — use GET /v2/references/{appId}.")
   public Response getSingleton(
     @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
-    FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
-    Response gate = checkAccess(ref, AccessType.Read, securityContext);
-    if (gate != null) return gate;
-    return Response.ok(new FileReferenceV2IO(ref)).build();
+    return gone(
+      "/problems/file-references.get-retired",
+      "GET /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
+      "Migrate to: GET /v2/references/" + appId
+    );
   }
 
-  // ─── content ──────────────────────────────────────────────────────────────
+  // ─── GET /v2/files/{appId}/content — RETIRED APISIMP-FILE-PATH-RETIRE-2 ──
 
   @GET
   @Path("/{appId}/content")
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
   @Operation(
-    summary = "Download the raw bytes of a singleton FileReference.",
-    description =
-      "Streams the file bytes stored for the FR1b singleton `:FileReference` identified " +
-      "by `appId` (UUID v7). The response `Content-Disposition` header is set to " +
-      "`attachment; filename=\"<originalName>\"` and `Content-Length` is set to the " +
-      "stored byte count so the caller can show a progress bar.\n\n" +
-      "Range requests: a single `Range: bytes=START-END` header is honoured (single-range " +
-      "only; FR1b does not support multi-range or suffix-range). A valid range returns " +
-      "HTTP 206 with `Content-Range` and `Accept-Ranges: bytes` headers. An unsatisfiable " +
-      "range (start ≥ total) returns 416 with `Content-Range: bytes */TOTAL`.\n\n" +
-      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
-      "The `Accept-Ranges` header is always included in 200 responses so clients can " +
-      "probe range support.\n\n" +
-      "Note: the underlying bytes live in the active storage backend (GridFS or S3). " +
-      "This endpoint proxies them through the shepard JVM; for large-file scenarios " +
-      "prefer `POST /v2/collections/{appId}/export-url` (presigned download) where " +
-      "supported."
+    summary = "RETIRED — use GET /v2/references/{appId}/content.",
+    description = "Retired in APISIMP-FILE-PATH-RETIRE-2. Migrate to: GET /v2/references/{appId}/content."
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Full file bytes as `application/octet-stream`; `Content-Disposition` and `Content-Length` are set.",
-    content = @Content(
-      mediaType = MediaType.APPLICATION_OCTET_STREAM,
-      schema = @Schema(type = SchemaType.STRING, format = "binary")
-    )
-  )
-  @APIResponse(
-    responseCode = "206",
-    description = "Partial content — single-range `Range: bytes=START-END` was honoured; `Content-Range` header is set."
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId, or its backing bytes are missing.")
-  @APIResponse(
-    responseCode = "416",
-    description = "Range not satisfiable — start offset is beyond the file size; `Content-Range: bytes */TOTAL` is included.",
-    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
-  )
+  @APIResponse(responseCode = "410", description = "Gone — use GET /v2/references/{appId}/content.")
   public Response getContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
     @Context SecurityContext securityContext
   ) {
-    FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
-    Response gate = checkAccess(ref, AccessType.Read, securityContext);
-    if (gate != null) return gate;
-
-    NamedInputStream payload;
-    try {
-      payload = singletonService.getPayload(appId);
-    } catch (NotFoundException nfe) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Backing bytes not found for this FileReference");
-    }
-
-    long total = payload.getSize();
-    String filename = payload.getName();
-
-    // No range header → full body.
-    if (rangeHeader == null || rangeHeader.isBlank()) {
-      return Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
-        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-        .header("Content-Length", total)
-        .header("Accept-Ranges", "bytes")
-        .build();
-    }
-
-    // Parse "bytes=START-END" (END optional). Multi-range and
-    // suffix-range ("bytes=-N") not supported in FR1b.
-    long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
-    if (range == null) {
-      ProblemJson rangeBody = new ProblemJson(
-        PROBLEM_TYPE_RANGE,
-        "Range Not Satisfiable",
-        Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE.getStatusCode(),
-        "Byte range start exceeds file size",
-        null
-      );
-      return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
-        .type("application/problem+json")
-        .header("Content-Range", "bytes */" + total)
-        .entity(rangeBody)
-        .build();
-    }
-    long start = range[0];
-    long end = range[1];
-    long length = end - start + 1;
-    StreamingOutput ranged = HttpRangeUtil.sliceStream(payload.getInputStream(), start, length);
-    return Response.status(Response.Status.PARTIAL_CONTENT)
-      .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-      .header("Content-Length", length)
-      .header("Content-Range", "bytes " + start + "-" + end + "/" + total)
-      .header("Accept-Ranges", "bytes")
-      .entity(ranged)
-      .type(MediaType.APPLICATION_OCTET_STREAM)
-      .build();
+    return gone(
+      "/problems/file-references.content-retired",
+      "GET /v2/files/" + appId + "/content retired (APISIMP-FILE-PATH-RETIRE-2). " +
+      "Migrate to: GET /v2/references/" + appId + "/content"
+    );
   }
 
-  // ─── patch ────────────────────────────────────────────────────────────────
+  // ─── PATCH /v2/files/{appId} — RETIRED APISIMP-FILE-PATH-RETIRE-2 ────────
 
   @PATCH
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
-    summary = "RFC 7396 merge-patch on a singleton FileReference.",
-    description =
-      "Applies a partial update to the `:FileReference` identified by `appId` (UUID v7). " +
-      "In FR1b the only mutable field via PATCH is `name` (the human-readable display " +
-      "name shown in the UI). The embedded `file` object fields (`filename`, `md5`, " +
-      "`fileSize`) are immutable after upload — re-upload to replace bytes.\n\n" +
-      "Example body: `{\"name\": \"calibration-run-2026\"}`.\n\n" +
-      "Setting `name` to `null` or an empty string returns 400. Absent fields are left " +
-      "unchanged per RFC 7396 semantics.\n\n" +
-      "Content-Type: prefer `application/merge-patch+json`; `application/json` is also " +
-      "accepted.\n\n" +
-      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
-      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity."
+    summary = "RETIRED — use PATCH /v2/references/{appId}.",
+    description = "Retired in APISIMP-FILE-PATH-RETIRE-2. Migrate to: PATCH /v2/references/{appId}."
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Updated FileReferenceV2IO with the new name applied.",
-    content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
-  )
-  @APIResponse(responseCode = "400", description = "Patch body is not a JSON object, or `name` is null or blank.")
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
+  @APIResponse(responseCode = "410", description = "Gone — use PATCH /v2/references/{appId}.")
   public Response patchSingleton(
     @PathParam("appId") String appId,
-    @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body,
+    JsonNode body,
     @Context SecurityContext securityContext
   ) {
-    if (body == null || !body.isObject()) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
-    }
-    FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
-    Response gate = checkAccess(ref, AccessType.Write, securityContext);
-    if (gate != null) return gate;
-
-    try {
-      Map<String, Object> patch = jsonNodeToMap(body);
-      FileReference updated = singletonService.patchSingleton(appId, patch);
-      return Response.ok(new FileReferenceV2IO(updated)).build();
-    } catch (BadRequestException bre) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
-    } catch (NotFoundException nfe) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "FileReference not found");
-    }
+    return gone(
+      "/problems/file-references.patch-retired",
+      "PATCH /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
+      "Migrate to: PATCH /v2/references/" + appId
+    );
   }
 
-  // ─── delete ───────────────────────────────────────────────────────────────
+  // ─── DELETE /v2/files/{appId} — RETIRED APISIMP-FILE-PATH-RETIRE-2 ───────
 
   @DELETE
   @Path("/{appId}")
   @Operation(
-    summary = "Hard-delete a singleton FileReference and its stored bytes.",
-    description =
-      "Permanently removes the `:FileReference` identified by `appId` (UUID v7) from " +
-      "Neo4j and deletes its stored bytes from the active storage backend (GridFS or S3). " +
-      "This is a hard delete — the bytes are unrecoverable after this call. To remove " +
-      "only the graph node without deleting bytes, use the upstream " +
-      "`DELETE /shepard/api/...` endpoint (which soft-deletes the Reference).\n\n" +
-      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
-      "Idempotency: if the Reference no longer exists the call returns 404, not 204 — " +
-      "the operation is not idempotent in the HTTP sense because a second call after " +
-      "deletion will find nothing to return.\n\n" +
-      "Side effects: `ProvenanceCaptureFilter` records a `DELETE` Activity. The parent " +
-      "DataObject's `referenceIds[]` list no longer includes this Reference's id after " +
-      "the call."
+    summary = "RETIRED — use DELETE /v2/references/{appId}.",
+    description = "Retired in APISIMP-FILE-PATH-RETIRE-2. Migrate to: DELETE /v2/references/{appId}."
   )
-  @APIResponse(responseCode = "204", description = "FileReference and its backing bytes permanently deleted.")
-  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
+  @APIResponse(responseCode = "410", description = "Gone — use DELETE /v2/references/{appId}.")
   public Response deleteSingleton(
     @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
-    FileReference ref = singletonService.getByAppId(appId);
-    if (ref == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No FileReference found for appId");
-    Response gate = checkAccess(ref, AccessType.Write, securityContext);
-    if (gate != null) return gate;
-    try {
-      singletonService.deleteSingleton(appId);
-      return Response.noContent().build();
-    } catch (NotFoundException nfe) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "FileReference not found during deletion");
-    }
+    return gone(
+      "/problems/file-references.delete-retired",
+      "DELETE /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
+      "Migrate to: DELETE /v2/references/" + appId
+    );
   }
 
-  // ─── helpers ──────────────────────────────────────────────────────────────
+  // ─── helpers kept for test-compat ─────────────────────────────────────────
 
   /**
-   * Returns the caller's principal name, or {@code null} when no
-   * principal is present (unauthenticated request — short-circuit
-   * 401 at the call site).
-   */
-  private String callerOrNull(SecurityContext securityContext) {
-    return securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-  }
-
-  /**
-   * Common access gate. Returns {@code null} when access is allowed;
-   * otherwise returns the short-circuit Response (401 / 403 / 404).
-   * The singleton must already be known to exist by the call site
-   * (404 if missing).
-   */
-  private Response checkAccess(FileReference ref, AccessType accessType, SecurityContext securityContext) {
-    String caller = callerOrNull(securityContext);
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
-    if (ref.getDataObject() == null) {
-      // Graph inconsistency — treat as 404.
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "Parent DataObject link is missing (graph inconsistency)");
-    }
-    // DataObjects have no own :Permissions node — walk up to the parent
-    // Collection via the perm-walk helper. Gating on doOgmId directly
-    // always 403'd because PermissionsDAO.findByEntityNeo4jId returns
-    // null for DOs.
-    String doAppId = ref.getDataObject().getAppId();
-    if (doAppId == null) {
-      // Pre-L2a DataObject with no appId — fall back to the old behaviour
-      // (gates on the DO's own perms, which fail closed; the operator can
-      // run the L2b backfill to populate appIds and unblock this path).
-      long doOgmId = ref.getDataObject().getId();
-      if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller)) {
-        return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on the parent DataObject");
-      }
-      return null;
-    }
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on the parent DataObject");
-    }
-    return null;
-  }
-
-  /**
-   * Parse a single {@code "bytes=START-END"} range header against
-   * a known total content length. Returns {@code null} for any
-   * unsupported / unsatisfiable shape (multi-range, suffix-range,
-   * out-of-bounds start, etc.) — call sites translate that into
-   * HTTP 416.
-   *
-   * <p>The single-range shape covers ~100 % of real-world clients
-   * (HTML5 video, Postman, curl). Multi-range / suffix-range are
-   * RFC 7233 features that virtually no browser issues; FR1b
-   * declines to implement them.
-   *
-   * @param header raw {@code Range} header value, e.g. {@code "bytes=0-1023"}.
-   * @param total total byte length of the resource.
-   * @return {@code [start, end]} (inclusive) or {@code null} if
-   *   unparseable / unsatisfiable.
-   */
-  /**
-   * @deprecated since MFFD-VIDEOREF-SCALE-1 — use
-   *   {@link HttpRangeUtil#parseRange(String, long)} directly.
-   *   Kept for test-compat; new code should depend on the shared util.
+   * @deprecated Delegates to {@link HttpRangeUtil#parseRange}; kept so
+   *   existing {@code FileReferenceV2RestTest} tests continue to compile.
+   *   New code should import {@link HttpRangeUtil} directly.
    */
   @Deprecated
   static long[] parseRange(String header, long total) {
@@ -536,9 +205,9 @@ public class FileReferenceV2Rest {
 
   /**
    * Convert a Jackson {@link JsonNode} object into a plain
-   * {@code Map<String, Object>} preserving null values (so
-   * RFC 7396 explicit-null clears flow through to the patch service).
-   * Mirrors {@code FileBundleReferenceRest#jsonNodeToMap}.
+   * {@code Map<String, Object>} preserving null values.
+   * Kept so {@code FileReferenceV2RestTest.jsonNodeToMap_preservesScalars}
+   * continues to compile without changes.
    */
   Map<String, Object> jsonNodeToMap(JsonNode node) {
     Map<String, Object> out = new LinkedHashMap<>();
@@ -571,8 +240,15 @@ public class FileReferenceV2Rest {
     return out;
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
+  private static Response gone(String type, String detail) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("status", 410);
+    body.put("title", "Gone");
+    body.put("type", type);
+    body.put("detail", detail);
+    return Response.status(Response.Status.GONE)
+      .type(MediaType.APPLICATION_JSON)
+      .entity(body)
+      .build();
   }
 }

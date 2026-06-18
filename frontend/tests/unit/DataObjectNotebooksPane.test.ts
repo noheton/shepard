@@ -31,7 +31,7 @@ function jupyterLaunchUrl(
   v2Base: string,
 ): string | null {
   if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
-  const downloadUrl = `${v2Base}/v2/files/${encodeURIComponent(appId)}/content`;
+  const downloadUrl = `${v2Base}/v2/references/${encodeURIComponent(appId)}/content`;
   const hubBase = cfg.hubUrl.replace(/\/$/, "");
   return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
 }
@@ -80,7 +80,7 @@ describe("DataObjectNotebooksPane — jupyterLaunchUrl (task #240)", () => {
     const url = jupyterLaunchUrl(enabledCfg, "fr1b-app-id", v2Base);
     expect(url).toBe(
       "https://hub.example.org/hub/spawn?file=" +
-        encodeURIComponent("https://shepard-api.example.org/v2/files/fr1b-app-id/content"),
+        encodeURIComponent("https://shepard-api.example.org/v2/references/fr1b-app-id/content"),
     );
   });
 
