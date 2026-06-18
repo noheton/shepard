@@ -606,4 +606,22 @@ class ContainersV2RestTest {
         .findFirst().orElse("NOT_FOUND");
     assertEquals("maxPoints", actual);
   }
+
+  // ─── APISIMP-THUMBNAIL-SIZE-PARAM-NAME regression ───────────────────────────
+
+  @Test
+  void getThumbnail_sizeParamAnnotationMatchesJavaName() throws NoSuchMethodException {
+    // Regression guard: the Java parameter name must match the @QueryParam annotation value.
+    // Previously the param was named "sizeParam" while the annotation said "size", causing
+    // a mismatch between the wire name and the internal identifier.
+    Method method = ContainersV2Rest.class.getMethod(
+        "getThumbnail", String.class, String.class, Integer.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String actual = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && p.getAnnotation(QueryParam.class).value().equals("size"))
+        .map(p -> p.getName())
+        .findFirst().orElse("NOT_FOUND");
+    assertEquals("size", actual);
+  }
 }

@@ -1333,7 +1333,7 @@ public class ContainersV2Rest {
   public Response getThumbnail(
     @PathParam("appId") String appId,
     @PathParam("oid") String oid,
-    @QueryParam("size") Integer sizeParam,
+    @QueryParam("size") Integer size,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1342,7 +1342,7 @@ public class ContainersV2Rest {
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    return resolved.get().handler().getThumbnail(appId, oid, sizeParam)
+    return resolved.get().handler().getThumbnail(appId, oid, size)
       .orElse(unsupportedKind("thumbnails"));
   }
 
