@@ -11,12 +11,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
+import jakarta.ws.rs.NotFoundException;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteRequestIO;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteResponseIO;
 import de.dlr.shepard.spi.ai.AiCapability;
@@ -54,6 +56,9 @@ class WikiWriterServiceTest {
   DataObjectService dataObjectService;
 
   @Mock
+  DataObjectDAO dataObjectDAO;
+
+  @Mock
   LabJournalEntryService labJournalEntryService;
 
   @InjectMocks
@@ -63,6 +68,7 @@ class WikiWriterServiceTest {
 
   private static final long COLLECTION_OGM_ID = 1L;
   private static final long DATA_OBJECT_OGM_ID = 42L;
+  private static final String DATA_OBJECT_APP_ID = "01919191-0000-7000-8000-000000000099";
   private static final long JOURNAL_ENTRY_ID = 99L;
   private static final String ACTIVITY_APP_ID = "01919191-0000-7000-8000-000000000001";
 
@@ -275,6 +281,45 @@ class WikiWriterServiceTest {
 
     // Journal entry must NOT be created when LLM fails.
     verify(labJournalEntryService, never()).createLabJournalEntry(anyLong(), anyString());
+  }
+
+  // ── wikiWriteByDataObjectAppId ─────────────────────────────────────────────
+
+  @Test
+  @DisplayName("wikiWriteByDataObjectAppId resolves collection from DataObject and delegates")
+  void wikiWriteByDataObjectAppId_happyPath() {
+    // Arrange: DataObjectDAO returns the target with a populated collection.
+    target.setAppId(DATA_OBJECT_APP_ID);
+    collection.setId(COLLECTION_OGM_ID);
+    target.setCollection(collection);
+    when(dataObjectDAO.findByAppId(DATA_OBJECT_APP_ID)).thenReturn(target);
+
+    when(llmProviderInstance.isResolvable()).thenReturn(true);
+    when(llmProviderInstance.get()).thenReturn(llmProvider);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLLECTION_OGM_ID))
+      .thenReturn(collection);
+    when(dataObjectService.getDataObject(COLLECTION_OGM_ID, DATA_OBJECT_OGM_ID))
+      .thenReturn(target);
+    when(llmProvider.complete(any(LlmRequest.class))).thenReturn(llmResponse);
+    when(labJournalEntryService.createLabJournalEntry(eq(DATA_OBJECT_OGM_ID), anyString()))
+      .thenReturn(journalEntry);
+
+    // Act.
+    WikiWriteResponseIO response = service.wikiWriteByDataObjectAppId(DATA_OBJECT_APP_ID, new WikiWriteRequestIO());
+
+    // Assert: delegation succeeds and response is populated.
+    assertThat(response.getGeneratedSummary()).isNotBlank();
+    assertThat(response.getActivityAppId()).isEqualTo(ACTIVITY_APP_ID);
+  }
+
+  @Test
+  @DisplayName("wikiWriteByDataObjectAppId throws NotFoundException when DataObject not found")
+  void wikiWriteByDataObjectAppId_notFound_throwsNotFoundException() {
+    when(dataObjectDAO.findByAppId("unknown-appid")).thenReturn(null);
+
+    assertThatThrownBy(() -> service.wikiWriteByDataObjectAppId("unknown-appid", new WikiWriteRequestIO()))
+      .isInstanceOf(NotFoundException.class)
+      .hasMessageContaining("unknown-appid");
   }
 
   @Test
