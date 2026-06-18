@@ -51,7 +51,7 @@ export interface ListEntityActivitiesRequest {
 
 export interface StatsRequest {
     scope: string;
-    id?: string;
+    entityId?: string;
     since?: number;
     until?: number;
 }
@@ -257,8 +257,8 @@ export class ProvenanceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters['id'] != null) {
-            queryParameters['id'] = requestParameters['id'];
+        if (requestParameters['entityId'] != null) {
+            queryParameters['entityId'] = requestParameters['entityId'];
         }
 
         if (requestParameters['scope'] != null) {

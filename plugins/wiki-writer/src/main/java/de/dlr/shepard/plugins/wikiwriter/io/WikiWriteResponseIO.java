@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Response body for
- * {@code POST /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write}.
+ * {@code POST /v2/data-objects/{dataObjectAppId}/wiki-write}.
  */
 @Data
 @NoArgsConstructor

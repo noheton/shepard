@@ -2,7 +2,6 @@ package de.dlr.shepard.plugins.wikiwriter.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteRequestIO;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteResponseIO;
@@ -32,7 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * WW1 — REST resource for the wiki-writer plugin.
  *
  * <p>Exposes a single endpoint:
- * {@code POST /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write}
+ * {@code POST /v2/data-objects/{dataObjectAppId}/wiki-write}
  *
  * <p>The endpoint summarises the target DataObject and its Collection siblings
  * using the configured LLM TEXT capability and writes the result as a
@@ -47,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * present or when the TEXT capability is not configured. The plugin still
  * starts normally when {@code shepard-plugin-ai} is absent.
  */
-@Path("/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write")
+@Path("/v2/data-objects/{dataObjectAppId}/wiki-write")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -60,9 +59,6 @@ public class WikiWriterRest {
 
   @Inject
   PermissionsService permissionsService;
-
-  @Inject
-  EntityIdResolver entityIdResolver;
 
   @POST
   @Operation(
@@ -93,10 +89,9 @@ public class WikiWriterRest {
   @APIResponse(responseCode = "400", description = "Bad request — invalid maxTokens range.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent Collection.")
-  @APIResponse(responseCode = "404", description = "No Collection or DataObject with that appId.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   @APIResponse(responseCode = "503", description = "LLM provider not configured or TEXT capability unavailable.")
   public Response wikiWrite(
-    @PathParam("collectionAppId") String collectionAppId,
     @PathParam("dataObjectAppId") String dataObjectAppId,
     @RequestBody(
       required = false,
@@ -104,16 +99,11 @@ public class WikiWriterRest {
     ) WikiWriteRequestIO body,
     @Context SecurityContext sc
   ) {
-    // Resolve appIds to OGM ids.
-    Long collectionOgmId = resolveOrNull(collectionAppId);
-    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (collectionOgmId == null || dataObjectOgmId == null) {
-      return problem(Response.Status.NOT_FOUND, "Collection or DataObject not found");
-    }
-
-    // Gate: Write permission on the DataObject (inherited from parent Collection).
+    // Gate: caller must be authenticated.
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
+
+    // Gate: Write permission on the DataObject (inherited from parent Collection).
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
       return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
@@ -135,8 +125,10 @@ public class WikiWriterRest {
     WikiWriteRequestIO request = body != null ? body : new WikiWriteRequestIO();
 
     try {
-      WikiWriteResponseIO result = wikiWriterService.wikiWrite(collectionOgmId, dataObjectOgmId, request);
+      WikiWriteResponseIO result = wikiWriterService.wikiWriteByDataObjectAppId(dataObjectAppId, request);
       return Response.ok(result).build();
+    } catch (NotFoundException nfe) {
+      return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (de.dlr.shepard.spi.ai.LlmException e) {
       Log.errorf(e, "WW1: LLM call failed for DataObject %s", dataObjectAppId);
       return Response.status(Response.Status.SERVICE_UNAVAILABLE)
@@ -148,14 +140,6 @@ public class WikiWriterRest {
           "LLM call failed: " + e.getMessage(),
           null))
         .build();
-    }
-  }
-
-  private Long resolveOrNull(String appId) {
-    try {
-      return entityIdResolver.resolveLong(appId);
-    } catch (NotFoundException nfe) {
-      return null;
     }
   }
 
