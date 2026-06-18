@@ -660,4 +660,42 @@ class ContainersV2RestTest {
         endDesc.toLowerCase().contains("nanosecond"),
         "end @Parameter description must mention 'nanosecond' — got: " + endDesc);
   }
+
+  // ─── APISIMP-CHANNEL-DOWNSAMPLE-UNDOCUMENTED regression ─────────────────────
+
+  @Test
+  void getChannelData_downsampleParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "downsample".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "downsample @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
+
+  @Test
+  void getChannelData_maxPointsParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "maxPoints".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "maxPoints @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
 }

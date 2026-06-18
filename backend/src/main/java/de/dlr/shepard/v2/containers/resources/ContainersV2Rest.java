@@ -650,7 +650,9 @@ public class ContainersV2Rest {
     @QueryParam("start") @NotNull @PositiveOrZero Long start,
     @Parameter(description = "Window end, nanoseconds since Unix epoch (exclusive). Must be > start.", required = true)
     @QueryParam("end")   @NotNull @PositiveOrZero Long end,
+    @Parameter(description = "Downsampling algorithm. Only 'lttb' (Largest Triangle Three Buckets) is supported; any other value disables downsampling.")
     @QueryParam("downsample") String downsample,
+    @Parameter(description = "Maximum number of data points to return when downsample=lttb is active. Ignored when downsample is absent or unrecognised.")
     @QueryParam("maxPoints") Integer maxPoints,
     @Context SecurityContext sc
   ) {
