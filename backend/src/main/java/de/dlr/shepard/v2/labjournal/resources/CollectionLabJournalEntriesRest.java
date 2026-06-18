@@ -10,12 +10,15 @@ import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -83,7 +86,10 @@ public class CollectionLabJournalEntriesRest {
       "round-trips. Returns an empty array when the collection has no data " +
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +
-      "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read."
+      "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.\n\n" +
+      "Pagination: supply both `page` (0-based) and `pageSize` (positive) to slice the result. " +
+      "Omitting either parameter (or supplying 0 for pageSize) returns all entries — " +
+      "the original bulk-fetch behaviour is preserved for backward compatibility."
   )
   @APIResponse(
     responseCode = "200",
@@ -95,6 +101,8 @@ public class CollectionLabJournalEntriesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @QueryParam("page") @PositiveOrZero Integer page,
+    @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
@@ -129,6 +137,13 @@ public class CollectionLabJournalEntriesRest {
         continue;
       }
       ios.add(new LabJournalEntryIO(e));
+    }
+    if (pageSize != null && pageSize > 0) {
+      int from = (page != null ? page : 0) * pageSize;
+      if (from >= ios.size()) {
+        return Response.ok(List.of()).build();
+      }
+      ios = ios.subList(from, Math.min(from + pageSize, ios.size()));
     }
     return Response.ok(ios).build();
   }

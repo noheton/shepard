@@ -76,25 +76,25 @@ class CollectionLabJournalEntriesRestTest {
   @Test
   void list_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertThat(resource.list(COLL_APP_ID, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void list_returns404WhenCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    assertThat(resource.list(COLL_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void list_returns403WhenNoReadPermission() {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    assertThat(resource.list(COLL_APP_ID, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(403);
   }
 
   @Test
   void list_returns200WithEntriesAndDataObjectIdPopulated() {
-    var r = resource.list(COLL_APP_ID, sc);
+    var r = resource.list(COLL_APP_ID, null, null, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -126,7 +126,7 @@ class CollectionLabJournalEntriesRestTest {
         buildEntry(11L, 101L, "hydrated", new Date(2_000_000L)),
         orphan
       ));
-    var r = resource.list(COLL_APP_ID, sc);
+    var r = resource.list(COLL_APP_ID, null, null, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -138,7 +138,7 @@ class CollectionLabJournalEntriesRestTest {
   @Test
   void list_returns200WithEmptyListWhenNoEntries() {
     when(entriesDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of());
-    var r = resource.list(COLL_APP_ID, sc);
+    var r = resource.list(COLL_APP_ID, null, null, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -147,8 +147,36 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_usesCollectionOgmIdForPermissionCheck() {
-    resource.list(COLL_APP_ID, sc);
+    resource.list(COLL_APP_ID, null, null, sc);
     verify(permissionsService).isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER));
+  }
+
+  @Test
+  void list_paginationReturnsSublistWhenPageAndSizeProvided() {
+    var r = resource.list(COLL_APP_ID, 0, 1, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var body = (List<LabJournalEntryIO>) r.getEntity();
+    assertThat(body).hasSize(1);
+    assertThat(body.get(0).getId()).isEqualTo(11L);
+  }
+
+  @Test
+  void list_paginationPageBeyondRangeReturnsEmptyList() {
+    var r = resource.list(COLL_APP_ID, 99, 10, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var body = (List<LabJournalEntryIO>) r.getEntity();
+    assertThat(body).isEmpty();
+  }
+
+  @Test
+  void list_nullPageAndSizeReturnsAllEntries() {
+    var r = resource.list(COLL_APP_ID, null, null, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var body = (List<LabJournalEntryIO>) r.getEntity();
+    assertThat(body).hasSize(2);
   }
 
   /**
