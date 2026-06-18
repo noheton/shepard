@@ -30,10 +30,15 @@ So the import model is:
     name (normalised) is the stable source id →
     ``urn:shepard:source:stringer-id = <dirname>``. This is the idempotency key.
   * Each run DO carries:
-      - the dir's ``.tiff`` frames as **singleton FileReferences (FR1b)** — one
-        ``POST /v2/files`` per frame (auto-parse + content in one call). At full
-        scale this is ~760 k uploads; the orchestrator runs that. ``--max-tiffs-per-run``
-        caps the count for a slice test.
+      - the dir's ``.tiff`` frames as **ONE FileBundleReference (FR1a)** — an IR
+        image series of ~5–6 k frames per run is exactly the multi-file shape the
+        CLAUDE.md "Reserve FileBundleReference for genuinely multi-file bundles —
+        image series, mesh sets" rule prescribes. The whole series is one bundle
+        named for the run, with every ``.tiff`` (sorted by filename so frame order
+        is preserved) uploaded into the bundle's default FileGroup. This replaces
+        the previous one-singleton-per-frame shape (~712 k singleton refs across
+        134 runs → 134 frame bundles). ``--max-tiffs-per-run`` caps the frame
+        count for a slice test.
       - the sibling ``<run>.svdx`` (TwinCAT scope SSOT) as a singleton FileReference.
       - the sibling ``<run>.txt`` raw-scope export as a singleton FileReference.
       - the sibling ``<run>*.MP4`` / ``.LRV`` videos (matched by run-base prefix)
@@ -70,8 +75,33 @@ Ingest surface (v2 + appId, per CLAUDE.md; v1 only where no v2 exists)
                            surface; same as seed-mffd-collections.py). The new
                            collection is addressed by appId thereafter.
   2. partOf annotation   : ``POST /v2/annotations``.
-  3. DataObject create   : ``POST /v2/collections/{appId}/data-objects`` → {appId,id}.
-  4. Singleton file      : TWO-STEP (the old multipart ``POST /v2/files`` is RETIRED
+  3. DataObject create   : ``POST /shepard/api/collections/{colNum}/dataObjects``
+                           → {id, appId}. v1 here (not v2) because the v2 DO-create
+                           response carries no numeric ``id``, and the v1
+                           FileBundleReference create (step 4a) needs the numeric
+                           collection + DO ids. The DO is addressed by appId for all
+                           annotation / predecessor work thereafter.
+  3b. Frame bundle (FR1a): the ``.tiff`` IR image series → ONE FileBundleReference.
+        a) ``POST /shepard/api/fileContainers`` {name} → {id, appId} — one
+           FileContainer per run to back the bundle's bytes.
+        b) ``POST /shepard/api/collections/{colNum}/dataObjects/{doNum}/fileReferences``
+           {name, fileContainerId, fileOids:[<placeholder-uuid>]} → the v1
+           FileReference create == this fork's FileBundleReference. ``fileOids`` is
+           ``@NotEmpty`` server-side, but a non-existent oid is logged-and-ignored
+           by ``FileBundleReferenceService.createReference`` (it only attaches oids
+           that resolve), so a throwaway UUID satisfies the validator while the
+           bundle is born with an empty ``default`` FileGroup. (The direct S3
+           container-payload upload — ``POST /fileContainers/{id}/payload`` — is 503
+           "not supported for provider s3"; the group-upload below is the only
+           S3-correct ingest path, and it needs an existing bundle, hence the
+           placeholder-oid bootstrap.)
+        c) For each frame, ``POST /v2/bundles/{bundleAppId}/groups/{groupAppId}/files``
+           multipart ``file=…`` → server stores the bytes (GridFS-backed; returns a
+           ShepardFile ``{oid, filename, fileSize, md5}``) and links it to the group.
+           Verify per page via ``GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files``
+           (PagedFilesIO ``totalElements``).
+  4. Singleton file      : the svdx/txt/MP4 siblings stay singleton FileReferences.
+                           TWO-STEP (the old multipart ``POST /v2/files`` is RETIRED
                            — 410 Gone, APISIMP-KIND-DISCRIMINATOR-2, confirmed live
                            2026-06-18):
                              a) ``POST /v2/references?kind=file&dataObjectAppId=…``
@@ -125,6 +155,7 @@ import sqlite3
 import sys
 import threading
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -248,6 +279,10 @@ class Counts:
     dos_reused: int = 0
     file_refs: int = 0
     file_refs_reused: int = 0
+    bundles_created: int = 0
+    bundles_reused: int = 0
+    frames_uploaded: int = 0
+    frames_reused: int = 0
     tiffs_uploaded: int = 0
     scope_uploaded: int = 0
     videos_uploaded: int = 0
@@ -273,27 +308,84 @@ class State:
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS runs ("
-            "  source_id TEXT PRIMARY KEY, do_appid TEXT, status TEXT, ts REAL)")
+            "  source_id TEXT PRIMARY KEY, do_appid TEXT, do_num INTEGER,"
+            "  status TEXT, ts REAL)")
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS files ("
             "  do_appid TEXT, fname TEXT, ref_appid TEXT, ts REAL,"
             "  PRIMARY KEY (do_appid, fname))")
+        # FR1a image-series bundle: one FileBundleReference per run holding ALL
+        # that run's .tiff frames. `bundles` tracks the bundle + its backing
+        # FileContainer + default group so a wiped/partial run re-converges; the
+        # `frames` table records each uploaded frame's ShepardFile oid so a
+        # resumed run skips frames already in the bundle.
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS bundles ("
+            "  do_appid TEXT PRIMARY KEY, bundle_appid TEXT, group_appid TEXT,"
+            "  fc_num INTEGER, fc_appid TEXT, ts REAL)")
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS frames ("
+            "  bundle_appid TEXT, fname TEXT, oid TEXT, ts REAL,"
+            "  PRIMARY KEY (bundle_appid, fname))")
+        # forward-compat: add do_num column if upgrading an older state file
+        try:
+            self.conn.execute("ALTER TABLE runs ADD COLUMN do_num INTEGER")
+        except sqlite3.OperationalError:
+            pass
         self.conn.commit()
 
     def get_run(self, source_id: str):
         with self._lock:
             row = self.conn.execute(
-                "SELECT do_appid, status FROM runs WHERE source_id=?",
+                "SELECT do_appid, status, do_num FROM runs WHERE source_id=?",
                 (source_id,)).fetchone()
         return row
 
-    def put_run(self, source_id: str, do_appid: str, status: str):
+    def put_run(self, source_id: str, do_appid: str, status: str,
+                do_num: Optional[int] = None):
         with self._lock:
             self.conn.execute(
-                "INSERT INTO runs(source_id,do_appid,status,ts) VALUES(?,?,?,?) "
+                "INSERT INTO runs(source_id,do_appid,do_num,status,ts) "
+                "VALUES(?,?,?,?,?) "
                 "ON CONFLICT(source_id) DO UPDATE SET do_appid=excluded.do_appid,"
+                "do_num=COALESCE(excluded.do_num, runs.do_num),"
                 "status=excluded.status, ts=excluded.ts",
-                (source_id, do_appid, status, time.time()))
+                (source_id, do_appid, do_num, status, time.time()))
+            self.conn.commit()
+
+    # ── bundle state (FR1a image-series) ─────────────────────────────────────
+    def get_bundle(self, do_appid: str):
+        with self._lock:
+            return self.conn.execute(
+                "SELECT bundle_appid, group_appid, fc_num, fc_appid "
+                "FROM bundles WHERE do_appid=?", (do_appid,)).fetchone()
+
+    def put_bundle(self, do_appid: str, bundle_appid: str, group_appid: str,
+                   fc_num: int, fc_appid: str):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO bundles(do_appid,bundle_appid,group_appid,fc_num,"
+                "fc_appid,ts) VALUES(?,?,?,?,?,?) "
+                "ON CONFLICT(do_appid) DO UPDATE SET bundle_appid=excluded.bundle_appid,"
+                "group_appid=excluded.group_appid, fc_num=excluded.fc_num,"
+                "fc_appid=excluded.fc_appid, ts=excluded.ts",
+                (do_appid, bundle_appid, group_appid, fc_num, fc_appid, time.time()))
+            self.conn.commit()
+
+    def get_frame(self, bundle_appid: str, fname: str) -> Optional[str]:
+        with self._lock:
+            row = self.conn.execute(
+                "SELECT oid FROM frames WHERE bundle_appid=? AND fname=?",
+                (bundle_appid, fname)).fetchone()
+        return row[0] if row else None
+
+    def put_frame(self, bundle_appid: str, fname: str, oid: str):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO frames(bundle_appid,fname,oid,ts) VALUES(?,?,?,?) "
+                "ON CONFLICT(bundle_appid,fname) DO UPDATE SET oid=excluded.oid,"
+                "ts=excluded.ts",
+                (bundle_appid, fname, oid, time.time()))
             self.conn.commit()
 
     def get_file(self, do_appid: str, fname: str) -> Optional[str]:
@@ -455,15 +547,21 @@ def build_live_index(client: Client, verbose: bool) -> LiveIndex:
 # ── importer ────────────────────────────────────────────────────────────────
 class Importer:
     def __init__(self, client: Client, state: State, counts: Counts,
-                 col_appid: str, live: LiveIndex, verbose: bool):
+                 col_appid: str, col_numeric: int, live: LiveIndex, verbose: bool,
+                 frame_workers: int = 8):
         self.c = client
         self.st = state
         self.n = counts
         self.col = col_appid
+        self.col_num = col_numeric
         self.live = live
         self.verbose = verbose
+        self.frame_workers = max(1, frame_workers)
         self._lock = threading.Lock()
         self._live_file_refs: dict[str, set[str]] = {}
+        self._do_num_idx: Optional[dict[str, int]] = None
+        self._live_frame_names: dict[str, set[str]] = {}
+        self._frame_set_locks: dict[str, threading.Lock] = {}
 
     # ── annotations
     def _annotate(self, do_appid: str, predicate: str, value: str) -> bool:
@@ -587,24 +685,230 @@ class Importer:
             self.n.add(videos_uploaded=1)
         return ref_appid
 
+    # ── numeric DO id resolution (for v1 FileBundleReference create) ─────────
+    def _build_do_numeric_index(self):
+        """One pass over the collection's v1 DataObjects → {appId: numericId}.
+        Built lazily on first need; the v2 DO-create response has no numeric id,
+        so a DO reused from the live index (or a wiped state file) needs this."""
+        with self._lock:
+            if getattr(self, "_do_num_idx", None) is not None:
+                return
+            idx: dict[str, int] = {}
+            page = 0
+            while True:
+                try:
+                    rows = self.c.get_json(
+                        f"/shepard/api/collections/{self.col_num}/dataObjects"
+                        f"?page={page}&size=200")
+                except RuntimeError:
+                    break
+                if not rows:
+                    break
+                for d in rows:
+                    if d.get("appId") and d.get("id") is not None:
+                        idx[d["appId"]] = d["id"]
+                if len(rows) < 200:
+                    break
+                page += 1
+            self._do_num_idx = idx
+
+    def _resolve_do_numeric(self, do_appid: str) -> Optional[int]:
+        self._build_do_numeric_index()
+        return self._do_num_idx.get(do_appid)
+
+    # ── frame bundle (FR1a image series) ─────────────────────────────────────
+    def _bundle_frame_count(self, bundle_appid: str, group_appid: str) -> int:
+        """Authoritative live count of frames in the bundle's default group, via
+        the paginated PagedFilesIO envelope (cheap — page 0, size 1)."""
+        try:
+            env = self.c.get_json(
+                f"/v2/bundles/{bundle_appid}/groups/{group_appid}/files"
+                f"?page=0&pageSize=1")
+            for k in ("totalElements", "total"):
+                if env.get(k) is not None:
+                    return int(env[k])
+        except (RuntimeError, ValueError, TypeError):
+            pass
+        return -1
+
+    def _ensure_bundle(self, do_appid: str, do_num: int, run: RunDir):
+        """Find-or-create the run's FileBundleReference (FR1a) + backing
+        FileContainer + default group. Idempotent: reuses the bundle recorded in
+        sqlite, otherwise probes the live DO for an existing bundle of the same
+        name before creating a new one. Returns (bundle_appid, group_appid,
+        fc_num, fc_appid)."""
+        cached = self.st.get_bundle(do_appid)
+        if cached and all(cached[:4]):
+            self.n.add(bundles_reused=1)
+            return cached[0], cached[1], cached[2], cached[3]
+
+        bundle_name = run.source_id
+        # live probe (idempotency for a wiped/partial state file): a prior run may
+        # have left a FileBundleReference on this DO. The `kind=bundle` discriminator
+        # is NOT registered on the unified /v2/references surface in this deployment,
+        # so list via the v1 fileReferences surface (== FileBundleReference) and
+        # resolve the default group via /v2/bundles/{appId}/groups.
+        try:
+            existing = self.c.get_json(
+                f"/shepard/api/collections/{self.col_num}/dataObjects/{do_num}/fileReferences")
+            for ref in (existing or []):
+                if ref.get("name") == bundle_name and ref.get("appId"):
+                    b_appid = ref["appId"]
+                    fc_num = ref.get("fileContainerId") or 0
+                    groups = self.c.get_json(f"/v2/bundles/{b_appid}/groups")
+                    if groups:
+                        g_appid = groups[0]["appId"]
+                        self.st.put_bundle(do_appid, b_appid, g_appid, fc_num, "")
+                        self.n.add(bundles_reused=1)
+                        return b_appid, g_appid, fc_num, ""
+        except RuntimeError:
+            pass
+
+        # create a FileContainer (v1) to back the bundle's bytes
+        fc = self.c.post_json("/shepard/api/fileContainers",
+                              {"name": f"stringer-frames-{bundle_name}"},
+                              retry_on_403=True)
+        fc_num = fc["id"]
+        fc_appid = fc.get("appId", "")
+        # create the FileBundleReference (v1) with a throwaway oid (logged-and-
+        # ignored server-side; satisfies the @NotEmpty fileOids validator). The
+        # bundle is born with an empty `default` FileGroup.
+        placeholder = str(uuid.uuid4())
+        br = self.c.post_json(
+            f"/shepard/api/collections/{self.col_num}/dataObjects/{do_num}/fileReferences",
+            {"name": bundle_name, "fileContainerId": fc_num,
+             "fileOids": [placeholder]}, retry_on_403=True)
+        b_appid = br["appId"]
+        bg = self.c.get_json(f"/v2/bundles/{b_appid}")
+        groups = bg.get("groups") or []
+        if not groups:
+            raise RuntimeError(f"bundle {b_appid} has no default group")
+        g_appid = groups[0]["appId"]
+        # container PublicReadable (IMPORT-PERMS-1): the bundle's bytes live in
+        # this per-run FileContainer; references inherit collection perms but the
+        # container itself needs PublicReadable so the frames are demo-readable.
+        try:
+            cur = self.c.get_json(f"/shepard/api/fileContainers/{fc_num}/permissions")
+            cur["permissionType"] = "PublicReadable"
+            self.c.request("PUT", f"/shepard/api/fileContainers/{fc_num}/permissions",
+                           json=cur, expect=(200, 201, 204), retry_on_403=True)
+            self.n.add(perms_set=1)
+        except RuntimeError as e:
+            if self.verbose:
+                print(f"  [perms WARN] container {fc_num}: {e}",
+                      file=sys.stderr, flush=True)
+        self.st.put_bundle(do_appid, b_appid, g_appid, fc_num, fc_appid)
+        # fresh bundle starts with an empty group — seed the live-frame cache so
+        # the first frame upload doesn't waste a paginated round-trip.
+        with self._lock:
+            self._live_frame_names[b_appid] = set()
+        self.n.add(bundles_created=1)
+        return b_appid, g_appid, fc_num, fc_appid
+
+    def _live_frame_set(self, bundle_appid: str, group_appid: str) -> set:
+        """Set of frame filenames already in the bundle's group, fetched EXACTLY
+        once per bundle and cached. Guards idempotency when the sqlite state file
+        is wiped/partial but the bundle already holds frames — the group-upload
+        endpoint does NOT dedupe by name, so without this a re-run would duplicate
+        every frame. The full paginated fetch runs under a per-bundle lock so the
+        N concurrent frame-workers don't each paginate (and so the set is fully
+        populated before any worker consults it)."""
+        with self._lock:
+            cached = self._live_frame_names.get(bundle_appid)
+            if cached is not None:
+                return cached
+            lock = self._frame_set_locks.setdefault(bundle_appid, threading.Lock())
+        with lock:
+            # double-check after acquiring the per-bundle lock
+            with self._lock:
+                cached = self._live_frame_names.get(bundle_appid)
+            if cached is not None:
+                return cached
+            names: set = set()
+            page = 0
+            while True:
+                try:
+                    env = self.c.get_json(
+                        f"/v2/bundles/{bundle_appid}/groups/{group_appid}/files"
+                        f"?page={page}&pageSize=1000")
+                except RuntimeError:
+                    break
+                items = env.get("items") or []
+                for it in items:
+                    nm = it.get("filename") or it.get("name")
+                    if nm:
+                        names.add(nm)
+                total_pages = env.get("totalPages")
+                if not items or (total_pages is not None and page + 1 >= total_pages):
+                    break
+                page += 1
+            with self._lock:
+                self._live_frame_names[bundle_appid] = names
+            return names
+
+    def _upload_frame(self, bundle_appid: str, group_appid: str, path: Path) -> Optional[str]:
+        """Upload one .tiff frame into the bundle's default FileGroup. Idempotent
+        on sqlite (skip already-uploaded frames) and on the live group contents
+        (re-run with a wiped state file skips frames already present). Returns the
+        ShepardFile oid."""
+        fname = path.name
+        cached = self.st.get_frame(bundle_appid, fname)
+        if cached:
+            self.n.add(frames_reused=1)
+            return cached
+        if fname in self._live_frame_set(bundle_appid, group_appid):
+            self.n.add(frames_reused=1)
+            return None
+        size = path.stat().st_size
+        attempt = 0
+        while True:
+            attempt += 1
+            with open(path, "rb") as fh:
+                resp = self.c.request(
+                    "POST",
+                    f"/v2/bundles/{bundle_appid}/groups/{group_appid}/files",
+                    files={"file": (fname, fh, "application/octet-stream")},
+                    expect=(200, 201), retry_on_403=True)
+            rec = resp.json()
+            oid = rec.get("oid")
+            stored = rec.get("fileSize")
+            if oid and (stored == size or size == 0 or stored is None):
+                break
+            self.n.add(short_uploads=1)
+            if self.verbose:
+                print(f"  [short-frame] {fname}: {stored}/{size} (attempt {attempt})"
+                      f" — re-uploading", file=sys.stderr, flush=True)
+        self.st.put_frame(bundle_appid, fname, oid)
+        with self._lock:
+            self._live_frame_names.setdefault(bundle_appid, set()).add(fname)
+        self.n.add(frames_uploaded=1, file_refs=1, tiffs_uploaded=1,
+                   bytes_uploaded=size)
+        return oid
+
     def process(self, run: RunDir):
-        # 1. DataObject — sqlite, then live index, then create.
+        # 1. DataObject — sqlite, then live index, then create. v1 create so we
+        #    capture the numeric id needed for the v1 FileBundleReference create.
         cached = self.st.get_run(run.source_id)
         if cached and cached[1] == "done":
             self.n.add(runs_reused=1)
             return cached[0]
         do_appid = cached[0] if cached else None
+        do_num = cached[2] if cached and len(cached) > 2 else None
         if not do_appid:
             do_appid = self.live.find_do(run.source_id)
         if do_appid:
             self.n.add(dos_reused=1)
+            if do_num is None:
+                do_num = self._resolve_do_numeric(do_appid)
         else:
             created = self.c.post_json(
-                f"/v2/collections/{self.col}/data-objects", {"name": run.source_id})
+                f"/shepard/api/collections/{self.col_num}/dataObjects",
+                {"name": run.source_id}, retry_on_403=True)
             do_appid = created["appId"]
+            do_num = created["id"]
             self.n.add(dos_created=1)
             self.live.by_source_id[run.source_id] = do_appid
-        self.st.put_run(run.source_id, do_appid, "creating")
+        self.st.put_run(run.source_id, do_appid, "creating", do_num=do_num)
 
         # 2. annotations (facets + idempotency key + provenance)
         relpath = os.path.relpath(str(run.dirpath), DATASET_ROOT)
@@ -621,13 +925,43 @@ class Importer:
         if run.defect:
             self._annotate(do_appid, PRED_DEFECT, "true")
 
-        # 3. files: scope siblings + videos first (cheap), then the tiff bundle
+        # 3. files: scope/video siblings stay singleton FileReferences (distinct
+        #    payloads, not part of the image series).
         for sib in run.siblings:
             self._upload_file(do_appid, sib)
-        for tif in run.tiffs:
-            self._upload_file(do_appid, tif)
 
-        self.st.put_run(run.source_id, do_appid, "done")
+        # 3b. the .tiff IR frames → ONE FileBundleReference (FR1a image series).
+        #     All frames (already sorted by filename in discover_runs) go into the
+        #     bundle's default FileGroup.
+        if run.tiffs:
+            if do_num is None:
+                do_num = self._resolve_do_numeric(do_appid)
+            if do_num is None:
+                raise RuntimeError(
+                    f"cannot resolve numeric DO id for {run.source_id}; "
+                    f"FileBundleReference create needs it")
+            b_appid, g_appid, fc_num, fc_appid = self._ensure_bundle(
+                do_appid, do_num, run)
+            # Pre-warm the live frame-name set ONCE before fanning out, so a
+            # resume-after-wiped-state run doesn't re-upload frames already in the
+            # bundle (the group-upload endpoint does not dedupe by name). A freshly
+            # created bundle has its cache seeded empty by _ensure_bundle, so this
+            # is a no-op there.
+            self._live_frame_set(b_appid, g_appid)
+            # Frames within a run upload concurrently — the dominant throughput
+            # lever (a run has thousands of frames; the per-frame POST is the hot
+            # path). The bundle/group already exists, so the uploads are
+            # independent. State writes + counts are lock-guarded.
+            if self.frame_workers > 1 and len(run.tiffs) > 1:
+                with ThreadPoolExecutor(max_workers=self.frame_workers) as fex:
+                    list(fex.map(
+                        lambda t: self._upload_frame(b_appid, g_appid, t),
+                        run.tiffs))
+            else:
+                for tif in run.tiffs:
+                    self._upload_frame(b_appid, g_appid, tif)
+
+        self.st.put_run(run.source_id, do_appid, "done", do_num=do_num)
         self.n.add(runs_done=1)
         if self.verbose:
             print(f"  [done] {run.source_id}: {len(run.tiffs)} tiffs + "
@@ -732,13 +1066,16 @@ def run_dry_run(runs: list[RunDir], extras: dict):
     print(f"  run DataObjects (P##…)   : {len(runs)}")
     total_tiffs = sum(len(r.tiffs) for r in runs)
     total_sibs = sum(len(r.siblings) for r in runs)
+    frame_bundles = sum(1 for r in runs if r.tiffs)
     tiff_bytes = sum(t.stat().st_size for r in runs for t in r.tiffs)
     sib_bytes = sum(s.stat().st_size for r in runs for s in r.siblings)
-    print(f"  tiff frame FileReferences: {total_tiffs:,}")
-    print(f"  sibling FileReferences   : {total_sibs:,} "
-          f"(svdx/txt/video matched by run-base)")
-    print(f"  total file references    : {total_tiffs + total_sibs:,}")
-    print(f"  total bytes (tiffs+sibs) : {(tiff_bytes + sib_bytes) / 1e9:.2f} GB")
+    print(f"  frame FileBundleReferences: {frame_bundles:,} "
+          f"(ONE per run; {total_tiffs:,} .tiff frames total inside them)")
+    print(f"  sibling FileReferences    : {total_sibs:,} "
+          f"(svdx/txt/video matched by run-base; kept as singletons)")
+    print(f"  total reference nodes     : {frame_bundles + total_sibs:,} "
+          f"(was {total_tiffs + total_sibs:,} pre-FR1a singleton-per-frame)")
+    print(f"  total bytes (tiffs+sibs)  : {(tiff_bytes + sib_bytes) / 1e9:.2f} GB")
     defects = sum(1 for r in runs if r.defect)
     print(f"  defect runs (_Fehler→NCR): {defects}")
     positions = sorted({r.position for r in runs})
@@ -779,7 +1116,11 @@ def main():
     ap.add_argument("--api-key", default=None)
     ap.add_argument("--keyfile", default=DEFAULT_KEYFILE)
     ap.add_argument("--state", default=DEFAULT_STATE)
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=4,
+                    help="run-level parallelism (DataObjects processed at once)")
+    ap.add_argument("--frame-workers", type=int, default=8,
+                    help="intra-run frame-upload parallelism (frames per run "
+                         "uploaded concurrently into the bundle's group)")
     ap.add_argument("--limit", type=int, default=None, help="only first N run dirs")
     ap.add_argument("--max-tiffs-per-run", type=int, default=None,
                     help="cap tiff uploads per run (slice-test knob; default all)")
@@ -797,7 +1138,7 @@ def main():
     print(f"source        : {source_root}")
     print(f"host          : {args.host}")
     print(f"mode          : {'DRY-RUN' if args.dry_run else 'LIVE'}  "
-          f"workers={args.workers}"
+          f"workers={args.workers} frame-workers={args.frame_workers}"
           f"{'  limit='+str(args.limit) if args.limit else ''}"
           f"{'  max-tiffs='+str(args.max_tiffs_per_run) if args.max_tiffs_per_run else ''}")
 
@@ -854,7 +1195,8 @@ def main():
 
     state = State(args.state)
     counts = Counts()
-    imp = Importer(client, state, counts, col_appid, live, args.verbose)
+    imp = Importer(client, state, counts, col_appid, col_numeric, live, args.verbose,
+                   frame_workers=args.frame_workers)
 
     total = len(runs)
     print(f"\n── ingesting {total} runs ──", flush=True)
@@ -893,6 +1235,8 @@ def main():
     print(f"  DataObjects created : {counts.dos_created}")
     print(f"  DataObjects reused  : {counts.dos_reused}")
     print(f"  file references     : {counts.file_refs} (reused {counts.file_refs_reused})")
+    print(f"  frame bundles       : {counts.bundles_created} (reused {counts.bundles_reused})")
+    print(f"  frames in bundles   : {counts.frames_uploaded} (reused {counts.frames_reused})")
     print(f"  tiffs uploaded      : {counts.tiffs_uploaded}")
     print(f"  scope uploaded      : {counts.scope_uploaded}")
     print(f"  videos uploaded     : {counts.videos_uploaded}")
