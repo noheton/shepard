@@ -85,12 +85,12 @@ public class UserGroupV2Rest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response listUserGroups(
     @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
-    @QueryParam("pageSize") @PositiveOrZero Integer size,
+    @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
     var params = new QueryParamHelper();
-    if (page != null && size != null) params = params.withPageAndSize(page, size);
+    if (page != null && pageSize != null) params = params.withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
     List<UserGroupV2IO> result = service.getAllUserGroups(params).stream()
       .map(UserGroupV2IO::new)
