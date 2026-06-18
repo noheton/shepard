@@ -645,8 +645,9 @@ class Importer:
         # A 400 is not transient, so skip-and-record (don't retry-forever or
         # fail the whole run). Tracked in aidocs/16 as IMPORT-FILESIZE-2GB.
         if size > 2_147_483_648:
-            self._log(f"  [skip >2GiB] {fname} ({size/1e9:.1f} GB) exceeds the "
-                      f"backend 2 GiB content cap — deferred (IMPORT-FILESIZE-2GB)")
+            print(f"  [skip >2GiB] {fname} ({size/1e9:.1f} GB) exceeds the "
+                  f"backend 2 GiB content cap — deferred (IMPORT-FILESIZE-2GB)",
+                  flush=True)
             return None
         attempt = 0
         while True:
