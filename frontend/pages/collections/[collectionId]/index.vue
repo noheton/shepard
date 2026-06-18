@@ -1,9 +1,7 @@
 <script lang="ts" setup>
-import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
 import CollectionArchiveControl from "~/components/context/collection/CollectionArchiveControl.vue";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
 import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
@@ -111,22 +109,30 @@ async function saveDescEdit() {
 }
 
 async function downloadRoCrate() {
-  if (isExporting.value || collectionNumericId.value === undefined) return;
+  if (isExporting.value) return;
   isExporting.value = true;
   try {
-    // V1 EXCEPTION (V2-SWEEP Wave 3): the v2 counterpart
-    // `POST /v2/collections/{appId}/export-url` returns 503 on storage
-    // backends without presigned support and points callers back to this
-    // v1 streaming export — so the streaming path has no full v2
-    // equivalent yet. Numeric id is resolved from the loaded v2 entity
-    // (never the route param). Backlog: EXPORT-V2-STREAM in aidocs/16.
-    const blob = await useShepardApi(CollectionApi).value.exportCollection({
-      collectionId: collectionNumericId.value,
-    });
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const resp = await fetch(
+      `${repV2BaseUrl()}/v2/collections/${encodeURIComponent(collectionIdStr)}/export`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/octet-stream",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      },
+    );
+    if (!resp.ok) {
+      handleError(new Error(`HTTP ${resp.status}`), "downloading RO-Crate export");
+      return;
+    }
+    const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${collection.value?.name ?? collectionNumericId.value}-export.zip`;
+    a.download = `${collection.value?.name ?? collectionIdStr}-export.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
