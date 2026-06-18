@@ -44,7 +44,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -58,6 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -628,7 +628,8 @@ public class ContainersV2Rest {
     summary = "Fetch data points for a channel by shepardId.",
     description =
       "Resolves the single-field shepardId to the legacy 5-tuple internally and returns data " +
-      "points for the requested time window. Accepts optional LTTB downsampling via " +
+      "points for the requested time window. `start` and `end` are nanoseconds since Unix epoch " +
+      "(e.g. `Date.now() * 1_000_000` in JS). Accepts optional LTTB downsampling via " +
       "?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Read on the container."
   )
@@ -645,7 +646,9 @@ public class ContainersV2Rest {
   public Response getChannelData(
     @PathParam("appId") String appId,
     @PathParam("shepardId") UUID shepardId,
+    @Parameter(description = "Window start, nanoseconds since Unix epoch (e.g. Date.now()*1_000_000 in JS).", required = true)
     @QueryParam("start") @NotNull @PositiveOrZero Long start,
+    @Parameter(description = "Window end, nanoseconds since Unix epoch (exclusive). Must be > start.", required = true)
     @QueryParam("end")   @NotNull @PositiveOrZero Long end,
     @QueryParam("downsample") String downsample,
     @QueryParam("maxPoints") Integer maxPoints,

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.ws.rs.QueryParam;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.UUID;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
@@ -611,9 +612,6 @@ class ContainersV2RestTest {
 
   @Test
   void getThumbnail_sizeParamAnnotationMatchesJavaName() throws NoSuchMethodException {
-    // Regression guard: the Java parameter name must match the @QueryParam annotation value.
-    // Previously the param was named "sizeParam" while the annotation said "size", causing
-    // a mismatch between the wire name and the internal identifier.
     Method method = ContainersV2Rest.class.getMethod(
         "getThumbnail", String.class, String.class, Integer.class,
         jakarta.ws.rs.core.SecurityContext.class);
@@ -623,5 +621,43 @@ class ContainersV2RestTest {
         .map(p -> p.getName())
         .findFirst().orElse("NOT_FOUND");
     assertEquals("size", actual);
+  }
+
+  // ─── APISIMP-CHANNEL-DATA-TIME-UNIT-UNDOCUMENTED regression ───────────────
+
+  @Test
+  void getChannelData_startParamHasNanosecondsInDescription() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    String startDesc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "start".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertTrue(
+        startDesc.toLowerCase().contains("nanosecond"),
+        "start @Parameter description must mention 'nanosecond' — got: " + startDesc);
+  }
+
+  @Test
+  void getChannelData_endParamHasNanosecondsInDescription() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    String endDesc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "end".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertTrue(
+        endDesc.toLowerCase().contains("nanosecond"),
+        "end @Parameter description must mention 'nanosecond' — got: " + endDesc);
   }
 }
