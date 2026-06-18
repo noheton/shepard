@@ -44,7 +44,7 @@ public record TimeseriesChannelV2IO(
    * once available — requires a TS-IDb/c Postgres migration adding
    * {@code container_app_id UUID} to the {@code timeseries} table.
    */
-  @Schema(description = "DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK exposed on wire. Use containerAppId once available — requires TS-IDb/c migration.", required = true)
+  @Schema(description = "DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK exposed on wire. Use containerAppId once available — requires TS-IDb/c migration.", required = true, deprecated = true)
   long containerId,
 
   @Schema(required = true, example = "turbopump_vibration")
