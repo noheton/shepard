@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -69,10 +68,7 @@ public class CollectionStreamExportRest {
   @APIResponse(
     responseCode = "200",
     description = "RO-Crate ZIP, streamed as application/octet-stream.",
-    content = @Content(
-      mediaType = MediaType.APPLICATION_OCTET_STREAM,
-      schema = @Schema(type = "string", format = "binary")
-    )
+    content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the collection.")
