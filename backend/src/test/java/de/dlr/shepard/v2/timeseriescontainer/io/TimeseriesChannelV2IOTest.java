@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
-import java.lang.reflect.RecordComponent;
 import java.util.Map;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -92,21 +91,17 @@ public class TimeseriesChannelV2IOTest {
   }
 
   @Test
-  void containerId_schema_isMarkedDeprecated() {
+  void containerId_schema_isMarkedDeprecated() throws NoSuchFieldException {
     // APISIMP-TSCHANNEL-CONTAINER-ID: containerId is a numeric Postgres serial FK that
     // violates the "no numeric internal IDs on the v2 wire" contract. Until the TS-IDb/c
     // migration adds containerAppId, the field must be flagged deprecated in the OpenAPI
     // schema so generated clients know not to depend on it.
-    RecordComponent component = null;
-    for (RecordComponent rc : TimeseriesChannelV2IO.class.getRecordComponents()) {
-      if (rc.getName().equals("containerId")) {
-        component = rc;
-        break;
-      }
-    }
-    assertNotNull(component, "containerId record component must exist");
-    Schema schema = component.getAnnotation(Schema.class);
-    assertNotNull(schema, "@Schema must be present on containerId");
+    //
+    // MicroProfile @Schema targets ElementType.FIELD (not RECORD_COMPONENT), so the
+    // annotation propagates to the backing field — use getDeclaredField, not RecordComponent.
+    java.lang.reflect.Field field = TimeseriesChannelV2IO.class.getDeclaredField("containerId");
+    Schema schema = field.getAnnotation(Schema.class);
+    assertNotNull(schema, "@Schema must be present on containerId backing field");
     assertTrue(schema.deprecated(), "@Schema(deprecated=true) must be set on containerId (APISIMP-TSCHANNEL-CONTAINER-ID)");
   }
 
