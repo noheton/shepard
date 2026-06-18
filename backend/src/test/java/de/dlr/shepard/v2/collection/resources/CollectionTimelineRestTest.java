@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -212,5 +214,26 @@ class CollectionTimelineRestTest {
       .thenReturn(new TimelineAggregate(List.of(), 0L, null, null));
     Response r = resource.timeline(COLL_APP_ID, 1, sc);
     assertThat(r.getHeaderString("Cache-Control")).isEqualTo("max-age=300, must-revalidate");
+  }
+
+  // ─── APISIMP-TIMELINE-BINSIZE-UNDOCUMENTED regression ────────────────────
+
+  @Test
+  void binSizeDays_paramHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionTimelineRest.class.getMethod(
+        "timeline", String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "binSizeDays".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "binSizeDays must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "binSizeDays must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for binSizeDays");
   }
 }

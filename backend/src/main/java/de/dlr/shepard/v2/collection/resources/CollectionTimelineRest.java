@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -119,6 +120,14 @@ public class CollectionTimelineRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response timeline(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Parameter(
+      description =
+        "Histogram bin width in days. Accepted ladder values: 1, 7, 30, 90, 365. " +
+        "Non-ladder values snap upward to the next ladder step. When the campaign span " +
+        "would produce more than ~730 bins per lane, the server auto-coarsens upward " +
+        "through the ladder until it fits. Default 1. " +
+        "The actual bin size used is echoed in the response's binSizeDays field."
+    )
     @QueryParam("binSizeDays") @DefaultValue("1") int binSizeDays,
     @Context SecurityContext sc
   ) {
