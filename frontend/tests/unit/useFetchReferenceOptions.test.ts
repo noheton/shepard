@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   mapToReferenceOptions,
   MAPPING_REFERENCE_KINDS,
+  isUrdfName,
   type ReferenceOption,
 } from "~/composables/useFetchReferenceOptions";
 
@@ -28,18 +29,17 @@ describe("mapToReferenceOptions", () => {
   it("falls back to appId in label when name is absent", () => {
     const refs = [{ appId: "ref-abc" }];
     const opts = mapToReferenceOptions(refs, "uri");
-    expect(opts[0].label).toBe("ref-abc (uri)");
+    expect(opts[0]!.label).toBe("ref-abc (uri)");
   });
 
   it("skips entries without an appId field", () => {
-    const refs = [
+    const refs: { name: string; appId?: string }[] = [
       { name: "no-appid" },
       { appId: "ref-ok", name: "fine" },
     ];
-    // @ts-expect-error — intentionally missing appId to test guard
     const opts = mapToReferenceOptions(refs, "git");
     expect(opts).toHaveLength(1);
-    expect(opts[0].appId).toBe("ref-ok");
+    expect(opts[0]!.appId).toBe("ref-ok");
   });
 
   it("returns an empty array for an empty input list", () => {
@@ -60,5 +60,35 @@ describe("mapToReferenceOptions", () => {
     expect(MAPPING_REFERENCE_KINDS).toContain("uri");
     expect(MAPPING_REFERENCE_KINDS).toContain("git");
     expect(MAPPING_REFERENCE_KINDS).toHaveLength(3);
+  });
+});
+
+describe("isUrdfName (URDF-REF-PICKER filter)", () => {
+  it("accepts names ending with .urdf (lowercase)", () => {
+    expect(isUrdfName("kr210-r2700.urdf")).toBe(true);
+    expect(isUrdfName("robot.urdf")).toBe(true);
+  });
+
+  it("accepts names ending with .URDF (uppercase)", () => {
+    expect(isUrdfName("Robot.URDF")).toBe(true);
+  });
+
+  it("accepts names ending with .Urdf (mixed case)", () => {
+    expect(isUrdfName("model.Urdf")).toBe(true);
+  });
+
+  it("rejects names with .urdf not at the end", () => {
+    expect(isUrdfName("my.urdf.bak")).toBe(false);
+    expect(isUrdfName("urdf-file.xml")).toBe(false);
+  });
+
+  it("rejects names without .urdf suffix", () => {
+    expect(isUrdfName("mesh.dae")).toBe(false);
+    expect(isUrdfName("robot.sdf")).toBe(false);
+    expect(isUrdfName("")).toBe(false);
+  });
+
+  it("handles names that are just '.urdf'", () => {
+    expect(isUrdfName(".urdf")).toBe(true);
   });
 });

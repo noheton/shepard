@@ -755,6 +755,7 @@ watch(
       :channels-v2="channelsV2.length ? channelsV2 : undefined"
       :start-ns="timeseriesReference.start"
       :end-ns="timeseriesReference.end"
+      :data-object-app-id="dataObjectIdStr || undefined"
     />
     <ConfirmDeleteDialog
       v-model:show-dialog="showDeleteDialog"
