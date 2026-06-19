@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
+import de.dlr.shepard.common.identifier.EntityIdResolver.LabeledResolution;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
@@ -88,6 +89,10 @@ class SemanticAnnotationV2RestTest {
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
+
+    // Default: SUBJ_APP_ID resolves as a DataObject (labels-driven gate, f9ecbd8f).
+    when(entityIdResolver.resolveWithLabels(eq(SUBJ_APP_ID)))
+      .thenReturn(new LabeledResolution(OGM_ID, List.of("DataObject")));
 
     // Default: caller has Read+Write+Manage on the DataObject subject
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Read), eq(CALLER)))
@@ -531,7 +536,9 @@ class SemanticAnnotationV2RestTest {
   void get_collectionSubject_usesOgmIdPermissionCheck() {
     var ann = annotation(ANN_APP_ID, "coll-001", "Collection", PREDICATE_IRI, "v");
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(entityIdResolver.resolveLong("coll-001")).thenReturn(OGM_ID);
+    // resolveWithLabels now drives the gate (f9ecbd8f); Collection label → direct Permissions check.
+    when(entityIdResolver.resolveWithLabels("coll-001"))
+      .thenReturn(new LabeledResolution(OGM_ID, List.of("Collection")));
     when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L)))
       .thenReturn(true);
 
