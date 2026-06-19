@@ -101,6 +101,11 @@ class SemanticAnnotationV2RestTest {
     SemanticConfig defaultConfig = new SemanticConfig();
     when(ontologyConfigService.loadSingleton()).thenReturn(defaultConfig);
 
+    // Default: SUBJ_APP_ID resolves to a DataObject node (label-driven permission gate
+    // introduced by f9ecbd8f; tests that need a different subject override per-test).
+    when(entityIdResolver.resolveWithLabels(eq(SUBJ_APP_ID)))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("DataObject")));
+
     // Default: provenance capture is a no-op unless overridden per test
     when(provenanceService.record(anyString(), anyString(), anyString(), anyString(),
         anyString(), anyString(), anyString(), anyInt(), anyLong(), anyLong()))
@@ -531,7 +536,8 @@ class SemanticAnnotationV2RestTest {
   void get_collectionSubject_usesOgmIdPermissionCheck() {
     var ann = annotation(ANN_APP_ID, "coll-001", "Collection", PREDICATE_IRI, "v");
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(entityIdResolver.resolveLong("coll-001")).thenReturn(OGM_ID);
+    when(entityIdResolver.resolveWithLabels("coll-001"))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
     when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L)))
       .thenReturn(true);
 
