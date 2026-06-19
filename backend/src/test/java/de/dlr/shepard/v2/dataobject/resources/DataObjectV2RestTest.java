@@ -942,4 +942,126 @@ class DataObjectV2RestTest {
       "DB-OPT5 default-trim should be < 50% of ?include=full payload (got " + trimmed.length() + " vs " + full.length() + ")"
     );
   }
+
+  // ─── APISIMP-DATAOBJECT-V2-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─
+
+  @Test
+  void list_name_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("name");
+    assertNotNull(param, "name must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "name must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for name must be non-blank");
+  }
+
+  @Test
+  void list_status_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("status");
+    assertNotNull(param, "status must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "status must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for status must be non-blank");
+  }
+
+  @Test
+  void list_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("page");
+    assertNotNull(param, "page must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "page must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for page must be non-blank");
+  }
+
+  @Test
+  void list_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("pageSize");
+    assertNotNull(param, "pageSize must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for pageSize must be non-blank");
+  }
+
+  @Test
+  void list_include_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("include");
+    assertNotNull(param, "include must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "include must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for include must be non-blank");
+  }
+
+  @Test
+  void list_fields_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("fields");
+    assertNotNull(param, "fields must carry @QueryParam on list()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "fields must carry @Parameter annotation on list()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for fields must be non-blank");
+  }
+
+  @Test
+  void predecessorChain_depth_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    java.lang.reflect.Method method = DataObjectV2Rest.class.getMethod(
+        "predecessorChain", String.class, String.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "depth".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "depth must carry @QueryParam on predecessorChain()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "depth must carry @Parameter annotation on predecessorChain()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for depth on predecessorChain() must be non-blank");
+  }
+
+  @Test
+  void successorChain_depth_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    java.lang.reflect.Method method = DataObjectV2Rest.class.getMethod(
+        "successorChain", String.class, String.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "depth".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "depth must carry @QueryParam on successorChain()");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "depth must carry @Parameter annotation on successorChain()");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description() == null || ann.description().isBlank(),
+        "@Parameter.description for depth on successorChain() must be non-blank");
+  }
+
+  private static java.lang.reflect.Parameter findListParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = DataObjectV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, int.class, int.class,
+        String.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
 }

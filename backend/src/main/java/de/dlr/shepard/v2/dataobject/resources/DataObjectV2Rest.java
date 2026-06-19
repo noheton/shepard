@@ -62,6 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -186,11 +187,26 @@ public class DataObjectV2Rest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Parameter(description = "Case-insensitive substring filter on DataObject name. Optional — omit to return all.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description =
+      "Lifecycle status filter. One of: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED, FAILED, "
+      + "NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED. Optional — omit to return all statuses.")
     @QueryParam("status") String status,
+    @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size — number of DataObjects per page (default 50, capped at 200 server-side).")
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
+    @Parameter(description =
+      "Comma-separated enrichment tokens. Supported values: "
+      + "`time-bounds` (adds timeBoundsStart/timeBoundsEnd epoch-nanosecond fields per DataObject), "
+      + "`full` (opts back into the full wire shape including description and attributes). "
+      + "Omit for the default diet payload (DB-OPT5).")
     @QueryParam("include") String include,
+    @Parameter(description =
+      "Comma-separated list of field names to include in each list item (GitHub REST convention). "
+      + "`id`, `appId`, and `name` are always included. Unknown field names return 400. "
+      + "Example: `?fields=appId,name,createdAt,status`.")
     @QueryParam("fields") String fields,
     @Context SecurityContext sc
   ) {
@@ -789,6 +805,7 @@ public class DataObjectV2Rest {
   public Response predecessorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum number of predecessor hops to traverse (default 10, clamped at 50 server-side).")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
@@ -826,6 +843,7 @@ public class DataObjectV2Rest {
   public Response successorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum number of successor hops to traverse (default 10, clamped at 50 server-side).")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
