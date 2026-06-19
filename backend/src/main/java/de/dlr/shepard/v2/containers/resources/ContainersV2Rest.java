@@ -1338,6 +1338,7 @@ public class ContainersV2Rest {
   public Response getThumbnail(
     @PathParam("appId") String appId,
     @PathParam("oid") String oid,
+    @Parameter(description = "Thumbnail pixel size. Accepted values: 64, 200, 400. Any other value (including absent) is normalised to 400.")
     @QueryParam("size") Integer size,
     @Context SecurityContext sc
   ) {

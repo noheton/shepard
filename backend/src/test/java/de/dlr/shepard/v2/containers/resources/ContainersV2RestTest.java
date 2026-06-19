@@ -623,6 +623,26 @@ class ContainersV2RestTest {
     assertEquals("size", actual);
   }
 
+  // ─── APISIMP-CONTAINERS-THUMBNAIL-SIZE-PARAM regression ──────────────────────
+
+  @Test
+  void getThumbnail_sizeParamIsDocumented() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getThumbnail", String.class, String.class, Integer.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "size".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "getThumbnail size @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
+
   // ─── APISIMP-CHANNEL-DATA-TIME-UNIT-UNDOCUMENTED regression ───────────────
 
   @Test
