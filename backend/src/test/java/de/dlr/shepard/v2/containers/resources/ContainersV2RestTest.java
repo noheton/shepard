@@ -718,4 +718,64 @@ class ContainersV2RestTest {
         desc.isBlank(),
         "maxPoints @Parameter description must be present and non-blank — got: '" + desc + "'");
   }
+
+  // ─── APISIMP-CONTAINERS-V2-PARAMS-UNDOCUMENTED-1 regression ─────────────────
+
+  @Test
+  void create_kindParamIsRequiredAndDescribed() {
+    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
+        .filter(m -> m.getName().equals("create"))
+        .findFirst().orElseThrow();
+    var ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "kind".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "create() kind @QueryParam must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "create() kind must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(), "create() kind description must be non-blank");
+  }
+
+  @Test
+  void delete_forceParamIsDescribed() {
+    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
+        .filter(m -> m.getName().equals("delete"))
+        .findFirst().orElseThrow();
+    var ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "force".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "delete() force @QueryParam must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(), "delete() force description must be non-blank");
+  }
+
+  @Test
+  void list_kindParamIsRequiredAndDescribed() {
+    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
+        .filter(m -> m.getName().equals("list"))
+        .findFirst().orElseThrow();
+    var kindAnn = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "kind".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(kindAnn, "list() kind @QueryParam must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(kindAnn.required(), "list() kind must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(kindAnn.description().isBlank(), "list() kind description must be non-blank");
+  }
+
+  @Test
+  void list_nameParamIsDescribed() {
+    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
+        .filter(m -> m.getName().equals("list"))
+        .findFirst().orElseThrow();
+    var nameAnn = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "name".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(nameAnn, "list() name @QueryParam must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertFalse(nameAnn.description().isBlank(), "list() name description must be non-blank");
+  }
 }
