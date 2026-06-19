@@ -120,6 +120,12 @@ DEFAULT_KEYFILE = "/root/.claude/uploads/mffd-import-key-2026-06-17.txt"
 TARGET_COLLECTION_APPID = "019ed455-66f4-7aea-8cb3-5c0b34a737df"
 DEFAULT_STATE = str(Path(__file__).resolve().parent / ".mffd-ts-import-state.sqlite")
 
+# Single shared TimeseriesContainer for the WHOLE tapelaying collection.
+# Every track's channels live here; track identity is folded into the channel
+# 5-tuple's `location` (see `_scope_location`) so they don't collide. This is the
+# "minimal containers" design: 1 container for ~8 251 tracks instead of one each.
+SHARED_CONTAINER_NAME = "mffd-afp-tapelaying-timeseries"
+
 SOURCE_DO_ID_PREDICATE = "urn:shepard:source:cube3-do-id"
 
 # Shepard root volume to watch — filling it crashes the instance.
@@ -366,11 +372,54 @@ def ref_name_for(track_folder: str) -> str:
     return f"TPS timeseries — {track_folder}"
 
 
+def _scope_location(loc: str, track_folder: str) -> str:
+    """Fold the track id into the channel's `location` so every track's channels
+    are unique within the single shared container (e.g. ``MFZ`` → ``MFZ-Track_100``).
+    Without this, all tracks' identical 5-tuples would collide in one container.
+
+    The backend forbids Space, Comma, Point and Slash in a 5-tuple field, so we
+    join with a hyphen and sanitize any forbidden char in the (otherwise clean)
+    track folder name to an underscore."""
+    safe = track_folder
+    for ch in (" ", ",", ".", "/"):
+        safe = safe.replace(ch, "_")
+    return f"{loc}-{safe}"
+
+
+def resolve_or_create_shared_container(client: "Client") -> tuple[str, int]:
+    """Idempotently get the one shared TimeseriesContainer (by name), creating it
+    on first run. Returns (appId, numericId). Sets PublicReadable once so demo
+    (non-admin) users can read it (IMPORT-PERMS-1)."""
+    # look up an existing container by name on the frozen v1 list (carries id+appId)
+    existing = client.get_json(
+        f"/shepard/api/timeseriesContainers?name="
+        f"{requests.utils.quote(SHARED_CONTAINER_NAME)}")
+    for c in (existing or []):
+        if c.get("name") == SHARED_CONTAINER_NAME:
+            appid = c.get("appId")
+            numeric = c.get("id")
+            print(f"shared container : reused {appid} (#{numeric})", flush=True)
+            return appid, numeric
+    # create it
+    container = client.post_json(
+        "/v2/containers?kind=timeseries", {"name": SHARED_CONTAINER_NAME},
+        retry_on_403=True)
+    appid = container["appId"]
+    perms = client.get_json(f"/v2/containers/{appid}/permissions")
+    numeric = perms["entityId"]
+    client.patch_json(f"/v2/containers/{appid}/permissions",
+                      {"permissionType": "PublicReadable"})
+    print(f"shared container : created {appid} (#{numeric}) PublicReadable",
+          flush=True)
+    return appid, numeric
+
+
 # ── per-track worker ──────────────────────────────────────────────────────────
 class TrackIngestor:
     def __init__(self, client: Client, counts: Counts, state: State,
                  col_appid: str, col_numeric: int,
                  id_to_appid: dict[str, str], appid_to_numeric: dict[str, int],
+                 shared_container_appid: str, shared_container_numeric: int,
                  verbose: bool):
         self.c = client
         self.n = counts
@@ -379,6 +428,8 @@ class TrackIngestor:
         self.col_numeric = col_numeric
         self.id_to_appid = id_to_appid
         self.appid_to_numeric = appid_to_numeric
+        self.sc_appid = shared_container_appid
+        self.sc_numeric = shared_container_numeric
         self.verbose = verbose
 
     def _existing_ref(self, do_numeric: int, want_name: str) -> bool:
@@ -425,18 +476,13 @@ class TrackIngestor:
             self.state.mark(do_id, "empty-csv")
             return
 
-        # 1. create container
-        container = self.c.post_json(
-            f"/v2/containers?kind=timeseries",
-            {"name": want_name}, retry_on_403=True,
-        )
-        container_appid = container["appId"]
-        # numeric id = entityId from permissions
-        perms = self.c.get_json(f"/v2/containers/{container_appid}/permissions")
-        container_numeric = perms["entityId"]
-        self.n.add(containers_created=1)
+        # Single shared container for the whole collection (created once in main).
+        container_appid = self.sc_appid
+        container_numeric = self.sc_numeric
 
-        # 2. write each channel's points (auto-creates the channel)
+        # write each channel's points into the shared container (auto-creates the
+        # channel). Track id is folded into `location` so this track's channels
+        # don't collide with any other track's in the shared container.
         min_ts = None
         max_ts = None
         ch_written = 0
@@ -447,7 +493,8 @@ class TrackIngestor:
             if not pts:
                 continue
             pts.sort(key=lambda p: p[0])
-            ts5 = {"measurement": meas, "device": dev, "location": loc,
+            scoped_loc = _scope_location(loc, t.folder)
+            ts5 = {"measurement": meas, "device": dev, "location": scoped_loc,
                    "symbolicName": sym, "field": fld}
             tuples_for_ref.append(ts5)
             # chunk a pathologically large channel
@@ -469,18 +516,14 @@ class TrackIngestor:
             max_ts = hi if max_ts is None else max(max_ts, hi)
 
         if ch_written == 0:
-            # everything got dropped; clean up the empty container
-            try:
-                self.c.request("DELETE", f"/v2/containers/{container_appid}")
-            except RuntimeError:
-                pass
             self.n.add(tracks_skipped_no_csv=1)
             self.state.mark(do_id, "empty-after-coerce")
             return
 
         self.n.add(channels_written=ch_written, points_written=pts_written)
 
-        # 3. create the TimeseriesReference linking container → DO
+        # create the TimeseriesReference on this track DO, selecting only this
+        # track's channels from the shared container.
         ref_body = {
             "name": want_name,
             "start": int(min_ts),
@@ -494,13 +537,6 @@ class TrackIngestor:
             ref_body, retry_on_403=True,
         )
         self.n.add(references_created=1)
-
-        # 4. PublicReadable so demo (non-admin) users can read (IMPORT-PERMS-1)
-        self.c.patch_json(
-            f"/v2/containers/{container_appid}/permissions",
-            {"permissionType": "PublicReadable"},
-        )
-        self.n.add(perms_set=1)
 
         self.state.mark(do_id, "done", container_appid, ch_written, pts_written)
         self.n.add(tracks_done=1)
@@ -648,10 +684,14 @@ def main():
     print(f"do maps       : {len(id_to_appid)} cube3-id→appId, "
           f"{len(appid_to_numeric)} appId→numeric", flush=True)
 
+    # one shared container for the whole collection (minimal-containers design)
+    sc_appid, sc_numeric = resolve_or_create_shared_container(client)
+
     state = State(args.state)
     counts = Counts()
     ing = TrackIngestor(client, counts, state, args.collection_appid, col_numeric,
-                        id_to_appid, appid_to_numeric, args.verbose)
+                        id_to_appid, appid_to_numeric, sc_appid, sc_numeric,
+                        args.verbose)
 
     total = len(tracks)
     print(f"\n── ingesting {total} tracks ──", flush=True)
