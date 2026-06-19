@@ -15,11 +15,16 @@ import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -244,5 +249,99 @@ class ReferencesV2RestTest {
     var body = new ByteArrayInputStream(new byte[] { 1 });
     var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
     assertEquals(400, r.getStatus());
+  }
+
+  // ─── APISIMP-REFERENCES-V2-PARAMS-UNDOCUMENTED regression ────────────────
+
+  @Test
+  void create_kindParamIsRequiredAndDescribed() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "create", String.class, String.class,
+        com.fasterxml.jackson.databind.JsonNode.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "kind".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "create() 'kind' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "create() 'kind' @Parameter must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "create() 'kind' @Parameter must have a non-blank description");
+  }
+
+  @Test
+  void create_dataObjectAppIdParamIsRequiredAndDescribed() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "create", String.class, String.class,
+        com.fasterxml.jackson.databind.JsonNode.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "dataObjectAppId".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "create() 'dataObjectAppId' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "create() 'dataObjectAppId' @Parameter must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "create() 'dataObjectAppId' @Parameter must have a non-blank description");
+  }
+
+  @Test
+  void uploadContent_filenameParamIsRequiredAndDescribed() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "uploadContent", String.class, String.class, String.class,
+        InputStream.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "filename".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "uploadContent() 'filename' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "uploadContent() 'filename' @Parameter must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "uploadContent() 'filename' @Parameter must have a non-blank description");
+  }
+
+  @Test
+  void list_kindParamIsRequiredAndDescribed() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "kind".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "list() 'kind' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "list() 'kind' @Parameter must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "list() 'kind' @Parameter must have a non-blank description");
+  }
+
+  @Test
+  void list_dataObjectAppIdParamIsRequiredAndDescribed() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "dataObjectAppId".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "list() 'dataObjectAppId' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.required(), "list() 'dataObjectAppId' @Parameter must be required=true");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "list() 'dataObjectAppId' @Parameter must have a non-blank description");
+  }
+
+  @Test
+  void list_fileKindParamHasDescription() throws NoSuchMethodException {
+    Method method = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, SecurityContext.class);
+    Parameter ann = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "fileKind".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Parameter.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, "list() 'fileKind' must have @Parameter");
+    org.junit.jupiter.api.Assertions.assertFalse(ann.description().isBlank(),
+        "list() 'fileKind' @Parameter must have a non-blank description");
   }
 }

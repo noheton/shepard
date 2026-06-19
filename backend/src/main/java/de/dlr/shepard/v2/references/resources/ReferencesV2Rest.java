@@ -35,6 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -121,7 +122,9 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   public Response create(
+    @Parameter(required = true, description = "Reference kind family: 'file', 'uri', 'timeseries', 'git', or any plugin-registered kind.")
     @QueryParam("kind") String kind,
+    @Parameter(required = true, description = "AppId of the parent DataObject to attach the reference to.")
     @QueryParam("dataObjectAppId") String dataObjectAppId,
     JsonNode body,
     @Context SecurityContext sc
@@ -283,6 +286,7 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "404", description = "No reference with that appId.")
   public Response uploadContent(
     @PathParam("appId") String appId,
+    @Parameter(required = true, description = "Original filename. Used for MIME type detection, fileKind classification, and storage. Required.")
     @QueryParam("filename") String filename,
     @HeaderParam("Content-Length") String contentLengthHeader,
     InputStream body,
@@ -398,8 +402,11 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   public Response list(
+    @Parameter(required = true, description = "Reference kind family to list: 'file', 'uri', 'timeseries', 'git', or any plugin-registered kind.")
     @QueryParam("kind") String kind,
+    @Parameter(required = true, description = "AppId of the DataObject whose references to list.")
     @QueryParam("dataObjectAppId") String dataObjectAppId,
+    @Parameter(description = "Optional file-kind discriminator (e.g. 'urdf', 'krl'). Only applies when kind=file; ignored for other kinds.")
     @QueryParam("fileKind") String fileKind,
     @Context SecurityContext sc
   ) {
