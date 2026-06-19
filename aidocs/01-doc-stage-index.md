@@ -417,7 +417,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-06-16 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-06-16 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-06-16 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-18 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-19 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-18 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-06-16 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-06-16 |
@@ -438,7 +438,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire91.md`](agent-findings/apisimp-sweep-2026-06-17-fire91.md) | APISIMP sweep — fire-91 (2026-06-17) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire93.md`](agent-findings/apisimp-sweep-2026-06-17-fire93.md) | APISIMP sweep — fire-93 (2026-06-17) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire108.md`](agent-findings/apisimp-sweep-2026-06-18-fire108.md) | APISIMP sweep — fire-108 (2026-06-18) | 2026-06-18 | 2026-06-18 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire115.md`](agent-findings/apisimp-sweep-2026-06-18-fire115.md) | APISIMP Sweep — fire-115 (2026-06-18) | 2026-06-18 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire115.md`](agent-findings/apisimp-sweep-2026-06-18-fire115.md) | APISIMP Sweep — fire-115 (2026-06-18) | 2026-06-18 | 2026-06-18 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-16 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-16 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-06-16 |
