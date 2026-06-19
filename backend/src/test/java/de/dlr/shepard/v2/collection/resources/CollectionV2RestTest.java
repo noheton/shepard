@@ -478,4 +478,16 @@ class CollectionV2RestTest {
     assertEquals("/{collectionAppId}", methodPath.value(),
       "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
   }
+
+  @Test
+  void listQueryParamIsPageSizeNotSize() throws NoSuchMethodException {
+    java.lang.reflect.Parameter[] params = CollectionV2Rest.class
+      .getMethod("list", String.class, int.class, int.class)
+      .getParameters();
+    // Third param (index 2) is pageSize — @QueryParam must be "pageSize", never "size".
+    jakarta.ws.rs.QueryParam qp = params[2].getAnnotation(jakarta.ws.rs.QueryParam.class);
+    assertNotNull(qp, "pageSize param must carry @QueryParam");
+    assertEquals("pageSize", qp.value(),
+      "@QueryParam(\"pageSize\") is the wire contract; renaming it breaks existing callers");
+  }
 }

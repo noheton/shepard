@@ -46,6 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -136,8 +137,8 @@ public class CollectionV2Rest {
       "authenticated caller has Read permission on. The page is unordered by default; " +
       "supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, " +
       "`status`, …) with `orderDesc=true` for a sorted result.\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both to paginate. " +
-      "The server caps `size` at 200 to avoid unbounded result sets.\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. " +
+      "The server caps `pageSize` at 200 to avoid unbounded result sets.\n\n" +
       "Filtering: `name` does a case-insensitive substring match.\n\n" +
       "Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the " +
       "stable identifier; use the matching `/v2/...` endpoints for follow-up calls.\n\n" +
@@ -152,12 +153,15 @@ public class CollectionV2Rest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400",
-    description = "Bean Validation rejected the query — `page` or `size` is negative.")
+    description = "Bean Validation rejected the query — `page` or `pageSize` is negative.")
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
+    @Parameter(description = "Case-insensitive substring filter on Collection name.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "0-based page index. Default 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size. Default 50; capped at 200.")
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
   ) {
     int safePage = Math.max(page, 0);

@@ -591,4 +591,28 @@ class FileBundleReferenceRestTest {
     assertEquals(0, paged.getTotalPages());
     assertEquals(0, paged.getItems().size());
   }
+
+  // ── wire-contract pins: @QueryParam names ────────────────────────────────
+
+  @Test
+  void deleteGroup_forceQueryParamNameIsPinned() throws NoSuchMethodException {
+    java.lang.reflect.Parameter[] params = FileBundleReferenceRest.class
+      .getMethod("deleteGroup", String.class, String.class, boolean.class, SecurityContext.class)
+      .getParameters();
+    jakarta.ws.rs.QueryParam qp = params[2].getAnnotation(jakarta.ws.rs.QueryParam.class);
+    assertNotNull(qp, "force param must carry @QueryParam");
+    assertEquals("force", qp.value(), "@QueryParam(\"force\") is the wire contract for deleteGroup");
+  }
+
+  @Test
+  void listGroupFiles_pageSizeQueryParamNameIsPinned() throws NoSuchMethodException {
+    java.lang.reflect.Parameter[] params = FileBundleReferenceRest.class
+      .getMethod("listGroupFiles", String.class, String.class, Integer.class, Integer.class, SecurityContext.class)
+      .getParameters();
+    // Fourth param (index 3) is pageSize — @QueryParam must be "pageSize", never "size".
+    jakarta.ws.rs.QueryParam qp = params[3].getAnnotation(jakarta.ws.rs.QueryParam.class);
+    assertNotNull(qp, "pageSize param must carry @QueryParam");
+    assertEquals("pageSize", qp.value(),
+      "@QueryParam(\"pageSize\") is the wire contract; renaming it to \"size\" would break callers");
+  }
 }
