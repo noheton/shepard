@@ -62,6 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -789,6 +790,7 @@ public class DataObjectV2Rest {
   public Response predecessorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
@@ -826,6 +828,7 @@ public class DataObjectV2Rest {
   public Response successorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {

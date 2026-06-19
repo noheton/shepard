@@ -32,9 +32,12 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -914,6 +917,44 @@ class DataObjectV2RestTest {
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("fields", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
+  }
+
+  // ── APISIMP-DO-CHAIN-DEPTH-PARAM regression ──────────────────────────────
+
+  @Test
+  void predecessorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    Method method = DataObjectV2Rest.class.getMethod(
+        "predecessorChain", String.class, String.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "depth".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "predecessorChain depth @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
+
+  @Test
+  void successorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    Method method = DataObjectV2Rest.class.getMethod(
+        "successorChain", String.class, String.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "depth".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "successorChain depth @Parameter description must be present and non-blank — got: '" + desc + "'");
   }
 
   @Test
