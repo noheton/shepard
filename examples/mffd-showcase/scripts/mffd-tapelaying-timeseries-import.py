@@ -372,20 +372,6 @@ def ref_name_for(track_folder: str) -> str:
     return f"TPS timeseries — {track_folder}"
 
 
-def _scope_location(loc: str, track_folder: str) -> str:
-    """Fold the track id into the channel's `location` so every track's channels
-    are unique within the single shared container (e.g. ``MFZ`` → ``MFZ-Track_100``).
-    Without this, all tracks' identical 5-tuples would collide in one container.
-
-    The backend forbids Space, Comma, Point and Slash in a 5-tuple field, so we
-    join with a hyphen and sanitize any forbidden char in the (otherwise clean)
-    track folder name to an underscore."""
-    safe = track_folder
-    for ch in (" ", ",", ".", "/"):
-        safe = safe.replace(ch, "_")
-    return f"{loc}-{safe}"
-
-
 def resolve_or_create_shared_container(client: "Client") -> tuple[str, int]:
     """Idempotently get the one shared TimeseriesContainer (by name), creating it
     on first run. Returns (appId, numericId). Sets PublicReadable once so demo
@@ -493,8 +479,12 @@ class TrackIngestor:
             if not pts:
                 continue
             pts.sort(key=lambda p: p[0])
-            scoped_loc = _scope_location(loc, t.folder)
-            ts5 = {"measurement": meas, "device": dev, "location": scoped_loc,
+            # Minimal channels: every run writes the SAME ~few-hundred signal
+            # channels (raw 5-tuple, no per-track scoping). Source timestamps are
+            # absolute, so sequential runs concatenate continuously on one channel
+            # with no overlap — each run is a distinct time window via its
+            # TimeseriesReference (start..end below). No duplicated channels.
+            ts5 = {"measurement": meas, "device": dev, "location": loc,
                    "symbolicName": sym, "field": fld}
             tuples_for_ref.append(ts5)
             # chunk a pathologically large channel
