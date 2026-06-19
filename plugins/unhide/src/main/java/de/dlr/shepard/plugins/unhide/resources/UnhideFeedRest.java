@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -127,8 +128,16 @@ public class UnhideFeedRest {
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
   public Response feed(
+    @Parameter(description = "Zero-based page number. When omitted, all records are returned (no pagination).")
     @QueryParam("page") Integer page,
+    @Parameter(description = "Maximum records per page (default: all). Ignored when page is absent.")
     @QueryParam("pageSize") Integer pageSize,
+    @Parameter(
+      description =
+        "When true, each record in the feed is validated against the configured SHACL shape " +
+        "before inclusion; invalid records are omitted and a validation report is returned instead " +
+        "of the raw feed. Default false."
+    )
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
     @Context UriInfo uriInfo,

@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.unhide.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,13 +20,17 @@ import de.dlr.shepard.plugins.unhide.services.UnhideConfigService;
 import de.dlr.shepard.plugins.unhide.services.UnhideFeedService;
 import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -229,6 +234,28 @@ class UnhideFeedRestTest {
     rest.feed(2, 50, false, headers, uriInfo, secCtx);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 2, 50);
+  }
+
+  // ─── APISIMP-PLUGIN-V2-PARAMS-UNDOCUMENTED regression ────────────────────
+
+  @Test
+  void feed_validateParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = Arrays.stream(UnhideFeedRest.class.getMethods())
+        .filter(m -> m.getName().equals("feed"))
+        .findFirst()
+        .orElseThrow(() -> new NoSuchMethodException("feed() not found on UnhideFeedRest"));
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "validate".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          Parameter ann = p.getAnnotation(Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst()
+        .orElse("");
+    assertFalse(
+        desc.isBlank(),
+        "validate @Parameter description must be non-blank — got: '" + desc + "'");
   }
 
   @Test

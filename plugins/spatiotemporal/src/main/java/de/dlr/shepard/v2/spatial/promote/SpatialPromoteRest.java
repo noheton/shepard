@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -89,6 +90,13 @@ public class SpatialPromoteRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileReference with that appId.")
   public Response promote(
+    @Parameter(
+      required = true,
+      description =
+        "UUID v7 appId of the singleton FileReference to promote to a spatial reference. " +
+        "The file must hold an eligible spatial payload (pointcloud or trajectory: " +
+        ".las, .laz, .ply, .e57, .pcd, .xyz, .pts). Returns 400 when absent or ineligible."
+    )
     @QueryParam("fileReferenceAppId") String fileReferenceAppId,
     @Context SecurityContext sc
   ) {
