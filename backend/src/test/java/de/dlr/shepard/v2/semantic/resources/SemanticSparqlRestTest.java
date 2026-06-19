@@ -12,9 +12,12 @@ import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +55,36 @@ class SemanticSparqlRestTest {
 
     // Use a stub that bypasses HTTP calls.
     rest = new StubRest(dao);
+  }
+
+  // ─── OpenAPI schema — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED ───────────
+
+  @Test
+  void queryGet_queryParamIsDocumented() throws NoSuchMethodException {
+    Method method = SemanticSparqlRest.class.getMethod(
+      "queryGet", String.class, String.class, jakarta.ws.rs.core.SecurityContext.class
+    );
+    java.lang.reflect.Parameter[] params = method.getParameters();
+    // find the @QueryParam("query") parameter
+    java.lang.reflect.Parameter queryParam = null;
+    for (java.lang.reflect.Parameter p : params) {
+      QueryParam qp = p.getAnnotation(QueryParam.class);
+      if (qp != null && "query".equals(qp.value())) {
+        queryParam = p;
+        break;
+      }
+    }
+    assertNotNull(queryParam, "@QueryParam(\"query\") not found on queryGet()");
+    Parameter openApiParam = queryParam.getAnnotation(Parameter.class);
+    assertNotNull(
+      openApiParam,
+      "@Parameter annotation missing on @QueryParam(\"query\") — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED"
+    );
+    assertTrue(openApiParam.required(), "@Parameter must be required=true for the SPARQL query param");
+    assertTrue(
+      openApiParam.description() != null && openApiParam.description().length() > 10,
+      "@Parameter description must not be blank"
+    );
   }
 
   // ─── Class-level annotations ──────────────────────────────────────────────

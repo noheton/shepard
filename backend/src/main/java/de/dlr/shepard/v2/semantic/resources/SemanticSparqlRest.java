@@ -38,6 +38,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -203,6 +204,13 @@ public class SemanticSparqlRest {
   @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
+    @Parameter(
+      required = true,
+      description =
+        "SPARQL 1.1 SELECT or ASK query string. " +
+        "Mutation forms (CONSTRUCT, INSERT, DELETE, UPDATE) return 400. " +
+        "Minimum 1 character."
+    )
     @QueryParam("query") String query,
     @Context SecurityContext sc
   ) {
