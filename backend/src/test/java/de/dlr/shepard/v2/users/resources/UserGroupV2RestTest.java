@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -24,8 +26,10 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.ws.rs.core.Response;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -103,6 +107,48 @@ class UserGroupV2RestTest {
     assertEquals(1, body.size());
     assertEquals(APP_ID, body.get(0).getAppId());
     assertEquals(GROUP_NAME, body.get(0).getName());
+  }
+
+  // ── @Parameter doc regression (APISIMP-USERGROUP-ORDERBY-PARAMS-UNDOCUMENTED) ──
+
+  @Test
+  void listUserGroups_orderByParamIsDocumented() throws NoSuchMethodException {
+    Method method = UserGroupV2Rest.class.getMethod(
+      "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class
+    );
+    Parameter[] apiParams = method.getAnnotationsByType(Parameter.class);
+    Parameter orderByParam = null;
+    for (Parameter p : apiParams) {
+      if ("orderBy".equals(p.name())) {
+        orderByParam = p;
+        break;
+      }
+    }
+    assertNotNull(orderByParam, "@Parameter(name=\"orderBy\") not found on listUserGroups()");
+    assertTrue(
+      orderByParam.description() != null && orderByParam.description().length() > 10,
+      "@Parameter(name=\"orderBy\") description must not be blank — APISIMP-USERGROUP-ORDERBY-PARAMS-UNDOCUMENTED"
+    );
+  }
+
+  @Test
+  void listUserGroups_orderDescParamIsDocumented() throws NoSuchMethodException {
+    Method method = UserGroupV2Rest.class.getMethod(
+      "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class
+    );
+    Parameter[] apiParams = method.getAnnotationsByType(Parameter.class);
+    Parameter orderDescParam = null;
+    for (Parameter p : apiParams) {
+      if ("orderDesc".equals(p.name())) {
+        orderDescParam = p;
+        break;
+      }
+    }
+    assertNotNull(orderDescParam, "@Parameter(name=\"orderDesc\") not found on listUserGroups()");
+    assertTrue(
+      orderDescParam.description() != null && orderDescParam.description().length() > 10,
+      "@Parameter(name=\"orderDesc\") description must not be blank — APISIMP-USERGROUP-ORDERBY-PARAMS-UNDOCUMENTED"
+    );
   }
 
   // ── GET /v2/user-groups/{appId} ──────────────────────────────────────

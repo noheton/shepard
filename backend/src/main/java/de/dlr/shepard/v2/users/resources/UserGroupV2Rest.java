@@ -79,10 +79,10 @@ public class UserGroupV2Rest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @Parameter(name = Constants.QP_PAGE)
-  @Parameter(name = "pageSize")
-  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
-  @Parameter(name = Constants.QP_ORDER_DESC)
+  @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index. Both page and pageSize must be provided to enable pagination; if either is omitted all results are returned.")
+  @Parameter(name = "pageSize", description = "Page size (number of groups per page). Both page and pageSize must be provided to enable pagination; if either is omitted all results are returned.")
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort attribute. Accepted values: name, createdAt, updatedAt. Default: insertion order (no guaranteed ordering when omitted).")
+  @Parameter(name = Constants.QP_ORDER_DESC, description = "Sort direction. true = descending; false or omitted = ascending.")
   public Response listUserGroups(
     @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
     @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
