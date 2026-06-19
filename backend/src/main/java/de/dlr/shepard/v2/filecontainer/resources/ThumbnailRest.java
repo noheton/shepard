@@ -17,6 +17,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -66,7 +67,7 @@ public class ThumbnailRest {
   public Response getThumbnail(
     @PathParam("containerAppId") String containerAppId,
     @PathParam("oid") String oid,
-    @QueryParam("size") Integer sizeParam
+    @Parameter(description = "Longest-side pixel size for the thumbnail. Accepted values: 64, 200, 400. Any other value is normalised to 400.") @QueryParam("size") Integer sizeParam
   ) {
     int sizePx = normaliseSize(sizeParam);
 

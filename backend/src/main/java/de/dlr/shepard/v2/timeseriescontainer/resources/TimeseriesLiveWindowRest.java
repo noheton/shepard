@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -107,14 +108,14 @@ public class TimeseriesLiveWindowRest {
     description = "No TimeseriesContainer with that appId, or no channel matches the supplied filter fields.")
   public Response getLiveWindow(
     @PathParam("containerAppId") String containerAppId,
-    @QueryParam("shepardId") UUID shepardId,
-    @QueryParam("measurement") String measurement,
-    @QueryParam("device") String device,
-    @QueryParam("location") String location,
-    @QueryParam("symbolicName") String symbolicName,
-    @QueryParam("field") String field,
-    @QueryParam("windowSeconds") @DefaultValue("300") @Min(1) @Max(3600) int windowSeconds,
-    @QueryParam("withBoundaryPoints") @DefaultValue("true") boolean withBoundaryPoints
+    @Parameter(description = "Preferred channel address: the channel's stable single-field UUID (shepardId). When supplied, the 5-tuple params are ignored.") @QueryParam("shepardId") UUID shepardId,
+    @Parameter(description = "5-tuple channel address — measurement name. Only `measurement` is required; the other tuple fields default to `\"\"` when omitted.") @QueryParam("measurement") String measurement,
+    @Parameter(description = "5-tuple channel address — device identifier. Defaults to `\"\"` when omitted.") @QueryParam("device") String device,
+    @Parameter(description = "5-tuple channel address — location identifier. Defaults to `\"\"` when omitted.") @QueryParam("location") String location,
+    @Parameter(description = "5-tuple channel address — symbolic name. Defaults to `\"\"` when omitted.") @QueryParam("symbolicName") String symbolicName,
+    @Parameter(description = "5-tuple channel address — field name. Defaults to `\"\"` when omitted.") @QueryParam("field") String field,
+    @Parameter(description = "Live window width in seconds (1–3600). Default 300 (5 minutes).") @QueryParam("windowSeconds") @DefaultValue("300") @Min(1) @Max(3600) int windowSeconds,
+    @Parameter(description = "When true (default), insert linearly-interpolated boundary points at the window start and end for numeric channel types.") @QueryParam("withBoundaryPoints") @DefaultValue("true") boolean withBoundaryPoints
   ) {
     // Resolves the container by appId and enforces Read permission.
     var container = containerService.getContainerByAppId(containerAppId);

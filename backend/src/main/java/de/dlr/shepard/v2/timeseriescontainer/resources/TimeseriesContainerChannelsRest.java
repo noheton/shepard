@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -95,8 +96,8 @@ public class TimeseriesContainerChannelsRest {
   @APIResponse(responseCode = "404", description = "No TimeseriesContainer with that id.")
   public Response listChannels(
     @PathParam("containerId") long containerId,
-    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("200") @PositiveOrZero int size
+    @Parameter(description = "Zero-based page index for pagination.") @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size (1–1000; values outside the range are clamped). Default 200.") @QueryParam("size") @DefaultValue("200") @PositiveOrZero int size
   ) {
     timeseriesContainerService.getContainer(containerId);
 
@@ -208,10 +209,10 @@ public class TimeseriesContainerChannelsRest {
   public Response getChannelData(
     @PathParam("containerId") long containerId,
     @PathParam("shepardId") UUID shepardId,
-    @QueryParam("start")      @NotNull @PositiveOrZero Long start,
-    @QueryParam("end")        @NotNull @PositiveOrZero Long end,
-    @QueryParam("downsample") String downsample,
-    @QueryParam("max_points") Integer maxPoints
+    @Parameter(description = "Window start timestamp in nanoseconds since Unix epoch (inclusive). Required.", required = true) @QueryParam("start") @NotNull @PositiveOrZero Long start,
+    @Parameter(description = "Window end timestamp in nanoseconds since Unix epoch (inclusive). Required.", required = true) @QueryParam("end") @NotNull @PositiveOrZero Long end,
+    @Parameter(description = "Downsampling algorithm. Supported value: `lttb` (Largest-Triangle-Three-Buckets). Omit to return raw points.") @QueryParam("downsample") String downsample,
+    @Parameter(description = "Target point count when `downsample=lttb` (1–5000; values outside range are clamped). Default 2000.") @QueryParam("max_points") Integer maxPoints
   ) {
     timeseriesContainerService.getContainer(containerId);
 
