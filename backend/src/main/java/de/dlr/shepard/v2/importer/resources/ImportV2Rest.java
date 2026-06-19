@@ -41,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -204,7 +205,21 @@ public class ImportV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response getContext(
+    @Parameter(
+      description =
+        "appId (UUID v7) of the target Collection. Required. Returns 404 when " +
+        "no Collection with this appId exists. The caller must have Read permission.",
+      required = true
+    )
     @QueryParam("collectionAppId") String collectionAppId,
+    @Parameter(
+      description =
+        "When true, the response body includes the full semantic-annotation graph " +
+        "of the target Collection (predicate IRIs, object values, vocabulary ids). " +
+        "Defaults to false. The false path executes a single Cypher count query " +
+        "and skips all annotation look-ups, making it significantly cheaper for " +
+        "importers that do not need annotation context."
+    )
     @QueryParam("includeSemanticGraph") @DefaultValue("false") boolean includeSemanticGraph,
     @Context SecurityContext sc
   ) {
