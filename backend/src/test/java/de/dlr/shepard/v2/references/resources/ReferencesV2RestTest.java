@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.references.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,8 +18,11 @@ import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.ws.rs.core.SecurityContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -244,5 +249,66 @@ class ReferencesV2RestTest {
     var body = new ByteArrayInputStream(new byte[] { 1 });
     var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
     assertEquals(400, r.getStatus());
+  }
+
+  // ─── APISIMP-REFERENCES-CREATE-LIST-PARAMS / APISIMP-REFERENCES-UPLOAD-CONTENT-FILENAME ──
+
+  @Test
+  void create_kindParam_isMarkedRequiredWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ReferencesV2Rest.class.getMethod(
+        "create", String.class, String.class, JsonNode.class, SecurityContext.class);
+    java.lang.reflect.Parameter param = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "kind".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "create() must carry @QueryParam(\"kind\")");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "create() kind param must carry @Parameter");
+    assertTrue(ann.required(), "@Parameter.required must be true for create() kind");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for create() kind");
+  }
+
+  @Test
+  void list_fileKindParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, SecurityContext.class);
+    java.lang.reflect.Parameter param = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "fileKind".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "list() must carry @QueryParam(\"fileKind\")");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list() fileKind param must carry @Parameter");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for list() fileKind");
+  }
+
+  @Test
+  void uploadContent_filenameParam_isMarkedRequiredWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ReferencesV2Rest.class.getMethod(
+        "uploadContent", String.class, String.class, String.class, InputStream.class, SecurityContext.class);
+    java.lang.reflect.Parameter param = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "filename".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "uploadContent() must carry @QueryParam(\"filename\")");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "uploadContent() filename param must carry @Parameter");
+    assertTrue(ann.required(), "@Parameter.required must be true for uploadContent() filename");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for uploadContent() filename");
   }
 }
