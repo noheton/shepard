@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -223,11 +224,17 @@ public class InstanceAdminRest {
   @APIResponse(description = "The `from` or `to` query parameter is not a valid ISO-8601 instant string.", responseCode = "400")
   public Response permissionAuditLog(
     @Context SecurityContext securityContext,
+    @Parameter(description = "Optional filter; returns only entries for this entity appId (Collection, DataObject, etc.). Omit to query across all entities.")
     @QueryParam("entityAppId") String entityAppId,
+    @Parameter(description = "Optional filter; returns only entries where the actor username matches exactly. Omit to query across all actors.")
     @QueryParam("actor") String actor,
+    @Parameter(description = "Optional ISO-8601 instant lower bound (inclusive) on occurred_at. Malformed value returns 400. Example: 2026-01-01T00:00:00Z.")
     @QueryParam("from") String from,
+    @Parameter(description = "Optional ISO-8601 instant upper bound (exclusive) on occurred_at. Malformed value returns 400. Example: 2026-02-01T00:00:00Z.")
     @QueryParam("to") String to,
+    @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") int page,
+    @Parameter(description = "Page size (default 50). Server-side cap: 500 — values above 500 are silently clamped.")
     @QueryParam("pageSize") @DefaultValue("50") int pageSize
   ) {
     requireInstanceAdmin(securityContext);
