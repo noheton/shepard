@@ -12,11 +12,15 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -195,5 +199,35 @@ class CollectionLabJournalEntriesRestTest {
     e.setDataObject(doNode);
     e.setCreatedAt(createdAt);
     return e;
+  }
+
+  // ─── APISIMP-COLLECTION-SNAPSHOT-LABJ-PARAMS regression ─────────────────
+
+  private static String labjListParamDesc(String queryParamName) throws NoSuchMethodException {
+    Method method = CollectionLabJournalEntriesRest.class.getMethod(
+        "list", String.class, Integer.class, Integer.class, SecurityContext.class);
+    return Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && queryParamName.equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(
+              org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+  }
+
+  @Test
+  void list_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = labjListParamDesc("page");
+    Assertions.assertFalse(desc.isBlank(),
+        "CollectionLabJournalEntriesRest.list() 'page' must carry a @Parameter description");
+  }
+
+  @Test
+  void list_pageSizeParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = labjListParamDesc("pageSize");
+    Assertions.assertFalse(desc.isBlank(),
+        "CollectionLabJournalEntriesRest.list() 'pageSize' must carry a @Parameter description");
   }
 }

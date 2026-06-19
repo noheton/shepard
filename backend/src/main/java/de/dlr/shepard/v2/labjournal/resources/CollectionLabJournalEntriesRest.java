@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -100,7 +101,9 @@ public class CollectionLabJournalEntriesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index. Omit (or pass null) to return all entries with no pagination.")
     @QueryParam("page") @PositiveOrZero Integer page,
+    @Parameter(description = "Page size. Omit (or pass null) to return all entries with no pagination. Paired with page: if one is null, pagination is disabled.")
     @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
     @Context SecurityContext sc
   ) {

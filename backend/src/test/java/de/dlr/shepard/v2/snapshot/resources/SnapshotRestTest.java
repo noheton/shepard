@@ -16,11 +16,15 @@ import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
 import de.dlr.shepard.context.snapshot.io.SnapshotEntryIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -304,5 +308,37 @@ class SnapshotRestTest {
     when(snapshotService.findByAppId(SNAP_APP_ID)).thenReturn(null);
     Response r = snapshotRest.delete(SNAP_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(404);
+  }
+
+  // ─── APISIMP-COLLECTION-SNAPSHOT-LABJ-PARAMS regression ─────────────────
+
+  private static String collSnapshotListParamDesc(String queryParamName) throws NoSuchMethodException {
+    Method method = CollectionSnapshotRest.class.getMethod(
+        "list", String.class, int.class, int.class, SecurityContext.class);
+    return Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && queryParamName.equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(
+              org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+  }
+
+  @Test
+  void collectionSnapshotList_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = collSnapshotListParamDesc("page");
+    Assertions.assertFalse(desc.isBlank(),
+        "CollectionSnapshotRest.list() 'page' must carry a @Parameter description");
+  }
+
+  @Test
+  void collectionSnapshotList_pageSizeParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = collSnapshotListParamDesc("pageSize");
+    Assertions.assertFalse(desc.isBlank(),
+        "CollectionSnapshotRest.list() 'pageSize' must carry a @Parameter description");
+    Assertions.assertTrue(desc.contains("200"),
+        "CollectionSnapshotRest.list() 'pageSize' description must mention the 200 cap");
   }
 }

@@ -22,12 +22,16 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import jakarta.validation.Validator;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -477,5 +481,48 @@ class CollectionV2RestTest {
     assertNotNull(methodPath, "get(...) must carry an @Path annotation");
     assertEquals("/{collectionAppId}", methodPath.value(),
       "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
+  }
+
+  // ─── APISIMP-COLLECTION-SNAPSHOT-LABJ-PARAMS regression ─────────────────
+
+  private static String descriptionForParam(Method method, String queryParamName) {
+    return Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && queryParamName.equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(
+              org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+  }
+
+  @Test
+  void list_namePamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    String desc = descriptionForParam(method, "name");
+    Assertions.assertFalse(desc.isBlank(),
+        "list() 'name' @QueryParam must carry a @Parameter description — got: '" + desc + "'");
+  }
+
+  @Test
+  void list_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    String desc = descriptionForParam(method, "page");
+    Assertions.assertFalse(desc.isBlank(),
+        "list() 'page' @QueryParam must carry a @Parameter description — got: '" + desc + "'");
+  }
+
+  @Test
+  void list_pageSizeParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    String desc = descriptionForParam(method, "pageSize");
+    Assertions.assertFalse(desc.isBlank(),
+        "list() 'pageSize' @QueryParam must carry a @Parameter description — got: '" + desc + "'");
+    Assertions.assertTrue(desc.contains("200"),
+        "'pageSize' description must document the 200 server-side cap — got: '" + desc + "'");
   }
 }
