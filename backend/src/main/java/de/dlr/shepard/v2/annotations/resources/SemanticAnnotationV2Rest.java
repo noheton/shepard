@@ -740,17 +740,48 @@ public class SemanticAnnotationV2Rest {
 
     boolean allowed;
 
-    if ("Collection".equalsIgnoreCase(subjectKind)) {
-      // Collections have their own Permissions node; resolve OGM id and check directly.
-      try {
-        long ogmId = entityIdResolver.resolveLong(subjectAppId);
-        allowed = permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L);
-      } catch (jakarta.ws.rs.NotFoundException nfe) {
-        return notFound("Collection", subjectAppId);
-      }
+    // Resolve the subject's Neo4j labels to pick the right permission gate. This
+    // is label-driven (not the caller-supplied subjectKind string) so a
+    // mislabeled or omitted subjectKind can't bypass or wrongly deny the gate.
+    long ogmId;
+    java.util.List<String> labels;
+    try {
+      var res = entityIdResolver.resolveWithLabels(subjectAppId);
+      ogmId = res.ogmId();
+      labels = res.labels();
+    } catch (jakarta.ws.rs.NotFoundException nfe) {
+      // Subject is not a resolvable Neo4j entity (e.g. a TimescaleDB channel
+      // shepardId). Per the entity-scoped-discovery contract, an unresolvable
+      // subject is open for Read (the underlying data is gated by its container)
+      // and closed for Write.
+      if (accessType == AccessType.Read) return null;
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN,
+        "Subject '" + subjectAppId + "' could not be resolved; cannot grant "
+          + accessType.name() + " permission.");
+    }
+
+    // Collections AND every *Container kind carry their OWN Permissions node, so
+    // gate them directly on that node (a PublicReadable container is readable by
+    // any authenticated caller). DataObjects, References and other children
+    // inherit from their parent Collection via the DataObject→Collection walk.
+    boolean ownsPermissionsNode =
+      labels.contains("Collection") || labels.stream().anyMatch(l -> l.endsWith("Container"));
+    boolean isChannel =
+      labels.contains("AnnotatableTimeseries") || labels.contains("Timeseries");
+    if (ownsPermissionsNode) {
+      allowed = permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L);
+    } else if (isChannel) {
+      // A timeseries channel (AnnotatableTimeseries bridge node) has no own
+      // Permissions node and no Neo4j edge to its container, so neither the direct
+      // check nor the DataObject walk can gate it. Its data is already gated at the
+      // container level, so annotation reads are open; writes via this REST path
+      // are denied (channel annotations are written by the dual-write service).
+      // TODO follow-up: resolve container via channel_metadata to allow container
+      // writers to annotate channels through the REST surface.
+      if (accessType == AccessType.Read) return null;
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN,
+        "Channel annotations cannot be modified through this endpoint.");
     } else {
-      // DataObject and all other entity kinds: walk DataObject→Collection.
-      // This also works for References and Containers that inherit from their parent DO.
       allowed = permissionsService.isAccessAllowedForDataObjectAppId(subjectAppId, accessType, caller);
     }
 
