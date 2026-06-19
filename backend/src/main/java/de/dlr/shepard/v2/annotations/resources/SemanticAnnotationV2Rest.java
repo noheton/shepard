@@ -43,6 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -149,11 +150,26 @@ public class SemanticAnnotationV2Rest {
   @APIResponse(responseCode = "400", description = "Bad pagination params (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
+    @Parameter(description =
+      "Filter by subject entity appId (UUID v7). Only annotations on this entity are returned. "
+      + "Supply to trigger a single entity-level permission check at the list boundary rather than "
+      + "per-row checks across the full result set.")
     @QueryParam("subjectAppId") String subjectAppId,
+    @Parameter(description =
+      "Narrow to a specific subject entity kind (e.g. 'DataObject', 'Collection', 'Container'). "
+      + "Combined with subjectAppId to disambiguate subjects across entity types.")
     @QueryParam("subjectKind") String subjectKind,
+    @Parameter(description =
+      "Filter by predicate IRI. Only annotations using exactly this predicate IRI are returned "
+      + "(e.g. 'urn:shepard:project:partOf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type').")
     @QueryParam("predicateIri") String predicateIri,
+    @Parameter(description =
+      "Filter by vocabulary identifier. Only annotations whose predicate belongs to this "
+      + "vocabulary are returned.")
     @QueryParam("vocabId") String vocabId,
+    @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") int page,
+    @Parameter(description = "Page size — number of annotations per page (default 50, range 1–200).")
     @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {
