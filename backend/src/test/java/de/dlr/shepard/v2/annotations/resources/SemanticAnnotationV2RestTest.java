@@ -752,6 +752,29 @@ class SemanticAnnotationV2RestTest {
   void listAnnotations_vocabId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
     var param = findListParam("vocabId");
     assertThat(param).as("vocabId must carry @QueryParam").isNotNull();
+  }
+
+  // ─── APISIMP-ANNOT-FIND-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─
+
+  /**
+   * APISIMP-ANNOT-FIND-PARAMS-UNDOCUMENTED — verifies that every {@code @QueryParam}
+   * on {@link SemanticAnnotationV2Rest#find} carries a non-blank {@code @Parameter}
+   * annotation so the generated OpenAPI schema documents all four params.
+   */
+  @Test
+  void findAnnotations_q_paramIsRequired() throws NoSuchMethodException {
+    var param = findFindParam("q");
+    assertThat(param).as("q must carry @QueryParam on find()").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("q must carry @Parameter").isNotNull();
+    assertThat(ann.required()).as("q must be marked required=true").isTrue();
+    assertThat(ann.description()).as("@Parameter.description for q must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void findAnnotations_vocabId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("vocabId");
+    assertThat(param).as("vocabId must carry @QueryParam on find()").isNotNull();
     var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
     assertThat(ann).as("vocabId must carry @Parameter").isNotNull();
     assertThat(ann.description()).as("@Parameter.description for vocabId must be non-blank").isNotBlank();
@@ -761,6 +784,11 @@ class SemanticAnnotationV2RestTest {
   void listAnnotations_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
     var param = findListParam("page");
     assertThat(param).as("page must carry @QueryParam").isNotNull();
+  }
+
+  void findAnnotations_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("page");
+    assertThat(param).as("page must carry @QueryParam on find()").isNotNull();
     var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
     assertThat(ann).as("page must carry @Parameter").isNotNull();
     assertThat(ann.description()).as("@Parameter.description for page must be non-blank").isNotBlank();
@@ -770,6 +798,11 @@ class SemanticAnnotationV2RestTest {
   void listAnnotations_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
     var param = findListParam("pageSize");
     assertThat(param).as("pageSize must carry @QueryParam").isNotNull();
+  }
+
+  void findAnnotations_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("pageSize");
+    assertThat(param).as("pageSize must carry @QueryParam on find()").isNotNull();
     var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
     assertThat(ann).as("pageSize must carry @Parameter").isNotNull();
     assertThat(ann.description()).as("@Parameter.description for pageSize must be non-blank").isNotBlank();
@@ -780,6 +813,13 @@ class SemanticAnnotationV2RestTest {
     java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
         "list", String.class, String.class, String.class, String.class,
         int.class, int.class, SecurityContext.class);
+  }
+
+  private static java.lang.reflect.Parameter findFindParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
+        "find", String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
     return java.util.Arrays.stream(method.getParameters())
         .filter(p -> {
           var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
