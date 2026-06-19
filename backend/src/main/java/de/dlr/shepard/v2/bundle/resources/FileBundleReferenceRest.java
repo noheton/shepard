@@ -47,6 +47,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -377,6 +378,9 @@ public class FileBundleReferenceRest {
   public Response deleteGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "When true, all files inside the group are permanently removed from storage before the group node is deleted. " +
+      "When false (default), the call returns 400 if the group still contains files. " +
+      "This operation is irreversible — deleted files cannot be recovered.")
     @QueryParam("force") boolean force,
     @Context SecurityContext securityContext
   ) {
@@ -430,7 +434,11 @@ public class FileBundleReferenceRest {
   public Response listGroupFiles(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "0-based page index. Default 0. " +
+      "A page index past the last page returns an empty items[] with the correct totalElements and totalPages.")
     @QueryParam("page") Integer page,
+    @Parameter(description = "Number of files per page. Default 200. Minimum 1; maximum 1000. " +
+      "Out-of-range values are clamped rather than rejected.")
     @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {

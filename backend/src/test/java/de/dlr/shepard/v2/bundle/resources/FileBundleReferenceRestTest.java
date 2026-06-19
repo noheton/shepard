@@ -1,8 +1,12 @@
 package de.dlr.shepard.v2.bundle.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -590,5 +594,57 @@ class FileBundleReferenceRestTest {
     assertEquals(0L, paged.getTotalElements());
     assertEquals(0, paged.getTotalPages());
     assertEquals(0, paged.getItems().size());
+  }
+
+  // ─── APISIMP-BUNDLE-REF-PARAMS-UNDOCUMENTED regression ──────────────────────
+
+  @Test
+  void deleteGroup_forceParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = FileBundleReferenceRest.class.getMethod(
+        "deleteGroup", String.class, String.class, boolean.class, jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(jakarta.ws.rs.QueryParam.class) != null
+            && "force".equals(p.getAnnotation(jakarta.ws.rs.QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    assertFalse(desc.isBlank(),
+        "force @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
+
+  @Test
+  void listGroupFiles_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = FileBundleReferenceRest.class.getMethod(
+        "listGroupFiles", String.class, String.class, Integer.class, Integer.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(jakarta.ws.rs.QueryParam.class) != null
+            && "page".equals(p.getAnnotation(jakarta.ws.rs.QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    assertFalse(desc.isBlank(),
+        "page @Parameter description must be present and non-blank — got: '" + desc + "'");
+  }
+
+  @Test
+  void listGroupFiles_pageSizeParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = FileBundleReferenceRest.class.getMethod(
+        "listGroupFiles", String.class, String.class, Integer.class, Integer.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(jakarta.ws.rs.QueryParam.class) != null
+            && "pageSize".equals(p.getAnnotation(jakarta.ws.rs.QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    assertFalse(desc.isBlank(),
+        "pageSize @Parameter description must be present and non-blank — got: '" + desc + "'");
   }
 }
