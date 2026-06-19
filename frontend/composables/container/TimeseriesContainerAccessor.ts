@@ -88,20 +88,36 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
     }
   }
 
+  // Cap the flat channel listing. A single shared container can hold hundreds of
+  // thousands of channels (MFFD tapelaying = ~574k); the v1 getTimeseriesOfContainer
+  // path was both unpaginated AND required a numeric id that the appId-routed page
+  // can't resolve (→ "Container with id 0"). Per-track access goes through each
+  // DataObject's TimeseriesReference (~190 channels); this flat view is a bounded
+  // sample. Full server-side-paginated browse is a follow-up (TS-CONTAINER-CHANNEL-PAGE).
+  private static readonly CHANNEL_PAGE_SIZE = 2000;
+
   async fetchMeasurements() {
     try {
       this.loading.value = true;
-      this.measurements.value = await this.api.value.getTimeseriesOfContainer({
-        timeseriesContainerId: this.numericId,
-      });
+      // V2-only: appId-keyed channel listing (no numeric id needed).
+      const containerAppId =
+        (this.container.value as unknown as { appId?: string | null } | undefined)?.appId ?? this.id;
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/channels`
+          + `?pageSize=${TimeseriesContainerAccessor.CHANNEL_PAGE_SIZE}`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // The v2 channel IO is a superset of the v1 TimeseriesEntity 5-tuple.
+      this.measurements.value = (await resp.json()) as TimeseriesEntity[];
     } catch (e) {
-      // Was "fetching files" — copy-paste from FileContainerAccessor. The
-      // misleading label fired on this TimeseriesContainerAccessor, which
-      // is what the user saw on `/containers/timeseries/{id}`.
       handleError(e as ResponseError, "fetching timeseries channels");
-      // Don't rethrow — the caller doesn't always swallow it, so a
-      // single fetch failure would cascade into an infinite spinner.
-      // Clear loading via the finally block and surface the toast.
+      // Don't rethrow — a single fetch failure would otherwise cascade into an
+      // infinite spinner. Clear loading via finally and surface the toast.
       this.measurements.value = [];
     } finally {
       this.loading.value = false;
