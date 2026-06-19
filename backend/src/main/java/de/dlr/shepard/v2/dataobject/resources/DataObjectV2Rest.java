@@ -21,6 +21,7 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.dataobject.io.PatchDataObjectV2IO;
 import de.dlr.shepard.v2.dataobject.io.PredecessorEdgePatchIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
@@ -514,7 +515,7 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     DataObject existing = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    DataObjectIO merged = new DataObjectIO(existing);
+    PatchDataObjectV2IO merged = new PatchDataObjectV2IO(existing);
     try {
       objectMapper.readerForUpdating(merged).readValue(patch);
     } catch (JsonProcessingException e) {
@@ -523,7 +524,7 @@ public class DataObjectV2Rest {
       throw new InvalidBodyException("Could not read JSON Merge Patch body: %s".formatted(e.getMessage()));
     }
 
-    Set<ConstraintViolation<DataObjectIO>> violations = validator.validate(merged);
+    Set<ConstraintViolation<PatchDataObjectV2IO>> violations = validator.validate(merged);
     if (!violations.isEmpty()) {
       throw new ConstraintViolationException(violations);
     }

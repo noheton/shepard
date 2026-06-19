@@ -25,6 +25,7 @@ import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteServ
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
 import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
+import de.dlr.shepard.v2.dataobject.io.PatchDataObjectV2IO;
 import de.dlr.shepard.v2.dataobject.io.TypedPredecessorIO;
 import de.dlr.shepard.v2.events.CollectionEventProducer;
 import io.quarkus.logging.Log;
@@ -430,9 +431,16 @@ public class DataObjectService {
       updateTypedPredecessors = v2ioForTyped.getTypedPredecessors();
     }
 
+    // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId-based predecessor list from PATCH body.
+    String[] patchPredecessorAppIds = null;
+    if (dataObject instanceof PatchDataObjectV2IO patchIO) {
+      patchPredecessorAppIds = patchIO.getPredecessorAppIds();
+    }
+
     List<DataObject> newPredecessors;
     String newTypedPredecessorsJson = null;
     if (updateTypedPredecessors != null && !updateTypedPredecessors.isEmpty()) {
+      // typedPredecessors (PROV1k) takes highest priority.
       for (TypedPredecessorIO tp : updateTypedPredecessors) {
         tp.validate();
       }
@@ -442,7 +450,27 @@ public class DataObjectService {
         dataObjectShepardId
       );
       newTypedPredecessorsJson = serialiseTypedPredecessors(updateTypedPredecessors);
+    } else if (patchPredecessorAppIds != null) {
+      // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: resolve predecessors by appId (second priority).
+      // Empty array explicitly clears all predecessors; non-empty resolves each to a DataObject.
+      if (patchPredecessorAppIds.length == 0) {
+        newPredecessors = new ArrayList<>();
+      } else {
+        List<TypedPredecessorIO> fromAppIds = Arrays.stream(patchPredecessorAppIds)
+          .map(appId -> new TypedPredecessorIO(appId, null))
+          .collect(Collectors.toList());
+        for (TypedPredecessorIO tp : fromAppIds) {
+          tp.validate();
+        }
+        newPredecessors = resolveTypedPredecessors(
+          old.getCollection().getShepardId(),
+          fromAppIds,
+          dataObjectShepardId
+        );
+      }
+      newTypedPredecessorsJson = null;
     } else {
+      // Fallback: use numeric predecessorIds (backward compat).
       newPredecessors = findRelatedDataObjects(
         old.getCollection().getShepardId(),
         dataObject.getPredecessorIds(),

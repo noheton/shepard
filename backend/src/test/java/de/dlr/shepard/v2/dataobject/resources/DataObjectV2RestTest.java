@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.dataobject.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,6 +12,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +33,7 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.dataobject.io.PatchDataObjectV2IO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -485,6 +489,39 @@ class DataObjectV2RestTest {
     assertEquals(200, r.getStatus());
     DataObjectIO io = (DataObjectIO) r.getEntity();
     assertEquals("new", io.getDescription());
+  }
+
+  @Test
+  void patch_predecessorAppIds_flowsAsPatchDataObjectV2IO() {
+    // BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — verify that when the PATCH body
+    // includes `predecessorAppIds`, the service receives a PatchDataObjectV2IO
+    // with that field populated (so the service can resolve by appId).
+    DataObject existing = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    DataObject updated = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.putArray("predecessorAppIds").add("pred-app-uuid");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(existing);
+    when(dataObjectService.updateDataObject(eq(COLL_OGM_ID), eq(DO_OGM_ID), any())).thenReturn(updated);
+
+    Response r = resource.patch(COLL_APP_ID, DO_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+
+    ArgumentCaptor<DataObjectIO> captor = ArgumentCaptor.forClass(DataObjectIO.class);
+    verify(dataObjectService).updateDataObject(eq(COLL_OGM_ID), eq(DO_OGM_ID), captor.capture());
+    DataObjectIO capturedIO = captor.getValue();
+    assertInstanceOf(PatchDataObjectV2IO.class, capturedIO,
+      "PATCH endpoint must pass PatchDataObjectV2IO to the service");
+    PatchDataObjectV2IO patchIO = (PatchDataObjectV2IO) capturedIO;
+    assertNotNull(patchIO.getPredecessorAppIds(), "predecessorAppIds must be populated from JSON patch");
+    assertEquals(1, patchIO.getPredecessorAppIds().length);
+    assertEquals("pred-app-uuid", patchIO.getPredecessorAppIds()[0]);
   }
 
   // ── delete ────────────────────────────────────────────────────────────────
