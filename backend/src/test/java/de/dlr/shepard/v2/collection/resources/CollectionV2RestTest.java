@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.collection.resources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -447,6 +448,65 @@ class CollectionV2RestTest {
 
     assertEquals(204, r.getStatus());
     verify(collectionService).deleteCollection(COLL_OGM_ID);
+  }
+
+  // ── APISIMP-COLLECTION-LIST-PARAMS regression ─────────────────────────────
+
+  @Test
+  void listName_paramHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "name".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "name must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "name must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for name");
+  }
+
+  @Test
+  void listPage_paramHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "page".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "page must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for page");
+  }
+
+  @Test
+  void listPageSize_paramHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionV2Rest.class.getMethod(
+        "list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "pageSize".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for pageSize");
   }
 
   // ── route-pinning ─────────────────────────────────────────────────────────

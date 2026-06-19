@@ -46,6 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -156,8 +157,11 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
+    @Parameter(description = "Optional case-insensitive substring filter on Collection name. Omit to return all accessible Collections.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "Zero-based page index. Defaults to 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size. Defaults to 50. The server silently clamps to the range [1, 200].")
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
   ) {
     int safePage = Math.max(page, 0);
