@@ -179,6 +179,44 @@ class CollectionLabJournalEntriesRestTest {
     assertThat(body).hasSize(2);
   }
 
+  // ── APISIMP-LABJOURNAL-PARAMS-DOC regression ─────────────────────────────
+
+  @Test
+  void list_pageParamHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionLabJournalEntriesRest.class.getMethod(
+        "list", String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "page".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertThat(param).as("page must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("page must carry @Parameter annotation").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for page must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void list_pageSizeParamHasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = CollectionLabJournalEntriesRest.class.getMethod(
+        "list", String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "pageSize".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertThat(param).as("pageSize must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("pageSize must carry @Parameter annotation").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for pageSize must be non-blank").isNotBlank();
+  }
+
   /**
    * Build a {@link LabJournalEntry} attached to a {@link DataObject} carrying
    * the given shepardId. Mirrors the v1 service path enough for the IO
