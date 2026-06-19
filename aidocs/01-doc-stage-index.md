@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 88 |
+| `deployed` | 89 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **470** |
+| **total docs** | **471** |
 | **UNTAGGED** | **0** |
 
 ## fragment (65)
@@ -67,7 +67,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17.md`](agent-findings/apisimp-sweep-2026-06-17.md) | APISIMP sweep — 2026-06-17 (fire-89) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire102.md`](agent-findings/apisimp-sweep-2026-06-18-fire102.md) | APISIMP surface sweep — fire-102 (2026-06-18) | 2026-06-18 | 2026-06-18 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire106.md`](agent-findings/apisimp-sweep-2026-06-18-fire106.md) | APISIMP surface sweep — fire-106 (2026-06-18) | 2026-06-18 | 2026-06-18 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire135.md`](agent-findings/apisimp-sweep-2026-06-19-fire135.md) | APISIMP Sweep — fire-135 (2026-06-19) | 2026-06-19 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire135.md`](agent-findings/apisimp-sweep-2026-06-19-fire135.md) | APISIMP Sweep — fire-135 (2026-06-19) | 2026-06-19 | 2026-06-19 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-16 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-16 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-06-16 |
@@ -411,7 +411,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-06-16 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-06-16 |
 
-## deployed (88)
+## deployed (89)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -440,6 +440,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-17-fire93.md`](agent-findings/apisimp-sweep-2026-06-17-fire93.md) | APISIMP sweep — fire-93 (2026-06-17) | 2026-06-17 | 2026-06-17 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire108.md`](agent-findings/apisimp-sweep-2026-06-18-fire108.md) | APISIMP sweep — fire-108 (2026-06-18) | 2026-06-18 | 2026-06-18 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire115.md`](agent-findings/apisimp-sweep-2026-06-18-fire115.md) | APISIMP Sweep — fire-115 (2026-06-18) | 2026-06-18 | 2026-06-18 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire137.md`](agent-findings/apisimp-sweep-2026-06-19-fire137.md) | APISIMP Sweep — 2026-06-19 (fire-137) | 2026-06-19 | — |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-16 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-16 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-06-16 |
