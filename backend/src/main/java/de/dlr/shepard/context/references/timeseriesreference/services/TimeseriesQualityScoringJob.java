@@ -8,6 +8,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
+import de.dlr.shepard.v2.admin.qualityscoring.services.TimeseriesQualityScoringConfigService;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,7 +16,6 @@ import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * AI1c — background job that emits {@code qualityScore} +
@@ -76,11 +76,8 @@ public class TimeseriesQualityScoringJob {
   @Inject
   TimeseriesDataPointRepository timeseriesDataPointRepository;
 
-  @ConfigProperty(name = "shepard.timeseries.quality-scoring.enabled", defaultValue = "false")
-  boolean enabled;
-
-  @ConfigProperty(name = "shepard.timeseries.quality-scoring.batch-size", defaultValue = "100")
-  int batchSize;
+  @Inject
+  TimeseriesQualityScoringConfigService qualityScoringConfigService;
 
   /**
    * Periodic run. {@code @Scheduled.every} resolves the interval
@@ -89,11 +86,11 @@ public class TimeseriesQualityScoringJob {
    */
   @Scheduled(every = "{shepard.timeseries.quality-scoring.interval}")
   public void runScoring() {
-    if (!enabled) {
-      Log.debug("AI1c quality scoring skipped — shepard.timeseries.quality-scoring.enabled=false");
+    if (!qualityScoringConfigService.isEnabled()) {
+      Log.debug("AI1c quality scoring skipped — enabled=false (runtime config)");
       return;
     }
-    int capped = clampBatchSize(batchSize);
+    int capped = clampBatchSize(qualityScoringConfigService.effectiveBatchSize());
     long now = currentTimeMillis();
     long staleCutoff = now - RESCORING_INTERVAL_MILLIS;
 
