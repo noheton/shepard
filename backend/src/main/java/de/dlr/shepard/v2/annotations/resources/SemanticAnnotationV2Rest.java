@@ -5,6 +5,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
 import de.dlr.shepard.provenance.entities.Activity;
@@ -15,6 +16,7 @@ import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints;
+import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import io.quarkus.logging.Log;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
@@ -36,6 +38,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
+import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -100,6 +103,10 @@ public class SemanticAnnotationV2Rest {
   /** PROJ-SEMA-WRITE-GATE-1 — runtime gate for urn:shepard:project / partOf / programme. */
   @Inject
   ProjectAnnotationConstraints projectAnnotationConstraints;
+
+  /** F9 — resolves Reference appIds to their parent DataObject for permission gating. */
+  @Inject
+  ReferencesV2Service referencesService;
 
   /** SEMA-V6-007 — mints `:Activity` nodes for annotation mutations. */
   @Inject
@@ -782,7 +789,34 @@ public class SemanticAnnotationV2Rest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN,
         "Channel annotations cannot be modified through this endpoint.");
     } else {
-      allowed = permissionsService.isAccessAllowedForDataObjectAppId(subjectAppId, accessType, caller);
+      // F9: Reference nodes are NOT DataObject nodes — isAccessAllowedForDataObjectAppId
+      // queries MATCH (c:Collection)-[:HAS_DATAOBJECT]->(d:DataObject {appId:…}), which
+      // never matches a Reference appId.  Detect Reference labels and walk to the parent
+      // DataObject first; fall through to the DataObject walk for everything else.
+      boolean isReference = labels.stream().anyMatch(l -> l.endsWith("Reference"));
+      if (isReference) {
+        Optional<ReferencesV2Service.ResolvedReference> refOpt =
+          referencesService.resolveByAppId(subjectAppId);
+        if (refOpt.isEmpty()) {
+          if (accessType == AccessType.Read) return null;
+          return problem(PROBLEM_TYPE_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN,
+            "Reference '" + subjectAppId + "' could not be resolved; cannot grant Write access.");
+        }
+        DataObject parent = refOpt.get().reference().getDataObject();
+        if (parent == null) {
+          if (accessType == AccessType.Read) return null;
+          return problem(PROBLEM_TYPE_FORBIDDEN, "Access denied", Response.Status.FORBIDDEN,
+            "Reference '" + subjectAppId + "' has no parent DataObject; cannot grant Write access.");
+        }
+        String doAppId = parent.getAppId();
+        if (doAppId != null) {
+          allowed = permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller);
+        } else {
+          allowed = permissionsService.isAccessTypeAllowedForUser(parent.getId(), accessType, caller, 0L);
+        }
+      } else {
+        allowed = permissionsService.isAccessAllowedForDataObjectAppId(subjectAppId, accessType, caller);
+      }
     }
 
     if (!allowed) {
