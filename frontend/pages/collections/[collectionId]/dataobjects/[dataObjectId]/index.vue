@@ -883,8 +883,10 @@ async function saveEmbargoEdit() {
                 >
                   <div class="pt-4">
                     <DataObjectLabJournalEntryList
-                      :collection-id="collection.id"
+                      :collection-app-id="collectionIdStr"
+                      :data-object-app-id="dataObject.appId ?? ''"
                       :data-object-id="dataObject.id"
+                      :is-allowed-to-write="isAllowedToEditCollection ?? false"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>

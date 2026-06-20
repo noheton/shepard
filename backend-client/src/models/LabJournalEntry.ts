@@ -20,11 +20,18 @@ import { mapValues } from '../runtime';
  */
 export interface LabJournalEntry {
     /**
-     * 
+     *
      * @type {number}
      * @memberof LabJournalEntry
      */
     readonly dataObjectId: number;
+    /**
+     * UUID v7 of the parent DataObject (UI-DO-LABJOURNAL-V2).
+     * Null for entries pre-dating L2a appId backfill.
+     * @type {string}
+     * @memberof LabJournalEntry
+     */
+    readonly dataObjectAppId?: string | null;
     /**
      * 
      * @type {string}
@@ -101,6 +108,7 @@ export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boo
     return {
         
         'dataObjectId': json['dataObjectId'],
+        'dataObjectAppId': json['dataObjectAppId'] == null ? undefined : json['dataObjectAppId'],
         'journalContent': json['journalContent'],
         'id': json['id'],
         'createdAt': (new Date(json['createdAt'])),

@@ -61,6 +61,22 @@ public class LabJournalEntryIO {
   private String appId;
 
   /**
+   * UI-DO-LABJOURNAL-V2 — UUID v7 of the parent DataObject.
+   *
+   * <p>Additive field — existing clients that ignore unknown JSON keys are unaffected.
+   * The v2 collection endpoint ({@code GET /v2/collections/{appId}/lab-journal-entries})
+   * needs this to let the frontend filter by DataObject appId without exposing the numeric
+   * Neo4j id (which {@link de.dlr.shepard.v2.collection.io.CollectionV2IO} suppresses from
+   * the wire via {@code @JsonIgnoreProperties({"id"})}).
+   *
+   * <p>May be {@code null} for entries whose DataObject was created before L2a seeded appIds
+   * (no backfill pass has been run on those rows).
+   */
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  @Schema(readOnly = true, nullable = true, example = "019506b4-dc55-7c92-b4e1-bf94db37e5b9")
+  private String dataObjectAppId;
+
+  /**
    * J1a — fixed constant indicating that all lab journal entries are interpreted
    * as CommonMark + GFM markdown by the render endpoint
    * ({@code GET /v2/lab-journal/{appId}/render}).
@@ -84,6 +100,7 @@ public class LabJournalEntryIO {
   public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
     this.appId = labJournalEntry.getAppId();
     this.dataObjectId = labJournalEntry.getDataObject().getShepardId();
+    this.dataObjectAppId = labJournalEntry.getDataObject().getAppId();
     this.journalContent = labJournalEntry.getContent();
     this.id = labJournalEntry.getId();
     this.createdAt = labJournalEntry.getCreatedAt();
