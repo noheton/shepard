@@ -20,8 +20,9 @@ class SqlTimeseriesConfigDescriptorTest {
   private SqlTimeseriesConfigService service;
   private SqlTimeseriesConfigDescriptor descriptor;
 
-  private static SqlTimeseriesConfig cfg(Long rows, String dur) {
+  private static SqlTimeseriesConfig cfg(Boolean enabled, Long rows, String dur) {
     SqlTimeseriesConfig c = new SqlTimeseriesConfig();
+    c.setEnabled(enabled);
     c.setMaxRows(rows);
     c.setMaxDurationIso(dur);
     return c;
@@ -30,6 +31,7 @@ class SqlTimeseriesConfigDescriptorTest {
   @BeforeEach
   void setUp() {
     service = Mockito.mock(SqlTimeseriesConfigService.class);
+    Mockito.when(service.getDefaultEnabled()).thenReturn(true);
     Mockito.when(service.getDefaultMaxRows()).thenReturn(1000L);
     Mockito.when(service.getDefaultMaxDuration()).thenReturn("PT60S");
     descriptor = new SqlTimeseriesConfigDescriptor();
@@ -43,25 +45,46 @@ class SqlTimeseriesConfigDescriptorTest {
 
   @Test
   void currentShapeResolvesDefaults() {
-    Mockito.when(service.current()).thenReturn(cfg(null, null));
+    Mockito.when(service.current()).thenReturn(cfg(null, null, null));
     SqlTimeseriesConfigIO io = descriptor.currentShape();
+    assertEquals(true, io.enabled());
     assertEquals(1000L, io.maxRows());
     assertEquals("PT60S", io.maxDuration());
   }
 
   @Test
   void patchAppliesNewValues() throws Exception {
-    Mockito.when(service.current()).thenReturn(cfg(500L, "PT30S"));
-    Mockito.when(service.patch(Mockito.any(), Mockito.any())).thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1)));
+    Mockito.when(service.current()).thenReturn(cfg(true, 500L, "PT30S"));
+    Mockito.when(service.patch(Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
     SqlTimeseriesConfigIO io = descriptor.applyMergePatch(MAPPER.readTree("{\"maxRows\":2000}"));
     assertEquals(2000L, io.maxRows());
-    // maxDuration carried through.
-    Mockito.verify(service).patch(2000L, "PT30S");
+    // enabled and maxDuration carried through.
+    Mockito.verify(service).patch(true, 2000L, "PT30S");
+  }
+
+  @Test
+  void patchDisablesEndpoint() throws Exception {
+    Mockito.when(service.current()).thenReturn(cfg(true, 500L, "PT30S"));
+    Mockito.when(service.patch(Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
+    SqlTimeseriesConfigIO io = descriptor.applyMergePatch(MAPPER.readTree("{\"enabled\":false}"));
+    assertEquals(false, io.enabled());
+    Mockito.verify(service).patch(false, 500L, "PT30S");
+  }
+
+  @Test
+  void patchNullEnabledClearsToDefault() throws Exception {
+    Mockito.when(service.current()).thenReturn(cfg(false, 500L, "PT30S"));
+    Mockito.when(service.patch(Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
+    descriptor.applyMergePatch(MAPPER.readTree("{\"enabled\":null}"));
+    Mockito.verify(service).patch(null, 500L, "PT30S");
   }
 
   @Test
   void nonPositiveMaxRowsThrows() {
-    Mockito.when(service.current()).thenReturn(cfg(500L, "PT30S"));
+    Mockito.when(service.current()).thenReturn(cfg(true, 500L, "PT30S"));
     ConfigPatchException ex = assertThrows(
       ConfigPatchException.class,
       () -> descriptor.applyMergePatch(MAPPER.readTree("{\"maxRows\":0}"))
@@ -71,7 +94,7 @@ class SqlTimeseriesConfigDescriptorTest {
 
   @Test
   void invalidDurationThrows() {
-    Mockito.when(service.current()).thenReturn(cfg(500L, "PT30S"));
+    Mockito.when(service.current()).thenReturn(cfg(true, 500L, "PT30S"));
     ConfigPatchException ex = assertThrows(
       ConfigPatchException.class,
       () -> descriptor.applyMergePatch(MAPPER.readTree("{\"maxDuration\":\"not-iso\"}"))
@@ -81,9 +104,10 @@ class SqlTimeseriesConfigDescriptorTest {
 
   @Test
   void nullClearsToDefault() throws Exception {
-    Mockito.when(service.current()).thenReturn(cfg(500L, "PT30S"));
-    Mockito.when(service.patch(Mockito.any(), Mockito.any())).thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1)));
+    Mockito.when(service.current()).thenReturn(cfg(true, 500L, "PT30S"));
+    Mockito.when(service.patch(Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenAnswer(i -> cfg(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
     descriptor.applyMergePatch(MAPPER.readTree("{\"maxRows\":null}"));
-    Mockito.verify(service).patch(null, "PT30S");
+    Mockito.verify(service).patch(true, null, "PT30S");
   }
 }

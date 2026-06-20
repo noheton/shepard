@@ -91,6 +91,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Toggle `source` field (`"default"` / `"config"` / `"runtime"`) on each toggle entry returned by `GET /v2/admin/features` and `PATCH /v2/admin/features/{name}` | none | `FeatureToggleEntry.getSource()` — returns `"runtime"` when overridden by PATCH, `"config"` when an `application.properties` key is present, `"default"` otherwise. `FeatureToggleIO` carries the field; no new endpoints, no schema change. 3 new `AdminFeaturesRestTest` cases. | **✓ ↑** | DX7 |
 | Spatial-data namespace alias (`shepard.spatial-data.*` → `shepard.infrastructure.spatial.*`) | only old names | both names resolve; old logs deprecation warning; removal v6.0 | **✓ ↑** | A3c / `aidocs/platform/A3c-namespace-migration.md` |
 | Permission cache TTL/max-size config | hard-coded global defaults | `shepard.permissions.cache.ttl` (`PT5M`) + `.max-size` (`10000`) | **✓ ↑** | A4 |
+| SQL timeseries endpoint enabled/disabled at runtime without restart | deploy-time `shepard.timeseries.sql.enabled` flag only | `PATCH /v2/admin/config/sql-timeseries {"enabled": false\|true\|null}` — runtime-mutable via `:SqlTimeseriesConfig` singleton; deploy-time key seeds the singleton and is the `null`-fallback | **✓ ↑** | FTOGGLE-SQL-ENABLE-1 |
 
 ## 3. Auth / API keys / security
 
