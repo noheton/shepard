@@ -65,13 +65,12 @@ export interface GridPosition {
 }
 
 /**
- * Minimal DataObject shape consumed by the helpers — id, name + the
- * annotations resolved for it. The component fetches DOs via the
- * existing list endpoint and pairs each one with annotations from
- * `getAllDataObjectAnnotations`.
+ * Minimal DataObject shape consumed by the helpers — appId, name + the
+ * annotations resolved for it. The component fetches DOs via the v2
+ * list endpoint and pairs each one with annotations from listAnnotations.
  */
 export interface DataObjectWithAnnotations {
-  id: number;
+  appId: string;
   name: string;
   annotations: SemanticAnnotation[];
 }

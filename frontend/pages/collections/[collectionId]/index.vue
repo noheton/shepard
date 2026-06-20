@@ -258,8 +258,8 @@ const collectionSceneGraphAppId = computed<string | null>(() => {
 // `urn:shepard:mffd:section` predicate. The widget renders only when the
 // probe flips `hasData` to true, so collections without OTvis data
 // pay only the probe cost (1 list + 5 small annotation fetches).
-const mffdNdtCollectionIdRef = computed<number | null>(() => collectionNumericId.value ?? null);
-const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
+const mffdNdtCollectionAppIdRef = computed<string | null>(() => collectionIdStr ?? null);
+const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionAppIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
 // this instance (INST2 — GET /v2/instance/capabilities, fetched in
@@ -547,8 +547,8 @@ useHead({
                  widget's own fetch (full per-DO annotation pull) only
                  fires once it's mounted. -->
             <MffdNdtGridCard
-              v-if="mffdNdtHasData === true && collectionNumericId"
-              :collection-id="collectionNumericId"
+              v-if="mffdNdtHasData === true && collectionIdStr"
+              :collection-app-id="collectionIdStr"
             />
 
             <!-- Always-visible: Semantic Annotation chips. Out of the
