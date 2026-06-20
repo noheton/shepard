@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.hdf.daos;
 
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
-import de.dlr.shepard.common.neo4j.daos.NeoConnector;
+import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.data.hdf.entities.HdfConfig;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collection;
