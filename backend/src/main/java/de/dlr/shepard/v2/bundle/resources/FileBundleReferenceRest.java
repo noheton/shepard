@@ -157,6 +157,56 @@ public class FileBundleReferenceRest {
     return Response.ok(new FileBundleReferenceIO(bundle)).build();
   }
 
+  @PATCH
+  @Path("/{bundleAppId}")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "RFC 7396 merge-patch on a FileBundleReference.",
+    description =
+      "Applies a partial update to the `:FileBundleReference` identified by `bundleAppId` " +
+      "(UUID v7).\n\n" +
+      "Patchable fields: `name` (string, non-blank required if present — setting `name` " +
+      "to `null` or blank returns 400). Fields absent from the body are left unchanged.\n\n" +
+      "Example: `{\"name\": \"hotfire-bundle-2026-revised\"}`.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json`; `application/json` also accepted.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "FileBundleReferenceIO reflecting the state after the patch was applied.",
+    content = @Content(schema = @Schema(implementation = FileBundleReferenceIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Patch body is not a JSON object, or `name` is null or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
+  public Response patchBundle(
+    @PathParam("bundleAppId") String bundleAppId,
+    @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body,
+    @Context SecurityContext securityContext
+  ) {
+    if (body == null || !body.isObject()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
+    }
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    Response gate = checkAccess(bundle, AccessType.Write, securityContext);
+    if (gate != null) return gate;
+
+    Map<String, Object> patch = jsonNodeToMap(body);
+    if (patch.containsKey("name")) {
+      Object nameVal = patch.get("name");
+      if (nameVal == null || nameVal.toString().isBlank()) {
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid name", Response.Status.BAD_REQUEST, "name must be non-blank when present in the patch");
+      }
+      bundle.setName(nameVal.toString().strip());
+    }
+    fileBundleReferenceDAO.createOrUpdate(bundle);
+    var groups = fileGroupDAO.findByBundleAppId(bundleAppId);
+    bundle.setGroups(groups);
+    return Response.ok(new FileBundleReferenceIO(bundle)).build();
+  }
+
   // ─── groups ───────────────────────────────────────────────────────────────
 
   @GET

@@ -150,6 +150,87 @@ class FileBundleReferenceRestTest {
     assertEquals(403, resource.getBundle(BUNDLE_APP_ID, securityContext).getStatus());
   }
 
+  // ─── PATCH /v2/bundles/{bundleAppId} ─────────────────────────────────────
+
+  @Test
+  void patchBundle_returns200AndRenamesBundle() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"hotfire-bundle-revised\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    var io = (FileBundleReferenceIO) r.getEntity();
+    assertEquals("hotfire-bundle-revised", io.getName());
+  }
+
+  @Test
+  void patchBundle_stripsWhitespaceFromName() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"  trimmed  \"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("trimmed", ((FileBundleReferenceIO) r.getEntity()).getName());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNotObject() {
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("\"not-an-object\""), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNull() {
+    assertEquals(400, resource.patchBundle(BUNDLE_APP_ID, null, securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenNameIsBlank() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"  \"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenNameIsExplicitNull() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":null}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchBundle_returns401WhenUnauthenticated() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    assertEquals(401, resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns403WhenNoWritePermission() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq("do-app-id"), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
+    assertEquals(403, resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns404WhenBundleMissing() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(null);
+    assertEquals(404, resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_doesNotMutateNameWhenKeyAbsentFromPatch() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{}"), securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("my bundle", ((FileBundleReferenceIO) r.getEntity()).getName());
+  }
+
   // ─── GET /v2/bundles/{appId}/groups ───────────────────────────────────────
 
   @Test

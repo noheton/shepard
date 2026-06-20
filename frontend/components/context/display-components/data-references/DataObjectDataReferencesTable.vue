@@ -79,6 +79,17 @@ function openDeleteDialog(item: DataTableElement) {
   showDeleteDialog.value = true;
 }
 
+// ── REF-EDIT-4: rename dialog for File Bundle rows ───────────────────────────
+const showEditBundleDialog = ref(false);
+const editBundleAppId = ref<string>("");
+const editBundleName = ref<string>("");
+
+function openEditBundleDialog(item: DataTableElement) {
+  editBundleAppId.value = item.meta.appId ?? "";
+  editBundleName.value = item.name;
+  showEditBundleDialog.value = true;
+}
+
 const { data: session } = useAuth();
 
 function v2BaseUrl(): string {
@@ -506,6 +517,12 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-eye-outline"
             @click="() => showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
           />
+          <!-- REF-EDIT-4: rename File Bundle -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'File Bundle' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            @click="() => openEditBundleDialog(item)"
+          />
           <!-- Legacy kinds: annotation dialog (v2 appId path) -->
           <ActionButton
             v-if="isAllowedToEditCollection && !NEW_KINDS.has(item.type) && item.meta.appId"
@@ -622,6 +639,15 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-4: bundle rename dialog -->
+  <EditFileBundleReferenceDialog
+    v-if="showEditBundleDialog && editBundleAppId"
+    v-model:show-dialog="showEditBundleDialog"
+    :bundle-app-id="editBundleAppId"
+    :current-name="editBundleName"
+    @saved="() => emit('refresh')"
   />
 </template>
 
