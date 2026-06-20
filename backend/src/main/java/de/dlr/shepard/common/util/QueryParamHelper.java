@@ -20,6 +20,10 @@ public class QueryParamHelper {
   private Long successorId;
   private OrderByAttribute orderByAttribute;
   private Boolean orderDesc;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation predicate IRI for lane filter. */
+  private String annotationFilterPredicateIri;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation literal value for lane filter. */
+  private String annotationFilterValue;
 
   public QueryParamHelper withName(String name) {
     this.name = name;
@@ -83,5 +87,31 @@ public class QueryParamHelper {
 
   public boolean hasOrderByAttribute() {
     return this.orderByAttribute != null;
+  }
+
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-2: sets the annotation predicate/value pair.
+   * Format: "predicateIri=value" — split on the first '=' character.
+   * Silently ignores malformed input (no '=' or blank parts).
+   */
+  public QueryParamHelper withAnnotationFilter(String annotationFilter) {
+    if (annotationFilter == null || annotationFilter.isBlank()) return this;
+    int sep = annotationFilter.indexOf('=');
+    if (sep < 1 || sep >= annotationFilter.length() - 1) return this;
+    this.annotationFilterPredicateIri = annotationFilter.substring(0, sep);
+    this.annotationFilterValue = annotationFilter.substring(sep + 1);
+    return this;
+  }
+
+  public boolean hasAnnotationFilter() {
+    return annotationFilterPredicateIri != null && annotationFilterValue != null;
+  }
+
+  public String getAnnotationFilterPredicateIri() {
+    return annotationFilterPredicateIri;
+  }
+
+  public String getAnnotationFilterValue() {
+    return annotationFilterValue;
   }
 }

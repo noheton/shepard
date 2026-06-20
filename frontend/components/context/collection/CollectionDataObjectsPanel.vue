@@ -23,6 +23,16 @@
           variant="tonal"
         >{{ s }}</v-chip>
       </v-chip-group>
+      <!-- COLL-TIMELINE-DRILLDOWN-FILTER-2: active lane chip from timeline drill-down -->
+      <v-chip
+        v-if="activeProcessTypeLane"
+        size="small"
+        color="primary"
+        variant="tonal"
+        closable
+        prepend-icon="mdi-filter"
+        @click:close="clearProcessTypeLane"
+      >{{ activeProcessTypeLane }}</v-chip>
     </div>
 
     <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate aria-label="Loading datasets" />
@@ -172,7 +182,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
 
@@ -182,7 +192,28 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
+
+// COLL-TIMELINE-DRILLDOWN-FILTER-2: read ?process-type=<lane> from the URL
+// (emitted by CollectionTimelinePane.vue drillDownPath() on bin click).
+// Derive the annotation filter as "urn:shepard:mffd:process-type=<lane>".
+const PROCESS_TYPE_PREDICATE = "urn:shepard:mffd:process-type";
+const activeProcessTypeLane = computed<string | null>(() => {
+  const v = route.query['process-type'];
+  return typeof v === 'string' && v.length > 0 ? v : null;
+});
+const annotationFilter = computed<string | undefined>(() =>
+  activeProcessTypeLane.value != null
+    ? `${PROCESS_TYPE_PREDICATE}=${activeProcessTypeLane.value}`
+    : undefined
+);
+
+function clearProcessTypeLane() {
+  const q = { ...route.query };
+  delete q['process-type'];
+  void router.replace({ query: q });
+}
 
 const STATUSES = [
   "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
@@ -211,11 +242,15 @@ watch(statusFilter, () => { page.value = 0; });
 
 const pageSize = 25;
 
+// Reset page on annotation filter change (lane drill-down → page 0)
+watch(annotationFilter, () => { page.value = 0; });
+
 const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   collectionId: props.collectionId,
   collectionAppId,
   name: serverName,
   status: statusFilter,
+  annotationFilter,
   page,
   pageSize,
   includeTimeBounds: true,

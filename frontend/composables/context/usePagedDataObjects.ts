@@ -34,6 +34,8 @@ export interface PagedDataObjectsOptions {
   pageSize?: number;
   /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
   includeTimeBounds?: boolean;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation lane filter ("predicateIri=value"). */
+  annotationFilter?: Ref<string | undefined>;
 }
 
 export interface PagedDataObjectsResult {
@@ -58,6 +60,7 @@ export interface PagedDataObjectsResult {
 export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObjectsResult {
   const { collectionId, collectionAppId, name, page } = opts;
   const status = opts.status;
+  const annotationFilter = opts.annotationFilter;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
 
@@ -113,6 +116,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         collectionAppId: identifier,
         name: nameFilter,
         status: statusFilter,
+        annotationFilter: annotationFilter?.value || undefined,
         page: currentPage,
         pageSize: pageSize,
         include: includeTimeBounds ? 'time-bounds' : undefined,
@@ -133,9 +137,13 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  const watchSources = status
-    ? [collectionAppId, name, status, page] as const
-    : [collectionAppId, name, page] as const;
+  const watchSources = [
+    collectionAppId,
+    name,
+    page,
+    ...(status ? [status] : []),
+    ...(annotationFilter ? [annotationFilter] : []),
+  ] as const;
   watch(watchSources, () => {
     void fetch();
   }, { immediate: true });

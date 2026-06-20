@@ -246,6 +246,12 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       where += " AND d.status = $status";
     }
 
+    if (paramsWithShepardIds.hasAnnotationFilter()) {
+      paramsMap.put("annoIri", paramsWithShepardIds.getAnnotationFilterPredicateIri());
+      paramsMap.put("annoVal", paramsWithShepardIds.getAnnotationFilterValue());
+      match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
+    }
+
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
       query +=
@@ -342,6 +348,12 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     if (params.hasStatus()) {
       paramsMap.put("status", params.getStatus());
       where += " AND d.status = $status";
+    }
+
+    if (params.hasAnnotationFilter()) {
+      paramsMap.put("annoIri", params.getAnnotationFilterPredicateIri());
+      paramsMap.put("annoVal", params.getAnnotationFilterValue());
+      match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
     }
 
     String query = match + where + " RETURN count(d) AS total";
