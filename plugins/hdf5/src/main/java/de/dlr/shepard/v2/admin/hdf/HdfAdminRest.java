@@ -11,6 +11,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
 import de.dlr.shepard.data.hdf.hsds.HsdsClient;
+import de.dlr.shepard.data.hdf.services.HdfConfigService;
 import de.dlr.shepard.v2.admin.hdf.io.HdfRebuildAclsResultIO;
 import io.quarkus.logging.Log;
 import io.quarkus.resteasy.reactive.server.EndpointDisabled;
@@ -88,6 +89,9 @@ public class HdfAdminRest {
   PermissionsService permissionsService;
 
   @Inject
+  HdfConfigService hdfConfigService;
+
+  @Inject
   Instance<HsdsClient> hsdsClientInstance;
 
   @Inject
@@ -156,13 +160,23 @@ public class HdfAdminRest {
       );
     }
 
+    // Runtime toggle check — allows operators to disable HDF without a restart.
+    if (!hdfConfigService.effectiveEnabled()) {
+      return problem(
+        PROBLEM_TYPE_DISABLED,
+        "HDF feature is disabled",
+        Status.SERVICE_UNAVAILABLE,
+        "HDF feature disabled at runtime; re-enable via PATCH /v2/admin/config/hdf {\"enabled\":true}."
+      );
+    }
+
     if (hsdsClientInstance == null || hsdsClientInstance.isUnsatisfied()) {
       Log.warn("HSDS rebuild-acls invoked while feature is off");
       return problem(
         PROBLEM_TYPE_DISABLED,
         "HDF feature is disabled",
         Status.SERVICE_UNAVAILABLE,
-        "shepard.hdf.enabled=false — set the toggle on and supply HSDS credentials before invoking rebuild-acls."
+        "shepard.hdf.enabled=false at deploy time — restart with shepard.hdf.enabled=true and HSDS credentials configured."
       );
     }
     HsdsClient hsds = hsdsClientInstance.get();
