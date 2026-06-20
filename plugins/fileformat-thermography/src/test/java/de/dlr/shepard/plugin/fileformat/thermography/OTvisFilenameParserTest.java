@@ -68,6 +68,27 @@ class OTvisFilenameParserTest {
     }
 
     @Test
+    void acceptsLayerPlusSuffixVariant() {
+        // L19+ is an official Edevis variant for a planned extra ply (143 files in MFFD archive)
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("S4_M13_L19+_F4.OTvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().section()).isEqualTo("S4");
+        assertThat(g.get().module()).isEqualTo("M13");
+        assertThat(g.get().layer()).isEqualTo("L19+");
+        assertThat(g.get().frame()).isEqualTo("F4");
+    }
+
+    @Test
+    void layerPlusSuffixPreservedInAnnotationValue() {
+        // The + is preserved verbatim so the annotation value round-trips to the filename
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("/uploads/mffd/S1_M2_L5+_F3.otvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().layer()).isEqualTo("L5+");
+    }
+
+    @Test
     void handlesLargeGridNumbers() {
         Optional<OTvisFilenameParser.GridPosition> g =
                 OTvisFilenameParser.parse("S100_M999_L1234_F5678.OTvis");
