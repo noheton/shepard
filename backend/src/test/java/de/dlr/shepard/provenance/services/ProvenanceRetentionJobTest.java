@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.provenance.daos.ActivityDAO;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -20,6 +21,9 @@ class ProvenanceRetentionJobTest {
   @Mock
   ActivityDAO activityDAO;
 
+  @Mock
+  ProvenanceConfigService provenanceConfigService;
+
   ProvenanceRetentionJob job;
 
   @BeforeEach
@@ -27,8 +31,9 @@ class ProvenanceRetentionJobTest {
     MockitoAnnotations.openMocks(this);
     job = new ProvenanceRetentionJob();
     job.activityDAO = activityDAO;
-    job.provenanceEnabled = true;
-    job.retentionDays = 730L;
+    job.provenanceConfigService = provenanceConfigService;
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveRetentionDays()).thenReturn(730L);
   }
 
   @Test
@@ -49,14 +54,14 @@ class ProvenanceRetentionJobTest {
 
   @Test
   void runSkippedWhenProvenanceDisabled() {
-    job.provenanceEnabled = false;
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(false);
     job.runNightly();
     verify(activityDAO, never()).deleteOlderThan(anyLong());
   }
 
   @Test
   void runSkippedWhenRetentionNegative() {
-    job.retentionDays = -1L;
+    when(provenanceConfigService.effectiveRetentionDays()).thenReturn(-1L);
     job.runNightly();
     verify(activityDAO, never()).deleteOlderThan(anyLong());
   }
@@ -71,7 +76,7 @@ class ProvenanceRetentionJobTest {
 
   @Test
   void currentCutoffMillisRespectsRetentionDays() {
-    job.retentionDays = 30L;
+    when(provenanceConfigService.effectiveRetentionDays()).thenReturn(30L);
     long now = System.currentTimeMillis();
     long cutoff = job.currentCutoffMillis();
     long expected = now - 30L * ProvenanceRetentionJob.MILLIS_PER_DAY;
