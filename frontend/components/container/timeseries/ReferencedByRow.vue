@@ -1,13 +1,35 @@
 <script setup lang="ts">
-import {
-  TimeseriesReferenceApi,
-  type DataObject,
-  type Timeseries,
-  type TimeseriesReference,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { type DataObject } from "@dlr-shepard/backend-client";
 import { readDataObjectAppId } from "~/utils/appId";
 import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
+
+interface TimeseriesChannel {
+  device?: string | null;
+  field?: string | null;
+  location?: string | null;
+  measurement?: string | null;
+  symbolicName?: string | null;
+}
+
+interface TimeseriesRefV2 {
+  appId: string;
+  name: string;
+  payload: {
+    start: number;
+    end: number;
+    timeseriesContainerId: number;
+    timeseries: TimeseriesChannel[];
+  };
+}
+
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
 const props = defineProps<{
   dataObject: DataObject;
@@ -41,19 +63,27 @@ const dataObjectHref = computed(() =>
 const expanded = ref(false);
 const loading = ref(false);
 const loaded = ref(false);
-const refsForContainer = ref<TimeseriesReference[]>([]);
+const refsForContainer = ref<TimeseriesRefV2[]>([]);
 
 async function fetchReferences() {
   if (loaded.value || loading.value) return;
+  const appId = doAppId.value;
+  if (!appId) return;
   loading.value = true;
   try {
-    const all = await useShepardApi(TimeseriesReferenceApi)
-      .value.getAllTimeseriesReferences({
-        collectionId: props.dataObject.collectionId,
-        dataObjectId: props.dataObject.id,
-      });
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url = `${v2BaseUrl()}/v2/references?kind=timeseries&dataObjectAppId=${encodeURIComponent(appId)}`;
+    const resp = await fetch(url, {
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        Accept: "application/json",
+      },
+    });
+    if (!resp.ok) throw new Error(`GET /v2/references?kind=timeseries returned ${resp.status}`);
+    const all = (await resp.json()) as TimeseriesRefV2[];
     refsForContainer.value = all.filter(
-      r => r.timeseriesContainerId === props.containerId,
+      r => r.payload?.timeseriesContainerId === props.containerId,
     );
     loaded.value = true;
   } catch (e) {
@@ -68,13 +98,14 @@ function onToggleExpand() {
   if (expanded.value) fetchReferences();
 }
 
-function channelLabel(ts: Timeseries): string {
+function channelLabel(ts: TimeseriesChannel): string {
   return [ts.device, ts.field, ts.location, ts.measurement, ts.symbolicName]
     .filter(Boolean)
     .join(" · ");
 }
 
-function nanosToHumanRange(startNs: number, endNs: number): string {
+function nanosToHumanRange(startNs: number | undefined, endNs: number | undefined): string {
+  if (startNs == null || endNs == null) return "–";
   const startMs = startNs / 1_000_000;
   const endMs = endNs / 1_000_000;
   const fmt = (ms: number) =>
@@ -145,23 +176,23 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
     <div v-else>
       <div
         v-for="ref in refsForContainer"
-        :key="ref.id"
+        :key="ref.appId"
         class="reference-card pa-3 mb-2"
       >
         <div class="d-flex align-baseline mb-1">
           <span class="text-body-2 font-weight-medium">{{ ref.name }}</span>
           <v-spacer />
           <span class="text-caption text-medium-emphasis">
-            {{ ref.timeseries.length }}
-            channel{{ ref.timeseries.length === 1 ? "" : "s" }}
+            {{ (ref.payload?.timeseries ?? []).length }}
+            channel{{ (ref.payload?.timeseries ?? []).length === 1 ? "" : "s" }}
           </span>
         </div>
         <div class="text-caption text-medium-emphasis mb-2 font-mono">
-          {{ nanosToHumanRange(ref.start, ref.end) }}
+          {{ nanosToHumanRange(ref.payload?.start, ref.payload?.end) }}
         </div>
         <div class="d-flex flex-wrap ga-1 mb-2">
           <v-chip
-            v-for="(ts, idx) in ref.timeseries"
+            v-for="(ts, idx) in (ref.payload?.timeseries ?? [])"
             :key="idx"
             size="x-small"
             variant="tonal"
