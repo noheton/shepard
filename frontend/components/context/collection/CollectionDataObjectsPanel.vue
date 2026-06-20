@@ -13,6 +13,17 @@
         style="max-width: 320px"
         @update:model-value="onSearchChange"
       />
+      <!-- Timeline drill-down date filter chip (COLL-TIMELINE-DRILLDOWN-FILTER-1) -->
+      <v-chip
+        v-if="drillDownDate"
+        closable
+        color="primary"
+        size="small"
+        prepend-icon="mdi-calendar-filter"
+        @click:close="clearDrillDownDate"
+      >
+        Day: {{ drillDownDate }}
+      </v-chip>
       <v-chip-group v-model="statusFilter" selected-class="v-chip--variant-flat">
         <v-chip value="" size="small" variant="tonal">All</v-chip>
         <v-chip
@@ -172,7 +183,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
 
@@ -182,7 +193,35 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
+
+// ── Timeline drill-down date filter ──────────────────────────────────────────
+// The collection timeline pane navigates here with ?date=YYYY-MM-DD when a
+// user clicks a bin (COLL-TIMELINE-DRILLDOWN-FILTER-1). We map the calendar
+// day to a 24 h createdAt window and pass it to the server-side filter.
+const drillDownDate = computed<string | undefined>(() => {
+  const d = route.query['date'];
+  return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : undefined;
+});
+
+const drillDownCreatedAfter = computed<string | undefined>(() => {
+  const d = drillDownDate.value;
+  return d ? `${d}T00:00:00.000Z` : undefined;
+});
+
+const drillDownCreatedBefore = computed<string | undefined>(() => {
+  if (!drillDownDate.value) return undefined;
+  const [y, m, day] = drillDownDate.value.split('-').map(Number);
+  const next = new Date(Date.UTC(y!, m! - 1, day! + 1));
+  return next.toISOString().replace(/\.\d{3}Z$/, '.000Z');
+});
+
+function clearDrillDownDate(): void {
+  const q = { ...route.query };
+  delete q['date'];
+  void router.replace({ query: q });
+}
 
 const STATUSES = [
   "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
@@ -219,7 +258,12 @@ const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   page,
   pageSize,
   includeTimeBounds: true,
+  createdAfter: drillDownCreatedAfter,
+  createdBefore: drillDownCreatedBefore,
 });
+
+// Reset to page 0 when the drill-down date filter changes
+watch(drillDownDate, () => { page.value = 0; });
 
 // Computed total pages for the page-jump widget
 const totalPages = computed(() => (totalItems.value != null ? Math.ceil(totalItems.value / pageSize) : 0));

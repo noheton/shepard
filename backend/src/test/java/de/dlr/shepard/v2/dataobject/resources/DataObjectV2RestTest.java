@@ -146,7 +146,7 @@ class DataObjectV2RestTest {
   @Test
   void listReturns404WhenCollectionUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
     assertEquals(404, r.getStatus());
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
@@ -156,7 +156,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -169,7 +169,7 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -190,7 +190,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
       .thenReturn(Map.of(DO_APP_ID, new long[] { 3L, 5L, 2L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -217,7 +217,7 @@ class DataObjectV2RestTest {
     when(timeseriesDataPointRepository.findTimeBoundsByContainerIds(List.of(containerNeo4jId)))
       .thenReturn(Map.of(containerNeo4jId, new long[] { 1_000_000L, 9_000_000L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -240,7 +240,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(8514L);
 
     // page=3, size=25 → firstIndex=75, lastIndex=75 (1 item)
-    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     // Content-Range must be present with format "dataobjects firstIndex-lastIndex/total"
@@ -263,7 +263,7 @@ class DataObjectV2RestTest {
       .thenReturn(Collections.emptyList());
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(0L);
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     String contentRange = (String) r.getHeaders().getFirst("Content-Range");
@@ -283,7 +283,7 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -291,6 +291,67 @@ class DataObjectV2RestTest {
     assertEquals(1, body.size());
     assertNull(body.get(0).getTimeBoundsStart());
     assertNull(body.get(0).getTimeBoundsEnd());
+  }
+
+  // ── list — date range filter (COLL-TIMELINE-DRILLDOWN-FILTER-1) ──────────
+
+  @Test
+  void listPassesCreatedAfterToQueryParams() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(Collections.emptyList());
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
+      "2024-06-15T00:00:00Z", null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    // Verify the QueryParamHelper with createdAfterMs was passed to the service.
+    var captor = org.mockito.ArgumentCaptor.forClass(de.dlr.shepard.common.util.QueryParamHelper.class);
+    verify(dataObjectService).getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), captor.capture(), eq(null));
+    assertNotNull(captor.getValue().getCreatedAfterMs());
+    assertEquals(1718409600000L, captor.getValue().getCreatedAfterMs());
+    assertNull(captor.getValue().getCreatedBeforeMs());
+  }
+
+  @Test
+  void listPassesCreatedRangeToQueryParams() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(Collections.emptyList());
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
+      "2024-06-15T00:00:00Z", "2024-06-16T00:00:00Z", securityContext);
+
+    assertEquals(200, r.getStatus());
+    var captor = org.mockito.ArgumentCaptor.forClass(de.dlr.shepard.common.util.QueryParamHelper.class);
+    verify(dataObjectService).getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), captor.capture(), eq(null));
+    assertNotNull(captor.getValue().getCreatedAfterMs());
+    assertNotNull(captor.getValue().getCreatedBeforeMs());
+    assertEquals(1718409600000L, captor.getValue().getCreatedAfterMs());
+    assertEquals(1718496000000L, captor.getValue().getCreatedBeforeMs());
+  }
+
+  @Test
+  void listIgnoresMalformedDateRange() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(Collections.emptyList());
+
+    // Malformed dates must not cause 500 — they're silently ignored.
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
+      "not-a-date", "also-bad", securityContext);
+
+    assertEquals(200, r.getStatus());
+    var captor = org.mockito.ArgumentCaptor.forClass(de.dlr.shepard.common.util.QueryParamHelper.class);
+    verify(dataObjectService).getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), captor.capture(), eq(null));
+    assertNull(captor.getValue().getCreatedAfterMs());
+    assertNull(captor.getValue().getCreatedBeforeMs());
   }
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -816,7 +877,7 @@ class DataObjectV2RestTest {
   @Test
   void listDefaultTrimDropsHeavyFields() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     // Heavy fields gone by default
@@ -839,7 +900,7 @@ class DataObjectV2RestTest {
   @Test
   void listIncludeFullReturnsFullShape() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     // All fields back including the heavy ones
@@ -852,7 +913,7 @@ class DataObjectV2RestTest {
   @Test
   void listFieldsParamLimitsToRequestedFields() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,name,createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,name,createdAt", null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
@@ -870,7 +931,7 @@ class DataObjectV2RestTest {
   void listFieldsParamAlwaysIncludesIdentity() {
     stubListSingleDataObject();
     // Ask only for createdAt; id, appId, name should still come back as identity guarantees.
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "createdAt", null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
@@ -885,7 +946,7 @@ class DataObjectV2RestTest {
   @Test
   void listFieldsParamEmptyStringTreatedAsAbsent() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "", null, null, securityContext);
     assertEquals(200, r.getStatus());
     // Empty fields → default-trim mode (not 400, not "fields" mode)
     assertEquals("default-trim", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
@@ -896,7 +957,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", null, null, securityContext);
     assertEquals(400, r.getStatus());
     // 400 returns ProblemJson entity with the offending field name in 'detail'
     de.dlr.shepard.common.exceptions.ProblemJson body = (de.dlr.shepard.common.exceptions.ProblemJson) r.getEntity();
@@ -911,7 +972,7 @@ class DataObjectV2RestTest {
   void listFieldsParamWhitespaceTolerated() {
     stubListSingleDataObject();
     // Whitespace around commas should not produce 400.
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", null, null, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("fields", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
   }
@@ -931,8 +992,8 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d, d, d, d, d));
 
-    String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext).getEntity();
-    String full = (String) resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext).getEntity();
+    String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, securityContext).getEntity();
+    String full = (String) resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, null, null, securityContext).getEntity();
     System.out.printf(
       "DB-OPT5 end-to-end measurement (5 DOs, 800-char description + 12-attr map per DO): full=%d B, default-trim=%d B (%.1f%% smaller)%n",
       full.length(), trimmed.length(), 100.0 * (full.length() - trimmed.length()) / full.length()

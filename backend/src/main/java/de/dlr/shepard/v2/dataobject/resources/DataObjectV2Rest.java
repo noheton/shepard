@@ -62,6 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -192,6 +193,14 @@ public class DataObjectV2Rest {
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
+    @Parameter(description = "ISO-8601 instant lower bound on createdAt (inclusive). " +
+      "Used by the collection timeline drill-down to narrow to a specific day. " +
+      "Example: 2024-06-15T00:00:00Z")
+    @QueryParam("createdAfter") String createdAfter,
+    @Parameter(description = "ISO-8601 instant upper bound on createdAt (exclusive). " +
+      "Pair with createdAfter to express a day window. " +
+      "Example: 2024-06-16T00:00:00Z")
+    @QueryParam("createdBefore") String createdBefore,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -222,6 +231,7 @@ public class DataObjectV2Rest {
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
+    if (createdAfter != null || createdBefore != null) params = params.withCreatedRange(createdAfter, createdBefore);
     params = params.withPageAndSize(safePage, safeSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);

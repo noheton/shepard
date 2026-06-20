@@ -245,6 +245,16 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       paramsMap.put("status", paramsWithShepardIds.getStatus());
       where += " AND d.status = $status";
     }
+    if (paramsWithShepardIds.hasCreatedRange()) {
+      if (paramsWithShepardIds.getCreatedAfterMs() != null) {
+        paramsMap.put("createdAfterMs", paramsWithShepardIds.getCreatedAfterMs());
+        where += " AND d.createdAt >= $createdAfterMs";
+      }
+      if (paramsWithShepardIds.getCreatedBeforeMs() != null) {
+        paramsMap.put("createdBeforeMs", paramsWithShepardIds.getCreatedBeforeMs());
+        where += " AND d.createdAt < $createdBeforeMs";
+      }
+    }
 
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
@@ -342,6 +352,16 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     if (params.hasStatus()) {
       paramsMap.put("status", params.getStatus());
       where += " AND d.status = $status";
+    }
+    if (params.hasCreatedRange()) {
+      if (params.getCreatedAfterMs() != null) {
+        paramsMap.put("createdAfterMs", params.getCreatedAfterMs());
+        where += " AND d.createdAt >= $createdAfterMs";
+      }
+      if (params.getCreatedBeforeMs() != null) {
+        paramsMap.put("createdBeforeMs", params.getCreatedBeforeMs());
+        where += " AND d.createdAt < $createdBeforeMs";
+      }
     }
 
     String query = match + where + " RETURN count(d) AS total";

@@ -34,6 +34,10 @@ export interface PagedDataObjectsOptions {
   pageSize?: number;
   /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
   includeTimeBounds?: boolean;
+  /** ISO-8601 instant lower bound on createdAt (inclusive). From timeline drill-down ?date= param. */
+  createdAfter?: Ref<string | undefined>;
+  /** ISO-8601 instant upper bound on createdAt (exclusive). From timeline drill-down ?date= param. */
+  createdBefore?: Ref<string | undefined>;
 }
 
 export interface PagedDataObjectsResult {
@@ -60,6 +64,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const status = opts.status;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
+  const createdAfter = opts.createdAfter;
+  const createdBefore = opts.createdBefore;
 
   // DB-OPT5: explicit ?fields= allow-list of exactly what the collection-detail
   // panel renders. Drops description, attributes, predecessor/successor arrays,
@@ -117,6 +123,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         pageSize: pageSize,
         include: includeTimeBounds ? 'time-bounds' : undefined,
         fields: DO_LIST_FIELDS,
+        createdAfter: createdAfter?.value || undefined,
+        createdBefore: createdBefore?.value || undefined,
       });
       const fetchedTotal = parseTotalCount(raw.raw.headers);
       const batch: DataObjectListItemV2[] = await raw.value();
@@ -133,9 +141,14 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  const watchSources = status
-    ? [collectionAppId, name, status, page] as const
-    : [collectionAppId, name, page] as const;
+  const watchSources = [
+    collectionAppId,
+    name,
+    page,
+    ...(status ? [status] : []),
+    ...(createdAfter ? [createdAfter] : []),
+    ...(createdBefore ? [createdBefore] : []),
+  ] as const;
   watch(watchSources, () => {
     void fetch();
   }, { immediate: true });

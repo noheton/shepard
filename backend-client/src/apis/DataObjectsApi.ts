@@ -74,6 +74,10 @@ export interface GetRdfRequest {
 
 export interface ListDataObjectsRequest {
     collectionAppId: string;
+    /** ISO-8601 instant lower bound on createdAt (inclusive). Example: 2024-06-15T00:00:00Z */
+    createdAfter?: string;
+    /** ISO-8601 instant upper bound on createdAt (exclusive). Example: 2024-06-16T00:00:00Z */
+    createdBefore?: string;
     fields?: string;
     include?: string;
     name?: string;
@@ -429,6 +433,14 @@ export class DataObjectsApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['createdAfter'] != null) {
+            queryParameters['createdAfter'] = requestParameters['createdAfter'];
+        }
+
+        if (requestParameters['createdBefore'] != null) {
+            queryParameters['createdBefore'] = requestParameters['createdBefore'];
+        }
 
         if (requestParameters['fields'] != null) {
             queryParameters['fields'] = requestParameters['fields'];

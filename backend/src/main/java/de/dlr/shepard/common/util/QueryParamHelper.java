@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.util;
 
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
+import java.time.Instant;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,10 @@ public class QueryParamHelper {
   private Long successorId;
   private OrderByAttribute orderByAttribute;
   private Boolean orderDesc;
+  /** Epoch-millis lower bound for {@code d.createdAt} (inclusive). Null → no lower bound. */
+  private Long createdAfterMs;
+  /** Epoch-millis upper bound for {@code d.createdAt} (exclusive). Null → no upper bound. */
+  private Long createdBeforeMs;
 
   public QueryParamHelper withName(String name) {
     this.name = name;
@@ -83,5 +88,26 @@ public class QueryParamHelper {
 
   public boolean hasOrderByAttribute() {
     return this.orderByAttribute != null;
+  }
+
+  /**
+   * Set a creation-date range filter. Both strings must be ISO-8601 instants
+   * (e.g. {@code "2024-06-15T00:00:00Z"}). Either may be null to suppress that
+   * bound. Malformed strings are silently ignored (no bound is set).
+   */
+  public QueryParamHelper withCreatedRange(String afterIso, String beforeIso) {
+    if (afterIso != null) {
+      try { this.createdAfterMs = Instant.parse(afterIso).toEpochMilli(); }
+      catch (Exception ignored) {}
+    }
+    if (beforeIso != null) {
+      try { this.createdBeforeMs = Instant.parse(beforeIso).toEpochMilli(); }
+      catch (Exception ignored) {}
+    }
+    return this;
+  }
+
+  public boolean hasCreatedRange() {
+    return createdAfterMs != null || createdBeforeMs != null;
   }
 }
