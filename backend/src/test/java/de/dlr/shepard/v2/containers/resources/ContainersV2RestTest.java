@@ -479,10 +479,13 @@ class ContainersV2RestTest {
     allowRead();
     var col = new de.dlr.shepard.context.collection.entities.Collection();
     col.setShepardId(1L);
+    col.setAppId("coll-app-1");
     var dataObject = new de.dlr.shepard.context.collection.entities.DataObject();
     dataObject.setAppId("do-app-1");
     dataObject.setCollection(col);
     var doIo = new de.dlr.shepard.context.collection.io.DataObjectIO(dataObject);
+    // MISSING-V2-APPID-IN-REFLISTS: collectionAppId must be populated in linked-DO response
+    assertEquals("coll-app-1", doIo.getCollectionAppId());
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of(doIo)));
     var r = resource.getLinkedDataObjects(APP_ID, securityContext);
     assertEquals(200, r.getStatus());

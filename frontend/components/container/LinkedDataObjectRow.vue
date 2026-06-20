@@ -1,35 +1,22 @@
 <script setup lang="ts">
 import type { DataObject } from "@dlr-shepard/backend-client";
 import { readDataObjectAppId } from "~/utils/appId";
-import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 
 const props = defineProps<{
   dataObject: DataObject;
 }>();
 
-// V2-LINKS: routes carry the UUID-v7 appId, never the numeric Neo4j id —
-// the v2 detail routes 404 on a numeric segment (operator-surfaced
-// /collections/367014 dead link). The DataObject carries its own appId on
-// the wire but only a numeric collectionId, so we resolve the owning
-// collection's appId via the shared cache.
-const { resolve: resolveCollectionAppId, peek: peekCollectionAppId } =
-  useCollectionAppIdResolver();
-const collectionAppIdRef = ref<string | null>(
-  peekCollectionAppId(props.dataObject.collectionId),
-);
-onMounted(async () => {
-  collectionAppIdRef.value = await resolveCollectionAppId(
-    props.dataObject.collectionId,
-  );
-});
-
+// MISSING-V2-APPID-IN-REFLISTS: collectionAppId now travels on the wire
+// directly — no async resolver round-trip needed.
 const doAppId = computed(() => readDataObjectAppId(props.dataObject));
 const collectionHref = computed(() =>
-  collectionAppIdRef.value ? `/collections/${collectionAppIdRef.value}` : null,
+  props.dataObject.collectionAppId
+    ? `/collections/${props.dataObject.collectionAppId}`
+    : null,
 );
 const dataObjectHref = computed(() =>
-  collectionAppIdRef.value && doAppId.value
-    ? `/collections/${collectionAppIdRef.value}/dataObjects/${doAppId.value}`
+  props.dataObject.collectionAppId && doAppId.value
+    ? `/collections/${props.dataObject.collectionAppId}/dataObjects/${doAppId.value}`
     : null,
 );
 </script>

@@ -119,6 +119,27 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private int structuredDataReferenceCount;
 
   /**
+   * MISSING-V2-APPID-IN-REFLISTS — {@code appId} (UUID v7) of the owning
+   * {@code :Collection}. Absent from the wire when {@code null} (pre-L2b
+   * rows or collections that predate the appId backfill). Use this field
+   * to build collection-scoped v2 routes without a secondary lookup —
+   * e.g. {@code /collections/{collectionAppId}/dataObjects/{dataObject.appId}}.
+   *
+   * <p>Eliminates the async {@code useCollectionAppIdResolver(collectionId)}
+   * round-trip in {@code LinkedDataObjectRow.vue} and {@code ReferencedByRow.vue}.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    readOnly = true,
+    description =
+      "MISSING-V2-APPID-IN-REFLISTS: appId (UUID v7) of the owning Collection. " +
+      "Absent when null (pre-L2b rows). Use to build v2 collection-scoped routes " +
+      "without a secondary collectionId→appId lookup."
+  )
+  private String collectionAppId;
+
+  /**
    * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — {@code appId} of the
    * {@code :ShepardTemplate} this DataObject was created from, or
    * {@code null} when the DataObject was created without a template
@@ -156,6 +177,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
   public DataObjectIO(DataObject dataObject) {
     super(dataObject);
     this.collectionId = dataObject.getCollection().getShepardId();
+    this.collectionAppId = dataObject.getCollection().getAppId();
     this.referenceIds = extractShepardIds(dataObject.getReferences());
     this.successorIds = extractShepardIds(dataObject.getSuccessors());
     this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
@@ -185,6 +207,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     DataObjectIO other = (DataObjectIO) o;
     return (
       collectionId == other.collectionId &&
+      Objects.equals(collectionAppId, other.collectionAppId) &&
       HasId.areEqualSets(referenceIds, other.referenceIds) &&
       HasId.areEqualSets(successorIds, other.successorIds) &&
       HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
@@ -201,6 +224,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + ((Long) collectionId).hashCode();
+    result = prime * result + Objects.hashCode(collectionAppId);
     result = prime * result + HasId.hashcodeHelper(referenceIds);
     result = prime * result + HasId.hashcodeHelper(successorIds);
     result = prime * result + HasId.hashcodeHelper(childrenIds);

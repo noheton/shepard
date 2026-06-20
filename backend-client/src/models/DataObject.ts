@@ -110,11 +110,17 @@ export interface DataObject {
      */
     embargoEndDate?: string | null;
     /**
-     * 
+     *
      * @type {number}
      * @memberof DataObject
      */
     readonly collectionId: number;
+    /**
+     * MISSING-V2-APPID-IN-REFLISTS: appId (UUID v7) of the owning Collection. Absent when null (pre-L2b rows). Use to build v2 collection-scoped routes without a secondary collectionId→appId lookup.
+     * @type {string}
+     * @memberof DataObject
+     */
+    readonly collectionAppId?: string | null;
     /**
      * 
      * @type {Array<number>}
@@ -265,6 +271,7 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'createdByOrcid': json['createdByOrcid'] == null ? undefined : json['createdByOrcid'],
         'embargoEndDate': json['embargoEndDate'] == null ? undefined : json['embargoEndDate'],
         'collectionId': json['collectionId'],
+        'collectionAppId': json['collectionAppId'] == null ? undefined : json['collectionAppId'],
         'referenceIds': json['referenceIds'],
         'successorIds': json['successorIds'],
         'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
@@ -279,7 +286,7 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function DataObjectToJSON(value?: Omit<DataObject, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'collectionId'|'referenceIds'|'successorIds'|'childrenIds'|'incomingIds'|'timeseriesReferenceCount'|'fileBundleCount'|'structuredDataReferenceCount'|'attachedTemplateAppId'|'videoStreamReferenceCount'> | null): any {
+export function DataObjectToJSON(value?: Omit<DataObject, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'collectionId'|'collectionAppId'|'referenceIds'|'successorIds'|'childrenIds'|'incomingIds'|'timeseriesReferenceCount'|'fileBundleCount'|'structuredDataReferenceCount'|'attachedTemplateAppId'|'videoStreamReferenceCount'> | null): any {
     if (value == null) {
         return value;
     }

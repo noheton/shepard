@@ -81,6 +81,7 @@ class DataObjectV2RestTest {
   static DataObject makeDataObject(long ogmId, String appId, String name) {
     Collection coll = new Collection();
     coll.setShepardId(COLL_OGM_ID);
+    coll.setAppId(COLL_APP_ID);
     DataObject d = new DataObject();
     d.setShepardId(ogmId);
     d.setAppId(appId);
@@ -329,6 +330,8 @@ class DataObjectV2RestTest {
     DataObjectIO io = (DataObjectIO) r.getEntity();
     assertNotNull(io);
     assertEquals(DO_APP_ID, io.getAppId());
+    // MISSING-V2-APPID-IN-REFLISTS: owning collection's appId must travel on the wire
+    assertEquals(COLL_APP_ID, io.getCollectionAppId());
   }
 
   // ── create ────────────────────────────────────────────────────────────────
