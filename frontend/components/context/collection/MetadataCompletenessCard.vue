@@ -21,7 +21,7 @@
  *     license, accessRights, dataObjectIds
  *   - SemanticAnnotation count — `AnnotatedCollection.fetchAnnotations`
  *   - Lab journal entry count — `useFetchCollectionLabJournalEntries`
- *   - Creator ORCID — `UserApi.getUser({username: createdBy})`
+ *   - Creator ORCID — `collection.createdByOrcid` (stamped at creation; no secondary fetch)
  *   - Keyword count — conservatively 0 until a keyword-annotation
  *     endpoint ships (FAIR8 follow-up in aidocs/16-dispatcher-backlog.md)
  *
@@ -29,10 +29,9 @@
  * `null` and the score is conservatively biased toward "incomplete"
  * during loading. The widget never blocks the page render.
  */
-import { UserApi, type Collection } from "@dlr-shepard/backend-client";
+import type { Collection } from "@dlr-shepard/backend-client";
 import { AnnotatedCollection } from "~/composables/annotated";
 import { useFetchCollectionLabJournalEntries } from "~/composables/context/useFetchCollectionLabJournalEntries";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   computeMetadataCompleteness,
   type MetadataCheck,
@@ -101,40 +100,31 @@ const labJournalCount = computed<number | null>(() =>
     : labJournalEntries.value.length,
 );
 
-// ── Fetch: creator ORCID ─────────────────────────────────────────────────
+// ── Creator ORCID ─────────────────────────────────────────────────────────
 //
-// Same Nuxt-context constraint as the annotation fetch — capture the
-// API binding in setup scope, invoke from `onMounted`.
-const userApi = useShepardApi(UserApi);
-const creatorOrcid = ref<string | null>(null);
-async function fetchCreatorOrcid() {
-  const username = props.collection.createdBy?.trim();
-  if (!username) return;
-  try {
-    const user = await userApi.value.getUser({ username });
-    const orcid = (user as unknown as { orcid?: string | null }).orcid ?? null;
-    creatorOrcid.value = orcid ?? "";
-  } catch {
-    // 404 on user is recoverable — treat as "no ORCID set".
-    creatorOrcid.value = "";
-  }
-}
+// collection.createdByOrcid is stamped by the backend at creation time from
+// the creator's User.orcid (AbstractDataObjectIO). Reading it directly avoids
+// the getUser({username: createdBy}) call that produced noisy 404s:
+// collection.createdBy carries a resolved display name (from
+// DisplayNameResolver.effectiveDisplayName), not the raw Keycloak username
+// that getUser expects.
+const creatorOrcid = computed<string | null>(() =>
+  props.collection.createdByOrcid ?? null,
+);
 
 // Initial best-effort fetch on mount + re-fire on auth-settle. The
 // `useAuth().data` ref starts `null` and populates once the
-// NextAuth session has been resolved. Without the watcher the card
-// permanently shows `null`/`0` for both fetches.
+// NextAuth session has been resolved. Without the watcher the annotation
+// fetch would permanently show `0` on first load due to the 401 race.
 const { data: authData } = useAuth();
 onMounted(() => {
   void fetchAnnotationCount();
-  void fetchCreatorOrcid();
 });
 watch(
   () => authData.value?.accessToken,
   newToken => {
     if (newToken) {
       void fetchAnnotationCount();
-      void fetchCreatorOrcid();
     }
   },
 );
