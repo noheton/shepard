@@ -14,7 +14,11 @@
  * `CollectionCrossTrackViewPane.vue` (vue-echarts + bar/grid/tooltip
  * components); zero new chart dependencies.
  */
-import { useCollectionTimeline } from "~/composables/context/useCollectionTimeline";
+import {
+  useCollectionTimeline,
+  fetchCollectionsForCompare,
+  type CollectionSummary,
+} from "~/composables/context/useCollectionTimeline";
 import {
   buildLaneOption,
   drillDownPath,
@@ -50,16 +54,52 @@ const props = defineProps<{
 }>();
 
 const binSizeDays = ref<number>(1);
-const { envelope, loading, error, fetchTimeline } = useCollectionTimeline();
+const { envelope, loading, error, fetchTimeline, fetchCrossTimeline } = useCollectionTimeline();
 
 const renderable = computed(() => hasRenderableData(envelope.value));
 const echoedBinSize = computed(() => envelope.value?.binSizeDays ?? binSizeDays.value);
 
 const lanes = computed(() => envelope.value?.lanes ?? []);
 
+// ── "Compare with" state ─────────────────────────────────────────────────────
+
+const compareIds = ref<string[]>([]);
+const selectorItems = ref<CollectionSummary[]>([]);
+const selectorLoading = ref(false);
+
+async function loadSelectorItems(): Promise<void> {
+  selectorLoading.value = true;
+  try {
+    const { data: session } = useAuth();
+    const token = session.value?.accessToken;
+    if (!token) return;
+    selectorItems.value = await fetchCollectionsForCompare(token);
+  } catch {
+    // autocomplete best-effort — silent failure is acceptable
+  } finally {
+    selectorLoading.value = false;
+  }
+}
+
+/** Options for the autocomplete: all accessible collections except the current one. */
+const compareOptions = computed(() =>
+  selectorItems.value
+    .filter((c) => c.appId !== props.collectionAppId)
+    .map((c) => ({
+      value: c.appId,
+      title: c.name ? `${c.name} (${c.appId.slice(0, 8)}…)` : c.appId,
+    })),
+);
+
+// ── fetch orchestration ──────────────────────────────────────────────────────
+
 async function refresh(): Promise<void> {
   if (!props.collectionAppId) return;
-  await fetchTimeline(props.collectionAppId, binSizeDays.value);
+  if (compareIds.value.length > 0) {
+    await fetchCrossTimeline([props.collectionAppId, ...compareIds.value], binSizeDays.value);
+  } else {
+    await fetchTimeline(props.collectionAppId, binSizeDays.value);
+  }
 }
 
 function onBinSizeChange(value: number | null): void {
@@ -97,14 +137,20 @@ function makeBinClickHandler(laneIndex: number) {
 
 onMounted(() => {
   void refresh();
+  void loadSelectorItems();
 });
 
 watch(
   () => props.collectionAppId,
   () => {
+    compareIds.value = [];
     void refresh();
   },
 );
+
+watch(compareIds, () => {
+  void refresh();
+});
 </script>
 
 <template>
@@ -121,6 +167,22 @@ watch(
         <template v-else>Loading timeline…</template>
       </div>
       <v-spacer />
+      <!-- COLL-TIMELINE-CROSS-1 — compare-with selector -->
+      <v-autocomplete
+        v-model="compareIds"
+        :items="compareOptions"
+        :loading="selectorLoading"
+        label="Compare with…"
+        density="compact"
+        variant="outlined"
+        multiple
+        chips
+        closable-chips
+        hide-details
+        clearable
+        class="compare-selector"
+        data-testid="timeline-compare-selector"
+      />
       <v-btn-toggle
         :model-value="binSizeDays"
         density="compact"
@@ -239,6 +301,10 @@ watch(
 .swimlane-chart {
   min-height: 88px;
   width: 100%;
+}
+.compare-selector {
+  min-width: 200px;
+  max-width: 340px;
 }
 .empty-state {
   margin-top: 16px;

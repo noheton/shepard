@@ -193,6 +193,91 @@ public class CollectionTimelineDAO {
     return n.longValue();
   }
 
+  // Cypher for multi-collection (IN-list) aggregation; identical in shape to
+  // CYPHER but joins via WHERE coll.appId IN $appIds instead of a property filter.
+  private static final String CYPHER_MULTI =
+    "MATCH (coll:Collection)-[:" + Constants.HAS_DATAOBJECT + "]->(d:DataObject) " +
+    "WHERE coll.appId IN $appIds " +
+    "  AND (d.deleted IS NULL OR d.deleted = false) " +
+    "OPTIONAL MATCH (a:SemanticAnnotation { propertyIRI: $predicateIri, subjectAppId: d.appId }) " +
+    "WITH d, coalesce(a.valueName, $unclassifiedKey) AS laneKey " +
+    "WITH laneKey, " +
+    "     CASE WHEN d.createdAt IS NULL THEN 0 ELSE d.createdAt END AS createdAtMs, " +
+    "     d.status AS status " +
+    "WITH laneKey, " +
+    "     CASE WHEN createdAtMs = 0 THEN 0 ELSE " +
+    "       datetime({epochMillis: createdAtMs}).truncate('day').epochMillis " +
+    "     END AS dayMs, " +
+    "     status " +
+    "RETURN laneKey, dayMs, count(*) AS cnt, " +
+    "       sum(CASE WHEN status IN ['NCR_OPEN','CONCESSION_PENDING'] THEN 1 ELSE 0 END) AS ncrCnt, " +
+    "       sum(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END) AS rejectCnt " +
+    "ORDER BY dayMs ASC";
+
+  private static final String CYPHER_RANGE_MULTI =
+    "MATCH (coll:Collection)-[:" + Constants.HAS_DATAOBJECT + "]->(d:DataObject) " +
+    "WHERE coll.appId IN $appIds " +
+    "  AND (d.deleted IS NULL OR d.deleted = false) " +
+    "  AND d.createdAt IS NOT NULL " +
+    "RETURN min(d.createdAt) AS minMs, max(d.createdAt) AS maxMs, count(d) AS total";
+
+  /**
+   * Multi-collection variant — aggregates DataObjects from all listed Collections
+   * into a single swimlane envelope (same shape as {@link #aggregate(String)}).
+   *
+   * <p>Callers are responsible for verifying Read access on each Collection in
+   * {@code collectionAppIds} before invoking this method.
+   *
+   * @param collectionAppIds non-null, non-empty list of Collection appIds
+   * @return aggregate result; rows ordered by day ascending
+   */
+  public TimelineAggregate aggregateMulti(List<String> collectionAppIds) {
+    if (collectionAppIds == null || collectionAppIds.isEmpty()) {
+      return new TimelineAggregate(List.of(), 0L, null, null);
+    }
+    if (collectionAppIds.size() == 1) {
+      return aggregate(collectionAppIds.get(0));
+    }
+    var session = NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) {
+      return new TimelineAggregate(List.of(), 0L, null, null);
+    }
+
+    Map<String, Object> params = new LinkedHashMap<>();
+    params.put("appIds", collectionAppIds);
+    params.put("predicateIri", PROCESS_TYPE_PREDICATE_IRI);
+    params.put("unclassifiedKey", UNCLASSIFIED_LANE_KEY);
+
+    List<TimelineRow> rows = new ArrayList<>();
+    long total = 0L;
+    var binResult = session.query(CYPHER_MULTI, params);
+    for (var row : binResult) {
+      String laneKey = stringOf(row.get("laneKey"));
+      long dayMs = longOf(row.get("dayMs"));
+      long cnt = longOf(row.get("cnt"));
+      long ncrCnt = longOf(row.get("ncrCnt"));
+      long rejectCnt = longOf(row.get("rejectCnt"));
+      if (laneKey == null) laneKey = UNCLASSIFIED_LANE_KEY;
+      rows.add(new TimelineRow(laneKey, dayMs, cnt, ncrCnt, rejectCnt));
+      total += cnt;
+    }
+
+    Long minMs = null;
+    Long maxMs = null;
+    var rangeResult = session.query(CYPHER_RANGE_MULTI, Map.of("appIds", collectionAppIds));
+    for (var row : rangeResult) {
+      Object rawMin = row.get("minMs");
+      Object rawMax = row.get("maxMs");
+      if (rawMin instanceof Number n) minMs = toEpochMillis(n);
+      if (rawMax instanceof Number n) maxMs = toEpochMillis(n);
+      Object rawTotal = row.get("total");
+      if (rawTotal instanceof Number n && total == 0L) total = n.longValue();
+      break;
+    }
+
+    return new TimelineAggregate(rows, total, minMs, maxMs);
+  }
+
   /** Visible for tests. */
   static String getProcessTypePredicateIri() {
     return PROCESS_TYPE_PREDICATE_IRI;

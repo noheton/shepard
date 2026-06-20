@@ -231,6 +231,44 @@ describe("COLL-TIMELINE-1 — toolbar contract", () => {
   });
 });
 
+describe("COLL-TIMELINE-CROSS-1 — fetchCrossTimeline builds multi-collection URL", () => {
+  it("sends repeated collections= params and binSizeDays to the cross-collection endpoint", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        binSizeDays: 7,
+        rangeStart: "2024-01-01T00:00:00Z",
+        rangeEnd: "2024-01-10T00:00:00Z",
+        totalDataObjects: 5,
+        lanes: [],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    vi.stubGlobal("useRuntimeConfig", () => ({
+      public: { backendV2ApiUrl: "https://shepard.test" },
+    }));
+    vi.stubGlobal("useAuth", () => ({ data: { value: { accessToken: "tok" } } }));
+
+    const { useCollectionTimeline } = await import(
+      "../../composables/context/useCollectionTimeline"
+    );
+    const { fetchCrossTimeline, envelope } = useCollectionTimeline();
+    await fetchCrossTimeline(["coll-a", "coll-b"], 7);
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const calledUrl = fetchSpy.mock.calls[0]![0] as string;
+    expect(calledUrl).toContain("/v2/collections/timeline");
+    expect(calledUrl).toContain("collections=coll-a");
+    expect(calledUrl).toContain("collections=coll-b");
+    expect(calledUrl).toContain("binSizeDays=7");
+    // Must NOT call single-collection endpoint
+    expect(calledUrl).not.toMatch(/\/v2\/collections\/coll-[ab]\/timeline/);
+    expect(envelope.value?.totalDataObjects).toBe(5);
+
+    vi.unstubAllGlobals();
+  });
+});
+
 describe("COLL-TIMELINE-1 — 4K viewport regression (option size stays fluid)", () => {
   it("does not pin pixel widths in the chart option (autoresize takes care of 4K)", () => {
     const option = buildLaneOption(lane(), 1) as {
