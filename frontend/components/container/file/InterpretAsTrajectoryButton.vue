@@ -18,11 +18,7 @@
  * appId rules it addresses entities by appId, targets /v2/, and never asks for a
  * path/URL.
  */
-import {
-  FileReferenceApi,
-  type FileReference,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import type { FileReference } from "@dlr-shepard/backend-client";
 import {
   useKrlTrajectory,
   defaultTrajectoryNameFor as krlDefaultName,
@@ -41,8 +37,6 @@ import {
 
 interface Props {
   fileReference: FileReference;
-  collectionId: number;
-  dataObjectId: number;
   /** appId of the parent DataObject — the trajectory defaults to attaching here. */
   dataObjectAppId: string;
   /** Path back to the DataObject detail page (for the result link). */
@@ -65,8 +59,25 @@ const fileKind = computed<"krl" | "urscript" | null>(() => {
 
 const isRobotSrc = computed(() => fileKind.value !== null);
 
+// V2-SWEEP-004-4: file-list for URDF/dat pickers now fetched from
+// GET /v2/references?kind=file&dataObjectAppId= instead of the v1 numeric-id path.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+function authHeaders(): Record<string, string> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
 const showDialog = ref(false);
-const collectionFileReferences = ref<FileReference[]>([]);
+const collectionFileReferences = ref<Array<{ name: string; appId: string | null }>>([]);
 const isLoadingRefs = ref(false);
 
 const urdfFileAppId = ref<string | null>(null);
@@ -121,16 +132,22 @@ const targetHintText = computed(() =>
 async function fetchFileReferencesForDataObject() {
   isLoadingRefs.value = true;
   try {
-    const refs = await useShepardApi(FileReferenceApi)
-      .value.getAllFileReferences({
-        collectionId: props.collectionId,
-        dataObjectId: props.dataObjectId,
-      })
-      .catch(e => {
-        handleError(e, "fetchFileReferencesForDataObject");
-        return [] as FileReference[];
-      });
-    collectionFileReferences.value = refs;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=file&dataObjectAppId=${encodeURIComponent(props.dataObjectAppId)}`;
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) {
+      handleError(new Error(`HTTP ${res.status}`), "fetchFileReferencesForDataObject");
+      collectionFileReferences.value = [];
+      return;
+    }
+    collectionFileReferences.value = (await res.json()) as Array<{
+      name: string;
+      appId: string | null;
+    }>;
+  } catch (e) {
+    handleError(e as Error, "fetchFileReferencesForDataObject");
+    collectionFileReferences.value = [];
   } finally {
     isLoadingRefs.value = false;
   }

@@ -204,8 +204,6 @@ watch(fileReference, () => {
               <v-col cols="12" class="d-flex flex-wrap ga-2">
                 <InterpretAsTrajectoryButton
                   :file-reference="fileReference"
-                  :collection-id="collectionNumericId ?? 0"
-                  :data-object-id="dataObjectNumericId ?? 0"
                   :data-object-app-id="dataObject.appId"
                   :data-object-path="collectionsPath + routeParams.collectionId + dataObjectsPathFragment + routeParams.dataObjectId"
                   :can-edit="!!isAllowedToEditCollection"
