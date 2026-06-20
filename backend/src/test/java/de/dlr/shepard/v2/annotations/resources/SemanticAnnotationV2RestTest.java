@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
@@ -22,11 +24,14 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.references.services.ReferencesV2Service;
+import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -64,6 +69,9 @@ class SemanticAnnotationV2RestTest {
   de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints projectAnnotationConstraints;
 
   @Mock
+  ReferencesV2Service referencesService;
+
+  @Mock
   ContainerRequestContext requestContext;
 
   @Mock
@@ -84,10 +92,15 @@ class SemanticAnnotationV2RestTest {
     resource.ontologyConfigService = ontologyConfigService;
     resource.provenanceService = provenanceService;
     resource.projectAnnotationConstraints = projectAnnotationConstraints;
+    resource.referencesService = referencesService;
     resource.requestContext = requestContext;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
+
+    // Default: resolveWithLabels returns DataObject labels for the standard subject.
+    when(entityIdResolver.resolveWithLabels(SUBJ_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("DataObject")));
 
     // Default: caller has Read+Write+Manage on the DataObject subject
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Read), eq(CALLER)))
@@ -531,7 +544,8 @@ class SemanticAnnotationV2RestTest {
   void get_collectionSubject_usesOgmIdPermissionCheck() {
     var ann = annotation(ANN_APP_ID, "coll-001", "Collection", PREDICATE_IRI, "v");
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(entityIdResolver.resolveLong("coll-001")).thenReturn(OGM_ID);
+    when(entityIdResolver.resolveWithLabels("coll-001"))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
     when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L)))
       .thenReturn(true);
 
@@ -634,6 +648,70 @@ class SemanticAnnotationV2RestTest {
     assertThat(io.getSourceMode())
       .as("X-AI-Agent header present without explicit sourceMode → must default to 'ai'")
       .isEqualTo("ai");
+  }
+
+  // ─── F9: Reference subject — walks to parent DataObject ──────────────────
+
+  static final String REF_APP_ID = "ref-001";
+  static final String PARENT_DO_APP_ID = "do-parent-001";
+
+  /**
+   * F9 — POST annotation on a FileReference subject: the gate resolves the
+   * parent DataObject appId and calls isAccessAllowedForDataObjectAppId with it
+   * (not with the Reference appId), then returns 201.
+   */
+  @Test
+  void create_referenceSubject_walksToParentDataObject_returns201() {
+    // Set up resolver: REF_APP_ID resolves to a FileReference node
+    when(entityIdResolver.resolveWithLabels(REF_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(99L, List.of("FileReference")));
+
+    // Set up reference service: resolves to a reference whose parent DO has PARENT_DO_APP_ID
+    BasicReference stubRef = new BasicReference();
+    DataObject parentDo = new DataObject();
+    parentDo.setAppId(PARENT_DO_APP_ID);
+    stubRef.setDataObject(parentDo);
+    ReferenceKindHandler stubHandler = org.mockito.Mockito.mock(ReferenceKindHandler.class);
+    when(referencesService.resolveByAppId(REF_APP_ID))
+      .thenReturn(Optional.of(new ReferencesV2Service.ResolvedReference(stubHandler, stubRef)));
+
+    // Grant write on the parent DO
+    when(permissionsService.isAccessAllowedForDataObjectAppId(
+        eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+
+    CreateAnnotationIO body = createBody("FileReference", REF_APP_ID, PREDICATE_IRI, "annotated-ref", null);
+    Response r = resource.create(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    // Verify gating used the PARENT DO appId, not the Reference appId
+    verify(permissionsService)
+      .isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER));
+  }
+
+  /**
+   * F9 — POST annotation on a FileReference subject where the caller lacks Write
+   * on the parent DataObject: must return 403, not 201.
+   */
+  @Test
+  void create_referenceSubject_denied_when_parentDoForbidden() {
+    when(entityIdResolver.resolveWithLabels(REF_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(99L, List.of("FileReference")));
+
+    BasicReference stubRef = new BasicReference();
+    DataObject parentDo = new DataObject();
+    parentDo.setAppId(PARENT_DO_APP_ID);
+    stubRef.setDataObject(parentDo);
+    ReferenceKindHandler stubHandler = org.mockito.Mockito.mock(ReferenceKindHandler.class);
+    when(referencesService.resolveByAppId(REF_APP_ID))
+      .thenReturn(Optional.of(new ReferencesV2Service.ResolvedReference(stubHandler, stubRef)));
+
+    when(permissionsService.isAccessAllowedForDataObjectAppId(
+        eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+
+    CreateAnnotationIO body = createBody("FileReference", REF_APP_ID, PREDICATE_IRI, "v", null);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(403);
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────
