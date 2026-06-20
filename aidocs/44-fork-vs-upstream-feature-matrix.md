@@ -91,6 +91,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Toggle `source` field (`"default"` / `"config"` / `"runtime"`) on each toggle entry returned by `GET /v2/admin/features` and `PATCH /v2/admin/features/{name}` | none | `FeatureToggleEntry.getSource()` — returns `"runtime"` when overridden by PATCH, `"config"` when an `application.properties` key is present, `"default"` otherwise. `FeatureToggleIO` carries the field; no new endpoints, no schema change. 3 new `AdminFeaturesRestTest` cases. | **✓ ↑** | DX7 |
 | Spatial-data namespace alias (`shepard.spatial-data.*` → `shepard.infrastructure.spatial.*`) | only old names | both names resolve; old logs deprecation warning; removal v6.0 | **✓ ↑** | A3c / `aidocs/platform/A3c-namespace-migration.md` |
 | Permission cache TTL/max-size config | hard-coded global defaults | `shepard.permissions.cache.ttl` (`PT5M`) + `.max-size` (`10000`) | **✓ ↑** | A4 |
+| Runtime-mutable provenance config (`enabled`, `captureReads`, `retentionDays`) via `:ProvenanceConfig` singleton + `GET/PATCH /v2/admin/config/provenance` | deploy-time props only | `ProvenanceConfigDescriptor` in ConfigRegistry; `ProvenanceCaptureFilter` + `ProvenanceRetentionJob` read from service at runtime | **✓ ↑** | FTOGGLE-PROV-1 |
 
 ## 3. Auth / API keys / security
 
