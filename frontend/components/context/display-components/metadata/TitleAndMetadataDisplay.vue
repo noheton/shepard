@@ -23,6 +23,8 @@ interface TitleAndMetadataDisplayProps {
       availability?: "available" | "deleted" | "forbidden" | "error";
     };
   };
+  /** TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: MDI icon key to show before the title. */
+  iconKey?: string | null;
   onDelete?: () => void;
   onDownload?: (name: string) => void;
   onAnnotate?: () => void;
@@ -39,6 +41,7 @@ const { advancedMode } = useAdvancedMode();
   <v-container fluid class="pt-0 pl-0 pr-0">
     <v-row no-gutters>
       <v-col cols="12" class="ml-n1 pb-6 d-flex align-center ga-3">
+        <v-icon v-if="iconKey" :icon="iconKey" size="28" class="text-medium-emphasis" />
         <h1 class="text-h1">{{ entity.name }}</h1>
         <StatusChip v-if="entity.status" :status="entity.status" />
       </v-col>

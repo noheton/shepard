@@ -15,6 +15,7 @@ Collection detail page — only Projects ever render anything.
 -->
 <script setup lang="ts">
 import { useProjectSubCollections } from "~/composables/context/useProject";
+import { defaultIconForKind } from "~/composables/useTemplateIcon";
 
 interface Props {
   appId: string;
@@ -25,11 +26,14 @@ const router = useRouter();
 
 const { subCollections, isLoading, isMissing } = useProjectSubCollections(props.appId);
 
-// The Project's per-kind default icon (mdi-folder-multiple) is the placeholder
-// until useTemplateIcon (TEMPLATE-ICONS-1) lands. When that composable is
-// present in the codebase, this falls back to it cleanly.
-function tileIcon(_appId: string): string {
-  return "mdi-folder-multiple";
+// TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: sub-collection tiles use the
+// per-kind default for "Collection" (mdi-folder-multiple). The sub-collection
+// summary type from GET /v2/projects/{appId}/sub-collections does not carry
+// the collection's attached template, so there is no iconKey to override with.
+// If a future endpoint adds template metadata to the summary, wire
+// useTemplateIconByAppId here.
+function tileIcon(): string {
+  return defaultIconForKind("Collection");
 }
 
 function shouldShow(): boolean {
@@ -107,7 +111,7 @@ function openChild(childAppId: string) {
             @click="openChild(child.appId)"
           >
             <v-card-title class="d-flex align-center text-body-1">
-              <v-icon :icon="tileIcon(child.appId)" class="mr-2" size="small" />
+              <v-icon :icon="tileIcon()" class="mr-2" size="small" />
               <span class="text-truncate">{{ child.name }}</span>
             </v-card-title>
             <v-card-text class="text-caption">
