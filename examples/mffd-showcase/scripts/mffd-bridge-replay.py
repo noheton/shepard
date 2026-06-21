@@ -439,6 +439,45 @@ class Replayer:
         self._live_file_refs: dict[str, set[str]] = (
             {k: set(v) for k, v in live.file_refs_by_do.items()} if live else {}
         )
+        # Minimal-containers: ONE shared StructuredDataContainer backs every
+        # structured-data reference for the whole collection (was one per ref,
+        # ~3102). Resolved once. Payloads coexist in it; each reference selects
+        # its own oid(s).
+        self._shared_sdc: Optional[int] = None
+        self._shared_sdc_lock = threading.Lock()
+
+    SHARED_SDC_NAME = "mffd-bridge-structured"
+
+    def _shared_structured_container(self) -> int:
+        """Idempotently resolve the ONE shared StructuredDataContainer (by name)
+        backing every structured-data reference. Created + PublicReadable once."""
+        with self._shared_sdc_lock:
+            if self._shared_sdc is not None:
+                return self._shared_sdc
+            try:
+                existing = self.c.get_json(
+                    f"/shepard/api/structuredDataContainers?name={self.SHARED_SDC_NAME}")
+                for sdc in (existing or []):
+                    if sdc.get("name") == self.SHARED_SDC_NAME and sdc.get("id"):
+                        self._shared_sdc = sdc["id"]
+                        return self._shared_sdc
+            except RuntimeError:
+                pass
+            sdc = self.c.post_json("/shepard/api/structuredDataContainers",
+                                   {"name": self.SHARED_SDC_NAME})
+            self._shared_sdc = sdc["id"]
+            try:
+                cur = self.c.get_json(
+                    f"/shepard/api/structuredDataContainers/{self._shared_sdc}/permissions")
+                cur["permissionType"] = "PublicReadable"
+                self.c.request("PUT",
+                    f"/shepard/api/structuredDataContainers/{self._shared_sdc}/permissions",
+                    json=cur, expect=(200, 201, 204))
+            except RuntimeError:
+                pass
+            print(f"  shared SDC #{self._shared_sdc} ({self.SHARED_SDC_NAME}) PublicReadable",
+                  flush=True)
+            return self._shared_sdc
 
     def _existing_struct_ref_names(self, do_appid: str, do_numeric: int) -> set:
         with self._live_refs_lock:
@@ -648,11 +687,8 @@ class Replayer:
         # kind handler, and the structured-data payload POST is v1-only).
         # Documented gap — see report + aidocs/16 PLUGIN-V2 rows.
         if container_id is None:
-            sdc = self.c.post_json(
-                "/shepard/api/structuredDataContainers",
-                {"name": f"{do_appid[:8]}-{ref_name}"},
-            )
-            container_id = sdc["id"]
+            # Minimal-containers: all structured-data refs share ONE SDC.
+            container_id = self._shared_structured_container()
             self.st.put_struct(do_id, ref_name, relfile, container_id, None, None, None)
 
         if oid is None:
