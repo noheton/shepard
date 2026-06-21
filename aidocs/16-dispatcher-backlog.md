@@ -3804,7 +3804,7 @@ picks these up. Terse by design.
 | **UIVERIFY-plugins-authenticated-paths** | Authenticated path-walk resolving the UNKNOWN plugin endpoints (aas/git/spatiotemporal/video/unhide/v1-compat) — confirm live v2 paths + render. | S | `docs/reference/plugins.md`; inventory §UNKNOWN |
 | **DOC-BASIC-sparql** | Write `docs/help/query-with-sparql.md` (researcher basic-mode). | XS | `frontend/pages/semantic/sparql/` |
 | **DOC-BASIC-shapes-render** | Write `docs/help/render-a-view.md`. | XS | `frontend/pages/shapes/render.vue` | **✓ shipped fire-172** direct-to-main |
-| **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` |
+| **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` | **✓ shipped fire-174** direct-to-main |
 | **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` |
 | **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-88** direct-to-main |
 | **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
