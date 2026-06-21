@@ -87,7 +87,7 @@ jobs:
       - name: Plugin unit tests
         run: |
           set -e
-          for p in kip minter-local minter-datacite minter-epic spatiotemporal hdf5 git file-s3; do
+          for p in kip minter-local minter-datacite minter-epic spatiotemporal hdf5 git file-s3 v1-compat; do
             echo "::group::test plugin $p"
             ( cd "plugins/$p" && mvn -B test )
             echo "::endgroup::"
