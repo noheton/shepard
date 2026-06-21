@@ -13,6 +13,7 @@ import {
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   REFERENCE_PREDICATE,
+  extractChannelSelectionHint,
   extractFileNamingPattern,
   fetchReferencePrefillAnnotations,
   findAnnotationByPredicate,
@@ -74,12 +75,47 @@ async function applyFileNamingPrefill(): Promise<void> {
   fileNamingPrefillApplied.value = true;
 }
 
+// ── REF-EDIT-1 — template-driven channel-selection prefill ───────────────────
+//
+// On dialog open, fetch the parent DataObject's annotations and look for a
+// `urn:shepard:reference:channelSelection` hint. If found, prefill the
+// timeseriesRef model with the declared channels and optional window duration.
+// Fires once per open; never overwrites data the user has already entered.
+const channelSelectionPrefillApplied = ref<boolean>(false);
+
+async function applyChannelSelectionPrefill(): Promise<void> {
+  if (channelSelectionPrefillApplied.value) return;
+  if (timeseriesRef.value && timeseriesRef.value.timeseries.length > 0) return;
+  const annotations = await fetchReferencePrefillAnnotations(
+    props.dataObjectAppId ?? "",
+  );
+  const annotation = findAnnotationByPredicate(
+    annotations,
+    REFERENCE_PREDICATE.CHANNEL_SELECTION,
+  );
+  const hint = extractChannelSelectionHint(annotation);
+  if (!hint) return;
+  // Guard again after async gap.
+  if (timeseriesRef.value && timeseriesRef.value.timeseries.length > 0) return;
+  const nowNs = Date.now() * 1_000_000;
+  const durationNs = hint.windowDurationNs ?? 30_000_000_000; // 30 s default
+  timeseriesRef.value = {
+    ...(timeseriesRef.value ?? {}),
+    timeseries: hint.channels as Array<{ measurement: string; device: string; location: string; symbolicName: string; field: string }>,
+    start: nowNs - durationNs,
+    end: nowNs,
+  };
+  channelSelectionPrefillApplied.value = true;
+}
+
 watch(
   showDialog,
   open => {
     if (open) {
       fileNamingPrefillApplied.value = false;
+      channelSelectionPrefillApplied.value = false;
       void applyFileNamingPrefill();
+      void applyChannelSelectionPrefill();
     }
   },
   { immediate: true },

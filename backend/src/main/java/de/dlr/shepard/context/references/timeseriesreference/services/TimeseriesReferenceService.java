@@ -429,6 +429,73 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     return timeseriesReferenceDAO.createOrUpdate(ref);
   }
 
+  /**
+   * REF-EDIT-1 — applies a merge-patch to the channel 5-tuple list and/or time bounds
+   * of a {@link TimeseriesReference}, in addition to the TM1a time-reference fields.
+   *
+   * <p>RFC 7396 merge-patch semantics for primitive {@code long} fields (start/end): because
+   * Java primitives cannot be {@code null}, presence is determined by the caller-supplied
+   * {@code patchMap} — if the key exists in the map the field is updated, otherwise it is
+   * left unchanged. This avoids forcing 0-valued writes when the client omits the field.
+   *
+   * <p>Channel replacement ({@code timeseries} key present in patchMap): the existing
+   * {@link ReferencedTimeseriesNodeEntity} list is cleared and rebuilt from the supplied
+   * channel 5-tuples, reusing existing nodes from the DAO (same strategy as
+   * {@link #createReference(long, long, TimeseriesReferenceIO)}).
+   *
+   * @param ref      the entity to update (must already be loaded)
+   * @param patch    IO object carrying the desired changes
+   * @param patchMap the raw JSON map from the PATCH body, used to detect presence of
+   *                 primitive fields ({@code start}, {@code end}) and {@code timeseries}
+   * @return the persisted entity after update
+   */
+  public TimeseriesReference updateChannelAndBounds(
+    TimeseriesReference ref,
+    TimeseriesReferenceIO patch,
+    java.util.Map<String, Object> patchMap
+  ) {
+    // TM1 fields — same logic as updateTimeReference
+    if (patch.getTimeReference() != null) {
+      ref.setTimeReference(patch.getTimeReference());
+    }
+    if (patch.getWallClockOffset() != null) {
+      ref.setWallClockOffset(patch.getWallClockOffset());
+    }
+    if (patch.getWallClockOffsetSource() != null) {
+      ref.setWallClockOffsetSource(patch.getWallClockOffsetSource());
+    }
+
+    // start / end — primitive longs; use patchMap presence check for RFC 7396 semantics
+    if (patchMap.containsKey("start") && patchMap.get("start") != null) {
+      ref.setStart(patch.getStart());
+    }
+    if (patchMap.containsKey("end") && patchMap.get("end") != null) {
+      ref.setEnd(patch.getEnd());
+    }
+
+    // timeseries — replace channel list when key is present and list is non-null/non-empty
+    if (patchMap.containsKey("timeseries") && patch.getTimeseries() != null && !patch.getTimeseries().isEmpty()) {
+      patch.getTimeseries().forEach(ts -> TimeseriesValidator.assertTimeseriesPropertiesAreValid(ts));
+      ref.getReferencedTimeseriesList().clear();
+      for (var ts : patch.getTimeseries()) {
+        var found = timeseriesDAO.find(
+          ts.getMeasurement(),
+          ts.getDevice(),
+          ts.getLocation(),
+          ts.getSymbolicName(),
+          ts.getField()
+        );
+        if (found != null) {
+          ref.addTimeseries(found);
+        } else {
+          ref.addTimeseries(new ReferencedTimeseriesNodeEntity(ts));
+        }
+      }
+    }
+
+    return timeseriesReferenceDAO.createOrUpdate(ref);
+  }
+
   private boolean matchFilter(
     Timeseries timeseries,
     Set<String> device,

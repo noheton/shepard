@@ -21,9 +21,11 @@ import { AnnotatedDataObject } from "~/composables/annotated";
 export {
   REFERENCE_PREDICATE,
   extractFileNamingPattern,
+  extractChannelSelectionHint,
   findAnnotationByPredicate,
   parseUriRelationshipHint,
   resolveFileNamingPlaceholders,
+  type ChannelSelectionHint,
   type UriRelationshipHint,
 } from "~/composables/references/referenceTemplatePrefill";
 
