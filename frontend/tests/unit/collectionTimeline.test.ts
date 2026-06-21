@@ -20,6 +20,7 @@ import {
   TIMELINE_COLOURS,
   BIN_SIZE_CHOICES,
   EMPTY_STATE_HINT,
+  LIVE_REFRESH_EVENTS,
 } from "../../utils/collectionTimeline";
 import type {
   CollectionTimelineEnvelope,
@@ -243,5 +244,81 @@ describe("COLL-TIMELINE-1 — 4K viewport regression (option size stays fluid)",
     expect(option.grid).not.toHaveProperty("height");
     // Font-size is small enough that a 4K viewport doesn't show 30pt labels.
     expect(option.xAxis.axisLabel.fontSize).toBeLessThanOrEqual(12);
+  });
+});
+
+describe("COLL-TIMELINE-LIVE-1 — LIVE_REFRESH_EVENTS", () => {
+  it("includes the three data-object mutation events that require a bin refresh", () => {
+    expect(LIVE_REFRESH_EVENTS.has("DATA_OBJECT_CREATED")).toBe(true);
+    expect(LIVE_REFRESH_EVENTS.has("DATA_OBJECT_UPDATED")).toBe(true);
+    expect(LIVE_REFRESH_EVENTS.has("DATA_OBJECT_DELETED")).toBe(true);
+  });
+
+  it("excludes HEARTBEAT (already dropped by composable before reaching handler)", () => {
+    expect(LIVE_REFRESH_EVENTS.has("HEARTBEAT")).toBe(false);
+  });
+
+  it("excludes COLLECTION_UPDATED (metadata-only; does not change bin aggregate)", () => {
+    expect(LIVE_REFRESH_EVENTS.has("COLLECTION_UPDATED")).toBe(false);
+  });
+});
+
+describe("COLL-TIMELINE-LIVE-1 — bypassCache option on fetchTimeline", () => {
+  it("passes cache: 'no-cache' to fetch when bypassCache=true (SSE-triggered refresh bypasses 5-min browser cache)", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        binSizeDays: 1,
+        rangeStart: null,
+        rangeEnd: null,
+        totalDataObjects: 0,
+        lanes: [],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    vi.stubGlobal("useRuntimeConfig", () => ({
+      public: { backendV2ApiUrl: "https://shepard.test" },
+    }));
+    vi.stubGlobal("useAuth", () => ({ data: { value: { accessToken: "tok" } } }));
+
+    const { useCollectionTimeline } = await import(
+      "../../composables/context/useCollectionTimeline"
+    );
+    const { fetchTimeline } = useCollectionTimeline();
+    await fetchTimeline("coll-uuid-7", 1, true);
+
+    const callOpts = fetchSpy.mock.calls[0]![1] as RequestInit;
+    expect(callOpts.cache).toBe("no-cache");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("omits cache option when bypassCache=false (browser cache applies)", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        binSizeDays: 1,
+        rangeStart: null,
+        rangeEnd: null,
+        totalDataObjects: 0,
+        lanes: [],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    vi.stubGlobal("useRuntimeConfig", () => ({
+      public: { backendV2ApiUrl: "https://shepard.test" },
+    }));
+    vi.stubGlobal("useAuth", () => ({ data: { value: { accessToken: "tok" } } }));
+
+    const { useCollectionTimeline } = await import(
+      "../../composables/context/useCollectionTimeline"
+    );
+    const { fetchTimeline } = useCollectionTimeline();
+    await fetchTimeline("coll-uuid-7", 1, false);
+
+    const callOpts = fetchSpy.mock.calls[0]![1] as RequestInit;
+    expect(callOpts.cache).toBeUndefined();
+
+    vi.unstubAllGlobals();
   });
 });

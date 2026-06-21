@@ -61,7 +61,7 @@ export function useCollectionTimeline() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  async function fetchTimeline(collectionAppId: string, binSizeDays = 1): Promise<void> {
+  async function fetchTimeline(collectionAppId: string, binSizeDays = 1, bypassCache = false): Promise<void> {
     if (!collectionAppId) return;
     loading.value = true;
     error.value = null;
@@ -70,7 +70,9 @@ export function useCollectionTimeline() {
       const url =
         `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}/timeline` +
         `?binSizeDays=${encodeURIComponent(String(binSizeDays))}`;
-      const response = await fetch(url, { headers });
+      const fetchInit: RequestInit = { headers };
+      if (bypassCache) fetchInit.cache = "no-cache";
+      const response = await fetch(url, fetchInit);
       if (!response.ok) {
         error.value = `HTTP ${response.status}`;
         envelope.value = null;

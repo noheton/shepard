@@ -17,6 +17,18 @@ export const TIMELINE_COLOURS = {
   rejected: "#e53935",
 };
 
+/**
+ * COLL-TIMELINE-LIVE-1 — SSE event types that should trigger a timeline
+ * bin refresh. HEARTBEAT is already dropped by useCollectionEvents before
+ * reaching handlers; COLLECTION_UPDATED is metadata-only and does not
+ * change the bin aggregate.
+ */
+export const LIVE_REFRESH_EVENTS = new Set([
+  "DATA_OBJECT_CREATED",
+  "DATA_OBJECT_UPDATED",
+  "DATA_OBJECT_DELETED",
+]);
+
 export interface TimelineEChartsSeries {
   name: string;
   type: "bar";

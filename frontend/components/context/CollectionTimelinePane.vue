@@ -15,12 +15,14 @@
  * components); zero new chart dependencies.
  */
 import { useCollectionTimeline } from "~/composables/context/useCollectionTimeline";
+import { useCollectionEvents } from "~/composables/context/useCollectionEvents";
 import {
   buildLaneOption,
   drillDownPath,
   hasRenderableData,
   BIN_SIZE_CHOICES,
   EMPTY_STATE_HINT,
+  LIVE_REFRESH_EVENTS,
 } from "~/utils/collectionTimeline";
 
 import VChart from "vue-echarts";
@@ -57,9 +59,9 @@ const echoedBinSize = computed(() => envelope.value?.binSizeDays ?? binSizeDays.
 
 const lanes = computed(() => envelope.value?.lanes ?? []);
 
-async function refresh(): Promise<void> {
+async function refresh(bypassCache = false): Promise<void> {
   if (!props.collectionAppId) return;
-  await fetchTimeline(props.collectionAppId, binSizeDays.value);
+  await fetchTimeline(props.collectionAppId, binSizeDays.value, bypassCache);
 }
 
 function onBinSizeChange(value: number | null): void {
@@ -67,6 +69,35 @@ function onBinSizeChange(value: number | null): void {
   binSizeDays.value = value;
   void refresh();
 }
+
+// COLL-TIMELINE-LIVE-1 — subscribe to SSE events; debounce rapid bursts of
+// creates/updates into a single cache-bypassing refresh so the bins stay current
+// without a manual reload.
+const liveSubscribed = ref(false);
+let liveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleLiveRefresh(): void {
+  if (liveDebounceTimer !== null) clearTimeout(liveDebounceTimer);
+  liveDebounceTimer = setTimeout(() => {
+    liveDebounceTimer = null;
+    void refresh(true);
+  }, 1_500);
+}
+
+const { onEvent } = useCollectionEvents(computed(() => props.collectionAppId));
+onEvent((event) => {
+  liveSubscribed.value = true;
+  if (LIVE_REFRESH_EVENTS.has(event.eventType)) {
+    scheduleLiveRefresh();
+  }
+});
+
+onUnmounted(() => {
+  if (liveDebounceTimer !== null) {
+    clearTimeout(liveDebounceTimer);
+    liveDebounceTimer = null;
+  }
+});
 
 function laneOption(laneIndex: number): Record<string, unknown> {
   const lane = lanes.value[laneIndex];
@@ -137,6 +168,15 @@ watch(
           {{ choice.label }}
         </v-btn>
       </v-btn-toggle>
+      <v-chip
+        v-if="liveSubscribed"
+        color="success"
+        size="x-small"
+        variant="tonal"
+        data-testid="timeline-live-chip"
+      >
+        ● Live
+      </v-chip>
       <v-btn
         size="x-small"
         variant="text"
