@@ -9,6 +9,7 @@ import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StoragePutRequest;
+import de.dlr.shepard.v2.admin.storage.services.AutosweepConfigService;
 import jakarta.enterprise.inject.Instance;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
@@ -22,15 +23,13 @@ import org.mockito.Mockito;
 /**
  * FS1e2 — unit tests for the {@link FileMigrationService#autoSweep()} method.
  *
- * <p>Follows the same direct-construction + field-assignment pattern as
- * {@link FileMigrationServiceTest}. Config properties ({@code autoSweepEnabled},
- * {@code autoSweepSource}, {@code autoSweepTarget}) are package-visible and
- * assigned directly. {@code stateRef} is private-final and requires a single
- * reflective write only in the "already-running" guard test.
+ * <p>FTOGGLE-AUTOSWEEP-1: config is now read from a mocked
+ * {@link AutosweepConfigService} rather than bare {@code @ConfigProperty} fields.
  */
 class FileMigrationAutoSweepTest {
 
   private FileMigrationService service;
+  private AutosweepConfigService autosweepConfigService;
 
   @SuppressWarnings("unchecked")
   private static FileStorageRegistry registryWith(FileStorage... adapters) {
@@ -56,19 +55,20 @@ class FileMigrationAutoSweepTest {
 
   @BeforeEach
   void setUp() {
+    autosweepConfigService = Mockito.mock(AutosweepConfigService.class);
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(false);
+    Mockito.when(autosweepConfigService.effectiveSource()).thenReturn("");
+    Mockito.when(autosweepConfigService.effectiveTarget()).thenReturn("");
     service = new FileMigrationService();
     service.registry = registryWith(enabledAdapter("gridfs"), enabledAdapter("s3"));
-    // Reset config fields to safe defaults before each test
-    service.autoSweepEnabled = false;
-    service.autoSweepSource = "";
-    service.autoSweepTarget = "";
+    service.autosweepConfigService = autosweepConfigService;
   }
 
   // ─── disabled by default ──────────────────────────────────────────────────
 
   @Test
   void autoSweep_disabledByDefault_noMigrationTriggered() {
-    service.autoSweepEnabled = false;
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(false);
     service.autoSweep();
     assertEquals(FileMigrationStatus.IDLE, service.getState().status());
   }
@@ -77,18 +77,18 @@ class FileMigrationAutoSweepTest {
 
   @Test
   void autoSweep_missingSource_logsWarningAndSkips() {
-    service.autoSweepEnabled = true;
-    service.autoSweepSource = "";
-    service.autoSweepTarget = "s3";
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(true);
+    Mockito.when(autosweepConfigService.effectiveSource()).thenReturn("");
+    Mockito.when(autosweepConfigService.effectiveTarget()).thenReturn("s3");
     service.autoSweep();
     assertEquals(FileMigrationStatus.IDLE, service.getState().status());
   }
 
   @Test
   void autoSweep_missingTarget_logsWarningAndSkips() {
-    service.autoSweepEnabled = true;
-    service.autoSweepSource = "gridfs";
-    service.autoSweepTarget = "";
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(true);
+    Mockito.when(autosweepConfigService.effectiveSource()).thenReturn("gridfs");
+    Mockito.when(autosweepConfigService.effectiveTarget()).thenReturn("");
     service.autoSweep();
     assertEquals(FileMigrationStatus.IDLE, service.getState().status());
   }
@@ -109,9 +109,9 @@ class FileMigrationAutoSweepTest {
     assertEquals(FileMigrationStatus.RUNNING, service.getState().status());
     String startedAt = service.getState().startedAt().toString();
 
-    service.autoSweepEnabled = true;
-    service.autoSweepSource = "gridfs";
-    service.autoSweepTarget = "s3";
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(true);
+    Mockito.when(autosweepConfigService.effectiveSource()).thenReturn("gridfs");
+    Mockito.when(autosweepConfigService.effectiveTarget()).thenReturn("s3");
     service.autoSweep();
 
     // State should still be the same RUNNING record — no new trigger
@@ -128,18 +128,13 @@ class FileMigrationAutoSweepTest {
     "Fix: inject a testable executor or add a wait/latch seam on the RUNNING→FAILED path.")
   @Test
   void autoSweep_enabledAndValid_transitionsToRunning() throws Exception {
-    service.autoSweepEnabled = true;
-    service.autoSweepSource = "gridfs";
-    service.autoSweepTarget = "s3";
+    Mockito.when(autosweepConfigService.effectiveEnabled()).thenReturn(true);
+    Mockito.when(autosweepConfigService.effectiveSource()).thenReturn("gridfs");
+    Mockito.when(autosweepConfigService.effectiveTarget()).thenReturn("s3");
     // Replace the background executor with a no-op so the synchronous RUNNING
-    // transition is observed deterministically. Without this, the real
-    // single-thread executor can run runMigration() — which fails fast (no
-    // Neo4j session) and flips the state to FAILED — before the assertion
-    // below reads it, making this test flaky under CI load.
+    // transition is observed deterministically.
     installNoOpExecutor(service);
     service.autoSweep();
-    // triggerMigration() sets state to RUNNING synchronously before dispatching
-    // to the executor; the no-op executor never runs the failing background work.
     FileMigrationState state = service.getState();
     assertEquals(FileMigrationStatus.RUNNING, state.status());
     assertEquals("gridfs", state.sourceProviderId());
@@ -149,8 +144,7 @@ class FileMigrationAutoSweepTest {
 
   /**
    * Reflectively swap the service's private-final single-thread executor for a
-   * no-op so submitted background migrations never run — lets a test observe the
-   * synchronous RUNNING transition without racing the async FAILED.
+   * no-op so submitted background migrations never run.
    */
   private static void installNoOpExecutor(FileMigrationService svc) throws Exception {
     java.util.concurrent.ExecutorService noop =
