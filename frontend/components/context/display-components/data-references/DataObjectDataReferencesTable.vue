@@ -92,6 +92,28 @@ function v2BaseUrl(): string {
 
 const emit = defineEmits<{ (e: "refresh"): void }>();
 
+// ── REF-EDIT-SPATIAL: rename dialog for Spatial rows ─────────────────────────
+const showEditSpatialDialog = ref(false);
+const editSpatialAppId = ref<string>("");
+const editSpatialCurrentName = ref<string>("");
+
+function openEditSpatialDialog(item: DataTableElement) {
+  editSpatialAppId.value = item.meta.appId ?? "";
+  editSpatialCurrentName.value = item.name;
+  showEditSpatialDialog.value = true;
+}
+
+function onSpatialRenamed(newName: string) {
+  // Optimistic local update so the row shows the new name without a
+  // full refresh; the parent page's `refresh` event keeps the real
+  // data in sync on next navigation.
+  const appId = editSpatialAppId.value;
+  if (!appId) return;
+  const target = allTableItems.value.find(i => i.meta.appId === appId);
+  if (target) target.name = newName;
+  emit("refresh");
+}
+
 // ── SPATIAL-UNIFY-004: in-context "Promote to spatial" on eligible File rows ──
 const { promote: promoteToSpatial, isPromoting } = usePromoteToSpatial();
 
@@ -565,6 +587,13 @@ function formatDuration(seconds: number | null | undefined): string {
           >
             Promote to spatial
           </v-btn>
+          <!-- REF-EDIT-SPATIAL: rename pencil for Spatial rows -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'Spatial' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            :data-testid="`edit-spatial-${item.meta.appId}`"
+            @click="() => openEditSpatialDialog(item)"
+          />
           <!-- SPATIAL-UNIFY-005: "View as pointcloud" on Spatial rows (in-context viewer entry) -->
           <v-btn
             v-if="item.type === 'Spatial' && item.meta.spatialContainerAppId"
@@ -622,6 +651,15 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-SPATIAL: rename dialog for Spatial rows -->
+  <EditSpatialDataReferenceDialog
+    v-if="showEditSpatialDialog && editSpatialAppId"
+    v-model:show-dialog="showEditSpatialDialog"
+    :spatial-reference-app-id="editSpatialAppId"
+    :current-name="editSpatialCurrentName"
+    @saved="onSpatialRenamed"
   />
 </template>
 
