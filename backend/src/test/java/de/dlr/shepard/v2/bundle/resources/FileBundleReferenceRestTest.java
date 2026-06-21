@@ -448,6 +448,68 @@ class FileBundleReferenceRestTest {
     verify(fileGroupService, never()).deleteGroup(any(), org.mockito.ArgumentMatchers.anyBoolean());
   }
 
+  // ─── PATCH /v2/bundles/{bundleAppId} ─────────────────────────────────────
+
+  @Test
+  void patchBundle_returnsRenamedBundle() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    var updated = existingBundle();
+    updated.setName("renamed");
+    when(fileBundleReferenceDAO.createOrUpdate(any())).thenReturn(updated);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"renamed\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("renamed", ((FileBundleReferenceIO) r.getEntity()).getName());
+  }
+
+  @Test
+  void patchBundle_emptyBodyLeavesNameUnchanged() {
+    var bundle = existingBundle();
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileBundleReferenceDAO.createOrUpdate(any())).thenReturn(bundle);
+    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{}"), securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("my bundle", ((FileBundleReferenceIO) r.getEntity()).getName());
+  }
+
+  @Test
+  void patchBundle_returns400WhenNameBlank() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+
+    var r = resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+    verify(fileBundleReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNull() {
+    assertEquals(400, resource.patchBundle(BUNDLE_APP_ID, null, securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns400WhenBodyNotObject() {
+    assertEquals(400, resource.patchBundle(BUNDLE_APP_ID, json("\"oops\""), securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns404WhenMissing() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(null);
+    assertEquals(404, resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext).getStatus());
+  }
+
+  @Test
+  void patchBundle_returns403WhenNoWritePermission() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq("do-app-id"), eq(AccessType.Write), eq(CALLER))).thenReturn(false);
+
+    assertEquals(403, resource.patchBundle(BUNDLE_APP_ID, json("{\"name\":\"x\"}"), securityContext).getStatus());
+    verify(fileBundleReferenceDAO, never()).createOrUpdate(any());
+  }
+
   // ── MFFD-IMAGEBUNDLE-PAGINATE-1 — paginated GET /files ───────────────────
 
   /**

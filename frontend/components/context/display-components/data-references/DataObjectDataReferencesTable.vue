@@ -182,6 +182,17 @@ async function confirmDelete() {
   }
 }
 
+// ── REF-EDIT-4: rename FileBundleReference dialog ────────────────────────────
+const showRenameBundleDialog = ref(false);
+const renameBundleAppId = ref<string>("");
+const renameBundleCurrentName = ref<string>("");
+
+function openRenameBundleDialog(appId: string, currentName: string) {
+  renameBundleAppId.value = appId;
+  renameBundleCurrentName.value = currentName;
+  showRenameBundleDialog.value = true;
+}
+
 // ── Table data ────────────────────────────────────────────────────────────────
 const legacyItems = computed(() =>
   props.dataReferences.map(mapDataReferenceToDataTableElement),
@@ -518,6 +529,14 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-tag-outline"
             @click="() => openSemaAnnotationDialog(item.meta.appId!, semaKindFor(item.type))"
           />
+          <!-- REF-EDIT-4: rename for File Bundle rows -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'File Bundle' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            aria-label="Rename bundle"
+            :data-testid="`rename-bundle-${item.meta.appId}`"
+            @click="() => openRenameBundleDialog(item.meta.appId!, item.name)"
+          />
           <!-- REF-UNIFIED-TABLE-FR1B: download for singleton File / Notebook -->
           <v-btn
             v-if="SINGLETON_FILE_KINDS.has(item.type) && item.meta.appId"
@@ -622,6 +641,15 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-4: rename dialog for File Bundle rows -->
+  <EditFileBundleReferenceDialog
+    v-if="showRenameBundleDialog && renameBundleAppId"
+    v-model:show-dialog="showRenameBundleDialog"
+    :bundle-app-id="renameBundleAppId"
+    :current-name="renameBundleCurrentName"
+    @saved="(newName) => { emit('refresh'); }"
   />
 </template>
 
