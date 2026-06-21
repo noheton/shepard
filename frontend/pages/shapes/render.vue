@@ -522,10 +522,11 @@ async function bootstrapUrdfFromReference(fileReferenceAppId: string) {
 
 onUnmounted(() => revokeUrdfBlob());
 
-// Thermography renderer state (tier-1) — purely annotation-driven, no
-// channel bindings yet. Channel-bound playback ships with tier-2
-// (OTVIS-PARSE-2 + THERMO-CHANNELS-1).
+// Thermography renderer state — annotation metadata + optional
+// fileReferenceAppId that drives the frame fetch (PLACEHOLDER-thermography-canvas).
 const thermographyAnnotations = ref<AnnotationMap>({});
+/** appId of the .OTvis FileReference — when set, ThermographyView fetches live frames. */
+const thermoFileRefAppId = ref<string>("");
 
 const trace3DColorScheme = computed<Trace3DColorScheme>(() => {
   switch (colormapName.value) {
@@ -590,9 +591,10 @@ onMounted(() => {
     return;
   }
 
-  // Thermography renderer (tier-1) — pure metadata-driven view, no
-  // channel bindings yet. Bootstrap shape: ?renderer=thermography
-  // (optional ?annotations=<base64-JSON-of-AnnotationMap>).
+  // Thermography renderer — metadata-driven + optional live-frame bootstrap.
+  // Shape: ?renderer=thermography
+  //   (optional ?annotations=<base64-JSON-of-AnnotationMap>)
+  //   (optional ?fileReferenceAppId=<UUID-v7> → live OTvis frame fetch)
   if (q.renderer === "thermography") {
     renderer.value = "thermography";
     if (q.annotations) {
@@ -601,6 +603,9 @@ onMounted(() => {
       } catch {
         thermographyAnnotations.value = {};
       }
+    }
+    if (q.fileReferenceAppId) {
+      thermoFileRefAppId.value = String(q.fileReferenceAppId);
     }
     fromReference.value = true;
     return;
@@ -774,14 +779,17 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
-    <!-- ── Thermography renderer (tier-1, metadata-only) ─────────────────────
-         Renders the OTvis annotation summary + a Three.js placeholder
-         canvas. Tier-2 (OTVIS-PARSE-2) replaces the placeholder with
-         the IR sequence texture. See aidocs/integrations/114 §5. -->
+    <!-- ── Thermography renderer ────────────────────────────────────────────
+         Renders the OTvis annotation summary + Three.js canvas.
+         When ?fileReferenceAppId= is supplied the canvas shows a live
+         decoded IR frame (PLACEHOLDER-thermography-canvas).
+         Bootstrap shape: ?renderer=thermography[&fileReferenceAppId=<appId>]
+         See aidocs/integrations/114 §5. -->
     <template v-if="rendererKind === 'thermography'">
       <ClientOnly>
         <ThermographyView
           :annotations="thermographyAnnotations"
+          :file-reference-app-id="thermoFileRefAppId || null"
           label="Thermography view"
         />
         <template #fallback>
