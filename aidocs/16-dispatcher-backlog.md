@@ -3809,7 +3809,7 @@ picks these up. Terse by design.
 | **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-88** direct-to-main |
 | **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
 | **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | hdf5 plugin |
-| **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` |
+| **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` | **✓ shipped fire-177** direct-to-main |
 | **DOC-BASIC-snapshot-diff** | Write `docs/help/compare-snapshots.md`. | XS | `frontend/pages/snapshots/diff.vue` |
 | **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | `frontend/pages/scene-graphs/play/` |
 | **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | `frontend/pages/search/` |
