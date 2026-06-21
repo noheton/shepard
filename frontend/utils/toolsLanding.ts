@@ -6,11 +6,11 @@
  * not hash-fragment-based, because `/tools` aggregates standalone routes
  * rather than fragments of one big page).
  *
- * V2CONV-B4: the `/scene-graphs` Tools tile was removed when the bespoke
- * scene-graph subsystem dissolved into the MAPPING_RECIPE mechanism — the 3D
- * view is now reached in-context from a URDF FileReference detail page
- * ("Create / Open 3D view"), per the "tool entry points are in-context first"
- * rule.
+ * The Scene-graphs tile points to /scene-graphs (the landing/picker added by
+ * UI-1920-SCENEGRAPH-NAV). The primary entry point remains in-context from a
+ * URDF/RDK FileReference detail page (OpenIn3dViewButton) per the
+ * "tool entry points are in-context first" CLAUDE.md rule; this tile is the
+ * fallback for entry-less starts.
  */
 
 export interface ToolTile {
@@ -63,6 +63,13 @@ export const TOOLS_TILES: ToolTile[] = [
     description:
       "Compile a data-kind template's SHACL shape into its form descriptor (BTKVS-B2).",
     icon: "mdi-form-select",
+  },
+  {
+    to: "/scene-graphs",
+    title: "Scene-graph viewer",
+    description:
+      "Open a URDF robot model in 3D — frames, joints, and live channel bindings via vis-trace3d.",
+    icon: "mdi-cube-scan",
   },
 ];
 
