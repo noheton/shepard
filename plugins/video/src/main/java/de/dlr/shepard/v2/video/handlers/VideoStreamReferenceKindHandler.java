@@ -129,6 +129,24 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
         changed = true;
       }
     }
+    // REF-EDIT-2 — wallClockTimestamp is the TM1 anchor (UTC epoch nanoseconds).
+    // Explicit null clears the field (operator corrects a wrong timestamp);
+    // absent key is a no-op per RFC 7396 merge-patch semantics.
+    if (patch != null && patch.containsKey("wallClockTimestamp")) {
+      Object v = patch.get("wallClockTimestamp");
+      Long newTs;
+      if (v == null) {
+        newTs = null;
+      } else if (v instanceof Number n) {
+        newTs = n.longValue();
+      } else {
+        throw new BadRequestException("'wallClockTimestamp' must be a number (UTC epoch nanoseconds) or null");
+      }
+      if (!java.util.Objects.equals(newTs, ref.getWallClockTimestamp())) {
+        ref.setWallClockTimestamp(newTs);
+        changed = true;
+      }
+    }
     if (changed) {
       User user = userService.getCurrentUser();
       ref.setUpdatedAt(dateHelper.getDate());

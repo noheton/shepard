@@ -21,10 +21,12 @@ import { AnnotatedDataObject } from "~/composables/annotated";
 export {
   REFERENCE_PREDICATE,
   extractFileNamingPattern,
+  extractVideoTimestampHint,
   findAnnotationByPredicate,
   parseUriRelationshipHint,
   resolveFileNamingPlaceholders,
   type UriRelationshipHint,
+  type VideoTimestampHint,
 } from "~/composables/references/referenceTemplatePrefill";
 
 /**

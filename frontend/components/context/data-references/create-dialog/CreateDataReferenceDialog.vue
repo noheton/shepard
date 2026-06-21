@@ -14,6 +14,7 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   REFERENCE_PREDICATE,
   extractFileNamingPattern,
+  extractVideoTimestampHint,
   fetchReferencePrefillAnnotations,
   findAnnotationByPredicate,
   resolveFileNamingPlaceholders,
@@ -80,10 +81,37 @@ watch(
     if (open) {
       fileNamingPrefillApplied.value = false;
       void applyFileNamingPrefill();
+      void applyVideoTimestampPrefill();
     }
   },
   { immediate: true },
 );
+
+// ── REF-EDIT-2 — template-driven video wallClockTimestamp prefill ─────────────
+//
+// On dialog open, fetch the parent DataObject's annotations and look for a
+// `urn:shepard:reference:videoTimestamp` hint. If found, expose it as a
+// reactive state for the video upload pane (or any future video-create wizard
+// embedded in this dialog) to consume. The hint is advisory — the user can
+// override it in the edit dialog post-creation.
+const videoTimestampHint = ref<{
+  wallClockOffsetMs?: number;
+  timezone?: string;
+} | null>(null);
+
+async function applyVideoTimestampPrefill(): Promise<void> {
+  videoTimestampHint.value = null;
+  const annotations = await fetchReferencePrefillAnnotations(
+    props.dataObjectAppId ?? "",
+  );
+  const annotation = findAnnotationByPredicate(
+    annotations,
+    REFERENCE_PREDICATE.VIDEO_TIMESTAMP,
+  );
+  const hint = extractVideoTimestampHint(annotation);
+  if (!hint) return;
+  videoTimestampHint.value = hint;
+}
 
 async function createDataReference() {
   if (!dataReferenceContainerId.value) return;

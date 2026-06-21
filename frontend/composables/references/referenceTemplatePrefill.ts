@@ -20,6 +20,19 @@ export const REFERENCE_PREDICATE = {
   FILE_NAMING: "urn:shepard:reference:fileNaming",
   /** REF-EDIT-TPL-6 — URIReference relationship + uri prefix. */
   URI_RELATIONSHIP: "urn:shepard:reference:uriRelationship",
+  /**
+   * REF-EDIT-2 — VideoStreamReference wall-clock timestamp hint.
+   *
+   * When present on a parent DataObject's annotations, the
+   * CreateDataReferenceDialog (video path) pre-populates the wallClockTimestamp
+   * field with an offset from the DataObject's creation time (if available)
+   * or a timezone hint for the operator to adjust.
+   *
+   * Annotation `valueName` shape: JSON object
+   *   `{"wallClockOffsetMs": <number>, "timezone": "<IANA-zone>"}`.
+   * Both fields are optional; unknown keys are ignored.
+   */
+  VIDEO_TIMESTAMP: "urn:shepard:reference:videoTimestamp",
 } as const;
 
 /**
@@ -69,6 +82,56 @@ export function resolveFileNamingPlaceholders(
 ): string {
   const iso = now.toISOString().slice(0, 10);
   return pattern.replace(/\{date\}/g, iso);
+}
+
+// ── REF-EDIT-2 — VideoStreamReference timestamp hint ─────────────────────────
+
+/**
+ * Parsed shape for the `urn:shepard:reference:videoTimestamp` hint.
+ * Both fields are optional; a hint object with no recognised fields
+ * returns null from `extractVideoTimestampHint`.
+ */
+export interface VideoTimestampHint {
+  /**
+   * Offset in milliseconds from the parent DataObject's `createdAt` timestamp.
+   * Positive values mean the video starts after the DataObject was created.
+   * When present, the Create dialog pre-populates wallClockTimestamp as
+   * `DataObject.createdAt + wallClockOffsetMs`.
+   */
+  wallClockOffsetMs?: number;
+  /**
+   * IANA timezone hint (e.g. "Europe/Berlin"). Surfaced as a helper note in
+   * the Create dialog so the operator can interpret the pre-filled local time.
+   */
+  timezone?: string;
+}
+
+/**
+ * Extract a VideoTimestampHint from an annotation. The annotation `valueName`
+ * must be a JSON object carrying at least one of `wallClockOffsetMs` or
+ * `timezone`. Returns null when the annotation is absent, non-JSON, or has
+ * no recognised fields.
+ */
+export function extractVideoTimestampHint(
+  annotation: import("@dlr-shepard/backend-client").SemanticAnnotation | null,
+): VideoTimestampHint | null {
+  if (!annotation) return null;
+  const raw = annotation.valueName?.trim();
+  if (!raw || raw.length === 0) return null;
+  if (!raw.startsWith("{")) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const wallClockOffsetMs =
+      typeof parsed.wallClockOffsetMs === "number"
+        ? parsed.wallClockOffsetMs
+        : undefined;
+    const timezone =
+      typeof parsed.timezone === "string" ? parsed.timezone : undefined;
+    if (wallClockOffsetMs === undefined && timezone === undefined) return null;
+    return { wallClockOffsetMs, timezone };
+  } catch {
+    return null;
+  }
 }
 
 /**

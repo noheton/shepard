@@ -8,6 +8,7 @@
  *     segments when annotations are present
  *   - An ffprobe-extracted metadata row (duration, resolution, codec, FPS, size)
  *   - A download button
+ *   - An edit button (REF-EDIT-2) opening EditVideoStreamReferenceDialog
  *
  * VID1a note: HLS segmented delivery is not yet implemented (deferred to VID1b).
  * The player uses the raw /download URL, which works for progressive MP4/WebM in
@@ -16,6 +17,7 @@
  */
 import VideoPlayer from "~/components/common/VideoPlayer.vue";
 import UploadFilesButton from "~/components/container/UploadFilesButton.vue";
+import EditVideoStreamReferenceDialog from "~/components/context/data-references/EditVideoStreamReferenceDialog.vue";
 import { xhrUploadRawPut, type XhrUploadOptions } from "~/composables/container/xhrUpload";
 import {
   type VideoStreamReferenceIO,
@@ -26,6 +28,8 @@ import { useFetchVideoAnnotations } from "~/composables/context/useFetchVideoAnn
 const props = defineProps<{
   dataObjectAppId: string;
   canUpload?: boolean;
+  /** When true, edit button is shown on each card. */
+  canWrite?: boolean;
 }>();
 
 const VIDEO_ACCEPT =
@@ -110,6 +114,42 @@ function annotationsFor(refAppId: string) {
     );
   }
   return annotationStates.get(refAppId)!;
+}
+
+// ── REF-EDIT-2: edit dialog state ────────────────────────────────────────────
+
+/** appId of the reference currently being edited, or null when dialog is closed. */
+const editingRefAppId = ref<string | null>(null);
+
+const editDialogOpen = computed({
+  get: () => editingRefAppId.value !== null,
+  set: (open: boolean) => {
+    if (!open) editingRefAppId.value = null;
+  },
+});
+
+const editingRef = computed<VideoStreamReferenceIO | null>(() =>
+  editingRefAppId.value
+    ? (references.value.find(r => r.appId === editingRefAppId.value) ?? null)
+    : null,
+);
+
+function openEditDialog(ref: VideoStreamReferenceIO) {
+  editingRefAppId.value = ref.appId;
+}
+
+function onEditSaved(update: { name: string; wallClockTimestamp: number | null }) {
+  if (!editingRefAppId.value) return;
+  const idx = references.value.findIndex(r => r.appId === editingRefAppId.value);
+  if (idx !== -1) {
+    // Optimistic local update — avoids a full re-fetch.
+    references.value[idx] = {
+      ...references.value[idx]!,
+      name: update.name,
+      wallClockTimestamp: update.wallClockTimestamp,
+    };
+  }
+  editingRefAppId.value = null;
 }
 
 /** Small palette for annotation segment colors, cycled by label. */
@@ -395,6 +435,17 @@ function formatBitrate(
           >
             Download
           </v-btn>
+          <!-- REF-EDIT-2: edit button — permission-gated via canWrite prop -->
+          <v-btn
+            v-if="canWrite"
+            variant="tonal"
+            density="comfortable"
+            prepend-icon="mdi-pencil-outline"
+            size="small"
+            @click="openEditDialog(ref)"
+          >
+            Edit
+          </v-btn>
         </v-card-actions>
       </v-card>
     </template>
@@ -404,6 +455,16 @@ function formatBitrate(
       <span v-if="canUpload">Use the upload button above to add a video file (MP4, MOV, MKV, WebM, AVI).</span>
       <span v-else>Upload a video file (MP4, MOV, MKV, WebM, AVI) to see it here.</span>
     </div>
+
+    <!-- REF-EDIT-2: edit dialog — rendered once for the currently selected reference -->
+    <EditVideoStreamReferenceDialog
+      v-if="editingRef"
+      v-model:show-dialog="editDialogOpen"
+      :app-id="editingRef.appId"
+      :current-name="editingRef.name ?? ''"
+      :current-wall-clock-timestamp-ms="editingRef.wallClockTimestamp ?? null"
+      @saved="onEditSaved"
+    />
   </div>
 </template>
 
