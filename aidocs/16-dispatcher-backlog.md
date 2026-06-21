@@ -3811,8 +3811,8 @@ picks these up. Terse by design.
 | **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | hdf5 plugin |
 | **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` | **✓ shipped fire-177** direct-to-main |
 | **DOC-BASIC-snapshot-diff** | Write `docs/help/compare-snapshots.md`. | XS | `frontend/pages/snapshots/diff.vue` | **✓ shipped fire-178** direct-to-main |
-| **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | `frontend/pages/scene-graphs/play/` |
-| **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | `frontend/pages/search/` |
+| **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | ✓ **shipped fire-179** — `docs/help/play-a-scene-graph.md`: open from FileReference "Open in scene-graph editor", orbit/zoom controls, frame+joint+binding summary, troubleshooting table. |
+| **DOC-BASIC-search** | Write `docs/help/search-everything.md`. | XS | ✓ **shipped fire-179** — `docs/help/search-everything.md`: simple q= search, 7 search types (Collection/DataObject/Reference/StructuredData + 3 container types), scope dropdowns, advanced JSON query builder, bookmarkable URLs. |
 | **DOC-BASIC-notifications** | Write `docs/help/get-notified.md`. | XS | AdminNotificationsPane |
 | **DOC-ADV-tools-landing** | Write `docs/reference/tools.md` cataloguing every Tools-cluster surface + its endpoint. | S | `frontend/pages/tools/index.vue` | **✓ shipped fire-65** — `docs/reference/tools.md` (7 surfaces: vocabularies, SPARQL, shape-validate, snapshot-diff, shapes-render, form-preview, materialize-mapping). |
 | **DOC-ADV-form-preview** | Write `docs/reference/form-preview.md` (template-form materialization internals). | S | `frontend/pages/tools/form-preview.vue` | **✓ shipped fire-67** — `docs/reference/form-preview.md` (endpoint, descriptor shape, DASH editor scoring, submit block, Excel export, ETag caching, worked examples). |
