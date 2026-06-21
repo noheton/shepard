@@ -3808,7 +3808,7 @@ picks these up. Terse by design.
 | **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` | **✓ shipped fire-175** direct-to-main |
 | **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-88** direct-to-main |
 | **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
-| **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | hdf5 plugin |
+| **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | ✓ **shipped fire-179** — `docs/help/browse-hdf-datasets.md`: opt-in gate check, create HDF container, write with h5pyd, HdfReference anchors, offline .h5 download, troubleshooting. |
 | **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` | **✓ shipped fire-177** direct-to-main |
 | **DOC-BASIC-snapshot-diff** | Write `docs/help/compare-snapshots.md`. | XS | `frontend/pages/snapshots/diff.vue` | **✓ shipped fire-178** direct-to-main |
 | **DOC-BASIC-scene-graph** | Write `docs/help/play-a-scene-graph.md`. | XS | ✓ **shipped fire-179** — `docs/help/play-a-scene-graph.md`: open from FileReference "Open in scene-graph editor", orbit/zoom controls, frame+joint+binding summary, troubleshooting table. |
