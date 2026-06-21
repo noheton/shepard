@@ -3802,7 +3802,7 @@ picks these up. Terse by design.
 | **UIVERIFY-tools-cluster** | Playwright e2e for sparql/shapes-render/shapes-validate/snapshot-diff once real UIs land. | M | `frontend/pages/tools/`, `/shapes/`, `/semantic/sparql` |
 | **UIVERIFY-admin-panes** | Playwright e2e (4K+1920) for each admin pane (plugins/features/audit/sql-ts/instance-admins/orcid/git/notifications/registry/provenance). | M | `frontend/components/context/admin/` |
 | **UIVERIFY-plugins-authenticated-paths** | Authenticated path-walk resolving the UNKNOWN plugin endpoints (aas/git/spatiotemporal/video/unhide/v1-compat) — confirm live v2 paths + render. | S | `docs/reference/plugins.md`; inventory §UNKNOWN |
-| **DOC-BASIC-sparql** | Write `docs/help/query-with-sparql.md` (researcher basic-mode). | XS | `frontend/pages/semantic/sparql/` |
+| **DOC-BASIC-sparql** | Write `docs/help/query-with-sparql.md` (researcher basic-mode). | XS | ✓ **shipped fire-171** — `docs/help/query-with-sparql.md` written: open from Tools tile or in-context from Collection/DataObject, `SELECT`/`ASK` syntax, 3 worked examples (list annotations on a DO, find by term, ASK existence check), restrictions, troubleshooting table, links to annotating-data + semantic-annotations reference. |
 | **DOC-BASIC-shapes-render** | Write `docs/help/render-a-view.md`. | XS | `frontend/pages/shapes/render.vue` | **✓ shipped fire-172** direct-to-main |
 | **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` | **✓ shipped fire-174** direct-to-main |
 | **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` | **✓ shipped fire-175** direct-to-main |
