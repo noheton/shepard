@@ -562,6 +562,48 @@ class Importer:
         self._do_num_idx: Optional[dict[str, int]] = None
         self._live_frame_names: dict[str, set[str]] = {}
         self._frame_set_locks: dict[str, threading.Lock] = {}
+        # Minimal-containers: ONE shared FileContainer backs every run's frame
+        # bundle for the whole collection (was one per run). Resolved once.
+        self._shared_fc: Optional[tuple[int, str]] = None
+        self._shared_fc_lock = threading.Lock()
+
+    SHARED_FC_NAME = "mffd-stringer-files"
+
+    def _shared_file_container(self) -> tuple[int, str]:
+        """Idempotently resolve the ONE shared FileContainer (by name) that backs
+        every run's frame bundle. Created + set PublicReadable on first call."""
+        with self._shared_fc_lock:
+            if self._shared_fc is not None:
+                return self._shared_fc
+            # reuse if it already exists (v1 list carries id+appId)
+            try:
+                existing = self.c.get_json(
+                    f"/shepard/api/fileContainers?name={quote(self.SHARED_FC_NAME)}")
+                for fc in (existing or []):
+                    if fc.get("name") == self.SHARED_FC_NAME and fc.get("id"):
+                        self._shared_fc = (fc["id"], fc.get("appId", ""))
+                        if self.verbose:
+                            print(f"  shared FileContainer reused #{fc['id']}",
+                                  file=sys.stderr, flush=True)
+                        return self._shared_fc
+            except RuntimeError:
+                pass
+            fc = self.c.post_json("/shepard/api/fileContainers",
+                                  {"name": self.SHARED_FC_NAME}, retry_on_403=True)
+            fc_num = fc["id"]
+            fc_appid = fc.get("appId", "")
+            try:
+                cur = self.c.get_json(f"/shepard/api/fileContainers/{fc_num}/permissions")
+                cur["permissionType"] = "PublicReadable"
+                self.c.request("PUT", f"/shepard/api/fileContainers/{fc_num}/permissions",
+                               json=cur, expect=(200, 201, 204), retry_on_403=True)
+                self.n.add(perms_set=1)
+            except RuntimeError:
+                pass
+            self._shared_fc = (fc_num, fc_appid)
+            print(f"  shared FileContainer created #{fc_num} ({self.SHARED_FC_NAME}) "
+                  f"PublicReadable", flush=True)
+            return self._shared_fc
 
     # ── annotations
     def _annotate(self, do_appid: str, predicate: str, value: str) -> bool:
@@ -773,12 +815,9 @@ class Importer:
         except RuntimeError:
             pass
 
-        # create a FileContainer (v1) to back the bundle's bytes
-        fc = self.c.post_json("/shepard/api/fileContainers",
-                              {"name": f"stringer-frames-{bundle_name}"},
-                              retry_on_403=True)
-        fc_num = fc["id"]
-        fc_appid = fc.get("appId", "")
+        # Minimal-containers: ALL runs' bundles share ONE FileContainer for the
+        # whole collection (was one per run). Resolved/created once.
+        fc_num, fc_appid = self._shared_file_container()
         # create the FileBundleReference (v1) with a throwaway oid (logged-and-
         # ignored server-side; satisfies the @NotEmpty fileOids validator). The
         # bundle is born with an empty `default` FileGroup.
