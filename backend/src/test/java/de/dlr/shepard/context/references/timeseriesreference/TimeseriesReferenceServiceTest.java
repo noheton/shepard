@@ -969,12 +969,8 @@ public class TimeseriesReferenceServiceTest {
     ref.setEnd(2000L);
     ref.setReferencedTimeseriesList(new java.util.ArrayList<>(List.of(existing)));
 
-    de.dlr.shepard.data.timeseries.model.Timeseries newCh = new de.dlr.shepard.data.timeseries.model.Timeseries();
-    newCh.setMeasurement("vibration");
-    newCh.setDevice("turbopump");
-    newCh.setLocation("bearing");
-    newCh.setSymbolicName("vib");
-    newCh.setField("value");
+    de.dlr.shepard.data.timeseries.model.Timeseries newCh =
+        new de.dlr.shepard.data.timeseries.model.Timeseries("vibration", "turbopump", "bearing", "vib", "value");
 
     TimeseriesReferenceIO patch = new TimeseriesReferenceIO();
     patch.setTimeseries(List.of(newCh));
