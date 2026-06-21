@@ -31,9 +31,9 @@ class AutosweepConfigDescriptorTest {
   @BeforeEach
   void setUp() {
     service = Mockito.mock(AutosweepConfigService.class);
-    Mockito.when(service.getDefaultEnabled()).thenReturn(false);
-    Mockito.when(service.getDefaultSource()).thenReturn("");
-    Mockito.when(service.getDefaultTarget()).thenReturn("");
+    Mockito.lenient().when(service.getDefaultEnabled()).thenReturn(false);
+    Mockito.lenient().when(service.getDefaultSource()).thenReturn("");
+    Mockito.lenient().when(service.getDefaultTarget()).thenReturn("");
     descriptor = new AutosweepConfigDescriptor();
     descriptor.service = service;
   }
