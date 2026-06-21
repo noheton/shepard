@@ -3807,7 +3807,7 @@ picks these up. Terse by design.
 | **DOC-BASIC-shapes-validate** | Write `docs/help/validate-against-a-shape.md`. | XS | `frontend/pages/shapes/validate.vue` | **✓ shipped fire-174** direct-to-main |
 | **DOC-BASIC-form-preview** | Write `docs/help/preview-a-template-form.md`. | XS | `frontend/pages/tools/form-preview.vue` | **✓ shipped fire-175** direct-to-main |
 | **DOC-BASIC-materialize-mapping** | Write `docs/help/materialize-a-mapping.md`. | XS | `frontend/pages/tools/materialize-mapping.vue` | **✓ shipped fire-88** direct-to-main |
-| **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin |
+| **DOC-BASIC-video** | Write `docs/help/upload-and-annotate-video.md`. | XS | video plugin | **✓ shipped fire-180** — `docs/help/upload-and-annotate-video.md`: opt-in gate check, upload via References panel, inline player, segment + point annotations, list view, timeseries cross-reference, troubleshooting. |
 | **DOC-BASIC-hdf** | Write `docs/help/browse-hdf-datasets.md`. | XS | ✓ **shipped fire-179** — `docs/help/browse-hdf-datasets.md`: opt-in gate check, create HDF container, write with h5pyd, HdfReference anchors, offline .h5 download, troubleshooting. |
 | **DOC-BASIC-vocabularies** | Write `docs/help/browse-vocabularies.md`. | XS | `frontend/pages/semantic/vocabularies/` | **✓ shipped fire-177** direct-to-main |
 | **DOC-BASIC-snapshot-diff** | Write `docs/help/compare-snapshots.md`. | XS | `frontend/pages/snapshots/diff.vue` | **✓ shipped fire-178** direct-to-main |
