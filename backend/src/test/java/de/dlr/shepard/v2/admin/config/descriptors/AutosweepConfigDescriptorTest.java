@@ -76,7 +76,7 @@ class AutosweepConfigDescriptorTest {
 
     assertEquals("gridfs", io.source());
     assertEquals("s3", io.target());
-    Mockito.verify(service).patch(null, "gridfs", "s3");
+    Mockito.verify(service).patch(false, "gridfs", "s3");
   }
 
   @Test
