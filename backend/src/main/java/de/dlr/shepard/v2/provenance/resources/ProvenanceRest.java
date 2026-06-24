@@ -159,12 +159,14 @@ public class ProvenanceRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   public Response listActivitiesProvJson(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -198,12 +200,14 @@ public class ProvenanceRest {
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response listActivitiesJsonLd(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
@@ -281,10 +285,10 @@ public class ProvenanceRest {
   @APIResponse(responseCode = "200", description = "Activities serialised as PROV-JSON.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listEntityActivitiesProvJson(
-    @PathParam("appId") String entityAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -311,10 +315,10 @@ public class ProvenanceRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response listEntityActivitiesJsonLd(
-    @PathParam("appId") String entityAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
+    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
@@ -382,11 +386,13 @@ public class ProvenanceRest {
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response countActivitiesJsonLd(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
