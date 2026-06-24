@@ -74,6 +74,8 @@ export interface GetRdfRequest {
 
 export interface ListDataObjectsRequest {
     collectionAppId: string;
+    /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation lane filter in format "predicateIri=value". */
+    annotationFilter?: string;
     fields?: string;
     include?: string;
     name?: string;
@@ -429,6 +431,10 @@ export class DataObjectsApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['annotationFilter'] != null) {
+            queryParameters['annotationFilter'] = requestParameters['annotationFilter'];
+        }
 
         if (requestParameters['fields'] != null) {
             queryParameters['fields'] = requestParameters['fields'];
