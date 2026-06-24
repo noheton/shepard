@@ -10,7 +10,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.spi.fileparser.FileParserRegistry;
 import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
 import io.quarkus.logging.Log;
@@ -77,7 +77,7 @@ public class SingletonFileReferenceService {
   DataObjectDAO dataObjectDAO;
 
   @Inject
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Inject
   UserService userService;
@@ -187,7 +187,7 @@ public class SingletonFileReferenceService {
     ensureSharedNamespace();
 
     // Replace an existing file blob if this is a re-upload.
-    String oldOid = ref.getFile() != null ? ref.getFile().getOid() : null;
+    ShepardFile oldFile = ref.getFile();
 
     boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
     byte[] parseBuf = null;
@@ -199,20 +199,20 @@ public class SingletonFileReferenceService {
         Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
       }
       if (parseBuf != null) {
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
       } else {
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
       }
     } else {
-      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
     }
 
-    // Delete old GridFS blob after writing the new one (write-then-delete avoids data loss on failure).
-    if (oldOid != null) {
+    // Delete old blob after writing the new one (write-then-delete avoids data loss on failure).
+    if (oldFile != null) {
       try {
-        fileService.deleteFile(SHARED_FILES_NAMESPACE, oldOid);
+        fileStorageService.deleteFile(SHARED_FILES_NAMESPACE, oldFile);
       } catch (NotFoundException nfe) {
-        Log.warnf("FR1b/attachContent: old GridFS blob oid=%s already missing for appId=%s", oldOid, appId);
+        Log.warnf("FR1b/attachContent: old stored blob oid=%s already missing for appId=%s", oldFile.getOid(), appId);
       }
     }
 
@@ -291,14 +291,14 @@ public class SingletonFileReferenceService {
         parseBuf = null;
       }
       if (parseBuf != null) {
-        // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+        // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to the active store.
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
       } else {
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
       }
     } else {
-      // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
-      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to the active store.
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
     }
 
     User user = userService.getCurrentUser();
@@ -394,15 +394,15 @@ public class SingletonFileReferenceService {
       }
       if (parseBuf != null) {
         // Persist the file bytes first; the resulting ShepardFile carries
-        // its own oid, md5, fileSize from the GridFS upload.
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf));
+        // its own oid, md5, fileSize from the active store.
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), 0L);
       } else {
-        saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, 0L);
       }
     } else {
       // Persist the file bytes first; the resulting ShepardFile carries
-      // its own oid, md5, fileSize from the GridFS upload.
-      saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+      // its own oid, md5, fileSize from the active store.
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, 0L);
     }
 
     User user = userService.getCurrentUser();
@@ -527,7 +527,8 @@ public class SingletonFileReferenceService {
     if (ref == null) {
       throw new NotFoundException("No singleton FileReference with appId " + appId);
     }
-    String fileOid = ref.getFile() != null ? ref.getFile().getOid() : null;
+    ShepardFile file = ref.getFile();
+    String fileOid = file != null ? file.getOid() : null;
 
     // Soft-delete the Neo4j node (matches the rest of the codebase's
     // soft-delete posture for Reference primitives).
@@ -538,14 +539,15 @@ public class SingletonFileReferenceService {
 
     // Hard-delete the byte payload — there's no other Reference
     // pointing at it (singletons own their file by construction).
+    // Routes through the active/per-row storage adapter (idempotent).
     if (fileOid != null) {
       try {
-        fileService.deleteFile(SHARED_FILES_NAMESPACE, fileOid);
+        fileStorageService.deleteFile(SHARED_FILES_NAMESPACE, file);
       } catch (NotFoundException nfe) {
         // Already gone — log and continue. The Neo4j-side soft-delete
         // already took effect; no need to fail the whole operation
-        // over an idempotent Mongo no-op.
-        Log.warnf("FR1b: GridFS blob for singleton appId=%s oid=%s already missing", appId, fileOid);
+        // over an idempotent storage no-op.
+        Log.warnf("FR1b: stored blob for singleton appId=%s oid=%s already missing", appId, fileOid);
       }
     }
     Log.debugf("FR1b: deleted singleton FileReference appId=%s (oid=%s)", appId, fileOid);
@@ -568,7 +570,7 @@ public class SingletonFileReferenceService {
     if (file == null || file.getOid() == null) {
       throw new NotFoundException("Singleton FileReference appId=" + appId + " has no attached file");
     }
-    return fileService.getPayload(SHARED_FILES_NAMESPACE, file.getOid());
+    return fileStorageService.getPayload(SHARED_FILES_NAMESPACE, file);
   }
 
   /**

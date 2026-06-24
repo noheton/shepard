@@ -14,7 +14,7 @@ import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
 import de.dlr.shepard.context.references.file.services.FileGroupService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
 import de.dlr.shepard.v2.bundle.io.PagedFilesIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -93,7 +93,7 @@ public class FileBundleReferenceRest {
   FileGroupService fileGroupService;
 
   @Inject
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Inject
   PermissionsService permissionsService;
@@ -527,10 +527,12 @@ public class FileBundleReferenceRest {
 
     File file = upload.uploadedFile().toFile();
     // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
-    // FileService can enforce the upload cap before writing to GridFS.
+    // the GridFS adapter can enforce the upload cap before writing.
+    // STORAGE-SPI-UNIFY-1: route through the active storage adapter via
+    // FileStorageService instead of hardcoding the GridFS FileService write.
     long declaredSize = file.length();
     try (InputStream is = new FileInputStream(file)) {
-      ShepardFile saved = fileService.createFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is, declaredSize);
+      ShepardFile saved = fileStorageService.storeFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is, declaredSize);
       fileGroupService.attachFile(groupAppId, saved);
       return Response.status(Response.Status.CREATED).entity(saved).build();
     } catch (IOException ioe) {

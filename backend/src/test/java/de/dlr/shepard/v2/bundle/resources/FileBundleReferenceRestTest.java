@@ -24,7 +24,7 @@ import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
 import de.dlr.shepard.context.references.file.services.FileGroupService;
 import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -59,7 +59,7 @@ class FileBundleReferenceRestTest {
   FileGroupService fileGroupService;
 
   @Mock
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Mock
   PermissionsService permissionsService;
@@ -82,7 +82,7 @@ class FileBundleReferenceRestTest {
     resource.fileBundleReferenceDAO = fileBundleReferenceDAO;
     resource.fileGroupDAO = fileGroupDAO;
     resource.fileGroupService = fileGroupService;
-    resource.fileService = fileService;
+    resource.fileStorageService = fileStorageService;
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
     resource.objectMapper = new ObjectMapper();

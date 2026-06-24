@@ -9,7 +9,7 @@ import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.plugin.fileformat.thermography.io.AnalyzeResultIO;
 import de.dlr.shepard.plugin.fileformat.thermography.io.PlateHeatmapIO;
 import de.dlr.shepard.v2.admin.thermography.io.ThermographyConfigIO;
@@ -96,7 +96,7 @@ public class ThermographyAnalysisService {
   SemanticAnnotationDAO semanticAnnotationDAO;
 
   @Inject
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   /**
    * MFFD-NDT-ADMIN-CONFIG-1: runtime-mutable config singleton service.
@@ -176,7 +176,10 @@ public class ThermographyAnalysisService {
           // skip non-TIFF entries quietly, count as skipped for the summary.
           continue;
         }
-        NamedInputStream nis = fileService.getPayload(containerMongoId, f.getOid());
+        // STORAGE-SPI-UNIFY-1: route the read through the active / per-row
+        // FileStorage adapter so TIFF bytes resolve whether stored under
+        // GridFS or S3 — the ShepardFile carries the providerId.
+        NamedInputStream nis = fileStorageService.getPayload(containerMongoId, f);
         try (InputStream raw = nis.getInputStream()) {
           FrameDecode decoded = decodeTiffFrame(raw);
           if (decoded == null) {
