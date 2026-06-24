@@ -14,6 +14,7 @@ import {
   THERMOGRAPHY_PREDICATES,
   MFFD_GRID_PREDICATES,
   projectMetadataRows,
+  parseAspectRatio,
   type AnnotationMap,
 } from "~/utils/thermographyChannelPicker";
 
@@ -52,5 +53,29 @@ describe("ThermographyCanvas integration surface", () => {
 
   it("renders no rows for an empty annotation map (canvas shows placeholder only)", () => {
     expect(projectMetadataRows({}).length).toBe(0);
+  });
+});
+
+describe("parseAspectRatio", () => {
+  it("parses standard OTvis 1024x768 resolution", () => {
+    expect(parseAspectRatio("1024x768")).toBeCloseTo(1024 / 768, 5);
+  });
+  it("parses landscape HD 1920x1080", () => {
+    expect(parseAspectRatio("1920x1080")).toBeCloseTo(1920 / 1080, 5);
+  });
+  it("accepts uppercase X separator", () => {
+    expect(parseAspectRatio("640X480")).toBeCloseTo(640 / 480, 5);
+  });
+  it("accepts Unicode × separator", () => {
+    expect(parseAspectRatio("800×600")).toBeCloseTo(800 / 600, 5);
+  });
+  it("falls back to 1024/768 for null/undefined/empty", () => {
+    expect(parseAspectRatio(null)).toBeCloseTo(1024 / 768, 5);
+    expect(parseAspectRatio(undefined)).toBeCloseTo(1024 / 768, 5);
+    expect(parseAspectRatio("")).toBeCloseTo(1024 / 768, 5);
+  });
+  it("falls back to 1024/768 for non-parseable strings", () => {
+    expect(parseAspectRatio("bad")).toBeCloseTo(1024 / 768, 5);
+    expect(parseAspectRatio("0x0")).toBeCloseTo(1024 / 768, 5); // h=0 guard
   });
 });
