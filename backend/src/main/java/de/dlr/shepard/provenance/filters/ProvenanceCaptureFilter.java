@@ -126,7 +126,13 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);
-    if (!isMutation && !provenanceConfigService.effectiveCaptureReads()) return;
+    if (!isMutation) {
+      // PROV-CAPTURE-READS: reads are only captured on /v2/ paths (this fork's dev surface).
+      // v1 /shepard/api/... reads are never captured regardless of captureReads — upstream-compat rule.
+      String earlyPath = request.getUriInfo().getPath();
+      boolean isV2Path = earlyPath != null && earlyPath.startsWith("v2/");
+      if (!isV2Path || !provenanceConfigService.effectiveCaptureReads()) return;
+    }
 
     int status = response.getStatus();
     // Only capture successful writes; failures aren't activities in
