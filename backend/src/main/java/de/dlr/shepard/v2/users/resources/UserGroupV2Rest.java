@@ -81,8 +81,8 @@ public class UserGroupV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = "pageSize")
-  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
-  @Parameter(name = Constants.QP_ORDER_DESC)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
+  @Parameter(name = Constants.QP_ORDER_DESC, description = "When true, sort descending. Default false (ascending).")
   public Response listUserGroups(
     @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
     @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
