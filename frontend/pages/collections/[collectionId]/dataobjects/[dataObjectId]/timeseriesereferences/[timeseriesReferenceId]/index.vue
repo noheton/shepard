@@ -103,6 +103,7 @@ function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): strin
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog       = ref<boolean>(false);
+const showEditDialog          = ref<boolean>(false);
 const showVisualize3D        = ref<boolean>(false);
 const showDetectAnomalies    = ref<boolean>(false);
 const canVisualize3D = computed(
@@ -326,6 +327,15 @@ const onDelete = () => {
   showDeleteDialog.value = true;
 };
 
+// REF-EDIT-1: apply edits from the edit dialog without a full refetch.
+function onEditSaved(updates: { name: string; start: number; end: number }) {
+  if (timeseriesReference.value) {
+    timeseriesReference.value.name  = updates.name;
+    timeseriesReference.value.start = updates.start;
+    timeseriesReference.value.end   = updates.end;
+  }
+}
+
 const onDownload = (name: string) => {
   downloadTimeseries(name);
 };
@@ -444,6 +454,7 @@ watch(
                 id-label="ID"
                 :on-delete="onDelete"
                 :on-download="onDownload"
+                :on-edit="isAllowedToEditCollection ? () => (showEditDialog = true) : undefined"
               />
             </v-row>
 
@@ -766,6 +777,17 @@ watch(
       v-model:show-dialog="showDetectAnomalies"
       :ref-app-id="timeseriesReferenceAppId"
       @annotations-saved="refetchTsAnnotations"
+    />
+    <EditTimeseriesReferenceDialog
+      v-if="timeseriesReferenceAppId && timeseriesReference"
+      v-model:show-dialog="showEditDialog"
+      :timeseries-reference-app-id="timeseriesReferenceAppId"
+      :current-name="timeseriesReference.name"
+      :current-start="timeseriesReference.start"
+      :current-end="timeseriesReference.end"
+      :current-channels="timeseriesReference.timeseries"
+      :available-channels="channelsV2.map(ch => ({ measurement: ch.measurement ?? '', device: ch.device ?? '', location: ch.location ?? '', symbolicName: ch.symbolicName ?? '', field: ch.field ?? '' }))"
+      @saved="onEditSaved"
     />
   </div>
 </template>
