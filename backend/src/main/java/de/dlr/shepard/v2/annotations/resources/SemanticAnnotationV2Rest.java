@@ -215,9 +215,17 @@ public class SemanticAnnotationV2Rest {
   @APIResponse(responseCode = "400", description = "Query string is blank (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response find(
+    @Parameter(required = true, description =
+      "Case-insensitive substring to search for. Must be non-blank. Matched against "
+      + "annotation value names and predicate names.")
     @QueryParam("q") String q,
+    @Parameter(description =
+      "Narrow results to annotations whose predicate belongs to this vocabulary identifier. "
+      + "Optional — omit to search across all vocabularies.")
     @QueryParam("vocabId") String vocabId,
+    @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") int page,
+    @Parameter(description = "Page size — number of annotations per page (default 50, range 1–200).")
     @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {
