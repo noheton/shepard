@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -9,6 +11,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -212,5 +216,47 @@ class SnapshotListRestTest {
     SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
     assertThat(body.page()).isEqualTo(3);
     assertThat(body.pageSize()).isEqualTo(25);
+  }
+
+  // ─── APISIMP-SNAPSHOT-LIST-PARAMS-UNDOCUMENTED regression ────────────────
+
+  private java.lang.reflect.Parameter findListParam(String queryParamName) throws NoSuchMethodException {
+    java.lang.reflect.Method method = SnapshotListRest.class.getMethod(
+        "list", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    return Arrays.stream(method.getParameters())
+        .filter(p -> {
+          jakarta.ws.rs.QueryParam qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Test
+  void list_collectionAppIdParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Parameter param = findListParam("collectionAppId");
+    assertNotNull(param, "collectionAppId must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "collectionAppId must carry @Parameter");
+    assertFalse(ann.description().isBlank(), "@Parameter.description must be non-blank for collectionAppId");
+  }
+
+  @Test
+  void list_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Parameter param = findListParam("page");
+    assertNotNull(param, "page must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "page must carry @Parameter");
+    assertFalse(ann.description().isBlank(), "@Parameter.description must be non-blank for page");
+  }
+
+  @Test
+  void list_pageSizeParam_hasParameterAnnotationDocumentingClamp() throws NoSuchMethodException {
+    java.lang.reflect.Parameter param = findListParam("pageSize");
+    assertNotNull(param, "pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter");
+    assertFalse(ann.description().isBlank(), "@Parameter.description must be non-blank for pageSize");
+    assertThat(ann.description()).contains("200");
   }
 }
