@@ -227,13 +227,17 @@ class Client:
     def request(self, method: str, path: str, *, expect=(200, 201, 204),
                 retry_on_403=False, max_403_retries=12, **kw) -> requests.Response:
         url = path if path.startswith("http") else f"{self.host}{path}"
+        # Caller-overridable timeout (default 300s). Large video/MP4 content PUTs
+        # need a much longer ceiling — at 300s the proxy returns 499 (Client Closed
+        # Request) mid-upload. The upload helper passes a 30-min timeout.
+        timeout = kw.pop("timeout", 300)
         attempt = 0
         n403 = 0
         backoff = 1.0
         while True:
             attempt += 1
             try:
-                resp = self.session.request(method, url, timeout=300, **kw)
+                resp = self.session.request(method, url, timeout=timeout, **kw)
             except (requests.ConnectionError, requests.Timeout) as e:
                 self._log(f"  [retry] {method} {path} transport error: {e} "
                           f"(attempt {attempt}, sleep {backoff:.0f}s)")
@@ -639,13 +643,16 @@ class Importer:
             if cached is not None:
                 return cached
         names: set = set()
-        try:
-            lst = self.c.get_json(
-                f"/v2/references?kind=file&dataObjectAppId={do_appid}")
-            if isinstance(lst, list):
-                names = {x.get("name") for x in lst if x.get("name")}
-        except RuntimeError:
-            pass
+        # cover BOTH kinds so the idempotency skip works for singleton files AND
+        # video references (MP4/LRV/AVI go through kind=video, not kind=file).
+        for k in ("file", "video"):
+            try:
+                lst = self.c.get_json(
+                    f"/v2/references?kind={k}&dataObjectAppId={do_appid}")
+                if isinstance(lst, list):
+                    names |= {x.get("name") for x in lst if x.get("name")}
+            except RuntimeError:
+                pass
         with self._lock:
             merged = self._live_file_refs.get(do_appid, set()) | names
             self._live_file_refs[do_appid] = merged
@@ -660,17 +667,25 @@ class Importer:
         failure so the caller treats it as a mismatch and re-uploads."""
         try:
             meta = self.c.get_json(f"/v2/references/{ref_appid}")
-            f = (meta or {}).get("payload", {}).get("file")
-            if f and f.get("fileSize") is not None:
-                return int(f["fileSize"])
+            payload = (meta or {}).get("payload", {})
+            # singleton file → payload.file.fileSize; video → payload.video.fileSize
+            for key in ("file", "video"):
+                blob = payload.get(key)
+                if blob:
+                    for sz in ("fileSize", "sizeBytes", "size"):
+                        if blob.get(sz) is not None:
+                            return int(blob[sz])
             return -1
         except (RuntimeError, ValueError, KeyError, TypeError):
             return -1
 
     def _upload_file(self, do_appid: str, path: Path) -> Optional[str]:
-        """Singleton FileReference (FR1b). Returns ref appId. Idempotent + verifies
-        stored length == source (re-upload on short-upload)."""
+        """Singleton FileReference (FR1b) — or a VideoReference (kind=video) for
+        .mp4/.lrv/.avi. Returns ref appId. Idempotent + verifies stored length ==
+        source (re-upload on short-upload). Video bytes share the same Mongo
+        collection as singleton files, so this stays container-minimal."""
         fname = path.name
+        ref_kind = "video" if path.suffix.lower() in VIDEO_EXTS else "file"
         cached = self.st.get_file(do_appid, fname)
         if cached:
             self.n.add(file_refs=1, file_refs_reused=1)
@@ -699,7 +714,7 @@ class Importer:
             # DISCRIMINATOR-2). retry_on_403 tolerates :Permissions wiring lag
             # right after the DO create.
             created = self.c.post_json(
-                f"/v2/references?kind=file&dataObjectAppId={do_appid}",
+                f"/v2/references?kind={ref_kind}&dataObjectAppId={do_appid}",
                 {"name": fname}, retry_on_403=True)
             ref_appid = created["appId"]
             with open(path, "rb") as fh:
@@ -707,7 +722,8 @@ class Importer:
                     "PUT",
                     f"/v2/references/{ref_appid}/content?filename={quote(fname)}",
                     data=fh, headers={"Content-Type": "application/octet-stream"},
-                    expect=(200, 201, 204), retry_on_403=True)
+                    expect=(200, 201, 204), retry_on_403=True,
+                    timeout=1800)  # 30 min ceiling for large video/MP4 uploads
             stored = self._content_length(ref_appid)
             if stored == size or size == 0:
                 break
