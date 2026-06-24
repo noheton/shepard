@@ -78,7 +78,7 @@ public class GitReferenceRest {
   private static Response gone(String replacement) {
     return Response.status(Response.Status.GONE)
       .type("application/problem+json")
-      .header("Link", "</v2/references>; rel=\"successor-version\"")
+      .header("Location", replacement)
       .entity(new ProblemJson(
         "urn:shepard:error:gone",
         "Endpoint retired",
