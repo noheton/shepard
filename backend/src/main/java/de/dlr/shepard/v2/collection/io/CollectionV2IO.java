@@ -19,9 +19,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>Follows the same sidecar pattern as {@link de.dlr.shepard.v2.containers.io.BasicContainerV2IO}.
  */
-@JsonIgnoreProperties({"id"})
+@JsonIgnoreProperties({"id", "dataObjectIds", "incomingIds", "defaultFileContainerId"})
 @NoArgsConstructor
-@Schema(name = "CollectionV2", description = "Collection response (v2) — id field suppressed; use appId.")
+@Schema(name = "CollectionV2", description = "Collection response (v2) — numeric id fields suppressed; use appId.")
 public class CollectionV2IO extends CollectionIO {
 
   public CollectionV2IO(Collection collection) {
