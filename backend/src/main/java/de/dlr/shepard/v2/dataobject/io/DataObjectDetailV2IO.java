@@ -28,13 +28,23 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * modified per the API-version policy) with typed per-kind container lists
  * and compact summary objects for related DataObjects.
  *
- * <p>Legacy fields from {@link DataObjectIO} ({@code referenceIds[]},
- * {@code successorIds[]}, etc.) are retained for backward compatibility.
+ * <p>APISIMP-DO-IO-NUMERIC-ID-LEAK: inherited numeric Neo4j id arrays
+ * ({@code collectionId}, {@code referenceIds}, {@code successorIds}, etc.)
+ * are suppressed from the v2 wire — callers use appId (UUID v7) exclusively.
  */
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonIgnoreProperties({"id"})
+@JsonIgnoreProperties({
+  // Neo4j internal node id — always suppressed on v2 (use appId).
+  "id",
+  // APISIMP-DO-IO-NUMERIC-ID-LEAK: inherited numeric Neo4j ids from DataObjectIO.
+  // v2 clients address entities by appId (UUID v7), never by substrate-internal longs.
+  "collectionId", "referenceIds", "successorIds", "predecessorIds",
+  "childrenIds", "parentId", "incomingIds",
+  // Deprecated int counts — superseded by typed container lists in this class.
+  "timeseriesReferenceCount", "fileBundleCount", "structuredDataReferenceCount"
+})
 @Schema(
   name = "DataObjectDetail",
   description = "Full DataObject detail response, extends DataObjectIO with typed " +

@@ -10,9 +10,9 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-BASICENTITY-DROP-ID slice 2 — verifies that {@link CollectionV2IO}
- * suppresses the Neo4j internal {@code id} field from the /v2/ wire shape
- * while preserving {@code appId} and collection-specific fields.
+ * APISIMP-COLL-IO-NUMERIC-ID-LEAK — verifies that {@link CollectionV2IO}
+ * suppresses all inherited numeric Neo4j id arrays and deprecated numeric fields
+ * from the /v2/ wire shape, in addition to the node-internal {@code id}.
  *
  * <p>The v1 {@code /shepard/api/} wire shape is not tested here; it is
  * covered by the existing v1 tests and must remain unchanged.
@@ -56,5 +56,23 @@ class CollectionV2IOTest {
     var io = new CollectionV2IO();
     io.setAppId("uuid-test");
     assertEquals("uuid-test", io.getAppId());
+  }
+
+  @Test
+  void collectionV2IO_suppressesNumericIdArrays() throws Exception {
+    // APISIMP-COLL-IO-NUMERIC-ID-LEAK: numeric arrays and deprecated Long inherited
+    // from CollectionIO must not appear on the /v2/ wire shape.
+    var c = collection("019b-numeric", "MFFD-Strip");
+    var io = new CollectionV2IO(c);
+    var tree = (ObjectNode) MAPPER.valueToTree(io);
+
+    assertFalse(tree.has("dataObjectIds"), "dataObjectIds (numeric[]) must not appear on /v2/");
+    assertFalse(tree.has("incomingIds"), "incomingIds (numeric[]) must not appear on /v2/");
+    assertFalse(tree.has("defaultFileContainerId"), "deprecated numeric Long must not appear on /v2/");
+    // v2 replacements must still be present
+    assertTrue(tree.has("appId"), "appId must be present");
+    // defaultFileContainerAppId is present only when non-null (JsonInclude.NON_NULL)
+    assertFalse(tree.has("defaultFileContainerAppId"),
+      "defaultFileContainerAppId absent when no default container is set");
   }
 }

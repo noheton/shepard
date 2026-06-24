@@ -28,7 +28,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonIgnoreProperties({"id"})
+@JsonIgnoreProperties({
+  // Neo4j internal node id — always suppressed on v2 (use appId).
+  "id",
+  // APISIMP-DO-IO-NUMERIC-ID-LEAK: inherited numeric Neo4j ids from DataObjectIO.
+  // v2 clients address entities by appId (UUID v7), never by substrate-internal longs.
+  "collectionId", "referenceIds", "successorIds", "predecessorIds",
+  "childrenIds", "parentId", "incomingIds",
+  // Deprecated int counts — superseded by timeseriesCount/fileCount/structuredDataCount
+  // (long, non-deleted-only) declared in this class.
+  "timeseriesReferenceCount", "fileBundleCount", "structuredDataReferenceCount"
+})
 @Schema(name = "DataObjectListItemV2", description = "DataObject list item enriched with per-kind reference counts (v2).")
 @JsonFilter(DataObjectListItemV2IO.FILTER_ID)
 public class DataObjectListItemV2IO extends DataObjectIO {
