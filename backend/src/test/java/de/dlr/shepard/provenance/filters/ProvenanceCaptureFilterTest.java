@@ -165,6 +165,19 @@ class ProvenanceCaptureFilterTest {
   }
 
   @Test
+  void getDoesNotCapture_v1Path_evenWhenCaptureReadsOn() throws IOException {
+    // PROV-CAPTURE-READS: v1 /shepard/api/... reads are never captured — upstream-compat rule.
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(true);
+    when(uriInfo.getPath()).thenReturn("shepard/api/collections");
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
+  }
+
+  @Test
   void failedRequestDoesNotCapture() throws IOException {
     when(request.getMethod()).thenReturn("POST");
     when(response.getStatus()).thenReturn(403);
