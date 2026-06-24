@@ -7,8 +7,12 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.plugins.v1compat.io.LegacyV1StatsIO;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,5 +69,24 @@ class LegacyV1StatsAdminRestTest {
     rest.getStats(-5);
 
     verify(stats, org.mockito.Mockito.times(2)).snapshot(1);
+  }
+
+  // ─── APISIMP-V1COMPAT-STATS-TOPN-PARAM regression ───────────────────────
+
+  @Test
+  void getStats_topNParamIsDocumented() throws NoSuchMethodException {
+    Method method = LegacyV1StatsAdminRest.class.getMethod("getStats", Integer.class);
+    String desc = Arrays.stream(method.getParameters())
+      .filter(p -> p.getAnnotation(QueryParam.class) != null
+        && "topN".equals(p.getAnnotation(QueryParam.class).value()))
+      .map(p -> {
+        Parameter ann = p.getAnnotation(Parameter.class);
+        return ann != null ? ann.description() : "";
+      })
+      .findFirst()
+      .orElse("");
+    assertThat(desc)
+      .as("@Parameter description must be present and non-blank on @QueryParam(\"topN\") — APISIMP-V1COMPAT-STATS-TOPN-PARAM")
+      .isNotBlank();
   }
 }
