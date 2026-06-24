@@ -3,6 +3,11 @@ import {
   instanceOfStructuredDataReference,
   instanceOfTimeseriesReference,
 } from "@dlr-shepard/backend-client";
+import type {
+  FileReference,
+  StructuredDataReference,
+  TimeseriesReference,
+} from "@dlr-shepard/backend-client";
 import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
 import type { GitReferenceIO } from "~/composables/context/gitReferenceTypes";
@@ -138,7 +143,16 @@ export const mapSpatialReferenceToDataTableElement = (
   },
 });
 
+/**
+ * REFS-V2-PANELS — classify a DataReference. v2-sourced refs carry the stable
+ * `__refKind` discriminator (the generated `instanceOf*` guards require a
+ * numeric `id` that v2 refs never carry, so they can't classify these rows).
+ * Falls back to the guards for any legacy v1-shaped DataReference.
+ */
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
+  if (ref.__refKind === "timeseries") return "TimeSeries";
+  if (ref.__refKind === "bundle") return "File Bundle";
+  if (ref.__refKind === "structured-data") return "Structured Data";
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";
   if (instanceOfFileReference(ref)) return "File Bundle";
   if (instanceOfStructuredDataReference(ref)) return "Structured Data";
@@ -147,35 +161,43 @@ const mapRefType = (ref: DataReference): DataTableElement["type"] => {
 };
 
 const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
-  if (instanceOfTimeseriesReference(ref)) {
+  const refType = mapRefType(ref);
+  // The reference's appId drives the v2 /v2/annotations surface (the numeric
+  // `id` is undefined for v2-sourced refs; legacy v1 cells fall back to it).
+  const appId = (ref as unknown as { appId?: string }).appId;
+  const id = (ref as unknown as { id?: number }).id;
+  if (refType === "TimeSeries") {
+    const ts = ref as unknown as TimeseriesReference;
     return {
-      id: ref.id,
-      // V2-only annotation path: the reference's appId drives the v2
-      // /v2/annotations surface (legacy numeric id only used by still-v1 cells).
-      appId: (ref as unknown as { appId?: string }).appId,
-      containerId: ref.timeseriesContainerId,
+      id,
+      appId,
+      containerId: ts.timeseriesContainerId,
       ...mapNameAndAvailability(ref),
-      interval: `${toShortDateTimeString(parseDateFromNanos(ref.start))} - ${toShortDateTimeString(parseDateFromNanos(ref.end))}`,
+      interval: `${toShortDateTimeString(parseDateFromNanos(ts.start))} - ${toShortDateTimeString(parseDateFromNanos(ts.end))}`,
       // AI1c — carry the quality score so the table can show a chip
-      qualityScore: ref.qualityScore ?? null,
+      qualityScore: ts.qualityScore ?? null,
     };
   }
-  if (instanceOfFileReference(ref))
+  if (refType === "File Bundle") {
+    const fr = ref as unknown as FileReference;
     return {
-      id: ref.id,
-      appId: (ref as unknown as { appId?: string }).appId,
-      containerId: ref.fileContainerId,
+      id,
+      appId,
+      containerId: fr.fileContainerId,
       ...mapNameAndAvailability(ref),
-      fileCount: ref.fileOids.length,
+      fileCount: fr.fileOids.length,
     };
-  if (instanceOfStructuredDataReference(ref))
+  }
+  if (refType === "Structured Data") {
+    const sdr = ref as unknown as StructuredDataReference;
     return {
-      id: ref.id,
-      appId: (ref as unknown as { appId?: string }).appId,
-      containerId: ref.structuredDataContainerId,
+      id,
+      appId,
+      containerId: sdr.structuredDataContainerId,
       ...mapNameAndAvailability(ref),
-      payloadCount: ref.structuredDataOids.length,
+      payloadCount: sdr.structuredDataOids.length,
     };
+  }
 
   throw Error("Cannot map container meta data: Unknown reference type.");
 };

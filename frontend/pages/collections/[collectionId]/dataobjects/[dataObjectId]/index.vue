@@ -99,9 +99,15 @@ const dataObjectNumericId = computed<number | undefined>(() =>
   resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
 );
 
+// REFS-V2-PANELS: the reference fetch is now appId-keyed (the v2 unified
+// /v2/references endpoint). Prefer the loaded DataObject's appId; fall back to
+// the route param (which IS the appId in the v2 routing) so the fetch can fire
+// before the entity resolves. Never a numeric id — that was the empty-panel bug.
+const dataObjectAppIdForRefs = computed<string | undefined>(
+  () => dataObject.value?.appId ?? routeParams.value.dataObjectId ?? undefined,
+);
 const { dataReferences } = useDataReferencesByDataObject(
-  collectionNumericId,
-  dataObjectNumericId,
+  dataObjectAppIdForRefs,
 );
 const { relatedEntities } = useRelatedEntities(
   collectionNumericId,
