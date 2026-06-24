@@ -15,6 +15,7 @@ const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
+const showEditDialog = ref<boolean>(false);
 const showStructuredDataContentViewerDialog = ref<boolean>(false);
 const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
 const selectedPayload = ref<string>("");
@@ -60,6 +61,10 @@ watch(structuredData, () => {
 
 function onAnnotate() {
   showAddAnnotationDialog.value = true;
+}
+
+function onEdit() {
+  showEditDialog.value = true;
 }
 
 function onDelete() {
@@ -198,6 +203,7 @@ watch(structuredDataReference, () => {
                   },
                 }"
                 :on-annotate="onAnnotate"
+                :on-edit="structuredDataReference.appId && isAllowedToEditCollection ? onEdit : undefined"
                 :on-delete="onDelete"
                 id-label="ID"
               />
@@ -310,6 +316,13 @@ watch(structuredDataReference, () => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <EditStructuredDataReferenceDialog
+      v-if="showEditDialog && structuredDataReference?.appId"
+      v-model:show-dialog="showEditDialog"
+      :structured-data-reference-app-id="structuredDataReference.appId"
+      :current-name="structuredDataReference.name"
+      @saved="(newName) => { if (structuredDataReference) structuredDataReference.name = newName; }"
+    />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
