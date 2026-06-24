@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 68 |
-| `concept` | 32 |
+| `concept` | 33 |
 | `idea` | 13 |
 | `feature-defined` | 132 |
 | `audited-by-personas` | 78 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 90 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **475** |
+| **total docs** | **476** |
 | **UNTAGGED** | **0** |
 
 ## fragment (68)
@@ -116,7 +116,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-06-18 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-06-18 |
 
-## concept (32)
+## concept (33)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -145,6 +145,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI & Graph Ergonomics — Design Cluster | 2026-05-23 | 2026-06-18 |
 | [`aidocs/ops/p22-sse-proxy-compat-findings.md`](ops/p22-sse-proxy-compat-findings.md) | P22 — SSE proxy-compatibility findings | 2026-05-26 | 2026-06-18 |
 | [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | 2026-06-18 |
+| [`aidocs/platform/195-feature-toggles-runtime-audit.md`](platform/195-feature-toggles-runtime-audit.md) | 195 — Feature toggle runtime migration audit | 2026-06-20 | — |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-06-18 |
 | [`aidocs/platform/API3-container-safe-delete-design.md`](platform/API3-container-safe-delete-design.md) | API3 — Safe-Delete Design for Container Endpoints | 2026-05-26 | 2026-06-18 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-06-18 |
