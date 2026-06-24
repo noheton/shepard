@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import de.dlr.shepard.context.semantic.daos.PredicateDAO;
 import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.Predicate;
@@ -220,5 +222,27 @@ class VocabularyBrowseRestTest {
     @SuppressWarnings("unchecked")
     List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
     assertTrue(body.isEmpty());
+  }
+
+  // ─── APISIMP-VOCAB-BROWSE-SCOPE-UNDOCUMENTED: @Parameter regression ───────
+
+  @Test
+  void listVocabulariesUsedBy_scopeParamIsDocumented() throws NoSuchMethodException {
+    java.lang.reflect.Method method = VocabularyBrowseRest.class.getMethod(
+        "listVocabulariesUsedBy", String.class, String.class);
+    java.lang.reflect.Parameter param = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "scope".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "scope must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "scope must carry @Parameter annotation (APISIMP-VOCAB-BROWSE-SCOPE-UNDOCUMENTED)");
+    assertTrue(
+        ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for scope");
   }
 }

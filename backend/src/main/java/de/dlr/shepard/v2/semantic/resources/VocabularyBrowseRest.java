@@ -24,6 +24,7 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -176,6 +177,12 @@ public class VocabularyBrowseRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabulariesUsedBy(
     @PathParam("entityAppId") String entityAppId,
+    @Parameter(
+      description =
+        "Annotation walk scope. 'data-object' (default): only the entity's own " +
+        "annotations. 'collection': walks [:HAS_DATAOBJECT*0..] descendants too. " +
+        "Any other value is treated as 'data-object'."
+    )
     @QueryParam("scope") @DefaultValue("data-object") String scope
   ) {
     if (entityAppId == null || entityAppId.isBlank()) {
