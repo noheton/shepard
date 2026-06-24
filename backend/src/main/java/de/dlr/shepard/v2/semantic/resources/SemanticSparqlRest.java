@@ -205,13 +205,13 @@ public class SemanticSparqlRest {
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
     @Parameter(
+      required = true,
       description =
         "URL-encoded SPARQL 1.1 SELECT or ASK query string. Must be non-empty — null or blank " +
         "returns 400. Only `SELECT` and `ASK` query forms are accepted; any mutation form " +
         "(`CONSTRUCT`, `INSERT`, `DELETE`, `UPDATE`, …) is rejected with 400 before reaching " +
         "the backend. For queries longer than ~2 KB prefer the POST form variant " +
-        "(`application/x-www-form-urlencoded`, field name `query`) to avoid proxy URL-length limits.",
-      required = true
+        "(`application/x-www-form-urlencoded`, field name `query`) to avoid proxy URL-length limits."
     )
     @QueryParam("query") String query,
     @Context SecurityContext sc
