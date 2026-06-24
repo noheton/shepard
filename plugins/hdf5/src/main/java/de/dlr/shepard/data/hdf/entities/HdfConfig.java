@@ -24,7 +24,7 @@ import org.neo4j.ogm.annotation.Property;
  * which returns this package — already covers OGM auto-discovery without
  * any change to {@code HdfPayloadKind}.
  *
- * <p>V115 migration adds the uniqueness constraint on {@code appId}.
+ * <p>V118 migration adds the uniqueness constraint on {@code appId}.
  */
 @NodeEntity
 @Getter
