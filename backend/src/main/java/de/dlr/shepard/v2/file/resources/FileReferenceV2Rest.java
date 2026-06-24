@@ -83,7 +83,8 @@ public class FileReferenceV2Rest {
       "/problems/file-references.multipart-upload-retired",
       "POST /v2/files multipart upload retired (APISIMP-KIND-DISCRIMINATOR-2). " +
       "Step 1: POST /v2/references?kind=file&dataObjectAppId=<doAppId> with JSON body {\"name\":\"<name>\"}. " +
-      "Step 2: PUT /v2/references/<appId>/content?filename=<original-name> with Content-Type: application/octet-stream body."
+      "Step 2: PUT /v2/references/<appId>/content?filename=<original-name> with Content-Type: application/octet-stream body.",
+      "/v2/references"
     );
   }
 
@@ -103,7 +104,8 @@ public class FileReferenceV2Rest {
     return gone(
       "/problems/file-references.list-by-do-retired",
       "GET /v2/files/by-data-object/" + dataObjectAppId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
-      "Migrate to: GET /v2/references?kind=file&dataObjectAppId=" + dataObjectAppId
+      "Migrate to: GET /v2/references?kind=file&dataObjectAppId=" + dataObjectAppId,
+      "/v2/references?kind=file&dataObjectAppId=" + dataObjectAppId
     );
   }
 
@@ -123,7 +125,8 @@ public class FileReferenceV2Rest {
     return gone(
       "/problems/file-references.get-retired",
       "GET /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
-      "Migrate to: GET /v2/references/" + appId
+      "Migrate to: GET /v2/references/" + appId,
+      "/v2/references/" + appId
     );
   }
 
@@ -145,7 +148,8 @@ public class FileReferenceV2Rest {
     return gone(
       "/problems/file-references.content-retired",
       "GET /v2/files/" + appId + "/content retired (APISIMP-FILE-PATH-RETIRE-2). " +
-      "Migrate to: GET /v2/references/" + appId + "/content"
+      "Migrate to: GET /v2/references/" + appId + "/content",
+      "/v2/references/" + appId + "/content"
     );
   }
 
@@ -167,7 +171,8 @@ public class FileReferenceV2Rest {
     return gone(
       "/problems/file-references.patch-retired",
       "PATCH /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
-      "Migrate to: PATCH /v2/references/" + appId
+      "Migrate to: PATCH /v2/references/" + appId,
+      "/v2/references/" + appId
     );
   }
 
@@ -187,7 +192,8 @@ public class FileReferenceV2Rest {
     return gone(
       "/problems/file-references.delete-retired",
       "DELETE /v2/files/" + appId + " retired (APISIMP-FILE-PATH-RETIRE-2). " +
-      "Migrate to: DELETE /v2/references/" + appId
+      "Migrate to: DELETE /v2/references/" + appId,
+      "/v2/references/" + appId
     );
   }
 
@@ -240,15 +246,17 @@ public class FileReferenceV2Rest {
     return out;
   }
 
-  private static Response gone(String type, String detail) {
+  private static Response gone(String type, String detail, String location) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("status", 410);
     body.put("title", "Gone");
     body.put("type", type);
     body.put("detail", detail);
-    return Response.status(Response.Status.GONE)
-      .type(MediaType.APPLICATION_JSON)
-      .entity(body)
-      .build();
+    Response.ResponseBuilder rb = Response.status(Response.Status.GONE)
+      .type(MediaType.APPLICATION_JSON);
+    if (location != null) {
+      rb = rb.header("Location", location);
+    }
+    return rb.entity(body).build();
   }
 }
