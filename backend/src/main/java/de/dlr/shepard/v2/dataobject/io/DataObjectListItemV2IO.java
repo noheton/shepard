@@ -28,7 +28,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonIgnoreProperties({"id"})
+@JsonIgnoreProperties({"id", "collectionId", "referenceIds", "successorIds",
+  "predecessorIds", "childrenIds", "parentId", "incomingIds"})
 @Schema(name = "DataObjectListItemV2", description = "DataObject list item enriched with per-kind reference counts (v2).")
 @JsonFilter(DataObjectListItemV2IO.FILTER_ID)
 public class DataObjectListItemV2IO extends DataObjectIO {

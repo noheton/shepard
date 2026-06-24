@@ -1,13 +1,18 @@
 package de.dlr.shepard.v2.references.handlers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
@@ -51,6 +56,9 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
   TimeseriesAnnotationDAO tsAnnotationDAO;
+
+  @Inject
+  ReferencedTimeseriesNodeEntityDAO tsNodeEntityDAO;
 
   @Override
   public String kind() {
@@ -119,6 +127,38 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
       throw new BadRequestException("invalid timeseries patch body: " + iae.getMessage());
     }
 
+    // REF-EDIT-1: apply basic scalar fields from the raw map so that absent keys
+    // are distinguished from explicit zero/null (primitive long can't express absence).
+    if (patch.containsKey("name") && patch.get("name") instanceof String s && !s.isBlank()) {
+      ref.setName(s.strip());
+    }
+    if (patch.containsKey("start") && patch.get("start") != null) {
+      ref.setStart(toLong(patch.get("start"), "start"));
+    }
+    if (patch.containsKey("end") && patch.get("end") != null) {
+      ref.setEnd(toLong(patch.get("end"), "end"));
+    }
+
+    // REF-EDIT-1: replace the channel list when provided.
+    if (patch.containsKey("timeseries") && patch.get("timeseries") instanceof List<?> rawList && !rawList.isEmpty()) {
+      List<Timeseries> newTimeseries;
+      try {
+        newTimeseries = objectMapper.convertValue(rawList, new TypeReference<List<Timeseries>>() {});
+      } catch (IllegalArgumentException iae) {
+        throw new BadRequestException("invalid timeseries channel list: " + iae.getMessage());
+      }
+      if (newTimeseries.isEmpty()) {
+        throw new BadRequestException("timeseries must be non-empty when provided");
+      }
+      newTimeseries.forEach(ts -> TimeseriesValidator.assertTimeseriesPropertiesAreValid(ts));
+      ref.getReferencedTimeseriesList().clear();
+      for (Timeseries ts : newTimeseries) {
+        ReferencedTimeseriesNodeEntity found = tsNodeEntityDAO.find(
+          ts.getMeasurement(), ts.getDevice(), ts.getLocation(), ts.getSymbolicName(), ts.getField());
+        ref.addTimeseries(found != null ? found : new ReferencedTimeseriesNodeEntity(ts));
+      }
+    }
+
     // Same validation the converged PATCH /v2/timeseries-references/{appId} applied.
     String effectiveTimeRef = body.getTimeReference() != null ? body.getTimeReference() : ref.getTimeReference();
     Long effectiveOffset = body.getWallClockOffset() != null ? body.getWallClockOffset() : ref.getWallClockOffset();
@@ -126,6 +166,7 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
       throw new BadRequestException("wallClockOffset is required when timeReference is EXPERIMENT_RELATIVE");
     }
 
+    // updateTimeReference applies TM1 fields and persists (single save covers all changes above).
     TimeseriesReference updated = timeseriesReferenceService.updateTimeReference(ref, body);
     return toIO(updated);
   }

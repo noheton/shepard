@@ -192,6 +192,7 @@ public class DataObjectV2Rest {
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
     @QueryParam("include") String include,
     @QueryParam("fields") String fields,
+    @QueryParam("annotationFilter") String annotationFilter,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -222,6 +223,7 @@ public class DataObjectV2Rest {
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
+    if (annotationFilter != null) params = params.withAnnotationFilter(annotationFilter);
     params = params.withPageAndSize(safePage, safeSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);

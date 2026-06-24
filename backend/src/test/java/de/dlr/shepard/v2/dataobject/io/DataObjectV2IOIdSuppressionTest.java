@@ -11,13 +11,13 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-BASICENTITY-DROP-ID slice 2 — verifies that
- * {@link DataObjectListItemV2IO} and {@link DataObjectDetailV2IO}
- * suppress the Neo4j internal {@code id} field from the /v2/ wire shape.
+ * APISIMP-BASICENTITY-DROP-ID slice 2 + APISIMP-DO-IO-NUMERIC-ID-LEAK —
+ * verifies that {@link DataObjectListItemV2IO} and {@link DataObjectDetailV2IO}
+ * suppress all inherited Neo4j internal numeric id fields from the /v2/ wire shape.
  *
- * <p>Both classes extend the shared v1 {@link de.dlr.shepard.context.collection.io.DataObjectIO}
- * (which exposes {@code id}) and add {@code @JsonIgnoreProperties({"id"})}
- * to suppress it on the v2 surface.
+ * <p>Numeric fields suppressed: {@code id}, {@code collectionId},
+ * {@code referenceIds}, {@code successorIds}, {@code predecessorIds},
+ * {@code childrenIds}, {@code parentId}, {@code incomingIds}.
  */
 class DataObjectV2IOIdSuppressionTest {
 
@@ -70,5 +70,39 @@ class DataObjectV2IOIdSuppressionTest {
     assertEquals(3, tree.get("timeseriesCount").asLong());
     assertEquals(5, tree.get("fileCount").asLong());
     assertEquals(2, tree.get("structuredDataCount").asLong());
+  }
+
+  // APISIMP-DO-IO-NUMERIC-ID-LEAK — extended suppression tests
+
+  private static final java.util.List<String> SUPPRESSED_NUMERIC_FIELDS =
+    java.util.List.of("id", "collectionId", "referenceIds", "successorIds",
+      "predecessorIds", "childrenIds", "parentId", "incomingIds");
+
+  @Test
+  void dataObjectListItemV2IO_suppressesAllInheritedNumericIdFields() throws Exception {
+    var io = makeListItem("018f-list-numeric", "AFP-Layer-002");
+    var writer = DataObjectListFieldFilter.writerFor(MAPPER, null, true);
+    var json = writer.writeValueAsString(io);
+    var tree = (ObjectNode) MAPPER.readTree(json);
+
+    for (var field : SUPPRESSED_NUMERIC_FIELDS) {
+      assertFalse(tree.has(field),
+        "Numeric id field '" + field + "' must not appear in /v2/ DataObject list responses");
+    }
+    assertTrue(tree.has("appId"));
+  }
+
+  @Test
+  void dataObjectDetailV2IO_suppressesAllInheritedNumericIdFields() throws Exception {
+    var io = new DataObjectDetailV2IO();
+    io.setAppId("018f-detail-numeric");
+    io.setName("TR-004-anomaly");
+    var tree = (ObjectNode) MAPPER.valueToTree(io);
+
+    for (var field : SUPPRESSED_NUMERIC_FIELDS) {
+      assertFalse(tree.has(field),
+        "Numeric id field '" + field + "' must not appear in /v2/ DataObject detail responses");
+    }
+    assertTrue(tree.has("appId"));
   }
 }

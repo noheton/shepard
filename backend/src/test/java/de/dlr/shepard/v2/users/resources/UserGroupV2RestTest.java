@@ -1,7 +1,9 @@
 package de.dlr.shepard.v2.users.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -18,14 +20,18 @@ import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
+import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.ws.rs.core.Response;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -294,5 +300,29 @@ class UserGroupV2RestTest {
     } catch (InvalidPathException e) {
       assertNotNull(e);
     }
+  }
+
+  // ── APISIMP-USERGROUP-ORDERBY — reflection regression tests ─────────────
+
+  @Test
+  void listUserGroups_orderByParam_hasDescriptionAnnotation() throws NoSuchMethodException {
+    Method m = UserGroupV2Rest.class.getDeclaredMethod(
+        "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class);
+    var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
+        .filter(p -> "orderBy".equals(p.name()))
+        .findFirst();
+    assertTrue(ann.isPresent(), "listUserGroups must have @Parameter(name=\"orderBy\")");
+    assertFalse(ann.get().description().isBlank(), "@Parameter.description must be non-blank for orderBy");
+  }
+
+  @Test
+  void listUserGroups_orderDescParam_hasDescriptionAnnotation() throws NoSuchMethodException {
+    Method m = UserGroupV2Rest.class.getDeclaredMethod(
+        "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class);
+    var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
+        .filter(p -> "orderDesc".equals(p.name()))
+        .findFirst();
+    assertTrue(ann.isPresent(), "listUserGroups must have @Parameter(name=\"orderDesc\")");
+    assertFalse(ann.get().description().isBlank(), "@Parameter.description must be non-blank for orderDesc");
   }
 }

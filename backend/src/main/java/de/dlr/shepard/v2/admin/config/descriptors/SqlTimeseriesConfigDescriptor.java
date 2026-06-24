@@ -37,7 +37,7 @@ public class SqlTimeseriesConfigDescriptor implements ConfigDescriptor<SqlTimese
 
   @Override
   public String description() {
-    return "Caps for the SQL-over-timeseries query surface: maxRows and maxDuration.";
+    return "SQL-over-timeseries endpoint toggle and query caps: enabled, maxRows, maxDuration.";
   }
 
   @Override
@@ -49,9 +49,11 @@ public class SqlTimeseriesConfigDescriptor implements ConfigDescriptor<SqlTimese
   public SqlTimeseriesConfigIO applyMergePatch(JsonNode patch) throws ConfigPatchException {
     SqlTimeseriesConfig current = service.current();
 
+    boolean enabledTouched = patch.has("enabled");
     boolean maxRowsTouched = patch.has("maxRows");
     boolean maxDurationTouched = patch.has("maxDuration");
 
+    Boolean effectiveEnabled = enabledTouched ? boolOrNull(patch.get("enabled")) : current.getEnabled();
     Long effectiveMaxRows = maxRowsTouched ? longOrNull(patch.get("maxRows")) : current.getMaxRows();
     String effectiveMaxDuration = maxDurationTouched ? textOrNull(patch.get("maxDuration")) : current.getMaxDurationIso();
 
@@ -81,12 +83,16 @@ public class SqlTimeseriesConfigDescriptor implements ConfigDescriptor<SqlTimese
       }
     }
 
-    SqlTimeseriesConfig saved = service.patch(effectiveMaxRows, effectiveMaxDuration);
+    SqlTimeseriesConfig saved = service.patch(effectiveEnabled, effectiveMaxRows, effectiveMaxDuration);
     return toIO(saved);
   }
 
   private SqlTimeseriesConfigIO toIO(SqlTimeseriesConfig cfg) {
-    return SqlTimeseriesConfigIO.from(cfg, service.getDefaultMaxRows(), service.getDefaultMaxDuration());
+    return SqlTimeseriesConfigIO.from(cfg, service.getDefaultEnabled(), service.getDefaultMaxRows(), service.getDefaultMaxDuration());
+  }
+
+  private static Boolean boolOrNull(JsonNode node) {
+    return node == null || node.isNull() ? null : node.asBoolean();
   }
 
   private static String textOrNull(JsonNode node) {

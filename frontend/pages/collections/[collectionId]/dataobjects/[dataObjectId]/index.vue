@@ -19,7 +19,10 @@ import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
 import ActionMenuButton from "~/components/context/tools/ActionMenuButton.vue";
 // UX612-M1 — resolve the attached template's kind so the Tools menu can gate
 // "Render view" on VIEW_RECIPE (the only kind /v2/shapes/render accepts).
-import { TemplatesApi } from "@dlr-shepard/backend-client";
+// TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND — also store the full template so
+// the header can show the template's iconKey.
+import { TemplatesApi, type ShepardTemplate } from "@dlr-shepard/backend-client";
+import { useTemplateIcon } from "~/composables/useTemplateIcon";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
@@ -493,17 +496,22 @@ const dataObjectAttachedTemplateAppId = computed<string | null>(() => {
 // leaves the kind null and the render item hidden (it would 422 anyway when
 // the kind can't be confirmed as VIEW_RECIPE).
 const templatesApi = useV2ShepardApi(TemplatesApi);
-const dataObjectAttachedTemplateKind = ref<string | null>(null);
+const dataObjectAttachedTemplate = ref<ShepardTemplate | null>(null);
+const dataObjectAttachedTemplateKind = computed<string | null>(
+  () => dataObjectAttachedTemplate.value?.templateKind ?? null,
+);
+const dataObjectHeaderIcon = computed<string>(() =>
+  useTemplateIcon(dataObjectAttachedTemplate.value, "DataObject"),
+);
 watch(
   dataObjectAttachedTemplateAppId,
   async appId => {
-    dataObjectAttachedTemplateKind.value = null;
+    dataObjectAttachedTemplate.value = null;
     if (!appId) return;
     try {
-      const tpl = await templatesApi.value.getTemplate({ appId });
-      dataObjectAttachedTemplateKind.value = tpl.templateKind ?? null;
+      dataObjectAttachedTemplate.value = await templatesApi.value.getTemplate({ appId });
     } catch {
-      // fire-and-forget — menu falls back to hiding the render item
+      // fire-and-forget — menu falls back to hiding the render item; header uses default icon
     }
   },
   { immediate: true },
@@ -590,6 +598,7 @@ async function saveEmbargoEdit() {
               <TitleAndMetadataDisplay
                 :entity="dataObject"
                 id-label="Data Object ID"
+                :icon-key="dataObjectHeaderIcon"
               />
             </v-row>
             <!-- LIC1/FAIR2/FAIR3/KIP1k: FAIR metadata strip — license + accessRights

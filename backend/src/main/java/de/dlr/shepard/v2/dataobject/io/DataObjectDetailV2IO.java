@@ -34,7 +34,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonIgnoreProperties({"id"})
+@JsonIgnoreProperties({"id", "collectionId", "referenceIds", "successorIds",
+  "predecessorIds", "childrenIds", "parentId", "incomingIds"})
 @Schema(
   name = "DataObjectDetail",
   description = "Full DataObject detail response, extends DataObjectIO with typed " +

@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.sql.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.configuration.feature.toggles.SqlTimeseriesFeatureToggle;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
@@ -166,7 +165,7 @@ public class SqlTimeseriesRest {
       @HeaderParam("Accept") String acceptHeader,
       @Context HttpServerResponse httpResponse,
       @Context SecurityContext securityContext) {
-    if (!SqlTimeseriesFeatureToggle.isActive()) {
+    if (!configService.effectiveEnabled()) {
       return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "SQL timeseries feature is disabled; enable via PATCH /v2/admin/config/sql-timeseries");
     }
     return executeQuery(spec, acceptHeader, httpResponse, securityContext);
@@ -174,8 +173,7 @@ public class SqlTimeseriesRest {
 
   /**
    * Core query logic — package-private so unit tests can call it directly without
-   * bootstrapping MicroProfile Config (which {@link SqlTimeseriesFeatureToggle#isActive()}
-   * requires). The toggle gate lives only in {@link #query}.
+   * bootstrapping a full CDI context. The enabled-gate lives only in {@link #query}.
    *
    * <p>The {@code httpResponse} parameter may be {@code null} in unit tests that do not set up
    * a full VertX context; trailer emission is skipped gracefully when it is null.
