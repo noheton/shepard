@@ -27,6 +27,7 @@ import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -113,7 +114,11 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response getEvents(
     @PathParam("runId") String runId,
+    @Parameter(description = "Filter to a single severity level. One of: INFO, WARN, ERROR.",
+               schema = @Schema(enumeration = {"INFO", "WARN", "ERROR"}))
     @QueryParam("level") String level,
+    @Parameter(description = "Filter to a single import phase. One of: WARMUP, DO_CREATE, REF_ATTACH, FILE_UPLOAD, COMPLETE.",
+               schema = @Schema(enumeration = {"WARMUP", "DO_CREATE", "REF_ATTACH", "FILE_UPLOAD", "COMPLETE"}))
     @QueryParam("phase") String phase,
     @Context SecurityContext sc
   ) {
