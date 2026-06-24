@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.users.entities.MirroredUser;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -15,7 +16,6 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * JAX-RS filter that lands one provenance {@link
@@ -103,8 +103,8 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   @Inject
   MirroredUserEnrichmentCache enrichmentCache;
 
-  @ConfigProperty(name = "shepard.provenance.capture-reads", defaultValue = "false")
-  boolean captureReads;
+  @Inject
+  ProvenanceConfigService provenanceConfigService;
 
   @Override
   public void filter(ContainerRequestContext request) throws IOException {
@@ -117,7 +117,8 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
   @Override
   public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
-    if (!provenance.isEnabled()) return;
+    // FTOGGLE-PROV-1: runtime-mutable master switch replaces deploy-time @ConfigProperty.
+    if (!provenanceConfigService.effectiveEnabled()) return;
 
     // SEMA-V6-007: handler already called ProvenanceService.record() directly
     // and set this property — skip to avoid a duplicate :Activity row.
@@ -125,7 +126,7 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);
-    if (!isMutation && !captureReads) return;
+    if (!isMutation && !provenanceConfigService.effectiveCaptureReads()) return;
 
     int status = response.getStatus();
     // Only capture successful writes; failures aren't activities in
