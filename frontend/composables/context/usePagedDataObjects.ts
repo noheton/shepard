@@ -73,6 +73,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   //  - incomingIds[]   → row.incomingCount (.length)
   //  - timeseriesCount, fileCount, structuredDataCount (v2 long counts)
   //  - timeBoundsStart, timeBoundsEnd (when ?include=time-bounds)
+  //  - attachedTemplateAppId (TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND)
   const DO_LIST_FIELDS = [
     "id",
     "appId",
@@ -87,6 +88,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     "structuredDataCount",
     "timeBoundsStart",
     "timeBoundsEnd",
+    "attachedTemplateAppId",
   ].join(",");
 
   const items = ref<DataObjectListItemV2[]>([]);

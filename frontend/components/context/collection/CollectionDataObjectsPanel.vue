@@ -54,6 +54,11 @@
           @click="navigateTo(row)"
         >
           <td>
+            <v-icon
+              :icon="templateIconFor(row.attachedTemplateAppId, 'DataObject')"
+              size="small"
+              class="mr-1 text-medium-emphasis"
+            />
             <NuxtLink :to="rowHref(row)" class="reference-link">
               {{ row.name }}
             </NuxtLink>
@@ -175,6 +180,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
+import { useTemplateIconByAppId } from "~/composables/useTemplateIconByAppId";
 
 const props = defineProps<{
   collectionId: number;
@@ -258,6 +264,8 @@ interface Row {
   createdAt: Date;
   timeBoundsStart: number | null;
   timeBoundsEnd: number | null;
+  /** TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: appId of the template this DO was created from. */
+  attachedTemplateAppId: string | null;
 }
 
 const rows = computed<Row[]>(() =>
@@ -276,8 +284,16 @@ const rows = computed<Row[]>(() =>
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
     timeBoundsStart: d.timeBoundsStart ?? null,
     timeBoundsEnd: d.timeBoundsEnd ?? null,
+    attachedTemplateAppId: d.attachedTemplateAppId ?? null,
   })),
 );
+
+// TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: lazily fetch the template for
+// each unique attachedTemplateAppId on the current page and cache by appId.
+const rowTemplateAppIds = computed(() =>
+  rows.value.map(r => r.attachedTemplateAppId),
+);
+const { iconFor: templateIconFor } = useTemplateIconByAppId(rowTemplateAppIds);
 
 // Time-bounds derived values — null-safe
 const anyTimeBounds = computed(() => rows.value.some(r => r.timeBoundsStart != null));
