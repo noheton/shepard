@@ -86,6 +86,7 @@
     <junit.version>5.10.5</junit.version>
     <mockito.version>5.23.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
+    <picocli.version>4.7.6</picocli.version>
   </properties>
 
   <dependencyManagement>
@@ -256,6 +257,52 @@
       <scope>provided</scope>
     </dependency>
 
+    <!--
+      FTOGGLE-CLI-PARITY-1 — CLI side: the plugin contributes
+      `shepard-admin hdf …` subcommands via AdminCliCommandProvider SPI.
+      The CLI itself is `provided` so its classes are not bundled
+      into the plugin JAR — the CLI's own `shepard-admin.jar` carries them.
+      Picocli is `provided` since the shaded CLI JAR already bundles it.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- ====== test scope ====== -->
     <!--
       AbstractPluginManifestTest base class — cross-cutting manifest
@@ -292,6 +339,44 @@
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
       <scope>test</scope>
+    </dependency>
+    <!--
+      FTOGGLE-CLI-PARITY-1 — CLI test fixtures (StubBackend, CliRunner)
+      so HdfCommandsTest can hit a localhost stub backend without
+      re-implementing the harness.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
