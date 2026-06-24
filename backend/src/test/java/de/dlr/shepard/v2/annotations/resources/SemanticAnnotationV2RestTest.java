@@ -714,6 +714,81 @@ class SemanticAnnotationV2RestTest {
     assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(403);
   }
 
+  // ─── APISIMP-ANNOT-LIST-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─
+
+  /**
+   * APISIMP-ANNOT-LIST-PARAMS-UNDOCUMENTED — verifies that every {@code @QueryParam}
+   * on {@link SemanticAnnotationV2Rest#list} carries a non-blank {@code @Parameter}
+   * description so the generated OpenAPI schema documents all six filters.
+   */
+  @Test
+  void listAnnotations_subjectAppId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("subjectAppId");
+    assertThat(param).as("subjectAppId must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("subjectAppId must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for subjectAppId must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_subjectKind_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("subjectKind");
+    assertThat(param).as("subjectKind must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("subjectKind must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for subjectKind must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_predicateIri_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("predicateIri");
+    assertThat(param).as("predicateIri must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("predicateIri must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for predicateIri must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_vocabId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("vocabId");
+    assertThat(param).as("vocabId must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("vocabId must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for vocabId must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("page");
+    assertThat(param).as("page must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("page must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for page must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("pageSize");
+    assertThat(param).as("pageSize must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("pageSize must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for pageSize must be non-blank").isNotBlank();
+  }
+
+  private static java.lang.reflect.Parameter findListParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, String.class,
+        int.class, int.class, SecurityContext.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
   // ─── helpers ─────────────────────────────────────────────────────────────
 
   private static SemanticAnnotation annotation(
