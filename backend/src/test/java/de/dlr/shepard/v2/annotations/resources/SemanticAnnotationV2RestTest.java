@@ -813,6 +813,13 @@ class SemanticAnnotationV2RestTest {
     java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
         "list", String.class, String.class, String.class, String.class,
         int.class, int.class, SecurityContext.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
   }
 
   private static java.lang.reflect.Parameter findFindParam(String queryParamName)
