@@ -86,8 +86,13 @@ public class ProvenanceRest {
   @Operation(
     summary = "List provenance activities (most recent first).",
     description = "Filterable by agent / target / time window. Casual users see only their own " +
-    "rows; instance-admins see all. Caps at 1000 rows per response — paginate via " +
-    "narrowing the time window."
+    "rows; instance-admins see all. Caps at 1000 rows per response.\n\n" +
+    "**Pagination:** This endpoint uses time-cursor pagination (`since`/`until` epoch ms), " +
+    "not page-offset. Offset pagination produces inconsistent results as new Activities land " +
+    "concurrently (append-only event stream — a new row shifts all subsequent offsets). To " +
+    "walk a large window: record the oldest `startedAt` value in the current page and pass it " +
+    "as `until` on the next request. The `?page=` query parameter is not supported and is " +
+    "silently ignored if supplied."
   )
   @APIResponse(
     responseCode = "200",
@@ -229,7 +234,10 @@ public class ProvenanceRest {
     summary = "Provenance trail for a single entity (most recent first).",
     description = "Returns every captured Activity whose targetAppId matches the supplied entity. " +
     "Casual users see only rows whose acting Agent is themselves; instance-admins see all rows " +
-    "targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows."
+    "targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.\n\n" +
+    "**Pagination:** Uses time-cursor pagination (`since`/`until` epoch ms) — see " +
+    "`GET /v2/provenance/activities` for the full rationale. The `?page=` parameter is not " +
+    "supported and is silently ignored."
   )
   @APIResponse(
     responseCode = "200",
