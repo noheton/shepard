@@ -205,11 +205,6 @@ public class SemanticSparqlRest {
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
     @Parameter(
-      required = true,
-      description =
-        "SPARQL 1.1 SELECT or ASK query string. " +
-        "Mutation forms (CONSTRUCT, INSERT, DELETE, UPDATE) return 400. " +
-        "Minimum 1 character."
       description =
         "URL-encoded SPARQL 1.1 SELECT or ASK query string. Must be non-empty — null or blank " +
         "returns 400. Only `SELECT` and `ASK` query forms are accepted; any mutation form " +

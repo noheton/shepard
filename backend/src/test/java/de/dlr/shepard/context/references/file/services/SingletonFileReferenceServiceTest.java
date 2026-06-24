@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -23,7 +25,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.spi.payload.BuiltinFileKindDetector;
 import de.dlr.shepard.spi.payload.FileKindDetector;
 import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
@@ -88,7 +90,7 @@ class SingletonFileReferenceServiceTest {
   DataObjectDAO dataObjectDAO;
 
   @Mock
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Mock
   UserService userService;
@@ -107,7 +109,7 @@ class SingletonFileReferenceServiceTest {
     service = new SingletonFileReferenceService();
     service.singletonFileReferenceDAO = singletonDao;
     service.dataObjectDAO = dataObjectDAO;
-    service.fileService = fileService;
+    service.fileStorageService = fileStorageService;
     service.userService = userService;
     service.dateHelper = dateHelper;
     service.entityIdResolver = entityIdResolver;
@@ -156,7 +158,7 @@ class SingletonFileReferenceServiceTest {
 
     var savedFile = new ShepardFile(new Date(), "doc.pdf", "deadbeef");
     savedFile.setOid("file-oid-1");
-    when(fileService.createFile(eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE), eq("doc.pdf"), any(InputStream.class)))
+    when(fileStorageService.storeFile(eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE), eq("doc.pdf"), any(InputStream.class), eq(0L)))
       .thenReturn(savedFile);
 
     // The DAO's createOrUpdate sets a shepardId on the row.
@@ -174,7 +176,7 @@ class SingletonFileReferenceServiceTest {
     assertEquals("PDF protocol", created.getName());
     assertEquals(savedFile, created.getFile());
     assertEquals(parent, created.getDataObject());
-    verify(fileService).createFile(eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE), eq("doc.pdf"), any(InputStream.class));
+    verify(fileStorageService).storeFile(eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE), eq("doc.pdf"), any(InputStream.class), eq(0L));
     // Two createOrUpdate calls (FR1a idiom: save once then set shepardId + save again)
     verify(singletonDao, times(2)).createOrUpdate(any(FileReference.class));
   }
@@ -307,7 +309,10 @@ class SingletonFileReferenceServiceTest {
     when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> inv.getArgument(0));
 
     assertDoesNotThrow(() -> service.deleteSingleton(SINGLETON_APP_ID));
-    verify(fileService).deleteFile(SingletonFileReferenceService.SHARED_FILES_NAMESPACE, "file-oid-1");
+    verify(fileStorageService).deleteFile(
+      eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
+      argThat(f -> f != null && "file-oid-1".equals(f.getOid()))
+    );
   }
 
   @Test
@@ -319,7 +324,7 @@ class SingletonFileReferenceServiceTest {
     existing.setFile(file);
     when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
     when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> inv.getArgument(0));
-    org.mockito.Mockito.doThrow(new NotFoundException("gone")).when(fileService).deleteFile(anyString(), anyString());
+    org.mockito.Mockito.doThrow(new NotFoundException("gone")).when(fileStorageService).deleteFile(anyString(), any(ShepardFile.class));
 
     // Should still complete cleanly — the Neo4j-side soft-delete is the source of truth.
     assertDoesNotThrow(() -> service.deleteSingleton(SINGLETON_APP_ID));
@@ -333,7 +338,7 @@ class SingletonFileReferenceServiceTest {
     when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
     when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> inv.getArgument(0));
     assertDoesNotThrow(() -> service.deleteSingleton(SINGLETON_APP_ID));
-    verify(fileService, never()).deleteFile(anyString(), anyString());
+    verify(fileStorageService, never()).deleteFile(anyString(), any(ShepardFile.class));
   }
 
   @Test
@@ -353,7 +358,7 @@ class SingletonFileReferenceServiceTest {
     existing.setFile(file);
     when(singletonDao.findByAppId(SINGLETON_APP_ID)).thenReturn(existing);
     var nis = new NamedInputStream("file-oid-1", new ByteArrayInputStream(new byte[] { 1, 2 }), "doc.pdf", 2L);
-    when(fileService.getPayload(SingletonFileReferenceService.SHARED_FILES_NAMESPACE, "file-oid-1")).thenReturn(nis);
+    when(fileStorageService.getPayload(eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE), any(ShepardFile.class))).thenReturn(nis);
     var actual = service.getPayload(SINGLETON_APP_ID);
     assertEquals("doc.pdf", actual.getName());
   }
@@ -392,7 +397,7 @@ class SingletonFileReferenceServiceTest {
     assertNotNull(created);
     assertEquals("my-doc", created.getName());
     assertNull(created.getFile());
-    verify(fileService, never()).createFile(anyString(), anyString(), any(InputStream.class));
+    verify(fileStorageService, never()).storeFile(anyString(), anyString(), any(InputStream.class), anyLong());
     verify(singletonDao, times(2)).createOrUpdate(any(FileReference.class));
   }
 
@@ -422,7 +427,7 @@ class SingletonFileReferenceServiceTest {
 
     var savedFile = new ShepardFile(new Date(), "report.pdf", "abc");
     savedFile.setOid("new-oid");
-    when(fileService.createFile(
+    when(fileStorageService.storeFile(
       eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
       eq("report.pdf"),
       any(InputStream.class),
@@ -435,7 +440,7 @@ class SingletonFileReferenceServiceTest {
     assertNotNull(updated);
     assertEquals(savedFile, updated.getFile());
     assertEquals("pdf", updated.getFileKind());
-    verify(fileService).createFile(
+    verify(fileStorageService).storeFile(
       eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
       eq("report.pdf"),
       any(InputStream.class),
@@ -454,7 +459,7 @@ class SingletonFileReferenceServiceTest {
 
     var newFile = new ShepardFile(new Date(), "new.pdf", "new");
     newFile.setOid("new-oid");
-    when(fileService.createFile(
+    when(fileStorageService.storeFile(
       eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
       eq("new.pdf"),
       any(InputStream.class),
@@ -465,7 +470,10 @@ class SingletonFileReferenceServiceTest {
     InputStream payload = new ByteArrayInputStream(new byte[] { 7, 8 });
     service.attachContent(SINGLETON_APP_ID, "new.pdf", payload, -1L);
     // old blob must be deleted after the new one is written
-    verify(fileService).deleteFile(SingletonFileReferenceService.SHARED_FILES_NAMESPACE, "old-oid");
+    verify(fileStorageService).deleteFile(
+      eq(SingletonFileReferenceService.SHARED_FILES_NAMESPACE),
+      argThat(f -> f != null && "old-oid".equals(f.getOid()))
+    );
   }
 
   @Test
