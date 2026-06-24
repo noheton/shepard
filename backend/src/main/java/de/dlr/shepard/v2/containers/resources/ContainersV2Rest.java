@@ -140,7 +140,11 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "400", description = "Unknown/uninstalled kind or invalid body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  public Response create(@QueryParam("kind") String kind, JsonNode body, @Context SecurityContext sc) {
+  public Response create(
+    @Parameter(required = true, description = "Container kind to create: `file` | `timeseries` | `structured-data`. Returns 400 for unknown or uninstalled kinds.")
+    @QueryParam("kind") String kind,
+    JsonNode body,
+    @Context SecurityContext sc) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (kind == null || kind.isBlank()) {
@@ -334,6 +338,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   public Response delete(
     @PathParam("appId") String appId,
+    @Parameter(description = "When `true`, deletes the container even if it has active DataObject references (those references are orphaned). Defaults to `false` (safe-delete: 409 if references exist).")
     @QueryParam("force") @DefaultValue("false") boolean force,
     @Context SecurityContext sc
   ) {
@@ -387,7 +392,9 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "400", description = "Missing/unknown kind.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
+    @Parameter(required = true, description = "Container kind to list: `file` | `timeseries` | `structured-data`. Returns 400 when absent or unrecognised.")
     @QueryParam("kind") String kind,
+    @Parameter(description = "Optional substring filter on container name. Case-sensitive. Omit to return all containers of the given kind.")
     @QueryParam("name") String name,
     @Context SecurityContext sc
   ) {
