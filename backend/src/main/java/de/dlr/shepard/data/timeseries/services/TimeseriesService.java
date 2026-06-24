@@ -33,6 +33,9 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @RequestScoped
 public class TimeseriesService {
 
+  /** Returned by {@link #saveDataPoints(long, Timeseries, List, boolean)} carrying both the persisted entity and the conflict count. */
+  public record SaveResult(TimeseriesEntity entity, int conflictCount) {}
+
   @Inject
   TimeseriesRepository timeseriesRepository;
 
@@ -409,6 +412,34 @@ public class TimeseriesService {
     timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
 
     return timeseriesEntity;
+  }
+
+  /**
+   * Save data points with an explicit overwrite policy.
+   *
+   * <p>When {@code overwrite=true}, existing rows at the same (channel, timestamp) are updated
+   * (last-write-wins, the pre-existing v1 behaviour).  When {@code overwrite=false}, conflicting
+   * points are silently skipped and the {@link SaveResult#conflictCount()} is non-zero.
+   *
+   * @return a {@link SaveResult} carrying the persisted {@link TimeseriesEntity} and the number
+   *         of points that were skipped because of a (timeseries_id, time) conflict
+   */
+  public SaveResult saveDataPoints(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    boolean overwrite
+  ) {
+    timeseriesContainerService.getContainer(timeseriesContainerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
+
+    DataPointValueType incomingValueType = inferValueType(dataPoints);
+    TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(timeseriesContainerId, timeseries, incomingValueType);
+
+    assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
+
+    int conflictCount = timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity, overwrite);
+    return new SaveResult(timeseriesEntity, conflictCount);
   }
 
   @Deprecated

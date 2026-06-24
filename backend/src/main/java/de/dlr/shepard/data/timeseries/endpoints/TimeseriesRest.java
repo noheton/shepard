@@ -53,6 +53,7 @@ import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -198,20 +199,43 @@ public class TimeseriesRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(
+    responseCode = "409",
+    description = "conflict — one or more timestamps already exist and overwrite=false"
+  )
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(
+    name = "overwrite",
+    description = "When false (default), existing rows at the same (channel, timestamp) are preserved and a 409 is returned if any conflicts are detected. Pass overwrite=true to restore the legacy last-write-wins ON CONFLICT DO UPDATE behaviour."
+  )
   public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @QueryParam("overwrite") @DefaultValue("false") boolean overwrite,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
     ) @Valid TimeseriesWithDataPoints payload
   ) {
+    if (!overwrite) {
+      TimeseriesService.SaveResult result = timeseriesService.saveDataPoints(
+        containerId,
+        payload.getTimeseries(),
+        payload.getPoints(),
+        false
+      );
+      if (result.conflictCount() > 0) {
+        return Response.status(Status.CONFLICT)
+          .entity(Map.of("conflictCount", result.conflictCount()))
+          .build();
+      }
+      return Response.ok(new Timeseries(result.entity())).status(Status.CREATED).build();
+    }
+
     TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
       containerId,
       payload.getTimeseries(),
       payload.getPoints()
     );
-
     return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
   }
 

@@ -107,12 +107,37 @@ public class TimeseriesDataPointRepository {
    */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
   public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
+    insertManyDataPoints(entities, timeseriesEntity, true);
+  }
+
+  /**
+   * Insert data points, optionally overwriting existing rows on (timeseries_id, time) conflicts.
+   *
+   * <p>When {@code overwrite=true} (the v1 default), an existing row is updated via
+   * {@code ON CONFLICT … DO UPDATE} — last-write-wins, the pre-existing behaviour.
+   * When {@code overwrite=false}, conflicting rows are silently skipped
+   * ({@code ON CONFLICT … DO NOTHING}) and the returned value is the total number of
+   * points that were NOT inserted due to a conflict with an already-stored row.
+   *
+   * @return total conflict count (points skipped); always 0 when {@code overwrite=true}
+   */
+  @Timed(value = "shepard.timeseries-data-point.batch-insert")
+  public int insertManyDataPoints(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity,
+    boolean overwrite
+  ) {
+    int totalConflicts = 0;
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
+      int batchSize = currentLimit - i;
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity, overwrite);
 
       try {
-        query.executeUpdate();
+        int inserted = query.executeUpdate();
+        if (!overwrite) {
+          totalConflicts += batchSize - inserted;
+        }
       } catch (DataException ex) {
         if (ex.getCause().toString().contains("ON CONFLICT DO UPDATE command cannot affect row a second time")) {
           throw new InvalidBodyException(
@@ -122,6 +147,7 @@ public class TimeseriesDataPointRepository {
         throw ex;
       }
     }
+    return totalConflicts;
   }
 
   /**
@@ -372,27 +398,30 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    TimeseriesEntity timeseriesEntity
+    TimeseriesEntity timeseriesEntity,
+    boolean overwrite
   ) {
+    String columnName = getColumnName(timeseriesEntity.getValueType());
     StringBuilder queryString = new StringBuilder();
     queryString.append(
-      "INSERT INTO timeseries_data_points (timeseries_id, time, " +
-      getColumnName(timeseriesEntity.getValueType()) +
-      ") values "
+      "INSERT INTO timeseries_data_points (timeseries_id, time, " + columnName + ") values "
     );
     queryString.append(
       IntStream.range(startInclusive, endExclusive)
         .mapToObj(index -> "(:timeseriesid" + ",:time" + index + ",:value" + index + ")")
         .collect(Collectors.joining(","))
     );
-    queryString.append(
-      " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseriesEntity.getValueType()) +
-      " = " +
-      "EXCLUDED." +
-      getColumnName(timeseriesEntity.getValueType()) +
-      ";"
-    );
+    if (overwrite) {
+      queryString.append(
+        " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
+        columnName +
+        " = EXCLUDED." +
+        columnName +
+        ";"
+      );
+    } else {
+      queryString.append(" ON CONFLICT (timeseries_id, time) DO NOTHING;");
+    }
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 

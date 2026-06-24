@@ -161,6 +161,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | NDJSON streaming ingest for timeseries (`application/x-ndjson` on `POST /timeseriesContainers/{id}/payload`) | JSON-only | shipped | **✓ ↑** | P14 (commit `24d4585`) |
+| Timeseries conflict policy (`?overwrite=false` → `ON CONFLICT DO NOTHING` + 409 + conflict count) on `POST /timeseriesContainers/{id}/payload` | silent last-write-wins | shipped | **✓ ↑** | TS-CONFLICT-POLICY-1 |
 | Body-form selective RO-Crate export (`POST /collections/{id}/export` with `ExportSelection`) | GET-only | shipped — additive sibling, GET preserved | **✓ ↑** | R2 (commit `be0eb26`) |
 | Per-payload selection (file OIDs / channel columns / time windows) | none | shipped | **✓ ↑** | R2b (commit `60a3ea1`) |
 | Per-payload metadata-field redaction (closed enum of 6 fields) | none | shipped | **✓ ↑** | R2c (commit `f993e8b`) |
