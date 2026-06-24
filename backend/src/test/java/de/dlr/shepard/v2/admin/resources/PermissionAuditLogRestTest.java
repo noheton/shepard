@@ -18,10 +18,14 @@ import de.dlr.shepard.v2.admin.services.InstanceAdminService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -166,5 +170,71 @@ class PermissionAuditLogRestTest {
     @SuppressWarnings("unchecked")
     List<PermissionAuditLogEntryIO> body = (List<PermissionAuditLogEntryIO>) r.getEntity();
     assertTrue(body.isEmpty());
+  }
+
+  // ─── APISIMP-INSTANCE-ADMIN-AUDIT-PARAMS regression ──────────────────────
+
+  private static String auditLogParamDesc(String queryParamName) throws NoSuchMethodException {
+    Method method = InstanceAdminRest.class.getMethod(
+        "permissionAuditLog",
+        SecurityContext.class, String.class, String.class,
+        String.class, String.class, int.class, int.class);
+    return Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && queryParamName.equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(
+              org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+  }
+
+  @Test
+  void auditLog_entityAppIdParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("entityAppId");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'entityAppId' must carry a @Parameter description");
+  }
+
+  @Test
+  void auditLog_actorParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("actor");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'actor' must carry a @Parameter description");
+  }
+
+  @Test
+  void auditLog_fromParamDescriptionMentions400() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("from");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'from' must carry a @Parameter description");
+    Assertions.assertTrue(desc.contains("400"),
+        "permissionAuditLog() 'from' description must mention 400 (parse-error behaviour)");
+  }
+
+  @Test
+  void auditLog_toParamDescriptionMentions400() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("to");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'to' must carry a @Parameter description");
+    Assertions.assertTrue(desc.contains("400"),
+        "permissionAuditLog() 'to' description must mention 400 (parse-error behaviour)");
+  }
+
+  @Test
+  void auditLog_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("page");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'page' must carry a @Parameter description");
+  }
+
+  @Test
+  void auditLog_pageSizeParamDescriptionMentions500() throws NoSuchMethodException {
+    String desc = auditLogParamDesc("pageSize");
+    Assertions.assertFalse(desc.isBlank(),
+        "permissionAuditLog() 'pageSize' must carry a @Parameter description");
+    Assertions.assertTrue(desc.contains("500"),
+        "permissionAuditLog() 'pageSize' description must mention the 500 server-side cap");
   }
 }
