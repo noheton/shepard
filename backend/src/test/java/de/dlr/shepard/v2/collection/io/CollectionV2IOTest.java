@@ -10,12 +10,13 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-BASICENTITY-DROP-ID slice 2 — verifies that {@link CollectionV2IO}
- * suppresses the Neo4j internal {@code id} field from the /v2/ wire shape
- * while preserving {@code appId} and collection-specific fields.
+ * APISIMP-BASICENTITY-DROP-ID slice 2 + APISIMP-COLL-IO-NUMERIC-ID-LEAK —
+ * verifies that {@link CollectionV2IO} suppresses all inherited Neo4j internal
+ * numeric id fields from the /v2/ wire shape while preserving {@code appId}
+ * and collection-specific fields.
  *
- * <p>The v1 {@code /shepard/api/} wire shape is not tested here; it is
- * covered by the existing v1 tests and must remain unchanged.
+ * <p>Numeric fields suppressed: {@code id}, {@code dataObjectIds},
+ * {@code incomingIds}, {@code defaultFileContainerId}.
  */
 class CollectionV2IOTest {
 
@@ -56,5 +57,23 @@ class CollectionV2IOTest {
     var io = new CollectionV2IO();
     io.setAppId("uuid-test");
     assertEquals("uuid-test", io.getAppId());
+  }
+
+  // APISIMP-COLL-IO-NUMERIC-ID-LEAK — extended suppression tests
+
+  private static final java.util.List<String> SUPPRESSED_COLLECTION_NUMERIC_FIELDS =
+    java.util.List.of("id", "dataObjectIds", "incomingIds", "defaultFileContainerId");
+
+  @Test
+  void collectionV2IO_suppressesAllInheritedNumericIdFields() throws Exception {
+    var io = new CollectionV2IO(collection("018f-coll-numeric", "MFFD-Q1"));
+    var tree = (ObjectNode) MAPPER.valueToTree(io);
+
+    for (var field : SUPPRESSED_COLLECTION_NUMERIC_FIELDS) {
+      assertFalse(tree.has(field),
+        "Numeric id field '" + field + "' must not appear in /v2/ Collection responses");
+    }
+    assertTrue(tree.has("appId"));
+    assertEquals("018f-coll-numeric", tree.get("appId").asText());
   }
 }
