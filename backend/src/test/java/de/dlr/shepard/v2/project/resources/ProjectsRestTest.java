@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.project.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -150,5 +151,70 @@ class ProjectsRestTest {
       "annotations", true, 0, 50);
     assertEquals(200, r.getStatus());
     assertNotNull(r.getEntity());
+  }
+
+  // ─── APISIMP-PROJECTS-BYANNOTATION-PARAMS-UNDOCUMENTED regression ─────────
+
+  private static java.lang.reflect.Parameter findByAnnotationQueryParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = ProjectsRest.class.getMethod(
+        "byAnnotation",
+        String.class, String.class, String.class,
+        String.class, boolean.class, int.class, int.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Test
+  void byAnnotation_includeParam_hasParameterAnnotationWithDescription()
+      throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("include");
+    assertNotNull(param, "include must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "include must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for include");
+  }
+
+  @Test
+  void byAnnotation_inheritParam_hasParameterAnnotationWithNotYetHonouredWarning()
+      throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("inherit");
+    assertNotNull(param, "inherit must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "inherit must carry @Parameter annotation");
+    assertTrue(ann.description() != null && ann.description().contains("not yet"),
+        "@Parameter.description for inherit must mention 'not yet' (not-yet-implemented note)");
+  }
+
+  @Test
+  void byAnnotation_pageParam_hasParameterAnnotationWithDescription()
+      throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("page");
+    assertNotNull(param, "page must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for page");
+  }
+
+  @Test
+  void byAnnotation_pageSizeParam_hasParameterAnnotationWithMaxCap()
+      throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("pageSize");
+    assertNotNull(param, "pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && ann.description().contains("500"),
+        "@Parameter.description for pageSize must mention the 500 cap");
   }
 }

@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -175,9 +176,34 @@ public class ProjectsRest {
       @PathParam("appId") String appId,
       @PathParam("predicate") String predicate,
       @PathParam("value") String value,
+      @Parameter(
+        description =
+          "Controls what is included in each result row beyond the DataObject identity. " +
+          "Accepted values: `identity` (default) — appId, name, collectionAppId only; " +
+          "`annotations` — additionally populates the per-row `matchedAnnotations` array " +
+          "with the matching predicate+value+source triple(s) for each DataObject."
+      )
       @QueryParam("include") @DefaultValue("identity") String include,
+      @Parameter(
+        description =
+          "When `true` (default), the intent is to walk parent DataObjects in the " +
+          "sub-Collection and include their annotations in the match. " +
+          "NOTE: this flag is accepted on the wire but the parent-walk is not yet " +
+          "implemented — all requests behave as if `inherit=false` until the follow-up " +
+          "lands (tracked in aidocs/16 PROJ-INHERIT-WALK). Wired now so callers can opt " +
+          "in without an API break once the walker ships."
+      )
       @QueryParam("inherit") @DefaultValue("true") boolean inherit,
+      @Parameter(
+        description =
+          "0-based page number. Default 0. Negative values are treated as 0."
+      )
       @QueryParam("page") @DefaultValue("0") int page,
+      @Parameter(
+        description =
+          "Number of results per page. Default 100. Maximum 500. " +
+          "Values above 500 are clamped to 500."
+      )
       @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
 
     if (predicate == null || predicate.isBlank()) {
