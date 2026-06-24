@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.neo4j.ogm.session.Session;
@@ -196,7 +197,14 @@ public class SemanticTermSearchRest {
   @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   public Response search(
+    @Parameter(
+      description = "Search string to match against ontology term labels. Must be at least 2 characters.",
+      required = true
+    )
     @QueryParam("q") String q,
+    @Parameter(
+      description = "Maximum number of results to return (default 20). Server-side cap: 50 — values above 50 are silently clamped to 50."
+    )
     @QueryParam("pageSize") @DefaultValue("20") int pageSize,
     @Context SecurityContext sc
   ) {

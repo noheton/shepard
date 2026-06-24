@@ -277,6 +277,47 @@ class SemanticTermSearchRestTest {
     );
   }
 
+  // ─── APISIMP-TERM-SEARCH-PAGESIZE-CAP-UNDOCUMENTED regression ─────────────
+
+  @Test
+  void q_paramIsMarkedRequiredWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticTermSearchRest.class.getMethod(
+        "search", String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "q".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "q must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "q must carry @Parameter annotation");
+    assertTrue(ann.required(), "@Parameter.required must be true for q");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for q");
+  }
+
+  @Test
+  void pageSize_paramDescribesServerSideCap() throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticTermSearchRest.class.getMethod(
+        "search", String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "pageSize".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && ann.description().contains("50"),
+        "@Parameter.description for pageSize must mention the server-side cap of 50");
+  }
+
   // ─── helpers ──────────────────────────────────────────────────────────────
 
   private void stubEmptyResult() {
