@@ -1,6 +1,7 @@
 /**
- * COLL-TIMELINE-1 — composable for
- * `GET /v2/collections/{collectionAppId}/timeline`.
+ * COLL-TIMELINE-1 / COLL-TIMELINE-CROSS-1 — composables for
+ * `GET /v2/collections/{collectionAppId}/timeline` (single) and
+ * `GET /v2/collections/timeline?collections=…` (cross-collection overlay).
  *
  * One canonical timeline envelope per Collection. The component
  * (`CollectionTimelinePane.vue`) lazy-loads on expansion to keep the
@@ -85,5 +86,59 @@ export function useCollectionTimeline() {
     }
   }
 
-  return { envelope, loading, error, fetchTimeline };
+  async function fetchCrossTimeline(collectionAppIds: string[], binSizeDays = 1): Promise<void> {
+    if (!collectionAppIds.length) return;
+    loading.value = true;
+    error.value = null;
+    try {
+      const headers = await authHeader();
+      const params = new URLSearchParams();
+      for (const id of collectionAppIds) {
+        params.append("collections", id);
+      }
+      params.set("binSizeDays", String(binSizeDays));
+      const url = `${v2BaseUrl()}/v2/collections/timeline?${params.toString()}`;
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        error.value = `HTTP ${response.status}`;
+        envelope.value = null;
+        return;
+      }
+      envelope.value = (await response.json()) as CollectionTimelineEnvelope;
+    } catch (e) {
+      error.value = (e as Error).message;
+      envelope.value = null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { envelope, loading, error, fetchTimeline, fetchCrossTimeline };
+}
+
+/** Minimal collection shape returned by the compare-selector helper. */
+export interface CollectionSummary {
+  appId: string;
+  name?: string | null;
+}
+
+/**
+ * Fetches up to 100 Collections accessible to the caller for use in the
+ * "Compare with" autocomplete. Raw `/v2/collections` call — no generated client.
+ */
+export async function fetchCollectionsForCompare(
+  accessToken: string,
+): Promise<CollectionSummary[]> {
+  const config = useRuntimeConfig().public;
+  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
+  const base = explicit && explicit.length > 0
+    ? explicit.replace(/\/$/, "")
+    : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "").replace(/\/$/, "");
+  const url = `${base}/v2/collections?pageSize=100`;
+  const resp = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+  });
+  if (!resp.ok) return [];
+  const items = (await resp.json()) as CollectionSummary[];
+  return Array.isArray(items) ? items : [];
 }
