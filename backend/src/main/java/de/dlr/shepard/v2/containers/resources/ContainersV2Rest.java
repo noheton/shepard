@@ -569,7 +569,9 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
   public Response listChannels(
     @PathParam("appId") String appId,
+    @Parameter(description = "0-based page index. Default `0`. Values past the last page return an empty items list.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Number of channels per page. Default `200`. Must be >= 0.")
     @QueryParam("pageSize") @DefaultValue("200") @PositiveOrZero int pageSize,
     @Context SecurityContext sc
   ) {
@@ -879,13 +881,24 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no live-window concept.")
   public Response getLiveWindow(
       @PathParam("appId") String appId,
+      @Parameter(description = "Preferred channel selector: the UUID v7 shepardId of the channel. " +
+        "Takes precedence over the 5-tuple (measurement/device/location/symbolicName/field). " +
+        "Exactly one of shepardId or a complete 5-tuple must be supplied.")
       @QueryParam("shepardId") UUID shepardId,
+      @Parameter(description = "5-tuple selector — measurement component. Required when shepardId is absent.")
       @QueryParam("measurement") String measurement,
+      @Parameter(description = "5-tuple selector — device component. Required when shepardId is absent.")
       @QueryParam("device") String device,
+      @Parameter(description = "5-tuple selector — location component. Required when shepardId is absent.")
       @QueryParam("location") String location,
+      @Parameter(description = "5-tuple selector — symbolicName component. Required when shepardId is absent.")
       @QueryParam("symbolicName") String symbolicName,
+      @Parameter(description = "5-tuple selector — field component. Required when shepardId is absent.")
       @QueryParam("field") String field,
+      @Parameter(description = "Window size in seconds. Default `300`. Min `1`, max `3600`.")
       @QueryParam("windowSeconds") @DefaultValue("300") @Min(1) @Max(3600) int windowSeconds,
+      @Parameter(description = "When `true` (default), the response includes the first point before and " +
+        "the first point after the window boundary so charts render continuous lines.")
       @QueryParam("withBoundaryPoints") @DefaultValue("true") boolean withBoundaryPoints,
       @Context SecurityContext sc
   ) {
