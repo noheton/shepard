@@ -35,6 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -121,7 +122,9 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   public Response create(
+    @Parameter(name = "kind", description = "Reference kind discriminator — required. Accepted values: \"file\", \"uri\", \"timeseries\", \"git\", or any plugin-registered kind. Returns 400 for unknown/uninstalled kinds.", required = true)
     @QueryParam("kind") String kind,
+    @Parameter(name = "dataObjectAppId", description = "UUID v7 appId of the parent DataObject to attach the new reference to. Returns 404 if no DataObject exists with this appId.", required = true)
     @QueryParam("dataObjectAppId") String dataObjectAppId,
     JsonNode body,
     @Context SecurityContext sc
@@ -283,6 +286,7 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "404", description = "No reference with that appId.")
   public Response uploadContent(
     @PathParam("appId") String appId,
+    @Parameter(name = "filename", description = "Original filename including extension (e.g. \"robot.urdf\", \"scan.h5\"). Required — used for MIME-type detection and fileKind classification (e.g. \".urdf\" → fileKind=urdf). Returns 400 when absent.", required = true)
     @QueryParam("filename") String filename,
     @HeaderParam("Content-Length") String contentLengthHeader,
     InputStream body,
@@ -398,8 +402,11 @@ public class ReferencesV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   public Response list(
+    @Parameter(name = "kind", description = "Reference kind discriminator — required. Accepted values: \"file\", \"uri\", \"timeseries\", \"git\", or any plugin-registered kind. Returns 400 for unknown/uninstalled kinds.", required = true)
     @QueryParam("kind") String kind,
+    @Parameter(name = "dataObjectAppId", description = "UUID v7 appId of the parent DataObject whose references to list. Returns 404 if no DataObject exists with this appId.", required = true)
     @QueryParam("dataObjectAppId") String dataObjectAppId,
+    @Parameter(name = "fileKind", description = "Optional sub-type filter; only meaningful when kind=file. Narrows results to FileReferences whose fileKind matches (e.g. \"urdf\", \"hdf5\"). Ignored for all other kinds.")
     @QueryParam("fileKind") String fileKind,
     @Context SecurityContext sc
   ) {
