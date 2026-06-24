@@ -28,6 +28,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -108,7 +109,13 @@ public class ShapesApplicableRest {
   @APIResponse(responseCode = "400", description = "focusAppId query parameter missing.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No entity carries the focus appId.")
-  public Response listApplicable(@QueryParam("focusAppId") String focusAppId) {
+  public Response listApplicable(
+    @Parameter(
+      description = "AppId of the entity to match shapes against (DataObject, Collection, etc.). Required.",
+      required = true
+    )
+    @QueryParam("focusAppId") String focusAppId
+  ) {
     if (focusAppId == null || focusAppId.isBlank()) {
       return problem(PT_BAD_REQUEST, "focusAppId required", 400, "Query parameter focusAppId is required");
     }
