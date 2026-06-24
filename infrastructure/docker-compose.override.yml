@@ -74,6 +74,10 @@ services:
       SHEPARD_FILES_S3_PATH_STYLE_ACCESS: "true"
       SHEPARD_FILES_S3_ACCESS_KEY_ID: "GK6f1eb80a3f7237cda3cf5830"
       SHEPARD_FILES_S3_SECRET_ACCESS_KEY: "a01a7b7b0d5a694aa8817b7657835b688ee4bf422fdf3df3a4c8b8137bf1e5f5"
+      # Enable the S3 FileStorage provider so FileStorageRegistry can activate
+      # provider=s3 (Garage). Without this the file-s3 bean stays unregistered and
+      # uploads silently fall back to GridFS.
+      SHEPARD_PLUGINS_FILE_S3_ENABLED: "true"
       SHEPARD_MIGRATION_AUTO_SWEEP_SOURCE: "none"
       SHEPARD_MIGRATION_AUTO_SWEEP_TARGET: "none"
       # SHACL-1 — audit-chain HMAC instance secret. Quarkus 3.27 rejects
