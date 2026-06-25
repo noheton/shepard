@@ -71,7 +71,9 @@ public record CrossDoBulkDataRequestIO(
 
   @Positive
   @Schema(
-    description = "LTTB target rows per series. Default 500. Hard cap 5000.",
+    description = "LTTB target rows per series. Minimum 1, default 500 (when null or omitted), hard cap 5000.",
+    minimum = "1",
+    maximum = "5000",
     example = "500"
   )
   Integer downsampleTo
