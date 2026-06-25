@@ -48,11 +48,13 @@ RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # from BtbN (https://github.com/BtbN/ffmpeg-builds) — self-contained, no shared-lib
 # dependencies. Only ffmpeg and ffprobe binaries are kept; the rest is cleaned up.
 # xz is installed temporarily to decompress the .tar.xz archive.
-# Pinned to a dated autobuild asset: BtbN retired the floating
-# `latest/ffmpeg-master-latest-linux64-gpl.tar.xz` asset (now 404), so the URL
-# must reference a concrete autobuild tag + git-hashed asset. Bump FFMPEG_URL to
-# a newer release from https://github.com/BtbN/FFmpeg-Builds/releases as needed.
-ARG FFMPEG_URL='https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-10-14-29/ffmpeg-N-124941-g54749da98a-linux64-gpl.tar.xz'
+# Use BtbN's floating `latest` asset: dated autobuild tags are rotated/deleted
+# over time (the previously-pinned 2026-06-10 tag now 404s and broke every
+# backend image build, 2026-06-25). The `latest/ffmpeg-master-latest-linux64-gpl.tar.xz`
+# pointer is maintained by BtbN and verified reachable (HTTP 200) — it tracks
+# master, so the exact ffmpeg build can drift, but it never rots. Pin a dated
+# asset again only if a specific ffmpeg revision is required.
+ARG FFMPEG_URL='https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz'
 RUN microdnf install -y xz --nodocs \
     && mkdir -p /tmp/ffmpeg-dl \
     && curl -fsSL -L "${FFMPEG_URL}" \
