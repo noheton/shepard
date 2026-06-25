@@ -257,6 +257,8 @@ export * from './SafeDeleteConflict';
 export * from './SearchBody';
 export * from './SearchParams';
 export * from './SearchScope';
+export * from './SearchV2Item';
+export * from './SearchV2Result';
 export * from './SelectItem';
 export * from './SemanticAnnotation';
 export * from './SemanticConfig';

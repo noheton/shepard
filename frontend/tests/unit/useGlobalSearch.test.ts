@@ -2,30 +2,39 @@
  * Tests for `useGlobalSearch` — the composer behind the header-search
  * dropdown (UI-002).
  *
- * The composer wires three existing search composables (collections /
- * dataobjects / containers). We mock `useShepardApi` at one level
- * and assert composed behaviour: debounce, error capture, empty-state,
- * limits, and that an empty query never fires a request.
+ * Collections + DataObjects are now fetched via GET /v2/search
+ * (useV2ShepardApi + SearchV2Api). Containers remain on v1 (V1-EXCEPTION).
+ * We mock both API helpers and assert composed behaviour: debounce, error
+ * capture, empty-state, limits, and that an empty query never fires a request.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 // vi.mock is hoisted by Vitest above the imports at runtime.
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
+}));
 vi.mock("~/composables/common/api/useShepardApi", () => ({
   useShepardApi: vi.fn(),
 }));
 
-const mockSearch = vi.fn();
+const mockGlobalSearch = vi.fn();
 const mockSearchContainers = vi.fn();
 
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
-  mockSearch.mockReset();
+  mockGlobalSearch.mockReset();
   mockSearchContainers.mockReset();
+  // v2 API — used for collections + dataobjects
+  (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
+    ref({ globalSearch: mockGlobalSearch }),
+  );
+  // v1 API — used for containers only (via useContainerSearch)
   (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ search: mockSearch, searchContainers: mockSearchContainers }),
+    ref({ searchContainers: mockSearchContainers }),
   );
 });
 
@@ -35,13 +44,15 @@ afterEach(() => {
 
 /** Advance the debounce + flush microtasks for any pending Promises. */
 async function tickAndFlush(ms: number) {
-  // Advance, then yield repeatedly so chains of awaited promises can settle.
   await vi.advanceTimersByTimeAsync(ms);
-  // Plus a few microtask flushes for good measure (Promise.allSettled chains
-  // sit one tick deeper than the resolved promises themselves).
   for (let i = 0; i < 5; i++) {
     await Promise.resolve();
   }
+}
+
+/** Build a v2 search result envelope. */
+function makeV2Result(items: Array<{ appId: string; name: string; kind: "collection" | "dataobject"; parentCollectionAppId?: string | null }>) {
+  return { items, total: items.length, page: 0, pageSize: 50, query: "" };
 }
 
 describe("useGlobalSearch", () => {
@@ -49,7 +60,7 @@ describe("useGlobalSearch", () => {
     const g = useGlobalSearch({ debounceMs: 100 });
     g.query.value = "";
     await tickAndFlush(200);
-    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockGlobalSearch).not.toHaveBeenCalled();
     expect(mockSearchContainers).not.toHaveBeenCalled();
     expect(g.collections.value).toEqual([]);
     expect(g.dataObjects.value).toEqual([]);
@@ -60,12 +71,12 @@ describe("useGlobalSearch", () => {
     const g = useGlobalSearch({ debounceMs: 100 });
     g.query.value = "   ";
     await tickAndFlush(200);
-    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockGlobalSearch).not.toHaveBeenCalled();
     expect(mockSearchContainers).not.toHaveBeenCalled();
   });
 
-  it("debounces — typing many chars within the window fires only once per kind", async () => {
-    mockSearch.mockResolvedValue({ results: [], resultSet: [] });
+  it("debounces — typing many chars within the window fires only once", async () => {
+    mockGlobalSearch.mockResolvedValue(makeV2Result([]));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 300 });
@@ -80,37 +91,25 @@ describe("useGlobalSearch", () => {
     g.query.value = "TR-00";
     await tickAndFlush(50);
     // Still under 300ms total since the LAST keystroke ⇒ no fire yet.
-    expect(mockSearch).not.toHaveBeenCalled();
+    expect(mockGlobalSearch).not.toHaveBeenCalled();
     // Now wait past the debounce window.
     await tickAndFlush(350);
-    // search() is called twice (once for Collection, once for DataObject);
-    // searchContainers() is called once.
-    expect(mockSearch).toHaveBeenCalledTimes(2);
+    // v2 search fires once (both collections + dataobjects come from one call).
+    expect(mockGlobalSearch).toHaveBeenCalledTimes(1);
+    // Container search fires once (v1, separate call).
     expect(mockSearchContainers).toHaveBeenCalledTimes(1);
   });
 
   it("populates collections + dataobjects + containers from a single query", async () => {
-    mockSearch.mockImplementation((req: { searchBody: { searchParams: { queryType: string } } }) => {
-      const t = req.searchBody.searchParams.queryType;
-      if (t === "Collection") {
-        // V2-LINKS: the wire carries `appId` (UUID v7) on every entity even
-        // though the generated TS model only declares `id`. The search
-        // composables read it defensively + thread it into the result shape.
-        return Promise.resolve({
-          results: [
-            { id: 42, name: "LUMEN campaign", appId: "019eb019-d49b-7131-b2d2-3f3107d36a4f" },
-          ],
-          resultSet: [{ collectionId: 42 }],
-        });
-      }
-      // DataObject
-      return Promise.resolve({
-        results: [
-          { id: 999, name: "TR-004", appId: "019eb019-d6c8-7858-b24d-b3b15de81d97" },
-        ],
-        resultSet: [{ collectionId: 42, dataObjectId: 999 }],
-      });
-    });
+    mockGlobalSearch.mockResolvedValue(makeV2Result([
+      { appId: "019eb019-d49b-7131-b2d2-3f3107d36a4f", name: "LUMEN campaign", kind: "collection" },
+      {
+        appId: "019eb019-d6c8-7858-b24d-b3b15de81d97",
+        name: "TR-004",
+        kind: "dataobject",
+        parentCollectionAppId: "019eb019-d49b-7131-b2d2-3f3107d36a4f",
+      },
+    ]));
     mockSearchContainers.mockResolvedValue({
       results: [{ id: 7, name: "lumen-ts", type: "TIMESERIES" }],
     });
@@ -121,17 +120,18 @@ describe("useGlobalSearch", () => {
 
     expect(g.collections.value).toEqual([
       {
-        collectionId: 42,
+        collectionId: 0,
         collectionName: "LUMEN campaign",
         collectionAppId: "019eb019-d49b-7131-b2d2-3f3107d36a4f",
       },
     ]);
     expect(g.dataObjects.value).toEqual([
       {
-        dataObjectId: 999,
+        dataObjectId: 0,
         dataObjectName: "TR-004",
         dataObjectAppId: "019eb019-d6c8-7858-b24d-b3b15de81d97",
-        collectionId: 42,
+        collectionId: undefined,
+        parentCollectionAppId: "019eb019-d49b-7131-b2d2-3f3107d36a4f",
       },
     ]);
     expect(g.containers.value).toEqual([
@@ -141,31 +141,20 @@ describe("useGlobalSearch", () => {
     expect(g.isEmpty.value).toBe(false);
   });
 
-  it("DataObject search runs WITHOUT collectionId in scope (global mode)", async () => {
-    mockSearch.mockResolvedValue({ results: [], resultSet: [] });
+  it("v2 search is called with the trimmed query string", async () => {
+    mockGlobalSearch.mockResolvedValue(makeV2Result([]));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 100 });
     g.query.value = "anything";
     await tickAndFlush(150);
 
-    const doCalls = mockSearch.mock.calls.filter(
-      (call: unknown[]) => {
-        const req = call[0] as { searchBody: { searchParams: { queryType: string } } };
-        return req.searchBody.searchParams.queryType === "DataObject";
-      },
-    );
-    expect(doCalls.length).toBe(1);
-    const firstCall = doCalls[0];
-    expect(firstCall).toBeDefined();
-    const reqArg = firstCall![0] as { searchBody: { scopes: Array<{ collectionId?: number }> } };
-    const scope = reqArg.searchBody.scopes[0];
-    expect(scope).toBeDefined();
-    expect(scope!.collectionId).toBeUndefined();
+    expect(mockGlobalSearch).toHaveBeenCalledTimes(1);
+    expect(mockGlobalSearch).toHaveBeenCalledWith({ q: "anything" });
   });
 
   it("isEmpty is true when query is non-empty and all kinds return zero results", async () => {
-    mockSearch.mockResolvedValue({ results: [], resultSet: [] });
+    mockGlobalSearch.mockResolvedValue(makeV2Result([]));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 100 });
@@ -176,8 +165,8 @@ describe("useGlobalSearch", () => {
     expect(g.error.value).toBeNull();
   });
 
-  it("captures error and sets a user-facing message when a kind errors", async () => {
-    mockSearch.mockRejectedValue(new Error("boom"));
+  it("captures error and sets a user-facing message when v2 search errors", async () => {
+    mockGlobalSearch.mockRejectedValue(new Error("boom"));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 100 });
@@ -188,20 +177,24 @@ describe("useGlobalSearch", () => {
   });
 
   it("respects per-kind limits", async () => {
-    const many = Array.from({ length: 20 }, (_, i) => ({ id: i + 1, name: `r${i}` }));
-    const triples = many.map(r => ({ collectionId: r.id }));
-    mockSearch.mockImplementation((req: { searchBody: { searchParams: { queryType: string } } }) => {
-      const t = req.searchBody.searchParams.queryType;
-      if (t === "Collection") {
-        return Promise.resolve({ results: many, resultSet: triples });
-      }
-      return Promise.resolve({
-        results: many.map(r => ({ id: r.id + 1000, name: r.name })),
-        resultSet: many.map(r => ({ collectionId: 1, dataObjectId: r.id + 1000 })),
-      });
-    });
+    const manyCollections = Array.from({ length: 20 }, (_, i) => ({
+      appId: `019eb019-0000-7000-a000-${String(i).padStart(12, "0")}`,
+      name: `coll-${i}`,
+      kind: "collection" as const,
+    }));
+    const manyDos = Array.from({ length: 20 }, (_, i) => ({
+      appId: `019eb019-1000-7000-a000-${String(i).padStart(12, "0")}`,
+      name: `do-${i}`,
+      kind: "dataobject" as const,
+      parentCollectionAppId: "019eb019-d49b-7131-b2d2-3f3107d36a4f",
+    }));
+    mockGlobalSearch.mockResolvedValue(makeV2Result([...manyCollections, ...manyDos]));
     mockSearchContainers.mockResolvedValue({
-      results: many.map(r => ({ id: r.id, name: r.name, type: "FILE" })),
+      results: Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `ct-${i}`,
+        type: "FILE",
+      })),
     });
 
     const g = useGlobalSearch({
@@ -219,10 +212,9 @@ describe("useGlobalSearch", () => {
   });
 
   it("reset() clears query + results", async () => {
-    mockSearch.mockResolvedValue({
-      results: [{ id: 1, name: "X" }],
-      resultSet: [{ collectionId: 1 }],
-    });
+    mockGlobalSearch.mockResolvedValue(makeV2Result([
+      { appId: "019eb019-d49b-7131-b2d2-3f3107d36a4f", name: "X", kind: "collection" },
+    ]));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 50 });
@@ -239,10 +231,9 @@ describe("useGlobalSearch", () => {
   });
 
   it("clearing the query mid-search wipes results immediately", async () => {
-    mockSearch.mockResolvedValue({
-      results: [{ id: 1, name: "X" }],
-      resultSet: [{ collectionId: 1 }],
-    });
+    mockGlobalSearch.mockResolvedValue(makeV2Result([
+      { appId: "019eb019-d49b-7131-b2d2-3f3107d36a4f", name: "X", kind: "collection" },
+    ]));
     mockSearchContainers.mockResolvedValue({ results: [] });
 
     const g = useGlobalSearch({ debounceMs: 50 });

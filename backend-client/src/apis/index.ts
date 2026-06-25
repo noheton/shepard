@@ -60,6 +60,7 @@ export * from './PublishApi';
 export * from './ReferenceApi';
 export * from './ReferencesApi';
 export * from './SearchApi';
+export * from './SearchV2Api';
 export * from './SemanticAnnotationApi';
 export * from './SemanticAnnotationsApi';
 export * from './SemanticPredicateStatisticsApi';
