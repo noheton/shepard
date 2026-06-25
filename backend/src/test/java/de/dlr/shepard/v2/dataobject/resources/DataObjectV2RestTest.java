@@ -997,4 +997,30 @@ class DataObjectV2RestTest {
       "DB-OPT5 default-trim should be < 50% of ?include=full payload (got " + trimmed.length() + " vs " + full.length() + ")"
     );
   }
+
+  @Test
+  void predecessorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
+        "predecessorChain", String.class, String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "depth".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "predecessorChain.depth must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "predecessorChain.depth must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for predecessorChain.depth");
+  }
+
+  @Test
+  void successorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
+        "successorChain", String.class, String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "depth".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "successorChain.depth must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "successorChain.depth must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for successorChain.depth");
+  }
 }
