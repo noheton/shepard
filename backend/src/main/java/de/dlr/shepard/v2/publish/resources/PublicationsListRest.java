@@ -93,7 +93,11 @@ public class PublicationsListRest {
     "publication history. Clients wanting only active Publications should filter " +
     "digitalObjectMutability != 'retired' client-side. " +
     "Auth: Read permission on the entity. No pagination — entities rarely have more than a " +
-    "handful of Publication rows."
+    "handful of Publication rows.\n\n" +
+    "DEPRECATED (APISIMP-PUBLICATIONS-KIND-PATH-SEGMENT): use the kind-agnostic alias " +
+    "GET /v2/publications?entityAppId={appId} instead — it does not require the caller to " +
+    "know the entity-kind URL segment. This path is kept for backward compatibility.",
+    deprecated = true
   )
   @APIResponse(
     responseCode = "200",
