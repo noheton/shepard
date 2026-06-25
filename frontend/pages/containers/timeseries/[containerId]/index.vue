@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import DeleteContainerButton from "~/components/container/DeleteContainerButton.vue";
+import ViewRecipeBuilderDialog from "~/components/container/timeseries/ViewRecipeBuilderDialog.vue";
 import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesContainerAccessor";
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 import { useTimeseriesContainerChartView } from "~/composables/containers/useTimeseriesContainerChartView";
@@ -52,6 +53,11 @@ const effectiveChannelKeys = computed<string[] | undefined>(() => {
   if (showAllChannels.value) return undefined; // ⇒ chart's legacy first-N path
   return persistedChannelKeys.value;
 });
+
+// UX-WALK-2026-05-29-07: "Visualize in 3D" CTA — opens ViewRecipeBuilderDialog
+// pre-wired to this container's channels. Shortens click-path to Trace3D from
+// 4+ clicks to 1.
+const showVisualize3D = ref(false);
 
 // Edit mode for the channel selector. When active, render checkboxes
 // alongside the chart; when not, just the chart.
@@ -200,10 +206,17 @@ useHead({
       <ExpansionPanels class="mb-4" :default-open="[0, 1]">
         <ExpansionPanelItem title="Channel Overview">
           <template
-            v-if="containerAccessor.isAllowedToEditData.value && !editingChartView"
+            v-if="!editingChartView"
             #append
           >
             <ExpansionPanelTitleButton
+              v-if="containerAccessor.measurements.value.length > 0"
+              icon="mdi-cube-outline"
+              text="Visualize in 3D"
+              @click.stop="showVisualize3D = true"
+            />
+            <ExpansionPanelTitleButton
+              v-if="containerAccessor.isAllowedToEditData.value"
               icon="mdi-tune-variant"
               text="Edit channels"
               @click="startEditChartView"
@@ -341,6 +354,17 @@ useHead({
         </ExpansionPanelItem>
       </ExpansionPanels>
     </v-container>
+    <!-- UX-WALK-2026-05-29-07: "Visualize in 3D" dialog — pre-wired to this
+         container's channels. startNs=0 (epoch) + endNs=now lets the user
+         refine the window inside the dialog before launching the shape. -->
+    <ViewRecipeBuilderDialog
+      v-if="containerAccessor.measurements.value.length > 0"
+      v-model="showVisualize3D"
+      :container-id="containerId"
+      :channels="containerAccessor.measurements.value"
+      :start-ns="0"
+      :end-ns="Date.now() * 1_000_000"
+    />
   </PageShell>
 </template>
 
