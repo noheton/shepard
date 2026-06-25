@@ -187,12 +187,19 @@ public class DataObjectV2Rest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Parameter(description = "Optional display-name filter (case-insensitive substring match). Omit to return all DataObjects.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "Lifecycle status filter. Accepted values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED. Unrecognised values silently return an empty page (no 400).")
     @QueryParam("status") String status,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
+    @Parameter(description = "Comma-separated response modifiers. `time-bounds` — populates `timeBoundsStart`/`timeBoundsEnd` per DataObject (costs one extra TimescaleDB round-trip). `full` — opts back into the full (pre-DB-OPT5) wire shape including deprecated fields.")
     @QueryParam("include") String include,
+    @Parameter(description = "Comma-separated field projection (flat CSV). Fields must exist on DataObjectListItemV2; an unrecognised field returns 400 with the offending name in the body. `id` and `appId` are always included. Omit to return all default fields.")
     @QueryParam("fields") String fields,
+    @Parameter(description = "Annotation filter: `<predicateIri>=<value>`. Restricts results to DataObjects carrying a semantic annotation with exactly that predicate IRI and value. Example: `urn:shepard:quality:rating=PASS`. Malformed values (missing `=` or empty parts) are silently ignored.")
     @QueryParam("annotationFilter") String annotationFilter,
     @Context SecurityContext sc
   ) {
