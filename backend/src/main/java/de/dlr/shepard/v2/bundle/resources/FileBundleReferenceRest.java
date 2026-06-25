@@ -47,6 +47,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -377,6 +378,7 @@ public class FileBundleReferenceRest {
   public Response deleteGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "When true, also permanently deletes all files in the group. When false (default), the request fails with 400 if the group still contains files.")
     @QueryParam("force") boolean force,
     @Context SecurityContext securityContext
   ) {
@@ -414,7 +416,7 @@ public class FileBundleReferenceRest {
       "Query parameters:\n" +
       "* `page` — 0-based page index. Default `0`. Values past the last page return an " +
       "empty `items[]` with the correct `totalElements`/`totalPages`.\n" +
-      "* `size` — page size. Default `200`; min `1`; max `1000`. Values outside the range " +
+      "* `pageSize` — page size. Default `200`; min `1`; max `1000`. Values outside the range " +
       "are clamped, never reject — the API gives a useful result even when a client " +
       "supplies an out-of-policy hint.\n\n" +
       "Auth: Read permission on the parent DataObject (inherited from its Collection)."
@@ -430,7 +432,9 @@ public class FileBundleReferenceRest {
   public Response listGroupFiles(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "0-based page index. Default 0. Values past the last page return an empty items[] with the correct totalElements/totalPages.")
     @QueryParam("page") Integer page,
+    @Parameter(description = "Page size. Default 200; clamped server-side to [1, 1000]. Out-of-range hints are clamped, never rejected.")
     @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {

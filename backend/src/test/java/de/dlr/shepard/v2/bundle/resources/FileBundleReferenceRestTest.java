@@ -591,4 +591,45 @@ class FileBundleReferenceRestTest {
     assertEquals(0, paged.getTotalPages());
     assertEquals(0, paged.getItems().size());
   }
+
+  // ─── APISIMP-COLLECTION-LIST-BUNDLE-SIZE-PAGESIZE reflection guards ────────
+
+  @Test
+  void deleteGroup_forceParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = FileBundleReferenceRest.class.getMethod(
+        "deleteGroup", String.class, String.class, boolean.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "force".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "deleteGroup.force must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "deleteGroup.force must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for deleteGroup.force");
+  }
+
+  @Test
+  void listGroupFiles_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = FileBundleReferenceRest.class.getMethod(
+        "listGroupFiles", String.class, String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "page".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "listGroupFiles.page must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "listGroupFiles.page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for listGroupFiles.page");
+  }
+
+  @Test
+  void listGroupFiles_pageSizeParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = FileBundleReferenceRest.class.getMethod(
+        "listGroupFiles", String.class, String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "listGroupFiles.pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "listGroupFiles.pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for listGroupFiles.pageSize");
+  }
 }
