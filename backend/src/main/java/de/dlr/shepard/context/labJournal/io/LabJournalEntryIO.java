@@ -13,9 +13,24 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "LabJournalEntry")
 public class LabJournalEntryIO {
 
-  @Schema(readOnly = true, required = true)
+  /**
+   * APISIMP-LJE-DATAOBJECTID-NUMERIC: numeric Neo4j OGM id — kept for existing
+   * callers; use {@code dataObjectAppId} (UUID v7) for new code.
+   */
+  @Schema(readOnly = true, required = true, deprecated = true,
+      description = "DEPRECATED: numeric Neo4j OGM id of the parent DataObject. Use dataObjectAppId (UUID v7) instead.")
   @NotNull
   private long dataObjectId;
+
+  /**
+   * UUID v7 appId of the parent DataObject — the single stable cross-substrate
+   * identity. Null only for entries whose DataObject predates the L2a appId
+   * backfill.
+   */
+  @Schema(readOnly = true, nullable = true,
+      description = "UUID v7 appId of the parent DataObject. Preferred over the deprecated dataObjectId.",
+      example = "019506b4-dc55-7c92-b4e1-bf94db37e5b9")
+  private String dataObjectAppId;
 
   @NotNull
   private String journalContent;
@@ -84,6 +99,7 @@ public class LabJournalEntryIO {
   public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
     this.appId = labJournalEntry.getAppId();
     this.dataObjectId = labJournalEntry.getDataObject().getShepardId();
+    this.dataObjectAppId = labJournalEntry.getDataObject().getAppId();
     this.journalContent = labJournalEntry.getContent();
     this.id = labJournalEntry.getId();
     this.createdAt = labJournalEntry.getCreatedAt();
