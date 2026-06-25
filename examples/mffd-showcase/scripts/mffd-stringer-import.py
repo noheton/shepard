@@ -227,10 +227,13 @@ class Client:
     def request(self, method: str, path: str, *, expect=(200, 201, 204),
                 retry_on_403=False, max_403_retries=12, **kw) -> requests.Response:
         url = path if path.startswith("http") else f"{self.host}{path}"
-        # Caller-overridable timeout (default 300s). Large video/MP4 content PUTs
-        # need a much longer ceiling — at 300s the proxy returns 499 (Client Closed
-        # Request) mid-upload. The upload helper passes a 30-min timeout.
-        timeout = kw.pop("timeout", 300)
+        # Caller-overridable (connect, read) timeout. The READ timeout is the
+        # one that matters here: it bounds how long we wait for the backend's
+        # RESPONSE. A bare scalar made the read effectively unbounded against a
+        # poisoned keep-alive connection (backend accepted the upload but never
+        # replied → worker blocked in ssl.read forever; the 2026-06-25 stall).
+        # 10s connect, 120s read default; large content PUTs override the read.
+        timeout = kw.pop("timeout", (10, 120))
         attempt = 0
         n403 = 0
         backoff = 1.0
@@ -239,8 +242,16 @@ class Client:
             try:
                 resp = self.session.request(method, url, timeout=timeout, **kw)
             except (requests.ConnectionError, requests.Timeout) as e:
-                self._log(f"  [retry] {method} {path} transport error: {e} "
-                          f"(attempt {attempt}, sleep {backoff:.0f}s)")
+                # STRINGER-HANG fix (2026-06-25): drop this thread's session so
+                # the retry dials a FRESH connection instead of reusing the dead
+                # pooled keep-alive socket. Without this the worker retried
+                # forever on the same wedged connection (silent, since the old
+                # log was gated on --verbose). Print unconditionally so a stall
+                # is visible in the run log.
+                self._local.session = None
+                print(f"  [retry] {method} {path} transport error: "
+                      f"{type(e).__name__} (attempt {attempt}, fresh conn, "
+                      f"sleep {backoff:.0f}s)", file=sys.stderr, flush=True)
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
                 continue
@@ -723,7 +734,7 @@ class Importer:
                     f"/v2/references/{ref_appid}/content?filename={quote(fname)}",
                     data=fh, headers={"Content-Type": "application/octet-stream"},
                     expect=(200, 201, 204), retry_on_403=True,
-                    timeout=1800)  # 30 min ceiling for large video/MP4 uploads
+                    timeout=(10, 1800))  # 10s connect, 30-min read ceiling for large video/MP4 uploads
             stored = self._content_length(ref_appid)
             if stored == size or size == 0:
                 break
