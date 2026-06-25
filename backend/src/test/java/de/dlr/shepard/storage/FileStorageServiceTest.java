@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * STORAGE-SPI-UNIFY-1 — proves {@link FileStorageService} routes every
@@ -75,24 +76,85 @@ class FileStorageServiceTest {
     verify(fileService).createFile(CONTAINER, "doc.pdf", bytes, 3L);
   }
 
-  // ── (a) store with provider=s3 → routes to the S3 adapter (no GridFS) ──────
+  // ── (a) store with provider=s3 → server-side put() through the SPI ─────────
 
   @Test
-  void storeFile_s3Active_doesNotTouchGridFsAndRequiresPresignedPath() {
+  void storeFile_s3Active_routesThroughSpiPutAndStampsProvider() throws Exception {
+    // STORAGE-SPI-UNIFY-PUT: the non-GridFS path now streams server-side
+    // through the adapter's put(), returning a ShepardFile keyed on the
+    // locator's oid — never touching the GridFS magic route.
     when(registry.requireActive()).thenReturn(s3);
-    InputStream bytes = new ByteArrayInputStream(new byte[] { 9 });
+    byte[] payload = new byte[] { 1, 2, 3, 4, 5 };
+    InputStream bytes = new ByteArrayInputStream(payload);
+    // S3 put() returns "<container>/<uuid>"; the service must persist
+    // the uuid as the oid so getPayload (buildLocator = container/oid)
+    // reconstructs the same key.
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/abc-123"));
 
-    // The direct-streaming single-file path is unsupported for object
-    // stores — the contract is "use the presigned URL endpoint". The
-    // key assertion for STORAGE-SPI-UNIFY-1 is that the decision is made
-    // via the registry's active adapter (s3) and FileService (the GridFS
-    // magic route) is NEVER consulted.
-    assertThrows(
-      ServiceUnavailableException.class,
-      () -> service.storeFile(CONTAINER, "clip.bin", bytes, 1L)
-    );
+    ShepardFile result = service.storeFile(CONTAINER, "clip.bin", bytes, 5L);
+
+    assertNotNull(result);
+    // oid is the locator key segment — round-trips with buildLocator.
+    assertEquals("abc-123", result.getOid());
+    assertEquals("s3", result.getProviderId());
+    assertEquals("clip.bin", result.getFilename());
+    assertEquals(5L, result.getFileSize());
+    // md5 computed while streaming (FB1a bookkeeping for object stores).
+    assertNotNull(result.getMd5());
+
+    // The captured put request carries the container, filename + declared size.
+    ArgumentCaptor<StoragePutRequest> putCaptor = ArgumentCaptor.forClass(StoragePutRequest.class);
+    verify(s3).put(putCaptor.capture());
+    assertEquals(CONTAINER, putCaptor.getValue().container());
+    assertEquals("clip.bin", putCaptor.getValue().fileName());
+    assertEquals(5L, putCaptor.getValue().sizeBytes());
+
+    // GridFS magic route is NEVER consulted on the s3 path.
     verify(fileService, never()).createFile(any(), any(), any(), org.mockito.ArgumentMatchers.anyLong());
     verify(fileService, never()).createFile(any(), any(), any());
+  }
+
+  @Test
+  void storeFile_s3Active_roundTripsLocatorThroughGetPayload() throws Exception {
+    // Make-or-break correctness: the oid persisted by storeFile must,
+    // when fed back through getPayload, reconstruct the EXACT locator the
+    // adapter expects. We prove it end-to-end with the same mock adapter.
+    when(registry.requireActive()).thenReturn(s3);
+    when(registry.list()).thenReturn(List.of(gridfs, s3));
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/key-xyz"));
+
+    ShepardFile stored = service.storeFile(
+      CONTAINER, "f.bin", new ByteArrayInputStream(new byte[] { 7 }), 1L);
+    stored.setProviderId("s3"); // storeFile already stamps this; explicit for clarity.
+
+    InputStream payload = new ByteArrayInputStream(new byte[] { 7 });
+    StorageGetResponse resp = new StorageGetResponse("s3", "f.bin", null, 1L, payload);
+    // getPayload rebuilds container/oid → must equal the put locator.
+    when(s3.get(new StorageLocator("s3", CONTAINER + "/key-xyz"))).thenReturn(resp);
+
+    NamedInputStream named = service.getPayload(CONTAINER, stored);
+    assertEquals("f.bin", named.getName());
+    verify(s3).get(new StorageLocator("s3", CONTAINER + "/key-xyz"));
+  }
+
+  @Test
+  void storeFile_s3PutFails_mapsToServiceUnavailable() throws Exception {
+    when(registry.requireActive()).thenReturn(s3);
+    when(s3.put(any(StoragePutRequest.class))).thenThrow(new StorageException("garage down"));
+    assertThrows(
+      ServiceUnavailableException.class,
+      () -> service.storeFile(CONTAINER, "f.bin", new ByteArrayInputStream(new byte[] { 1 }), 1L)
+    );
+  }
+
+  @Test
+  void oidFromLocator_extractsKeySegmentAfterContainerPrefix() {
+    assertEquals("uuid-1", FileStorageService.oidFromLocator("c", "c/uuid-1"));
+    // Defensive fallback when the adapter used a different prefix.
+    assertEquals("tail", FileStorageService.oidFromLocator("c", "other/tail"));
+    assertEquals("whole", FileStorageService.oidFromLocator("c", "whole"));
   }
 
   @Test
