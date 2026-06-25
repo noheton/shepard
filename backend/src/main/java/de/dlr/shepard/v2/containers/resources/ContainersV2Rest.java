@@ -378,12 +378,15 @@ public class ContainersV2Rest {
     summary = "List containers of a kind, optionally filtered by name.",
     description =
       "Returns every container of `kind` the caller may read, as ContainerV2IO[]. " +
-      "An optional `name` query param narrows by substring.\n\nAuth: " +
+      "An optional `name` query param narrows by substring.\n\n" +
+      "Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
+      "(1–200) to slice the result. Omitting either returns all containers. " +
+      "`X-Total-Count` header carries the total before paging.\n\nAuth: " +
       "authenticated; per-container Read is enforced by the underlying list query."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of ContainerV2IO (may be empty).",
+    description = "List of ContainerV2IO (may be empty). Header X-Total-Count = total count before paging.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(type = SchemaType.ARRAY, implementation = ContainerV2IO.class)
@@ -396,6 +399,10 @@ public class ContainersV2Rest {
     @QueryParam("kind") String kind,
     @Parameter(description = "Optional substring filter on container name. Case-sensitive. Omit to return all containers of the given kind.")
     @QueryParam("name") String name,
+    @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all containers.")
+    @QueryParam("page") Integer page,
+    @Parameter(description = "Page size for pagination (1–200). Omit to return all containers.")
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -404,8 +411,19 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     try {
-      List<ContainerV2IO> containers = containersService.list(kind, name);
-      return Response.ok(containers).build();
+      List<ContainerV2IO> all = containersService.list(kind, name);
+      int total = all.size();
+      List<ContainerV2IO> result;
+      if (pageSize != null && pageSize > 0) {
+        int safeSize = Math.min(pageSize, 200);
+        int safePage = page != null ? page : 0;
+        int from = (int) Math.min((long) safePage * safeSize, total);
+        int to = (int) Math.min((long) from + safeSize, total);
+        result = all.subList(from, to);
+      } else {
+        result = all;
+      }
+      return Response.ok(result).header("X-Total-Count", total).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     }

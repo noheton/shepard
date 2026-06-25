@@ -14,6 +14,7 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -23,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -45,24 +47,44 @@ public class NotificationRest {
     summary = "List in-app notifications for the authenticated user.",
     description = "Returns all non-expired notifications visible to the caller, ordered most-recent-first. " +
     "Includes notifications addressed to the caller's username, ALL-audience broadcasts, and (when the " +
-    "caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Capped at 200 rows."
+    "caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Service cap: 200 rows.\n\n" +
+    "Pagination (APISIMP-NOTIFICATIONS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
+    "(1–200) to slice the result. Omitting either returns all notifications. " +
+    "`X-Total-Count` header carries the total before paging."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of notifications.",
+    description = "List of notifications. Header X-Total-Count = total count before paging.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = NotificationIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  public Response list(@Context SecurityContext sc) {
+  public Response list(
+    @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all notifications.")
+    @QueryParam("page") Integer page,
+    @Parameter(description = "Page size for pagination (1–200). Omit to return all notifications.")
+    @QueryParam("pageSize") Integer pageSize,
+    @Context SecurityContext sc
+  ) {
     String username = resolveUsername(sc);
     if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
         Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
-    List<NotificationIO> result = service.listForUser(username, isAdmin)
+    List<NotificationIO> all = service.listForUser(username, isAdmin)
       .stream()
       .map(NotificationIO::from)
       .toList();
-    return Response.ok(result).build();
+    int total = all.size();
+    List<NotificationIO> result;
+    if (pageSize != null && pageSize > 0) {
+      int safeSize = Math.min(pageSize, 200);
+      int safePage = page != null ? page : 0;
+      int from = (int) Math.min((long) safePage * safeSize, total);
+      int to = (int) Math.min((long) from + safeSize, total);
+      result = all.subList(from, to);
+    } else {
+      result = all;
+    }
+    return Response.ok(result).header("X-Total-Count", total).build();
   }
 
   @GET
