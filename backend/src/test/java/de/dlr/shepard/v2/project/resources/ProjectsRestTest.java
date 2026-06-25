@@ -44,15 +44,65 @@ class ProjectsRestTest {
 
   // ── list ──────────────────────────────────────────────────────────────────
 
+  static final String SECOND_APP_ID = "018f9c5a-7e26-7000-a000-000000000003";
+
   @Test
   void list_returns200WithAppIds() {
     when(projectsService.listProjectAppIds())
-      .thenReturn(List.of(PROJECT_APP_ID, "018f9c5a-7e26-7000-a000-000000000003"));
-    Response r = resource.list();
+      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    Response r = resource.list(null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<String> body = (List<String>) r.getEntity();
     assertEquals(2, body.size());
+  }
+
+  @Test
+  void list_xTotalCountHeader_reflectsUnpagedTotal() {
+    when(projectsService.listProjectAppIds())
+      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    Response r = resource.list(null, null);
+    assertEquals(200, r.getStatus());
+    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void list_pageSize1_returnsFirstItemOnly() {
+    when(projectsService.listProjectAppIds())
+      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    Response r = resource.list(0, 1);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<String> body = (List<String>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals(PROJECT_APP_ID, body.get(0));
+    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void list_pageSizeCappedAt200() {
+    List<String> manyIds = java.util.stream.IntStream.range(0, 50)
+      .mapToObj(i -> "018f9c5a-7e26-7000-a000-" + String.format("%012d", i))
+      .collect(java.util.stream.Collectors.toList());
+    when(projectsService.listProjectAppIds()).thenReturn(manyIds);
+    Response r = resource.list(0, 999);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<String> body = (List<String>) r.getEntity();
+    assertTrue(body.size() <= 200, "pageSize should be capped at 200");
+    assertEquals("50", String.valueOf(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void list_pagePastEnd_returnsEmpty() {
+    when(projectsService.listProjectAppIds())
+      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    Response r = resource.list(99, 10);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<String> body = (List<String>) r.getEntity();
+    assertTrue(body.isEmpty(), "page past end should return empty list");
+    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   // ── get ───────────────────────────────────────────────────────────────────

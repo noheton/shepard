@@ -72,18 +72,34 @@ public class ProjectsRest {
       "`urn:shepard:project = \"true\"`. Returned in name-order. The list is " +
       "always-visible — the frontend `/projects` route uses this to render its " +
       "tile grid.\n\n" +
+      "Pagination (APISIMP-PROJECTS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
+      "(1–200) to receive a slice. Omit both to return all projects. " +
+      "`X-Total-Count` header carries the total before paging.\n\n" +
       "For each appId in the response, follow up with `GET /v2/projects/{appId}` " +
       "for the Project envelope (with programmes and aggregate counts)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Array of Project appIds.",
+    description = "Array of Project appIds. Header X-Total-Count = total count before paging.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = String.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  public Response list() {
-    List<String> appIds = projectsService.listProjectAppIds();
-    return Response.ok(appIds).build();
+  public Response list(
+      @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all projects.")
+      @QueryParam("page") Integer page,
+      @Parameter(description = "Page size for pagination (1–200). Omit to return all projects.")
+      @QueryParam("pageSize") Integer pageSize) {
+    List<String> all = projectsService.listProjectAppIds();
+    long total = all.size();
+    List<String> result = all;
+    if (pageSize != null && pageSize > 0) {
+      int safeSize = Math.min(pageSize, 200);
+      int safePage = page != null ? page : 0;
+      int from = (int) Math.min((long) safePage * safeSize, total);
+      int to = (int) Math.min((long) from + safeSize, total);
+      result = all.subList(from, to);
+    }
+    return Response.ok(result).header("X-Total-Count", total).build();
   }
 
   // ─── GET Project envelope ─────────────────────────────────────────────────
