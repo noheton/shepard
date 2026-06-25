@@ -1,7 +1,8 @@
 import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 
 /**
- * V2-SWEEP Wave 1 (2026-06-10): the treeview is appId-native.
+ * SIDEBAR-LAZY-TREE (2026-06-25): the treeview is appId-native AND
+ * lazy-loaded.
  *
  * `id` is the DataObject's appId (UUID v7) — it is the value the v-treeview
  * keys on, the value sidebar links route on, and the value compared against
@@ -9,6 +10,16 @@ import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
  * `numericId` ONLY for the named v1-only dialog inputs (create-dialog
  * ParentInput/PredecessorInput — backlog SIDEBAR-V2-CREATE in aidocs/16);
  * it never appears in a route, link, or emit.
+ *
+ * Lazy contract: a node is expandable iff it has at least one child. Vuetify's
+ * `load-children` prop fires the first time a user expands a node whose
+ * `children` is an EMPTY ARRAY (`[]`). So:
+ *   - expandable node → `children: []` (placeholder; chevron shows, lazy-fetch
+ *     replaces it on first expand)
+ *   - leaf node → `children: undefined` (no `children` key → no chevron)
+ * The whole tree is NEVER materialised client-side; each level is fetched on
+ * demand. This is the MFFD-scale fix (8 483 DataObjects → ~43 eager fetches
+ * before, now one fetch of ~33 roots, children on expand).
  */
 export interface TreeviewItem {
   /** appId (UUID v7) — v2 identity; used for routes, treeview value, opened state. */
@@ -20,6 +31,12 @@ export interface TreeviewItem {
    */
   numericId: number;
   title: string;
+  /**
+   * Lazy children:
+   *   - `[]`        → expandable, not yet loaded (Vuetify fires load-children)
+   *   - non-empty   → loaded children
+   *   - `undefined` → leaf (no chevron)
+   */
   children: TreeviewItem[] | undefined;
   /** appIds of direct children (empty array = leaf; drives the chevron/dot). */
   childrenIds: string[] | undefined;
@@ -30,75 +47,67 @@ export interface TreeviewItem {
 /**
  * The v2 list row, augmented with the appId-native parent/children linkage
  * (`parentAppId`/`childrenAppIds`) added to `DataObjectListItemV2IO` for the
- * sidebar tree. The generated client type predates these fields, so we widen
- * it locally; the backend always sends them on the list endpoint.
- *
- * SIDEBAR-V2-APPID-LINK (2026-06-25): the numeric `id`/`parentId`/`childrenIds`
- * are suppressed on the v2 wire (APISIMP-DO-IO-NUMERIC-ID-LEAK), so the tree
- * is assembled purely from appIds. The old numeric-keyed assembly collapsed
- * the whole tree to one node once `id` became null (operator-surfaced: only
- * one PlyGroup visible).
+ * sidebar tree. The generated client type predates these fields (and the new
+ * `parentAppId`/`topLevel` request params), so we widen locally; the backend
+ * always sends them on the list endpoint.
  */
-type ListRow = DataObjectListItemV2 & {
+export type ListRow = DataObjectListItemV2 & {
   parentAppId?: string | null;
   childrenAppIds?: string[] | null;
 };
 
 /**
- * Build the fully-materialised tree from the exhaustive v2 list
- * (`GET /v2/collections/{collectionAppId}/data-objects`). Linkage is by
- * `appId` only (`parentAppId`); the numeric id is no longer on the wire.
+ * Map a single v2 list row to a {@link TreeviewItem}, deciding leaf vs.
+ * expandable from `childrenAppIds`.
  *
- * Rows without an appId cannot be addressed by the v2-only UI and are
- * skipped (post-reset data always carries one).
+ * Rows without an appId cannot be addressed by the v2-only UI and yield
+ * `undefined` (callers filter them out). Post-reset data always carries one.
+ *
+ * @param parentAppId the appId of the parent the row was fetched under
+ *   (for roots: undefined). Used to populate `parentId` without a second
+ *   lookup, since the lazy fetch already knows the parent.
+ */
+export function mapRowToItem(
+  row: ListRow,
+  parentAppId?: string,
+): TreeviewItem | undefined {
+  if (!row.appId) return undefined;
+  const childAppIds = (row.childrenAppIds ?? []).filter(
+    (c): c is string => !!c,
+  );
+  const hasChildren = childAppIds.length > 0;
+  return {
+    id: row.appId,
+    // numericId is best-effort: the v2 list suppresses the numeric id, so it
+    // is usually -1. It is only consumed by the v1-only create-dialog
+    // plumbing (SIDEBAR-V2-CREATE) and never appears on a route or link.
+    numericId: row.id ?? -1,
+    title: row.name,
+    // Expandable → empty-array placeholder (Vuetify lazy trigger); leaf →
+    // undefined (no chevron).
+    children: hasChildren ? [] : undefined,
+    childrenIds: childAppIds,
+    parentId: parentAppId,
+  };
+}
+
+/**
+ * Map a page of v2 list rows (one hierarchy level) to {@link TreeviewItem}s,
+ * dropping rows without an appId. Used for both the initial root load
+ * (`?topLevel=true`) and each lazy child fetch (`?parentAppId=…`).
+ *
+ * Creation order: appId is UUID v7 (time-ordered), so a lexicographic appId
+ * sort reproduces creation order.
  */
 export function buildTreeviewItems(
   rows: DataObjectListItemV2[],
+  parentAppId?: string,
 ): TreeviewItem[] {
-  const byAppId = new Map<string, TreeviewItem>();
-  const parentAppIdOf = new Map<string, string>();
-
+  const items: TreeviewItem[] = [];
   for (const row of rows as ListRow[]) {
-    if (!row.appId) continue;
-    byAppId.set(row.appId, {
-      id: row.appId,
-      // numericId is best-effort: the v2 list suppresses the numeric id, so it
-      // is usually -1. It is only consumed by the v1-only create-dialog
-      // plumbing (SIDEBAR-V2-CREATE) and never appears on a route or link.
-      numericId: row.id ?? -1,
-      title: row.name,
-      children: undefined,
-      childrenIds: [],
-      parentId: undefined,
-    });
-    if (row.parentAppId) parentAppIdOf.set(row.appId, row.parentAppId);
+    const item = mapRowToItem(row, parentAppId);
+    if (item) items.push(item);
   }
-
-  const roots: TreeviewItem[] = [];
-  for (const item of byAppId.values()) {
-    const parentAppId = parentAppIdOf.get(item.id);
-    const parent =
-      parentAppId !== undefined ? byAppId.get(parentAppId) : undefined;
-    if (parent) {
-      item.parentId = parent.id;
-      parent.children = parent.children ?? [];
-      parent.children.push(item);
-      parent.childrenIds = parent.childrenIds ?? [];
-      parent.childrenIds.push(item.id);
-    } else {
-      roots.push(item);
-    }
-  }
-
-  // Creation order: appId is UUID v7 (time-ordered), so a lexicographic appId
-  // sort reproduces creation order — the replacement for the old numeric-id
-  // sort now that the numeric id is off the wire.
-  const sortRec = (items: TreeviewItem[]) => {
-    items.sort((a, b) => a.id.localeCompare(b.id));
-    for (const item of items) {
-      if (item.children) sortRec(item.children);
-    }
-  };
-  sortRec(roots);
-  return roots;
+  items.sort((a, b) => a.id.localeCompare(b.id));
+  return items;
 }
