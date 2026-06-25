@@ -251,6 +251,12 @@ Status legend:
 | S1 | Streaming OpenAPI compatible read path → client generation | 4 | M–L | queued | Already covered in `12-timescaledb-performance-analysis.md` §11. GH #1548. |
 | S2 | Databus publication service (in dataship, but back-reference URI lands here) | 1199–1214, 721 | S | parked | Dataship-side; this repo only needs to accept a URI reference |
 
+### MFFD ingest blockers (2026-06-25)
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| IMPORT-VIDEO-MP4-SHORTUPLOAD | Large-MP4 video upload retry-loops the stringer importer | M | **needs-decision** | `mffd-stringer-import.py:_upload_file` re-uploads forever when `payload.video.fileSize != source size` (the short-upload guard, lines ~738-748). On run 13's `P02_1.Bahn.MP4` (1.33 GB) the recorded `fileSize` never matches → 50 DELETE→POST→PUT cycles in 30 min, **zero HTTP 500s**, ingest wedged. `VideoStreamReferenceService.handleUpload` sets `fileSizeBytes = probe.fileSizeBytes() ?? sizeHint(contentLength)` (lines 204/313). ffprobe **exits 1** on these GoPro MP4s (moov atom at file end → fails on the non-seekable stdin pipe `VideoProbeService.probe` feeds it), so `probe` is empty and the recorded size falls back to the declared HTTP `Content-Length` — which appears not to round-trip authoritatively for large chunked PUTs through Caddy. **Contrast:** the singleton-file path (`FileStorageService.storeViaSpi`) records the *actual* spooled byte count (`Files.size(tmp)`), so it is immune — this is the video sibling of the `STORAGE-SPI-PUT-SIZEFIX` already shipped. **Fix candidates:** (a) video service records authoritative stored size from `storage.get(locator).sizeBytes()` (already fetched for probing) instead of the declared content-length; (b) make `VideoProbeService` spool to a seekable temp file before ffprobe (also un-breaks probing). **Decision for operator:** fix the video size path now, or have the importer skip/defer video MP4s for this run. Diagnosed during autonomous loop 2026-06-25 16:3x UTC; NOT yet fixed (out of the authorized S3-503/500 scope). |
+
 ### Newly surfaced (second-pass analysis of `input_raw.md` lines 1840–8409)
 
 These come from a re-read of regions the first scan missed. `R7` deduplicates with existing `L1`. `R2` (RO-Crate) is **already implemented** in this repo (`ExportConstants.ROCRATE_METADATA`); only the per-payload selection enhancement remains. Most others are blocked on user/maintainer decisions.
