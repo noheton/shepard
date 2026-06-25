@@ -16,6 +16,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -82,20 +84,37 @@ public class CollectionWatchesRest {
       "Auth: Read on the Collection. The per-container availability check " +
       "filters out container details the caller can't see, but the watch " +
       "row itself is always returned so the operator knows the link exists.\n\n" +
+      "Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
+      "(1–200) to receive a slice. Omit both to return all watches. " +
+      "`X-Total-Count` header carries the total before paging.\n\n" +
       "Next step: `POST /v2/collections/{collectionAppId}/watched-containers` " +
       "to add a watch, or click the target container's appId in the UI."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of watches (may be empty).",
+    description = "List of watches (may be empty). Header X-Total-Count = total count before paging.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = WatchIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
-  public Response list(@PathParam("collectionAppId") @NotBlank String collectionAppId) {
-    List<WatchIO> result = service.list(collectionAppId);
-    return Response.ok(result).build();
+  public Response list(
+      @PathParam("collectionAppId") @NotBlank String collectionAppId,
+      @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all watches.")
+      @QueryParam("page") Integer page,
+      @Parameter(description = "Page size for pagination (1–200). Omit to return all watches.")
+      @QueryParam("pageSize") Integer pageSize) {
+    List<WatchIO> all = service.list(collectionAppId);
+    long total = all.size();
+    List<WatchIO> result = all;
+    if (pageSize != null && pageSize > 0) {
+      int safeSize = Math.min(pageSize, 200);
+      int safePage = page != null ? page : 0;
+      int from = (int) Math.min((long) safePage * safeSize, total);
+      int to = (int) Math.min((long) from + safeSize, total);
+      result = all.subList(from, to);
+    }
+    return Response.ok(result).header("X-Total-Count", total).build();
   }
 
   @POST
