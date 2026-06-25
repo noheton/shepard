@@ -16,6 +16,7 @@ import {
 import type {
   CollectionReferenceV2,
   DataObjectReferencePayload,
+  DataObjectReferenceV2,
   DataObjectReferenceWithPayload,
   Predecessor,
   RelatedEntity,
@@ -132,7 +133,14 @@ export function useRelatedEntities(
   async function fetchDataObjectReferences(
     collectionId: number,
     dataObjectId: number,
-  ): Promise<DataObjectReferenceWithPayload[]> {
+  ): Promise<(DataObjectReferenceWithPayload | DataObjectReferenceV2)[]> {
+    const doAppId = toValue(dataObjectAppIdInput);
+    // MISSING-V2-APPID-IN-REFLISTS slice 3: use v2 surface when a UUID v7 appId is
+    // available. The v2 payload carries referencedDataObjectAppId/Name and
+    // referencedCollectionAppId/Name so the mapper can build appId-routed links.
+    if (doAppId && doAppId.includes("-")) {
+      return fetchDataObjectReferencesV2(doAppId);
+    }
     const dataObjectReferences = await useShepardApi(DataObjectReferenceApi)
       .value.getAllDataObjectReferences({ collectionId, dataObjectId })
       .catch(error => handleError(error, "fetchDataObjectReferences"));
@@ -155,6 +163,43 @@ export function useRelatedEntities(
       return [];
     }
     return dataObjectReferencesWithPayloads;
+  }
+
+  async function fetchDataObjectReferencesV2(
+    dataObjectAppId: string,
+  ): Promise<DataObjectReferenceV2[]> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url = `${v2BaseUrl()}/v2/references?kind=dataobject&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: "application/json",
+        },
+      });
+      if (!resp.ok) return [];
+      const data: unknown = await resp.json();
+      if (!Array.isArray(data)) return [];
+      return (data as Record<string, unknown>[]).map(item => ({
+        id: item.id as number,
+        appId: item.appId as string,
+        kind: "dataobject" as const,
+        name: item.name as string,
+        createdAt: new Date(item.createdAt as string),
+        createdBy: item.createdBy as string,
+        payload: {
+          referencedDataObjectAppId: ((item.payload as Record<string, unknown>)?.referencedDataObjectAppId ?? null) as string | null,
+          referencedDataObjectName: ((item.payload as Record<string, unknown>)?.referencedDataObjectName ?? null) as string | null,
+          referencedCollectionAppId: ((item.payload as Record<string, unknown>)?.referencedCollectionAppId ?? null) as string | null,
+          referencedCollectionName: ((item.payload as Record<string, unknown>)?.referencedCollectionName ?? null) as string | null,
+          relationship: ((item.payload as Record<string, unknown>)?.relationship ?? null) as string | null,
+        },
+      }));
+    } catch (e) {
+      handleError(e, "fetchDataObjectReferencesV2");
+      return [];
+    }
   }
 
   async function fetchCollectionReferences(

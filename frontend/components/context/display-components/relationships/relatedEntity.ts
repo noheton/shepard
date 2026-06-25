@@ -53,9 +53,39 @@ export function isURIReferenceV2(entity: unknown): entity is URIReferenceV2 {
   );
 }
 
+/**
+ * MISSING-V2-APPID-IN-REFLISTS slice 3: v2 wire shape for kind=dataobject references.
+ * The payload carries the referenced DataObject's appId, name, and its Collection's
+ * appId/name so the frontend can build appId-routed links without an extra round-trip.
+ */
+export type DataObjectReferenceV2 = {
+  id: number;
+  appId: string;
+  kind: "dataobject";
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+  payload: {
+    referencedDataObjectAppId?: string | null;
+    referencedDataObjectName?: string | null;
+    referencedCollectionAppId?: string | null;
+    referencedCollectionName?: string | null;
+    relationship?: string | null;
+  };
+};
+
+export function isDataObjectReferenceV2(entity: unknown): entity is DataObjectReferenceV2 {
+  return (
+    !!entity &&
+    typeof entity === "object" &&
+    (entity as DataObjectReferenceV2).kind === "dataobject"
+  );
+}
+
 export type RelatedEntity =
   | URIReference
   | DataObjectReferenceWithPayload
+  | DataObjectReferenceV2
   | CollectionReference
   | CollectionReferenceV2
   | URIReferenceV2

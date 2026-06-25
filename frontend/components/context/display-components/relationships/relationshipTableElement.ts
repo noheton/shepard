@@ -54,6 +54,12 @@ export type DataObjectReferenceType =
       collectionId: number;
     }
   | {
+      // MISSING-V2-APPID-IN-REFLISTS slice 3: v2 shape — numeric ids not on the wire.
+      type: "Data Object Reference";
+      availability: "available";
+      collectionName?: string;
+    }
+  | {
       type: "Data Object Reference";
       availability: "private";
       id: number;

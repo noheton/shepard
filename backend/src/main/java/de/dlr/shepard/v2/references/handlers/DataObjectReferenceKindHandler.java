@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.references.handlers;
 
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
@@ -19,11 +20,15 @@ import java.util.Map;
 /**
  * V2-SWEEP-004-1 — in-tree {@link ReferenceKindHandler} for {@code kind=dataobject}.
  * Delegates wholly to the existing {@link DataObjectReferenceService}; no logic is
- * duplicated. Payload key set: {@code {referencedDataObjectAppId, relationship}}.
+ * duplicated.
  *
- * <p>Pre-feature rows whose {@code referencedDataObject} carries no {@code appId}
- * will resolve {@code referencedDataObjectAppId} as {@code null} in the IO —
- * consistent with the "return null, never backfill" contract for pre-feature rows.
+ * <p>Payload key set: {@code {referencedDataObjectAppId, referencedDataObjectName,
+ * referencedCollectionAppId, referencedCollectionName, relationship}}.
+ * The name/collection fields are resolved by re-fetching the referenced DataObject
+ * at {@code DEPTH_ENTITY=1} so the frontend can build appId-routed links without an
+ * extra round-trip (MISSING-V2-APPID-IN-REFLISTS slice 3). Pre-feature rows whose
+ * {@code referencedDataObject} carries no {@code appId} resolve those fields as
+ * {@code null} — consistent with the "return null, never backfill" contract.
  */
 @RequestScoped
 public class DataObjectReferenceKindHandler implements ReferenceKindHandler {
@@ -53,11 +58,22 @@ public class DataObjectReferenceKindHandler implements ReferenceKindHandler {
   public ReferenceV2IO toIO(BasicReference reference) {
     DataObjectReference ref = (DataObjectReference) reference;
     ReferenceV2IO io = new ReferenceV2IO(ref, kind());
-    DataObject referencedDataObject = ref.getReferencedDataObject();
-    io.put(
-      "referencedDataObjectAppId",
-      referencedDataObject != null ? referencedDataObject.getAppId() : null
-    );
+    DataObject stub = ref.getReferencedDataObject();
+    String refDoAppId = stub != null ? stub.getAppId() : null;
+    io.put("referencedDataObjectAppId", refDoAppId);
+
+    // MISSING-V2-APPID-IN-REFLISTS slice 3: re-fetch at depth=1 to get name +
+    // collection so clients can build appId-routed links without a second call.
+    if (refDoAppId != null) {
+      DataObject full = dataObjectDAO.findByAppId(refDoAppId);
+      if (full != null) {
+        io.put("referencedDataObjectName", full.getName());
+        Collection refColl = full.getCollection();
+        io.put("referencedCollectionAppId", refColl != null ? refColl.getAppId() : null);
+        io.put("referencedCollectionName", refColl != null ? refColl.getName() : null);
+      }
+    }
+
     io.put("relationship", ref.getRelationship());
     return io;
   }

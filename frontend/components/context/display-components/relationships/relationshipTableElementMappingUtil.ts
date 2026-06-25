@@ -5,7 +5,7 @@ import {
   instanceOfURIReference,
   type URIReference,
 } from "@dlr-shepard/backend-client";
-import { isCollectionReferenceV2, isURIReferenceV2, type RelatedEntity } from "./relatedEntity";
+import { isCollectionReferenceV2, isDataObjectReferenceV2, isURIReferenceV2, type RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
@@ -72,11 +72,8 @@ function mapRelationshipType(
   if (instanceOfDataObject(entity)) {
     return entity.type;
   }
-  if (isCollectionReferenceV2(entity)) {
+  if (isCollectionReferenceV2(entity) || isURIReferenceV2(entity) || isDataObjectReferenceV2(entity)) {
     return (entity.payload.relationship ?? undefined) as string | undefined;
-  }
-  if (isURIReferenceV2(entity)) {
-    return entity.payload.relationship ?? undefined;
   }
   return entity.relationship ?? undefined;
 }
@@ -112,6 +109,21 @@ function mapName(
       path:
         entity.payload && colAppId && doAppId
           ? `/collections/${colAppId}/dataobjects/${doAppId}`
+          : undefined,
+    };
+  }
+
+  // MISSING-V2-APPID-IN-REFLISTS slice 3: v2 DataObject reference — payload carries
+  // referencedDataObjectAppId/Name and referencedCollectionAppId/Name directly.
+  if (isDataObjectReferenceV2(entity)) {
+    const refDoAppId = entity.payload.referencedDataObjectAppId;
+    const refColAppId = entity.payload.referencedCollectionAppId;
+    const displayName = entity.payload.referencedDataObjectName ?? entity.name;
+    return {
+      value: displayName,
+      path:
+        refColAppId && refDoAppId
+          ? `/collections/${refColAppId}/dataobjects/${refDoAppId}`
           : undefined,
     };
   }
@@ -172,6 +184,18 @@ function mapType(
     };
   }
 
+  if (isDataObjectReferenceV2(entity)) {
+    const refDoAppId = entity.payload.referencedDataObjectAppId;
+    const refColName = entity.payload.referencedCollectionName ?? undefined;
+    if (!refDoAppId)
+      return { type: "Data Object Reference", availability: "deleted" };
+    return {
+      type: "Data Object Reference",
+      collectionName: refColName,
+      availability: "available",
+    };
+  }
+
   if (isCollectionReferenceV2(entity)) {
     const refColAppId = entity.payload.referencedCollectionAppId;
     if (!refColAppId) return { type: "Collection Reference", availability: "deleted" };
@@ -205,7 +229,8 @@ function readReferenceAppId(entity: RelatedEntity): string | undefined {
 function mapReferenceKind(entity: RelatedEntity): string | undefined {
   if (instanceOfURIReference(entity) || isURIReferenceV2(entity))
     return "URIReference";
-  if (instanceOfDataObjectReference(entity)) return "DataObjectReference";
+  if (instanceOfDataObjectReference(entity) || isDataObjectReferenceV2(entity))
+    return "DataObjectReference";
   if (instanceOfCollectionReference(entity) || isCollectionReferenceV2(entity))
     return "CollectionReference";
   return undefined;
@@ -216,6 +241,7 @@ function isAnnotatable(entity: RelatedEntity): boolean {
     instanceOfCollectionReference(entity) ||
     isCollectionReferenceV2(entity) ||
     instanceOfDataObjectReference(entity) ||
+    isDataObjectReferenceV2(entity) ||
     instanceOfURIReference(entity) ||
     isURIReferenceV2(entity)
   );
