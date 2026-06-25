@@ -24,6 +24,10 @@ const {
   loadError,
   refreshItems,
   collapseItem,
+  // SIDEBAR-LAZY-TREE (2026-06-25): Vuetify `load-children` Promise callback —
+  // fires once on first expand of a node whose `children` is an empty array,
+  // fetching that node's direct children via `?parentAppId=…`.
+  loadChildren,
 } = useTreeviewItems(routeParams);
 const { advancedMode: _advancedMode } = useAdvancedMode();
 
@@ -276,6 +280,7 @@ const { mobile } = useDisplay();
           v-if="!loading && !!treeviewItems && treeviewItems.length > 0"
           :opened="effectiveOpenedItems"
           :items="filteredItems"
+          :load-children="loadChildren"
           class="treeview"
           item-value="id"
           activatable

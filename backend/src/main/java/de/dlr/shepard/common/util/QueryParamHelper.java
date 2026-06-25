@@ -79,6 +79,35 @@ public class QueryParamHelper {
     return this.parentId != null;
   }
 
+  /**
+   * SIDEBAR-LAZY-TREE — restrict the result to the direct children of the
+   * DataObject identified by {@code parentShepardId}. This is the appId-native
+   * {@code ?parentAppId=} list filter resolved to its shepardId at the resource
+   * boundary; it reuses the existing {@code parentId} DAO Cypher path
+   * ({@code <-[:has_child]-(parent {shepardId})}).
+   *
+   * @param parentShepardId the numeric shepardId of the parent DataObject
+   *                        (resolved from the wire {@code parentAppId})
+   * @return this (fluent)
+   */
+  public QueryParamHelper withParentShepardId(long parentShepardId) {
+    this.parentId = parentShepardId;
+    return this;
+  }
+
+  /**
+   * SIDEBAR-LAZY-TREE — restrict the result to root (top-level) DataObjects:
+   * those with no parent DataObject inside the Collection. Implemented via the
+   * existing {@code parentId == -1} sentinel, which the DAO translates to
+   * {@code NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))}.
+   *
+   * @return this (fluent)
+   */
+  public QueryParamHelper withTopLevelOnly() {
+    this.parentId = -1L;
+    return this;
+  }
+
   public QueryParamHelper withOrderByAttribute(OrderByAttribute orderBy, Boolean orderDesc) {
     this.orderByAttribute = orderBy;
     this.orderDesc = orderDesc;

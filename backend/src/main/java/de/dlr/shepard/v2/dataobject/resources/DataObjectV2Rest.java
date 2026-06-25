@@ -201,6 +201,10 @@ public class DataObjectV2Rest {
     @QueryParam("fields") String fields,
     @Parameter(description = "Annotation filter: `<predicateIri>=<value>`. Restricts results to DataObjects carrying a semantic annotation with exactly that predicate IRI and value. Example: `urn:shepard:quality:rating=PASS`. Malformed values (missing `=` or empty parts) are silently ignored.")
     @QueryParam("annotationFilter") String annotationFilter,
+    @Parameter(description = "SIDEBAR-LAZY-TREE — restrict to the direct, non-deleted children of the DataObject with this `appId` (within the same Collection). Drives the lazy collection-sidebar tree: fetch one hierarchy level per expand. Composes with `page`/`pageSize`/`fields`/`name`/`status`/`annotationFilter`. Mutually exclusive with `topLevel=true` (when both are given, `topLevel` wins). An unknown `parentAppId` yields an empty page.")
+    @QueryParam("parentAppId") String parentAppId,
+    @Parameter(description = "SIDEBAR-LAZY-TREE — when `true`, return ONLY root DataObjects (those with no parent DataObject inside the Collection). Drives the lazy collection-sidebar tree's initial load. Composes with the other filters. Overrides `parentAppId` when both are set.")
+    @QueryParam("topLevel") Boolean topLevel,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -232,6 +236,25 @@ public class DataObjectV2Rest {
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
     if (annotationFilter != null) params = params.withAnnotationFilter(annotationFilter);
+
+    // SIDEBAR-LAZY-TREE — root / parent hierarchy filter. `topLevel=true` wins
+    // over `parentAppId` when both are supplied. The parentAppId is resolved to
+    // the parent's shepardId here at the boundary; the DAO's existing parentId
+    // Cypher path (`<-[:has_child]-(parent {shepardId})`) does the restriction.
+    if (Boolean.TRUE.equals(topLevel)) {
+      params = params.withTopLevelOnly();
+    } else if (parentAppId != null && !parentAppId.isBlank()) {
+      DataObject parent = dataObjectDAO.findByAppId(parentAppId);
+      if (parent == null || parent.isDeleted() || parent.getShepardId() == null) {
+        // Unknown / deleted parent → empty page (mirrors an unmatched filter).
+        return Response.ok("[]", MediaType.APPLICATION_JSON)
+          .header("Content-Range", "dataobjects */0")
+          .header("X-Total-Count", 0)
+          .build();
+      }
+      params = params.withParentShepardId(parent.getShepardId());
+    }
+
     params = params.withPageAndSize(safePage, safeSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
