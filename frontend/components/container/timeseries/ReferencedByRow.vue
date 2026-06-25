@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import {
-  TimeseriesReferenceApi,
+  ReferencesApi,
   type DataObject,
-  type Timeseries,
-  type TimeseriesReference,
+  type ReferenceV2,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { readDataObjectAppId } from "~/utils/appId";
 import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 
@@ -41,19 +40,41 @@ const dataObjectHref = computed(() =>
 const expanded = ref(false);
 const loading = ref(false);
 const loaded = ref(false);
-const refsForContainer = ref<TimeseriesReference[]>([]);
+const refsForContainer = ref<ReferenceV2[]>([]);
+
+// Per-kind payload shape for timeseries references.
+type TsPayload = {
+  start?: number;
+  end?: number;
+  timeseriesContainerId?: number;
+  timeseries?: Array<{
+    device?: string;
+    field?: string;
+    location?: string;
+    measurement?: string;
+    symbolicName?: string;
+  }>;
+};
+
+function tsPayload(ref: ReferenceV2): TsPayload {
+  return (ref.payload ?? {}) as TsPayload;
+}
 
 async function fetchReferences() {
   if (loaded.value || loading.value) return;
+  const appId = doAppId.value;
+  if (!appId) return;
   loading.value = true;
   try {
-    const all = await useShepardApi(TimeseriesReferenceApi)
-      .value.getAllTimeseriesReferences({
-        collectionId: props.dataObject.collectionId,
-        dataObjectId: props.dataObject.id,
+    // V1-EXCEPTION replaced: was useShepardApi(TimeseriesReferenceApi) with numeric IDs.
+    // Now uses the v2 unified endpoint keyed by dataObjectAppId (UUID v7).
+    const all = await useV2ShepardApi(ReferencesApi)
+      .value.listReferences({
+        kind: "timeseries",
+        dataObjectAppId: appId,
       });
     refsForContainer.value = all.filter(
-      r => r.timeseriesContainerId === props.containerId,
+      r => tsPayload(r).timeseriesContainerId === props.containerId,
     );
     loaded.value = true;
   } catch (e) {
@@ -68,7 +89,7 @@ function onToggleExpand() {
   if (expanded.value) fetchReferences();
 }
 
-function channelLabel(ts: Timeseries): string {
+function channelLabel(ts: NonNullable<TsPayload["timeseries"]>[number]): string {
   return [ts.device, ts.field, ts.location, ts.measurement, ts.symbolicName]
     .filter(Boolean)
     .join(" · ");
@@ -152,16 +173,16 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           <span class="text-body-2 font-weight-medium">{{ ref.name }}</span>
           <v-spacer />
           <span class="text-caption text-medium-emphasis">
-            {{ ref.timeseries.length }}
-            channel{{ ref.timeseries.length === 1 ? "" : "s" }}
+            {{ (tsPayload(ref).timeseries ?? []).length }}
+            channel{{ (tsPayload(ref).timeseries ?? []).length === 1 ? "" : "s" }}
           </span>
         </div>
         <div class="text-caption text-medium-emphasis mb-2 font-mono">
-          {{ nanosToHumanRange(ref.start, ref.end) }}
+          {{ nanosToHumanRange(tsPayload(ref).start ?? 0, tsPayload(ref).end ?? 0) }}
         </div>
         <div class="d-flex flex-wrap ga-1 mb-2">
           <v-chip
-            v-for="(ts, idx) in ref.timeseries"
+            v-for="(ts, idx) in (tsPayload(ref).timeseries ?? [])"
             :key="idx"
             size="x-small"
             variant="tonal"
