@@ -49,21 +49,40 @@ const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 const COLLECTION_APP_ID = "019e6ffc-aaaa-7bcd-9eef-000000000042";
 
+// SIDEBAR-V2-APPID-LINK: rows now carry parentAppId/childrenAppIds (UUID v7),
+// not the deprecated numeric parentId/childrenIds that buildTreeviewItems no
+// longer reads.
 function row(
   id: number,
   appId: string,
   name: string,
-  parentId: number | null = null,
-  childrenIds: number[] = [],
-): DataObjectListItemV2 {
-  return { id, appId, name, parentId, childrenIds } as DataObjectListItemV2;
+  parentAppId: string | null = null,
+  childrenAppIds: string[] = [],
+): DataObjectListItemV2 & { parentAppId?: string | null; childrenAppIds?: string[] } {
+  return { id, appId, name, parentAppId, childrenAppIds } as DataObjectListItemV2 & {
+    parentAppId?: string | null;
+    childrenAppIds?: string[];
+  };
 }
 
 const ROWS = [
   row(100, "019e0000-0000-7000-8000-000000000100", "TR-001"),
-  row(200, "019e0000-0000-7000-8000-000000000200", "TR-004", null, [300]),
-  row(300, "019e0000-0000-7000-8000-000000000300", "Investigation", 200, [400]),
-  row(400, "019e0000-0000-7000-8000-000000000400", "Vibration analysis", 300),
+  row(200, "019e0000-0000-7000-8000-000000000200", "TR-004", null, [
+    "019e0000-0000-7000-8000-000000000300",
+  ]),
+  row(
+    300,
+    "019e0000-0000-7000-8000-000000000300",
+    "Investigation",
+    "019e0000-0000-7000-8000-000000000200",
+    ["019e0000-0000-7000-8000-000000000400"],
+  ),
+  row(
+    400,
+    "019e0000-0000-7000-8000-000000000400",
+    "Vibration analysis",
+    "019e0000-0000-7000-8000-000000000300",
+  ),
 ];
 
 beforeEach(() => {
