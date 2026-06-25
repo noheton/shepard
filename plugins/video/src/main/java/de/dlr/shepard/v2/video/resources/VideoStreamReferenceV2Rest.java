@@ -69,6 +69,7 @@ public class VideoStreamReferenceV2Rest {
   ) {
     return Response.status(Response.Status.GONE)
       .type("application/problem+json")
+      .header("Location", "/v2/references")
       .entity(new ProblemJson(
         "urn:shepard:error:gone",
         "Gone",
@@ -101,6 +102,7 @@ public class VideoStreamReferenceV2Rest {
   ) {
     return Response.status(Response.Status.GONE)
       .type("application/problem+json")
+      .header("Location", "/v2/references/" + appId + "/content")
       .entity(new ProblemJson(
         "urn:shepard:error:gone",
         "Gone",

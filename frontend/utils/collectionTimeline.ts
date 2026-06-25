@@ -175,6 +175,24 @@ export const BIN_SIZE_CHOICES = [
 ];
 
 /**
+ * Title for the bin action menu that appears when a user clicks a timeline
+ * bar. Shows the lane label + the bin's start date so the user knows which
+ * period they are acting on before choosing to drill-down or annotate.
+ *
+ * Examples:
+ *   binAnnotateMenuTitle("AFP Layup", "2024-04-15", 1)  → "AFP Layup — 2024-04-15"
+ *   binAnnotateMenuTitle("AFP Layup", "2024-04-15", 7)  → "AFP Layup — 2024-04-15 (7-day bin)"
+ */
+export function binAnnotateMenuTitle(
+  laneLabel: string,
+  day: string,
+  binSizeDays: number,
+): string {
+  const suffix = binSizeDays > 1 ? ` (${binSizeDays}-day bin)` : "";
+  return `${laneLabel} — ${day}${suffix}`;
+}
+
+/**
  * Empty-state copy. Surfaced when the envelope reports zero lanes — which
  * (given the backend coalesces unannotated DOs into an `unclassified` lane)
  * only happens when the Collection has zero non-deleted DataObjects. The

@@ -46,6 +46,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * is processed independently: failures on item N do not prevent items
  * N+1..M from being attempted.
  *
+ * <p><b>Cross-collection root.</b> This endpoint lives at {@code /v2/data-objects/batch}
+ * rather than under a Collection path because a single batch request may target
+ * <em>multiple</em> Collections; no single {@code collectionAppId} segment would
+ * correctly scope it. Each item carries its own {@code collectionAppId} and is
+ * permission-checked independently (Write on that Collection).
+ *
  * <p><b>Permissions.</b> The caller must be authenticated. Each item's
  * target collection is permission-checked independently for Write access.
  * The permission result per {@code collectionAppId} is memoised within the

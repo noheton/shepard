@@ -62,6 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -186,12 +187,19 @@ public class DataObjectV2Rest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Parameter(description = "Optional display-name filter (case-insensitive substring match). Omit to return all DataObjects.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "Lifecycle status filter. Accepted values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED. Unrecognised values silently return an empty page (no 400).")
     @QueryParam("status") String status,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
     @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize,
+    @Parameter(description = "Comma-separated response modifiers. `time-bounds` — populates `timeBoundsStart`/`timeBoundsEnd` per DataObject (costs one extra TimescaleDB round-trip). `full` — opts back into the full (pre-DB-OPT5) wire shape including deprecated fields.")
     @QueryParam("include") String include,
+    @Parameter(description = "Comma-separated field projection (flat CSV). Fields must exist on DataObjectListItemV2; an unrecognised field returns 400 with the offending name in the body. `id` and `appId` are always included. Omit to return all default fields.")
     @QueryParam("fields") String fields,
+    @Parameter(description = "Annotation filter: `<predicateIri>=<value>`. Restricts results to DataObjects carrying a semantic annotation with exactly that predicate IRI and value. Example: `urn:shepard:quality:rating=PASS`. Malformed values (missing `=` or empty parts) are silently ignored.")
     @QueryParam("annotationFilter") String annotationFilter,
     @Context SecurityContext sc
   ) {
@@ -791,6 +799,7 @@ public class DataObjectV2Rest {
   public Response predecessorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
@@ -828,6 +837,7 @@ public class DataObjectV2Rest {
   public Response successorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
     @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {

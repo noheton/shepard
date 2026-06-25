@@ -28,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -100,7 +101,9 @@ public class CollectionLabJournalEntriesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index. Only effective when pageSize > 0. When omitted with no pageSize, all entries are returned (bulk-fetch mode for backward compatibility).")
     @QueryParam("page") @PositiveOrZero Integer page,
+    @Parameter(description = "Page size. When omitted or 0, all entries are returned (bulk-fetch backward-compat mode). Server-side cap: 200.")
     @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
     @Context SecurityContext sc
   ) {

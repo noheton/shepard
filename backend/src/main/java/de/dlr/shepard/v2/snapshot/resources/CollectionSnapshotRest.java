@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -180,7 +181,9 @@ public class CollectionSnapshotRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") int page,
+    @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
     @QueryParam("pageSize") @DefaultValue("50") int pageSize,
     @Context SecurityContext sc
   ) {

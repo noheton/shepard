@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.references.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -244,5 +246,48 @@ class ReferencesV2RestTest {
     var body = new ByteArrayInputStream(new byte[] { 1 });
     var r = resource.uploadContent(REF_APP_ID, "doc.pdf", null, body, securityContext);
     assertEquals(400, r.getStatus());
+  }
+
+  // ─── APISIMP-REFERENCES-PARAMS-1 reflection guards ───────────────────────
+
+  @Test
+  void create_kindParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "create", String.class, String.class, com.fasterxml.jackson.databind.JsonNode.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "kind".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "create.kind must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "create.kind must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for create.kind");
+  }
+
+  @Test
+  void list_fileKindParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "fileKind".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.fileKind must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.fileKind must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.fileKind");
+  }
+
+  @Test
+  void uploadContent_filenameParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "uploadContent", String.class, String.class, String.class,
+        java.io.InputStream.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "filename".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "uploadContent.filename must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "uploadContent.filename must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for uploadContent.filename");
   }
 }
