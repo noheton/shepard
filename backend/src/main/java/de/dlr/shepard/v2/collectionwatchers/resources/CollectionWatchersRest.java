@@ -12,6 +12,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -22,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -56,15 +58,16 @@ public class CollectionWatchersRest {
     operationId = "listCollectionWatches",
     summary = "List all watchers for this Collection (CW1).",
     description =
-      "Returns the complete list of users currently watching this Collection. Each " +
-      "item carries `username` and `since` (epoch millis when the watch was registered). " +
-      "The list is unordered and is not paginated — the number of watchers is expected " +
-      "to be small relative to the DataObject count.\n\n" +
+      "Returns the list of users currently watching this Collection. Each " +
+      "item carries `username` and `since` (epoch millis when the watch was registered).\n\n" +
+      "Pagination (APISIMP-PAGINATION-LIST-WATCHERS): supply both `page` (0-based) and " +
+      "`pageSize` (1–200) to receive a slice. Omit both to return all watchers. " +
+      "`X-Total-Count` header carries the total watcher count before paging.\n\n" +
       "Auth: Read permission on the Collection."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of CollectionWatcherIO records (may be empty). Each item has `username` and `since` (epoch millis).",
+    description = "List of CollectionWatcherIO records (may be empty). Header X-Total-Count = total count before paging.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionWatcherIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
@@ -72,12 +75,25 @@ public class CollectionWatchersRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all watchers.")
+    @QueryParam("page") Integer page,
+    @Parameter(description = "Page size for pagination (1–200). Omit to return all watchers.")
+    @QueryParam("pageSize") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    List<CollectionWatcherIO> result = service.list(collectionAppId, caller);
-    return Response.ok(result).build();
+    List<CollectionWatcherIO> all = service.list(collectionAppId, caller);
+    long total = all.size();
+    List<CollectionWatcherIO> result = all;
+    if (pageSize != null && pageSize > 0) {
+      int safeSize = Math.min(pageSize, 200);
+      int safePage = page != null ? page : 0;
+      int from = (int) Math.min((long) safePage * safeSize, total);
+      int to = (int) Math.min((long) from + safeSize, total);
+      result = all.subList(from, to);
+    }
+    return Response.ok(result).header("X-Total-Count", total).build();
   }
 
   @GET

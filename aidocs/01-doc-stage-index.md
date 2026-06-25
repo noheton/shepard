@@ -72,7 +72,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-20-fire153.md`](agent-findings/apisimp-sweep-2026-06-20-fire153.md) | APISIMP sweep — 2026-06-20 fire-153 | 2026-06-20 | 2026-06-21 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-21-fire187.md`](agent-findings/apisimp-sweep-2026-06-21-fire187.md) | APISIMP sweep — 2026-06-21 fire-187 | 2026-06-21 | 2026-06-21 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-24.md`](agent-findings/apisimp-sweep-2026-06-24.md) | API Simplification Sweep — 2026-06-24 | — | 2026-06-24 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-25-fire221.md`](agent-findings/apisimp-sweep-2026-06-25-fire221.md) | API Simplification Sweep — 2026-06-25 (fire-221) | — | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-25-fire221.md`](agent-findings/apisimp-sweep-2026-06-25-fire221.md) | API Simplification Sweep — 2026-06-25 (fire-221) | — | 2026-06-25 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25.md`](agent-findings/apisimp-sweep-2026-06-25.md) | API Simplification Sweep — 2026-06-25 (fire-211) | — | 2026-06-25 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-21 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-21 |
