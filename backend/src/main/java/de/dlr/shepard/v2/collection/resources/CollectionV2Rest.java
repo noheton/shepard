@@ -157,6 +157,7 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
+    @Parameter(description = "Optional case-insensitive substring filter on Collection name. Omit to return all collections the caller can read.")
     @QueryParam(Constants.QP_NAME) String name,
     @Parameter(description = "0-based page index. Default 0. Negative values are rejected (400).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,

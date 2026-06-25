@@ -78,4 +78,33 @@ class ProvenanceRestParamAnnotationTest {
       String.class, jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "targetKind"), "countActivitiesJsonLd.targetKind");
   }
+
+  // ─── APISIMP-REMAINING-PARAMS: countActivities (plain-JSON) ───────────────
+
+  @Test
+  void countActivities_agentParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "countActivities",
+      String.class, String.class, String.class, Long.class, Long.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "agent"), "countActivities.agent");
+  }
+
+  @Test
+  void countActivities_targetKindParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "countActivities",
+      String.class, String.class, String.class, Long.class, Long.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "targetKind"), "countActivities.targetKind");
+  }
+
+  @Test
+  void countActivities_sinceParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "countActivities",
+      String.class, String.class, String.class, Long.class, Long.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "since"), "countActivities.since");
+  }
 }

@@ -351,11 +351,13 @@ public class ProvenanceRest {
     content = @Content(schema = @Schema(implementation = ActivityCountIO.class))
   )
   public Response countActivities(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
