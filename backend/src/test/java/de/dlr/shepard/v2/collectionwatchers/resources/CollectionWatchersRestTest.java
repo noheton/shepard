@@ -52,7 +52,7 @@ class CollectionWatchersRestTest {
   @Test
   void listReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.list(COLL_APP_ID, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, securityContext);
     assertEquals(401, r.getStatus());
     verify(service, never()).list(anyString(), anyString());
   }
@@ -62,19 +62,74 @@ class CollectionWatchersRestTest {
     CollectionWatcherIO io = makeIO("app-1", ALICE, COLL_APP_ID);
     when(service.list(COLL_APP_ID, ALICE)).thenReturn(List.of(io));
 
-    Response r = resource.list(COLL_APP_ID, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
     assertEquals(1, body.size());
+    assertEquals(1L, r.getHeaderString("X-Total-Count") != null
+      ? Long.parseLong(r.getHeaderString("X-Total-Count")) : -1L);
   }
 
   @Test
   void listPropagates403FromService() {
     when(service.list(eq(COLL_APP_ID), eq(ALICE))).thenThrow(new ForbiddenException());
     org.junit.jupiter.api.Assertions.assertThrows(ForbiddenException.class,
-      () -> resource.list(COLL_APP_ID, securityContext));
+      () -> resource.list(COLL_APP_ID, null, null, securityContext));
+  }
+
+  @Test
+  void listPaginatesResultsWhenPageSizeProvided() {
+    List<CollectionWatcherIO> all = List.of(
+      makeIO("app-1", "user1", COLL_APP_ID),
+      makeIO("app-2", "user2", COLL_APP_ID),
+      makeIO("app-3", "user3", COLL_APP_ID)
+    );
+    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
+
+    Response r = resource.list(COLL_APP_ID, 0, 2, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
+    assertEquals(2, body.size());
+    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void listClampsPageSizeTo200() {
+    List<CollectionWatcherIO> all = new java.util.ArrayList<>();
+    for (int i = 0; i < 250; i++) {
+      all.add(makeIO("app-" + i, "user" + i, COLL_APP_ID));
+    }
+    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
+
+    Response r = resource.list(COLL_APP_ID, 0, 999, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
+    assertEquals(200, body.size());
+    assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void listReturnsSecondPageCorrectly() {
+    List<CollectionWatcherIO> all = List.of(
+      makeIO("app-1", "user1", COLL_APP_ID),
+      makeIO("app-2", "user2", COLL_APP_ID),
+      makeIO("app-3", "user3", COLL_APP_ID)
+    );
+    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
+
+    Response r = resource.list(COLL_APP_ID, 1, 2, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("app-3", body.get(0).watcherAppId());
   }
 
   // ─── GET /watches/me ──────────────────────────────────────────────────────
