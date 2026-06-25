@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Collection } from "@dlr-shepard/backend-client";
 import {
   useFetchRecentCollections,
 } from "~/composables/context/useFetchRecentCollections";
@@ -8,6 +9,16 @@ import { readCollectionAppId } from "~/utils/appId";
 import { usePinnedChannels } from "~/composables/container/usePinnedChannels";
 
 const router = useRouter();
+
+// MISSING-V2-APPID-IN-REFLISTS slice 4: appId-first key/watch handle for
+// Collections. Post-reset Collections carry a UUID v7 appId but no numeric
+// id — using collection.id for v-for keys and isWatched() calls silently
+// breaks for them (all keys collapse to null; isWatched(null) never matches
+// an entry stored under the appId). Prefers the UUID appId; falls back to
+// the numeric id for legacy entries.
+function collectionHandle(collection: Collection): string | number {
+  return readCollectionAppId(collection) ?? collection.id ?? 0;
+}
 
 // User info
 const { user, isLoading: userLoading } = useFetchUserProfile();
@@ -275,7 +286,7 @@ function relativeTime(date: Date | null | undefined): string {
       <template v-else>
         <v-col
           v-for="collection in watched"
-          :key="collection.id"
+          :key="collectionHandle(collection)"
           cols="12"
           sm="6"
           md="4"
@@ -323,7 +334,7 @@ function relativeTime(date: Date | null | undefined): string {
         <template v-else>
           <v-col
             v-for="collection in myCollections"
-            :key="collection.id"
+            :key="collectionHandle(collection)"
             cols="12"
             sm="6"
             md="4"
@@ -331,7 +342,7 @@ function relativeTime(date: Date | null | undefined): string {
             <CollectionGalleryCard
               :collection="collection"
               :watchable="true"
-              :watched="isWatched(collection.id!)"
+              :watched="isWatched(collectionHandle(collection))"
               @toggle-watch="toggleWatched(collection)"
             />
           </v-col>
@@ -374,7 +385,7 @@ function relativeTime(date: Date | null | undefined): string {
       >
         <v-list-item
           v-for="(collection, idx) in sharedCollections"
-          :key="collection.id"
+          :key="collectionHandle(collection)"
           :to="readCollectionAppId(collection) ? `/collections/${readCollectionAppId(collection)}` : undefined"
           :data-testid="`shared-collection-row-${idx}`"
           :divider="idx < sharedCollections.length - 1"
