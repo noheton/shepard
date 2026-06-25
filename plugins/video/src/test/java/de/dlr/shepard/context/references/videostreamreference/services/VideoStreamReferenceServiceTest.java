@@ -188,6 +188,43 @@ class VideoStreamReferenceServiceTest {
   }
 
   @Test
+  void create_recordsAuthoritativeStoredSize_notDeclaredContentLength() throws Exception {
+    // IMPORT-VIDEO-MP4-SHORTUPLOAD regression: when ffprobe yields no size and
+    // the declared Content-Length is unreliable (null/mismatched for large
+    // chunked PUTs), the persisted fileSize must be the storage adapter's
+    // authoritative stored byte count — otherwise the importer's stored!=size
+    // guard retry-loops forever on large MP4s.
+    long storedSize = 1_331_387_223L; // the real on-disk MP4 size
+    StorageLocator locator = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(locator);
+
+    StorageGetResponse getResp = mock(StorageGetResponse.class);
+    when(getResp.stream()).thenReturn(InputStream.nullInputStream());
+    when(getResp.sizeBytes()).thenReturn(storedSize);
+    when(fileStorage.get(locator)).thenReturn(getResp);
+
+    // ffprobe fails → empty probe (no fileSizeBytes).
+    when(videoProbeService.probe(any(InputStream.class), any())).thenReturn(VideoProbeResult.empty());
+
+    VideoStreamReference persisted = new VideoStreamReference(12L);
+    persisted.setAppId("vsr-stored-size");
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(persisted);
+
+    org.mockito.ArgumentCaptor<VideoStreamReference> captor =
+      org.mockito.ArgumentCaptor.forClass(VideoStreamReference.class);
+
+    // Declared content-length is deliberately wrong (null) — the large-upload
+    // failure shape. The stored size must still be recorded.
+    service.create(
+      DO_APPID, "Big", "P02_1.Bahn.MP4", "video/mp4", null, InputStream.nullInputStream()
+    );
+
+    verify(videoStreamReferenceDAO, org.mockito.Mockito.atLeastOnce()).createOrUpdate(captor.capture());
+    assertThat(captor.getAllValues())
+      .anyMatch(r -> Long.valueOf(storedSize).equals(r.getFileSizeBytes()));
+  }
+
+  @Test
   void create_missingDataObject_throws() throws Exception {
     when(entityIdResolver.resolveLong(DO_APPID)).thenThrow(new NotFoundException());
 

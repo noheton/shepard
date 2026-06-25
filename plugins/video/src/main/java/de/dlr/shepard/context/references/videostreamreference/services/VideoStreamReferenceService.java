@@ -192,8 +192,12 @@ public class VideoStreamReferenceService {
     }
 
     VideoProbeResult probe = VideoProbeResult.empty();
+    Long storedSize = null;
     try {
       StorageGetResponse getResp = storage.get(locator);
+      // Authoritative stored byte count from the storage adapter (S3 object
+      // content-length / GridFS length) — read before the stream is consumed.
+      storedSize = getResp.sizeBytes();
       try (InputStream videoStream = getResp.stream()) {
         probe = videoProbeService.probe(videoStream, mimeType);
       }
@@ -201,7 +205,14 @@ public class VideoStreamReferenceService {
       Log.warnf("VID1a/attachBytes: probe failed (locator=%s): %s", locator, ex.getMessage());
     }
 
-    Long fileSizeBytes = probe.fileSizeBytes() != null ? probe.fileSizeBytes() : sizeHint;
+    // IMPORT-VIDEO-MP4-SHORTUPLOAD — the actual stored size wins. The declared
+    // Content-Length does not round-trip for large chunked PUTs through the
+    // proxy, and ffprobe is unreliable on these MP4s (exits 1), so falling back
+    // to either recorded a fileSize that never matched the source and wedged
+    // the importer's short-upload retry guard. The storage adapter's reported
+    // size is the ground truth the client verifies against.
+    Long fileSizeBytes = storedSize != null ? storedSize
+      : (probe.fileSizeBytes() != null ? probe.fileSizeBytes() : sizeHint);
     User user = userService.getCurrentUser();
     ref.setMimeType(mimeType);
     ref.setFileSizeBytes(fileSizeBytes);
@@ -300,8 +311,12 @@ public class VideoStreamReferenceService {
 
     // Now probe the stored bytes by fetching them back.
     VideoProbeResult probe = VideoProbeResult.empty();
+    Long storedSize = null;
     try {
       StorageGetResponse getResp = storage.get(locator);
+      // Authoritative stored byte count from the storage adapter (S3 object
+      // content-length / GridFS length) — read before the stream is consumed.
+      storedSize = getResp.sizeBytes();
       try (InputStream videoStream = getResp.stream()) {
         probe = videoProbeService.probe(videoStream, mimeType);
       }
@@ -309,8 +324,14 @@ public class VideoStreamReferenceService {
       Log.warnf("VID1a: probe failed after upload (locator=%s): %s", locator, ex.getMessage());
     }
 
-    // Determine file size: prefer probe > Content-Length.
-    Long fileSizeBytes = probe.fileSizeBytes() != null ? probe.fileSizeBytes() : contentLength;
+    // IMPORT-VIDEO-MP4-SHORTUPLOAD — the actual stored size wins. The declared
+    // Content-Length does not round-trip for large chunked PUTs through the
+    // proxy, and ffprobe is unreliable on these MP4s (exits 1), so falling back
+    // to either recorded a fileSize that never matched the source and wedged
+    // the importer's short-upload retry guard. The storage adapter's reported
+    // size is the ground truth the client verifies against.
+    Long fileSizeBytes = storedSize != null ? storedSize
+      : (probe.fileSizeBytes() != null ? probe.fileSizeBytes() : contentLength);
 
     User user = userService.getCurrentUser();
 
