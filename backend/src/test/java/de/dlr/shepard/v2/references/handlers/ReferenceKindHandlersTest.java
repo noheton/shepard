@@ -508,4 +508,50 @@ class ReferenceKindHandlersTest {
     when(dataObjectDAO.findByAppId("no-such")).thenReturn(null);
     assertThrows(NotFoundException.class, () -> dataObjectRefHandler.create(DO_APP_ID, Map.of("name", "x", "referencedDataObjectAppId", "no-such")));
   }
+
+  // MISSING-V2-APPID-IN-REFLISTS slice 3 — enriched payload ──────────────────
+
+  @Test
+  void dataobject_toIO_enrichesNameAndCollection_whenRefDoFound() {
+    Collection refColl = new Collection(500L);
+    refColl.setAppId("coll-app-500");
+    refColl.setName("Reference Collection");
+    DataObject fullRefDo = new DataObject(200L);
+    fullRefDo.setAppId("do-app-200");
+    fullRefDo.setName("Referenced DO");
+    fullRefDo.setCollection(refColl);
+    when(dataObjectDAO.findByAppId("do-app-200")).thenReturn(fullRefDo);
+
+    var io = dataObjectRefHandler.toIO(doRef());
+
+    assertEquals("Referenced DO", io.getPayload().get("referencedDataObjectName"));
+    assertEquals("coll-app-500", io.getPayload().get("referencedCollectionAppId"));
+    assertEquals("Reference Collection", io.getPayload().get("referencedCollectionName"));
+  }
+
+  @Test
+  void dataobject_toIO_enrichmentFieldsNull_whenRefDoNotFound() {
+    when(dataObjectDAO.findByAppId("do-app-200")).thenReturn(null);
+
+    var io = dataObjectRefHandler.toIO(doRef());
+
+    assertNull(io.getPayload().get("referencedDataObjectName"));
+    assertNull(io.getPayload().get("referencedCollectionAppId"));
+    assertNull(io.getPayload().get("referencedCollectionName"));
+    // Core fields still present
+    assertEquals("do-app-200", io.getPayload().get("referencedDataObjectAppId"));
+  }
+
+  @Test
+  void dataobject_toIO_enrichmentSkipped_whenReferencedDoHasNoAppId() {
+    var ref = doRef();
+    DataObject stubNoAppId = new DataObject(200L);
+    // appId intentionally not set
+    ref.setReferencedDataObject(stubNoAppId);
+
+    var io = dataObjectRefHandler.toIO(ref);
+
+    assertNull(io.getPayload().get("referencedDataObjectAppId"));
+    assertNull(io.getPayload().get("referencedDataObjectName"));
+  }
 }
