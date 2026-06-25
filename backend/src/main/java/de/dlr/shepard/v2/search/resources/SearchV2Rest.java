@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.search.resources;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
 import de.dlr.shepard.common.search.io.QueryType;
 import de.dlr.shepard.common.search.io.ResponseBody;
+import de.dlr.shepard.common.search.io.ResultTriple;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.io.SearchScope;
@@ -10,6 +11,8 @@ import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.DataObjectSearchService;
 import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.util.TraversalRules;
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.v2.search.io.SearchV2ItemIO;
 import de.dlr.shepard.v2.search.io.SearchV2ResultIO;
 import io.quarkus.security.Authenticated;
@@ -25,7 +28,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -58,6 +63,9 @@ public class SearchV2Rest {
 
   @Inject
   DataObjectSearchService dataObjectSearchService;
+
+  @Inject
+  CollectionDAO collectionDAO;
 
   @GET
   @Operation(
@@ -110,7 +118,7 @@ public class SearchV2Rest {
       BasicCollectionAttributes.createdAt,
       true
     );
-    colPage.getResults().forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection")));
+    colPage.getResults().forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
     total += colPage.getTotalResults() != null ? colPage.getTotalResults() : 0L;
 
     // DataObjects — global scope (no collection/dataobject constraint)
@@ -119,7 +127,21 @@ public class SearchV2Rest {
       new SearchParams(q, QueryType.DataObject)
     );
     ResponseBody doResult = dataObjectSearchService.search(body);
-    Arrays.stream(doResult.getResults()).forEach(r -> items.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject")));
+    ResultTriple[] triples = doResult.getResultSet();
+    // Cache collection appId lookups; the result set is small so N+1 is fine.
+    Map<Long, String> collectionAppIdCache = new HashMap<>();
+    for (int i = 0; i < doResult.getResults().length; i++) {
+      var r = doResult.getResults()[i];
+      Long colId = (triples != null && i < triples.length) ? triples[i].getCollectionId() : null;
+      String colAppId = null;
+      if (colId != null) {
+        colAppId = collectionAppIdCache.computeIfAbsent(colId, id -> {
+          Collection col = collectionDAO.findLightByNeo4jId(id);
+          return col != null ? col.getAppId() : null;
+        });
+      }
+      items.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject", colAppId));
+    }
     total += doResult.getResults().length;
 
     return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q)).build();

@@ -13,16 +13,17 @@ export interface DataObjectSearchResult {
    */
   dataObjectAppId: string | null;
   /**
-   * Owning collection — populated from the parallel `resultSet` (ResultTriple)
-   * array on the server response. Required for building a navigation route
-   * from the global header-search dropdown. Optional because legacy callers
-   * may not need it; it is set whenever the backend returns it.
-   *
-   * NOTE: this is the NUMERIC id (the triple carries no appId). The header
-   * search resolves it to the collection appId at click time via
-   * `useCollectionAppIdResolver`.
+   * Owning collection numeric id — populated from the v1 ResultTriple. Used by
+   * legacy in-collection search callers; the header-search path now reads
+   * `parentCollectionAppId` instead (set by the v2 endpoint).
    */
   collectionId?: number;
+  /**
+   * AppId of the owning Collection — set by GET /v2/search (MISSING-V2-APPID-IN-SEARCH).
+   * The header-search path reads this to navigate without a secondary
+   * collection-resolver call.
+   */
+  parentCollectionAppId?: string | null;
 }
 
 /**

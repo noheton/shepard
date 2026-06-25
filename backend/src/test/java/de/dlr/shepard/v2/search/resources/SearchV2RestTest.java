@@ -16,6 +16,7 @@ import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.DataObjectSearchService;
 import de.dlr.shepard.common.search.services.PaginatedCollectionList;
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.v2.search.io.SearchV2ItemIO;
 import de.dlr.shepard.v2.search.io.SearchV2ResultIO;
@@ -41,12 +42,16 @@ class SearchV2RestTest {
 
   static final String COLL_APP_ID = "018f9c5a-7e26-7000-a000-000000000010";
   static final String DO_APP_ID = "018f9c5a-7e26-7000-a000-000000000020";
+  static final long COLL_NEO4J_ID = 42L;
 
   @Mock
   CollectionSearchService collectionSearchService;
 
   @Mock
   DataObjectSearchService dataObjectSearchService;
+
+  @Mock
+  CollectionDAO collectionDAO;
 
   SearchV2Rest resource;
 
@@ -56,6 +61,7 @@ class SearchV2RestTest {
     resource = new SearchV2Rest();
     resource.collectionSearchService = collectionSearchService;
     resource.dataObjectSearchService = dataObjectSearchService;
+    resource.collectionDAO = collectionDAO;
   }
 
   @Test
@@ -93,18 +99,22 @@ class SearchV2RestTest {
   }
 
   @Test
-  void dataObjectsIncludeAppId() {
+  void dataObjectsIncludeAppIdAndParentCollectionAppId() {
     stubEmptyCollections("TR-004");
 
     BasicEntityIO doIO = new BasicEntityIO();
     doIO.setAppId(DO_APP_ID);
     doIO.setName("TR-004");
     ResponseBody doResponse = new ResponseBody(
-      new ResultTriple[] { new ResultTriple(1L, 2L) },
+      new ResultTriple[] { new ResultTriple(COLL_NEO4J_ID, 2L) },
       new BasicEntityIO[] { doIO },
       new SearchParams("TR-004", QueryType.DataObject)
     );
     when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+
+    Collection owningCollection = new Collection(COLL_NEO4J_ID);
+    owningCollection.setAppId(COLL_APP_ID);
+    when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(owningCollection);
 
     Response resp = resource.search("TR-004", 0, 50);
 
@@ -118,6 +128,7 @@ class SearchV2RestTest {
     assertEquals(1, doItems.size());
     assertEquals(DO_APP_ID, doItems.get(0).getAppId());
     assertEquals("TR-004", doItems.get(0).getName());
+    assertEquals(COLL_APP_ID, doItems.get(0).getParentCollectionAppId());
   }
 
   @Test

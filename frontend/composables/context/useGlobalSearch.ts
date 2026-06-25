@@ -1,30 +1,24 @@
 /**
  * useGlobalSearch — drives the global header-search dropdown (UI-002).
  *
- * Composes the three existing search composables — collections,
- * dataobjects, containers — into a single debounced surface. Each kind
- * runs in parallel and writes into its own result ref so the dropdown
- * can render incrementally as each batch lands.
+ * Collections + DataObjects: GET /v2/search via useV2ShepardApi (appId-keyed,
+ * no numeric Neo4j ids). Containers: POST /shepard/api/search via
+ * useContainerSearch (V1-EXCEPTION — no v2 container search endpoint yet;
+ * tracked in aidocs/16 MISSING-V2-APPID-IN-SEARCH).
  *
- * Why a composer (and not a fourth backend call): the existing search
- * composables already encode the wire shape, the id-vs-name dispatch,
- * and the de-duplication logic. Re-implementing any of that here would
- * be the kind of drift the "reuse before reimplement" rule warns about.
- *
- * Owner: UI-002 (`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`).
+ * Owner: UI-002 / MISSING-V2-APPID-IN-SEARCH
  */
-import {
-  useCollectionSearch,
-  type MyCollectionSearchResult,
-} from "./useCollectionSearch";
-import {
-  useDataObjectSearch,
-  type DataObjectSearchResult,
-} from "./useDataObjectSearch";
+import { SearchV2Api } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import {
   useContainerSearch,
   type MyContainerSearchResult,
 } from "./useContainerSearch";
+import type { MyCollectionSearchResult } from "./useCollectionSearch";
+import type { DataObjectSearchResult } from "./useDataObjectSearch";
+
+export type { MyCollectionSearchResult } from "./useCollectionSearch";
+export type { DataObjectSearchResult } from "./useDataObjectSearch";
 
 export interface GlobalSearchOptions {
   /** Debounce delay in ms (default 300). */
@@ -42,7 +36,7 @@ export type GlobalSearchKind = "collection" | "dataobject" | "container";
 export interface GlobalSearchState {
   /** Bound to the input field. */
   query: Ref<string>;
-  /** True while ANY of the three searches is in flight. */
+  /** True while ANY of the searches is in flight. */
   isLoading: Ref<boolean>;
   /** True once the user has typed something and we've finished at least one query. */
   hasSearched: Ref<boolean>;
@@ -68,29 +62,20 @@ export function useGlobalSearch(
   const dataObjectLimit = opts.dataObjectLimit ?? 10;
   const containerLimit = opts.containerLimit ?? 5;
 
+  const v2SearchApi = useV2ShepardApi(SearchV2Api);
+
   const query = ref<string>("");
-  const queryRefForChildren = computed(() => query.value);
+  const queryRefForWatch = computed(() => query.value);
   const hasSearched = ref<boolean>(false);
   const error = ref<string | null>(null);
+  const v2IsLoading = ref<boolean>(false);
 
-  // Children expect a Ref<string>; pass a writable ref kept in sync so
-  // their `searchString.value` reads the current query.
+  // Raw v2 result arrays (before limit slicing)
+  const rawCollections = ref<MyCollectionSearchResult[]>([]);
+  const rawDataObjects = ref<DataObjectSearchResult[]>([]);
+
+  // Container search stays on v1 — no v2 container search endpoint yet.
   const sharedSearchRef = ref<string>("");
-
-  const {
-    collectionSearchResults,
-    startSearch: startCollectionSearch,
-    isLoading: collectionsLoading,
-    resetResultList: resetCollections,
-  } = useCollectionSearch(sharedSearchRef);
-
-  const {
-    dataObjectSearchResults,
-    startSearch: startDataObjectSearch,
-    isLoading: dataObjectsLoading,
-    resetResultList: resetDataObjects,
-  } = useDataObjectSearch(undefined, sharedSearchRef);
-
   const {
     containerSearchResults,
     startSearch: startContainerSearch,
@@ -99,20 +84,17 @@ export function useGlobalSearch(
   } = useContainerSearch(sharedSearchRef);
 
   const collections = computed(() =>
-    collectionSearchResults.value.slice(0, collectionLimit),
+    rawCollections.value.slice(0, collectionLimit),
   );
   const dataObjects = computed(() =>
-    dataObjectSearchResults.value.slice(0, dataObjectLimit),
+    rawDataObjects.value.slice(0, dataObjectLimit),
   );
   const containers = computed(() =>
     containerSearchResults.value.slice(0, containerLimit),
   );
 
   const isLoading = computed(
-    () =>
-      collectionsLoading.value ||
-      dataObjectsLoading.value ||
-      containersLoading.value,
+    () => v2IsLoading.value || containersLoading.value,
   );
 
   const isEmpty = computed(
@@ -125,48 +107,68 @@ export function useGlobalSearch(
       containers.value.length === 0,
   );
 
+  function resetV2Results() {
+    rawCollections.value = [];
+    rawDataObjects.value = [];
+  }
+
   function reset() {
     query.value = "";
     sharedSearchRef.value = "";
     hasSearched.value = false;
     error.value = null;
-    resetCollections();
-    resetDataObjects();
+    resetV2Results();
     resetContainers();
+  }
+
+  async function fetchV2(trimmed: string): Promise<void> {
+    v2IsLoading.value = true;
+    try {
+      const result = await v2SearchApi.value.globalSearch({ q: trimmed });
+      rawCollections.value = result.items
+        .filter(item => item.kind === "collection")
+        .map(item => ({
+          collectionId: 0, // numeric id not exposed by v2; not used for navigation
+          collectionName: item.name,
+          collectionAppId: item.appId,
+        }));
+      rawDataObjects.value = result.items
+        .filter(item => item.kind === "dataobject")
+        .map(item => ({
+          dataObjectId: 0, // numeric id not exposed by v2; not used for navigation
+          dataObjectName: item.name,
+          dataObjectAppId: item.appId,
+          collectionId: undefined,
+          parentCollectionAppId: item.parentCollectionAppId ?? null,
+        }));
+    } finally {
+      v2IsLoading.value = false;
+    }
   }
 
   function runSearch() {
     const trimmed = query.value.trim();
     sharedSearchRef.value = trimmed;
     if (trimmed === "") {
-      resetCollections();
-      resetDataObjects();
+      resetV2Results();
       resetContainers();
       hasSearched.value = false;
       error.value = null;
       return;
     }
-    // Reset before each new query so stale results from a previous
-    // input don't accumulate as the user types.
-    resetCollections();
-    resetDataObjects();
+    resetV2Results();
     resetContainers();
     error.value = null;
-    // Fire all three in parallel. Each child returns a Promise (we patched
-    // each `startSearch` to do so). We catch per-kind so one failing kind
-    // doesn't poison the others, and surface a single user-facing error
-    // when any kind failed.
+
     const handle = (label: string, p: Promise<void>): Promise<void> =>
       p.catch(e => {
         error.value = "Search temporarily unavailable";
-        // Preserve full error for devtools / handleError pipeline.
         const h = (globalThis as { handleError?: (e: unknown, ctx: string) => void }).handleError;
         if (typeof h === "function") h(e, `globalSearch:${label}`);
       });
 
     const ops: Promise<void>[] = [
-      handle("collections", startCollectionSearch()),
-      handle("dataobjects", startDataObjectSearch()),
+      handle("v2", fetchV2(trimmed)),
       handle("containers", startContainerSearch()),
     ];
 
@@ -185,18 +187,15 @@ export function useGlobalSearch(
     }, debounceMs);
   }
 
-  // Watch the query and (de)bounce.
-  watch(queryRefForChildren, () => {
+  watch(queryRefForWatch, () => {
     const trimmed = query.value.trim();
     if (trimmed === "") {
-      // Empty input ⇒ clear results immediately, no debounce, no fetch.
       if (debounceTimer) {
         clearTimeout(debounceTimer);
         debounceTimer = null;
       }
       sharedSearchRef.value = "";
-      resetCollections();
-      resetDataObjects();
+      resetV2Results();
       resetContainers();
       hasSearched.value = false;
       error.value = null;
@@ -205,7 +204,6 @@ export function useGlobalSearch(
     scheduleSearch();
   });
 
-  // Clean up the timer if the component using this composable unmounts.
   if (typeof onUnmounted === "function") {
     onUnmounted(() => {
       if (debounceTimer) clearTimeout(debounceTimer);

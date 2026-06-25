@@ -19,4 +19,13 @@ public class SearchV2ItemIO {
 
   @Schema(readOnly = true, required = true, enumeration = { "collection", "dataobject" })
   private String kind;
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "AppId of the owning Collection — populated for kind=dataobject, null for kind=collection. " +
+      "Enables the frontend to construct the navigation route without a secondary collection-lookup."
+  )
+  private String parentCollectionAppId;
 }

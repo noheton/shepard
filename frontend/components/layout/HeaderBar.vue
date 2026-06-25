@@ -417,7 +417,6 @@ import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
 import type { DataObjectSearchResult } from "~/composables/context/useDataObjectSearch";
 import type { MyCollectionSearchResult } from "~/composables/context/useCollectionSearch";
 import type { MyContainerSearchResult } from "~/composables/context/useContainerSearch";
-import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useFetchNotifications } from "~/composables/context/useFetchNotifications";
@@ -592,7 +591,6 @@ const toggleTheme = () => {
 // ── Global header search (QW1 / UI-002) ───────────────────────────────────────
 
 const search = useGlobalSearch({ debounceMs: 300 });
-const { resolve: resolveCollectionAppId } = useCollectionAppIdResolver();
 const dropdownOpen = ref(false);
 const searchFieldRef = ref<{ $el: HTMLElement } | null>(null);
 const resultListRef = ref<{ $el: HTMLElement } | null>(null);
@@ -629,15 +627,11 @@ function onPickCollection(c: MyCollectionSearchResult) {
   void router.push(`/collections/${c.collectionAppId}`);
 }
 
-async function onPickDataObject(d: DataObjectSearchResult) {
-  if (d.collectionId === undefined || !d.dataObjectAppId) return;
-  // The DataObject carries its own appId, but the owning collection arrives as
-  // a numeric id (the search ResultTriple has no appId) — resolve it.
-  const colAppId = await resolveCollectionAppId(d.collectionId);
-  if (!colAppId) return;
+function onPickDataObject(d: DataObjectSearchResult) {
+  if (!d.dataObjectAppId || !d.parentCollectionAppId) return;
   closeDropdown();
   void router.push(
-    `/collections/${colAppId}/dataobjects/${d.dataObjectAppId}`,
+    `/collections/${d.parentCollectionAppId}/dataobjects/${d.dataObjectAppId}`,
   );
 }
 
