@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
@@ -119,6 +120,9 @@ public class ContainersV2Rest {
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  UserGroupService userGroupService;
 
   // ─── create ────────────────────────────────────────────────────────────
 
@@ -1292,11 +1296,28 @@ public class ContainersV2Rest {
     if (patch.containsKey("manager") && patch.get("manager") instanceof java.util.List<?> managerList) {
       current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
     }
-    if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
-      current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    // APISIMP-CONTAINERS-PERMS-IO-NUMERIC: numeric group IDs are deprecated write input.
+    if (patch.containsKey("readerGroupIds") && !patch.containsKey("readerGroupAppIds")) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated field", Response.Status.BAD_REQUEST,
+        "readerGroupIds is deprecated; use readerGroupAppIds (UUID v7) to set reader groups");
     }
-    if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
-      current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+    if (patch.containsKey("writerGroupIds") && !patch.containsKey("writerGroupAppIds")) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated field", Response.Status.BAD_REQUEST,
+        "writerGroupIds is deprecated; use writerGroupAppIds (UUID v7) to set writer groups");
+    }
+    if (patch.containsKey("readerGroupAppIds") && patch.get("readerGroupAppIds") instanceof java.util.List<?> rgl) {
+      long[] ids = rgl.stream()
+        .map(Object::toString)
+        .mapToLong(groupAppId -> userGroupService.getUserGroupByAppId(groupAppId).getId())
+        .toArray();
+      current.setReaderGroupIds(ids);
+    }
+    if (patch.containsKey("writerGroupAppIds") && patch.get("writerGroupAppIds") instanceof java.util.List<?> wgl) {
+      long[] ids = wgl.stream()
+        .map(Object::toString)
+        .mapToLong(groupAppId -> userGroupService.getUserGroupByAppId(groupAppId).getId())
+        .toArray();
+      current.setWriterGroupIds(ids);
     }
     var updated = permissionsService.updatePermissionsByNeo4jId(current, id);
     return Response.ok(new PermissionsIO(updated)).build();

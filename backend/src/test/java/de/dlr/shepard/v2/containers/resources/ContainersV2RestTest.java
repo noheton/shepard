@@ -20,6 +20,8 @@ import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.entities.UserGroup;
+import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.entities.FileContainer;
@@ -57,6 +59,9 @@ class ContainersV2RestTest {
   PermissionsService permissionsService;
 
   @Mock
+  UserGroupService userGroupService;
+
+  @Mock
   ContainerKindHandler handler;
 
   @Mock
@@ -74,6 +79,7 @@ class ContainersV2RestTest {
     resource = new ContainersV2Rest();
     resource.containersService = containersService;
     resource.permissionsService = permissionsService;
+    resource.userGroupService = userGroupService;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
   }
@@ -413,6 +419,66 @@ class ContainersV2RestTest {
       .thenReturn(Optional.empty());
     var r = resource.patchPermissions(APP_ID, om.readTree("{\"permissionType\":\"Private\"}"), securityContext);
     assertEquals(404, r.getStatus());
+  }
+
+  // APISIMP-CONTAINERS-PERMS-IO-NUMERIC: numeric group IDs rejected; appIds accepted
+
+  @Test
+  void patchPermissions_returns400WhenOnlyReaderGroupIdsProvidedWithoutAppIds() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    var r = resource.patchPermissions(APP_ID,
+      om.readTree("{\"readerGroupIds\":[10,11]}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns400WhenOnlyWriterGroupIdsProvidedWithoutAppIds() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    var r = resource.patchPermissions(APP_ID,
+      om.readTree("{\"writerGroupIds\":[20]}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns200WhenReaderGroupAppIdsProvided() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    UserGroup g = new UserGroup(77L);
+    g.setAppId("group-app-77");
+    when(userGroupService.getUserGroupByAppId("group-app-77")).thenReturn(g);
+    when(permissionsService.updatePermissionsByNeo4jId(any(PermissionsIO.class), eq(CONTAINER_NEO_ID)))
+      .thenReturn(permissions());
+    var r = resource.patchPermissions(APP_ID,
+      om.readTree("{\"readerGroupAppIds\":[\"group-app-77\"]}"), securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_returns200WhenWriterGroupAppIdsProvided() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+    when(permissionsService.getPermissionsOfEntityOptional(CONTAINER_NEO_ID))
+      .thenReturn(Optional.of(permissions()));
+    UserGroup g = new UserGroup(88L);
+    g.setAppId("group-app-88");
+    when(userGroupService.getUserGroupByAppId("group-app-88")).thenReturn(g);
+    when(permissionsService.updatePermissionsByNeo4jId(any(PermissionsIO.class), eq(CONTAINER_NEO_ID)))
+      .thenReturn(permissions());
+    var r = resource.patchPermissions(APP_ID,
+      om.readTree("{\"writerGroupAppIds\":[\"group-app-88\"]}"), securityContext);
+    assertEquals(200, r.getStatus());
   }
 
   // ─── listVersions (APISIMP-PV-UNIFY) ──────────────────────────────────────
