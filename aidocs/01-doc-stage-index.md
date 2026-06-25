@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 70 |
+| `fragment` | 71 |
 | `concept` | 33 |
 | `idea` | 13 |
 | `feature-defined` | 132 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 90 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **478** |
+| **total docs** | **479** |
 | **UNTAGGED** | **0** |
 
-## fragment (70)
+## fragment (71)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -72,6 +72,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-20-fire153.md`](agent-findings/apisimp-sweep-2026-06-20-fire153.md) | APISIMP sweep — 2026-06-20 fire-153 | 2026-06-20 | 2026-06-21 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-21-fire187.md`](agent-findings/apisimp-sweep-2026-06-21-fire187.md) | APISIMP sweep — 2026-06-21 fire-187 | 2026-06-21 | 2026-06-21 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-24.md`](agent-findings/apisimp-sweep-2026-06-24.md) | API Simplification Sweep — 2026-06-24 | — | 2026-06-24 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-25-fire221.md`](agent-findings/apisimp-sweep-2026-06-25-fire221.md) | API Simplification Sweep — 2026-06-25 (fire-221) | — | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25.md`](agent-findings/apisimp-sweep-2026-06-25.md) | API Simplification Sweep — 2026-06-25 (fire-211) | — | 2026-06-25 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-21 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-21 |
