@@ -20,12 +20,15 @@ import {
   type CollectionSummary,
 } from "~/composables/context/useCollectionTimeline";
 import {
+  binAnnotateMenuTitle,
   buildLaneOption,
   drillDownPath,
   hasRenderableData,
   BIN_SIZE_CHOICES,
   EMPTY_STATE_HINT,
 } from "~/utils/collectionTimeline";
+import { AnnotatedCollection } from "~/composables/annotated";
+import AddAnnotationDialog from "~/components/context/semantic/annotation/add-dialog/AddAnnotationDialog.vue";
 
 import VChart from "vue-echarts";
 import { use } from "echarts/core";
@@ -55,6 +58,13 @@ const props = defineProps<{
 
 const binSizeDays = ref<number>(1);
 const { envelope, loading, error, fetchTimeline, fetchCrossTimeline } = useCollectionTimeline();
+
+/** Bin action menu — shown when user clicks a chart bar */
+const pendingBin = ref<{ laneKey: string; laneLabel: string; day: string } | null>(null);
+const showBinActionMenu = ref(false);
+const showAnnotateDialog = ref(false);
+
+const annotatedCollection = computed(() => new AnnotatedCollection(props.collectionAppId));
 
 const renderable = computed(() => hasRenderableData(envelope.value));
 const echoedBinSize = computed(() => envelope.value?.binSizeDays ?? binSizeDays.value);
@@ -115,11 +125,9 @@ function laneOption(laneIndex: number): Record<string, unknown> {
 }
 
 /**
- * Bin-click handler — navigate to the data-objects list with the
- * process-type + date filter query params. The list page doesn't yet
- * honour those params (the COLL-TIMELINE-DRILLDOWN-FILTER-1 follow-up
- * handles that); the navigation still lands on a useful page rather
- * than failing silently.
+ * Bin-click handler — shows an action menu with "View DataObjects" (drill-
+ * down) and "Annotate this period" (COLL-TIMELINE-ANNOTATE-1). The previous
+ * immediate-navigate behaviour is preserved via onDrillDown().
  */
 function onBinClick(laneIndex: number, params: unknown): void {
   const lane = lanes.value[laneIndex];
@@ -128,7 +136,19 @@ function onBinClick(laneIndex: number, params: unknown): void {
   if (dataIndex < 0 || dataIndex >= lane.bins.length) return;
   const bin = lane.bins[dataIndex];
   if (!bin) return;
-  void navigateTo(drillDownPath(props.collectionAppId, lane.key, bin.day));
+  pendingBin.value = { laneKey: lane.key, laneLabel: lane.label, day: bin.day };
+  showBinActionMenu.value = true;
+}
+
+function onDrillDown(): void {
+  if (!pendingBin.value) return;
+  showBinActionMenu.value = false;
+  void navigateTo(drillDownPath(props.collectionAppId, pendingBin.value.laneKey, pendingBin.value.day));
+}
+
+function onAnnotateBin(): void {
+  showBinActionMenu.value = false;
+  showAnnotateDialog.value = true;
 }
 
 function makeBinClickHandler(laneIndex: number) {
@@ -253,6 +273,41 @@ watch(compareIds, () => {
       </div>
     </div>
   </div>
+
+  <!-- Bin action menu — shown on chart-bar click -->
+  <v-dialog v-model="showBinActionMenu" max-width="380" data-testid="bin-action-menu">
+    <v-card>
+      <v-card-title class="text-subtitle-1 pt-4 pb-0">
+        {{ pendingBin
+          ? binAnnotateMenuTitle(pendingBin.laneLabel, pendingBin.day, echoedBinSize)
+          : '' }}
+      </v-card-title>
+      <v-card-text class="pa-0">
+        <v-list>
+          <v-list-item
+            prepend-icon="mdi-filter-outline"
+            title="View DataObjects"
+            subtitle="Filter the DataObjects list to this period"
+            @click="onDrillDown"
+          />
+          <v-list-item
+            prepend-icon="mdi-note-plus-outline"
+            title="Annotate this period"
+            subtitle="Add a semantic annotation to this Collection for this timeline period"
+            @click="onAnnotateBin"
+          />
+        </v-list>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <!-- Annotation dialog — collection-level annotation pre-seeded from selected bin -->
+  <AddAnnotationDialog
+    v-if="showAnnotateDialog"
+    v-model:show-dialog="showAnnotateDialog"
+    :annotated="annotatedCollection"
+    prefill="urn:shepard:quality"
+  />
 </template>
 
 <style scoped>

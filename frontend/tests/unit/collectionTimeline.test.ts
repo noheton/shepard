@@ -13,6 +13,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import {
+  binAnnotateMenuTitle,
   buildLaneOption,
   drillDownPath,
   hasRenderableData,
@@ -266,6 +267,29 @@ describe("COLL-TIMELINE-CROSS-1 — fetchCrossTimeline builds multi-collection U
     expect(envelope.value?.totalDataObjects).toBe(5);
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe("COLL-TIMELINE-ANNOTATE-1 — binAnnotateMenuTitle", () => {
+  it("returns 'Lane — day' for a daily bin", () => {
+    expect(binAnnotateMenuTitle("AFP Layup", "2024-04-15", 1)).toBe("AFP Layup — 2024-04-15");
+  });
+
+  it("appends the bin-size suffix for weekly bins", () => {
+    expect(binAnnotateMenuTitle("AFP Layup", "2024-04-15", 7)).toBe("AFP Layup — 2024-04-15 (7-day bin)");
+  });
+
+  it("appends the bin-size suffix for monthly bins", () => {
+    expect(binAnnotateMenuTitle("NDT Inspection", "2024-01-01", 30)).toBe(
+      "NDT Inspection — 2024-01-01 (30-day bin)",
+    );
+  });
+
+  it("handles lane labels that contain special characters", () => {
+    const title = binAnnotateMenuTitle("Stringer CRW / Frame Welding", "2024-06-01", 1);
+    expect(title).toContain("Stringer CRW / Frame Welding");
+    expect(title).toContain("2024-06-01");
+    expect(title).not.toContain("day bin");
   });
 });
 
