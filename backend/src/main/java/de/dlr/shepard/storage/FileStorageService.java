@@ -10,6 +10,11 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -108,15 +113,15 @@ public class FileStorageService {
       // provider, this branch stops being taken.
       result = fileService.createFile(container, fileName, inputStream, declaredSize);
     } else {
-      // Non-GridFS adapters (S3, future Garage-direct) require the
-      // presigned-upload path — direct streaming through the JVM is
-      // not the supported shape for object stores. Mirrors the
-      // FileContainerService.createFileImpl posture so the behaviour
-      // is identical across all single-file write paths.
-      throw new ServiceUnavailableException(
-        "Direct upload is not supported for storage provider '" + adapter.id() +
-        "'. Use the presigned upload URL endpoint for object-store backends."
-      );
+      // STORAGE-SPI-UNIFY-PUT: non-GridFS adapters (S3, future
+      // Garage-direct) stream server-side through the SPI's put().
+      // The adapter (e.g. S3FileStorage) reads the bytes via
+      // RequestBody.fromInputStream and returns a StorageLocator
+      // "<container>/<key>". We compute the md5 while streaming so the
+      // FB1a md5 bookkeeping is populated for object-store rows too,
+      // and we derive the oid from the locator so the read path
+      // (getPayload → buildLocator) round-trips to the same key.
+      result = storeViaSpi(adapter, container, fileName, inputStream, declaredSize);
     }
     if (result != null) {
       result.setProviderId(adapter.id());
@@ -128,6 +133,68 @@ public class FileStorageService {
       );
     }
     return result;
+  }
+
+  /**
+   * STORAGE-SPI-UNIFY-PUT — server-side store through a non-GridFS
+   * {@link FileStorage} adapter's {@link FileStorage#put}. Streams the
+   * bytes through a {@link DigestInputStream} so the FB1a {@code md5} is
+   * recorded for object-store rows (GridFS computes its own md5; this
+   * fills the same field for S3 &amp; friends). Derives the persisted
+   * {@code oid} from the returned locator's key segment so the read path
+   * ({@link #getPayload} → {@link #buildLocator}) reconstructs the exact
+   * same locator and finds the bytes.
+   *
+   * @return a metadata-only {@link ShepardFile} carrying oid / filename /
+   *         md5 / fileSize. The caller stamps {@code providerId}.
+   */
+  ShepardFile storeViaSpi(FileStorage adapter, String container, String fileName, InputStream inputStream, long declaredSize) {
+    MessageDigest md5Digest;
+    try {
+      md5Digest = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      // MD5 is a JDK-guaranteed algorithm; this never fires.
+      throw new ServiceUnavailableException("MD5 unavailable for storage md5 bookkeeping: " + e.getMessage());
+    }
+    DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
+    Long size = declaredSize > 0 ? declaredSize : null;
+    StoragePutRequest put = new StoragePutRequest(container, fileName, null, digesting, size, null);
+
+    StorageLocator locator;
+    try {
+      locator = adapter.put(put);
+    } catch (StorageQuotaExceededException qee) {
+      throw new ServiceUnavailableException(
+        "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
+    } catch (StorageException se) {
+      Log.errorf("FileStorageService.storeFile: SPI put failed on container=%s adapter=%s — %s",
+        container, adapter.id(), se.getMessage());
+      throw new ServiceUnavailableException(
+        "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
+    }
+
+    String oid = oidFromLocator(container, locator.locator());
+    String md5 = HexFormat.of().formatHex(md5Digest.digest());
+    ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
+    file.setFileSize(size);
+    return file;
+  }
+
+  /**
+   * Extract the persisted {@code oid} (the read-path key segment) from a
+   * non-GridFS locator of the form {@code "<container>/<key>"}. The read
+   * path rebuilds the locator as {@code container + "/" + oid}, so the
+   * oid must be exactly the trailing key after {@code "<container>/"}.
+   * Falls back to the substring after the last {@code '/'} if the
+   * adapter chose a different container prefix.
+   */
+  static String oidFromLocator(String container, String locator) {
+    String prefix = container + "/";
+    if (locator.startsWith(prefix)) {
+      return locator.substring(prefix.length());
+    }
+    int slash = locator.lastIndexOf('/');
+    return slash >= 0 && slash < locator.length() - 1 ? locator.substring(slash + 1) : locator;
   }
 
   /**
