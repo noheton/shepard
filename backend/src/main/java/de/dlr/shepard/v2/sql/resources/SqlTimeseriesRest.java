@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.sql.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
 import de.dlr.shepard.data.timeseries.sql.SqlQueryCompiler;
@@ -9,6 +10,7 @@ import de.dlr.shepard.data.timeseries.sql.SqlQueryExecutor;
 import de.dlr.shepard.data.timeseries.sql.SqlQuerySpec;
 import de.dlr.shepard.data.timeseries.sql.WriteResult;
 import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
+import io.quarkus.logging.Log;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -29,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -95,6 +98,9 @@ public class SqlTimeseriesRest {
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  EntityIdResolver entityIdResolver;
 
   /**
    * P10c: runtime-mutable config singleton. Effective max-rows and max-duration
@@ -185,9 +191,14 @@ public class SqlTimeseriesRest {
         ? securityContext.getUserPrincipal().getName()
         : null;
 
-    List<Long> requestedIds = spec.where().containerIdIn() != null
-        ? spec.where().containerIdIn()
-        : List.of();
+    // Prefer container_app_id_in (UUID v7); fall back to deprecated container_id_in (numeric).
+    // Unknown or unresolvable appIds are silently excluded — same policy as forbidden IDs.
+    List<Long> requestedIds;
+    if (spec.where().containerAppIdIn() != null && !spec.where().containerAppIdIn().isEmpty()) {
+      requestedIds = resolveAppIds(spec.where().containerAppIdIn());
+    } else {
+      requestedIds = spec.where().containerIdIn() != null ? spec.where().containerIdIn() : List.of();
+    }
 
     Set<Long> allowed = permissionsService.filterAllowedForUser(requestedIds, AccessType.Read, username);
 
@@ -300,6 +311,25 @@ public class SqlTimeseriesRest {
       return Format.NDJSON;
     }
     return Format.CSV; // default
+  }
+
+  /**
+   * Resolves a list of container {@code appId} strings (UUID v7) to their Neo4j Long ids.
+   * Appids that cannot be resolved (unknown entity) are silently excluded so the caller
+   * gets the same "silently drop unauthorised/unknown" behaviour as the permission filter.
+   * Package-private for unit tests.
+   */
+  List<Long> resolveAppIds(List<String> appIds) {
+    List<Long> result = new ArrayList<>(appIds.size());
+    for (String appId : appIds) {
+      try {
+        result.add(entityIdResolver.resolveLong(appId));
+      } catch (Exception e) {
+        // Unknown appId — silently skip; same policy as permission-filter exclusion.
+        Log.debugf("SqlTimeseriesRest: skipping unknown container appId=%s (%s)", appId, e.getMessage());
+      }
+    }
+    return result;
   }
 
   /** Parses an ISO-8601 duration string to milliseconds. Returns 0 on parse failure (no limit). */

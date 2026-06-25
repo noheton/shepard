@@ -30,10 +30,11 @@ public record TimeseriesChannelV2IO(
 
   /**
    * The legacy numeric id of the row. Kept for clients that still
-   * deduplicate or join against {@code TimeseriesIO.id}; will be deprecated
-   * once {@code shepardId} adoption is complete.
+   * deduplicate or join against {@code TimeseriesIO.id}.
+   *
+   * <p>DEPRECATED (APISIMP-TSCHANNEL-INT-ID-DEPRECATE): use {@code shepardId} instead.
    */
-  @Schema(description = "Legacy numeric channel id (Postgres serial).", required = true)
+  @Schema(deprecated = true, description = "DEPRECATED: legacy numeric channel id (Postgres serial). Use shepardId instead.", required = true)
   int id,
 
   /**

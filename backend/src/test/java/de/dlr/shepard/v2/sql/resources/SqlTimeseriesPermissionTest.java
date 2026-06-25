@@ -2,10 +2,12 @@ package de.dlr.shepard.v2.sql.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
 import de.dlr.shepard.data.timeseries.sql.SqlQueryCompiler;
@@ -14,12 +16,15 @@ import de.dlr.shepard.data.timeseries.sql.SqlQuerySpec;
 import de.dlr.shepard.data.timeseries.sql.WriteResult;
 import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -53,6 +58,7 @@ class SqlTimeseriesPermissionTest {
   private SpyQueryCompiler compiler;
   private SqlQueryExecutor executor;
   private SecurityContext securityContext;
+  private StubEntityIdResolver entityIdResolver;
 
   @BeforeEach
   void setUp() {
@@ -61,10 +67,12 @@ class SqlTimeseriesPermissionTest {
     compiler = new SpyQueryCompiler();
     executor = mock(SqlQueryExecutor.class);
     securityContext = mock(SecurityContext.class);
+    entityIdResolver = new StubEntityIdResolver();
 
     rest.permissionsService = permissionsService;
     rest.compiler = compiler;
     rest.executor = executor;
+    rest.entityIdResolver = entityIdResolver;
     // P10c: wire a stub configService (not injected by CDI in unit tests)
     SqlTimeseriesConfigService configService = Mockito.mock(SqlTimeseriesConfigService.class);
     Mockito.when(configService.effectiveMaxRows()).thenReturn(1_000_000L);
@@ -75,15 +83,25 @@ class SqlTimeseriesPermissionTest {
     when(securityContext.getUserPrincipal()).thenReturn(alice);
   }
 
-  // Helper: build a minimal valid SqlQuerySpec with given container IDs
+  // Helper: build a minimal valid SqlQuerySpec with given numeric container IDs (deprecated path)
   private SqlQuerySpec specWithContainerIds(List<Long> ids) {
     return new SqlQuerySpec(
         List.of(new SqlQuerySpec.SelectItem("time", null, null)),
         "timeseries_data_points",
         new SqlQuerySpec.WhereClause(
             new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
-            ids,
-            null),
+            ids, null, null),
+        null, null, null);
+  }
+
+  // Helper: build a minimal valid SqlQuerySpec with container_app_id_in (UUID v7 path)
+  private SqlQuerySpec specWithContainerAppIds(List<String> appIds) {
+    return new SqlQuerySpec(
+        List.of(new SqlQuerySpec.SelectItem("time", null, null)),
+        "timeseries_data_points",
+        new SqlQuerySpec.WhereClause(
+            new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
+            null, appIds, null),
         null, null, null);
   }
 
@@ -151,6 +169,78 @@ class SqlTimeseriesPermissionTest {
         "Compiler must receive exactly the allowed container IDs");
   }
 
+  @Test
+  void containerAppIdIn_resolvedToLongs_passedToPermissionsService() throws IOException {
+    // appIds "aaa" → 10L, "bbb" → 20L registered in the stub resolver
+    entityIdResolver.register("aaa", 10L);
+    entityIdResolver.register("bbb", 20L);
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("aaa", "bbb"));
+    permissionsService.stubbedResult = Set.of(10L, 20L);
+
+    when(executor.executeCsv(
+        Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.any()))
+        .thenReturn(new WriteResult(0, false));
+
+    rest.executeQuery(spec, null, null, securityContext);
+
+    assertEquals(Set.of(10L, 20L), compiler.lastAllowedIds,
+        "Resolved appIds must be passed to permission filter and compiler");
+  }
+
+  @Test
+  void containerAppIdIn_unknownAppIdSilentlySkipped() throws IOException {
+    entityIdResolver.register("known", 42L);
+    // "unknown" is not registered → resolveLong throws NotFoundException → skipped
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("known", "unknown-appid"));
+    permissionsService.stubbedResult = Set.of(42L);
+
+    when(executor.executeCsv(
+        Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.any()))
+        .thenReturn(new WriteResult(0, false));
+
+    rest.executeQuery(spec, null, null, securityContext);
+
+    // Only the resolved "known" → 42L is passed; "unknown-appid" is silently excluded
+    assertEquals(Set.of(42L), compiler.lastAllowedIds);
+  }
+
+  @Test
+  void containerAppIdIn_takesPrecedenceOverContainerIdIn() throws IOException {
+    entityIdResolver.register("uuid-99", 99L);
+    // spec has both: container_id_in=[5L] and container_app_id_in=["uuid-99"]
+    SqlQuerySpec spec = new SqlQuerySpec(
+        List.of(new SqlQuerySpec.SelectItem("time", null, null)),
+        "timeseries_data_points",
+        new SqlQuerySpec.WhereClause(
+            new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
+            List.of(5L), List.of("uuid-99"), null),
+        null, null, null);
+    permissionsService.stubbedResult = Set.of(99L);
+
+    when(executor.executeCsv(
+        Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.any()))
+        .thenReturn(new WriteResult(0, false));
+
+    rest.executeQuery(spec, null, null, securityContext);
+
+    // container_app_id_in wins: resolved uuid-99 → 99L (not 5L from container_id_in)
+    assertEquals(Set.of(99L), compiler.lastAllowedIds,
+        "container_app_id_in must take precedence over container_id_in");
+  }
+
+  @Test
+  void resolveAppIds_filtersUnknownAppIds() {
+    entityIdResolver.register("x", 1L);
+    entityIdResolver.register("y", 2L);
+    // "z" is not registered
+
+    List<Long> result = rest.resolveAppIds(List.of("x", "z", "y"));
+
+    assertTrue(result.contains(1L), "x → 1L expected");
+    assertTrue(result.contains(2L), "y → 2L expected");
+    assertEquals(2, result.size(), "Unknown 'z' must be silently dropped");
+  }
+
   // --- Stubs ---
 
   /**
@@ -186,6 +276,33 @@ class SqlTimeseriesPermissionTest {
       lastAllowedIds = allowedContainerIds;
       lastResult = new PreparedStatementSpec("SELECT 1", List.of());
       return lastResult;
+    }
+  }
+
+  /**
+   * Stub EntityIdResolver that resolves from a pre-populated map without touching Neo4j.
+   * Unknown appIds throw NotFoundException (mirroring production behaviour).
+   */
+  static class StubEntityIdResolver extends EntityIdResolver {
+
+    private final Map<String, Long> map = new HashMap<>();
+
+    void register(String appId, long neo4jId) {
+      map.put(appId, neo4jId);
+    }
+
+    @Override
+    public long resolveLong(String appId) {
+      Long id = map.get(appId);
+      if (id == null) {
+        throw new NotFoundException("No entity with appId " + appId);
+      }
+      return id;
+    }
+
+    @Override
+    protected org.neo4j.ogm.session.Session session() {
+      return null; // never called — resolveLong is fully overridden
     }
   }
 }

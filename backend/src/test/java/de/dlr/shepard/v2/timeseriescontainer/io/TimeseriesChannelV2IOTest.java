@@ -91,6 +91,17 @@ public class TimeseriesChannelV2IOTest {
   }
 
   @Test
+  void id_schema_isMarkedDeprecated() throws NoSuchFieldException {
+    // APISIMP-TSCHANNEL-INT-ID-DEPRECATE: the legacy Postgres serial `id` must carry
+    // @Schema(deprecated=true) so generated clients know to prefer shepardId.
+    // MicroProfile @Schema targets FIELD not RECORD_COMPONENT — use getDeclaredField.
+    java.lang.reflect.Field field = TimeseriesChannelV2IO.class.getDeclaredField("id");
+    Schema schema = field.getAnnotation(Schema.class);
+    assertNotNull(schema, "@Schema must be present on id backing field");
+    assertTrue(schema.deprecated(), "@Schema(deprecated=true) must be set on id (APISIMP-TSCHANNEL-INT-ID-DEPRECATE)");
+  }
+
+  @Test
   void containerId_schema_isMarkedDeprecated() throws NoSuchFieldException {
     // APISIMP-TSCHANNEL-CONTAINER-ID: containerId is a numeric Postgres serial FK that
     // violates the "no numeric internal IDs on the v2 wire" contract. Until the TS-IDb/c
