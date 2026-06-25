@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -108,8 +110,39 @@ public class DataObjectListItemV2IO extends DataObjectIO {
   private String provenanceMode;
 
   /**
+   * appId (UUID v7) of the parent DataObject, or {@code null} when this is a
+   * top-level node. This is the appId-native replacement for the suppressed
+   * numeric {@code parentId}: the collection sidebar tree links children to
+   * parents purely by appId, so no numeric Neo4j id ever reaches the wire.
+   * Omitted from JSON when {@code null} (top-level node).
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "appId (UUID v7) of the parent DataObject, or null when top-level. " +
+      "appId-native linkage for the sidebar tree (replaces the suppressed numeric parentId)."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String parentAppId;
+
+  /**
+   * appIds (UUID v7) of the direct, non-deleted child DataObjects (empty for a
+   * leaf). The appId-native replacement for the suppressed numeric
+   * {@code childrenIds}; drives the sidebar tree's expand affordance.
+   */
+  @Schema(
+    readOnly = true,
+    description =
+      "appIds (UUID v7) of direct non-deleted children (empty for a leaf). " +
+      "appId-native linkage for the sidebar tree (replaces the suppressed numeric childrenIds)."
+  )
+  private List<String> childrenAppIds = new ArrayList<>();
+
+  /**
    * Copies all fields from {@code dataObject} (via the {@link DataObjectIO}
-   * supertype constructor) and overlays the three reference counts.
+   * supertype constructor) and overlays the three reference counts plus the
+   * appId-native parent/children linkage used by the sidebar tree.
    *
    * @param dataObject the loaded entity
    * @param tsCount    timeseries reference count (non-deleted)
@@ -123,5 +156,22 @@ public class DataObjectListItemV2IO extends DataObjectIO {
     this.structuredDataCount = sdCount;
     // PROV1j — surface the stored provenance mode (null = human default).
     this.provenanceMode = dataObject.getProvenanceMode();
+
+    // appId-native tree linkage (SIDEBAR-V2-APPID-LINK): the numeric id/parentId/
+    // childrenIds are suppressed on the wire, so expose the parent + child appIds
+    // the sidebar tree assembles on. Parent/children are already hydrated here
+    // (DataObjectIO computes the numeric parentId/childrenIds from the same edges).
+    if (dataObject.getParent() != null && !dataObject.getParent().isDeleted()) {
+      this.parentAppId = dataObject.getParent().getAppId();
+    }
+    List<String> kids = new ArrayList<>();
+    if (dataObject.getChildren() != null) {
+      for (DataObject child : dataObject.getChildren()) {
+        if (child != null && !child.isDeleted() && child.getAppId() != null) {
+          kids.add(child.getAppId());
+        }
+      }
+    }
+    this.childrenAppIds = kids;
   }
 }

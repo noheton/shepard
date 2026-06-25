@@ -47,11 +47,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     for (let page = 0; page < MAX_PAGES; page++) {
       const batch = await dataObjectV2Api.value.listDataObjects({
         collectionAppId: collectionId,
-        // DB-OPT5 trim: the tree only needs identity + linkage. `id` is the
-        // numeric Neo4j id used purely for client-side tree assembly (and
-        // the SIDEBAR-V2-CREATE v1-dialog exception); it never reaches a
-        // route or link.
-        fields: "id,appId,name,parentId,childrenIds",
+        // DB-OPT5 trim: the tree only needs identity + appId-native linkage.
+        // SIDEBAR-V2-APPID-LINK: the numeric id/parentId/childrenIds are
+        // suppressed on the v2 wire, so the tree is assembled from
+        // parentAppId/childrenAppIds. `id` is still requested best-effort for
+        // the SIDEBAR-V2-CREATE v1-dialog exception; it never reaches a route.
+        fields: "id,appId,name,parentAppId,childrenAppIds",
         page,
         pageSize: PAGE_SIZE,
       });

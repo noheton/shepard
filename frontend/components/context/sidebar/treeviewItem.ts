@@ -28,11 +28,26 @@ export interface TreeviewItem {
 }
 
 /**
+ * The v2 list row, augmented with the appId-native parent/children linkage
+ * (`parentAppId`/`childrenAppIds`) added to `DataObjectListItemV2IO` for the
+ * sidebar tree. The generated client type predates these fields, so we widen
+ * it locally; the backend always sends them on the list endpoint.
+ *
+ * SIDEBAR-V2-APPID-LINK (2026-06-25): the numeric `id`/`parentId`/`childrenIds`
+ * are suppressed on the v2 wire (APISIMP-DO-IO-NUMERIC-ID-LEAK), so the tree
+ * is assembled purely from appIds. The old numeric-keyed assembly collapsed
+ * the whole tree to one node once `id` became null (operator-surfaced: only
+ * one PlyGroup visible).
+ */
+type ListRow = DataObjectListItemV2 & {
+  parentAppId?: string | null;
+  childrenAppIds?: string[] | null;
+};
+
+/**
  * Build the fully-materialised tree from the exhaustive v2 list
- * (`GET /v2/collections/{collectionAppId}/data-objects`). The v2 list rows
- * carry `appId` plus the numeric `id`/`parentId`/`childrenIds` linkage; the
- * numeric linkage is resolved to appIds here and never leaves this module
- * except as `numericId` (see above).
+ * (`GET /v2/collections/{collectionAppId}/data-objects`). Linkage is by
+ * `appId` only (`parentAppId`); the numeric id is no longer on the wire.
  *
  * Rows without an appId cannot be addressed by the v2-only UI and are
  * skipped (post-reset data always carries one).
@@ -40,29 +55,30 @@ export interface TreeviewItem {
 export function buildTreeviewItems(
   rows: DataObjectListItemV2[],
 ): TreeviewItem[] {
-  const byNumericId = new Map<number, TreeviewItem>();
-  const parentNumericIdOf = new Map<number, number>();
+  const byAppId = new Map<string, TreeviewItem>();
+  const parentAppIdOf = new Map<string, string>();
 
-  for (const row of rows) {
+  for (const row of rows as ListRow[]) {
     if (!row.appId) continue;
-    byNumericId.set(row.id, {
+    byAppId.set(row.appId, {
       id: row.appId,
-      numericId: row.id,
+      // numericId is best-effort: the v2 list suppresses the numeric id, so it
+      // is usually -1. It is only consumed by the v1-only create-dialog
+      // plumbing (SIDEBAR-V2-CREATE) and never appears on a route or link.
+      numericId: row.id ?? -1,
       title: row.name,
       children: undefined,
       childrenIds: [],
       parentId: undefined,
     });
-    if (row.parentId != null) parentNumericIdOf.set(row.id, row.parentId);
+    if (row.parentAppId) parentAppIdOf.set(row.appId, row.parentAppId);
   }
 
   const roots: TreeviewItem[] = [];
-  for (const item of byNumericId.values()) {
-    const parentNumericId = parentNumericIdOf.get(item.numericId);
+  for (const item of byAppId.values()) {
+    const parentAppId = parentAppIdOf.get(item.id);
     const parent =
-      parentNumericId !== undefined
-        ? byNumericId.get(parentNumericId)
-        : undefined;
+      parentAppId !== undefined ? byAppId.get(parentAppId) : undefined;
     if (parent) {
       item.parentId = parent.id;
       parent.children = parent.children ?? [];
@@ -74,11 +90,11 @@ export function buildTreeviewItems(
     }
   }
 
-  // Stable creation order — numeric ids are creation-ordered (the pre-Wave-1
-  // tree sorted by numeric id; appIds are UUID v7 so time-ordered too, but
-  // numeric keeps byte-identical ordering with the previous behaviour).
+  // Creation order: appId is UUID v7 (time-ordered), so a lexicographic appId
+  // sort reproduces creation order — the replacement for the old numeric-id
+  // sort now that the numeric id is off the wire.
   const sortRec = (items: TreeviewItem[]) => {
-    items.sort((a, b) => a.numericId - b.numericId);
+    items.sort((a, b) => a.id.localeCompare(b.id));
     for (const item of items) {
       if (item.children) sortRec(item.children);
     }
