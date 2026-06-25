@@ -679,13 +679,24 @@ class Importer:
         try:
             meta = self.c.get_json(f"/v2/references/{ref_appid}")
             payload = (meta or {}).get("payload", {})
-            # singleton file → payload.file.fileSize; video → payload.video.fileSize
+            if not isinstance(payload, dict):
+                return -1
+            # The v2 reference envelope (ReferenceV2IO) puts per-kind fields
+            # FLAT in `payload`, keyed by the top-level `kind` — e.g. a video
+            # exposes payload.fileSizeBytes directly. The singleton-file path is
+            # the exception: it nests a ShepardFile blob under payload.file with
+            # a `fileSize` key. Scan the flat payload first, then any nested
+            # file/video blob, across all known size key names.
+            blobs = [payload]
             for key in ("file", "video"):
-                blob = payload.get(key)
-                if blob:
-                    for sz in ("fileSize", "sizeBytes", "size"):
-                        if blob.get(sz) is not None:
-                            return int(blob[sz])
+                nested = payload.get(key)
+                if isinstance(nested, dict):
+                    blobs.append(nested)
+            for blob in blobs:
+                for sz in ("fileSize", "fileSizeBytes", "sizeBytes", "size"):
+                    val = blob.get(sz)
+                    if val is not None:
+                        return int(val)
             return -1
         except (RuntimeError, ValueError, KeyError, TypeError):
             return -1

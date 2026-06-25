@@ -85,6 +85,14 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
     io.setReferenceShape("stream");
     io.put("storageLocator", ref.getStorageLocator());
     io.put("mimeType", ref.getMimeType());
+    // Canonical size key for the unified /v2/references surface. The singleton
+    // file reference exposes its size as `fileSize` (via the ShepardFile blob);
+    // video historically exposed only `fileSizeBytes`, so a generic consumer
+    // reading `fileSize` (e.g. the stringer importer's stored-size verification)
+    // got nothing and retry-looped (IMPORT-VIDEO-MP4-SHORTUPLOAD). Emit both:
+    // `fileSize` for cross-kind consistency, `fileSizeBytes` for the existing
+    // video-player frontend that already reads it.
+    io.put("fileSize", ref.getFileSizeBytes());
     io.put("fileSizeBytes", ref.getFileSizeBytes());
     io.put("durationSeconds", ref.getDurationSeconds());
     io.put("width", ref.getWidth());
