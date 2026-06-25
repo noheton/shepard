@@ -179,6 +179,38 @@ class CollectionLabJournalEntriesRestTest {
     assertThat(body).hasSize(2);
   }
 
+  // ── @Parameter documentation regression tests ────────────────────────────
+
+  private static java.lang.reflect.Parameter listParam(String qpName) throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionLabJournalEntriesRest.class.getMethod(
+        "list", String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    return java.util.Arrays.stream(m.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && qpName.equals(qp.value());
+        })
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No @QueryParam(\"" + qpName + "\") on list()"));
+  }
+
+  private static void assertParamDocumented(java.lang.reflect.Parameter param, String label) {
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    org.junit.jupiter.api.Assertions.assertNotNull(ann, label + " must carry @Parameter");
+    org.junit.jupiter.api.Assertions.assertTrue(ann.description() != null && !ann.description().isBlank(),
+        label + " @Parameter.description must be non-blank");
+  }
+
+  @Test
+  void list_pageParamIsDocumented() throws NoSuchMethodException {
+    assertParamDocumented(listParam("page"), "list.page");
+  }
+
+  @Test
+  void list_pageSizeParamIsDocumented() throws NoSuchMethodException {
+    assertParamDocumented(listParam("pageSize"), "list.pageSize");
+  }
+
   /**
    * Build a {@link LabJournalEntry} attached to a {@link DataObject} carrying
    * the given shepardId. Mirrors the v1 service path enough for the IO
