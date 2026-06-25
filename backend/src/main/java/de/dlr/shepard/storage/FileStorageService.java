@@ -9,7 +9,12 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -136,14 +141,32 @@ public class FileStorageService {
   }
 
   /**
-   * STORAGE-SPI-UNIFY-PUT — server-side store through a non-GridFS
-   * {@link FileStorage} adapter's {@link FileStorage#put}. Streams the
-   * bytes through a {@link DigestInputStream} so the FB1a {@code md5} is
-   * recorded for object-store rows (GridFS computes its own md5; this
-   * fills the same field for S3 &amp; friends). Derives the persisted
-   * {@code oid} from the returned locator's key segment so the read path
-   * ({@link #getPayload} → {@link #buildLocator}) reconstructs the exact
-   * same locator and finds the bytes.
+   * STORAGE-SPI-UNIFY-PUT / STORAGE-SPI-PUT-SIZEFIX — server-side store
+   * through a non-GridFS {@link FileStorage} adapter's {@link FileStorage#put}.
+   *
+   * <p><strong>Why the temp-file spool.</strong> The {@code declaredSize}
+   * the caller forwards is, on several paths, derived from the inbound
+   * {@code Content-Length} HTTP header (the singleton-content PUT
+   * {@code PUT /v2/references/{appId}/content}) rather than from the true
+   * count of bytes the entity {@link InputStream} yields. When those two
+   * disagree — chunked transfer-encoding, a reverse proxy re-framing the
+   * body, gzip on the wire, or RESTEasy handing back a partially-consumed
+   * stream — passing the wrong size to {@code RequestBody.fromInputStream
+   * (stream, size)} makes S3 {@code PutObject} abort with
+   * <em>"The request content has fewer bytes than the specified
+   * content-length"</em> (the live 500 on an 11-byte upload). To make the
+   * SPI put robust to a wrong/zero {@code declaredSize}, we spool the
+   * (MD5-digesting) stream to a temp file, then hand the adapter the
+   * <em>actual</em> file length — so the size always matches the bytes.
+   *
+   * <p>A temp file (not a heap buffer) keeps this safe for large uploads:
+   * an importer may stream a ~1 GB svdx without exhausting the heap. The
+   * MD5 is computed during the copy (over the real bytes), and the temp
+   * file is always deleted in a {@code finally}.
+   *
+   * <p>Derives the persisted {@code oid} from the returned locator's key
+   * segment so the read path ({@link #getPayload} → {@link #buildLocator})
+   * reconstructs the exact same locator and finds the bytes.
    *
    * @return a metadata-only {@link ShepardFile} carrying oid / filename /
    *         md5 / fileSize. The caller stamps {@code providerId}.
@@ -156,28 +179,53 @@ public class FileStorageService {
       // MD5 is a JDK-guaranteed algorithm; this never fires.
       throw new ServiceUnavailableException("MD5 unavailable for storage md5 bookkeeping: " + e.getMessage());
     }
-    DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
-    Long size = declaredSize > 0 ? declaredSize : null;
-    StoragePutRequest put = new StoragePutRequest(container, fileName, null, digesting, size, null);
 
-    StorageLocator locator;
+    Path tmp = null;
     try {
-      locator = adapter.put(put);
-    } catch (StorageQuotaExceededException qee) {
-      throw new ServiceUnavailableException(
-        "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
-    } catch (StorageException se) {
-      Log.errorf("FileStorageService.storeFile: SPI put failed on container=%s adapter=%s — %s",
-        container, adapter.id(), se.getMessage());
-      throw new ServiceUnavailableException(
-        "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
-    }
+      // Spool to a temp file while digesting, so we never trust a
+      // possibly-wrong declaredSize for the PutObject content-length.
+      tmp = Files.createTempFile("shepard-spi-put-", ".bin");
+      long actualSize;
+      try (DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
+           OutputStream out = Files.newOutputStream(tmp)) {
+        digesting.transferTo(out);
+        actualSize = Files.size(tmp);
+      }
+      String md5 = HexFormat.of().formatHex(md5Digest.digest());
 
-    String oid = oidFromLocator(container, locator.locator());
-    String md5 = HexFormat.of().formatHex(md5Digest.digest());
-    ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
-    file.setFileSize(size);
-    return file;
+      StorageLocator locator;
+      // Hand the adapter a fresh stream over the temp file plus its TRUE
+      // length — this is the size that exactly matches the bytes, so the
+      // S3 RequestBody.fromInputStream(stream, size) path never mismatches.
+      try (InputStream fileStream = new BufferedInputStream(Files.newInputStream(tmp))) {
+        StoragePutRequest put = new StoragePutRequest(container, fileName, null, fileStream, actualSize, null);
+        locator = adapter.put(put);
+      } catch (StorageQuotaExceededException qee) {
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
+      } catch (StorageException se) {
+        Log.errorf("FileStorageService.storeFile: SPI put failed on container=%s adapter=%s — %s",
+          container, adapter.id(), se.getMessage());
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
+      }
+
+      String oid = oidFromLocator(container, locator.locator());
+      ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
+      file.setFileSize(actualSize);
+      return file;
+    } catch (IOException ioe) {
+      throw new ServiceUnavailableException(
+        "Storage provider '" + adapter.id() + "' failed to spool upload bytes: " + ioe.getMessage());
+    } finally {
+      if (tmp != null) {
+        try {
+          Files.deleteIfExists(tmp);
+        } catch (IOException cleanup) {
+          Log.warnf("FileStorageService.storeViaSpi: could not delete temp file %s — %s", tmp, cleanup.getMessage());
+        }
+      }
+    }
   }
 
   /**
