@@ -1,13 +1,14 @@
 package de.dlr.shepard.data.timeseries.sql;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * P10a — immutable JSON DSL record for {@code POST /v2/sql/timeseries}.
@@ -104,19 +105,31 @@ public record SqlQuerySpec(
 
   /**
    * The {@code where} clause. {@code timeBetween} is required; the rest are optional.
+   *
+   * <p>Container filtering: use {@code container_app_id_in} (UUID v7 strings).
+   * {@code container_id_in} (numeric Neo4j IDs) is deprecated; when both are supplied,
+   * {@code container_app_id_in} takes precedence.
    */
   public record WhereClause(
       @NotNull @Valid @JsonProperty("time_between") TimeBetween timeBetween,
+      @Schema(deprecated = true,
+              description = "Deprecated — use container_app_id_in (UUID v7 strings) instead. " +
+                            "Numeric Neo4j container IDs; silently ignored when container_app_id_in is also present.")
       @JsonProperty("container_id_in") List<Long> containerIdIn,
+      @Schema(description = "Timeseries container appIds (UUID v7) to include. " +
+                            "Unknown or unauthorised appIds are silently excluded.")
+      @JsonProperty("container_app_id_in") List<String> containerAppIdIn,
       @JsonProperty("filters") List<FilterItem> filters) {
 
     @JsonCreator
     public WhereClause(
         @JsonProperty("time_between") @NotNull @Valid TimeBetween timeBetween,
         @JsonProperty("container_id_in") List<Long> containerIdIn,
+        @JsonProperty("container_app_id_in") List<String> containerAppIdIn,
         @JsonProperty("filters") List<FilterItem> filters) {
       this.timeBetween = timeBetween;
       this.containerIdIn = containerIdIn;
+      this.containerAppIdIn = containerAppIdIn;
       this.filters = filters;
     }
   }
