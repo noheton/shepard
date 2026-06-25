@@ -34,8 +34,13 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -583,13 +588,22 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    * to match their {@code containerMongoId/uuid} key format.
    */
   /**
-   * STORAGE-SPI-UNIFY-PUT — server-side store through a non-GridFS
-   * adapter's {@link FileStorage#put}. Streams through a
-   * {@link DigestInputStream} for the FB1a md5, and derives the oid
-   * from the returned locator's key segment so {@link #getFile} (which
-   * rebuilds the locator as {@code containerMongoId + "/" + oid}) finds
-   * the exact same key. Returns a metadata-only {@link ShepardFile};
-   * the caller stamps {@code providerId}.
+   * STORAGE-SPI-UNIFY-PUT / STORAGE-SPI-PUT-SIZEFIX — server-side store
+   * through a non-GridFS adapter's {@link FileStorage#put}.
+   *
+   * <p>Spools the (MD5-digesting) stream to a temp file first, then hands
+   * the adapter the <em>actual</em> file length rather than a possibly-wrong
+   * {@code declaredSize} (which, on the multipart / Content-Length paths,
+   * can disagree with the bytes the stream yields and make S3
+   * {@code PutObject} reject the request with "fewer bytes than the
+   * specified content-length"). A temp file (not a heap buffer) keeps this
+   * safe for large uploads; the temp file is deleted in a {@code finally}.
+   * Derives the oid from the returned locator's key segment so
+   * {@link #getFile} (which rebuilds the locator as
+   * {@code containerMongoId + "/" + oid}) finds the exact same key. Returns
+   * a metadata-only {@link ShepardFile}; the caller stamps
+   * {@code providerId}. See {@code FileStorageService.storeViaSpi} for the
+   * full rationale (this is the {@code FileContainerService} sibling).
    */
   private ShepardFile storeViaSpi(
     FileStorage adapter, String containerMongoId, String fileName, InputStream inputStream, long declaredSize) {
@@ -599,32 +613,52 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     } catch (NoSuchAlgorithmException e) {
       throw new ServiceUnavailableException("MD5 unavailable for storage md5 bookkeeping: " + e.getMessage());
     }
-    DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
-    Long size = declaredSize > 0 ? declaredSize : null;
-    StoragePutRequest put = new StoragePutRequest(containerMongoId, fileName, null, digesting, size, null);
 
-    StorageLocator locator;
+    Path tmp = null;
     try {
-      locator = adapter.put(put);
-    } catch (StorageQuotaExceededException qee) {
-      throw new ServiceUnavailableException(
-        "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
-    } catch (StorageException se) {
-      Log.errorf("FileContainerService.createFile: SPI put failed on container=%s adapter=%s — %s",
-        containerMongoId, adapter.id(), se.getMessage());
-      throw new ServiceUnavailableException(
-        "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
-    }
+      tmp = Files.createTempFile("shepard-spi-put-", ".bin");
+      long actualSize;
+      try (DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
+           OutputStream out = Files.newOutputStream(tmp)) {
+        digesting.transferTo(out);
+        actualSize = Files.size(tmp);
+      }
+      String md5 = HexFormat.of().formatHex(md5Digest.digest());
 
-    String key = locator.locator();
-    String prefix = containerMongoId + "/";
-    String oid = key.startsWith(prefix)
-      ? key.substring(prefix.length())
-      : (key.lastIndexOf('/') >= 0 ? key.substring(key.lastIndexOf('/') + 1) : key);
-    String md5 = HexFormat.of().formatHex(md5Digest.digest());
-    ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
-    file.setFileSize(size);
-    return file;
+      StorageLocator locator;
+      try (InputStream fileStream = new BufferedInputStream(Files.newInputStream(tmp))) {
+        StoragePutRequest put = new StoragePutRequest(containerMongoId, fileName, null, fileStream, actualSize, null);
+        locator = adapter.put(put);
+      } catch (StorageQuotaExceededException qee) {
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
+      } catch (StorageException se) {
+        Log.errorf("FileContainerService.createFile: SPI put failed on container=%s adapter=%s — %s",
+          containerMongoId, adapter.id(), se.getMessage());
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
+      }
+
+      String key = locator.locator();
+      String prefix = containerMongoId + "/";
+      String oid = key.startsWith(prefix)
+        ? key.substring(prefix.length())
+        : (key.lastIndexOf('/') >= 0 ? key.substring(key.lastIndexOf('/') + 1) : key);
+      ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
+      file.setFileSize(actualSize);
+      return file;
+    } catch (IOException ioe) {
+      throw new ServiceUnavailableException(
+        "Storage provider '" + adapter.id() + "' failed to spool upload bytes: " + ioe.getMessage());
+    } finally {
+      if (tmp != null) {
+        try {
+          Files.deleteIfExists(tmp);
+        } catch (IOException cleanup) {
+          Log.warnf("FileContainerService.storeViaSpi: could not delete temp file %s — %s", tmp, cleanup.getMessage());
+        }
+      }
+    }
   }
 
   private static StorageLocator buildLocatorForRow(String providerId, String containerMongoId, String oid) {

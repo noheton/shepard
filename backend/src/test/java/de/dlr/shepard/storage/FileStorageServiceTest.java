@@ -139,6 +139,74 @@ class FileStorageServiceTest {
     verify(s3).get(new StorageLocator("s3", CONTAINER + "/key-xyz"));
   }
 
+  // ── STORAGE-SPI-PUT-SIZEFIX: declared size is recomputed from the spooled bytes ──
+
+  @Test
+  void storeViaSpi_declaredSizeMatchesActualStreamedBytes() throws Exception {
+    // The adapter's put() must receive a StoragePutRequest whose declared
+    // size EXACTLY equals the number of bytes actually streamed — never the
+    // caller's (possibly wrong) declaredSize. Here the payload is 7 bytes.
+    when(registry.requireActive()).thenReturn(s3);
+    byte[] payload = new byte[] { 10, 20, 30, 40, 50, 60, 70 };
+    InputStream bytes = new ByteArrayInputStream(payload);
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/k-7"));
+
+    // Caller declares the correct size here; the assertion proves the
+    // request size matches the streamed bytes regardless.
+    ShepardFile result = service.storeFile(CONTAINER, "ok.bin", bytes, payload.length);
+
+    ArgumentCaptor<StoragePutRequest> putCaptor = ArgumentCaptor.forClass(StoragePutRequest.class);
+    verify(s3).put(putCaptor.capture());
+    // The declared size on the put must equal the actual byte count.
+    assertEquals((long) payload.length, putCaptor.getValue().sizeBytes());
+    assertEquals((long) payload.length, result.getFileSize());
+  }
+
+  @Test
+  void storeViaSpi_callerDeclaredSizeWrong_putGetsActualByteCount() throws Exception {
+    // The live bug: a Content-Length-derived declaredSize disagrees with
+    // the bytes the stream yields. The temp-file spool must recompute the
+    // size so the adapter is handed the ACTUAL count (here 3), not the
+    // bogus declaredSize the caller passed (here 11).
+    when(registry.requireActive()).thenReturn(s3);
+    byte[] actualPayload = new byte[] { 1, 2, 3 }; // 3 bytes really delivered
+    long wrongDeclaredSize = 11L;                  // caller claims 11
+    InputStream bytes = new ByteArrayInputStream(actualPayload);
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/k-wrong"));
+
+    ShepardFile result = service.storeFile(CONTAINER, "mismatch.bin", bytes, wrongDeclaredSize);
+
+    ArgumentCaptor<StoragePutRequest> putCaptor = ArgumentCaptor.forClass(StoragePutRequest.class);
+    verify(s3).put(putCaptor.capture());
+    // The put size must be the TRUE 3 bytes, never the bogus 11.
+    assertEquals(3L, putCaptor.getValue().sizeBytes());
+    assertEquals(3L, result.getFileSize());
+    // md5 must be over the real bytes, not absent.
+    assertNotNull(result.getMd5());
+    assertEquals("s3", result.getProviderId());
+  }
+
+  @Test
+  void storeViaSpi_zeroDeclaredSize_putStillGetsActualByteCount() throws Exception {
+    // declaredSize <= 0 (the "unknown size" path) must still produce a
+    // non-null, correct put size from the spooled temp file — the
+    // adapter never has to fall back to readAllBytes() with a null size.
+    when(registry.requireActive()).thenReturn(s3);
+    byte[] actualPayload = new byte[] { 9, 8, 7, 6 }; // 4 bytes
+    InputStream bytes = new ByteArrayInputStream(actualPayload);
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/k-zero"));
+
+    ShepardFile result = service.storeFile(CONTAINER, "zero.bin", bytes, 0L);
+
+    ArgumentCaptor<StoragePutRequest> putCaptor = ArgumentCaptor.forClass(StoragePutRequest.class);
+    verify(s3).put(putCaptor.capture());
+    assertEquals(4L, putCaptor.getValue().sizeBytes());
+    assertEquals(4L, result.getFileSize());
+  }
+
   @Test
   void storeFile_s3PutFails_mapsToServiceUnavailable() throws Exception {
     when(registry.requireActive()).thenReturn(s3);
