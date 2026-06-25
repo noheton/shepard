@@ -480,6 +480,20 @@ class CollectionV2RestTest {
       "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
   }
 
+  // ─── APISIMP-REMAINING-PARAMS reflection guards ────────────────────────────
+
+  @Test
+  void list_nameParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "name".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.name must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.name must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.name");
+  }
+
   // ─── APISIMP-COLLECTION-LIST-BUNDLE-SIZE-PAGESIZE reflection guards ────────
 
   @Test
