@@ -78,13 +78,13 @@ abstract class SubjectAnnotated implements Annotated {
 
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     if (!this.subjectAppId) return [];
-    const items = await this.annotationsApi.value.listAnnotations({
+    const page = await this.annotationsApi.value.listAnnotations({
       subjectAppId: this.subjectAppId,
       subjectKind: this.subjectKind,
       pageSize: 200,
     });
     this._appIdMap.clear();
-    return items.map((item, idx) => {
+    return page.items.map((item, idx) => {
       this._appIdMap.set(idx, item.appId);
       return mapAnnotationV2ToLegacy(item, idx);
     });
