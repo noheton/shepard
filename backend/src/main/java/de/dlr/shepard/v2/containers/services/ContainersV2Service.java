@@ -162,6 +162,31 @@ public class ContainersV2Service {
     return r.handler().patch(appId, patch);
   }
 
+  /**
+   * P21-V2-METADATA-EDIT — full-replace of all mutable container metadata.
+   * {@code name} is required; {@code status} is applied from the body (null if
+   * absent, which clears any existing status). All other mutable fields follow
+   * the same contract. Delegates to the owning kind's {@link
+   * de.dlr.shepard.v2.containers.spi.ContainerKindHandler#patch patch} with a
+   * normalised body that always carries both fields so the PATCH handler applies
+   * the full-replace semantics.
+   *
+   * @param appId UUID v7 of the container.
+   * @param body  the full-replace payload; {@code name} is required.
+   * @return the unified IO reflecting the post-put state.
+   */
+  public ContainerV2IO putByAppId(String appId, Map<String, Object> body) {
+    // PUT = full-replace: validate name here; build a normalised map that always
+    // carries both mutable fields so the existing patch handler clears status when absent.
+    de.dlr.shepard.v2.containers.handlers.ContainerPatchSupport.requireName(body);
+    Map<String, Object> normalized = new java.util.LinkedHashMap<>();
+    normalized.put("name", body.get("name"));
+    normalized.put("status", body.get("status")); // null when absent → clears status
+    ResolvedContainer r = resolveByAppId(appId)
+      .orElseThrow(() -> new NotFoundException("No container with appId " + appId));
+    return r.handler().patch(appId, normalized);
+  }
+
   public void deleteByAppId(String appId) {
     ResolvedContainer r = resolveByAppId(appId)
       .orElseThrow(() -> new NotFoundException("No container with appId " + appId));

@@ -43,6 +43,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -311,6 +312,53 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
     try {
       ContainerV2IO updated = containersService.patchByAppId(appId, JsonNodeMaps.toMap(body));
+      return Response.ok(updated).build();
+    } catch (BadRequestException bre) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
+    } catch (NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, nfe.getMessage() != null ? nfe.getMessage() : "Container not found");
+    }
+  }
+
+  // ─── put (full-replace metadata) ───────────────────────────────────────
+
+  @PUT
+  @Path("/{appId}")
+  @Operation(
+    operationId = "putContainer",
+    summary = "P21-V2-METADATA-EDIT: full-replace editable metadata of any container by appId.",
+    description =
+      "Replaces all mutable metadata fields on the container at `appId`. `name` is " +
+      "required; `status` is applied from the body and reset to null when absent " +
+      "(unlike PATCH which leaves absent keys unchanged). Kind-specific payload fields " +
+      "(e.g. OID, default collection) are read-only and are ignored.\n\nAuth: Write " +
+      "on the container."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "The post-put ContainerV2IO.",
+    content = @Content(schema = @Schema(implementation = ContainerV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object, name is missing or blank, or status value is invalid.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response put(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON)) JsonNode body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null || !body.isObject()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PUT body must be a JSON object");
+    }
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    try {
+      ContainerV2IO updated = containersService.putByAppId(appId, JsonNodeMaps.toMap(body));
       return Response.ok(updated).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());

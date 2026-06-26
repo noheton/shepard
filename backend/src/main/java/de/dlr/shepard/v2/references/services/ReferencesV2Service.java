@@ -161,6 +161,23 @@ public class ReferencesV2Service {
     return r.handler().patch(appId, patch);
   }
 
+  /**
+   * P21-V2-METADATA-EDIT — full-replace of all mutable reference metadata.
+   * {@code name} is required in {@code body}; delegates to the owning kind's
+   * {@link de.dlr.shepard.v2.references.spi.ReferenceKindHandler#put put}
+   * method (default: delegates to patch; kinds with strict full-replace
+   * semantics override).
+   *
+   * @param appId UUID v7 of the reference.
+   * @param body  the full-replace payload; {@code name} is required.
+   * @return the unified IO reflecting the post-put state.
+   */
+  public ReferenceV2IO putByAppId(String appId, Map<String, Object> body) {
+    ResolvedReference r = resolveByAppId(appId)
+      .orElseThrow(() -> new NotFoundException("No reference with appId " + appId));
+    return r.handler().put(appId, body);
+  }
+
   public void deleteByAppId(String appId) {
     ResolvedReference r = resolveByAppId(appId)
       .orElseThrow(() -> new NotFoundException("No reference with appId " + appId));

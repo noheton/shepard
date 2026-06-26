@@ -134,4 +134,20 @@ class ReferencesV2ServiceTest {
     assertEquals(1, out.size());
     assertEquals("file", out.get(0).getKind());
   }
+
+  // ─── putByAppId (P21-V2-METADATA-EDIT) ─────────────────────────────────────
+
+  @Test
+  void putByAppId_unknown_throwsNotFound() {
+    var svc = new ReferencesV2Service(List.of(new StubHandler("uri", ref("a"))));
+    assertThrows(NotFoundException.class, () -> svc.putByAppId("missing", Map.of("name", "x")));
+  }
+
+  @Test
+  void putByAppId_delegatesToHandlerPut() {
+    var r = ref("a");
+    var svc = new ReferencesV2Service(List.of(new StubHandler("uri", r)));
+    var io = svc.putByAppId("a", Map.of("name", "n"));
+    assertEquals("uri", io.getKind());
+  }
 }

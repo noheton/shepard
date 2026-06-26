@@ -237,6 +237,59 @@ class ContainersV2RestTest {
     assertEquals(404, r.getStatus());
   }
 
+  // ─── put (P21-V2-METADATA-EDIT) ────────────────────────────────────────────
+
+  @Test
+  void put_returns200WhenAllowed() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(containersService.putByAppId(eq(APP_ID), any())).thenReturn(new ContainerV2IO());
+    var r = resource.put(APP_ID, om.readTree("{\"name\":\"new-name\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    verify(containersService).putByAppId(eq(APP_ID), any());
+  }
+
+  @Test
+  void put_returns400WhenBodyNotObject() throws Exception {
+    var r = resource.put(APP_ID, om.readTree("\"notanobject\""), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void put_returns401WhenUnauthenticated() throws Exception {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.put(APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void put_returns403WhenNoWrite() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.put(APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void put_returns404WhenUnknown() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
+    var r = resource.put(APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void put_returns400WhenServiceThrowsBadRequest() throws Exception {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(containersService.putByAppId(eq(APP_ID), any()))
+      .thenThrow(new jakarta.ws.rs.BadRequestException("'name' must be non-blank"));
+    var r = resource.put(APP_ID, om.readTree("{\"name\":\"x\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
   // ─── file download (V2CONV-A7-HDF) ─────────────────────────────────────────
 
   private void allowRead() {

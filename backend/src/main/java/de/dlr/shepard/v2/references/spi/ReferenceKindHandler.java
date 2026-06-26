@@ -129,6 +129,21 @@ public interface ReferenceKindHandler {
   List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind);
 
   /**
+   * P21-V2-METADATA-EDIT — full-replace of all mutable reference metadata.
+   * {@code name} is required in {@code body}; absent kind-specific mutable
+   * fields are passed through to the underlying patch as-is (handlers that
+   * need strict null-reset semantics override this method). The default
+   * implementation delegates to {@link #patch(String, Map)}.
+   *
+   * @param appId UUID v7 of the reference.
+   * @param body  the full-replace field map; {@code name} is required.
+   * @return the unified IO reflecting the post-put state.
+   */
+  default ReferenceV2IO put(String appId, Map<String, Object> body) {
+    return patch(appId, body);
+  }
+
+  /**
    * APISIMP-KIND-DISCRIMINATOR — Option C content companion.
    *
    * <p>Upload binary content to an existing reference node identified by
