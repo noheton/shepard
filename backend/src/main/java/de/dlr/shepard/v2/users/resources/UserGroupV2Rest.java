@@ -15,8 +15,11 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -79,18 +82,17 @@ public class UserGroupV2Rest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @Parameter(name = Constants.QP_PAGE)
-  @Parameter(name = "pageSize")
+  @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
+  @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "When true, sort descending. Default false (ascending).")
   public Response listUserGroups(
-    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
-    @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
+    @QueryParam(Constants.QP_PAGE) @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
-    var params = new QueryParamHelper();
-    if (page != null && pageSize != null) params = params.withPageAndSize(page, pageSize);
+    var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
     List<UserGroupV2IO> result = service.getAllUserGroups(params).stream()
       .map(UserGroupV2IO::new)

@@ -640,28 +640,28 @@ class ContainersV2RestTest {
   @Test
   void list_returns200WithNameFilter() {
     when(containersService.list(eq("file"), eq("sca"))).thenReturn(List.of(new ContainerV2IO()));
-    var r = resource.list("file", "sca", null, null, securityContext);
+    var r = resource.list("file", "sca", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     verify(containersService).list("file", "sca");
   }
 
   @Test
   void list_returns400WhenMissingKind() {
-    var r = resource.list(null, null, null, null, securityContext);
+    var r = resource.list(null, null, 0, 50, securityContext);
     assertEquals(400, r.getStatus());
   }
 
   @Test
   void list_returns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = resource.list("file", null, null, null, securityContext);
+    var r = resource.list("file", null, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void list_xTotalCountHeaderIsPresent() {
     when(containersService.list(eq("file"), isNull())).thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
-    var r = resource.list("file", null, null, null, securityContext);
+    var r = resource.list("file", null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
@@ -694,7 +694,7 @@ class ContainersV2RestTest {
         .mapToObj(i -> new ContainerV2IO())
         .collect(java.util.stream.Collectors.toList());
     when(containersService.list(eq("file"), isNull())).thenReturn(many);
-    var r = resource.list("file", null, 0, 300, securityContext);
+    var r = resource.list("file", null, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (List<ContainerV2IO>) r.getEntity();

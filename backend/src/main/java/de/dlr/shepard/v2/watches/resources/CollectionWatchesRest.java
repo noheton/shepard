@@ -8,8 +8,12 @@ import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -100,21 +104,15 @@ public class CollectionWatchesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
       @PathParam("collectionAppId") @NotBlank String collectionAppId,
-      @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all watches.")
-      @QueryParam("page") Integer page,
-      @Parameter(description = "Page size for pagination (1–200). Omit to return all watches.")
-      @QueryParam("pageSize") Integer pageSize) {
+      @Parameter(description = "Zero-based page index (default 0).")
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size, 1–200 (default 50).")
+      @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
     List<WatchIO> all = service.list(collectionAppId);
     long total = all.size();
-    List<WatchIO> result = all;
-    if (pageSize != null && pageSize > 0) {
-      int safeSize = Math.min(pageSize, 200);
-      int safePage = page != null ? page : 0;
-      int from = (int) Math.min((long) safePage * safeSize, total);
-      int to = (int) Math.min((long) from + safeSize, total);
-      result = all.subList(from, to);
-    }
-    return Response.ok(result).header("X-Total-Count", total).build();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
   }
 
   @POST

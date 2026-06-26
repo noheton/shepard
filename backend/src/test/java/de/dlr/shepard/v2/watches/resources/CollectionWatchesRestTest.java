@@ -48,7 +48,7 @@ class CollectionWatchesRestTest {
   void list_noPagination_returnsAllAndXTotalCount() {
     when(service.list(COLL_APP_ID))
       .thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
-    Response r = resource.list(COLL_APP_ID, null, null);
+    Response r = resource.list(COLL_APP_ID, 0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<WatchIO> body = (List<WatchIO>) r.getEntity();
@@ -98,7 +98,7 @@ class CollectionWatchesRestTest {
   @Test
   void list_page_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
     java.lang.reflect.Method method = CollectionWatchesRest.class.getMethod(
-        "list", String.class, Integer.class, Integer.class);
+        "list", String.class, int.class, int.class);
     var param = java.util.Arrays.stream(method.getParameters())
         .filter(p -> {
           var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
@@ -115,7 +115,7 @@ class CollectionWatchesRestTest {
   @Test
   void list_pageSize_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
     java.lang.reflect.Method method = CollectionWatchesRest.class.getMethod(
-        "list", String.class, Integer.class, Integer.class);
+        "list", String.class, int.class, int.class);
     var param = java.util.Arrays.stream(method.getParameters())
         .filter(p -> {
           var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);

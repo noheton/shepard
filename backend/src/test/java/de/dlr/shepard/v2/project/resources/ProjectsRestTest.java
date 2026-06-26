@@ -50,7 +50,7 @@ class ProjectsRestTest {
   void list_returns200WithAppIds() {
     when(projectsService.listProjectAppIds())
       .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
-    Response r = resource.list(null, null);
+    Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<String> body = (List<String>) r.getEntity();
@@ -61,7 +61,7 @@ class ProjectsRestTest {
   void list_xTotalCountHeader_reflectsUnpagedTotal() {
     when(projectsService.listProjectAppIds())
       .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
-    Response r = resource.list(null, null);
+    Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
@@ -103,6 +103,17 @@ class ProjectsRestTest {
     List<String> body = (List<String>) r.getEntity();
     assertTrue(body.isEmpty(), "page past end should return empty list");
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void list_pageParamsCarryValidationAnnotations() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ProjectsRest.class.getDeclaredMethod(
+        "list", int.class, int.class);
+    java.lang.reflect.Parameter page = m.getParameters()[0];
+    java.lang.reflect.Parameter size = m.getParameters()[1];
+    assertNotNull(page.getAnnotation(jakarta.validation.constraints.PositiveOrZero.class), "page: @PositiveOrZero");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize: @Min");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize: @Max");
   }
 
   // ── get ───────────────────────────────────────────────────────────────────

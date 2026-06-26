@@ -90,7 +90,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_returnsEmptyList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
-    Response r = resource.listUserGroups(null, null, null, null);
+    Response r = resource.listUserGroups(0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
@@ -102,7 +102,7 @@ class UserGroupV2RestTest {
   void listUserGroups_returnsMappedList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class)))
       .thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
-    Response r = resource.listUserGroups(null, null, null, null);
+    Response r = resource.listUserGroups(0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
@@ -307,7 +307,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_orderByParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderBy".equals(p.name()))
         .findFirst();
@@ -318,7 +318,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_orderDescParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", Integer.class, Integer.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderDesc".equals(p.name()))
         .findFirst();
