@@ -1815,7 +1815,7 @@ SSOT: [`aidocs/agent-findings/no-ui-gap-survey-2026-05-24.md`](agent-findings/no
 
 | ID | Item | Size | Status | Notes |
 |---|---|---|---|---|
-| AI1a-UI | Per-user AI settings frontend — admin REST endpoint not yet shipped; placeholder mounted at `/me#ai-settings` advertises the surface | S | gated-on-AI1a-backend | Survey §1; gate on AI1a admin REST |
+| AI1a-UI | Per-user AI settings frontend — `ai.baseUrl` + `ai.model` editable via preferences API (U1d); `ai.apiKey` locked pending U2 encrypted-secret storage. `PlaceholderFragmentPane` replaced by `AiSettingsPane.vue` (2026-06-26). | S | **partial-shipped (2026-06-26)** — `useAiSettings` composable + `AiSettingsPane.vue` + 6 Vitest tests; full unlock on U2 + AI1a backend. | Survey §1; gate on AI1a admin REST + U2 for apiKey. |
 | PG-COLLAPSE-002-UI | Backup configuration UI — placeholder at `/admin#backup` advertises `:BackupConfig` surface from `aidocs/strategy/105`; promotes when the endpoint ships | S | gated-on-PG-COLLAPSE-002 | Survey §2 |
 | AI1b-UI | "Detect anomalies" button on TimeseriesReference page wiring `POST /v2/timeseries-references/{}/detect-anomalies` | XS | **✓ shipped (2026-05-27)** | Survey §3; button + `DetectAnomaliesDialog.vue` (parametrized window/threshold/createAnnotations, inline results table) were already implemented by a prior agent session; row marked shipped on audit confirmation. |
 | AI1c-UI | `qualityScore` badge on TimeseriesReference cards + detail page | XS | **✓ already shipped** (fire-243 audit) — `QualityScoreChip.vue` exists and is rendered in 3+ FE files; row was stale. | Survey §4; sibling of task #62 |
