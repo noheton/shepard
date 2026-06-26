@@ -17,6 +17,7 @@
  * Design: aidocs/platform/191 §decision-2. Backlog: V2CONV-B4.
  */
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
+import BindChannelsDialog from "~/components/scene-graph/BindChannelsDialog.vue";
 import { materializeMapping } from "~/composables/useMaterializeMapping";
 import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
 
@@ -39,6 +40,7 @@ interface PlayEnvelope {
 const loading = ref(true);
 const error = ref<string | null>(null);
 const envelope = ref<PlayEnvelope | null>(null);
+const showBindChannels = ref(false);
 
 const {
   objectUrl: urdfUrl,
@@ -96,7 +98,29 @@ onUnmounted(revokeBlob);
           >
             {{ envelope.playbackStatus }}
           </v-chip>
+          <v-spacer />
+          <v-btn
+            v-if="envelope && !loading"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-link-variant"
+            data-test="bind-channels-btn"
+            @click="showBindChannels = true"
+          >
+            Bind channels
+          </v-btn>
         </div>
+
+        <BindChannelsDialog
+          v-if="envelope"
+          v-model="showBindChannels"
+          :template-app-id="templateAppId"
+          :urdf-file-reference-app-id="envelope.urdfFileReferenceAppId ?? ''"
+          :joints="(envelope.joints ?? []).map(j => ({ name: j.name, type: j.type }))"
+          :current-ts-ref-app-id="envelope.jointTimeseriesReferenceAppId"
+          :current-bindings="envelope.jointChannelBindings"
+          @applied="load"
+        />
 
         <v-alert
           v-if="error"
