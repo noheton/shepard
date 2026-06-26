@@ -84,7 +84,8 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
       const url = `${v2BaseUrl()}/v2/references/${refAppId.value}/annotations`;
       const response = await fetch(url, { headers });
       if (response.ok) {
-        annotations.value = (await response.json()) as TimeseriesAnnotationDto[];
+        const page = await response.json();
+        annotations.value = (page.items ?? page) as TimeseriesAnnotationDto[];
       } else {
         annotations.value = [];
       }

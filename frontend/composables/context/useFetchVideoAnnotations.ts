@@ -61,7 +61,8 @@ export function useFetchVideoAnnotations(
         handleError(fetchError.value, "listVideoAnnotations");
         return;
       }
-      annotations.value = (await response.json()) as VideoAnnotationIO[];
+      const page = await response.json();
+      annotations.value = (page.items ?? page) as VideoAnnotationIO[];
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Network error";

@@ -11,6 +11,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service.ResolvedReference;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
@@ -108,9 +109,11 @@ class ReferenceAnnotationRestTest {
     var r = resource.list(REF_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var rows = (List<Map<String, Object>>) r.getEntity();
-    assertThat(rows).hasSize(1);
-    assertThat(rows.get(0).get("label")).isEqualTo("spike");
+    var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.total()).isEqualTo(1);
+    assertThat(page.page()).isEqualTo(0);
+    assertThat(page.items().get(0).get("label")).isEqualTo("spike");
   }
 
   @Test
@@ -118,6 +121,10 @@ class ReferenceAnnotationRestTest {
     when(handler.listAnnotations(REF_ID)).thenReturn(Collections.emptyList());
     var r = resource.list(REF_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
+    assertThat(page.items()).isEmpty();
+    assertThat(page.total()).isEqualTo(0);
   }
 
   // ── create ──────────────────────────────────────────────────────────────

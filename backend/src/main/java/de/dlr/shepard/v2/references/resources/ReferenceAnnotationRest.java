@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service.ResolvedReference;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
@@ -148,7 +149,7 @@ public class ReferenceAnnotationRest {
   public Response list(@PathParam("appId") String appId, @Context SecurityContext sc) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
       List<Map<String, Object>> rows = r.handler().listAnnotations(appId);
-      return Response.ok(rows).build();
+      return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
     });
   }
 
