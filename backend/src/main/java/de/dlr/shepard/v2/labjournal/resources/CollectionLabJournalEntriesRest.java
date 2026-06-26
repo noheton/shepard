@@ -10,8 +10,11 @@ import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -87,9 +90,8 @@ public class CollectionLabJournalEntriesRest {
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +
       "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.\n\n" +
-      "Pagination: supply both `page` (0-based) and `pageSize` (positive) to slice the result. " +
-      "Omitting either parameter (or supplying 0 for pageSize) returns all entries — " +
-      "the original bulk-fetch behaviour is preserved for backward compatibility."
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total entry count before paging."
   )
   @APIResponse(
     responseCode = "200",
@@ -101,10 +103,10 @@ public class CollectionLabJournalEntriesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
-    @Parameter(description = "Zero-based page index. Only effective when pageSize > 0. When omitted with no pageSize, all entries are returned (bulk-fetch mode for backward compatibility).")
-    @QueryParam("page") @PositiveOrZero Integer page,
-    @Parameter(description = "Page size. When omitted or 0, all entries are returned (bulk-fetch backward-compat mode). Server-side cap: 200.")
-    @QueryParam("pageSize") @PositiveOrZero Integer pageSize,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
@@ -140,19 +142,10 @@ public class CollectionLabJournalEntriesRest {
       }
       ios.add(new LabJournalEntryIO(e));
     }
-    if (pageSize != null && pageSize > 0) {
-      // Use long arithmetic to avoid int overflow when page and pageSize are both large.
-      // The downcast back to int is safe: fromL < ios.size() which always fits in int.
-      long fromL = (long) (page != null ? page : 0) * pageSize;
-      if (fromL >= ios.size()) {
-        return Response.ok(List.of()).build();
-      }
-      int from = (int) fromL;
-      // Long arithmetic prevents overflow when pageSize is near Integer.MAX_VALUE.
-      int to = (int) Math.min((long) from + pageSize, ios.size());
-      ios = ios.subList(from, to);
-    }
-    return Response.ok(ios).build();
+    long total = ios.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(ios.subList(from, to)).header("X-Total-Count", total).build();
   }
 
   private static Response problem(String type, String title, Response.Status status, String detail) {

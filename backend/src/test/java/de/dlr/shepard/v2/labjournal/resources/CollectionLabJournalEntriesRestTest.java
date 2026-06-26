@@ -79,25 +79,25 @@ class CollectionLabJournalEntriesRestTest {
   @Test
   void list_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.list(COLL_APP_ID, 0, 50, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void list_returns404WhenCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.list(COLL_APP_ID, 0, 50, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void list_returns403WhenNoReadPermission() {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    assertThat(resource.list(COLL_APP_ID, null, null, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.list(COLL_APP_ID, 0, 50, sc).getStatus()).isEqualTo(403);
   }
 
   @Test
   void list_returns200WithEntriesAndDataObjectIdPopulated() {
-    var r = resource.list(COLL_APP_ID, null, null, sc);
+    var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -132,7 +132,7 @@ class CollectionLabJournalEntriesRestTest {
         buildEntry(11L, 101L, DO_APP_ID_1, "hydrated", new Date(2_000_000L)),
         orphan
       ));
-    var r = resource.list(COLL_APP_ID, null, null, sc);
+    var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -145,7 +145,7 @@ class CollectionLabJournalEntriesRestTest {
   @Test
   void list_returns200WithEmptyListWhenNoEntries() {
     when(entriesDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of());
-    var r = resource.list(COLL_APP_ID, null, null, sc);
+    var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -154,7 +154,7 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_usesCollectionOgmIdForPermissionCheck() {
-    resource.list(COLL_APP_ID, null, null, sc);
+    resource.list(COLL_APP_ID, 0, 50, sc);
     verify(permissionsService).isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER));
   }
 
@@ -179,7 +179,7 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_nullPageAndSizeReturnsAllEntries() {
-    var r = resource.list(COLL_APP_ID, null, null, sc);
+    var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var body = (List<LabJournalEntryIO>) r.getEntity();
@@ -190,7 +190,7 @@ class CollectionLabJournalEntriesRestTest {
 
   private static java.lang.reflect.Parameter listParam(String qpName) throws NoSuchMethodException {
     java.lang.reflect.Method m = CollectionLabJournalEntriesRest.class.getMethod(
-        "list", String.class, Integer.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+        "list", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
     return java.util.Arrays.stream(m.getParameters())
         .filter(p -> {
           var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);

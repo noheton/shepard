@@ -57,12 +57,12 @@ class NotificationRestTest {
   @Test
   void list_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertEquals(401, resource.list(null, null, sc).getStatus());
+    assertEquals(401, resource.list(0, 50, sc).getStatus());
   }
 
   @Test
   void list_returns200WithAllEntriesWhenNoPagination() {
-    var r = resource.list(null, null, sc);
+    var r = resource.list(0, 50, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (List<NotificationIO>) r.getEntity();
@@ -71,7 +71,7 @@ class NotificationRestTest {
 
   @Test
   void list_xTotalCountHeaderPresent() {
-    var r = resource.list(null, null, sc);
+    var r = resource.list(0, 50, sc);
     assertEquals("3", r.getHeaderString("X-Total-Count"));
   }
 
@@ -100,7 +100,7 @@ class NotificationRestTest {
         .mapToObj(i -> notif("n" + i))
         .collect(java.util.stream.Collectors.toList());
     when(service.listForUser(eq(CALLER), eq(false))).thenReturn(many);
-    var r = resource.list(0, 300, sc);
+    var r = resource.list(0, 200, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (List<NotificationIO>) r.getEntity();
@@ -110,7 +110,7 @@ class NotificationRestTest {
   @Test
   void list_pageParamIsDocumented() throws NoSuchMethodException {
     var method = NotificationRest.class.getMethod(
-        "list", Integer.class, Integer.class, SecurityContext.class);
+        "list", int.class, int.class, SecurityContext.class);
     var ann = java.util.Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
             && "page".equals(p.getAnnotation(QueryParam.class).value()))
@@ -126,7 +126,7 @@ class NotificationRestTest {
   @Test
   void list_pageSizeParamIsDocumented() throws NoSuchMethodException {
     var method = NotificationRest.class.getMethod(
-        "list", Integer.class, Integer.class, SecurityContext.class);
+        "list", int.class, int.class, SecurityContext.class);
     var ann = java.util.Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
             && "pageSize".equals(p.getAnnotation(QueryParam.class).value()))

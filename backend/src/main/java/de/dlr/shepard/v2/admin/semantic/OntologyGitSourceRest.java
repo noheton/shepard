@@ -27,6 +27,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.ws.rs.DefaultValue;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -85,9 +89,8 @@ public class OntologyGitSourceRest {
     summary = "List all ontology git sources.",
     description = "Returns every registered OntologyGitSource (enabled and disabled), " +
     "ordered by name. Includes last-ingest status and error for quick health assessment.\n\n" +
-    "Pagination (APISIMP-PAGINATION-LIST-GIT-SOURCES): supply `page` (0-based) and " +
-    "`pageSize` (1–200, default 50) to receive a slice. Omit both to return all sources. " +
-    "`X-Total-Count` header carries the total count before paging."
+    "Pagination (APISIMP-PAGINATION-LIST-GIT-SOURCES): `page` (0-based, default 0) and " +
+    "`pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging."
   )
   @APIResponse(
     responseCode = "200",
@@ -97,10 +100,10 @@ public class OntologyGitSourceRest {
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role (RFC 7807).")
   public Response list(
-    @Parameter(description = "Zero-based page index. Effective only when pageSize is supplied. Omit to return all sources.")
-    @QueryParam("page") Integer page,
-    @Parameter(description = "Page size (1–200). Omit to return all sources.")
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     Response denied = guardAdmin(securityContext);
@@ -111,15 +114,9 @@ public class OntologyGitSourceRest {
     for (OntologyGitSource s : sources) all.add(OntologyGitSourceIO.from(s));
 
     long total = all.size();
-    List<OntologyGitSourceIO> result = all;
-    if (pageSize != null && pageSize > 0) {
-      int safeSize = Math.min(pageSize, 200);
-      int safePage = page != null ? page : 0;
-      int from = (int) Math.min((long) safePage * safeSize, total);
-      int to = (int) Math.min((long) from + safeSize, total);
-      result = all.subList(from, to);
-    }
-    return Response.ok(result).header("X-Total-Count", total).build();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
   }
 
   // ────────────────────────────────────────────────────────────────────────

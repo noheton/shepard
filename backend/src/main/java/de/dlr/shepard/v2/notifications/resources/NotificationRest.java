@@ -6,8 +6,12 @@ import de.dlr.shepard.v2.notifications.io.NotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -59,10 +63,10 @@ public class NotificationRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
-    @Parameter(description = "Zero-based page index for pagination. Effective only when pageSize > 0. Omit to return all notifications.")
-    @QueryParam("page") Integer page,
-    @Parameter(description = "Page size for pagination (1–200). Omit to return all notifications.")
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String username = resolveUsername(sc);
@@ -74,17 +78,9 @@ public class NotificationRest {
       .map(NotificationIO::from)
       .toList();
     int total = all.size();
-    List<NotificationIO> result;
-    if (pageSize != null && pageSize > 0) {
-      int safeSize = Math.min(pageSize, 200);
-      int safePage = page != null ? page : 0;
-      int from = (int) Math.min((long) safePage * safeSize, total);
-      int to = (int) Math.min((long) from + safeSize, total);
-      result = all.subList(from, to);
-    } else {
-      result = all;
-    }
-    return Response.ok(result).header("X-Total-Count", total).build();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
   }
 
   @GET

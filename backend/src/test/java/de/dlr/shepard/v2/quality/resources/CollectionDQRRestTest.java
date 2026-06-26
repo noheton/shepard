@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.quality.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -50,7 +51,7 @@ class CollectionDQRRestTest {
   @Test
   void listReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.list(COLL_APP_ID, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
     verify(service, never()).list(anyString(), anyString());
   }
@@ -60,7 +61,7 @@ class CollectionDQRRestTest {
     DQRIO dqr = makeDQRIO("dqr-1", "Must have name");
     when(service.list(COLL_APP_ID, ALICE)).thenReturn(List.of(dqr));
 
-    Response r = resource.list(COLL_APP_ID, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -73,7 +74,7 @@ class CollectionDQRRestTest {
   void listPropagates403FromService() {
     when(service.list(eq(COLL_APP_ID), eq(ALICE))).thenThrow(new ForbiddenException());
     org.junit.jupiter.api.Assertions.assertThrows(ForbiddenException.class,
-      () -> resource.list(COLL_APP_ID, null, null, securityContext));
+      () -> resource.list(COLL_APP_ID, 0, 50, securityContext));
   }
 
   @Test
@@ -95,20 +96,31 @@ class CollectionDQRRestTest {
   }
 
   @Test
-  void listClampsPageSizeTo200() {
+  void listMaxPageSizeReturnsFirstTwoHundred() {
     List<DQRIO> all = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
       all.add(makeDQRIO("dqr-" + i, "Rule " + i));
     }
     when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
 
-    Response r = resource.list(COLL_APP_ID, 0, 999, securityContext);
+    Response r = resource.list(COLL_APP_ID, 0, 200, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<DQRIO> body = (List<DQRIO>) r.getEntity();
     assertEquals(200, body.size());
     assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void listPageParamsCarryValidationAnnotations() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionDQRRest.class.getDeclaredMethod(
+        "list", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter page = m.getParameters()[1];
+    java.lang.reflect.Parameter size = m.getParameters()[2];
+    assertNotNull(page.getAnnotation(jakarta.validation.constraints.PositiveOrZero.class), "page: @PositiveOrZero");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize: @Min");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize: @Max");
   }
 
   @Test

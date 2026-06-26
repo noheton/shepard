@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.semantic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
@@ -46,14 +47,14 @@ class OntologyGitSourceRestTest {
   @Test
   void listReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.list(null, null, securityContext);
+    Response r = resource.list(0, 50, securityContext);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void listReturns200WithXTotalCount() {
     when(gitSourceDAO.listAll()).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
-    Response r = resource.list(null, null, securityContext);
+    Response r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals(2L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     @SuppressWarnings("unchecked")
@@ -76,16 +77,27 @@ class OntologyGitSourceRestTest {
   }
 
   @Test
-  void listClampsPageSizeTo200() {
+  void listMaxPageSizeReturnsFirstTwoHundred() {
     List<OntologyGitSource> big = new ArrayList<>();
     for (int i = 0; i < 250; i++) big.add(makeSource("src-" + i));
     when(gitSourceDAO.listAll()).thenReturn(big);
-    Response r = resource.list(0, 500, securityContext);
+    Response r = resource.list(0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     List<OntologyGitSourceIO> body = (List<OntologyGitSourceIO>) r.getEntity();
     assertEquals(200, body.size());
     assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
+  }
+
+  @Test
+  void listPageParamsCarryValidationAnnotations() throws NoSuchMethodException {
+    java.lang.reflect.Method m = de.dlr.shepard.v2.admin.semantic.OntologyGitSourceRest.class.getDeclaredMethod(
+        "list", int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter page = m.getParameters()[0];
+    java.lang.reflect.Parameter size = m.getParameters()[1];
+    assertNotNull(page.getAnnotation(jakarta.validation.constraints.PositiveOrZero.class), "page: @PositiveOrZero");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize: @Min");
+    assertNotNull(size.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize: @Max");
   }
 
   @Test
