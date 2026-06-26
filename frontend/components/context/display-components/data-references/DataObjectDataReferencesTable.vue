@@ -79,6 +79,15 @@ function openDeleteDialog(item: DataTableElement) {
   showDeleteDialog.value = true;
 }
 
+// ── REF-EDIT-4: rename dialog for FileBundleReference rows ───────────────────
+const showEditBundleDialog = ref(false);
+const editBundleTarget = ref<DataTableElement | null>(null);
+
+function openEditBundleDialog(item: DataTableElement) {
+  editBundleTarget.value = item;
+  showEditBundleDialog.value = true;
+}
+
 const { data: session } = useAuth();
 
 function v2BaseUrl(): string {
@@ -512,6 +521,13 @@ function formatDuration(seconds: number | null | undefined): string {
             icon="mdi-tag-outline"
             @click="() => openAddAnnotationDialog(item.meta.appId!, legacyKindFor(item.type))"
           />
+          <!-- REF-EDIT-4: rename action for FileBundleReference rows -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'File Bundle' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            aria-label="Rename file bundle reference"
+            @click="() => openEditBundleDialog(item)"
+          />
           <!-- New kinds: SEMA-V6 annotation dialog -->
           <ActionButton
             v-if="isAllowedToEditCollection && NEW_KINDS.has(item.type) && item.meta.appId"
@@ -622,6 +638,15 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-4: rename dialog for FileBundleReference -->
+  <EditFileBundleReferenceDialog
+    v-if="showEditBundleDialog && editBundleTarget?.meta.appId"
+    v-model:show-dialog="showEditBundleDialog"
+    :file-bundle-reference-app-id="editBundleTarget.meta.appId!"
+    :current-name="editBundleTarget.name"
+    @saved="() => emit('refresh')"
   />
 </template>
 
