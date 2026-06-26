@@ -43,6 +43,35 @@ From the JSONL transcripts at `/root/.claude/projects/-opt-shepard/*.jsonl` — 
 
 **The 63% cache-read finding matters:** a naive per-token estimate without cache-discount would overcount by ~2–3×. Anthropic's prompt caching changes the energy story materially — this is the kind of provider-specific finding that makes the case study publishable.
 
+### §0.1b API token-spend $$ cost estimate (2026-06-26) — MEASURED (local CC) + estimated (cloud)
+
+Measured by summing `usage.{output,cache_creation_input,cache_read_input}_tokens`
+across the **10 local Claude Code transcripts** in `/root/.claude/projects/-opt-shepard/*.jsonl`
+(56,820 usage records). **This is the interactive Claude Code instance ONLY** — it
+excludes the hourly cloud dispatcher (RemoteTrigger) and the cloud research/persona
+agent fleet, which together produced most of the ~2,100 merged PRs.
+
+| Component        | Tokens   | Opus 4.x rate | Cost (Opus) |
+|------------------|----------|---------------|-------------|
+| cache-read       | 15.85 B  | $1.50 /MTok   | $23,778     |
+| cache-creation   | 0.355 B  | $18.75 /MTok  | $6,656      |
+| output           | 0.056 B  | $75 /MTok     | $4,200      |
+| input (uncached) | ~0 B     | $15 /MTok     | ~$0         |
+| **RAW total**    | **16.26 B** | —          | **≈ $34,600** |
+
+- **Cache-read share: 97%.** The cost is almost entirely *re-reading the per-turn
+  context* — CLAUDE.md (~15k tok) + the ~300-item TaskList re-injected on every turn
+  — not generation. Output is only ~$4.2k of the $34.6k.
+- Same 16.26 B tokens at **Sonnet** rates ($3/$15, cache-read $0.30) ≈ **$6.9k** — a
+  5× difference. The Opus cache-read premium is the dominant lever.
+- **Cloud dispatcher + research agents** (not in these transcripts): est. ~$5–13k
+  (Sonnet, heavily cached) → **whole-project order ≈ $40–50k.**
+- **Correction:** an earlier conversational guess of "0.6–1.5 B tokens / ~$0.8–1B"
+  was ~25× too low on tokens; the measured raw for the local instance alone is 16.26 B.
+- **Biggest reduction lever:** stop re-injecting the full TaskList + heavy CLAUDE.md
+  every turn (a recurring per-turn cache-read tax × thousands of turns), and/or route
+  routine/idle work (e.g. the watchdog loop) to Sonnet/Haiku instead of Opus.
+
 ### §0.2 Heuristic backfill (2026-05-20 → 2026-05-23) — MEDIUM/LOW confidence
 
 Cumulative across **214 commits** estimated from commit shape (token volumes inferred from diff size, not measured):
