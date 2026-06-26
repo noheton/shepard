@@ -8,7 +8,6 @@
 
 import type { SparqlBinding } from "~/composables/context/admin/useSparqlPlayground";
 import { useSparqlPlayground } from "~/composables/context/admin/useSparqlPlayground";
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
 useHead({ title: "SPARQL playground | shepard" });
 
@@ -189,13 +188,6 @@ const showRaw = ref(false);
       </v-card>
     </template>
 
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="N1f"
-      design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
-      endpoint="/v2/semantic/{repoAppId}/sparql"
-      notes="Backend live since N1f shipped. Table rendering shipped in #64. Full editor / autocomplete queued."
-    />
   </v-container>
 </template>
 
