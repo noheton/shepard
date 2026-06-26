@@ -14,6 +14,13 @@ import { useFetchCollectionContainers } from "~/composables/context/useFetchColl
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateFileReference } from "~/composables/references/useCreateFileReference";
 import { useCreateSingletonFileReference } from "~/composables/references/useCreateSingletonFileReference";
+import {
+  REFERENCE_PREDICATE,
+  fetchReferencePrefillAnnotations,
+  findAnnotationByPredicate,
+  parseBundleLayoutHint,
+  resolveFileNamingPlaceholders,
+} from "~/composables/references/useReferenceTemplatePrefill";
 import type { FileRef } from "~/components/context/data-references/create-dialog/DataRef";
 
 interface FileUploadDialogProps {
@@ -116,6 +123,29 @@ const newFileContainerPermissionType = ref<PermissionType>(
 
 const newReferenceName = ref<string>("");
 const isFileContainerDefault = ref<boolean>(false);
+
+// REF-EDIT-TPL-4 — template-driven bundle name prefill.
+// Fetched once on mount from the parent DataObject's bundleLayout annotation.
+// Stored separately so the file-selection auto-fill can restore it for
+// multi-file bundles (where auto-fill would otherwise leave the name blank).
+const templateBundleName = ref<string>("");
+
+onMounted(async () => {
+  if (!props.dataObjectAppId || uploadMode.value !== "bundle") return;
+  try {
+    const anns = await fetchReferencePrefillAnnotations(props.dataObjectAppId);
+    const ann = findAnnotationByPredicate(anns, REFERENCE_PREDICATE.BUNDLE_LAYOUT);
+    const hint = parseBundleLayoutHint(ann);
+    if (hint?.name) {
+      templateBundleName.value = resolveFileNamingPlaceholders(hint.name);
+      if (!newReferenceName.value) {
+        newReferenceName.value = templateBundleName.value;
+      }
+    }
+  } catch {
+    // fire-and-forget — prefill failure is silent; dialog still opens
+  }
+});
 
 // CC1d: "link" = link to an existing collection container; "create" = create a new one.
 // Default to "link" so the most common case (container already exists) requires zero
@@ -404,7 +434,11 @@ function updateReferenceNameByFileName() {
     if (files.value.length === 1) {
       newReferenceName.value = `${currentDateShortForm()}-${files.value[0]!.name}`;
     } else {
-      newReferenceName.value = "";
+      // For multi-file bundles: restore the template-prefilled name if the
+      // user hasn't typed anything, otherwise leave their value intact.
+      if (!newReferenceName.value || newReferenceName.value === templateBundleName.value) {
+        newReferenceName.value = templateBundleName.value;
+      }
     }
   }
 }
@@ -418,6 +452,14 @@ watch(
   },
   { deep: true },
 );
+
+// REF-EDIT-TPL-4 — when the user switches to bundle mode, apply the
+// template-prefilled name if one was fetched and the field is still empty.
+watch(uploadMode, (mode: "singleton" | "bundle") => {
+  if (mode === "bundle" && !newReferenceName.value && templateBundleName.value) {
+    newReferenceName.value = templateBundleName.value;
+  }
+});
 
 // CC1c: pre-fill the container name with "<Collection name> — file store" when
 // the user switches to the "Create new" tab. Only fills when the field is still
