@@ -92,6 +92,9 @@ const deleteWarning = computed<string | undefined>(() => {
   );
 });
 
+// P21-V2-METADATA-EDIT-2: rename dialog state.
+const showRenameDialog = ref(false);
+
 const fetchData = async () => {
   await containerAccessor.fetchData();
   containerAccessor.fetchMeasurements();
@@ -152,6 +155,21 @@ useHead({
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
+                  <v-btn
+                    v-if="containerAccessor.isAllowedToEditData.value && containerAppId"
+                    icon="mdi-pencil-outline"
+                    size="small"
+                    variant="text"
+                    title="Rename container"
+                    @click="showRenameDialog = true"
+                  />
+                  <EditContainerNameDialog
+                    v-if="containerAppId"
+                    v-model:show-dialog="showRenameDialog"
+                    :container-app-id="containerAppId"
+                    :current-name="containerAccessor.container.value?.name ?? ''"
+                    @saved="fetchData"
+                  />
                   <UploadFilesButton
                     v-if="containerAccessor.isAllowedToEditData.value"
                     accept=".csv"
