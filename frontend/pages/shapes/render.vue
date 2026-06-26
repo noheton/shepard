@@ -8,7 +8,7 @@
  *
  *   "trace-3d" | "tresjs"  → <Trace3DView> (flat-array adapter + legend)
  *   "table"                → inline <v-table> of channel values
- *   (unknown)              → <PlaceholderImplStatus> noting the unsupported hint
+ *   (unknown)              → <v-alert type="warning"> unsupported renderer hint
  *
  * Beta: bindings come back status=DECLARED (no live resolution).
  * User supplies the TS container ID to complete the pipeline until TPL2c ships.
@@ -32,7 +32,6 @@ import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
 import UrdfView from "~/components/container/timeseries/UrdfView.vue";
 import ThermographyView from "~/components/container/timeseries/ThermographyView.vue";
 import type { AnnotationMap } from "~/utils/thermographyChannelPicker";
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import Trace3DEditChannelsDialog from "~/components/container/timeseries/Trace3DEditChannelsDialog.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/components/container/timeseries/Trace3DChannelPicker.vue";
 // UI-SHAPES-RENDER-PICKERS-001 — replace bare appId text inputs with pickers.
@@ -978,7 +977,7 @@ onMounted(() => {
           </v-table>
         </v-card>
 
-        <!-- unknown renderer → placeholder with hint -->
+        <!-- unknown renderer → warning alert -->
         <v-alert v-else type="warning" variant="tonal" class="mt-2" density="compact">
           <strong>Unsupported renderer: <code>{{ renderer ?? "(none)" }}</code></strong>
           — {{ tracePoints.length }} points were fetched but no frontend component handles this renderer hint yet.
@@ -1108,14 +1107,6 @@ onMounted(() => {
       </v-card>
     </template>
 
-    <!-- ── placeholder status ─────────────────────────────────────────────── -->
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="TPL2b"
-      design-doc="aidocs/semantics/98-shapes-views-and-process-model.md"
-      endpoint="/v2/shapes/render"
-      notes="Beta: all bindings return status=DECLARED. Live channel resolution (TPL2c) ships after the TS-ID migration (aidocs/platform/87). Color-mapped 3D trace via Three.js."
-    />
 
     <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
     <Trace3DEditChannelsDialog
