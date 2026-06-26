@@ -28,6 +28,17 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # MFFD-INGEST-OOM (2026-06-26): the base compose caps the backend JVM at
+      # -Xmx2G (upstream default). Under MFFD-scale ingest the .svdx parse path
+      # buffers into heap; the importer's warmup re-verification burst (~450
+      # concurrent .svdx re-uploads) exhausted the 2G heap → OutOfMemoryError
+      # storm → backend healthy-but-dead (the shallow healthcheck still passed
+      # while every content PUT 503'd on "Read timed out"). The nuclide host has
+      # 32G; raise the heap so the ingest survives the burst, and add
+      # ExitOnOutOfMemoryError so a future OOM fails fast (container exits →
+      # `restart: unless-stopped` brings it back fresh) instead of zombieing.
+      # Overrides the base compose JAVA_OPTS.
+      JAVA_OPTS: "-Xms2G -Xmx10G -XX:+ExitOnOutOfMemoryError"
       # Internal HTTP URL so the backend can reach Keycloak for OIDC discovery
       # without going through the public internet. Keycloak's KC_HOSTNAME forces
       # the issuer in the discovery doc and in tokens to the public HTTPS URL,
