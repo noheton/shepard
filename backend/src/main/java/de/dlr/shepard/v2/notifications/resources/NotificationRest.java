@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.notifications.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.io.NotificationCountIO;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
@@ -58,8 +59,8 @@ public class NotificationRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of notifications. Header X-Total-Count = total count before paging.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = NotificationIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
@@ -80,7 +81,9 @@ public class NotificationRest {
     int total = all.size();
     int from = (int) Math.min((long) page * pageSize, total);
     int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+        .build();
   }
 
   @GET

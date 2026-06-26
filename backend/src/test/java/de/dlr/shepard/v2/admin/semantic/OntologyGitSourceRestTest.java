@@ -9,6 +9,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.OntologyGitSourceDAO;
 import de.dlr.shepard.context.semantic.entities.OntologyGitSource;
 import de.dlr.shepard.context.semantic.services.OntologyGitIngestService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyGitSourceIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -58,8 +59,8 @@ class OntologyGitSourceRestTest {
     assertEquals(200, r.getStatus());
     assertEquals(2L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     @SuppressWarnings("unchecked")
-    List<OntologyGitSourceIO> body = (List<OntologyGitSourceIO>) r.getEntity();
-    assertEquals(2, body.size());
+    PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
+    assertEquals(2, body.items().size());
   }
 
   @Test
@@ -71,9 +72,9 @@ class OntologyGitSourceRestTest {
     assertEquals(200, r.getStatus());
     assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     @SuppressWarnings("unchecked")
-    List<OntologyGitSourceIO> body = (List<OntologyGitSourceIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals("a1", body.get(0).getAppId());
+    PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals("a1", body.items().get(0).getAppId());
   }
 
   @Test
@@ -84,8 +85,8 @@ class OntologyGitSourceRestTest {
     Response r = resource.list(0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<OntologyGitSourceIO> body = (List<OntologyGitSourceIO>) r.getEntity();
-    assertEquals(200, body.size());
+    PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
+    assertEquals(200, body.items().size());
     assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -108,9 +109,9 @@ class OntologyGitSourceRestTest {
     Response r = resource.list(1, 2, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<OntologyGitSourceIO> body = (List<OntologyGitSourceIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("a3", body.get(0).getAppId());
+    PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("a3", body.items().get(0).getAppId());
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

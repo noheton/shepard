@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.watches.entities.Watch;
 import de.dlr.shepard.v2.watches.io.WatchIO;
 import de.dlr.shepard.v2.watches.services.WatchService;
@@ -51,8 +52,8 @@ class CollectionWatchesRestTest {
     Response r = resource.list(COLL_APP_ID, 0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<WatchIO> body = (List<WatchIO>) r.getEntity();
-    assertEquals(2, body.size());
+    PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
+    assertEquals(2, body.items().size());
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
@@ -63,9 +64,9 @@ class CollectionWatchesRestTest {
     Response r = resource.list(COLL_APP_ID, 0, 1);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<WatchIO> body = (List<WatchIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(W1_APP_ID, body.get(0).watchAppId());
+    PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(W1_APP_ID, body.items().get(0).watchAppId());
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
@@ -78,8 +79,8 @@ class CollectionWatchesRestTest {
     Response r = resource.list(COLL_APP_ID, 0, 999);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<WatchIO> body = (List<WatchIO>) r.getEntity();
-    assertTrue(body.size() <= 200, "pageSize must be capped at 200");
+    PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
+    assertTrue(body.items().size() <= 200, "pageSize must be capped at 200");
     assertEquals("50", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
@@ -90,8 +91,8 @@ class CollectionWatchesRestTest {
     Response r = resource.list(COLL_APP_ID, 99, 10);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<WatchIO> body = (List<WatchIO>) r.getEntity();
-    assertTrue(body.isEmpty(), "page past end must return empty list");
+    PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
+    assertTrue(body.items().isEmpty(), "page past end must return empty list");
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 

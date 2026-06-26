@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.context.semantic.daos.OntologyGitSourceDAO;
 import de.dlr.shepard.context.semantic.entities.OntologyGitSource;
 import de.dlr.shepard.context.semantic.services.OntologyGitIngestService;
@@ -94,8 +95,8 @@ public class OntologyGitSourceRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Git sources (may be empty). Header X-Total-Count = total count before paging.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = OntologyGitSourceIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role (RFC 7807).")
@@ -116,7 +117,9 @@ public class OntologyGitSourceRest {
     long total = all.size();
     int from = (int) Math.min((long) page * pageSize, total);
     int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+        .build();
   }
 
   // ────────────────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.entities.Notification;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
@@ -65,8 +66,8 @@ class NotificationRestTest {
     var r = resource.list(0, 50, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<NotificationIO>) r.getEntity();
-    assertEquals(3, body.size());
+    var body = (PagedResponseIO<NotificationIO>) r.getEntity();
+    assertEquals(3, body.items().size());
   }
 
   @Test
@@ -81,8 +82,8 @@ class NotificationRestTest {
     assertEquals(200, r.getStatus());
     assertEquals("3", r.getHeaderString("X-Total-Count"));
     @SuppressWarnings("unchecked")
-    var body = (List<NotificationIO>) r.getEntity();
-    assertEquals(2, body.size());
+    var body = (PagedResponseIO<NotificationIO>) r.getEntity();
+    assertEquals(2, body.items().size());
   }
 
   @Test
@@ -90,8 +91,8 @@ class NotificationRestTest {
     var r = resource.list(99, 10, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<NotificationIO>) r.getEntity();
-    assertEquals(0, body.size());
+    var body = (PagedResponseIO<NotificationIO>) r.getEntity();
+    assertEquals(0, body.items().size());
   }
 
   @Test
@@ -103,8 +104,8 @@ class NotificationRestTest {
     var r = resource.list(0, 200, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<NotificationIO>) r.getEntity();
-    assertEquals(200, body.size());
+    var body = (PagedResponseIO<NotificationIO>) r.getEntity();
+    assertEquals(200, body.items().size());
   }
 
   @Test

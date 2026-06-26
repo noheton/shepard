@@ -15,6 +15,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
@@ -390,10 +391,10 @@ public class ContainersV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of ContainerV2IO (may be empty). Header X-Total-Count = total count before paging.",
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = ContainerV2IO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "400", description = "Missing/unknown kind.")
@@ -419,7 +420,9 @@ public class ContainersV2Rest {
       int total = all.size();
       int from = (int) Math.min((long) page * pageSize, total);
       int to = (int) Math.min((long) from + pageSize, total);
-      return Response.ok(all.subList(from, to)).header("X-Total-Count", total).build();
+      return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+          .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+          .build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     }

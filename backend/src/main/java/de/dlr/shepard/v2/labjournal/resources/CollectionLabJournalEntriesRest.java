@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -95,8 +96,8 @@ public class CollectionLabJournalEntriesRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "All lab journal entries in the collection (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = LabJournalEntryIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -145,7 +146,9 @@ public class CollectionLabJournalEntriesRest {
     long total = ios.size();
     int from = (int) Math.min((long) page * pageSize, total);
     int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(ios.subList(from, to)).header("X-Total-Count", total).build();
+    return Response.ok(new PagedResponseIO<>(ios.subList(from, to), total, page, pageSize))
+        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+        .build();
   }
 
   private static Response problem(String type, String title, Response.Status status, String detail) {

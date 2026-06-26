@@ -11,6 +11,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
@@ -100,17 +101,17 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
-    assertThat(body).hasSize(2);
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
     // dataObjectId field must be populated — the frontend uses it to group.
-    assertThat(body.get(0).getDataObjectId()).isEqualTo(101L);
-    assertThat(body.get(1).getDataObjectId()).isEqualTo(102L);
+    assertThat(body.items().get(0).getDataObjectId()).isEqualTo(101L);
+    assertThat(body.items().get(1).getDataObjectId()).isEqualTo(102L);
     // APISIMP-LJE-DATAOBJECTID-NUMERIC: dataObjectAppId (UUID v7) must also be populated.
-    assertThat(body.get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
-    assertThat(body.get(1).getDataObjectAppId()).isEqualTo(DO_APP_ID_2);
+    assertThat(body.items().get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
+    assertThat(body.items().get(1).getDataObjectAppId()).isEqualTo(DO_APP_ID_2);
     // id and journalContent must round-trip.
-    assertThat(body.get(0).getId()).isEqualTo(11L);
-    assertThat(body.get(0).getJournalContent()).isEqualTo("newer");
+    assertThat(body.items().get(0).getId()).isEqualTo(11L);
+    assertThat(body.items().get(0).getJournalContent()).isEqualTo("newer");
   }
 
   /**
@@ -135,11 +136,11 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
     // The orphan is skipped; only the hydrated entry survives.
-    assertThat(body).hasSize(1);
-    assertThat(body.get(0).getDataObjectId()).isEqualTo(101L);
-    assertThat(body.get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
+    assertThat(body.items()).hasSize(1);
+    assertThat(body.items().get(0).getDataObjectId()).isEqualTo(101L);
+    assertThat(body.items().get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
   }
 
   @Test
@@ -148,8 +149,8 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
-    assertThat(body).isEmpty();
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    assertThat(body.items()).isEmpty();
   }
 
   @Test
@@ -163,9 +164,9 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 1, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
-    assertThat(body).hasSize(1);
-    assertThat(body.get(0).getId()).isEqualTo(11L);
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(1);
+    assertThat(body.items().get(0).getId()).isEqualTo(11L);
   }
 
   @Test
@@ -173,8 +174,8 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 99, 10, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
-    assertThat(body).isEmpty();
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    assertThat(body.items()).isEmpty();
   }
 
   @Test
@@ -182,8 +183,8 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<LabJournalEntryIO>) r.getEntity();
-    assertThat(body).hasSize(2);
+    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
   }
 
   // ── @Parameter documentation regression tests ────────────────────────────

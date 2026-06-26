@@ -26,6 +26,7 @@ import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.containers.spi.ContainerFileDownload;
@@ -674,8 +675,8 @@ class ContainersV2RestTest {
     assertEquals(200, r.getStatus());
     assertEquals("3", r.getHeaderString("X-Total-Count"));
     @SuppressWarnings("unchecked")
-    var body = (List<ContainerV2IO>) r.getEntity();
-    assertEquals(2, body.size());
+    var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
+    assertEquals(2, body.items().size());
   }
 
   @Test
@@ -684,8 +685,8 @@ class ContainersV2RestTest {
     var r = resource.list("file", null, 99, 10, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<ContainerV2IO>) r.getEntity();
-    assertEquals(0, body.size());
+    var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
+    assertEquals(0, body.items().size());
   }
 
   @Test
@@ -697,8 +698,8 @@ class ContainersV2RestTest {
     var r = resource.list("file", null, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<ContainerV2IO>) r.getEntity();
-    assertEquals(200, body.size());
+    var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
+    assertEquals(200, body.items().size());
   }
 
   @Test
