@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 92 |
+| `deployed` | 93 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **481** |
+| **total docs** | **482** |
 | **UNTAGGED** | **0** |
 
 ## fragment (71)
@@ -305,7 +305,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/94-federation-and-dataspaces.md`](strategy/94-federation-and-dataspaces.md) | 94 — Federation and dataspaces: where Shepard sits in Manufacturing-X / Aerospace-X / Catena-X | 2026-05-23 | 2026-06-24 |
 | [`aidocs/strategy/ai-fork-production-readiness-2026-05-23.md`](strategy/ai-fork-production-readiness-2026-05-23.md) | Is the AI-collaborative `noheton/shepard` fork production-ready? | 2026-05-23 | 2026-06-24 |
 | [`aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md`](strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md) | Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis | 2026-05-23 | 2026-06-24 |
-| [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-06-24 |
+| [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-06-26 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-06-24 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-06-24 |
 | [`aidocs/ux/74-auto-refresh-stale-session.md`](ux/74-auto-refresh-stale-session.md) | 74 — Auto-Refresh on Stale Session | 2026-05-23 | 2026-06-24 |
@@ -418,7 +418,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-06-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-06-24 |
 
-## deployed (92)
+## deployed (93)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -449,7 +449,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-18-fire115.md`](agent-findings/apisimp-sweep-2026-06-18-fire115.md) | APISIMP Sweep — fire-115 (2026-06-18) | 2026-06-18 | 2026-06-24 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire137.md`](agent-findings/apisimp-sweep-2026-06-19-fire137.md) | APISIMP Sweep — 2026-06-19 (fire-137) | 2026-06-19 | 2026-06-24 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire145.md`](agent-findings/apisimp-sweep-2026-06-19-fire145.md) | APISIMP Sweep — fire-145 · 2026-06-19 | 2026-06-19 | 2026-06-24 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire238.md`](agent-findings/apisimp-sweep-2026-06-26-fire238.md) | APISIMP Sweep — 2026-06-26 (fire-238) | 2026-06-26 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire238.md`](agent-findings/apisimp-sweep-2026-06-26-fire238.md) | APISIMP Sweep — 2026-06-26 (fire-238) | 2026-06-26 | 2026-06-26 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire241.md`](agent-findings/apisimp-sweep-2026-06-26-fire241.md) | APISIMP Sweep — 2026-06-26 (fire-241) | 2026-06-26 | — |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-26.md`](agent-findings/apisimp-sweep-2026-06-26.md) | APISIMP Sweep — 2026-06-26 (fire-231) | 2026-06-26 | 2026-06-26 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-24 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-24 |
