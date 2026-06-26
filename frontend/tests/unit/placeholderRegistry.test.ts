@@ -57,7 +57,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const ai = findPlaceholder("ai-config");
     expect(ai).toBeDefined();
     expect(ai?.surface).toBe("admin");
-    expect(ai?.backend).toBe("partial");
+    expect(ai?.backend).toBe("shipped"); // real pane shipped 2026-06-26
   });
 
   it("findPlaceholder returns undefined for unknown slugs", () => {
