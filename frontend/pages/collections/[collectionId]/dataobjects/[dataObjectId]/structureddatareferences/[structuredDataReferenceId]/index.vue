@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { StructuredDataReferenceApi } from "@dlr-shepard/backend-client";
 import ActionButton from "~/components/common/data-table/ActionButton.vue";
+import EditStructuredDataReferenceDialog from "~/components/context/display-components/structured-data-references/EditStructuredDataReferenceDialog.vue";
 import type { StructuredDataDataTableItem } from "~/components/context/display-components/structured-data-references/structuredDataDataTableItem";
 import { mapStructuredDataListToDataTableItems } from "~/components/context/display-components/structured-data-references/structuredDataMappingUtil";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
@@ -15,6 +16,7 @@ const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
+const showRenameDialog = ref<boolean>(false);
 const showStructuredDataContentViewerDialog = ref<boolean>(false);
 const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
 const selectedPayload = ref<string>("");
@@ -64,6 +66,16 @@ function onAnnotate() {
 
 function onDelete() {
   showDeleteDialog.value = true;
+}
+
+function onEdit() {
+  showRenameDialog.value = true;
+}
+
+function onNameSaved(newName: string) {
+  if (structuredDataReference.value) {
+    structuredDataReference.value = { ...structuredDataReference.value, name: newName };
+  }
 }
 
 function deleteStructuredDataReference() {
@@ -199,6 +211,7 @@ watch(structuredDataReference, () => {
                 }"
                 :on-annotate="onAnnotate"
                 :on-delete="onDelete"
+                :on-edit="isAllowedToEditCollection ? onEdit : undefined"
                 id-label="ID"
               />
             </v-row>
@@ -310,6 +323,13 @@ watch(structuredDataReference, () => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <EditStructuredDataReferenceDialog
+      v-if="showRenameDialog && structuredDataReference?.appId"
+      v-model:show-dialog="showRenameDialog"
+      :structured-data-reference-app-id="structuredDataReference.appId ?? ''"
+      :current-name="structuredDataReference.name ?? ''"
+      @saved="onNameSaved"
+    />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
