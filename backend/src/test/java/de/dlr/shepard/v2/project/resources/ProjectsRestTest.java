@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.project.io.ProjectByAnnotationIO;
 import de.dlr.shepard.v2.project.io.ProjectIO;
 import de.dlr.shepard.v2.project.io.SubCollectionsIO;
@@ -53,8 +54,8 @@ class ProjectsRestTest {
     Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<String> body = (List<String>) r.getEntity();
-    assertEquals(2, body.size());
+    PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
+    assertEquals(2, body.items().size());
   }
 
   @Test
@@ -73,9 +74,9 @@ class ProjectsRestTest {
     Response r = resource.list(0, 1);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<String> body = (List<String>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(PROJECT_APP_ID, body.get(0));
+    PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(PROJECT_APP_ID, body.items().get(0));
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
@@ -88,8 +89,8 @@ class ProjectsRestTest {
     Response r = resource.list(0, 999);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<String> body = (List<String>) r.getEntity();
-    assertTrue(body.size() <= 200, "pageSize should be capped at 200");
+    PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
+    assertTrue(body.items().size() <= 200, "pageSize should be capped at 200");
     assertEquals("50", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
@@ -100,8 +101,8 @@ class ProjectsRestTest {
     Response r = resource.list(99, 10);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<String> body = (List<String>) r.getEntity();
-    assertTrue(body.isEmpty(), "page past end should return empty list");
+    PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
+    assertTrue(body.items().isEmpty(), "page past end should return empty list");
     assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 

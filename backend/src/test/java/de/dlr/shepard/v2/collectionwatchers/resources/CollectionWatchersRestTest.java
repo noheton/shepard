@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.collectionwatchers.io.CollectionWatcherIO;
 import de.dlr.shepard.v2.collectionwatchers.resources.CollectionWatchersRest;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
@@ -67,8 +68,8 @@ class CollectionWatchersRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
-    assertEquals(1, body.size());
+    PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
+    assertEquals(1, body.items().size());
     assertEquals(1L, r.getHeaderString("X-Total-Count") != null
       ? Long.parseLong(r.getHeaderString("X-Total-Count")) : -1L);
   }
@@ -93,8 +94,8 @@ class CollectionWatchersRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
-    assertEquals(2, body.size());
+    PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
+    assertEquals(2, body.items().size());
     assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -110,8 +111,8 @@ class CollectionWatchersRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
-    assertEquals(200, body.size());
+    PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
+    assertEquals(200, body.items().size());
     assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -139,9 +140,9 @@ class CollectionWatchersRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionWatcherIO> body = (List<CollectionWatcherIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("app-3", body.get(0).watcherAppId());
+    PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("app-3", body.items().get(0).watcherAppId());
   }
 
   // ─── GET /watches/me ──────────────────────────────────────────────────────

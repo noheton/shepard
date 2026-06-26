@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.quality.io.DQRIO;
 import de.dlr.shepard.v2.quality.services.DataQualityRequirementService;
 import jakarta.ws.rs.ForbiddenException;
@@ -65,8 +66,8 @@ class CollectionDQRRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DQRIO> body = (List<DQRIO>) r.getEntity();
-    assertEquals(1, body.size());
+    PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
+    assertEquals(1, body.items().size());
     assertEquals(1L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -90,8 +91,8 @@ class CollectionDQRRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DQRIO> body = (List<DQRIO>) r.getEntity();
-    assertEquals(2, body.size());
+    PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
+    assertEquals(2, body.items().size());
     assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -107,8 +108,8 @@ class CollectionDQRRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DQRIO> body = (List<DQRIO>) r.getEntity();
-    assertEquals(200, body.size());
+    PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
+    assertEquals(200, body.items().size());
     assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
@@ -136,9 +137,9 @@ class CollectionDQRRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DQRIO> body = (List<DQRIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("dqr-3", body.get(0).dqrAppId());
+    PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("dqr-3", body.items().get(0).dqrAppId());
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
