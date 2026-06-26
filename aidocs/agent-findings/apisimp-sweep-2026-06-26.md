@@ -4,7 +4,7 @@ last-stage-change: 2026-06-26
 audience: [contributor]
 ---
 
-# APISIMP Sweep — 2026-06-26 (fire-227)
+# APISIMP Sweep — 2026-06-26 (fire-231)
 
 Automated scan of the live `/v2` REST surface for residual sprawl.
 Scope: `backend/src/main/java/de/dlr/shepard/v2/` + plugin `@Path`s.
