@@ -25,6 +25,7 @@ import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundles
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
 import AdminConfigOverviewPane from "~/components/context/admin/AdminConfigOverviewPane.vue";
+import AdminAiConfigPane from "~/components/context/admin/AdminAiConfigPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -211,7 +212,7 @@ const landingCards = [
     fragment: AdminFragments.AI_CONFIG,
     icon: "mdi-robot-outline",
     title: "AI configuration",
-    description: "Per-instance LLM fallback (designed; ships with AI1a).",
+    description: "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, EMBEDDING, …). PATCH body keyed by capability name.",
   },
   {
     fragment: AdminFragments.BACKUP,
@@ -333,11 +334,9 @@ const landingCards = [
     <AdminUserGitPane
       v-if="routeFragment === AdminFragments.USERS_GIT"
     />
+    <!-- PLACEHOLDER-REPLACE-AI-CONFIG: real pane shipped 2026-06-26 -->
+    <AdminAiConfigPane v-if="routeFragment === AdminFragments.AI_CONFIG" />
     <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
-      v-if="routeFragment === AdminFragments.AI_CONFIG"
-      slug="ai-config"
-    />
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"

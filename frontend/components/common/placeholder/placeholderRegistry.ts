@@ -114,15 +114,18 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     backend: "partial",
   },
   {
+    // PLACEHOLDER-REPLACE-AI-CONFIG (2026-06-26): real pane shipped as
+    // AdminAiConfigPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds.
     slug: "ai-config",
     surface: "admin",
     title: "AI configuration",
     subtitle:
-      "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, IMAGE_GEN, VISION, EMBEDDING, STRUCTURED, TRANSCRIPTION, MODERATION). PATCH body keyed by capability name.",
+      "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, IMAGE_GEN, VISION, EMBEDDING, STRUCTURED, TRANSCRIPTION, MODERATION). PATCH body keyed by capability name. Real pane shipped 2026-06-26 — calls GET/PATCH /v2/admin/config/ai.",
     endpoint: "/v2/admin/config/ai",
     backlogRow: "APISIMP-AI-ADMIN-REST",
     designDoc: "aidocs/integrations/97-shepard-plugin-ai-design.md",
-    backend: "partial",
+    backend: "shipped",
   },
   {
     slug: "backup",
