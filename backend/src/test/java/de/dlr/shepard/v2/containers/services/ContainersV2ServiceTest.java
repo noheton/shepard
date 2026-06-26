@@ -142,4 +142,29 @@ class ContainersV2ServiceTest {
     var svc = new ContainersV2Service(List.of(new StubHandler("file", container("a"))));
     assertThrows(NotFoundException.class, () -> svc.patchByAppId("missing", Map.of()));
   }
+
+  // ─── putByAppId (P21-V2-METADATA-EDIT) ─────────────────────────────────────
+
+  @Test
+  void putByAppId_requiresName_throwsBadRequest() {
+    var c = container("a");
+    var svc = new ContainersV2Service(List.of(new StubHandler("file", c)));
+    // body without 'name' → BadRequestException from ContainerPatchSupport.requireName
+    assertThrows(BadRequestException.class, () -> svc.putByAppId("a", Map.of("status", "READY")));
+  }
+
+  @Test
+  void putByAppId_unknown_throwsNotFound() {
+    var svc = new ContainersV2Service(List.of(new StubHandler("file", container("a"))));
+    assertThrows(NotFoundException.class, () -> svc.putByAppId("missing", Map.of("name", "x")));
+  }
+
+  @Test
+  void putByAppId_delegatesToPatch_withNormalisedBody() {
+    var c = container("a");
+    var svc = new ContainersV2Service(List.of(new StubHandler("file", c)));
+    // PUT {name:"n"} → normalised body {name:"n", status:null} → patch sets status=null
+    var io = svc.putByAppId("a", Map.of("name", "n"));
+    assertEquals("file", io.getKind()); // stub returns a ContainerV2IO with kind set
+  }
 }

@@ -228,6 +228,61 @@ public class ReferencesV2Rest {
     }
   }
 
+  // ─── put (full-replace metadata) ───────────────────────────────────────
+
+  @PUT
+  @Path("/{appId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+    operationId = "putReference",
+    summary = "P21-V2-METADATA-EDIT: full-replace editable metadata of any reference by appId.",
+    description =
+      "Replaces all mutable metadata fields on the reference at `appId`. `name` is " +
+      "required. Kind-specific mutable fields (e.g. `uri`/`relationship` for uri " +
+      "references, time-window fields for timeseries references) are applied from the " +
+      "body — absent fields are left to kind-handler discretion (default: unchanged, " +
+      "matching PATCH semantics). Binary content is NOT modified by this endpoint; " +
+      "use `PUT /v2/references/{appId}/content` for byte payloads.\n\nAuth: Write " +
+      "on the parent DataObject."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "The post-put ReferenceV2IO.",
+    content = @Content(schema = @Schema(implementation = ReferenceV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object, name is missing or blank, or kind-specific validation failed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No reference with that appId.")
+  public Response put(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON)) JsonNode body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null || !body.isObject()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PUT body must be a JSON object");
+    }
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to update a reference");
+    Map<String, Object> map = JsonNodeMaps.toMap(body);
+    Object nameVal = map.get("name");
+    if (!(nameVal instanceof String s) || s.isBlank()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing field", Response.Status.BAD_REQUEST, "PUT body must carry a non-blank 'name'");
+    }
+    var resolved = referencesService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    Response gate = gateOnParent(resolved.get().reference(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    try {
+      ReferenceV2IO updated = referencesService.putByAppId(appId, map);
+      return Response.ok(updated).build();
+    } catch (BadRequestException bre) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
+    } catch (jakarta.ws.rs.NotFoundException nfe) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no reference found with appId: " + appId);
+    }
+  }
+
   // ─── delete ────────────────────────────────────────────────────────────
 
   @DELETE

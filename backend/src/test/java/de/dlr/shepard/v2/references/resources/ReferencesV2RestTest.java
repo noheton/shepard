@@ -248,6 +248,66 @@ class ReferencesV2RestTest {
     assertEquals(400, r.getStatus());
   }
 
+  // ─── put (P21-V2-METADATA-EDIT) ────────────────────────────────────────────
+
+  @Test
+  void put_returns200WhenAllowed() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(referencesService.putByAppId(eq(REF_APP_ID), any())).thenReturn(new ReferenceV2IO());
+    var r = resource.put(REF_APP_ID, om.readTree("{\"name\":\"new-name\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    verify(referencesService).putByAppId(eq(REF_APP_ID), any());
+  }
+
+  @Test
+  void put_returns400WhenBodyNotObject() throws Exception {
+    var r = resource.put(REF_APP_ID, om.readTree("\"notanobject\""), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void put_returns400WhenNameMissing() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    var r = resource.put(REF_APP_ID, om.readTree("{\"uri\":\"https://x\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void put_returns400WhenNameBlank() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    var r = resource.put(REF_APP_ID, om.readTree("{\"name\":\"  \"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void put_returns401WhenUnauthenticated() throws Exception {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.put(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void put_returns403WhenNoWrite() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.put(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void put_returns404WhenUnknown() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.empty());
+    var r = resource.put(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
   // ─── APISIMP-REFERENCES-PARAMS-1 reflection guards ───────────────────────
 
   @Test
