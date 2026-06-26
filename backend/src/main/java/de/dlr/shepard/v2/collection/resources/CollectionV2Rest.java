@@ -38,8 +38,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -149,8 +149,8 @@ public class CollectionV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Page of Collections the caller may Read (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionV2IO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400",
     description = "Bean Validation rejected the query — `page` or `pageSize` is negative.")
@@ -167,16 +167,22 @@ public class CollectionV2Rest {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
+    // Load all user-visible collections without DB-side pagination so we can
+    // compute the true filtered total, then paginate in memory (same pattern
+    // as ContainersV2Rest, APISIMP-PAGINATION-ENVELOPE-1).
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
-    params = params.withPageAndSize(safePage, safeSize);
 
-    var collections = collectionService.getAllCollections(params);
-    var result = new ArrayList<CollectionV2IO>(collections.size());
-    for (var c : collections) {
-      result.add(new CollectionV2IO(c));
-    }
-    return Response.ok(result)
+    var all = collectionService.getAllCollections(params).stream()
+        .map(CollectionV2IO::new)
+        .toList();
+
+    int total = all.size();
+    int from = (int) Math.min((long) safePage * safeSize, total);
+    int to = (int) Math.min((long) from + safeSize, total);
+
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, safePage, safeSize))
+      .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }

@@ -22,6 +22,8 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.v2.collection.io.CollectionV2IO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -85,7 +87,7 @@ class CollectionV2RestTest {
   // ── list ──────────────────────────────────────────────────────────────────
 
   @Test
-  void listReturns200WithRows() {
+  void listReturns200WithPagedEnvelope() {
     Collection c = new Collection();
     c.setShepardId(COLL_OGM_ID);
     c.setAppId(COLL_APP_ID);
@@ -96,20 +98,38 @@ class CollectionV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionIO> body = (List<CollectionIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(COLL_APP_ID, body.get(0).getAppId());
+    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertEquals(1, body.items().size());
+    assertEquals(COLL_APP_ID, body.items().get(0).getAppId());
+    // X-Total-Count header kept during deprecation window
+    assertEquals("1", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
-  void listClampsOversizeRequestToMax200() {
+  void listReturnsEmptyPagedEnvelopeWhenNoCollections() {
     when(collectionService.getAllCollections(any())).thenReturn(List.of());
-    // Asking for 500 must not blow through the 200 cap server-side.
+
+    Response r = resource.list(null, 0, 50);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
+    assertEquals(0, body.total());
+    assertEquals(0, body.items().size());
+  }
+
+  @Test
+  void listClampsOversizePageSizeToMax200() {
+    when(collectionService.getAllCollections(any())).thenReturn(List.of());
+    // Asking for 500 must be clamped to 200 server-side.
     Response r = resource.list(null, 0, 500);
     assertEquals(200, r.getStatus());
-    // The QueryParamHelper inside is opaque to the test; we exercise that
-    // the call completes and the response code is correct. The cap itself
-    // is a defensive measure — a unit-level slice of it covered above.
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
+    assertEquals(200, body.pageSize());
   }
 
   // ── get ────────────────────────────────────────────────────────────────────
