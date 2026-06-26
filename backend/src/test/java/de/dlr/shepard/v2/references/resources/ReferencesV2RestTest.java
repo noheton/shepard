@@ -158,6 +158,53 @@ class ReferencesV2RestTest {
     assertEquals(400, r.getStatus());
   }
 
+  // ─── replace ─────────────────────────────────────────────────────────────
+
+  @Test
+  void replace_returns200WhenAllowed() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+    when(referencesService.replaceByAppId(eq(REF_APP_ID), any())).thenReturn(new ReferenceV2IO());
+    var r = resource.replace(REF_APP_ID, om.readTree("{\"name\":\"new-name\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void replace_returns400WhenBodyNotObject() throws Exception {
+    var r = resource.replace(REF_APP_ID, om.readTree("[1,2,3]"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void replace_returns400WhenNameMissing() throws Exception {
+    var r = resource.replace(REF_APP_ID, om.readTree("{\"uri\":\"https://x\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void replace_returns403WhenNoWrite() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    var r = resource.replace(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void replace_returns404WhenUnknown() throws Exception {
+    when(referencesService.resolveByAppId(REF_APP_ID)).thenReturn(Optional.empty());
+    var r = resource.replace(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void replace_returns401WhenUnauthenticated() throws Exception {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.replace(REF_APP_ID, om.readTree("{\"name\":\"n\"}"), securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
   // ─── delete ──────────────────────────────────────────────────────────────
 
   @Test

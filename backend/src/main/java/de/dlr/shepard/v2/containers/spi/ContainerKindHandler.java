@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
 
@@ -109,6 +110,26 @@ public interface ContainerKindHandler {
    * @return the unified IO reflecting the post-patch state.
    */
   ContainerV2IO patch(String appId, Map<String, Object> patch);
+
+  /**
+   * Full-replace the mutable metadata of the container identified by {@code appId}.
+   * Unlike {@link #patch}, absent optional fields ({@code status}) are reset to null.
+   * {@code name} is always required; implementations throw {@link BadRequestException}
+   * when it is absent or blank.
+   *
+   * <p>Default delegates to {@link #patch} after normalising the body (injects
+   * {@code status=null} when the caller omitted it so the patch treats it as an
+   * explicit clear rather than a no-op).
+   *
+   * @param appId UUID v7 of the container.
+   * @param body the full-replace field map; {@code name} required.
+   * @return the unified IO reflecting the post-replace state.
+   */
+  default ContainerV2IO replace(String appId, Map<String, Object> body) {
+    Map<String, Object> normalized = body != null ? new java.util.HashMap<>(body) : new java.util.HashMap<>();
+    if (!normalized.containsKey("status")) normalized.put("status", null);
+    return patch(appId, normalized);
+  }
 
   /**
    * Delete the container of this kind identified by {@code appId}.

@@ -17,6 +17,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -61,6 +62,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       returns the unified {@link ContainerV2IO}.</li>
  *   <li>{@code PATCH  /v2/containers/{appId}} — RFC 7396 merge-patch ({@code name},
  *       {@code status}), dispatched to the owning kind's patcher.</li>
+ *   <li>{@code PUT    /v2/containers/{appId}} — full-replace ({@code name} required,
+ *       {@code status} reset to null if absent), dispatched to the owning kind's replacer.</li>
  *   <li>{@code DELETE /v2/containers/{appId}} — dispatched to the owning kind's deleter.</li>
  *   <li>{@code GET    /v2/containers?kind=…[&name=…]} — list/filter; returns
  *       {@code ContainerV2IO[]}.</li>
@@ -68,7 +71,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Identifiers are {@code appId} (UUID v7) strings throughout; numeric Neo4j
  * ids never appear on the wire. Create/list require authentication; get is gated
- * Read and patch/delete Write on the resolved container's own id.
+ * Read and patch/put/delete Write on the resolved container's own id.
  *
  * <p>Plugin kinds: {@code ?kind=hdf} returns 400 ("uninstalled kind") until the
  * hdf5 plugin ships its own {@code ContainerKindHandler} — tracked as
@@ -186,6 +189,55 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
     try {
       ContainerV2IO updated = containersService.patchByAppId(appId, JsonNodeMaps.toMap(body));
+      return Response.ok(updated).build();
+    } catch (BadRequestException bre) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+  }
+
+  // ─── replace ───────────────────────────────────────────────────────────
+
+  @PUT
+  @Path("/{appId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+    operationId = "replaceContainer",
+    summary = "Full-replace container metadata by appId; dispatched by kind.",
+    description =
+      "Full-replaces the mutable metadata (`name`, `status`) of the container at `appId`. " +
+      "Unlike PATCH, absent optional fields are reset to null; `name` is required.\n\n" +
+      "Auth: Write on the container."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "The post-replace ContainerV2IO.",
+    content = @Content(schema = @Schema(implementation = ContainerV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body missing required 'name', not a JSON object, or field validation failed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
+  @APIResponse(responseCode = "404", description = "No container with that appId.")
+  public Response replace(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON)) JsonNode body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PUT body must be a JSON object").build();
+    }
+    if (!body.hasNonNull("name")) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("'name' is required for full-replace PUT").build();
+    }
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = containersService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gate(resolved.get().container(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    try {
+      ContainerV2IO updated = containersService.replaceByAppId(appId, JsonNodeMaps.toMap(body));
       return Response.ok(updated).build();
     } catch (BadRequestException bre) {
       return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();

@@ -162,6 +162,12 @@ public class ContainersV2Service {
     return r.handler().patch(appId, patch);
   }
 
+  public ContainerV2IO replaceByAppId(String appId, Map<String, Object> body) {
+    ResolvedContainer r = resolveByAppId(appId)
+      .orElseThrow(() -> new NotFoundException("No container with appId " + appId));
+    return r.handler().replace(appId, body);
+  }
+
   public void deleteByAppId(String appId) {
     ResolvedContainer r = resolveByAppId(appId)
       .orElseThrow(() -> new NotFoundException("No container with appId " + appId));

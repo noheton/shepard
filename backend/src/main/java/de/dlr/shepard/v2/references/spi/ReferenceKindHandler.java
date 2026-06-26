@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.spi;
 
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
 
@@ -104,6 +105,25 @@ public interface ReferenceKindHandler {
    * @return the unified IO reflecting the post-patch state.
    */
   ReferenceV2IO patch(String appId, Map<String, Object> patch);
+
+  /**
+   * Full-replace the mutable metadata of the reference identified by {@code appId}.
+   * Unlike {@link #patch}, absent optional fields are reset to null (kind-specific).
+   * {@code name} is always required; implementations throw {@link BadRequestException}
+   * when it is absent or blank.
+   *
+   * <p>Default delegates to {@link #patch} — sufficient for kinds whose only
+   * optional-clearable field is {@code name} (file, structured-data, collection,
+   * dataobject, git, hdf). Kinds with additional optional fields
+   * (timeseries → start/end; uri → relationship) override this method.
+   *
+   * @param appId UUID v7 of the reference.
+   * @param body the full-replace field map; {@code name} required.
+   * @return the unified IO reflecting the post-replace state.
+   */
+  default ReferenceV2IO replace(String appId, Map<String, Object> body) {
+    return patch(appId, body != null ? body : java.util.Map.of());
+  }
 
   /**
    * Delete the reference of this kind identified by {@code appId}.

@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,18 @@ public class UriReferenceKindHandler implements ReferenceKindHandler {
   public ReferenceV2IO patch(String appId, Map<String, Object> patch) {
     URIReference updated = uriReferenceService.patchReferenceByAppId(appId, patch);
     return toIO(updated);
+  }
+
+  @Override
+  public ReferenceV2IO replace(String appId, Map<String, Object> body) {
+    // Full-replace: uri is required; relationship resets to null if absent
+    Map<String, Object> normalized = body != null ? new HashMap<>(body) : new HashMap<>();
+    if (!normalized.containsKey("uri") || normalized.get("uri") == null
+        || normalized.get("uri").toString().isBlank()) {
+      throw new BadRequestException("'uri' is required for URI reference full-replace PUT");
+    }
+    if (!normalized.containsKey("relationship")) normalized.put("relationship", null);
+    return patch(appId, normalized);
   }
 
   @Override

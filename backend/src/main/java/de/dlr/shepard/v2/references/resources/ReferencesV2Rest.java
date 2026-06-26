@@ -17,6 +17,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -56,6 +57,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       kind; returns the unified {@link ReferenceV2IO}.</li>
  *   <li>{@code PATCH  /v2/references/{appId}} — RFC 7396 merge-patch, dispatched
  *       to the owning kind's patcher.</li>
+ *   <li>{@code PUT    /v2/references/{appId}} — full-replace, dispatched to the
+ *       owning kind's replacer; {@code name} required.</li>
  *   <li>{@code DELETE /v2/references/{appId}} — dispatched to the owning kind's
  *       deleter.</li>
  *   <li>{@code GET    /v2/references?kind=…&dataObjectAppId=…[&fileKind=…]} —
@@ -64,7 +67,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Identifiers are {@code appId} (UUID v7) strings throughout; numeric Neo4j
  * ids never appear on the wire. Permission is gated against the resolved parent
- * DataObject's appId (Read for get/list, Write for create/patch/delete).
+ * DataObject's appId (Read for get/list, Write for create/patch/put/delete).
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -196,6 +199,56 @@ public class ReferencesV2Rest {
     if (gate != null) return gate;
     try {
       ReferenceV2IO updated = referencesService.patchByAppId(appId, JsonNodeMaps.toMap(body));
+      return Response.ok(updated).build();
+    } catch (BadRequestException bre) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+  }
+
+  // ─── replace ───────────────────────────────────────────────────────────
+
+  @PUT
+  @Path("/{appId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+    operationId = "replaceReference",
+    summary = "Full-replace reference metadata by appId; dispatched by kind.",
+    description =
+      "Full-replaces the mutable metadata of the reference at `appId` (dispatched to " +
+      "the owning kind's replacer). `name` is required. Optional fields absent from " +
+      "the body are reset to null (e.g. uri → relationship; timeseries → start/end).\n\n" +
+      "Auth: Write on the parent DataObject."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "The post-replace ReferenceV2IO.",
+    content = @Content(schema = @Schema(implementation = ReferenceV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body missing required 'name', not a JSON object, or kind-specific validation failed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No reference with that appId.")
+  public Response replace(
+    @PathParam("appId") String appId,
+    @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON)) JsonNode body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PUT body must be a JSON object").build();
+    }
+    if (!body.hasNonNull("name")) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("'name' is required for full-replace PUT").build();
+    }
+    String caller = callerOrNull(sc);
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    var resolved = referencesService.resolveByAppId(appId);
+    if (resolved.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    Response gate = gateOnParent(resolved.get().reference(), AccessType.Write, caller);
+    if (gate != null) return gate;
+    try {
+      ReferenceV2IO updated = referencesService.replaceByAppId(appId, JsonNodeMaps.toMap(body));
       return Response.ok(updated).build();
     } catch (BadRequestException bre) {
       return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();

@@ -161,6 +161,12 @@ public class ReferencesV2Service {
     return r.handler().patch(appId, patch);
   }
 
+  public ReferenceV2IO replaceByAppId(String appId, Map<String, Object> body) {
+    ResolvedReference r = resolveByAppId(appId)
+      .orElseThrow(() -> new NotFoundException("No reference with appId " + appId));
+    return r.handler().replace(appId, body);
+  }
+
   public void deleteByAppId(String appId) {
     ResolvedReference r = resolveByAppId(appId)
       .orElseThrow(() -> new NotFoundException("No reference with appId " + appId));
