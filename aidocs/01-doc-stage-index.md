@@ -430,7 +430,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-06-24 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-06-24 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-06-24 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-25 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-06-26 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-06-24 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-06-24 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire15.md`](agent-findings/apisimp-sweep-2026-06-13-fire15.md) | APISIMP Sweep — 2026-06-13 (fire #N+15) | 2026-06-13 | 2026-06-24 |
@@ -450,7 +450,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire137.md`](agent-findings/apisimp-sweep-2026-06-19-fire137.md) | APISIMP Sweep — 2026-06-19 (fire-137) | 2026-06-19 | 2026-06-24 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-19-fire145.md`](agent-findings/apisimp-sweep-2026-06-19-fire145.md) | APISIMP Sweep — fire-145 · 2026-06-19 | 2026-06-19 | 2026-06-24 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire238.md`](agent-findings/apisimp-sweep-2026-06-26-fire238.md) | APISIMP Sweep — 2026-06-26 (fire-238) | 2026-06-26 | 2026-06-26 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire241.md`](agent-findings/apisimp-sweep-2026-06-26-fire241.md) | APISIMP Sweep — 2026-06-26 (fire-241) | 2026-06-26 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire241.md`](agent-findings/apisimp-sweep-2026-06-26-fire241.md) | APISIMP Sweep — 2026-06-26 (fire-241) | 2026-06-26 | 2026-06-26 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-26.md`](agent-findings/apisimp-sweep-2026-06-26.md) | APISIMP Sweep — 2026-06-26 (fire-231) | 2026-06-26 | 2026-06-26 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-24 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-24 |
