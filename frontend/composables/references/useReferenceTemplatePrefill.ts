@@ -23,8 +23,10 @@ export {
   extractFileNamingPattern,
   extractChannelSelectionHint,
   findAnnotationByPredicate,
+  parseBundleLayoutHint,
   parseUriRelationshipHint,
   resolveFileNamingPlaceholders,
+  type BundleLayoutHint,
   type ChannelSelectionHint,
   type UriRelationshipHint,
 } from "~/composables/references/referenceTemplatePrefill";
