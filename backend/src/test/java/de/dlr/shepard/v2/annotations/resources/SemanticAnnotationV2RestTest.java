@@ -24,6 +24,7 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -127,15 +128,17 @@ class SemanticAnnotationV2RestTest {
     var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "CF/LMPAEK");
     when(annotationDAO.findFiltered(eq(SUBJ_APP_ID), any(), any(), any(), eq(0), eq(50)))
       .thenReturn(List.of(ann));
+    when(annotationDAO.countFiltered(eq(SUBJ_APP_ID), any(), any(), any())).thenReturn(1L);
 
     Response r = resource.list(SUBJ_APP_ID, null, null, null, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    List<AnnotationIO> rows = (List<AnnotationIO>) r.getEntity();
-    assertThat(rows).hasSize(1);
-    assertThat(rows.get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
-    assertThat(rows.get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
+    PagedResponseIO<AnnotationIO> page = (PagedResponseIO<AnnotationIO>) r.getEntity();
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.total()).isEqualTo(1L);
+    assertThat(page.items().get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
+    assertThat(page.items().get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
   }
 
   @Test

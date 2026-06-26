@@ -15,6 +15,7 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import io.quarkus.logging.Log;
@@ -40,7 +41,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -144,8 +144,8 @@ public class SemanticAnnotationV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Array of AnnotationV2 matching the filters (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AnnotationIO.class))
+    description = "PagedResponse of AnnotationV2 matching the filters.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad pagination params (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -186,12 +186,13 @@ public class SemanticAnnotationV2Rest {
       if (gate != null) return gate;
     }
 
-    List<AnnotationIO> result = annotationDAO
+    List<AnnotationIO> items = annotationDAO
       .findFiltered(subjectAppId, subjectKind, predicateIri, vocabId, page, pageSize)
       .stream()
       .map(AnnotationIO::new)
       .toList();
-    return Response.ok(result).build();
+    long total = annotationDAO.countFiltered(subjectAppId, subjectKind, predicateIri, vocabId);
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   // ─── FIND (text search) ────────────────────────────────────────────────────
@@ -209,8 +210,8 @@ public class SemanticAnnotationV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Array of AnnotationV2 matching the text query.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AnnotationIO.class))
+    description = "PagedResponse of AnnotationV2 matching the text query.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query string is blank (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -240,12 +241,13 @@ public class SemanticAnnotationV2Rest {
         "page must be >= 0; pageSize must be in [1, " + MAX_PAGE_SIZE + "]");
     }
 
-    List<AnnotationIO> result = annotationDAO
+    List<AnnotationIO> items = annotationDAO
       .textSearch(q, vocabId, page, pageSize)
       .stream()
       .map(AnnotationIO::new)
       .toList();
-    return Response.ok(result).build();
+    long total = annotationDAO.countTextSearch(q, vocabId);
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   // ─── GET BY appId ──────────────────────────────────────────────────────────

@@ -51,7 +51,7 @@ const COLLECTION_APP_ID = "0192bbbb-0000-7000-8000-000000000042";
 
 describe("v2 SubjectAnnotated accessors", () => {
   it("AnnotatedCollection.fetchAnnotations queries by subjectAppId + Collection kind", async () => {
-    mockListAnnotations.mockResolvedValue([WIRE_ANNOTATION]);
+    mockListAnnotations.mockResolvedValue({ items: [WIRE_ANNOTATION], total: 1, page: 0, pageSize: 200 });
     const { AnnotatedCollection } = await import("~/composables/annotated");
 
     const out = await new AnnotatedCollection(COLLECTION_APP_ID).fetchAnnotations();
@@ -73,7 +73,7 @@ describe("v2 SubjectAnnotated accessors", () => {
   });
 
   it("AnnotatedDataObject uses the DataObject subjectKind", async () => {
-    mockListAnnotations.mockResolvedValue([]);
+    mockListAnnotations.mockResolvedValue({ items: [], total: 0, page: 0, pageSize: 200 });
     const { AnnotatedDataObject } = await import("~/composables/annotated");
 
     await new AnnotatedDataObject("0192cccc-0000-7000-8000-0000000000aa").fetchAnnotations();
@@ -84,7 +84,7 @@ describe("v2 SubjectAnnotated accessors", () => {
   });
 
   it("AnnotatedReference carries the supplied concrete reference kind", async () => {
-    mockListAnnotations.mockResolvedValue([]);
+    mockListAnnotations.mockResolvedValue({ items: [], total: 0, page: 0, pageSize: 200 });
     const { AnnotatedReference } = await import("~/composables/annotated");
 
     await new AnnotatedReference(
@@ -98,7 +98,7 @@ describe("v2 SubjectAnnotated accessors", () => {
   });
 
   it("AnnotatedReference defaults to the generic 'Reference' kind", async () => {
-    mockListAnnotations.mockResolvedValue([]);
+    mockListAnnotations.mockResolvedValue({ items: [], total: 0, page: 0, pageSize: 200 });
     const { AnnotatedReference } = await import("~/composables/annotated");
 
     await new AnnotatedReference("0192eeee-0000-7000-8000-0000000000cc").fetchAnnotations();
@@ -109,7 +109,7 @@ describe("v2 SubjectAnnotated accessors", () => {
   });
 
   it("delete resolves the real annotation appId via the fakeId map", async () => {
-    mockListAnnotations.mockResolvedValue([WIRE_ANNOTATION]);
+    mockListAnnotations.mockResolvedValue({ items: [WIRE_ANNOTATION], total: 1, page: 0, pageSize: 200 });
     mockDeleteAnnotation.mockResolvedValue(undefined);
     const { AnnotatedCollection } = await import("~/composables/annotated");
 
@@ -175,7 +175,7 @@ describe("v2 SubjectAnnotated accessors", () => {
   });
 
   it("the container variants carry their own subjectKind", async () => {
-    mockListAnnotations.mockResolvedValue([]);
+    mockListAnnotations.mockResolvedValue({ items: [], total: 0, page: 0, pageSize: 200 });
     const {
       AnnotatedTimeseriesContainer,
       AnnotatedFileContainer,
