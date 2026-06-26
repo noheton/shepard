@@ -12,13 +12,18 @@
  *     channel->joint bindings + urdfFileReferenceAppId).
  *  2. Resolve the bound URDF FileReference's bytes to a blob URL (appId only —
  *     never a path/URL the user typed).
- *  3. Render the robot with UrdfCanvas (Three.js urdf-loader).
+ *  3. When a TimeseriesReference is bound + channel bindings present, load
+ *     JointTrack[] via useJointTracksLoader and render UrdfAnimator for
+ *     timeseries-driven playback (SCENEGRAPH-CANVAS-ANIM-1).
+ *  4. Fall back to static UrdfCanvas when no tracks are available.
  *
- * Design: aidocs/platform/191 §decision-2. Backlog: V2CONV-B4.
+ * Design: aidocs/platform/191 §decision-2. Backlog: V2CONV-B4, SCENEGRAPH-CANVAS-ANIM-1.
  */
+import UrdfAnimator from "~/components/container/timeseries/UrdfAnimator.vue";
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
 import { materializeMapping } from "~/composables/useMaterializeMapping";
 import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
+import { useJointTracksLoader } from "~/composables/useJointTracksLoader";
 
 useHead({ title: "Scene-graph 3D view | shepard" });
 
@@ -32,6 +37,8 @@ interface PlayEnvelope {
   rootLink?: string | null;
   frames?: { name: string; parent: string | null }[];
   joints?: { name: string; type: string }[];
+  /** Timeseries reference whose channels drive joint animation. */
+  jointTimeseriesReferenceAppId?: string;
   jointChannelBindings?: { joint: string; channelSelector: string }[];
   playbackStatus?: string;
 }
@@ -46,6 +53,13 @@ const {
   resolve: resolveBlob,
   revoke: revokeBlob,
 } = useUrdfReferenceBlob();
+
+const {
+  tracks,
+  loading: tracksLoading,
+  error: tracksError,
+  load: loadTracks,
+} = useJointTracksLoader();
 
 async function load() {
   loading.value = true;
@@ -66,6 +80,13 @@ async function load() {
     await resolveBlob(env.urdfFileReferenceAppId);
     if (blobError.value) {
       error.value = blobError.value.message;
+      return;
+    }
+    // Load joint tracks when timeseries reference + bindings are present.
+    const tsRefAppId = env.jointTimeseriesReferenceAppId;
+    const bindings = env.jointChannelBindings ?? [];
+    if (tsRefAppId && bindings.length > 0) {
+      await loadTracks(tsRefAppId, bindings);
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to materialize the 3D view.";
@@ -112,11 +133,46 @@ onUnmounted(revokeBlob);
 
         <div v-else-if="urdfUrl" class="play-canvas">
           <ClientOnly>
-            <UrdfCanvas :urdf-url="urdfUrl" label="Scene-graph 3D view" />
+            <!-- Animated: joint tracks loaded from bound TimeseriesReference -->
+            <UrdfAnimator
+              v-if="tracks.length > 0"
+              :urdf-url="urdfUrl"
+              :tracks="tracks"
+              label="Scene-graph 3D view"
+              data-test="urdf-animator"
+            />
+            <!-- Static: no timeseries reference or tracks still loading -->
+            <UrdfCanvas
+              v-else
+              :urdf-url="urdfUrl"
+              label="Scene-graph 3D view"
+              data-test="urdf-canvas"
+            />
             <template #fallback>
               <v-skeleton-loader type="image" height="500" />
             </template>
           </ClientOnly>
+
+          <v-alert
+            v-if="tracksLoading"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mt-2"
+            data-test="tracks-loading"
+          >
+            Loading channel data for playback…
+          </v-alert>
+          <v-alert
+            v-if="tracksError"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mt-2"
+            data-test="tracks-error"
+          >
+            {{ tracksError }}
+          </v-alert>
         </div>
 
         <v-card
