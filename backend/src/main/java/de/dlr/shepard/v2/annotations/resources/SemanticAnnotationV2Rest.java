@@ -802,7 +802,11 @@ public class SemanticAnnotationV2Rest {
     boolean isChannel =
       labels.contains("AnnotatableTimeseries") || labels.contains("Timeseries");
     if (ownsPermissionsNode) {
-      allowed = permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L);
+      // Use the 3-arg overload so currentIat() is resolved internally — same as every
+      // other Collection/Container permission check in v2.  The 4-arg form with jwtIat=0L
+      // is for API-key / non-JWT callers; using it on a @Authenticated endpoint created a
+      // stale cache key that caused the collection owner to receive 403 (RESEED-FIND-MISC a).
+      allowed = permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller);
     } else if (isChannel) {
       // A timeseries channel (AnnotatableTimeseries bridge node) has no own
       // Permissions node and no Neo4j edge to its container, so neither the direct
