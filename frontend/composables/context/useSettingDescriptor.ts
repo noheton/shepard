@@ -19,6 +19,9 @@ export interface SettingDescriptor<T = unknown> {
 /** Well-known setting keys — extend as new preferences are introduced. */
 export const SETTING_KEYS = {
   UI_ADVANCED_MODE: "ui.advancedMode",
+  AI_BASE_URL: "ai.baseUrl",
+  AI_MODEL: "ai.model",
+  // ai.apiKey is intentionally absent: requires U2 encrypted secret storage.
 } as const;
 
 // Descriptors for the above keys — typed and validated in the future U1c layer.
@@ -35,6 +38,18 @@ export const SETTING_DESCRIPTORS: SettingDescriptor[] = [
     description: "Shows advanced features like container management and low-level data views.",
     type: "boolean",
     defaultValue: false,
+  },
+  {
+    key: SETTING_KEYS.AI_BASE_URL,
+    label: "AI provider base URL",
+    description: "Base URL for the LLM HTTP API. Overrides the instance default when set.",
+    type: "string",
+  },
+  {
+    key: SETTING_KEYS.AI_MODEL,
+    label: "AI model",
+    description: "Model name or ID. Overrides the instance default when set.",
+    type: "string",
   },
 ];
 
