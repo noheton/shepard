@@ -12,7 +12,8 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     // findings doc commits to a specific count; if this changes the doc
     // must change too (forces same-PR coupling).
     // 2026-05-31 PLACEHOLDER-REPLACE-TPL3a-lite + PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY: -2
-    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(16);
+    // 2026-06-27 MFFD-BATCH-01 batch-create admin placeholder: +1
+    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(17);
     expect(PLACEHOLDER_ENTRIES).toHaveLength(EXPECTED_PLACEHOLDER_COUNT);
   });
 
@@ -69,7 +70,8 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const profile = placeholdersBySurface("profile");
     const route = placeholdersBySurface("route");
     // 2026-05-31: ontology-alignment + instance-registry promoted to real panes
-    expect(admin.length).toBe(8);
+    // 2026-06-27 MFFD-BATCH-01: batch-create admin placeholder: +1
+    expect(admin.length).toBe(9);
     expect(profile.length).toBe(1);
     expect(route.length).toBe(7); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
     expect(admin.length + profile.length + route.length).toBe(

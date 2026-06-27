@@ -179,8 +179,7 @@ public class CollectionSceneGraphRest {
         Response.Status.NOT_FOUND, "no template with that appId");
     }
     if (!MAPPING_RECIPE_KIND.equals(template.get().getTemplateKind())) {
-      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Wrong template kind",
-        Response.Status.fromStatusCode(422),
+      return problem422(PROBLEM_TYPE_UNPROCESSABLE, "Wrong template kind",
         "hero view must be a MAPPING_RECIPE template; kind=" + template.get().getTemplateKind());
     }
 
@@ -230,5 +229,11 @@ public class CollectionSceneGraphRest {
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
+  /** For status codes not in the JAX-RS 3.1 Status enum (e.g. 422 Unprocessable Entity). */
+  private static Response problem422(String type, String title, String detail) {
+    ProblemJson body = new ProblemJson(type, title, 422, detail, null);
+    return Response.status(422).type("application/problem+json").entity(body).build();
   }
 }

@@ -248,6 +248,13 @@ const landingCards = [
     description: "Apply a YAML mapping of cross-process Predecessor edges (tapelaying → bridgewelding → NDT → cleats).",
     path: "/admin/mffd-process-chain",
   },
+  // MFFD-BATCH-01
+  {
+    fragment: AdminFragments.BATCH_CREATE,
+    icon: "mdi-layers-plus",
+    title: "Bulk DataObject creation",
+    description: "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item results. For MFFD-scale imports.",
+  },
 ];
 </script>
 
@@ -352,6 +359,11 @@ const landingCards = [
     <!-- J1e: JupyterHub link-out config -->
     <AdminJupyterPane
       v-if="routeFragment === AdminFragments.JUPYTER"
+    />
+    <!-- MFFD-BATCH-01: bulk DataObject create (PLACEHOLDER-REPLACE-MFFD-BATCH-01-UI) -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.BATCH_CREATE"
+      slug="batch-create"
     />
   </PaneLayout>
 </template>
