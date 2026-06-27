@@ -3604,7 +3604,7 @@ Operator directive: deploy latest `main`, full instance wipe, reseed only LUMEN 
 | **RESEED-LUMEN-UPDATE** | Update `examples/lumen-showcase/seed.py` to current surfaces (`/v2/references?kind=`, `/v2/containers?kind=`, semantic annotations not `attributes`, templates-as-shapes, NCR on TR-004, cite/license). Reseed. Keep the 15-run hotfire narrative. | M | host-only | `aidocs/integrations/121 §4`; `examples/lumen-showcase/seed.py` |
 | **RESEED-FEATURE-SEEDS** | Write `examples/feature-showcase/feat-*/seed.py` per the §5 catalogue (Core V2CONV + Robotics/transform + Quality/semantic + MFFD templates = ~15 focused Collections). Each idempotent, documents the feature + plugins it proves. Parallelizable (one agent per set). | L | host-only | `aidocs/integrations/121 §5` |
 | **RESEED-MICROSECTIONS-UPDATE** | Update + reseed `examples/microsections-showcase/seed.py` to current surfaces (was retired in the wipe; operator wants it kept + modernised — 8 DOs + FR1b singleton refs). | S | queued | `examples/microsections-showcase/seed.py`; memory `MEMORY.md` active arc (microsections) |
-| **RESEED-BTKVS-DOCKET-UPDATE** | Update + reseed `examples/btkvs-docket-showcase/seed.py` + `seed_vocab.py` to current surfaces (kept + modernised post-wipe). | S | queued | `examples/btkvs-docket-showcase/seed.py`; `seed_vocab.py` |
+| **RESEED-BTKVS-DOCKET-UPDATE** | Update + reseed `examples/btkvs-docket-showcase/seed.py` + `seed_vocab.py` to current surfaces (kept + modernised post-wipe). | S | in-flight | `examples/btkvs-docket-showcase/seed.py`; `seed_vocab.py` |
 
 ### RESEED findings — deploy gaps surfaced by the feature seeds (2026-06-09)
 
