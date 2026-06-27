@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 71 |
+| `fragment` | 72 |
 | `concept` | 33 |
 | `idea` | 13 |
 | `feature-defined` | 132 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 96 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **485** |
+| **total docs** | **486** |
 | **UNTAGGED** | **0** |
 
-## fragment (71)
+## fragment (72)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -74,6 +74,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-24.md`](agent-findings/apisimp-sweep-2026-06-24.md) | API Simplification Sweep — 2026-06-24 | — | 2026-06-26 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25-fire221.md`](agent-findings/apisimp-sweep-2026-06-25-fire221.md) | API Simplification Sweep — 2026-06-25 (fire-221) | — | 2026-06-26 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25.md`](agent-findings/apisimp-sweep-2026-06-25.md) | API Simplification Sweep — 2026-06-25 (fire-211) | — | 2026-06-26 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire272.md`](agent-findings/apisimp-sweep-2026-06-27-fire272.md) | APISIMP Sweep — 2026-06-27 (fire-272) | 2026-06-27 | — |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-26 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-26 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-06-26 |
@@ -425,7 +426,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-06-26 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-06-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-06-26 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-27 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-06-28 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-06-27 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-06-26 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-06-26 |
