@@ -59,6 +59,24 @@ COLLECTION_DESCRIPTION = (
     "This is the JupyterHub-integration showcase (task J2 in `aidocs/16`)."
 )
 
+# Semantic annotation predicates — urn:shepard:microsections namespace.
+# All metadata travels as SemanticAnnotations, not the legacy attributes bag.
+_A = "urn:shepard:microsections:"
+ANNOTATION_PREDICATES: dict[str, str] = {
+    "sample_series":   _A + "sample-series",
+    "specimen_kind":   _A + "specimen-kind",
+    "imaging_method":  _A + "imaging-method",
+    "image_format":    _A + "image-format",
+    "analysis_method": _A + "analysis-method",
+    "analysis_kit":    _A + "analysis-kit",
+    "phases_detected": _A + "phases-detected",
+    "metric_computed": _A + "metric-computed",
+    "research_domain": _A + "research-domain",
+    "audit_relevance": _A + "audit-relevance",
+    "sample_id":       _A + "sample-id",
+    "fiber_type":      _A + "fiber-type",
+}
+
 # Per-sample analysis variants.  Sample 01 has two notebooks (carbon vs flax);
 # samples 02-07 each have a single notebook.
 SAMPLE_VARIANTS: list[tuple[str, str, str]] = [
@@ -202,8 +220,6 @@ def find_or_create_data_object(
     api: Api,
     collection_app_id: str,
     name: str,
-    *,
-    attributes: dict,
 ) -> dict:
     listing = api.get(
         f"/v2/collections/{collection_app_id}/data-objects",
@@ -216,10 +232,47 @@ def find_or_create_data_object(
             return do
     created = api.post(
         f"/v2/collections/{collection_app_id}/data-objects",
-        json_body={"name": name, "attributes": attributes},
+        json_body={"name": name},
     )
     _log("OK", name, "DataObject", created["appId"])
     return created
+
+
+def apply_annotations(api: Api, subject_app_id: str, attrs: dict) -> None:
+    """Write key/value pairs as SemanticAnnotations on a DataObject.
+
+    Idempotent: fetches existing predicateIris for the subject and skips
+    any that are already present.  Unknown keys (not in ANNOTATION_PREDICATES)
+    are silently skipped rather than written to the legacy attributes bag.
+    """
+    try:
+        resp = api.get("/v2/annotations", params={
+            "subjectAppId": subject_app_id,
+            "pageSize": 200,
+        })
+        items = resp.get("items", resp) if isinstance(resp, dict) else (resp or [])
+        existing_iris = {
+            a.get("predicateIri") or a.get("propertyIri")
+            for a in (items or [])
+            if a
+        }
+    except Exception:
+        existing_iris = set()
+
+    for key, value in attrs.items():
+        pred_iri = ANNOTATION_PREDICATES.get(key)
+        if not pred_iri:
+            continue
+        if pred_iri in existing_iris:
+            _log("SKIP", f"{key}={value!r}", "Annotation (exists)")
+            continue
+        api.post("/v2/annotations", json_body={
+            "subjectAppId": subject_app_id,
+            "subjectKind": "DataObject",
+            "predicateIri": pred_iri,
+            "objectLiteral": str(value),
+        })
+        _log("OK", f"{key}={value!r}", "Annotation", pred_iri)
 
 
 def upload_singleton_if_absent(
@@ -280,12 +333,14 @@ def seed(api: Api, raw_dir: Path, *, reset: bool) -> None:
             _log("MISS", notebook_filename, "notebook not found — skipping sample")
             continue
 
-        attrs = {
+        do = find_or_create_data_object(api, coll_id, sample_id)
+
+        # Write per-sample metadata as SemanticAnnotations (not attributes bag).
+        apply_annotations(api, do["appId"], {
             **SAMPLE_ATTRIBUTES_COMMON,
             "sample_id": tif_stem,
             "fiber_type": fiber_type,
-        }
-        do = find_or_create_data_object(api, coll_id, sample_id, attributes=attrs)
+        })
 
         # Attach the TIF as a singleton FileReference directly on the DO.
         # The name carries the .tif extension so the frontend classifier
