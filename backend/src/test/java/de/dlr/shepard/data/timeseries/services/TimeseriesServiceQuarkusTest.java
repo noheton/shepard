@@ -581,4 +581,95 @@ public class TimeseriesServiceQuarkusTest {
       fail("An unexpected exception was thrown.");
     }
   }
+
+  // ── TS-CONFLICT-POLICY-1: overwrite flag ─────────────────────────────────
+
+  @Test
+  @Transactional
+  public void saveDataPoints_conflictWithOverwriteFalse_throwsConflictException() {
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("conflict-channel");
+
+    long ts = InstantHelper.now().toNano();
+    List<TimeseriesDataPoint> points = List.of(new TimeseriesDataPoint(ts, 1.0));
+
+    // First write succeeds with overwrite=false.
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, points, false);
+
+    // Second write at the same timestamp must throw 409 Conflict.
+    de.dlr.shepard.common.exceptions.ConflictException thrown =
+      assertThrowsExactly(de.dlr.shepard.common.exceptions.ConflictException.class, () ->
+        this.timeseriesService.saveDataPoints(container.getId(), timeseries, points, false)
+      );
+    assertEquals(Status.CONFLICT.getStatusCode(), thrown.getResponse().getStatus());
+  }
+
+  @Test
+  @Transactional
+  public void saveDataPoints_conflictWithOverwriteTrue_silentlyOverwrites() {
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("overwrite-channel");
+
+    long ts = InstantHelper.now().toNano();
+    List<TimeseriesDataPoint> first = List.of(new TimeseriesDataPoint(ts, 1.0));
+    List<TimeseriesDataPoint> second = List.of(new TimeseriesDataPoint(ts, 2.0));
+
+    // First write.
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, first, true);
+
+    // Second write at same timestamp with overwrite=true must succeed (last-wins).
+    assertDoesNotThrow(() ->
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, second, true)
+    );
+
+    TimeseriesDataPointsQueryParams qp = new TimeseriesDataPointsQueryParams(
+      ts - 1, ts + 1, null, null, null);
+    var stored = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, qp);
+    assertEquals(1, stored.size(), "Only one row should exist after overwrite");
+    assertEquals(2.0, (Double) stored.getFirst().getValue(), 0.001, "Value should be the latest written");
+  }
+
+  @Test
+  @Transactional
+  public void saveDataPoints_noConflict_overwriteFalseSucceeds() {
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("no-conflict-channel");
+
+    long ts1 = InstantHelper.now().toNano();
+    long ts2 = ts1 + 1_000_000L;
+    List<TimeseriesDataPoint> first = List.of(new TimeseriesDataPoint(ts1, 1.0));
+    List<TimeseriesDataPoint> second = List.of(new TimeseriesDataPoint(ts2, 2.0));
+
+    // Two writes at different timestamps — both should succeed with overwrite=false.
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, first, false);
+    assertDoesNotThrow(() ->
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, second, false)
+    );
+
+    TimeseriesDataPointsQueryParams qp = new TimeseriesDataPointsQueryParams(
+      ts1 - 1, ts2 + 1, null, null, null);
+    var stored = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, qp);
+    assertEquals(2, stored.size(), "Both unique-timestamp points should be stored");
+  }
 }
