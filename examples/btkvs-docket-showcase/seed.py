@@ -16,10 +16,10 @@ The seed mirrors the LUMEN / MFFD / microsections precedent (stdlib-only
     ``post_analysis`` JSON as a ``:StructuredDataReference``.
 3.  Editor stamps → ``:Activity`` PROV-O rows — **deferred**. See the
     TODO at ``_decode_editor`` below; the v3 ``editor.{name,date}``
-    tuples land as DataObject attributes for now, full
-    ``:Activity`` decomposition happens in ``BTKVS-A3`` (the
-    server-side decompose endpoint that will own this graph creation
-    natively).
+    tuples land as ``SemanticAnnotations`` (``urn:shepard:btkvs:editor-*``
+    predicates) for now, full ``:Activity`` decomposition happens in
+    ``BTKVS-A3`` (the server-side decompose endpoint that will own this
+    graph creation natively).
 
 Hits the live Shepard at ``https://shepard-api.nuclide.systems``
 (override via ``--host``).
@@ -86,6 +86,43 @@ COLLECTION_DESCRIPTION = (
 
 # Per-step relationship type for the linear chain (PROV1k allowed values).
 PROV_WAS_INFORMED_BY = "prov:wasInformedBy"
+
+# Semantic annotation predicates — urn:shepard:btkvs namespace.
+# All metadata travels as SemanticAnnotations, not the legacy attributes bag.
+_A = "urn:shepard:btkvs:"
+ANNOTATION_PREDICATES: dict[str, str] = {
+    "btkvs_kind":                _A + "kind",
+    "docket_id":                 _A + "docket-id",
+    "docket_version":            _A + "docket-version",
+    "project":                   _A + "project",
+    "project_lead":              _A + "project-lead",
+    "ktr":                       _A + "ktr",
+    "delivery_date":             _A + "delivery-date",
+    "comments":                  _A + "comments",
+    "geometry":                  _A + "geometry",
+    "fvc":                       _A + "fvc",
+    "precursor":                 _A + "precursor",
+    "additive":                  _A + "additive",
+    "additive_description":      _A + "additive-description",
+    "reinforcement_layer_count": _A + "reinforcement-layer-count",
+    "reinforcement_orientation": _A + "reinforcement-orientation",
+    "weave_type":                _A + "weave-type",
+    "weave_pattern":             _A + "weave-pattern",
+    "weave_area_density":        _A + "weave-area-density",
+    "fiber_material":            _A + "fiber-material",
+    "fiber_density":             _A + "fiber-density",
+    "step_kind":                 _A + "step-kind",
+    "step_index":                _A + "step-index",
+    "method":                    _A + "method",
+    "executed":                  _A + "executed",
+    "cycle":                     _A + "cycle",
+    "burn_id":                   _A + "burn-id",
+    "temperature":               _A + "temperature",
+    "editor_name":               _A + "editor-name",
+    "editor_date":               _A + "editor-date",
+    "parent_step_kind":          _A + "parent-step-kind",
+    "parent_step_index":         _A + "parent-step-index",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -333,6 +370,43 @@ def find_data_object_by_name(rows: list[dict], name: str) -> dict | None:
     return None
 
 
+def apply_annotations(api: Api, subject_app_id: str, attrs: dict) -> None:
+    """Write key/value pairs as SemanticAnnotations on a DataObject.
+
+    Idempotent: fetches existing predicateIris for the subject and skips
+    any that are already present.  Unknown keys (not in ANNOTATION_PREDICATES)
+    are silently skipped rather than written to the legacy attributes bag.
+    """
+    try:
+        resp = api.get("/v2/annotations", params={
+            "subjectAppId": subject_app_id,
+            "pageSize": 200,
+        })
+        items = resp.get("items", resp) if isinstance(resp, dict) else (resp or [])
+        existing_iris = {
+            a.get("predicateIri") or a.get("propertyIri")
+            for a in (items or [])
+            if a
+        }
+    except Exception:
+        existing_iris = set()
+
+    for key, value in attrs.items():
+        pred_iri = ANNOTATION_PREDICATES.get(key)
+        if not pred_iri:
+            continue
+        if pred_iri in existing_iris:
+            _log("SKIP", f"{key}={value!r}", "Annotation (exists)")
+            continue
+        api.post("/v2/annotations", json_body={
+            "subjectAppId": subject_app_id,
+            "subjectKind": "DataObject",
+            "predicateIri": pred_iri,
+            "objectLiteral": str(value),
+        })
+        _log("OK", f"{key}={value!r}", "Annotation", pred_iri)
+
+
 def create_data_object(
     api: Api,
     collection_app_id: str,
@@ -363,7 +437,6 @@ def create_data_object(
     if predecessor_app_id is not None:
         body: dict[str, Any] = {
             "name": name,
-            "attributes": attributes,
             "typedPredecessors": [
                 {
                     "predecessorAppId": predecessor_app_id,
@@ -388,7 +461,6 @@ def create_data_object(
                     "collectionAppId": collection_app_id,
                     "name": name,
                     "parentAppId": parent_app_id,
-                    "attributes": attributes,
                 }
             ],
         )
@@ -403,7 +475,7 @@ def create_data_object(
         return {"name": name, "appId": item["appId"]}
     return api.post(
         f"/v2/collections/{collection_app_id}/data-objects",
-        json_body={"name": name, "attributes": attributes},
+        json_body={"name": name},
     )
 
 
@@ -432,6 +504,7 @@ def find_or_create_data_object(
         predecessor_app_id=predecessor_app_id,
         v1ids=v1ids,
     )
+    apply_annotations(api, created["appId"], attributes)
     rows_cache.append(created)
     _log("OK", name, kind_label, created["appId"])
     return created
@@ -641,17 +714,21 @@ def step_info(idx: int, step_entry: dict) -> tuple[str, str, dict]:
 
 
 def _decode_editor(editor: dict | None) -> dict[str, str]:
-    """Surface ``editor.{name,date}`` into the DO's ``attributes`` map.
+    """Surface ``editor.{name,date}`` as SemanticAnnotation keys.
+
+    Returns a dict with ``editor_name`` / ``editor_date`` keys that
+    ``apply_annotations()`` will map to ``urn:shepard:btkvs:editor-name``
+    and ``urn:shepard:btkvs:editor-date`` predicates.
 
     TODO (BTKVS-A4 §2.3, deferred): every ``editor`` tuple in the v3
     docket should produce one ``:Activity`` PROV-O node
     (``sourceMode='human'``, ``WAS_ASSOCIATED_WITH`` → ``:User``,
     ``GENERATED`` → the step or post-analysis DO).  The
-    server-side decompose endpoint (BTKVS-A3) will own this — the seed
-    script keeps editor info on attributes for now so the BT-KVS team
-    can see the data is captured, without the seed having to mint
-    ``:Activity`` rows directly (which would require API surface that
-    doesn't yet exist for arbitrary editor-name strings).
+    server-side decompose endpoint (BTKVS-A3) will own this; until then
+    the editor fields travel as SemanticAnnotations so the BT-KVS team
+    can see the data is captured without the seed minting ``:Activity``
+    rows directly (which would require API surface that doesn't yet exist
+    for arbitrary editor-name strings).
     """
     if not editor:
         return {}
