@@ -42,7 +42,7 @@ const fileReferenceNumericId = computed(() =>
   resolveNumericId(undefined, routeParams.value.fileReferenceId),
 );
 
-const { fileReference, files } = useFetchFileReference(
+const { fileReference, files, notFound: fileReferenceNotFound } = useFetchFileReference(
   collectionNumericId,
   dataObjectNumericId,
   fileReferenceNumericId,
@@ -298,6 +298,19 @@ watch(fileReference, () => {
           </v-container>
         </v-col>
       </v-row>
+      <!-- UI-404-NICE-EMPTY-STATE-REF-PAGES: 404 on the file reference fetch →
+           honest empty state instead of an eternal spinner. -->
+      <EntityNotFound
+        v-else-if="fileReferenceNotFound"
+        entity-kind="FileReference"
+        :requested-id="routeParams.fileReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
     <EditFileReferenceDialog
