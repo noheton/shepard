@@ -1,0 +1,11 @@
+DEF hello_world()
+  ; Minimal KRL fixture for KRL-INTERPRETER-05 service tests.
+  ; This file is parsed by KRL-INTERPRETER-02 (the pykrlparser-backed
+  ; sidecar parser) at run-time; the backend treats it as opaque bytes.
+  DECL POS HOME = {X 100, Y 200, Z 300, A 0, B 0, C 0}
+  $BASE = {X 0, Y 0, Z 0, A 0, B 0, C 0}
+  $TOOL = {X 0, Y 0, Z 0, A 0, B 0, C 0}
+  PTP HOME
+  LIN {X 150, Y 200, Z 300, A 0, B 0, C 0}
+  WAIT SEC 0.5
+END
