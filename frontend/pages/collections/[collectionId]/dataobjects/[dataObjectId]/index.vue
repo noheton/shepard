@@ -897,9 +897,14 @@ async function saveEmbargoEdit() {
                   title="Lab Journal"
                 >
                   <div class="pt-4">
+                    <!-- UI-DO-LABJOURNAL-V2: appId-keyed props so the panel works
+                         for appId-only DataObjects (post-reset). Numeric ids passed
+                         as optional compat for the v1 create/delete child path. -->
                     <DataObjectLabJournalEntryList
-                      :collection-id="collection.id"
-                      :data-object-id="dataObject.id"
+                      :collection-app-id="collectionIdStr"
+                      :data-object-app-id="dataObject?.appId ?? dataObjectIdStr"
+                      :collection-numeric-id="collection?.id ?? undefined"
+                      :data-object-numeric-id="dataObject?.id ?? undefined"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>
