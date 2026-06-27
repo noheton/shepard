@@ -22,10 +22,13 @@ import {
   useFetchVideoStreamReferences,
 } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchVideoAnnotations } from "~/composables/context/useFetchVideoAnnotations";
+import EditVideoStreamReferenceDialog from "~/components/context/dataobject/EditVideoStreamReferenceDialog.vue";
 
 const props = defineProps<{
   dataObjectAppId: string;
   canUpload?: boolean;
+  /** Set true when the caller has Write permission so the rename button is shown. */
+  canEdit?: boolean;
 }>();
 
 const VIDEO_ACCEPT =
@@ -110,6 +113,22 @@ function annotationsFor(refAppId: string) {
     );
   }
   return annotationStates.get(refAppId)!;
+}
+
+// ── edit dialog state (REF-EDIT-2) ────────────────────────────────────────────
+
+const showEditDialog = ref(false);
+const editingRef = ref<VideoStreamReferenceIO | null>(null);
+
+function openEditDialog(ref: VideoStreamReferenceIO) {
+  editingRef.value = ref;
+  showEditDialog.value = true;
+}
+
+function onRenamed(newName: string) {
+  if (editingRef.value) {
+    editingRef.value.name = newName;
+  }
 }
 
 /** Small palette for annotation segment colors, cycled by label. */
@@ -218,8 +237,19 @@ function formatBitrate(
         variant="outlined"
         class="video-card"
       >
-        <v-card-title class="text-body-1 font-weight-medium pb-1">
-          {{ ref.name ?? ref.appId }}
+        <v-card-title class="text-body-1 font-weight-medium pb-1 d-flex align-center">
+          <span>{{ ref.name ?? ref.appId }}</span>
+          <v-btn
+            v-if="canEdit"
+            icon="mdi-pencil-outline"
+            size="x-small"
+            variant="plain"
+            density="compact"
+            class="ml-2"
+            :aria-label="`Rename ${ref.name ?? ref.appId}`"
+            data-testid="edit-video-ref-btn"
+            @click.stop="openEditDialog(ref)"
+          />
         </v-card-title>
 
         <v-card-text class="pt-0">
@@ -404,6 +434,15 @@ function formatBitrate(
       <span v-if="canUpload">Use the upload button above to add a video file (MP4, MOV, MKV, WebM, AVI).</span>
       <span v-else>Upload a video file (MP4, MOV, MKV, WebM, AVI) to see it here.</span>
     </div>
+
+    <!-- REF-EDIT-2 — rename dialog, mounted once outside the v-for loop -->
+    <EditVideoStreamReferenceDialog
+      v-if="editingRef"
+      v-model:show-dialog="showEditDialog"
+      :video-stream-reference-app-id="editingRef.appId"
+      :current-name="editingRef.name ?? editingRef.appId"
+      @saved="onRenamed"
+    />
   </div>
 </template>
 
