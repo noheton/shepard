@@ -18,6 +18,8 @@ import de.dlr.shepard.v2.search.io.SearchV2ResultIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -99,7 +101,7 @@ public class SearchV2Rest {
       description = "Page size (1–200).",
       schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50")
     )
-    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     if (q == null || q.isBlank()) {
       return Response.status(Response.Status.BAD_REQUEST).entity("Query parameter 'q' is required.").build();
@@ -144,6 +146,8 @@ public class SearchV2Rest {
     }
     total += doResult.getResults().length;
 
-    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q)).build();
+    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q))
+        .header("X-Total-Count", total)
+        .build();
   }
 }
