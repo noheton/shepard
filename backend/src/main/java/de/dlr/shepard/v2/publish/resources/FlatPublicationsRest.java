@@ -6,9 +6,14 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -21,7 +26,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -70,12 +74,14 @@ public class FlatPublicationsRest {
       "the caller to know the entity-kind URL segment. Pass any publishable entity's appId; the " +
       "server resolves the entity kind internally. Ordered mintedAt DESC (most-recent first). " +
       "Includes retired rows (digitalObjectMutability = 'retired'). " +
-      "Auth: Read permission on the entity."
+      "Auth: Read permission on the entity.\n\n" +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total count before paging (kept during deprecation window)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of Publications, most-recent first. Empty array when entity has never been published.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PublicationIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Missing or blank entityAppId parameter (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -84,6 +90,10 @@ public class FlatPublicationsRest {
   public Response list(
     @Parameter(description = "AppId of the entity whose Publications to list.", required = true)
     @QueryParam("entityAppId") String entityAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext,
     @Context UriInfo uriInfo
   ) {
@@ -113,14 +123,19 @@ public class FlatPublicationsRest {
     }
 
     List<Publication> rows = publicationDAO.findByEntityAppId(entityAppId);
-    List<PublicationIO> body = rows.stream()
+    List<PublicationIO> all = rows.stream()
       .map(p -> {
         String resolverUrl = PublicationsListRest.absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
         return PublicationIO.from(p, resolverUrl);
       })
       .toList();
 
-    return Response.ok(body).build();
+    long total = all.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to   = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+      .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+      .build();
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {

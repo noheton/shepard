@@ -11,6 +11,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,13 +78,16 @@ class FlatPublicationsRestTest {
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
 
-    Response r = rest.list("01HF-A", securityContext, uriInfo);
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("shepard:dlr.de:data-objects:01HF-A:v1", body.get(0).pid());
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("shepard:dlr.de:data-objects:01HF-A:v1", body.items().get(0).pid());
+    assertEquals(1L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
   }
 
   @Test
@@ -93,11 +98,11 @@ class FlatPublicationsRestTest {
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
 
-    Response r = rest.list("01HF-A", securityContext, uriInfo);
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
     assertTrue(
-      body.get(0).resolverUrl().endsWith("/v2/.well-known/kip/shepard:dlr.de:data-objects:01HF-A:v1"),
+      body.items().get(0).resolverUrl().endsWith("/v2/.well-known/kip/shepard:dlr.de:data-objects:01HF-A:v1"),
       "resolverUrl should point to the KIP resolver path"
     );
   }
@@ -109,38 +114,39 @@ class FlatPublicationsRestTest {
       .thenReturn(true);
     when(publicationDAO.findByEntityAppId("01HF-NEW")).thenReturn(List.of());
 
-    Response r = rest.list("01HF-NEW", securityContext, uriInfo);
+    Response r = rest.list("01HF-NEW", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertTrue(body.isEmpty(), "Unpublished entity should return an empty list");
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertTrue(body.items().isEmpty(), "Unpublished entity should return empty items");
+    assertEquals(0L, body.total());
   }
 
   @Test
   void missingEntityAppIdReturns400() {
-    Response r = rest.list(null, securityContext, uriInfo);
+    Response r = rest.list(null, 0, 50, securityContext, uriInfo);
     assertEquals(400, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
   }
 
   @Test
   void blankEntityAppIdReturns400() {
-    Response r = rest.list("   ", securityContext, uriInfo);
+    Response r = rest.list("   ", 0, 50, securityContext, uriInfo);
     assertEquals(400, r.getStatus());
   }
 
   @Test
   void missingAuthReturns401() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = rest.list("01HF-A", securityContext, uriInfo);
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void unknownEntityReturns404() {
     when(entityIdResolver.resolveLong("01HF-X")).thenThrow(new NotFoundException("nope"));
-    Response r = rest.list("01HF-X", securityContext, uriInfo);
+    Response r = rest.list("01HF-X", 0, 50, securityContext, uriInfo);
     assertEquals(404, r.getStatus());
   }
 
@@ -149,7 +155,7 @@ class FlatPublicationsRestTest {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
       .thenReturn(false);
-    Response r = rest.list("01HF-A", securityContext, uriInfo);
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
     assertEquals(403, r.getStatus());
   }
 
@@ -163,12 +169,12 @@ class FlatPublicationsRestTest {
     pub.setEntityAppId("01COLL-A");
     when(publicationDAO.findByEntityAppId("01COLL-A")).thenReturn(List.of(pub));
 
-    Response r = rest.list("01COLL-A", securityContext, uriInfo);
+    Response r = rest.list("01COLL-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals("collections", body.get(0).entityKind());
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals("collections", body.items().get(0).entityKind());
   }
 
   @Test
@@ -180,12 +186,90 @@ class FlatPublicationsRestTest {
     retired.setDigitalObjectMutability("retired");
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(retired));
 
-    Response r = rest.list("01HF-A", securityContext, uriInfo);
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals(1, body.size(), "Retired publications should appear in the flat alias too");
-    assertEquals("retired", body.get(0).digitalObjectMutability());
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(1, body.items().size(), "Retired publications should appear in the flat alias too");
+    assertEquals("retired", body.items().get(0).digitalObjectMutability());
+  }
+
+  @Test
+  void paginationFirstPageReturnsSlice() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    List<Publication> pubs = new ArrayList<>();
+    for (int i = 0; i < 7; i++) {
+      pubs.add(publication("pid-" + i));
+    }
+    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+
+    Response r = rest.list("01HF-A", 0, 3, securityContext, uriInfo);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(3, body.items().size(), "First page should contain 3 items");
+    assertEquals(7L, body.total(), "Total should reflect full count");
+    assertEquals(0, body.page());
+    assertEquals(3, body.pageSize());
+  }
+
+  @Test
+  void paginationSecondPageReturnsNextSlice() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    List<Publication> pubs = new ArrayList<>();
+    for (int i = 0; i < 7; i++) {
+      pubs.add(publication("pid-" + i));
+    }
+    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+
+    Response r = rest.list("01HF-A", 1, 3, securityContext, uriInfo);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(3, body.items().size(), "Second page should contain 3 items");
+    assertEquals(7L, body.total());
+    assertEquals(1, body.page());
+  }
+
+  @Test
+  void paginationBeyondEndReturnsEmptyItems() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    List<Publication> pubs = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      pubs.add(publication("pid-" + i));
+    }
+    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+
+    Response r = rest.list("01HF-A", 5, 10, securityContext, uriInfo);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertTrue(body.items().isEmpty(), "Page beyond end should return empty items");
+    assertEquals(3L, body.total(), "Total should still reflect full count");
+  }
+
+  @Test
+  void xTotalCountHeaderPresent() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
+    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
+
+    Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
+
+    assertEquals(200, r.getStatus());
+    assertEquals("1", r.getHeaderString("X-Total-Count"),
+      "X-Total-Count header should carry total count before paging");
   }
 }
