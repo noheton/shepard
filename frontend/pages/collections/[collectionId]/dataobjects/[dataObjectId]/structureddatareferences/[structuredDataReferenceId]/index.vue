@@ -39,12 +39,16 @@ const structuredDataReferenceNumericId = computed(() =>
   resolveNumericId(undefined, routeParams.value.structuredDataReferenceId),
 );
 
-const { structuredDataReference, structuredData, refreshStructuredData } =
-  useFetchStructuredDataReference(
-    collectionNumericId,
-    dataObjectNumericId,
-    structuredDataReferenceNumericId,
-  );
+const {
+  structuredDataReference,
+  structuredData,
+  refreshStructuredData,
+  notFound: structuredDataReferenceNotFound,
+} = useFetchStructuredDataReference(
+  collectionNumericId,
+  dataObjectNumericId,
+  structuredDataReferenceNumericId,
+);
 
 const headers = ref([
   { title: "Name", key: "name", sortable: true },
@@ -314,6 +318,19 @@ watch(structuredDataReference, () => {
           </v-container>
         </v-col>
       </v-row>
+      <!-- UI-404-NICE-EMPTY-STATE-REF-PAGES: 404 on the structured-data reference
+           fetch → honest empty state instead of an eternal spinner. -->
+      <EntityNotFound
+        v-else-if="structuredDataReferenceNotFound"
+        entity-kind="StructuredDataReference"
+        :requested-id="routeParams.structuredDataReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
     <EditStructuredDataReferenceDialog
