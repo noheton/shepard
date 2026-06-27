@@ -21,7 +21,12 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.v2.search.io.SearchV2ItemIO;
 import de.dlr.shepard.v2.search.io.SearchV2ResultIO;
 import jakarta.ws.rs.core.Response;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -181,6 +186,45 @@ class SearchV2RestTest {
       .map(Field::getName)
       .collect(Collectors.toList());
     assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
+  }
+
+  /** Regression: successful search response must carry X-Total-Count header matching body total. */
+  @Test
+  void responseIncludesXTotalCountHeader() {
+    Collection col = new Collection(1L);
+    col.setAppId(COLL_APP_ID);
+    col.setName("LUMEN Campaign");
+    PaginatedCollectionList page = new PaginatedCollectionList(
+      List.of(col),
+      3,
+      "LUMEN",
+      Optional.of(0),
+      Optional.of(50),
+      BasicCollectionAttributes.createdAt,
+      true
+    );
+    when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
+    stubEmptyDataObjects("LUMEN");
+
+    Response resp = resource.search("LUMEN", 0, 50);
+
+    assertEquals(200, resp.getStatus());
+    Object header = resp.getHeaders().getFirst("X-Total-Count");
+    assertEquals(3L, header, "X-Total-Count header must match body total");
+  }
+
+  /** Regression: pageSize @PathParam on search() must carry @Min(1) and @Max(200). */
+  @Test
+  void pageSizeAnnotationHasMinOneAndMax200() throws NoSuchMethodException {
+    Method searchMethod = SearchV2Rest.class.getMethod("search", String.class, int.class, int.class);
+    Parameter pageSizeParam = searchMethod.getParameters()[2];
+    List<Class<? extends Annotation>> annotationTypes = Arrays.stream(pageSizeParam.getAnnotations())
+      .map(Annotation::annotationType)
+      .collect(Collectors.toList());
+    assertTrue(annotationTypes.contains(Min.class), "pageSize must have @Min");
+    assertTrue(annotationTypes.contains(Max.class), "pageSize must have @Max");
+    assertEquals(1L, pageSizeParam.getAnnotation(Min.class).value(), "@Min value must be 1");
+    assertEquals(200L, pageSizeParam.getAnnotation(Max.class).value(), "@Max value must be 200");
   }
 
   // --- helpers ---

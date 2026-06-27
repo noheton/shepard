@@ -453,7 +453,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-26-fire241.md`](agent-findings/apisimp-sweep-2026-06-26-fire241.md) | APISIMP Sweep — 2026-06-26 (fire-241) | 2026-06-26 | 2026-06-26 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-26.md`](agent-findings/apisimp-sweep-2026-06-26.md) | APISIMP Sweep — 2026-06-26 (fire-231) | 2026-06-26 | 2026-06-26 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire268.md`](agent-findings/apisimp-sweep-2026-06-27-fire268.md) | APISIMP Sweep — 2026-06-27 (fire-268) | 2026-06-27 | 2026-06-27 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire270.md`](agent-findings/apisimp-sweep-2026-06-27-fire270.md) | APISIMP Sweep — 2026-06-27 (fire-270) | 2026-06-27 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire270.md`](agent-findings/apisimp-sweep-2026-06-27-fire270.md) | APISIMP Sweep — 2026-06-27 (fire-270) | 2026-06-27 | 2026-06-27 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-27.md`](agent-findings/apisimp-sweep-2026-06-27.md) | APISIMP Sweep — 2026-06-27 (fire-262) | 2026-06-27 | 2026-06-27 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-26 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-26 |
