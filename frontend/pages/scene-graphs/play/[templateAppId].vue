@@ -33,6 +33,7 @@ interface PlayEnvelope {
   rootLink?: string | null;
   frames?: { name: string; parent: string | null }[];
   joints?: { name: string; type: string }[];
+  jointTimeseriesReferenceAppId?: string | null;
   jointChannelBindings?: { joint: string; channelSelector: string }[];
   playbackStatus?: string;
 }
