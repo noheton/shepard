@@ -33,6 +33,8 @@ export enum AdminFragments {
   JUPYTER = "jupyter",
   // UI-GAP-3
   CONFIG_OVERVIEW = "config-overview",
+  // MFFD-BATCH-01
+  BATCH_CREATE = "batch-create",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -175,5 +177,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "JupyterHub link-out",
     fragment: AdminFragments.JUPYTER,
     icon: "mdi-jupyter",
+  },
+  // MFFD-BATCH-01
+  {
+    name: "Bulk DataObject creation",
+    fragment: AdminFragments.BATCH_CREATE,
+    icon: "mdi-layers-plus",
   },
 ];

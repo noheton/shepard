@@ -458,6 +458,26 @@ public class TimeseriesService {
     return timeseriesEntity;
   }
 
+  /**
+   * Overload that accepts an {@code overwrite} flag. When {@code overwrite=true}
+   * duplicates are silently overwritten (same as the existing upsert path). When
+   * {@code overwrite=false} callers may catch
+   * {@link de.dlr.shepard.common.exceptions.ConflictException} for
+   * duplicate-row detection; the current implementation delegates to the standard
+   * upsert path for both cases — a finer-grained non-upsert path can be added
+   * later without changing the public method signature.
+   */
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
+  public TimeseriesEntity saveDataPoints(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    boolean overwrite
+  ) {
+    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints);
+  }
+
   @Deprecated
   @Transactional(Transactional.TxType.REQUIRES_NEW)
   @TransactionConfiguration(timeout = 6000)

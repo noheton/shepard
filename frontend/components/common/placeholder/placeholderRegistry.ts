@@ -217,6 +217,19 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
     backend: "shipped",
   },
+  // MFFD-BATCH-01: batch DataObject create — backend shipped; full UI TBD
+  {
+    slug: "batch-create",
+    surface: "admin",
+    title: "Bulk DataObject creation",
+    subtitle:
+      "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item result. " +
+      "Designed for MFFD-scale imports (17 600+ DataObjects). Full UI pending; use the REST surface directly today.",
+    endpoint: null,
+    backlogRow: "MFFD-BATCH-01",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
   // PLACEHOLDER-REPLACE-TPL3a-lite shipped 2026-05-31 → AdminOntologyAlignmentPane
   // PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY shipped 2026-05-31 → AdminInstanceRegistryPane
   // TS-SEMANTIC-REST
