@@ -14,11 +14,15 @@ import de.dlr.shepard.v2.admin.services.InstanceAdminService;
 import de.dlr.shepard.v2.admin.services.NukeService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -214,10 +218,10 @@ public class InstanceAdminRest {
                   "from/to (ISO-8601), and pagination via page/size."
   )
   @APIResponse(
-    description = "Page of permission audit log entries (GRANT/REVOKE/UPDATE events) sorted by occurred_at DESC.",
+    description = "Page of permission audit log entries (GRANT/REVOKE/UPDATE events) sorted by occurred_at DESC, wrapped in a PagedResponse envelope.",
     responseCode = "200",
     content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditLogEntryIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
@@ -233,9 +237,9 @@ public class InstanceAdminRest {
     @Parameter(description = "Optional ISO-8601 instant upper bound (exclusive) on occurred_at. Malformed value returns 400. Example: 2026-02-01T00:00:00Z.")
     @QueryParam("to") String to,
     @Parameter(description = "Zero-based page index (default 0).")
-    @QueryParam("page") @DefaultValue("0") int page,
-    @Parameter(description = "Page size (default 50). Server-side cap: 500 — values above 500 are silently clamped.")
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–500 (default 50). Server-side cap: 500 — values above 500 are rejected by bean validation.")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize
   ) {
     requireInstanceAdmin(securityContext);
 
@@ -249,10 +253,13 @@ public class InstanceAdminRest {
         "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage());
     }
 
+    long total = permissionAuditLogQueryService.count(entityAppId, actor, fromInstant, toInstant);
     List<PermissionAuditLogEntryIO> rows = permissionAuditLogQueryService.query(
       entityAppId, actor, fromInstant, toInstant, page, pageSize
     );
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   /**

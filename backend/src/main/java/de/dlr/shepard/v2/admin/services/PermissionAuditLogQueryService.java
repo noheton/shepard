@@ -28,6 +28,53 @@ public class PermissionAuditLogQueryService {
   AgroalDataSource defaultDataSource;
 
   /**
+   * Count matching rows with the same filter predicate as {@link #query}.
+   *
+   * @param entityAppId filter by entity appId (null = no filter)
+   * @param actor       filter by actor_username (null = no filter)
+   * @param from        filter to rows with occurred_at &gt;= from (null = no lower bound)
+   * @param to          filter to rows with occurred_at &lt; to (null = no upper bound)
+   * @return total matching row count, or 0 on SQL failure
+   */
+  public long count(String entityAppId, String actor, Instant from, Instant to) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM permission_audit_log WHERE 1=1 ");
+    List<Object> params = new ArrayList<>();
+
+    if (entityAppId != null && !entityAppId.isBlank()) {
+      sql.append("AND entity_app_id = ? ");
+      params.add(entityAppId.trim());
+    }
+    if (actor != null && !actor.isBlank()) {
+      sql.append("AND actor_username = ? ");
+      params.add(actor.trim());
+    }
+    if (from != null) {
+      sql.append("AND occurred_at >= ? ");
+      params.add(Timestamp.from(from));
+    }
+    if (to != null) {
+      sql.append("AND occurred_at < ? ");
+      params.add(Timestamp.from(to));
+    }
+
+    try (Connection conn = defaultDataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+      for (int i = 0; i < params.size(); i++) {
+        Object p = params.get(i);
+        if (p instanceof String s) ps.setString(i + 1, s);
+        else if (p instanceof Timestamp ts) ps.setTimestamp(i + 1, ts);
+        else ps.setObject(i + 1, p);
+      }
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? rs.getLong(1) : 0L;
+      }
+    } catch (Exception e) {
+      Log.warnf(e, "F3: permission audit log count query failed; returning 0");
+      return 0L;
+    }
+  }
+
+  /**
    * Query the permission audit log with optional filters.
    *
    * @param entityAppId filter by entity appId (null = no filter)
