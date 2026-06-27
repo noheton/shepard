@@ -541,20 +541,62 @@ class SemanticAnnotationV2RestTest {
     assertThat(resource.exportTurtle(ANN_APP_ID, sc).getStatus()).isEqualTo(404);
   }
 
-  // ─── collection subject kind ──────────────────────────────────────────────
+  // ─── collection subject kind (RESEED-FIND-MISC item a) ──────────────────
 
+  static final String COLL_APP_ID = "coll-001";
+
+  /** GET annotation on a Collection subject — owner must receive 200, not 403. */
   @Test
-  void get_collectionSubject_usesOgmIdPermissionCheck() {
-    var ann = annotation(ANN_APP_ID, "coll-001", "Collection", PREDICATE_IRI, "v");
+  void get_collectionSubject_returns200_whenOwnerHasReadPermission() {
+    var ann = annotation(ANN_APP_ID, COLL_APP_ID, "Collection", PREDICATE_IRI, "v");
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(entityIdResolver.resolveWithLabels("coll-001"))
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
       .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
-    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L)))
+    // 3-arg — the fix: same overload used by every other Collection permission check in v2
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
 
     Response r = resource.get(ANN_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L));
+    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER));
+  }
+
+  @Test
+  void get_collectionSubject_returns403_whenReadDenied() {
+    var ann = annotation(ANN_APP_ID, COLL_APP_ID, "Collection", PREDICATE_IRI, "v");
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+
+    assertThat(resource.get(ANN_APP_ID, sc).getStatus()).isEqualTo(403);
+  }
+
+  /** LIST annotations on a Collection subject — owner must receive 200. */
+  @Test
+  void list_collectionSubject_returns200_whenOwnerHasReadPermission() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(annotationDAO.findFiltered(eq(COLL_APP_ID), any(), any(), any(), eq(0), eq(50)))
+      .thenReturn(List.of());
+    when(annotationDAO.countFiltered(eq(COLL_APP_ID), any(), any(), any())).thenReturn(0L);
+
+    Response r = resource.list(COLL_APP_ID, "Collection", null, null, 0, 50, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER));
+  }
+
+  @Test
+  void list_collectionSubject_returns403_whenReadDenied() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+
+    assertThat(resource.list(COLL_APP_ID, "Collection", null, null, 0, 50, sc).getStatus()).isEqualTo(403);
   }
 
   // ─── legacy annotation (null subjectAppId) ────────────────────────────────
