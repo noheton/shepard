@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.repositories;
 
+import de.dlr.shepard.common.exceptions.ConflictException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -105,14 +106,65 @@ public class TimeseriesDataPointRepository {
    *                              View' -> 'Timeseries: Multiple Values for One
    *                              Timestamp')
    */
+  /**
+   * Insert data points using the VALUES INSERT path, silently overwriting
+   * existing rows on {@code (timeseries_id, time)} conflict ({@code DO UPDATE}).
+   * This is the legacy / v1-compatible behaviour — all existing callers that
+   * have not opted into the conflict-reject policy should use this overload.
+   */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
   public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
+    insertManyDataPoints(entities, timeseriesEntity, true);
+  }
+
+  /**
+   * Insert data points using the VALUES INSERT path with configurable conflict
+   * handling.
+   *
+   * <p>When {@code overwrite=true} (legacy / v1-compatible): an existing row at
+   * the same {@code (timeseries_id, time)} is silently replaced via
+   * {@code ON CONFLICT DO UPDATE}.
+   *
+   * <p>When {@code overwrite=false} (new v2 default): an existing row at the
+   * same {@code (timeseries_id, time)} causes the batch to be aborted and a
+   * {@link ConflictException} (HTTP 409) is thrown. The caller should surface
+   * this to the user so they can decide whether to retry with
+   * {@code overwrite=true}.
+   *
+   * @param entities          data points to insert
+   * @param timeseriesEntity  the target timeseries channel
+   * @param overwrite         {@code true} to silently replace conflicts;
+   *                          {@code false} to throw {@link ConflictException}
+   * @throws InvalidBodyException if {@code overwrite=true} and two rows in the
+   *                              same batch share a timestamp (within-batch
+   *                              duplicate — always an error regardless of policy)
+   * @throws ConflictException    if {@code overwrite=false} and one or more points
+   *                              conflict with existing data
+   */
+  @Timed(value = "shepard.timeseries-data-point.batch-insert-overwrite-aware")
+  public void insertManyDataPoints(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity,
+    boolean overwrite
+  ) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity, overwrite);
 
       try {
-        query.executeUpdate();
+        int affected = query.executeUpdate();
+        if (!overwrite) {
+          int submitted = currentLimit - i;
+          if (affected < submitted) {
+            throw new ConflictException(
+              "Duplicate timeseries data points detected: submitted %d point(s) but only %d were inserted." +
+              " Conflicting (channel, timestamp) pairs already exist." +
+              " Re-send with overwrite=true to replace existing values.",
+              submitted,
+              affected
+            );
+          }
+        }
       } catch (DataException ex) {
         if (ex.getCause().toString().contains("ON CONFLICT DO UPDATE command cannot affect row a second time")) {
           throw new InvalidBodyException(
@@ -372,7 +424,8 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    TimeseriesEntity timeseriesEntity
+    TimeseriesEntity timeseriesEntity,
+    boolean overwrite
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
@@ -385,14 +438,18 @@ public class TimeseriesDataPointRepository {
         .mapToObj(index -> "(:timeseriesid" + ",:time" + index + ",:value" + index + ")")
         .collect(Collectors.joining(","))
     );
-    queryString.append(
-      " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseriesEntity.getValueType()) +
-      " = " +
-      "EXCLUDED." +
-      getColumnName(timeseriesEntity.getValueType()) +
-      ";"
-    );
+    if (overwrite) {
+      queryString.append(
+        " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
+        getColumnName(timeseriesEntity.getValueType()) +
+        " = " +
+        "EXCLUDED." +
+        getColumnName(timeseriesEntity.getValueType()) +
+        ";"
+      );
+    } else {
+      queryString.append(" ON CONFLICT (timeseries_id, time) DO NOTHING;");
+    }
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 

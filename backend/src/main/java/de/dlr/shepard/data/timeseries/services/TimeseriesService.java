@@ -354,9 +354,9 @@ public class TimeseriesService {
   }
 
   /**
-   * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in
-   * the database.
+   * Saves data points via the VALUES INSERT path with {@code overwrite=true}
+   * (legacy / v1-compatible: silent last-wins on conflict).
+   * Existing callers that have not opted into the reject policy should use this.
    *
    * @param timeseriesContainerId Identifies the TimeseriesContainer
    * @param timeseries            The timeseries identifiers
@@ -368,21 +368,43 @@ public class TimeseriesService {
     Timeseries timeseries,
     List<TimeseriesDataPoint> dataPoints
   ) {
-    timeseriesContainerService.getContainer(timeseriesContainerId);
-    timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
-
-    // Fix B: scan first few points instead of blindly trusting the first.
-    // A glitch first-point (null, NaN, "NaN" string) would otherwise
-    // lock the channel to the wrong type for all future ingest.
-    DataPointValueType incomingValueType = inferValueType(dataPoints);
-
-    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, incomingValueType);
+    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, true);
   }
 
   /**
-   * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in
-   * the database.
+   * Saves data points via the VALUES INSERT path with configurable conflict
+   * policy.
+   *
+   * <p>When {@code overwrite=false} (recommended for new v2 callers), a
+   * {@link de.dlr.shepard.common.exceptions.ConflictException} (HTTP 409) is
+   * thrown if any submitted point collides with an existing
+   * {@code (timeseries_id, time)} pair. Re-send with {@code overwrite=true} to
+   * replace existing values.
+   *
+   * @param timeseriesContainerId Identifies the TimeseriesContainer
+   * @param timeseries            The timeseries identifiers
+   * @param dataPoints            Data points to be added to the timeseries
+   * @param overwrite             {@code true} to silently replace conflicts;
+   *                              {@code false} to throw on conflict (HTTP 409)
+   * @return created or updated timeseries entity
+   */
+  public TimeseriesEntity saveDataPoints(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    boolean overwrite
+  ) {
+    timeseriesContainerService.getContainer(timeseriesContainerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
+
+    DataPointValueType incomingValueType = inferValueType(dataPoints);
+
+    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, incomingValueType, overwrite);
+  }
+
+  /**
+   * Saves data points via the VALUES INSERT path with an explicit value type and
+   * {@code overwrite=true} (legacy / v1-compatible: silent last-wins on conflict).
    *
    * @param timeseriesContainerId Identifies the TimeseriesContainer
    * @param timeseries            The timeseries identifiers
@@ -399,6 +421,31 @@ public class TimeseriesService {
     List<TimeseriesDataPoint> dataPoints,
     DataPointValueType dataType
   ) {
+    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, dataType, true);
+  }
+
+  /**
+   * Saves data points via the VALUES INSERT path with an explicit value type and
+   * configurable conflict policy.
+   *
+   * @param timeseriesContainerId Identifies the TimeseriesContainer
+   * @param timeseries            The timeseries identifiers
+   * @param dataPoints            Data points to be added to the timeseries
+   * @param dataType              The data type that values in this timeseries
+   *                              will have
+   * @param overwrite             {@code true} to silently replace conflicts;
+   *                              {@code false} to throw on conflict (HTTP 409)
+   * @return created or updated timeseries entity
+   */
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
+  public TimeseriesEntity saveDataPoints(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    DataPointValueType dataType,
+    boolean overwrite
+  ) {
     timeseriesContainerService.getContainer(timeseriesContainerId);
     timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
 
@@ -406,7 +453,7 @@ public class TimeseriesService {
 
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
 
-    timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
+    timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity, overwrite);
 
     return timeseriesEntity;
   }
