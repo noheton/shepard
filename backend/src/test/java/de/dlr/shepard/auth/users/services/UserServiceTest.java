@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
@@ -19,6 +20,7 @@ import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +30,9 @@ public class UserServiceTest {
 
   @InjectMock
   UserDAO dao;
+
+  @InjectMock
+  AuthenticationContext authCtx;
 
   @Inject
   UserService service;
@@ -236,5 +241,85 @@ public class UserServiceTest {
     ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
     verify(dao).createOrUpdate(captor.capture());
     assertNull(captor.getValue().getPreferencesJson(), "preferencesJson must be null when map is empty");
+  }
+
+  // ── BUG-USER-PROVISION-EMAIL-COLLISION regression tests ──────────────────
+
+  /**
+   * When find-by-username misses but find-by-email hits (stored node has a
+   * different username), createOrUpdateUser must return the existing node
+   * without throwing and without creating a duplicate.
+   *
+   * <p>Scenario: importer service created a node with username = "uuid-service"
+   * and email = "admin@demo.shepard.local". Interactive admin login arrives with
+   * username = "admin", same email. Old code → blind create → email unique
+   * constraint violation → 500.  Fixed code → email fallback → returns existing
+   * node.
+   */
+  @Test
+  public void createOrUpdateUser_emailCollision_returnsExistingNode() {
+    var existingNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    var tokenUser = new User("admin", "Admin", "User", "admin@demo.shepard.local");
+
+    when(dao.find("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(existingNode));
+
+    var result = service.createOrUpdateUser(tokenUser);
+
+    assertEquals(existingNode, result, "must return the email-matched node, not create a new one");
+    verify(dao, never()).createOrUpdate(tokenUser);
+  }
+
+  /**
+   * With the email-collision fix, profile fields are updated on the existing
+   * node (found by email) just like they are when found by username.
+   */
+  @Test
+  public void createOrUpdateUser_emailCollision_updatesProfileOnExistingNode() {
+    var existingNode = new User("uuid-service", "Old", "Name", "admin@demo.shepard.local");
+    var tokenUser = new User("admin", "Admin", "User", "admin@demo.shepard.local");
+
+    when(dao.find("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(existingNode));
+    when(dao.createOrUpdate(existingNode)).thenReturn(existingNode);
+
+    service.createOrUpdateUser(tokenUser);
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(dao).createOrUpdate(captor.capture());
+    assertEquals("Admin", captor.getValue().getFirstName());
+    assertEquals("User", captor.getValue().getLastName());
+  }
+
+  /**
+   * getCurrentUser must succeed via email fallback when the stored username
+   * diverges from the token's username (cached-path scenario: no provision
+   * runs, but the node carries a different username key).
+   */
+  @Test
+  public void getCurrentUser_emailFallback_succeedsWhenUsernameMissesButEmailHits() {
+    var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
+    when(dao.find("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+
+    var result = service.getCurrentUser();
+
+    assertEquals(storedNode, result, "email fallback must return the stored node");
+  }
+
+  /**
+   * getCurrentUser must still throw when both username and email lookups miss.
+   */
+  @Test
+  public void getCurrentUser_throwsWhenNeitherUsernameNorEmailMatch() {
+    when(authCtx.getCurrentUserName()).thenReturn("ghost");
+    when(authCtx.getCurrentUserEmail()).thenReturn("ghost@nowhere.example");
+    when(dao.find("ghost")).thenReturn(null);
+    when(dao.findByEmail("ghost@nowhere.example")).thenReturn(Optional.empty());
+
+    assertThrows(InvalidRequestException.class, () -> service.getCurrentUser());
   }
 }
