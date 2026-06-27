@@ -172,3 +172,81 @@ export function useSceneGraphPlay() {
 
   return { loading, createTemplate };
 }
+
+// ── Slice 2: patch existing template bindings ─────────────────────────────────
+
+/**
+ * Build the patched MAPPING_RECIPE body from a channel-map keyed by joint name.
+ * Pure + exported so unit tests can assert the body shape without network I/O.
+ *
+ * Backlog: SCENEGRAPH-CANVAS-ANIM-1 slice 2.
+ */
+export function buildPatchedSceneGraphBody(
+  urdfFileReferenceAppId: string,
+  jointTimeseriesReferenceAppId: string | null | undefined,
+  channelMap: Record<string, string | null>,
+  joints: { name: string }[],
+): Record<string, unknown> {
+  const bindings = joints
+    .filter(j => !!(channelMap[j.name] ?? "").trim())
+    .map(j => ({ joint: j.name, channelSelector: (channelMap[j.name] as string).trim() }));
+  return buildSceneGraphPlayTemplateBody({
+    urdfFileReferenceAppId,
+    jointTimeseriesReferenceAppId: jointTimeseriesReferenceAppId || null,
+    jointChannelBindings: bindings.length > 0 ? bindings : null,
+  });
+}
+
+export interface PatchSceneGraphBindingsRequest {
+  templateAppId: string;
+  urdfFileReferenceAppId: string;
+  jointTimeseriesReferenceAppId?: string | null;
+  jointChannelBindings?: SceneGraphPlayBinding[] | null;
+}
+
+export type PatchSceneGraphBindingsResult =
+  | { ok: true }
+  | { ok: false; status: number; detail: string };
+
+/** Patch the joint TS bindings on an existing MAPPING_RECIPE template. */
+export function usePatchSceneGraphBindings() {
+  const loading = ref(false);
+
+  async function patch(
+    req: PatchSceneGraphBindingsRequest,
+  ): Promise<PatchSceneGraphBindingsResult> {
+    loading.value = true;
+    try {
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      if (!accessToken) {
+        return { ok: false, status: 401, detail: "Sign in expired — refresh the page." };
+      }
+      const newBody = buildSceneGraphPlayTemplateBody({
+        urdfFileReferenceAppId: req.urdfFileReferenceAppId,
+        jointTimeseriesReferenceAppId: req.jointTimeseriesReferenceAppId,
+        jointChannelBindings: req.jointChannelBindings,
+      });
+      const url = `${v2BaseUrl()}/v2/templates/${encodeURIComponent(req.templateAppId)}`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ body: JSON.stringify(newBody) }),
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        return { ok: false, status: response.status, detail: text || `HTTP ${response.status}` };
+      }
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, status: 0, detail: e instanceof Error ? e.message : "Network error." };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { loading, patch };
+}
