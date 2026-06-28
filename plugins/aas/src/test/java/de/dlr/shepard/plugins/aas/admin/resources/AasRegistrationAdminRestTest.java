@@ -14,6 +14,7 @@ import de.dlr.shepard.plugins.aas.services.AasRegistryOutboxService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.aas.admin.io.AasRegistrationIO;
 import de.dlr.shepard.plugins.aas.admin.io.AasSyncResultIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -59,29 +60,35 @@ class AasRegistrationAdminRestTest {
   // --- GET /v2/admin/aas/registrations ---
 
   @Test
-  void listRegistrationsReturnsEmptyListWhenNoRows() {
-    when(registrationDAO.listAll()).thenReturn(List.of());
+  void listRegistrationsReturnsEmptyPagedEnvelopeWhenNoRows() {
+    when(registrationDAO.countAll()).thenReturn(0L);
+    when(registrationDAO.listAll(0, 50)).thenReturn(List.of());
 
-    Response r = rest.listRegistrations();
+    Response r = rest.listRegistrations(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<AasRegistrationIO> body = (List<AasRegistrationIO>) r.getEntity();
-    assertEquals(0, body.size());
+    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
+    assertEquals(0L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertEquals(0, body.items().size());
   }
 
   @Test
-  void listRegistrationsReturnsMappedRow() {
+  void listRegistrationsReturnsPagedEnvelopeWithMappedRow() {
     AasRegistration reg = buildReg(SHELL_APP_ID, Status.SYNCED, null);
-    when(registrationDAO.listAll()).thenReturn(List.of(reg));
+    when(registrationDAO.countAll()).thenReturn(1L);
+    when(registrationDAO.listAll(0, 50)).thenReturn(List.of(reg));
 
-    Response r = rest.listRegistrations();
+    Response r = rest.listRegistrations(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<AasRegistrationIO> body = (List<AasRegistrationIO>) r.getEntity();
-    assertEquals(1, body.size());
-    AasRegistrationIO io = body.get(0);
+    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
+    assertEquals(1L, body.total());
+    assertEquals(1, body.items().size());
+    AasRegistrationIO io = body.items().get(0);
     assertEquals(SHELL_APP_ID, io.shellAppId());
     assertEquals(REGISTRY_URL, io.registryUrl());
     assertEquals(Status.SYNCED, io.status());
@@ -90,13 +97,38 @@ class AasRegistrationAdminRestTest {
   @Test
   void listRegistrationsIncludesErrorMessageOnFailedRow() {
     AasRegistration reg = buildReg(SHELL_APP_ID, Status.FAILED, "HTTP 503: Service Unavailable");
-    when(registrationDAO.listAll()).thenReturn(List.of(reg));
+    when(registrationDAO.countAll()).thenReturn(1L);
+    when(registrationDAO.listAll(0, 50)).thenReturn(List.of(reg));
 
-    Response r = rest.listRegistrations();
+    Response r = rest.listRegistrations(0, 50);
 
     @SuppressWarnings("unchecked")
-    List<AasRegistrationIO> body = (List<AasRegistrationIO>) r.getEntity();
-    assertEquals("HTTP 503: Service Unavailable", body.get(0).errorMessage());
+    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
+    assertEquals("HTTP 503: Service Unavailable", body.items().get(0).errorMessage());
+  }
+
+  @Test
+  void pageSizeIsCappedAt200() {
+    when(registrationDAO.countAll()).thenReturn(0L);
+    when(registrationDAO.listAll(0, AasRegistrationAdminRest.MAX_PAGE_SIZE)).thenReturn(List.of());
+
+    Response r = rest.listRegistrations(0, 9999);
+
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
+    assertEquals(AasRegistrationAdminRest.MAX_PAGE_SIZE, body.pageSize());
+  }
+
+  @Test
+  void negativePageIsClampedToZero() {
+    when(registrationDAO.countAll()).thenReturn(0L);
+    when(registrationDAO.listAll(0, 50)).thenReturn(List.of());
+
+    Response r = rest.listRegistrations(-5, 50);
+
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
+    assertEquals(0, body.page());
   }
 
   // --- POST /v2/admin/aas/registrations/sync ---
