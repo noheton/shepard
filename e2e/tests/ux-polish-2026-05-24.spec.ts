@@ -19,10 +19,7 @@
  *   through `?q=<query>`.
  */
 import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
-
-const USERNAME = process.env.DEMO_USER || "flodemo";
-const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 
 const LUMEN_ID = 42;
 const SECOND_COLLECTION_ID = Number(
@@ -35,7 +32,7 @@ const SECOND_COLLECTION_ID = Number(
 
 test.describe("UX polish bundle 2026-05-24", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, USERNAME, PASSWORD);
+    await loginAs(page, DEMO_USER, DEMO_PASSWORD);
   });
 
   test("Pattern A: no red error toast flashes on cold load of /collections/42", async ({ page }) => {
