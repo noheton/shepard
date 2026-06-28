@@ -18,6 +18,7 @@ const BESPOKE_PANE: Record<string, string> = {
   unhide: AdminFragments.UNHIDE,
   "legacy-v1": AdminFragments.LEGACY_V1,
   "sql-timeseries": AdminFragments.SQL_TIMESERIES,
+  aas: AdminFragments.AAS_CONFIG,
 };
 
 function v2BaseUrl(): string {

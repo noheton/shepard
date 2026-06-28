@@ -35,6 +35,8 @@ export enum AdminFragments {
   CONFIG_OVERVIEW = "config-overview",
   // MFFD-BATCH-01
   BATCH_CREATE = "batch-create",
+  // MISSING-aas-ui Slice 3
+  AAS_CONFIG = "aas-config",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -183,5 +185,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Bulk DataObject creation",
     fragment: AdminFragments.BATCH_CREATE,
     icon: "mdi-layers-plus",
+  },
+  // MISSING-aas-ui Slice 3
+  {
+    name: "AAS Integration",
+    fragment: AdminFragments.AAS_CONFIG,
+    icon: "mdi-layers-triple-outline",
   },
 ];

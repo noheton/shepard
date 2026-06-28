@@ -26,6 +26,7 @@ import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vu
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
 import AdminConfigOverviewPane from "~/components/context/admin/AdminConfigOverviewPane.vue";
 import AdminAiConfigPane from "~/components/context/admin/AdminAiConfigPane.vue";
+import AasAdminConfigPane from "~/components/context/admin/AasAdminConfigPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -255,6 +256,13 @@ const landingCards = [
     title: "Bulk DataObject creation",
     description: "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item results. For MFFD-scale imports.",
   },
+  // MISSING-aas-ui Slice 3
+  {
+    fragment: AdminFragments.AAS_CONFIG,
+    icon: "mdi-layers-triple-outline",
+    title: "AAS Integration",
+    description: "Configure the IDTA Asset Administration Shell integration: enable/disable, set IDTA Registry URL and API key, set the instance base URL embedded in Shell descriptors.",
+  },
 ];
 </script>
 
@@ -365,5 +373,7 @@ const landingCards = [
       v-if="routeFragment === AdminFragments.BATCH_CREATE"
       slug="batch-create"
     />
+    <!-- MISSING-aas-ui Slice 3: AAS admin config pane -->
+    <AasAdminConfigPane v-if="routeFragment === AdminFragments.AAS_CONFIG" />
   </PaneLayout>
 </template>
