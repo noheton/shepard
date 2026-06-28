@@ -86,7 +86,7 @@
 
       <!-- Submodels section -->
       <v-card variant="outlined">
-        <v-card-title class="text-body-1 font-weight-medium pa-3 pb-1">
+        <v-card-title class="text-body-1 font-weight-medium pa-3 pb-1 d-flex align-center">
           Submodels
           <v-chip size="x-small" variant="tonal" class="ml-2">
             {{ submodelsTotal }}
@@ -95,20 +95,36 @@
 
         <v-progress-linear v-if="isSubmodelsLoading" indeterminate />
 
-        <v-table density="comfortable">
+        <!-- Empty state -->
+        <v-alert
+          v-if="!isSubmodelsLoading && submodels.length === 0"
+          type="info"
+          variant="tonal"
+          class="ma-3"
+        >
+          No Submodels yet. Top-level DataObjects in this Collection become Submodels automatically.
+          <template #append>
+            <v-btn
+              :to="`/collections/${collectionId}`"
+              variant="tonal"
+              size="small"
+              prepend-icon="mdi-folder-open-outline"
+            >
+              Open Collection
+            </v-btn>
+          </template>
+        </v-alert>
+
+        <v-table v-if="submodels.length > 0" density="comfortable">
           <thead>
             <tr>
-              <th>DataObject</th>
+              <th>Submodel</th>
               <th>Reference IRI</th>
               <th>Type</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-if="!isSubmodelsLoading && submodels.length === 0">
-              <td colspan="3" class="text-center text-medium-emphasis py-6">
-                No Submodels (no top-level DataObjects in this Collection).
-              </td>
-            </tr>
             <tr v-for="(ref, idx) in submodels" :key="idx">
               <td>
                 <NuxtLink
@@ -128,11 +144,23 @@
               <td>
                 <v-chip size="small" variant="outlined">{{ ref.type }}</v-chip>
               </td>
+              <td>
+                <v-btn
+                  v-if="ref.keys.length > 0"
+                  :to="`/collections/${collectionId}/dataobjects/${submodelRefToAppId(ref.keys[0].value)}`"
+                  variant="text"
+                  size="x-small"
+                  prepend-icon="mdi-open-in-new"
+                  density="compact"
+                >
+                  Open DataObject
+                </v-btn>
+              </td>
             </tr>
           </tbody>
         </v-table>
 
-        <div class="d-flex align-center justify-space-between pa-3">
+        <div v-if="submodels.length > 0" class="d-flex align-center justify-space-between pa-3">
           <span class="text-caption text-medium-emphasis">
             {{ submodelsTotal }} Submodel{{ submodelsTotal === 1 ? "" : "s" }} total
           </span>

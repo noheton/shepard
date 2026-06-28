@@ -30,6 +30,7 @@ export function submodelRefToAppId(value: string): string {
 export interface AasSubmodelRefIO {
   type: string;
   keys: Array<{ type: string; value: string }>;
+  displayName?: string | null;
 }
 
 interface SubmodelsPage {
