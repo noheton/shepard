@@ -33,8 +33,8 @@ const SAMPLE_SHELL = {
 
 const SAMPLE_SUBMODELS_PAGE = {
   items: [
-    { type: "ExternalReference", keys: [{ type: "Submodel", value: "urn:shepard:dataobject:do-app-id-1" }] },
-    { type: "ExternalReference", keys: [{ type: "Submodel", value: "urn:shepard:dataobject:do-app-id-2" }] },
+    { type: "ExternalReference", keys: [{ type: "Submodel", value: "urn:shepard:dataobject:do-app-id-1" }], displayName: "TR-001 Run" },
+    { type: "ExternalReference", keys: [{ type: "Submodel", value: "urn:shepard:dataobject:do-app-id-2" }], displayName: null },
   ],
   total: 2,
   page: 0,
@@ -136,6 +136,18 @@ describe("useAasShell — init fetch", () => {
     const submodelUrl = calls.find(([url]) => (url as string).includes("/submodels"))?.[0] as string;
     expect(submodelUrl).toContain("page=0");
     expect(submodelUrl).toContain("pageSize=50");
+  });
+
+  it("preserves displayName from submodel references", async () => {
+    mockFetchMulti({
+      "/submodels": SAMPLE_SUBMODELS_PAGE,
+      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
+    });
+    const { submodels } = useAasShell(COLLECTION_APP_ID);
+    await flush();
+
+    expect((submodels.value[0] as { displayName?: string }).displayName).toBe("TR-001 Run");
+    expect((submodels.value[1] as { displayName?: string | null }).displayName).toBeNull();
   });
 });
 
