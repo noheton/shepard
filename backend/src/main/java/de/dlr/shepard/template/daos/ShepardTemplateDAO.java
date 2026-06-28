@@ -221,10 +221,14 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     }
   }
 
+  /** Hard cap on distinct tags returned by {@link #listDistinctTags}. */
+  static final int TAGS_MAX = 500;
+
   /**
    * Distinct list of tags across all non-retired templates, sorted
    * ascending. Used by the picker UI's tag-autocomplete dropdown.
    * Optionally narrows to one {@code templateKind}.
+   * Capped at {@value #TAGS_MAX} entries.
    */
   public List<String> listDistinctTags(String templateKind) {
     StringBuilder cypher = new StringBuilder(
@@ -235,7 +239,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
       cypher.append(" AND t.templateKind = $kind");
       params.put("kind", templateKind);
     }
-    cypher.append(" UNWIND coalesce(t.tags, []) AS tag RETURN DISTINCT tag ORDER BY tag");
+    cypher.append(" UNWIND coalesce(t.tags, []) AS tag RETURN DISTINCT tag ORDER BY tag LIMIT " + TAGS_MAX);
     var result = session.query(cypher.toString(), params);
     List<String> out = new ArrayList<>();
     for (Map<String, Object> row : result.queryResults()) {
