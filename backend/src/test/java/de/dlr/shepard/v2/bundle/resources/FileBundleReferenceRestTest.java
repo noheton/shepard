@@ -23,6 +23,7 @@ import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
 import de.dlr.shepard.context.references.file.services.FileGroupService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
@@ -153,7 +154,7 @@ class FileBundleReferenceRestTest {
   // ─── GET /v2/bundles/{appId}/groups ───────────────────────────────────────
 
   @Test
-  void listGroups_returns200WithRows() {
+  void listGroups_returns200WithPagedEnvelope() {
     var g1 = new FileGroup(1L);
     g1.setIndex(0);
     g1.setName("default");
@@ -161,26 +162,45 @@ class FileBundleReferenceRestTest {
     g2.setIndex(1);
     g2.setName("phase1");
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(fileGroupService.listGroups(BUNDLE_APP_ID)).thenReturn(List.of(g1, g2));
+    when(fileGroupService.countGroups(BUNDLE_APP_ID)).thenReturn(2L);
+    when(fileGroupService.listGroups(BUNDLE_APP_ID, 0, 50)).thenReturn(List.of(g1, g2));
 
-    var r = resource.listGroups(BUNDLE_APP_ID, securityContext);
+    var r = resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<FileGroupIO> rows = (List<FileGroupIO>) r.getEntity();
-    assertEquals(2, rows.size());
+    PagedResponseIO<FileGroupIO> envelope = (PagedResponseIO<FileGroupIO>) r.getEntity();
+    assertEquals(2L, envelope.total());
+    assertEquals(0, envelope.page());
+    assertEquals(50, envelope.pageSize());
+    assertEquals(2, envelope.items().size());
+    assertEquals("default", envelope.items().get(0).getName());
+  }
+
+  @Test
+  void listGroups_returns200EmptyPage() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.countGroups(BUNDLE_APP_ID)).thenReturn(0L);
+    when(fileGroupService.listGroups(BUNDLE_APP_ID, 0, 50)).thenReturn(List.of());
+
+    var r = resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<FileGroupIO> envelope = (PagedResponseIO<FileGroupIO>) r.getEntity();
+    assertEquals(0L, envelope.total());
+    assertTrue(envelope.items().isEmpty());
   }
 
   @Test
   void listGroups_returns404WhenBundleMissing() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(null);
-    assertEquals(404, resource.listGroups(BUNDLE_APP_ID, securityContext).getStatus());
+    assertEquals(404, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
   }
 
   @Test
   void listGroups_returns403WhenNoReadPermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq("do-app-id"), eq(AccessType.Read), eq(CALLER))).thenReturn(false);
-    assertEquals(403, resource.listGroups(BUNDLE_APP_ID, securityContext).getStatus());
+    assertEquals(403, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
   }
 
   // ─── POST /v2/bundles/{appId}/groups ──────────────────────────────────────

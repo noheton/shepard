@@ -17,11 +17,15 @@ import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
 import de.dlr.shepard.v2.bundle.io.PagedFilesIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -165,27 +169,30 @@ public class FileBundleReferenceRest {
   @Operation(
     summary = "List FileGroups under a bundle, ordered by ascending index.",
     description =
-      "Returns the ordered list of `:FileGroup` nodes belonging to the " +
+      "Returns a paged list of `:FileGroup` nodes belonging to the " +
       "`:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted " +
       "by their `index` field ascending (lowest index first), which matches the display " +
       "order in the UI.\n\n" +
       "Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, " +
       "`startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached " +
       "to that group via the FileContainer).\n\n" +
+      "Pagination: `?page=0&pageSize=50` (page zero-based; pageSize capped at 200 server-side).\n\n" +
       "Auth: Read permission on the parent DataObject (inherited from its Collection).\n\n" +
       "Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, " +
       "or `POST /v2/bundles/{bundleAppId}/groups` to add a new group."
   )
   @APIResponse(
     responseCode = "200",
-    description = "JSON array of FileGroupIO records ordered by index ascending; may be empty.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileGroupIO.class))
+    description = "Paged envelope of FileGroupIO records ordered by index ascending.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response listGroups(
     @PathParam("bundleAppId") String bundleAppId,
+    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
@@ -193,8 +200,10 @@ public class FileBundleReferenceRest {
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
-    List<FileGroupIO> rows = fileGroupService.listGroups(bundleAppId).stream().map(FileGroupIO::new).toList();
-    return Response.ok(rows).build();
+    long total = fileGroupService.countGroups(bundleAppId);
+    List<FileGroupIO> items = fileGroupService.listGroups(bundleAppId, page, pageSize)
+        .stream().map(FileGroupIO::new).toList();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @POST
