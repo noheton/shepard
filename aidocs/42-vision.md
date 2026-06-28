@@ -623,12 +623,15 @@ Mid-horizon:
   lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
   versions of a note so researchers can recover earlier drafts. **J1e shipped
-  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
-  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
-  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
-  they show up as **Notebook**-kind rows in the unified Data References table
-  with a one-click "Open in JupyterHub" launch button gated on the admin
-  config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
+  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out,
+  delivered via `shepard-plugin-jupyter` (installed by default; not in-core).
+  (`:JupyterConfig` singleton + `GET/PATCH /v2/admin/plugins/jupyter/config` +
+  `shepard-admin jupyter` CLI + JupyterHub compose sidecar path-mounted at
+  `/jupyterhub`; backend + CLI classes live in `plugins/jupyter/`). Notebooks
+  are no longer in a dedicated DataObject panel; they show up as
+  **Notebook**-kind rows in the unified Data References table with a one-click
+  "Open in JupyterHub" launch button gated on the admin config
+  (REF-UNIFIED-TABLE-FR1B). The launch URL composes
   `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
   can absorb it.
 - **REST-driven digital-twin scene editing** (`aidocs/data/85`, DT1
