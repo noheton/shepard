@@ -52,6 +52,9 @@ import MaterialBatchTracePane from "~/components/context/mffd/MaterialBatchTrace
 // per-kind tile grid all bound to one `useSyncedTimeCursor` instance.
 import MultiPlayerPane from "~/components/context/multiplayer/MultiPlayerPane.vue";
 import { selectMultiPlayerTiles } from "~/utils/multiPlayerTiles";
+// MISSING-aas-ui Slice 4: in-context AAS submodel identity pane. Shows the
+// DataObject's role as an IDTA AAS Submodel when the AAS plugin is enabled.
+import DataObjectAasPane from "~/components/context/aas/DataObjectAasPane.vue";
 import { useSpatialDataReferencesForDataObject } from "~/composables/context/useSpatialDataReferencesForDataObject";
 import { useFetchSpatialReferencesV2 } from "~/composables/context/useFetchSpatialReferencesV2";
 import {
@@ -979,6 +982,20 @@ async function saveEmbargoEdit() {
                       :data-object-app-id="dataObject.appId ?? undefined"
                     />
                   </template>
+                </ExpansionPanelItem>
+                <!-- MISSING-aas-ui Slice 4: AAS submodel context pane. Mounted
+                     when the DataObject has a resolved appId and the parent
+                     Collection appId is known (always true on this page). The
+                     pane handles 501/disabled + 404 internally; mounting cost
+                     is negligible when AAS is off. -->
+                <ExpansionPanelItem
+                  v-if="dataObject?.appId && collectionIdStr"
+                  title="AAS Submodel"
+                >
+                  <DataObjectAasPane
+                    :collection-app-id="collectionIdStr"
+                    :data-object-app-id="dataObject.appId"
+                  />
                 </ExpansionPanelItem>
                 <!-- J1c retirement (2026-05-29): the dedicated Jupyter Notebooks
                      panel has been merged into the unified Data References
