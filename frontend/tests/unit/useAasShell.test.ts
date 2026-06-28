@@ -88,8 +88,8 @@ describe("useAasShell — init fetch", () => {
 
   it("populates shell on success", async () => {
     mockFetchMulti({
-      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
       "/submodels": SAMPLE_SUBMODELS_PAGE,
+      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
     });
     const { shell } = useAasShell(COLLECTION_APP_ID);
     await flush();
@@ -100,8 +100,8 @@ describe("useAasShell — init fetch", () => {
 
   it("passes Authorization Bearer header", async () => {
     mockFetchMulti({
-      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
       "/submodels": SAMPLE_SUBMODELS_PAGE,
+      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
     });
     useAasShell(COLLECTION_APP_ID);
     await flush();
@@ -114,8 +114,8 @@ describe("useAasShell — init fetch", () => {
 
   it("fetches submodels after a successful shell fetch", async () => {
     mockFetchMulti({
-      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
       "/submodels": SAMPLE_SUBMODELS_PAGE,
+      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
     });
     const { submodels, submodelsTotal } = useAasShell(COLLECTION_APP_ID);
     await flush();
@@ -126,8 +126,8 @@ describe("useAasShell — init fetch", () => {
 
   it("submodels URL includes page and pageSize", async () => {
     mockFetchMulti({
-      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
       "/submodels": SAMPLE_SUBMODELS_PAGE,
+      [`/v2/aas/shells/${COLLECTION_APP_ID}`]: SAMPLE_SHELL,
     });
     useAasShell(COLLECTION_APP_ID);
     await flush();
