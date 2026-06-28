@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.search.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
 import de.dlr.shepard.common.search.io.QueryType;
 import de.dlr.shepard.common.search.io.ResponseBody;
@@ -104,7 +105,8 @@ public class SearchV2Rest {
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     if (q == null || q.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("Query parameter 'q' is required.").build();
+      return problem("/problems/search.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Query parameter 'q' is required and must be non-blank.");
     }
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
@@ -149,5 +151,10 @@ public class SearchV2Rest {
     return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q))
         .header("X-Total-Count", total)
         .build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

@@ -148,6 +148,23 @@ class SearchV2RestTest {
     assertEquals(400, resp.getStatus());
   }
 
+  /** APISIMP-SEARCH-BAD-REQUEST-PLAIN-STRING — 400 must use problem+json, not plain text. */
+  @Test
+  void badRequestReturnsProblemJson() {
+    Response resp = resource.search(null, 0, 50);
+    assertEquals(400, resp.getStatus());
+    assertEquals("application/problem+json",
+        resp.getMediaType().toString(),
+        "400 must be application/problem+json, not text/plain");
+  }
+
+  @Test
+  void blankQueryAlsoReturnsProblemJson() {
+    Response resp = resource.search("   ", 0, 50);
+    assertEquals(400, resp.getStatus());
+    assertEquals("application/problem+json", resp.getMediaType().toString());
+  }
+
   @Test
   void pageSizeIsCappedAt200() {
     PaginatedCollectionList page = new PaginatedCollectionList(

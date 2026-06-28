@@ -7,6 +7,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -24,7 +25,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -170,10 +170,10 @@ public class CollectionSnapshotRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot page (may be empty).",
+    description = "Snapshot page (may be empty). Envelope: { items[], total, page, pageSize }.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = SnapshotIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -199,7 +199,9 @@ public class CollectionSnapshotRest {
       .map(SnapshotIO::new)
       .toList();
 
-    return Response.ok(rows).build();
+    long total = snapshotService.countByCollection(collectionAppId);
+
+    return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize)).build();
   }
 
   // ── private helpers ───────────────────────────────────────────────────────

@@ -199,6 +199,7 @@ export * from './OrderByItem';
 export * from './OtvisFramesIO';
 export * from './PagedFiles';
 export * from './PagedResponseAnnotationV2';
+export * from './PagedResponseSnapshot';
 export * from './PatchCollectionProperties';
 export * from './PatchFeatureToggle';
 export * from './PatchGitCredential';
