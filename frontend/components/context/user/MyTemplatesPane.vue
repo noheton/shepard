@@ -97,9 +97,9 @@ function load() {
   isLoading.value = true;
   loadError.value = null;
   useV2ShepardApi(TemplatesApi)
-    .value.listTemplates({})
-    .then(rows => {
-      templates.value = rows ?? [];
+    .value.listTemplates({ pageSize: 200 })
+    .then(page => {
+      templates.value = page?.items ?? [];
     })
     .catch(err => {
       loadError.value =

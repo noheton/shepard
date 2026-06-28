@@ -14,6 +14,7 @@ import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
 import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.template.io.CreateShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.PatchShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
@@ -57,35 +58,72 @@ class ShepardTemplateRestTest {
   @Test
   void listReturns401IfUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.list(null, false, securityContext);
+    Response r = resource.list(null, false, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void listExcludesRetiredByDefault() {
-    when(dao.list(null, false)).thenReturn(List.of(new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}")));
-    Response r = resource.list(null, false, securityContext);
+    when(dao.count(null, false)).thenReturn(1L);
+    when(dao.list(null, false, 0, 50)).thenReturn(List.of(new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}")));
+    Response r = resource.list(null, false, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> rows = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, rows.size());
+    PagedResponseIO<ShepardTemplateIO> page = (PagedResponseIO<ShepardTemplateIO>) r.getEntity();
+    assertEquals(1, page.items().size());
+    assertEquals(1L, page.total());
+    assertEquals(0, page.page());
+    assertEquals(50, page.pageSize());
   }
 
   @Test
   void listIncludeRetiredIgnoredForNonAdmin() {
     when(securityContext.isUserInRole("instance-admin")).thenReturn(false);
-    when(dao.list(null, false)).thenReturn(List.of());
-    resource.list(null, true, securityContext);
-    verify(dao).list(null, false); // includeRetired=true downgraded to false
-    verify(dao, never()).list(null, true);
+    when(dao.count(null, false)).thenReturn(0L);
+    when(dao.list(null, false, 0, 50)).thenReturn(List.of());
+    resource.list(null, true, 0, 50, securityContext);
+    verify(dao).list(null, false, 0, 50); // includeRetired=true downgraded to false
+    verify(dao, never()).list(null, true, 0, 50);
   }
 
   @Test
   void listIncludeRetiredHonouredForAdmin() {
     when(securityContext.isUserInRole("instance-admin")).thenReturn(true);
-    when(dao.list("EXPERIMENT_RECIPE", true)).thenReturn(List.of());
-    resource.list("EXPERIMENT_RECIPE", true, securityContext);
-    verify(dao).list("EXPERIMENT_RECIPE", true);
+    when(dao.count("EXPERIMENT_RECIPE", true)).thenReturn(0L);
+    when(dao.list("EXPERIMENT_RECIPE", true, 0, 50)).thenReturn(List.of());
+    resource.list("EXPERIMENT_RECIPE", true, 0, 50, securityContext);
+    verify(dao).list("EXPERIMENT_RECIPE", true, 0, 50);
+  }
+
+  @Test
+  void listPageEnvelopeFieldsAreCorrect() {
+    when(dao.count(null, false)).thenReturn(75L);
+    when(dao.list(null, false, 1, 20)).thenReturn(List.of());
+    Response r = resource.list(null, false, 1, 20, securityContext);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<ShepardTemplateIO> page = (PagedResponseIO<ShepardTemplateIO>) r.getEntity();
+    assertEquals(75L, page.total());
+    assertEquals(1, page.page());
+    assertEquals(20, page.pageSize());
+  }
+
+  @Test
+  void listPage1CallsCorrectDaoParams() {
+    when(dao.count(null, false)).thenReturn(10L);
+    when(dao.list(null, false, 1, 5)).thenReturn(List.of());
+    resource.list(null, false, 1, 5, securityContext);
+    verify(dao).count(null, false);
+    verify(dao).list(null, false, 1, 5);
+  }
+
+  @Test
+  void listKindFilterPassedToDao() {
+    when(dao.count("MAPPING_RECIPE", false)).thenReturn(3L);
+    when(dao.list("MAPPING_RECIPE", false, 0, 50)).thenReturn(List.of());
+    resource.list("MAPPING_RECIPE", false, 0, 50, securityContext);
+    verify(dao).count("MAPPING_RECIPE", false);
+    verify(dao).list("MAPPING_RECIPE", false, 0, 50);
   }
 
   @Test

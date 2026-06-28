@@ -47,6 +47,44 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return out;
   }
 
+  /** Count templates matching the same filters as {@link #list(String, boolean, int, int)}. */
+  public long count(String templateKind, boolean includeRetired) {
+    StringBuilder cypher = new StringBuilder("MATCH (t:ShepardTemplate) WHERE 1=1");
+    Map<String, Object> params = new HashMap<>();
+    if (templateKind != null) {
+      cypher.append(" AND t.templateKind = $kind");
+      params.put("kind", templateKind);
+    }
+    if (!includeRetired) {
+      cypher.append(" AND (t.retired IS NULL OR t.retired = false)");
+    }
+    cypher.append(" RETURN count(t) AS total");
+    var result = session.query(cypher.toString(), params);
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /** Paginated list — same filters as {@link #list(String, boolean)} with SKIP/LIMIT. */
+  public List<ShepardTemplate> list(String templateKind, boolean includeRetired, int page, int pageSize) {
+    StringBuilder cypher = new StringBuilder("MATCH (t:ShepardTemplate) WHERE 1=1");
+    Map<String, Object> params = new HashMap<>();
+    if (templateKind != null) {
+      cypher.append(" AND t.templateKind = $kind");
+      params.put("kind", templateKind);
+    }
+    if (!includeRetired) {
+      cypher.append(" AND (t.retired IS NULL OR t.retired = false)");
+    }
+    cypher.append(" RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit");
+    params.put("skip", (long) page * pageSize);
+    params.put("limit", (long) pageSize);
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher.toString(), params).forEach(out::add);
+    return out;
+  }
+
   /**
    * Find the highest-version, non-retired template with the given
    * name within the given kind. Returns {@link Optional#empty()}

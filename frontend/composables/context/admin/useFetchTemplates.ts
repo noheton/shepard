@@ -11,9 +11,11 @@ export function useFetchTemplates() {
   async function refresh(includeRetired = false) {
     isLoading.value = true;
     try {
-      templates.value = await useV2ShepardApi(TemplatesApi).value.listTemplates({
+      const page = await useV2ShepardApi(TemplatesApi).value.listTemplates({
         includeRetired,
+        pageSize: 200,
       });
+      templates.value = page.items;
     } catch (error) {
       templates.value = [];
       handleError(error, "fetching templates");

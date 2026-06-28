@@ -215,11 +215,12 @@ function authHeadersLocal(): Record<string, string> {
 async function loadNodeShapeOptions(): Promise<void> {
   loadingNodeShapes.value = true;
   try {
-    const res = await fetch(`${v2BaseLocal()}/v2/templates?kind=SHAPE_CONSTRAINT`, {
+    const res = await fetch(`${v2BaseLocal()}/v2/templates?kind=SHAPE_CONSTRAINT&pageSize=200`, {
       headers: authHeadersLocal(),
     });
     if (!res.ok) return;
-    const rows = (await res.json()) as { name?: string; body?: string }[];
+    const data = await res.json();
+    const rows = (data?.items ?? data) as { name?: string; body?: string }[];
     const opts: NodeShapeOption[] = [];
     for (const row of rows) {
       const es = editorStateFromTemplateBody(row.body ?? null);
