@@ -16,6 +16,7 @@ import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
 import de.dlr.shepard.context.snapshot.io.SnapshotEntryIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -166,20 +167,23 @@ class SnapshotRestTest {
   @Test
   void list_returns200WithRows() {
     when(snapshotService.listByCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of(snapshot));
+    when(snapshotService.countByCollection(COLL_APP_ID)).thenReturn(1L);
 
     Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    List<SnapshotIO> body = (List<SnapshotIO>) r.getEntity();
-    assertThat(body).hasSize(1);
-    assertThat(body.get(0).appId()).isEqualTo(SNAP_APP_ID);
+    PagedResponseIO<SnapshotIO> body = (PagedResponseIO<SnapshotIO>) r.getEntity();
+    assertThat(body.items()).hasSize(1);
+    assertThat(body.items().get(0).appId()).isEqualTo(SNAP_APP_ID);
+    assertThat(body.total()).isEqualTo(1L);
   }
 
   @Test
   void list_returns200WithEmptyList_whenNoSnapshots() {
     when(snapshotService.listByCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of());
+    when(snapshotService.countByCollection(COLL_APP_ID)).thenReturn(0L);
     Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
