@@ -65,14 +65,22 @@
       </v-list-item>
     </v-list>
 
-    <div class="d-flex mt-2 px-0">
+    <div class="d-flex flex-wrap ga-2 mt-2 px-0">
       <v-btn
         variant="tonal"
         size="small"
         prepend-icon="mdi-layers-triple-outline"
-        :to="`/aas/shells`"
+        :to="`/aas/shells/${props.collectionAppId}`"
       >
-        Browse AAS Shells
+        Open AAS Shell
+      </v-btn>
+      <v-btn
+        variant="tonal"
+        size="small"
+        prepend-icon="mdi-cube-outline"
+        :to="`/aas/submodels/${props.collectionAppId}/${props.dataObjectAppId}`"
+      >
+        Open Submodel
       </v-btn>
     </div>
   </v-card>
