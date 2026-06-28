@@ -11,6 +11,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.plugins.aas.v2.io.AasReferenceIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasShellIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
@@ -86,27 +87,27 @@ public class AasShellsRest {
       description = "Returns one AssetAdministrationShell per Collection the authenticated caller " +
           "may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), " +
           "`assetInformation`, optional `description`, and an empty `submodels` list. " +
-          "Submodels are populated by AAS1b. See `aidocs/52 §4a`.")
+          "Submodels are populated by AAS1b. See `aidocs/integrations/52-aas-backend-integration.md §4a`. " +
+          "Uses page-offset pagination (default page=0, pageSize=50, server cap 200).")
   @APIResponse(
       responseCode = "200",
-      description = "List of Shells readable by the caller. Empty list when the caller has no " +
-          "readable Collections.",
-      content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AasShellIO.class)))
+      description = "Paged list of Shells readable by the caller. " +
+          "Envelope: { items[], total, page, pageSize }.",
+      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listShells(
-      @Parameter(description = "Zero-based page number. Requires `pageSize`.")
-      @QueryParam("page") Integer page,
-      @Parameter(description = "Page size.")
-      @QueryParam("pageSize") @DefaultValue("100") Integer pageSize) {
+      @Parameter(description = "Zero-based page number (default 0).")
+      @QueryParam("page") @DefaultValue("0") int page,
+      @Parameter(description = "Page size (default 50, server cap 200).")
+      @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
 
     if (aasDisabled()) return aasDisabledResponse();
 
     String username = authenticationContext.getCurrentUserName();
-
-    var params = new QueryParamHelper();
-    if (page != null) {
-      params = params.withPageAndSize(page, pageSize);
-    }
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
+    var params = new QueryParamHelper().withPageAndSize(safePage, safeSize);
+    long total = collectionDAO.countAllCollectionsByShepardId(username);
 
     List<AasShellIO> shells = collectionDAO
         .findAllCollectionsByShepardId(params, username)
@@ -114,7 +115,7 @@ public class AasShellsRest {
         .map(mappingService::toShell)
         .toList();
 
-    return Response.ok(shells).build();
+    return Response.ok(new PagedResponseIO<>(shells, total, safePage, safeSize)).build();
   }
 
   @GET
@@ -160,18 +161,23 @@ public class AasShellsRest {
           "Each Reference has `type=ExternalReference` and a single Submodel key with value " +
           "`urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or " +
           "the caller lacks read access (404-on-no-read discipline). " +
-          "See `aidocs/integrations/52-aas-backend-integration.md §4b`.")
+          "See `aidocs/integrations/52-aas-backend-integration.md §4b`. " +
+          "Uses page-offset pagination (default page=0, pageSize=50, server cap 200).")
   @APIResponse(
       responseCode = "200",
-      description = "Submodel references for the requested Shell. Empty when the Collection " +
-          "has no top-level DataObjects.",
-      content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AasReferenceIO.class)))
+      description = "Paged Submodel references for the requested Shell. " +
+          "Envelope: { items[], total, page, pageSize }.",
+      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "Shell not found or caller lacks read access.")
   public Response listSubmodels(
       @Parameter(description = "Base64url-encoded Shell IRI per IDTA-01002-3-2 §4.3, " +
           "or bare Collection appId.")
-      @PathParam("aasId") String aasId) {
+      @PathParam("aasId") String aasId,
+      @Parameter(description = "Zero-based page number (default 0).")
+      @QueryParam("page") @DefaultValue("0") int page,
+      @Parameter(description = "Page size (default 50, server cap 200).")
+      @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
 
     if (aasDisabled()) return aasDisabledResponse();
 
@@ -181,8 +187,13 @@ public class AasShellsRest {
     if (collection == null) {
       return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
-    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
-    return Response.ok(mappingService.toSubmodelRefs(dataObjects)).build();
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
+    long total = dataObjectDAO.countTopLevelByCollectionAppId(appId);
+    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId, safePage, safeSize);
+    return Response.ok(
+        new PagedResponseIO<>(mappingService.toSubmodelRefs(dataObjects), total, safePage, safeSize)
+    ).build();
   }
 
   private static Response problem(Response.Status status, String detail) {

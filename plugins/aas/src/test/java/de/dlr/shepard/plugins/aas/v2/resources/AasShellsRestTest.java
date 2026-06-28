@@ -1,7 +1,9 @@
 package de.dlr.shepard.plugins.aas.v2.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,7 @@ import de.dlr.shepard.plugins.aas.v2.io.AasReferenceIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasReferenceIO.AasKeyIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasShellIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasShellIO.AssetInformationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -61,7 +64,10 @@ class AasShellsRestTest {
     enabledConfig.setEnabled(true);
     when(aasConfigService.current()).thenReturn(enabledConfig);
     when(authenticationContext.getCurrentUserName()).thenReturn("alice");
+    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(0L);
     when(dataObjectDAO.findTopLevelByCollectionAppId(any())).thenReturn(List.of());
+    when(dataObjectDAO.findTopLevelByCollectionAppId(any(), anyInt(), anyInt())).thenReturn(List.of());
+    when(dataObjectDAO.countTopLevelByCollectionAppId(any())).thenReturn(0L);
   }
 
   private Collection makeCollection(String appId, String name) {
@@ -83,11 +89,15 @@ class AasShellsRestTest {
   @Test
   void returnsEmptyListWhenNoCollections() {
     when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of());
-    var r = resource.listShells(null, 100);
+    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(0L);
+    var r = resource.listShells(0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var body = (List<AasShellIO>) r.getEntity();
-    assertEquals(0, body.size());
+    var body = (PagedResponseIO<AasShellIO>) r.getEntity();
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
   }
 
   @Test
@@ -97,34 +107,38 @@ class AasShellsRestTest {
     AasShellIO s1 = makeShell("id-1");
     AasShellIO s2 = makeShell("id-2");
     when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of(c1, c2));
+    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(2L);
     when(mappingService.toShell(c1)).thenReturn(s1);
     when(mappingService.toShell(c2)).thenReturn(s2);
 
-    var r = resource.listShells(null, 100);
+    var r = resource.listShells(0, 50);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    var shells = (List<AasShellIO>) r.getEntity();
-    assertEquals(2, shells.size());
-    assertEquals("urn:shepard:collection:id-1", shells.get(0).getId());
-    assertEquals("urn:shepard:collection:id-2", shells.get(1).getId());
+    var body = (PagedResponseIO<AasShellIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(2L, body.total());
+    assertEquals("urn:shepard:collection:id-1", body.items().get(0).getId());
+    assertEquals("urn:shepard:collection:id-2", body.items().get(1).getId());
   }
 
   @Test
   void passesCallerUsernameToDAO() {
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
     when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of());
-    resource.listShells(null, 100);
-    // verify username was propagated — mockito would have matched `any()` regardless,
-    // so we capture via the verify below
+    when(collectionDAO.countAllCollectionsByShepardId(eq("bob"))).thenReturn(0L);
+    resource.listShells(0, 50);
     org.mockito.Mockito.verify(collectionDAO)
         .findAllCollectionsByShepardId(any(), org.mockito.Mockito.eq("bob"));
+    org.mockito.Mockito.verify(collectionDAO)
+        .countAllCollectionsByShepardId(org.mockito.Mockito.eq("bob"));
   }
 
   @Test
   void anonymousUserPassesNullUsername() {
     when(authenticationContext.getCurrentUserName()).thenReturn(null);
     when(collectionDAO.findAllCollectionsByShepardId(any(), isNull())).thenReturn(List.of());
-    var r = resource.listShells(null, 100);
+    when(collectionDAO.countAllCollectionsByShepardId(isNull())).thenReturn(0L);
+    var r = resource.listShells(0, 50);
     assertEquals(200, r.getStatus());
     org.mockito.Mockito.verify(collectionDAO)
         .findAllCollectionsByShepardId(any(), isNull());
@@ -135,10 +149,22 @@ class AasShellsRestTest {
     Collection c = makeCollection("solo", "Solo");
     AasShellIO shell = makeShell("solo");
     when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of(c));
+    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(1L);
     when(mappingService.toShell(c)).thenReturn(shell);
 
-    var r = resource.listShells(null, 100);
+    var r = resource.listShells(0, 50);
     assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void pageSizeIsCappedAt200() {
+    when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of());
+    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(0L);
+    var r = resource.listShells(0, 9999);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<AasShellIO>) r.getEntity();
+    assertEquals(200, body.pageSize());
   }
 
   // --- resolveAppId (AAS1b Commit 1) ---
@@ -257,7 +283,7 @@ class AasShellsRestTest {
   void listSubmodelsReturns404WhenShellNotFound() {
     when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
 
-    var r = resource.listSubmodels("no-such-id");
+    var r = resource.listSubmodels("no-such-id", 0, 50);
 
     assertEquals(404, r.getStatus());
   }
@@ -266,15 +292,17 @@ class AasShellsRestTest {
   void listSubmodelsReturnsEmptyListForCollectionWithNoDataObjects() {
     Collection c = makeCollection("col-aaa-111", "Alpha");
     when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
-    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(List.of());
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"), anyInt(), anyInt())).thenReturn(List.of());
+    when(dataObjectDAO.countTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(0L);
     when(mappingService.toSubmodelRefs(List.of())).thenReturn(List.of());
 
-    var r = resource.listSubmodels("col-aaa-111");
+    var r = resource.listSubmodels("col-aaa-111", 0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<AasReferenceIO> body = (List<AasReferenceIO>) r.getEntity();
-    assertEquals(0, body.size());
+    var body = (PagedResponseIO<AasReferenceIO>) r.getEntity();
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
   }
 
   @Test
@@ -284,16 +312,18 @@ class AasShellsRestTest {
     AasReferenceIO ref = new AasReferenceIO("ExternalReference",
         List.of(new AasKeyIO("Submodel", "urn:shepard:dataobject:do-111")));
     when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
-    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(List.of(d));
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"), anyInt(), anyInt())).thenReturn(List.of(d));
+    when(dataObjectDAO.countTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(1L);
     when(mappingService.toSubmodelRefs(List.of(d))).thenReturn(List.of(ref));
 
-    var r = resource.listSubmodels("col-aaa-111");
+    var r = resource.listSubmodels("col-aaa-111", 0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<AasReferenceIO> body = (List<AasReferenceIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("ExternalReference", body.get(0).type());
+    var body = (PagedResponseIO<AasReferenceIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals("ExternalReference", body.items().get(0).type());
   }
 
   @Test
@@ -301,9 +331,27 @@ class AasShellsRestTest {
     when(authenticationContext.getCurrentUserName()).thenReturn("carol");
     when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
 
-    resource.listSubmodels("col-aaa-111");
+    resource.listSubmodels("col-aaa-111", 0, 50);
 
     verify(collectionDAO).findByAppId(eq("col-aaa-111"), eq("carol"));
+  }
+
+  @Test
+  void listSubmodelsEnvelopeContainsPageMetadata() {
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"), anyInt(), anyInt())).thenReturn(List.of());
+    when(dataObjectDAO.countTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(5L);
+    when(mappingService.toSubmodelRefs(any())).thenReturn(List.of());
+
+    var r = resource.listSubmodels("col-aaa-111", 1, 2);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<AasReferenceIO>) r.getEntity();
+    assertEquals(5L, body.total());
+    assertEquals(1, body.page());
+    assertEquals(2, body.pageSize());
   }
 
   // --- aasDisabledResponse (APISIMP-AAS-SHELLS-DISABLED-ENVELOPE) ---
@@ -314,7 +362,7 @@ class AasShellsRestTest {
     disabledConfig.setEnabled(false);
     when(aasConfigService.current()).thenReturn(disabledConfig);
 
-    var r = resource.listShells(null, 100);
+    var r = resource.listShells(0, 50);
 
     assertEquals(501, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
