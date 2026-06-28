@@ -22,6 +22,7 @@ import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -110,19 +111,23 @@ class SemanticAnnotationV2RestTest {
   // ─── list ────────────────────────────────────────────────────────────────
 
   @Test
-  void list_bySubjectAppId_returns200WithAnnotations() {
+  void list_bySubjectAppId_returns200WithPagedEnvelope() {
     var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "CF/LMPAEK");
     when(annotationDAO.findFiltered(eq(SUBJ_APP_ID), any(), any(), any(), eq(0), eq(50)))
       .thenReturn(List.of(ann));
+    when(annotationDAO.countFiltered(eq(SUBJ_APP_ID), any(), any(), any())).thenReturn(1L);
 
     Response r = resource.list(SUBJ_APP_ID, null, null, null, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    List<AnnotationIO> rows = (List<AnnotationIO>) r.getEntity();
-    assertThat(rows).hasSize(1);
-    assertThat(rows.get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
-    assertThat(rows.get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
+    PagedResponseIO<AnnotationIO> page = (PagedResponseIO<AnnotationIO>) r.getEntity();
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.total()).isEqualTo(1L);
+    assertThat(page.page()).isEqualTo(0);
+    assertThat(page.pageSize()).isEqualTo(50);
+    assertThat(page.items().get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
+    assertThat(page.items().get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
   }
 
   @Test
@@ -159,6 +164,50 @@ class SemanticAnnotationV2RestTest {
 
     assertThat(r.getStatus()).isEqualTo(200);
     verify(annotationDAO).findFiltered(eq(SUBJ_APP_ID), any(), any(), any(), eq(2), eq(10));
+  }
+
+  // ─── find (text search) — APISIMP-ANNOTATION-PLAIN-ARRAY ────────────────
+
+  @Test
+  void find_returns200WithPagedEnvelope() {
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "CF/LMPAEK");
+    when(annotationDAO.textSearch(eq("CF"), any(), eq(0), eq(50))).thenReturn(List.of(ann));
+    when(annotationDAO.countTextSearch(eq("CF"), any())).thenReturn(1L);
+
+    Response r = resource.find("CF", null, 0, 50, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<AnnotationIO> page = (PagedResponseIO<AnnotationIO>) r.getEntity();
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.total()).isEqualTo(1L);
+    assertThat(page.items().get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
+  }
+
+  @Test
+  void find_emptyResult_returnsZeroTotal() {
+    when(annotationDAO.textSearch(eq("zzz"), any(), eq(0), eq(50))).thenReturn(List.of());
+    when(annotationDAO.countTextSearch(eq("zzz"), any())).thenReturn(0L);
+
+    Response r = resource.find("zzz", null, 0, 50, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<AnnotationIO> page = (PagedResponseIO<AnnotationIO>) r.getEntity();
+    assertThat(page.items()).isEmpty();
+    assertThat(page.total()).isEqualTo(0L);
+  }
+
+  @Test
+  void find_returns400WhenQueryBlank() {
+    assertThat(resource.find("", null, 0, 50, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.find(null, null, 0, 50, sc).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void find_returns401WhenUnauthenticated() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    assertThat(resource.find("CF", null, 0, 50, sc).getStatus()).isEqualTo(401);
   }
 
   // ─── get by appId ─────────────────────────────────────────────────────────

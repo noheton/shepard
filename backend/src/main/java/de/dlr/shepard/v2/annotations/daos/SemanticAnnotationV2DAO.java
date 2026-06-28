@@ -121,6 +121,66 @@ public class SemanticAnnotationV2DAO extends GenericDAO<SemanticAnnotation> {
       .toList();
   }
 
+  // ─── count mirrors ────────────────────────────────────────────────────────
+
+  /** Count mirror of {@link #findFiltered} — same WHERE clause, no SKIP/LIMIT. */
+  public long countFiltered(
+    String subjectAppId,
+    String subjectKind,
+    String predicateIri,
+    String vocabularyId
+  ) {
+    Map<String, Object> params = new HashMap<>();
+    StringBuilder where = new StringBuilder("WHERE 1=1");
+
+    if (subjectAppId != null && !subjectAppId.isBlank()) {
+      where.append(" AND a.subjectAppId = $subjectAppId");
+      params.put("subjectAppId", subjectAppId);
+    }
+    if (subjectKind != null && !subjectKind.isBlank()) {
+      where.append(" AND a.subjectKind = $subjectKind");
+      params.put("subjectKind", subjectKind);
+    }
+    if (predicateIri != null && !predicateIri.isBlank()) {
+      where.append(" AND a.propertyIRI = $predicateIri");
+      params.put("predicateIri", predicateIri);
+    }
+    if (vocabularyId != null && !vocabularyId.isBlank()) {
+      where.append(" AND a.vocabularyId = $vocabularyId");
+      params.put("vocabularyId", vocabularyId);
+    }
+
+    String query = "MATCH (a:SemanticAnnotation) " + where + " RETURN count(a) AS total";
+    return countFromQuery(query, params);
+  }
+
+  /** Count mirror of {@link #textSearch} — same WHERE clause, no SKIP/LIMIT. */
+  public long countTextSearch(String q, String vocabularyId) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("q", "(?i).*" + escapeRegex(q) + ".*");
+
+    StringBuilder where = new StringBuilder(
+      "WHERE (a.valueName =~ $q OR a.propertyName =~ $q OR a.valueIRI =~ $q OR a.propertyIRI =~ $q)"
+    );
+    if (vocabularyId != null && !vocabularyId.isBlank()) {
+      where.append(" AND a.vocabularyId = $vocabularyId");
+      params.put("vocabularyId", vocabularyId);
+    }
+
+    String query = "MATCH (a:SemanticAnnotation) " + where + " RETURN count(a) AS total";
+    return countFromQuery(query, params);
+  }
+
+  private long countFromQuery(String query, Map<String, Object> params) {
+    org.neo4j.ogm.model.Result r = session.query(query, params);
+    if (r == null) return 0L;
+    for (Map<String, Object> row : r.queryResults()) {
+      Object t = row.get("total");
+      if (t instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
   // ─── back-pointer stamp ────────────────────────────────────────────────────
 
   /**
