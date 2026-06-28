@@ -113,7 +113,7 @@
               <td>
                 <NuxtLink
                   v-if="ref.keys.length > 0"
-                  :to="`/collections/${collectionId}/dataobjects/${submodelRefToAppId(ref.keys[0].value)}`"
+                  :to="`/aas/submodels/${collectionId}/${submodelRefToAppId(ref.keys[0].value)}`"
                   class="text-primary text-decoration-none font-weight-medium"
                 >
                   {{ ref.displayName ?? submodelRefToAppId(ref.keys[0].value) }}
