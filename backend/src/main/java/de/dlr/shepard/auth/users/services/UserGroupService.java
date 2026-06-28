@@ -76,6 +76,10 @@ public class UserGroupService {
     return userGroupDAO.findAllUserGroups(params, authenticationContext.getCurrentUserName());
   }
 
+  public long countAllUserGroups() {
+    return userGroupDAO.countAllUserGroups(authenticationContext.getCurrentUserName());
+  }
+
   /**
    * V2-SWEEP-002 — look up a UserGroup by its UUID v7 appId, with read-permission check.
    *

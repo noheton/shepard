@@ -29,6 +29,19 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
     return session.load(UserGroup.class, stub.getId(), DEPTH_ENTITY);
   }
 
+  /** Counts UserGroups visible to {@code username} — mirrors {@link #findAllUserGroups} WHERE clause. */
+  public long countAllUserGroups(String username) {
+    String query = "MATCH %s WHERE %s RETURN count(ug) AS c".formatted(
+        CypherQueryHelper.getObjectPart("ug", "UserGroup", false),
+        CypherQueryHelper.getReadableByQuery("ug", username));
+    var it = session.query(query, Map.of()).queryResults().iterator();
+    if (it.hasNext()) {
+      Object c = it.next().get("c");
+      return c instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
   public List<UserGroup> findAllUserGroups(QueryParamHelper params, String username) {
     Map<String, Object> paramsMap = new HashMap<>();
     if (params.hasPagination()) {

@@ -25,6 +25,7 @@ import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
@@ -90,25 +91,42 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_returnsEmptyList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
+    when(service.countAllUserGroups()).thenReturn(0L);
     Response r = resource.listUserGroups(0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
     assertNotNull(body);
-    assertEquals(0, body.size());
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
   }
 
   @Test
   void listUserGroups_returnsMappedList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class)))
       .thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
+    when(service.countAllUserGroups()).thenReturn(1L);
     Response r = resource.listUserGroups(0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(APP_ID, body.get(0).getAppId());
-    assertEquals(GROUP_NAME, body.get(0).getName());
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals(APP_ID, body.items().get(0).getAppId());
+    assertEquals(GROUP_NAME, body.items().get(0).getName());
+  }
+
+  @Test
+  void listUserGroups_envelopeContainsPageAndPageSize() {
+    when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
+    when(service.countAllUserGroups()).thenReturn(42L);
+    Response r = resource.listUserGroups(2, 10, null, null);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(42L, body.total());
+    assertEquals(2, body.page());
+    assertEquals(10, body.pageSize());
   }
 
   // ── GET /v2/user-groups/{appId} ──────────────────────────────────────

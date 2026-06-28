@@ -9,6 +9,7 @@ import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import de.dlr.shepard.v2.users.io.UserGroupV2IO;
 import jakarta.annotation.security.RolesAllowed;
@@ -78,8 +79,8 @@ public class UserGroupV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of user groups.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupV2IO.class))
+    description = "Paged list of user groups.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
@@ -94,10 +95,11 @@ public class UserGroupV2Rest {
   ) {
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    List<UserGroupV2IO> result = service.getAllUserGroups(params).stream()
+    long total = service.countAllUserGroups();
+    List<UserGroupV2IO> items = service.getAllUserGroups(params).stream()
       .map(UserGroupV2IO::new)
       .toList();
-    return Response.ok(result).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @GET
