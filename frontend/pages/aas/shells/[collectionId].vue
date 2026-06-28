@@ -113,7 +113,7 @@
                   :to="`/collections/${collectionId}/dataobjects/${submodelRefToAppId(ref.keys[0].value)}`"
                   class="text-primary text-decoration-none font-weight-medium"
                 >
-                  {{ submodelRefToAppId(ref.keys[0].value) }}
+                  {{ ref.displayName ?? submodelRefToAppId(ref.keys[0].value) }}
                 </NuxtLink>
               </td>
               <td>
