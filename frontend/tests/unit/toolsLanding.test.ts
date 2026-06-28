@@ -27,6 +27,7 @@ describe("TOOLS_TILES", () => {
       "/snapshots/diff",
       "/shapes/render",
       "/tools/form-preview", // BTKVS-B2 — form-descriptor placeholder stub
+      "/aas/shells", // MISSING-aas-ui Slice 1 — AAS Shell list
     ];
     expect(TOOLS_TILES.map(t => t.to).sort()).toEqual(expectedRoutes.sort());
   });

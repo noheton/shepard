@@ -64,6 +64,13 @@ export const TOOLS_TILES: ToolTile[] = [
       "Compile a data-kind template's SHACL shape into its form descriptor (BTKVS-B2).",
     icon: "mdi-form-select",
   },
+  {
+    to: "/aas/shells",
+    title: "AAS Shells",
+    description:
+      "Browse Collections as IDTA AAS v3 Asset Administration Shells (AAS1a/AAS1b).",
+    icon: "mdi-layers-triple-outline",
+  },
 ];
 
 // UU2 (2026-05-31): `isPlausibleAppId` lives in `utils/idShape.ts` (which
