@@ -33,7 +33,7 @@ export function useSnapshots(collectionAppId: Ref<string | null>) {
     snapshotsApi.value
       .listCollectionSnapshots({ collectionAppId: appId })
       .then(result => {
-        snapshots.value = result;
+        snapshots.value = result.items ?? [];
       })
       .catch(error => {
         handleError(error, "listSnapshots");

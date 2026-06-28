@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  PagedResponseSnapshot,
   Snapshot,
   SnapshotDataObjects,
   SnapshotDiff,
@@ -22,6 +23,7 @@ import type {
   SnapshotListPageIO,
 } from '../models/index';
 import {
+    PagedResponseSnapshotFromJSON,
     SnapshotFromJSON,
     SnapshotToJSON,
     SnapshotDataObjectsFromJSON,
@@ -340,7 +342,7 @@ export class SnapshotsApi extends runtime.BaseAPI {
      * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Each `SnapshotIO` carries: `appId`, `name`, `description`, `snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, and `entryCount` (number of VersionableEntities recorded in the manifest).  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. `size` capped at 200 server-side.  Auth: Read on the Collection.  Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries of a specific Snapshot, or `GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots.
      * [v2] List Snapshots of a Collection, newest first (V2b).
      */
-    async listCollectionSnapshotsRaw(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Snapshot>>> {
+    async listCollectionSnapshotsRaw(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseSnapshot>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -379,14 +381,14 @@ export class SnapshotsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SnapshotFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseSnapshotFromJSON(jsonValue));
     }
 
     /**
-     * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Each `SnapshotIO` carries: `appId`, `name`, `description`, `snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, and `entryCount` (number of VersionableEntities recorded in the manifest).  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. `size` capped at 200 server-side.  Auth: Read on the Collection.  Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries of a specific Snapshot, or `GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots.
+     * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Response envelope: `{ items[], total, page, pageSize }` (APISIMP-COLLECTION-SNAPSHOT-PLAIN-ARRAY fix).  Auth: Read on the Collection.
      * [v2] List Snapshots of a Collection, newest first (V2b).
      */
-    async listCollectionSnapshots(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Snapshot>> {
+    async listCollectionSnapshots(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseSnapshot> {
         const response = await this.listCollectionSnapshotsRaw(requestParameters, initOverrides);
         return await response.value();
     }
