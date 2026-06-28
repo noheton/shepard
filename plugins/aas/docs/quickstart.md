@@ -10,7 +10,29 @@ Explorer, BaSyx SDK) to browse your data.
 
 ---
 
-## Browse your data as AAS Shells
+## Browse in the Shepard UI
+
+The **Tools → AAS Shells** tile (top navigation bar) opens the shells listing.
+From there you can navigate without leaving the browser:
+
+1. **Tools → AAS Shells** — lists every Collection you can read as an AAS Shell.
+2. Click a Shell name → **Shell detail page** — shows Asset Information and the
+   Submodels table (one row per top-level DataObject). Each row has an
+   **"Open DataObject"** button that jumps directly to the DataObject detail view.
+3. Click a Submodel name → **Submodel detail page** — shows the Submodel
+   identity fields and a **SubmodelElements (Properties)** table listing all
+   semantic annotations on that DataObject as AAS Property elements.
+
+In-context shortcuts are also available on every entity detail page:
+
+- **Collection detail → AAS pane** (right sidebar) — shows the Shell IRI,
+  idShort, Asset Kind, Submodel count, and a **"View AAS Shell"** button.
+- **DataObject detail → AAS pane** (right sidebar) — shows the Shell IRI and
+  Submodel IRI with **"Open AAS Shell"** and **"Open Submodel"** buttons.
+
+---
+
+## Browse your data as AAS Shells (API)
 
 Point your AAS client at:
 
