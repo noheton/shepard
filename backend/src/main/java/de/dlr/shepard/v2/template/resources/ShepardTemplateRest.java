@@ -286,11 +286,12 @@ public class ShepardTemplateRest {
   @Path("/tags")
   @Operation(
     summary = "Distinct list of tags across all non-retired templates.",
-    description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind."
+    description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind. " +
+    "Server-side cap: at most 500 distinct tags are returned (alphabetically first 500)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Distinct tag list, sorted ascending.",
+    description = "Distinct tag list, sorted ascending. Capped at 500 entries.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = String.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
