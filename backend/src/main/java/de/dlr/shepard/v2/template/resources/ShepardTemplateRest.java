@@ -13,6 +13,8 @@ import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -29,6 +31,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Optional;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -79,20 +82,23 @@ public class ShepardTemplateRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Matching templates, ordered by name then version DESC.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardTemplateIO.class))
+    description = "Paged result set, ordered by name then version DESC.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
     @Parameter(description = "Set true to include retired rows. Only meaningful for admins.")
     @DefaultValue("false") @QueryParam("includeRetired") boolean includeRetired,
+    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @Min(0) int page,
+    @Parameter(description = "Page size (1–200). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     boolean effInclude = includeRetired && securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
-    List<ShepardTemplateIO> rows = dao.list(kind, effInclude).stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(rows).build();
+    long total = dao.count(kind, effInclude);
+    List<ShepardTemplateIO> rows = dao.list(kind, effInclude, page, pageSize).stream().map(ShepardTemplateIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize)).build();
   }
 
   @GET

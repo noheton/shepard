@@ -47,7 +47,7 @@ function getAuthHeaders(): Record<string, string> {
   return h;
 }
 
-/** GET /v2/templates?kind=<kind>. Public surface; returns 200 + an array. */
+/** GET /v2/templates?kind=<kind>&pageSize=200. Public surface; returns PagedResponseIO envelope. */
 async function fetchTemplates() {
   isLoading.value = true;
   fetchError.value = null;
@@ -58,7 +58,8 @@ async function fetchTemplates() {
       fetchError.value = `${res.status} ${res.statusText}`;
       return;
     }
-    items.value = (await res.json()) as TemplateListItem[];
+    const data = await res.json();
+    items.value = (data?.items ?? data) as TemplateListItem[];
   } catch (e) {
     fetchError.value = e instanceof Error ? e.message : String(e);
   } finally {

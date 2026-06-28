@@ -16,12 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   CreateShepardTemplate,
+  PagedResponseShepardTemplate,
   PatchShepardTemplate,
   ShepardTemplate,
 } from '../models/index';
 import {
     CreateShepardTemplateFromJSON,
     CreateShepardTemplateToJSON,
+    PagedResponseShepardTemplateFromJSON,
     PatchShepardTemplateFromJSON,
     PatchShepardTemplateToJSON,
     ShepardTemplateFromJSON,
@@ -52,6 +54,8 @@ export interface ImportTemplatesRequest {
 export interface ListTemplatesRequest {
     includeRetired?: boolean;
     kind?: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface PatchTemplateRequest {
@@ -299,7 +303,7 @@ export class TemplatesApi extends runtime.BaseAPI {
      * Any authenticated user can browse. Retired rows are excluded by default; admins may set ?includeRetired=true to see them too.
      * [v2] List templates (latest non-retired version per name).
      */
-    async listTemplatesRaw(requestParameters: ListTemplatesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ShepardTemplate>>> {
+    async listTemplatesRaw(requestParameters: ListTemplatesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
         const queryParameters: any = {};
 
         if (requestParameters['includeRetired'] != null) {
@@ -308,6 +312,14 @@ export class TemplatesApi extends runtime.BaseAPI {
 
         if (requestParameters['kind'] != null) {
             queryParameters['kind'] = requestParameters['kind'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -331,14 +343,14 @@ export class TemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ShepardTemplateFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
     }
 
     /**
      * Any authenticated user can browse. Retired rows are excluded by default; admins may set ?includeRetired=true to see them too.
      * [v2] List templates (latest non-retired version per name).
      */
-    async listTemplates(requestParameters: ListTemplatesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ShepardTemplate>> {
+    async listTemplates(requestParameters: ListTemplatesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
         const response = await this.listTemplatesRaw(requestParameters, initOverrides);
         return await response.value();
     }
