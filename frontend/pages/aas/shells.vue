@@ -45,7 +45,7 @@
             <tr v-for="shell in shells" :key="shell.id">
               <td>
                 <NuxtLink
-                  :to="`/collections/${shellIdToAppId(shell.id)}`"
+                  :to="`/aas/shells/${shellIdToAppId(shell.id)}`"
                   class="text-primary text-decoration-none font-weight-medium"
                 >
                   {{ shell.idShort }}
