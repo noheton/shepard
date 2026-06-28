@@ -1,7 +1,9 @@
 package de.dlr.shepard.v2.search.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -146,6 +148,14 @@ class SearchV2RestTest {
   void nullQueryReturnsBadRequest() {
     Response resp = resource.search(null, 0, 50);
     assertEquals(400, resp.getStatus());
+  }
+
+  @Test
+  void blankQueryReturnsProblemJson() {
+    Response resp = resource.search("", 0, 50);
+    assertEquals(400, resp.getStatus());
+    assertEquals("application/problem+json", resp.getMediaType().toString());
+    assertInstanceOf(ProblemJson.class, resp.getEntity());
   }
 
   @Test

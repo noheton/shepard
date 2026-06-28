@@ -32,8 +32,8 @@ export function useSnapshots(collectionAppId: Ref<string | null>) {
     isLoading.value = true;
     snapshotsApi.value
       .listCollectionSnapshots({ collectionAppId: appId })
-      .then(result => {
-        snapshots.value = result;
+      .then((result: any) => {
+        snapshots.value = Array.isArray(result) ? result : (result.items ?? []);
       })
       .catch(error => {
         handleError(error, "listSnapshots");
