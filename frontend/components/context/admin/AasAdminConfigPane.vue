@@ -97,6 +97,11 @@ async function saveApiKey() {
 async function clearApiKey() {
   await patch({ registryApiKey: null });
 }
+
+const wellKnownUrl = computed(() => {
+  const base = config.value?.baseUrl?.replace(/\/$/, "") ?? "";
+  return base ? `${base}/v2/aas/.well-known/aas-server` : "";
+});
 </script>
 
 <template>
@@ -294,6 +299,21 @@ async function clearApiKey() {
               Save Base URL
             </v-btn>
           </div>
+
+          <template v-if="config.baseUrl">
+            <v-divider />
+            <div>
+              <div class="text-body-2 font-weight-medium mb-1">Well-known URL</div>
+              <div class="text-caption text-medium-emphasis mb-2">
+                Share this URL with external IDTA registries so they can discover
+                this instance's AAS capabilities.
+              </div>
+              <div class="d-flex align-center ga-1 flex-wrap">
+                <code class="text-caption">{{ wellKnownUrl }}</code>
+                <ClipboardButton :text="wellKnownUrl" success-message="Well-known URL copied" />
+              </div>
+            </div>
+          </template>
         </v-card-text>
 
         <v-card-actions class="pa-4 pt-0">

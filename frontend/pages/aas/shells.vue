@@ -52,7 +52,10 @@
                 </NuxtLink>
               </td>
               <td>
-                <code class="text-caption">{{ shell.id }}</code>
+                <div class="d-flex align-center ga-1">
+                  <code class="text-caption">{{ shell.id }}</code>
+                  <ClipboardButton :text="shell.id" success-message="Shell IRI copied" />
+                </div>
               </td>
               <td>
                 <v-chip size="small" variant="outlined" color="secondary">
