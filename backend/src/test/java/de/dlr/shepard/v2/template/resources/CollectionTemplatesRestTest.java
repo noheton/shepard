@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -15,6 +16,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.template.io.AllowedTemplatesIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
 import jakarta.ws.rs.core.Response;
@@ -64,15 +66,15 @@ class CollectionTemplatesRestTest {
   @Test
   void listAllowedReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.listAllowed(COLL_APP_ID, securityContext);
+    Response r = resource.listAllowed(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
-    verify(templateDAO, never()).listAllowedForCollection(any());
+    verify(templateDAO, never()).listAllowedForCollection(any(), anyInt(), anyInt());
   }
 
   @Test
   void listAllowedReturns404WhenCollectionMissing() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
-    Response r = resource.listAllowed(COLL_APP_ID, securityContext);
+    Response r = resource.listAllowed(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(404, r.getStatus());
     verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
   }
@@ -81,42 +83,48 @@ class CollectionTemplatesRestTest {
   void listAllowedReturns403WhenCallerLacksRead() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
-    Response r = resource.listAllowed(COLL_APP_ID, securityContext);
+    Response r = resource.listAllowed(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(403, r.getStatus());
   }
 
   @Test
-  void listAllowedReturnsTemplates() {
+  void listAllowedReturnsPagedEnvelope() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("tmpl-1");
-    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of(t));
+    when(templateDAO.countAllowedForCollection(COLL_APP_ID)).thenReturn(1L);
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of(t));
 
-    Response r = resource.listAllowed(COLL_APP_ID, securityContext);
+    Response r = resource.listAllowed(COLL_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> rows = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, rows.size());
-    assertEquals("tmpl-1", rows.get(0).getAppId());
+    PagedResponseIO<ShepardTemplateIO> page = (PagedResponseIO<ShepardTemplateIO>) r.getEntity();
+    assertEquals(1L, page.total());
+    assertEquals(0, page.page());
+    assertEquals(50, page.pageSize());
+    assertEquals(1, page.items().size());
+    assertEquals("tmpl-1", page.items().get(0).getAppId());
   }
 
   @Test
-  void listUsedReturnsTemplates() {
+  void listUsedReturnsPagedEnvelope() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("tmpl-used");
-    when(templateDAO.listUsedByCollection(COLL_APP_ID)).thenReturn(List.of(t));
+    when(templateDAO.countUsedByCollection(COLL_APP_ID)).thenReturn(1L);
+    when(templateDAO.listUsedByCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of(t));
 
-    Response r = resource.listUsed(COLL_APP_ID, securityContext);
+    Response r = resource.listUsed(COLL_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> rows = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, rows.size());
-    assertEquals("tmpl-used", rows.get(0).getAppId());
+    PagedResponseIO<ShepardTemplateIO> page = (PagedResponseIO<ShepardTemplateIO>) r.getEntity();
+    assertEquals(1L, page.total());
+    assertEquals(1, page.items().size());
+    assertEquals("tmpl-used", page.items().get(0).getAppId());
   }
 
   @Test
@@ -129,31 +137,24 @@ class CollectionTemplatesRestTest {
   }
 
   @Test
-  void setAllowedReplacesAndReturnsNewSet() {
+  void setAllowedReturns204OnSuccess() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
-    var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
-    t.setAppId("tmpl-1");
-    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of(t));
 
     Response r = resource.setAllowed(COLL_APP_ID, new AllowedTemplatesIO(List.of("tmpl-1")), securityContext);
 
-    assertEquals(200, r.getStatus());
+    assertEquals(204, r.getStatus());
     verify(templateDAO).setAllowedForCollection(COLL_APP_ID, List.of("tmpl-1"));
-    @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> rows = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, rows.size());
   }
 
   @Test
   void setAllowedNullBodyClearsTheSet() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
-    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
 
     Response r = resource.setAllowed(COLL_APP_ID, null, securityContext);
 
-    assertEquals(200, r.getStatus());
+    assertEquals(204, r.getStatus());
     verify(templateDAO).setAllowedForCollection(COLL_APP_ID, List.of());
   }
 
@@ -161,11 +162,10 @@ class CollectionTemplatesRestTest {
   void setAllowedEmptyListClearsTheSet() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
-    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
 
     Response r = resource.setAllowed(COLL_APP_ID, new AllowedTemplatesIO(List.of()), securityContext);
 
-    assertEquals(200, r.getStatus());
+    assertEquals(204, r.getStatus());
     verify(templateDAO).setAllowedForCollection(COLL_APP_ID, List.of());
   }
 

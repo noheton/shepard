@@ -37,7 +37,8 @@ if (props.collectionAppId) {
   isLoadingTemplates.value = true;
   useV2ShepardApi(CollectionTemplatesApi)
     .value.listAllowed({ appId: props.collectionAppId })
-    .then(templates => {
+    .then(page => {
+      const templates = page.items ?? [];
       allowedTemplates.value = templates;
       // Basic-mode users see the template picker first (templates are the
       // predigested path for users who don't know which containers/annotations
