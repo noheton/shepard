@@ -1,12 +1,66 @@
 <script setup lang="ts">
 import { useAasAdminConfig } from "~/composables/aas/useAasAdminConfig";
+import { useAasRegistrations } from "~/composables/aas/useAasRegistrations";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { AdminFragments } from "./adminMenuItems";
 
 const { config, isLoading, isSaving, error, refresh, patch } = useAasAdminConfig();
+const {
+  registrationsPage,
+  isLoading: isLoadingRegs,
+  isSyncing,
+  error: regsError,
+  lastSyncResult,
+  triggerSync,
+} = useAasRegistrations();
 
 const { isPluginEnabled } = useInstanceCapabilities();
 const isPluginInstalled = computed(() => isPluginEnabled("aas"));
+
+// IDTA template import (one-shot POST)
+const isImporting = ref(false);
+const importResult = ref<{ created: number; skipped: number } | null>(null);
+const importError = ref<string | null>(null);
+
+function v2BaseUrl(): string {
+  const runtimeConfig = useRuntimeConfig().public;
+  const explicit = runtimeConfig.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (runtimeConfig.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function importIdtaTemplates() {
+  isImporting.value = true;
+  importError.value = null;
+  importResult.value = null;
+  try {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const response = await fetch(`${v2BaseUrl()}/v2/admin/aas/import-idta-templates`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    importResult.value = { created: result.created?.length ?? 0, skipped: result.skipped ?? 0 };
+  } catch (e) {
+    importError.value = "IDTA template import failed";
+    handleError(e, "importing IDTA AAS templates");
+  } finally {
+    isImporting.value = false;
+  }
+}
+
+function statusColor(status: string) {
+  if (status === "SYNCED") return "success";
+  if (status === "FAILED") return "error";
+  return "warning";
+}
 
 // edit form state
 const editRegistryUrl = ref("");
@@ -254,6 +308,163 @@ async function clearApiKey() {
             Open API config
           </v-btn>
         </v-card-actions>
+      </v-card>
+      <!-- Registry Registrations Outbox -->
+      <v-card variant="outlined">
+        <v-card-title class="d-flex align-center ga-2 bg-surface-variant">
+          <v-icon icon="mdi-sync" />
+          <span>Registry Registrations</span>
+          <v-chip
+            v-if="registrationsPage"
+            size="small"
+            variant="tonal"
+            class="ml-2"
+          >
+            {{ registrationsPage.total }} total
+          </v-chip>
+          <v-spacer />
+          <v-btn
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-sync"
+            :loading="isSyncing"
+            :disabled="isSyncing || !config.enabled || !config.registryUrl"
+            @click="triggerSync"
+          >
+            Sync Now
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="pa-4 d-flex flex-column ga-3">
+          <v-alert
+            v-if="regsError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            closable
+            @click:close="regsError = null"
+          >
+            {{ regsError }}
+          </v-alert>
+
+          <v-alert
+            v-if="lastSyncResult !== null"
+            type="success"
+            variant="tonal"
+            density="compact"
+          >
+            Sync complete — {{ lastSyncResult.synced }} shell(s) registered.
+          </v-alert>
+
+          <centered-loading-spinner v-if="isLoadingRegs && !registrationsPage" />
+
+          <template v-else-if="registrationsPage">
+            <div
+              v-if="registrationsPage.items.length === 0"
+              class="text-body-2 text-medium-emphasis"
+            >
+              No registration rows yet. Rows are seeded when the AAS integration
+              is enabled and the first sync runs.
+            </div>
+            <v-table v-else density="compact">
+              <thead>
+                <tr>
+                  <th>Collection (Shell AppId)</th>
+                  <th>Registry</th>
+                  <th>Status</th>
+                  <th>Last attempt</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in registrationsPage.items"
+                  :key="row.appId"
+                >
+                  <td>
+                    <code class="text-caption">{{ row.shellAppId }}</code>
+                  </td>
+                  <td>
+                    <span class="text-caption">{{ row.registryUrl }}</span>
+                  </td>
+                  <td>
+                    <v-chip
+                      :color="statusColor(row.status)"
+                      size="x-small"
+                      variant="tonal"
+                    >
+                      {{ row.status }}
+                    </v-chip>
+                    <div
+                      v-if="row.errorMessage"
+                      class="text-caption text-error mt-1"
+                    >
+                      {{ row.errorMessage }}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="text-caption text-medium-emphasis">
+                      {{
+                        row.lastAttemptAt
+                          ? new Date(row.lastAttemptAt).toLocaleString()
+                          : "—"
+                      }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </template>
+        </v-card-text>
+      </v-card>
+
+      <!-- IDTA Submodel Templates -->
+      <v-card variant="outlined">
+        <v-card-title class="d-flex align-center ga-2 bg-surface-variant">
+          <v-icon icon="mdi-package-variant-closed" />
+          <span>IDTA Submodel Templates</span>
+        </v-card-title>
+
+        <v-card-text class="pa-4 d-flex flex-column ga-3">
+          <div class="text-body-2 text-medium-emphasis">
+            Import the bundled IDTA Submodel Templates (e.g. Contact Information,
+            Nameplate, Technical Data) into the global template library.
+            Safe to re-run — identical templates are skipped.
+          </div>
+
+          <v-alert
+            v-if="importError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            closable
+            @click:close="importError = null"
+          >
+            {{ importError }}
+          </v-alert>
+
+          <v-alert
+            v-if="importResult"
+            type="success"
+            variant="tonal"
+            density="compact"
+          >
+            Import complete — {{ importResult.created }} created,
+            {{ importResult.skipped }} skipped.
+          </v-alert>
+
+          <div class="d-flex justify-end">
+            <v-btn
+              size="small"
+              variant="tonal"
+              prepend-icon="mdi-download-outline"
+              :loading="isImporting"
+              :disabled="isImporting || !config.enabled"
+              @click="importIdtaTemplates"
+            >
+              Import IDTA Templates
+            </v-btn>
+          </div>
+        </v-card-text>
       </v-card>
     </template>
   </div>
