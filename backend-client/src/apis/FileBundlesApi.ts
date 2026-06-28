@@ -20,6 +20,7 @@ import type {
   FileGroup,
   JsonNode,
   PagedFiles,
+  PagedResponseFileGroup,
   ShepardFile,
 } from '../models/index';
 import {
@@ -33,6 +34,7 @@ import {
     JsonNodeToJSON,
     PagedFilesFromJSON,
     PagedFilesToJSON,
+    PagedResponseFileGroupFromJSON,
     ShepardFileFromJSON,
     ShepardFileToJSON,
 } from '../models/index';
@@ -66,6 +68,8 @@ export interface ListGroupFilesRequest {
 
 export interface ListGroupsRequest {
     bundleAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface PatchGroupRequest {
@@ -366,7 +370,7 @@ export class FileBundlesApi extends runtime.BaseAPI {
      * Returns the ordered list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
      * [v2] List FileGroups under a bundle, ordered by ascending index.
      */
-    async listGroupsRaw(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FileGroup>>> {
+    async listGroupsRaw(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseFileGroup>> {
         if (requestParameters['bundleAppId'] == null) {
             throw new runtime.RequiredError(
                 'bundleAppId',
@@ -375,6 +379,14 @@ export class FileBundlesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -397,14 +409,14 @@ export class FileBundlesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FileGroupFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFileGroupFromJSON(jsonValue));
     }
 
     /**
-     * Returns the ordered list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
+     * Returns a paged list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Pagination: `?page=0&pageSize=50` (page zero-based; pageSize capped at 200 server-side).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
      * [v2] List FileGroups under a bundle, ordered by ascending index.
      */
-    async listGroups(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FileGroup>> {
+    async listGroups(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseFileGroup> {
         const response = await this.listGroupsRaw(requestParameters, initOverrides);
         return await response.value();
     }
