@@ -17,6 +17,7 @@ import * as runtime from '../runtime';
 import type {
   AllowedTemplates,
   DataObject,
+  PagedResponseShepardTemplate,
   ShepardTemplate,
   TemplateInstantiateRequest,
   TemplateInstantiation,
@@ -26,6 +27,7 @@ import {
     AllowedTemplatesToJSON,
     DataObjectFromJSON,
     DataObjectToJSON,
+    PagedResponseShepardTemplateFromJSON,
     ShepardTemplateFromJSON,
     ShepardTemplateToJSON,
     TemplateInstantiateRequestFromJSON,
@@ -47,10 +49,14 @@ export interface InstantiateDataObjectRequest {
 
 export interface ListAllowedRequest {
     appId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface ListUsedRequest {
     appId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface SetAllowedRequest {
@@ -177,7 +183,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
     /**
      * [v2] List templates the Collection owner has curated as allowed inside this Collection.
      */
-    async listAllowedRaw(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ShepardTemplate>>> {
+    async listAllowedRaw(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -186,6 +192,14 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -208,13 +222,13 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ShepardTemplateFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
     }
 
     /**
      * [v2] List templates the Collection owner has curated as allowed inside this Collection.
      */
-    async listAllowed(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ShepardTemplate>> {
+    async listAllowed(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
         const response = await this.listAllowedRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -222,7 +236,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
     /**
      * [v2] List templates the Collection has cited via :USES_TEMPLATE.
      */
-    async listUsedRaw(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ShepardTemplate>>> {
+    async listUsedRaw(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -231,6 +245,14 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -253,13 +275,13 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ShepardTemplateFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
     }
 
     /**
      * [v2] List templates the Collection has cited via :USES_TEMPLATE.
      */
-    async listUsed(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ShepardTemplate>> {
+    async listUsed(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
         const response = await this.listUsedRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -268,7 +290,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
      * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates.
      * [v2] Replace the allowed-template set for this Collection.
      */
-    async setAllowedRaw(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ShepardTemplate>>> {
+    async setAllowedRaw(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -309,16 +331,15 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
             body: AllowedTemplatesToJSON(requestParameters['allowedTemplates']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ShepardTemplateFromJSON));
+        return new runtime.VoidApiResponse(response);
     }
 
     /**
-     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates.
+     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204.
      * [v2] Replace the allowed-template set for this Collection.
      */
-    async setAllowed(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ShepardTemplate>> {
-        const response = await this.setAllowedRaw(requestParameters, initOverrides);
-        return await response.value();
+    async setAllowed(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.setAllowedRaw(requestParameters, initOverrides);
     }
 
 }

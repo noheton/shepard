@@ -138,6 +138,30 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return out;
   }
 
+  /** Paginated variant of {@link #listAllowedForCollection(String)}. */
+  public List<ShepardTemplate> listAllowedForCollection(String collectionAppId, int page, int pageSize) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:ALLOWS_TEMPLATE]->(t:ShepardTemplate) " +
+      "WHERE t.retired IS NULL OR t.retired = false " +
+      "RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId, "skip", (long) page * pageSize, "limit", (long) pageSize)).forEach(out::add);
+    return out;
+  }
+
+  /** Count of non-retired templates in the allowed set for one Collection. */
+  public long countAllowedForCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:ALLOWS_TEMPLATE]->(t:ShepardTemplate) " +
+      "WHERE t.retired IS NULL OR t.retired = false " +
+      "RETURN count(t) AS total";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
   /**
    * Templates the Collection has cited via {@code :USES_TEMPLATE}
    * (the provenance edge — "this Collection was created from
@@ -151,6 +175,28 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     List<ShepardTemplate> out = new ArrayList<>();
     findByQuery(cypher, Map.of("cAppId", collectionAppId)).forEach(out::add);
     return out;
+  }
+
+  /** Paginated variant of {@link #listUsedByCollection(String)}. */
+  public List<ShepardTemplate> listUsedByCollection(String collectionAppId, int page, int pageSize) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:USES_TEMPLATE]->(t:ShepardTemplate) " +
+      "RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId, "skip", (long) page * pageSize, "limit", (long) pageSize)).forEach(out::add);
+    return out;
+  }
+
+  /** Count of templates in the used set for one Collection (includes retired). */
+  public long countUsedByCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:USES_TEMPLATE]->(t:ShepardTemplate) " +
+      "RETURN count(t) AS total";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
   }
 
   /**

@@ -11,13 +11,18 @@ import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.TemplateInstantiationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -84,17 +89,24 @@ public class CollectionTemplatesRest {
   @Operation(summary = "List templates the Collection owner has curated as allowed inside this Collection.")
   @APIResponse(
     responseCode = "200",
-    description = "Allowed templates (retired excluded).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardTemplateIO.class))
+    description = "Allowed templates (retired excluded) wrapped in a PagedResponseIO envelope.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
-  public Response listAllowed(@PathParam("appId") String collectionAppId, @Context SecurityContext securityContext) {
+  public Response listAllowed(
+    @PathParam("appId") String collectionAppId,
+    @DefaultValue("0") @Min(0) @QueryParam("page") int page,
+    @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
+    @Context SecurityContext securityContext
+  ) {
     Optional<Long> ogmId = resolveAndGate(collectionAppId, AccessType.Read, securityContext);
     if (ogmId.isEmpty()) return forbiddenOrNotFound(collectionAppId, securityContext);
-    List<ShepardTemplateIO> rows = templateDAO.listAllowedForCollection(collectionAppId).stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(rows).build();
+    long total = templateDAO.countAllowedForCollection(collectionAppId);
+    List<ShepardTemplateIO> items = templateDAO.listAllowedForCollection(collectionAppId, page, pageSize)
+        .stream().map(ShepardTemplateIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @GET
@@ -102,30 +114,33 @@ public class CollectionTemplatesRest {
   @Operation(summary = "List templates the Collection has cited via :USES_TEMPLATE.")
   @APIResponse(
     responseCode = "200",
-    description = "Used templates (includes retired rows since past citations stay valid).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardTemplateIO.class))
+    description = "Used templates (includes retired rows) wrapped in a PagedResponseIO envelope.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
-  public Response listUsed(@PathParam("appId") String collectionAppId, @Context SecurityContext securityContext) {
+  public Response listUsed(
+    @PathParam("appId") String collectionAppId,
+    @DefaultValue("0") @Min(0) @QueryParam("page") int page,
+    @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
+    @Context SecurityContext securityContext
+  ) {
     Optional<Long> ogmId = resolveAndGate(collectionAppId, AccessType.Read, securityContext);
     if (ogmId.isEmpty()) return forbiddenOrNotFound(collectionAppId, securityContext);
-    List<ShepardTemplateIO> rows = templateDAO.listUsedByCollection(collectionAppId).stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(rows).build();
+    long total = templateDAO.countUsedByCollection(collectionAppId);
+    List<ShepardTemplateIO> items = templateDAO.listUsedByCollection(collectionAppId, page, pageSize)
+        .stream().map(ShepardTemplateIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @PUT
   @Path("/allowed")
   @Operation(
     summary = "Replace the allowed-template set for this Collection.",
-    description = "Full replace (not merge). Empty list = no curation; the picker falls back to all live templates."
+    description = "Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204; follow up with GET .../allowed to see the new set."
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Updated allowed-set.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardTemplateIO.class))
-  )
+  @APIResponse(responseCode = "204", description = "Set replaced successfully.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Manage on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
@@ -139,8 +154,7 @@ public class CollectionTemplatesRest {
 
     List<String> ids = body == null ? List.of() : (body.getTemplateAppIds() == null ? List.of() : body.getTemplateAppIds());
     templateDAO.setAllowedForCollection(collectionAppId, ids);
-    List<ShepardTemplateIO> rows = templateDAO.listAllowedForCollection(collectionAppId).stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(rows).build();
+    return Response.noContent().build();
   }
 
   @POST
