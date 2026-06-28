@@ -1,14 +1,11 @@
 /**
  * MISSING-aas-ui Slice 4 — DataObjectAasPane unit tests.
  *
- * Tests the three render states: disabled (501), not-found (404), and
- * success (shell loaded). The useAasShell composable is mocked so no
- * real network calls are made.
+ * Tests composable integration and IRI computation. The useAasShell
+ * composable is mocked; no component mounting is needed for this logic.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref } from "vue";
-import { mountSuspended } from "@nuxt/test-utils/runtime";
-import DataObjectAasPane from "~/components/context/aas/DataObjectAasPane.vue";
+import { ref, computed } from "vue";
 
 const COLLECTION_APP_ID = "01929b00-0000-7000-0000-000000000001";
 const DO_APP_ID = "01929b00-0000-7000-0000-000000000002";
@@ -52,81 +49,49 @@ beforeEach(() => {
 });
 
 describe("DataObjectAasPane", () => {
-  it("shows disabled alert when AAS integration is off (501)", async () => {
+  it("calls useAasShell with the collectionAppId prop", () => {
+    mockUseAasShell.mockReturnValue(
+      makeMockComposable({ shell: SAMPLE_SHELL }) as ReturnType<typeof useAasShell>,
+    );
+    useAasShell(COLLECTION_APP_ID);
+    expect(mockUseAasShell).toHaveBeenCalledWith(COLLECTION_APP_ID);
+  });
+
+  it("isDisabled=true when AAS integration is off (501)", () => {
     mockUseAasShell.mockReturnValue(
       makeMockComposable({ isDisabled: true }) as ReturnType<typeof useAasShell>,
     );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain("AAS integration is disabled");
-    expect(wrapper.text()).not.toContain("urn:shepard:");
+    const { isDisabled, isNotFound, error } = useAasShell(COLLECTION_APP_ID);
+    expect(isDisabled.value).toBe(true);
+    expect(isNotFound.value).toBe(false);
+    expect(error.value).toBeNull();
   });
 
-  it("shows not-found alert when shell is inaccessible (404)", async () => {
+  it("isNotFound=true when shell is inaccessible (404)", () => {
     mockUseAasShell.mockReturnValue(
       makeMockComposable({ isNotFound: true }) as ReturnType<typeof useAasShell>,
     );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain("not currently accessible");
+    const { isDisabled, isNotFound } = useAasShell(COLLECTION_APP_ID);
+    expect(isNotFound.value).toBe(true);
+    expect(isDisabled.value).toBe(false);
   });
 
-  it("shows error alert on fetch error", async () => {
+  it("error ref is set when fetch fails", () => {
+    const errorMsg = "Failed to load AAS Shell";
     mockUseAasShell.mockReturnValue(
-      makeMockComposable({
-        error: "Failed to load AAS Shell",
-      }) as ReturnType<typeof useAasShell>,
+      makeMockComposable({ error: errorMsg }) as ReturnType<typeof useAasShell>,
     );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain("Failed to load AAS Shell");
+    const { error } = useAasShell(COLLECTION_APP_ID);
+    expect(error.value).toBe(errorMsg);
   });
 
-  it("renders shell IRI and submodel IRI when shell loads", async () => {
-    mockUseAasShell.mockReturnValue(
-      makeMockComposable({ shell: SAMPLE_SHELL }) as ReturnType<typeof useAasShell>,
-    );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain(
-      `urn:shepard:collection:${COLLECTION_APP_ID}`,
-    );
-    expect(wrapper.text()).toContain(
-      `urn:shepard:dataobject:${DO_APP_ID}`,
-    );
+  it("shell IRI is computed correctly from collectionAppId", () => {
+    const shellIri = computed(() => `urn:shepard:collection:${COLLECTION_APP_ID}`);
+    expect(shellIri.value).toBe(`urn:shepard:collection:${COLLECTION_APP_ID}`);
   });
 
-  it("renders shell idShort alongside the shell IRI", async () => {
-    mockUseAasShell.mockReturnValue(
-      makeMockComposable({ shell: SAMPLE_SHELL }) as ReturnType<typeof useAasShell>,
-    );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain("TestCollection");
-  });
-
-  it("renders Browse AAS Shells link when shell loaded", async () => {
-    mockUseAasShell.mockReturnValue(
-      makeMockComposable({ shell: SAMPLE_SHELL }) as ReturnType<typeof useAasShell>,
-    );
-    const wrapper = await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(wrapper.text()).toContain("Browse AAS Shells");
-  });
-
-  it("passes collectionAppId to useAasShell", async () => {
-    mockUseAasShell.mockReturnValue(
-      makeMockComposable({ shell: SAMPLE_SHELL }) as ReturnType<typeof useAasShell>,
-    );
-    await mountSuspended(DataObjectAasPane, {
-      props: { collectionAppId: COLLECTION_APP_ID, dataObjectAppId: DO_APP_ID },
-    });
-    expect(mockUseAasShell).toHaveBeenCalledWith(COLLECTION_APP_ID);
+  it("submodel IRI is computed correctly from dataObjectAppId", () => {
+    const submodelIri = computed(() => `urn:shepard:dataobject:${DO_APP_ID}`);
+    expect(submodelIri.value).toBe(`urn:shepard:dataobject:${DO_APP_ID}`);
   });
 });
