@@ -36,7 +36,10 @@
       <div class="d-flex align-center justify-space-between mb-4">
         <div>
           <h1 class="text-h5 font-weight-bold">{{ shell.idShort }}</h1>
-          <code class="text-caption text-medium-emphasis">{{ shell.id }}</code>
+          <div class="d-flex align-center ga-1 flex-wrap mt-1">
+            <code class="text-caption text-medium-emphasis">{{ shell.id }}</code>
+            <ClipboardButton :text="shell.id" success-message="Shell IRI copied" />
+          </div>
         </div>
         <v-btn
           :to="`/collections/${collectionId}`"
@@ -117,9 +120,10 @@
                 </NuxtLink>
               </td>
               <td>
-                <code v-if="ref.keys.length > 0" class="text-caption">
-                  {{ ref.keys[0].value }}
-                </code>
+                <div v-if="ref.keys.length > 0" class="d-flex align-center ga-1">
+                  <code class="text-caption">{{ ref.keys[0].value }}</code>
+                  <ClipboardButton :text="ref.keys[0].value" success-message="Submodel IRI copied" />
+                </div>
               </td>
               <td>
                 <v-chip size="small" variant="outlined">{{ ref.type }}</v-chip>
