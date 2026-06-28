@@ -715,6 +715,18 @@ useHead({
                     />
                   </div>
                 </ExpansionPanelItem>
+                <!-- AAS Identity — shows the IDTA AAS Shell IRI for this Collection.
+                     Visible to all readers when collectionAppId is resolved; the
+                     panel itself handles the 501-disabled / 404-not-found states. -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="AAS Identity"
+                >
+                  <div class="pt-2">
+                    <CollectionAasPane :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
+
                 <!-- Snapshots and Publishing are panels of data, not advanced-mode
                      fields — visible to anyone with edit permission, in both modes
                      (per the refined basic/advanced policy: the toggle gates fields,
