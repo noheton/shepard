@@ -68,12 +68,12 @@ async function fetchReferences() {
   try {
     // V1-EXCEPTION replaced: was useShepardApi(TimeseriesReferenceApi) with numeric IDs.
     // Now uses the v2 unified endpoint keyed by dataObjectAppId (UUID v7).
-    const all = await useV2ShepardApi(ReferencesApi)
+    const envelope = await useV2ShepardApi(ReferencesApi)
       .value.listReferences({
         kind: "timeseries",
         dataObjectAppId: appId,
       });
-    refsForContainer.value = all.filter(
+    refsForContainer.value = (envelope.items ?? []).filter(
       r => tsPayload(r).timeseriesContainerId === props.containerId,
     );
     loaded.value = true;

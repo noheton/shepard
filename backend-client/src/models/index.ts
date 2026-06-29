@@ -204,6 +204,7 @@ export * from './PagedResponseFileGroup';
 export * from './PagedResponseNotebookReference';
 export * from './PagedResponseOntologyAlignment';
 export * from './PagedResponseOntologyBundleIO';
+export * from './PagedResponseReferenceV2';
 export * from './PagedResponseShepardTemplate';
 export * from './PagedResponseSnapshot';
 export * from './PatchCollectionProperties';

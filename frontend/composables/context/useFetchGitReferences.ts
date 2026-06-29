@@ -39,11 +39,11 @@ export function useFetchGitReferences(dataObjectAppId: string) {
   async function refresh() {
     isLoading.value = true;
     try {
-      const raw = await useV2ShepardApi(ReferencesApi).value.listReferences({
+      const envelope = await useV2ShepardApi(ReferencesApi).value.listReferences({
         kind: "git",
         dataObjectAppId,
       });
-      gitReferences.value = raw.map(toGitReferenceIO);
+      gitReferences.value = (envelope.items ?? []).map(toGitReferenceIO);
     } catch (error) {
       handleError(error, "listGitReferences");
     } finally {

@@ -81,8 +81,8 @@ export function useDataReferencesByDataObject(
         );
         return [];
       }
-      const body = (await resp.json()) as unknown;
-      return Array.isArray(body) ? (body as ReferenceV2IO[]) : [];
+      const body = (await resp.json()) as { items?: ReferenceV2IO[] } | ReferenceV2IO[];
+      return Array.isArray(body) ? body : ((body as { items?: ReferenceV2IO[] }).items ?? []);
     } catch (error) {
       handleError(error, `fetch ${kind} references`);
       return [];

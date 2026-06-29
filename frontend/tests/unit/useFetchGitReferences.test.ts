@@ -53,7 +53,7 @@ const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 describe("useFetchGitReferences", () => {
   it("calls listReferences with kind=git and the dataObjectAppId", async () => {
-    mockListReferences.mockResolvedValue([RAW_GIT_REF]);
+    mockListReferences.mockResolvedValue({ items: [RAW_GIT_REF], total: 1, page: 0, pageSize: 1 });
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"
@@ -68,7 +68,7 @@ describe("useFetchGitReferences", () => {
   });
 
   it("maps payload fields to GitReferenceIO correctly", async () => {
-    mockListReferences.mockResolvedValue([RAW_GIT_REF]);
+    mockListReferences.mockResolvedValue({ items: [RAW_GIT_REF], total: 1, page: 0, pageSize: 1 });
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"
@@ -85,7 +85,7 @@ describe("useFetchGitReferences", () => {
   });
 
   it("handles a minimal payload (only repoUrl required)", async () => {
-    mockListReferences.mockResolvedValue([RAW_GIT_REF_MINIMAL]);
+    mockListReferences.mockResolvedValue({ items: [RAW_GIT_REF_MINIMAL], total: 1, page: 0, pageSize: 1 });
 
     const { useFetchGitReferences } = await import(
       "~/composables/context/useFetchGitReferences"

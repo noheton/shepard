@@ -6,6 +6,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
@@ -32,7 +33,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -439,17 +439,17 @@ public class ReferencesV2Rest {
     operationId = "listReferences",
     summary = "List references of a kind attached to a DataObject, optionally filtered.",
     description =
-      "Returns every reference of `kind` attached to `dataObjectAppId` as " +
-      "ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows " +
-      "to singletons of that file-kind (e.g. `fileKind=urdf`).\n\nAuth: Read on the " +
-      "parent DataObject."
+      "Returns every reference of `kind` attached to `dataObjectAppId` wrapped in a " +
+      "standard PagedResponseIO envelope ({items, total, page, pageSize}). For `kind=file`, " +
+      "an optional `fileKind` query param narrows to singletons of that file-kind " +
+      "(e.g. `fileKind=urdf`).\n\nAuth: Read on the parent DataObject."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of ReferenceV2IO (may be empty).",
+    description = "Paged list of ReferenceV2IO (may be empty).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = ReferenceV2IO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "400", description = "Missing kind/dataObjectAppId or unknown kind.")
@@ -478,7 +478,7 @@ public class ReferencesV2Rest {
     }
     try {
       List<ReferenceV2IO> refs = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
-      return Response.ok(refs).build();
+      return Response.ok(new PagedResponseIO<>(refs, refs.size(), 0, refs.size())).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
