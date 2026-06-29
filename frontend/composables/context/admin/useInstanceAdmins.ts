@@ -68,7 +68,7 @@ export function useInstanceAdmins() {
         error.value = await parseProblemDetail(response);
         return;
       }
-      grants.value = (await response.json()) as InstanceAdminGrantIO[];
+      grants.value = ((await response.json()) as { items: InstanceAdminGrantIO[] }).items;
     } catch (e) {
       error.value =
         e instanceof Error ? e.message : "Failed to load instance admins";
