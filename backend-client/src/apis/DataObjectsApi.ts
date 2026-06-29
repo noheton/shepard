@@ -82,6 +82,10 @@ export interface ListDataObjectsRequest {
     page?: number;
     pageSize?: number;
     status?: string;
+    /** SIDEBAR-LAZY-TREE: return only DataObjects with no parent (tree roots). */
+    topLevel?: boolean;
+    /** SIDEBAR-LAZY-TREE: return only the direct children of this DataObject appId. */
+    parentAppId?: string;
 }
 
 export interface PatchDataObjectV2Request {
@@ -458,6 +462,14 @@ export class DataObjectsApi extends runtime.BaseAPI {
 
         if (requestParameters['status'] != null) {
             queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['topLevel'] != null) {
+            queryParameters['topLevel'] = requestParameters['topLevel'];
+        }
+
+        if (requestParameters['parentAppId'] != null) {
+            queryParameters['parentAppId'] = requestParameters['parentAppId'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
