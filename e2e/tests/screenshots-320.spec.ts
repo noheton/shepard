@@ -34,6 +34,33 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     url: "/collections/019ed455-67f7-7725-bf2d-7cd1b67aca9f/dataobjects/019ed586-87df-7710-a94c-c5fd60108d20",
     settle: 7000,
   },
+  {
+    // F — single SVDX DataObject landing: shows the contained .svdx file
+    // ("Scope Project_AutoSave_19_04_29.svdx") with metadata, download, and
+    // any parsed-out references. (The file-reference detail page hangs in a
+    // spinner — tracked as a separate L2-class bug; the DO landing is the
+    // closest "show me what's in this svdx" we have today.)
+    id: "F-svdx-content",
+    url: "/collections/019ed455-67f7-7725-bf2d-7cd1b67aca9f/dataobjects/019ed587-b219-70a1-ac9b-66ab742f45ed",
+    settle: 9000,
+  },
+  {
+    // G — robot cell: Trace3D of the AFP TCP path colored by tape consolidation
+    // force (TapeForce_TapeActForce[1], newton, MTLH/MFZ) over a 60-second
+    // tapelaying window starting at Track 9 / Run 29995 (2023-01-19 08:30:39
+    // UTC). Same container as Shot C. The TapeForce signal is the dynamic
+    // pressure applied to each ply; varies -1.3 to 11.9 N over the window.
+    id: "G-robot-cell-pressure",
+    url: "/shapes/render?roles=eyJ4Ijp7Im1lYXN1cmVtZW50IjoibW0iLCJkZXZpY2UiOiJSMjAiLCJsb2NhdGlvbiI6Ik1GWiIsInN5bWJvbGljTmFtZSI6IlgiLCJmaWVsZCI6InZhbHVlIn0sInkiOnsibWVhc3VyZW1lbnQiOiJtbSIsImRldmljZSI6IlIyMCIsImxvY2F0aW9uIjoiTUZaIiwic3ltYm9saWNOYW1lIjoiWSIsImZpZWxkIjoidmFsdWUifSwieiI6eyJtZWFzdXJlbWVudCI6Im1tIiwiZGV2aWNlIjoiUjIwIiwibG9jYXRpb24iOiJNRloiLCJzeW1ib2xpY05hbWUiOiJaIiwiZmllbGQiOiJ2YWx1ZSJ9LCJ2YWx1ZSI6eyJtZWFzdXJlbWVudCI6Im5ld3RvbiIsImRldmljZSI6Ik1UTEgiLCJsb2NhdGlvbiI6Ik1GWiIsInN5bWJvbGljTmFtZSI6IlRhcGVGb3JjZV9UYXBlQWN0Rm9yY2VbMV0iLCJmaWVsZCI6InZhbHVlIn19&containerAppId=019ede2a-60ec-7ac1-899d-3fe4c6263cbb&renderer=trace-3d&startNs=1674117039068000000&endNs=1674117099068000000&colormap=inferno",
+    settle: 12000,
+  },
+  {
+    // H — OTVIS thermography viewer: /shapes/render renderer=thermography
+    // streams a heatmap PNG for the bound OTvis FileReference (S10_M11_L11_F1.OTvis).
+    id: "H-otvis-viewer",
+    url: "/shapes/render?renderer=thermography&fileReferenceAppId=019ed593-0db3-7185-b863-fcc75379d412",
+    settle: 12000,
+  },
 ];
 
 test("capture MFFD presentation surfaces", async ({ page }) => {
