@@ -7,6 +7,7 @@ import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.BatchIngestIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.EventIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.IngestEventIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.RunSummaryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.importer.services.ImportDiagnosticsLog;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
@@ -158,7 +159,7 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Run summary list",
-    content = @Content(schema = @Schema(implementation = RunSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response listRuns(@Context SecurityContext sc) {
@@ -169,7 +170,7 @@ public class ImportDiagnosticsV2Rest {
         .map(RunSummaryIO::from)
         .toList();
 
-    return Response.ok(runs).build();
+    return Response.ok(new PagedResponseIO<>(runs, runs.size(), 0, runs.size())).build();
   }
 
   // ─── POST /v2/import/diagnostics/{runId}/events ───────────────────────────
