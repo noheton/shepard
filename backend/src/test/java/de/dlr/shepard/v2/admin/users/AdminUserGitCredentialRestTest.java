@@ -13,9 +13,10 @@ import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialIO;
-import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialListIO;
+import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialListItemIO;
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialResultIO;
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialRotateIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.Date;
@@ -74,15 +75,18 @@ class AdminUserGitCredentialRestTest {
 
   // ── GET list ─────────────────────────────────────────────────────────────
 
+  @SuppressWarnings("unchecked")
   @Test
   void list_returns200_withEmptyList_whenNoCredentials() {
     when(dao.findAllByUser(USER)).thenReturn(List.of());
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    AdminGitCredentialListIO body = (AdminGitCredentialListIO) r.getEntity();
+    PagedResponseIO<AdminGitCredentialListItemIO> body = (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
     assertThat(body.items()).isEmpty();
+    assertThat(body.total()).isEqualTo(0);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void list_returns200_withItems_andOmitsPat() {
     Date rotated = new Date(2000L);
@@ -91,8 +95,9 @@ class AdminUserGitCredentialRestTest {
 
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    AdminGitCredentialListIO body = (AdminGitCredentialListIO) r.getEntity();
+    PagedResponseIO<AdminGitCredentialListItemIO> body = (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
+    assertThat(body.total()).isEqualTo(1);
     var item = body.items().get(0);
     assertThat(item.appId()).isEqualTo(CRED_APP_ID);
     assertThat(item.host()).isEqualTo("gitlab.com");
@@ -107,13 +112,14 @@ class AdminUserGitCredentialRestTest {
       .doesNotContain("pat", "encryptedPat");
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void list_returns200_withNullLastRotatedAt_forLegacyRows() {
     GitCredential legacy = cred(CRED_APP_ID, "github.com", "bob", null);
     when(dao.findAllByUser(USER)).thenReturn(List.of(legacy));
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    AdminGitCredentialListIO body = (AdminGitCredentialListIO) r.getEntity();
+    PagedResponseIO<AdminGitCredentialListItemIO> body = (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
     assertThat(body.items().get(0).lastRotatedAt()).isNull();
   }
 
