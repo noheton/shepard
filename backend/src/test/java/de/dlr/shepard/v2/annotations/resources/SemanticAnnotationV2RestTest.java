@@ -22,6 +22,9 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultItemIO;
+import de.dlr.shepard.v2.annotations.io.BulkCreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -31,10 +34,12 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -757,6 +762,127 @@ class SemanticAnnotationV2RestTest {
 
     CreateAnnotationIO body = createBody("FileReference", REF_APP_ID, PREDICATE_IRI, "v", null);
     assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(403);
+  }
+
+  // ─── SEMANTIC-ANNOTATE-BULK-REST-1: POST /v2/annotations/bulk ───────────
+
+  @Test
+  void bulkCreate_returns207WithAllSucceeded() {
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of(
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "val-1", null),
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "val-2", null)
+    ));
+
+    Response r = resource.bulkCreate(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(207);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getCreated()).isEqualTo(2);
+    assertThat(result.getFailed()).isEqualTo(0);
+    assertThat(result.getResults()).hasSize(2);
+    assertThat(result.getResults().get(0).getStatus()).isEqualTo("created");
+    assertThat(result.getResults().get(1).getStatus()).isEqualTo("created");
+    assertThat(result.getResults().get(0).getIndex()).isEqualTo(0);
+    assertThat(result.getResults().get(1).getIndex()).isEqualTo(1);
+  }
+
+  @Test
+  void bulkCreate_returns401WhenUnauthenticated() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null)));
+    assertThat(resource.bulkCreate(body, sc, null).getStatus()).isEqualTo(401);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenBodyNull() {
+    assertThat(resource.bulkCreate(null, sc, null).getStatus()).isEqualTo(400);
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void bulkCreate_returns400WhenAnnotationsEmpty() {
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of());
+    assertThat(resource.bulkCreate(body, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenExceedsMaxSize() {
+    List<CreateAnnotationIO> specs = new ArrayList<>();
+    for (int i = 0; i <= BulkCreateAnnotationIO.MAX_SIZE; i++) {
+      specs.add(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v" + i, null));
+    }
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(specs);
+    assertThat(resource.bulkCreate(body, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_isolatesPerRowValidationErrors() {
+    // Spec at index 0 is missing predicateIri — should fail; spec at index 1 is valid.
+    CreateAnnotationIO bad = new CreateAnnotationIO();
+    bad.setSubjectAppId(SUBJ_APP_ID);
+    bad.setSubjectKind("DataObject");
+    // predicateIri intentionally not set → MISSING_FIELD
+    bad.setObjectLiteral("val");
+
+    CreateAnnotationIO good = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "good-val", null);
+
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of(bad, good));
+
+    Response r = resource.bulkCreate(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(207);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getCreated()).isEqualTo(1);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).getStatus()).isEqualTo("error");
+    assertThat(result.getResults().get(0).getErrorCode()).isEqualTo("MISSING_FIELD");
+    assertThat(result.getResults().get(1).getStatus()).isEqualTo("created");
+  }
+
+  @Test
+  void bulkCreate_isolatesPerRowPermissionErrors() {
+    String otherSubject = "do-no-write";
+    when(entityIdResolver.resolveWithLabels(otherSubject))
+      .thenReturn(new EntityIdResolver.LabeledResolution(99L, List.of("DataObject")));
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(otherSubject), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+
+    CreateAnnotationIO forbidden = createBody("DataObject", otherSubject, PREDICATE_IRI, "v", null);
+    CreateAnnotationIO allowed = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of(forbidden, allowed));
+
+    Response r = resource.bulkCreate(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(207);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getCreated()).isEqualTo(1);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).getStatus()).isEqualTo("error");
+    assertThat(result.getResults().get(0).getErrorCode()).isEqualTo("FORBIDDEN");
+    assertThat(result.getResults().get(1).getStatus()).isEqualTo("created");
+  }
+
+  @Test
+  void bulkCreate_respectsAiAgentHeader() {
+    BulkCreateAnnotationIO body = new BulkCreateAnnotationIO();
+    body.setAnnotations(List.of(
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "ai-val", null)
+    ));
+
+    resource.bulkCreate(body, sc, "TestAgent/1.0");
+
+    ArgumentCaptor<SemanticAnnotation> captor = ArgumentCaptor.forClass(SemanticAnnotation.class);
+    verify(annotationDAO).createOrUpdate(captor.capture());
+    assertThat(captor.getValue().getSourceMode())
+      .as("X-AI-Agent header without explicit sourceMode must default to 'ai'")
+      .isEqualTo("ai");
   }
 
   // ─── APISIMP-ANNOT-LIST-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─

@@ -13,6 +13,9 @@ import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultItemIO;
+import de.dlr.shepard.v2.annotations.io.BulkCreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -38,6 +41,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -452,6 +456,159 @@ public class SemanticAnnotationV2Rest {
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
+  }
+
+  // ─── BULK CREATE ───────────────────────────────────────────────────────────
+
+  @POST
+  @Path("/bulk")
+  @Operation(
+    operationId = "bulkCreateAnnotations",
+    summary = "Create up to 100 semantic annotations in one request.",
+    description =
+      "SEMANTIC-ANNOTATE-BULK-REST-1 — batch create endpoint mirroring the MCP " +
+      "`semantic_annotate_bulk` tool. Accepts up to " + BulkCreateAnnotationIO.MAX_SIZE +
+      " annotation specs (same shape as POST /v2/annotations). Each spec is processed " +
+      "independently; a failure in one does not abort the rest.\n\n" +
+      "Returns HTTP 207 Multi-Status with per-spec outcomes in the `results` array. " +
+      "The response carries `created` (success count), `failed` (error count), and " +
+      "per-row `status` plus either `appId`/`subjectAppId` (success) or " +
+      "`errorCode`/`errorMessage` (failure).\n\n" +
+      "Provenance: the ProvenanceCaptureFilter records one :Activity for the whole " +
+      "bulk request (not one per annotation), consistent with the DataObject batch pattern."
+  )
+  @APIResponse(
+    responseCode = "207",
+    description = "Multi-Status: per-spec outcome for each annotation in the request list.",
+    content = @Content(schema = @Schema(implementation = BulkAnnotationResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Body missing, empty list, or list exceeds 100 specs (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response bulkCreate(
+    BulkCreateAnnotationIO body,
+    @Context SecurityContext sc,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader
+  ) {
+    String caller = callerName(sc);
+    if (caller == null) return unauthorized();
+
+    if (body == null || body.getAnnotations() == null || body.getAnnotations().isEmpty()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing annotations", Response.Status.BAD_REQUEST,
+        "Request body must contain at least one annotation spec in the 'annotations' list");
+    }
+    if (body.getAnnotations().size() > BulkCreateAnnotationIO.MAX_SIZE) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Too many annotations", Response.Status.BAD_REQUEST,
+        "Bulk create accepts at most " + BulkCreateAnnotationIO.MAX_SIZE +
+        " specs per request; received " + body.getAnnotations().size());
+    }
+
+    boolean aiHeader = aiAgentHeader != null && !aiAgentHeader.isBlank();
+    boolean isAdmin = sc != null && sc.isUserInRole(de.dlr.shepard.common.util.Constants.INSTANCE_ADMIN_ROLE);
+
+    List<BulkAnnotationResultItemIO> results = new ArrayList<>(body.getAnnotations().size());
+    int created = 0;
+    int failed = 0;
+
+    List<CreateAnnotationIO> specs = body.getAnnotations();
+    for (int i = 0; i < specs.size(); i++) {
+      CreateAnnotationIO spec = specs.get(i);
+      try {
+        // Validate required fields
+        if (blank(spec.getSubjectAppId())) {
+          results.add(BulkAnnotationResultItemIO.error(i, "MISSING_FIELD", "subjectAppId is required"));
+          failed++;
+          continue;
+        }
+        if (blank(spec.getSubjectKind())) {
+          results.add(BulkAnnotationResultItemIO.error(i, "MISSING_FIELD", "subjectKind is required"));
+          failed++;
+          continue;
+        }
+        if (blank(spec.getPredicateIri())) {
+          results.add(BulkAnnotationResultItemIO.error(i, "MISSING_FIELD", "predicateIri is required"));
+          failed++;
+          continue;
+        }
+        boolean hasLiteral = !blank(spec.getObjectLiteral());
+        boolean hasIri = !blank(spec.getObjectIri());
+        if (!hasLiteral && !hasIri) {
+          results.add(BulkAnnotationResultItemIO.error(i, "MISSING_FIELD",
+            "Exactly one of objectLiteral or objectIri must be provided"));
+          failed++;
+          continue;
+        }
+        if (hasLiteral && hasIri) {
+          results.add(BulkAnnotationResultItemIO.error(i, "INVALID_INPUT",
+            "Provide exactly one of objectLiteral or objectIri, not both"));
+          failed++;
+          continue;
+        }
+
+        // Permission check
+        Response gate = checkWriteAccessForSubject(spec.getSubjectAppId(), spec.getSubjectKind(), caller);
+        if (gate != null) {
+          results.add(BulkAnnotationResultItemIO.error(i, "FORBIDDEN",
+            "Caller lacks Write permission on subject " + spec.getSubjectAppId()));
+          failed++;
+          continue;
+        }
+
+        // PROJ-SEMA-WRITE-GATE-1 — project annotation constraints
+        String shaclViolation = projectAnnotationConstraints.check(
+          spec.getSubjectAppId(), spec.getSubjectKind(), spec.getPredicateIri(),
+          spec.getObjectLiteral(), spec.getObjectIri());
+        if (shaclViolation != null) {
+          results.add(BulkAnnotationResultItemIO.error(i, "CONSTRAINT_VIOLATION", shaclViolation));
+          failed++;
+          continue;
+        }
+
+        // PROJ-SEMA-DUAL-OWNERSHIP-1 — for partOf writes, require Write on the parent Project
+        String parentDeny = projectAnnotationConstraints.checkParentWritePermission(
+          spec.getPredicateIri(), spec.getObjectLiteral(), caller, isAdmin);
+        if (parentDeny != null) {
+          results.add(BulkAnnotationResultItemIO.error(i, "FORBIDDEN", parentDeny));
+          failed++;
+          continue;
+        }
+
+        SemanticAnnotation annotation = new SemanticAnnotation();
+        annotation.setAppId(AppIdGenerator.next());
+        annotation.setSubjectKind(spec.getSubjectKind());
+        annotation.setSubjectAppId(spec.getSubjectAppId());
+        annotation.setPropertyIRI(spec.getPredicateIri());
+        annotation.setPropertyName(spec.getPredicateLabel());
+        annotation.setVocabularyId(spec.getVocabularyId());
+        annotation.setValueIRI(spec.getObjectIri());
+        annotation.setValueName(hasLiteral ? spec.getObjectLiteral() : null);
+        annotation.setNumericValue(spec.getNumericValue());
+        annotation.setUnitIRI(spec.getUnitIri());
+        String resolvedSourceMode = spec.getSourceMode() != null
+          ? spec.getSourceMode()
+          : (aiHeader ? "ai" : "human");
+        annotation.setSourceMode(resolvedSourceMode);
+        annotation.setSourceActivityAppId(spec.getSourceActivityAppId());
+        annotation.setAgentUsername(caller);
+        annotation.setValidFromMillis(spec.getValidFromMillis());
+        annotation.setValidUntilMillis(spec.getValidUntilMillis());
+        annotation.setConfidence(spec.getConfidence() != null ? spec.getConfidence() : 1.0);
+
+        annotationDAO.createOrUpdate(annotation);
+
+        results.add(BulkAnnotationResultItemIO.success(i, annotation.getAppId(), annotation.getSubjectAppId()));
+        created++;
+      } catch (RuntimeException e) {
+        Log.debugf(e, "SemanticAnnotationV2Rest: bulk spec[%d] failed", i);
+        results.add(BulkAnnotationResultItemIO.error(i, "INTERNAL_ERROR",
+          e.getMessage() != null ? e.getMessage() : "Unexpected error processing spec at index " + i));
+        failed++;
+      }
+    }
+
+    Log.infof("SemanticAnnotationV2Rest: bulk-created %d/%d annotations for %s",
+      created, specs.size(), caller);
+    // ProvenanceCaptureFilter fires once for the 207 — no per-row recordAnnotationActivity().
+    return Response.status(207).entity(new BulkAnnotationResultIO(created, failed, results)).build();
   }
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────
