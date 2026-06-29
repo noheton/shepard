@@ -16,19 +16,19 @@
 import * as runtime from '../runtime';
 import type {
   AdminGitCredentialIO,
-  AdminGitCredentialListIO,
   AdminGitCredentialResultIO,
   AdminGitCredentialRotateIO,
+  PagedResponseAdminGitCredentialListItem,
 } from '../models/index';
 import {
     AdminGitCredentialIOFromJSON,
     AdminGitCredentialIOToJSON,
-    AdminGitCredentialListIOFromJSON,
-    AdminGitCredentialListIOToJSON,
     AdminGitCredentialResultIOFromJSON,
     AdminGitCredentialResultIOToJSON,
     AdminGitCredentialRotateIOFromJSON,
     AdminGitCredentialRotateIOToJSON,
+    PagedResponseAdminGitCredentialListItemFromJSON,
+    PagedResponseAdminGitCredentialListItemToJSON,
 } from '../models/index';
 
 export interface ListGitCredentialsRequest {
@@ -55,7 +55,7 @@ export class AdminGitCredentialPreseedApi extends runtime.BaseAPI {
      * Returns the discovery metadata for every credential the named user owns: appId, host, username, displayName, and lastRotatedAt. The PAT itself is **never** returned on the wire (write-only credential rule). Use `POST /v2/admin/users/{username}/git-credentials/{appId}/rotate` to refresh a credential\'s PAT.  Pre-ADM-USR-GIT-BACKEND-1 credentials (rows persisted before the `lastRotatedAt` field existed) return `null` for that field until they are next rotated.
      * [v2] List a user\'s git credentials (admin-only).
      */
-    async listGitCredentialsRaw(requestParameters: ListGitCredentialsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminGitCredentialListIO>> {
+    async listGitCredentialsRaw(requestParameters: ListGitCredentialsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseAdminGitCredentialListItem>> {
         if (requestParameters['username'] == null) {
             throw new runtime.RequiredError(
                 'username',
@@ -82,14 +82,14 @@ export class AdminGitCredentialPreseedApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => AdminGitCredentialListIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseAdminGitCredentialListItemFromJSON(jsonValue));
     }
 
     /**
      * Returns the discovery metadata for every credential the named user owns: appId, host, username, displayName, and lastRotatedAt. The PAT itself is **never** returned on the wire (write-only credential rule). Use `POST /v2/admin/users/{username}/git-credentials/{appId}/rotate` to refresh a credential\'s PAT.  Pre-ADM-USR-GIT-BACKEND-1 credentials (rows persisted before the `lastRotatedAt` field existed) return `null` for that field until they are next rotated.
      * [v2] List a user\'s git credentials (admin-only).
      */
-    async listGitCredentials(requestParameters: ListGitCredentialsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminGitCredentialListIO> {
+    async listGitCredentials(requestParameters: ListGitCredentialsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseAdminGitCredentialListItem> {
         const response = await this.listGitCredentialsRaw(requestParameters, initOverrides);
         return await response.value();
     }
