@@ -212,7 +212,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md`](agent-findings/rdm-scrutinizer-2026-05-24.md) | RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/repo-reconciliation-2026-05-31.md`](agent-findings/repo-reconciliation-2026-05-31.md) | Repo hygiene reconciliation — 2026-05-31 | 2026-05-31 | 2026-06-02 |
 | [`aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md`](agent-findings/research-network-orcid-anchor-2026-05-23.md) | Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/screenshot-learnings-validation-2026-06-29.md`](agent-findings/screenshot-learnings-validation-2026-06-29.md) | Screenshot-learnings v2-API-conformance validation (L1–L7) | — | — |
+| [`aidocs/agent-findings/screenshot-learnings-validation-2026-06-29.md`](agent-findings/screenshot-learnings-validation-2026-06-29.md) | Screenshot-learnings v2-API-conformance validation (L1–L7) | — | 2026-06-29 |
 | [`aidocs/agent-findings/synthesis-architecture-report-2026-05-24.md`](agent-findings/synthesis-architecture-report-2026-05-24.md) | Synthesis architecture report — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md`](agent-findings/tib-hannover-outreach-2026-05-23.md) | TIB Hannover outreach — Step 1 ("Used by" entry) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/topnav-reachability-reconciler.md`](agent-findings/topnav-reachability-reconciler.md) | Top-Nav Reachability Reconciler — findings | 2026-05-30 | 2026-05-30 |
