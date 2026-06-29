@@ -256,10 +256,11 @@ class SnapshotRestTest {
 
     Response r = snapshotRest.manifest(SNAP_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    List<SnapshotEntryIO> body = (List<SnapshotEntryIO>) r.getEntity();
-    assertThat(body).hasSize(2);
-    assertThat(body.get(0).entityAppId()).isEqualTo("entity-app-id-1");
-    assertThat(body.get(0).revision()).isEqualTo(3L);
+    PagedResponseIO<SnapshotEntryIO> body = (PagedResponseIO<SnapshotEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.items().get(0).entityAppId()).isEqualTo("entity-app-id-1");
+    assertThat(body.items().get(0).revision()).isEqualTo(3L);
+    assertThat(body.total()).isEqualTo(2L);
   }
 
   @Test
