@@ -11,7 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
-import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportListIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportReadIO;
 import de.dlr.shepard.v2.notifications.transport.services.NotificationTransportService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
@@ -67,9 +68,13 @@ class NotificationTransportRestListTest {
     Response r = rest.list();
 
     assertEquals(200, r.getStatus());
-    NotificationTransportListIO out = (NotificationTransportListIO) r.getEntity();
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<NotificationTransportReadIO> out = (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
     assertNotNull(out);
     assertTrue(out.items().isEmpty());
+    assertEquals(0, out.total());
+    assertEquals(0, out.page());
+    assertEquals(0, out.pageSize());
   }
 
   @Test
@@ -94,8 +99,12 @@ class NotificationTransportRestListTest {
     Response r = rest.list();
 
     assertEquals(200, r.getStatus());
-    NotificationTransportListIO out = (NotificationTransportListIO) r.getEntity();
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<NotificationTransportReadIO> out = (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
     assertEquals(2, out.items().size());
+    assertEquals(2L, out.total());
+    assertEquals(0, out.page());
+    assertEquals(2, out.pageSize());
     assertEquals("app-smtp", out.items().get(0).appId());
     assertEquals("app-matrix", out.items().get(1).appId());
   }
