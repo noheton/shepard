@@ -1,37 +1,45 @@
 <script setup lang="ts">
 /**
+ * VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29 PR-4 — videostream-reference detail
+ * page is now metadata + Download + Open-as picker. The inline <VideoPlayer>
+ * moved out: video playback ships as a VIEW_RECIPE shape (the sibling
+ * `VideoPlaybackShape`, PR-2) consumed through /shapes/render. See
+ * `memory/feedback_file_viewers_as_view_recipe.md` and
+ * `aidocs/16:VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29` for the doctrine.
+ *
  * REF-VIDEO-DETAIL-PAGE — appId-keyed detail page for a VideoStreamReference.
+ * Loads through the unified v2 envelope (UX612-C1) so `fileKind = "video"`
+ * drives the picker; the route param is the v2 appId throughout. Numeric
+ * ids are not used anywhere on this page (frontend-v2-only rule).
  *
- * Mirrors the timeseries-ref detail page shape (V2CONV pattern): the route
- * param is the v2 appId (UUID v7), the reference is loaded via the unified
- * GET /v2/references/{appId} envelope, the per-kind payload carries video
- * metadata (durationSeconds, width, height, codec, …). Numeric ids are only
- * resolved at call time for the (currently none required) v1 fallback path.
- *
- * The page renders:
- *   - Breadcrumbs: Collections › collection.name › DataObject.name › videoRef.name
- *   - TitleAndMetadataDisplay header with Annotate / Edit / Delete actions
- *   - Inline <VideoPlayer> against /v2/references/{appId}/content (range-aware)
- *   - SemanticAnnotationList (SEMA-V6 polymorphic annotations)
- *   - Edit dialog: EditVideoStreamReferenceDialog (rename only)
- *   - Delete dialog: raw fetch DELETE
- *       /v2/data-objects/{doAppId}/video-stream-references/{appId}
- *     (same path the DataObjectDataReferencesTable uses for video rows)
+ * Page surface:
+ *   - Breadcrumbs: Collections › collection.name › DataObject.name › ref.name
+ *   - TitleAndMetadataDisplay with Annotate / Edit / Delete actions
+ *   - Metadata chips (duration, resolution, codec, fps, bytes, bitrate)
+ *   - Download button (direct content GET; "I just want the bytes")
+ *   - Open as … picker → /shapes/render?templateAppId=…&focusShepardId=…
+ *   - SemanticAnnotationList
+ *   - Edit/Delete/Annotate dialogs
  */
-import VideoPlayer from "~/components/common/VideoPlayer.vue";
+import { ReferencesApi } from "@dlr-shepard/backend-client";
 import EditVideoStreamReferenceDialog from "~/components/context/dataobject/EditVideoStreamReferenceDialog.vue";
+import ViewRecipePicker from "~/components/shapes/ViewRecipePicker.vue";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 
 definePageMeta({ layout: "collection" });
 
 interface VideoRefView {
   appId: string;
+  /** Numeric Neo4j id from the v2 envelope. Used by TitleAndMetadataDisplay's
+   *  legacy entity shape; never on the wire. */
   id: number;
   name: string;
   createdAt: Date;
   createdBy: string;
   updatedAt: Date | null;
   updatedBy: string | null;
+  fileKind: string | null;
   mimeType?: string | null;
   fileSizeBytes?: number | null;
   durationSeconds?: number | null;
@@ -50,10 +58,11 @@ const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 
-// Load the reference through the unified v2 envelope (UX612-C1 / V2CONV) —
-// the same shape the timeseries-ref page uses post-V2CONV.
-const { referenceV2, notFound: referenceNotFound, refresh: refreshReferenceV2 } =
-  useFetchReferenceV2(() => routeParams.value.videoStreamReferenceId);
+const {
+  referenceV2,
+  notFound: referenceNotFound,
+  refresh: refreshReferenceV2,
+} = useFetchReferenceV2(() => routeParams.value.videoStreamReferenceId);
 
 const videoReference = computed<VideoRefView | undefined>(() => {
   const r = referenceV2.value;
@@ -67,6 +76,10 @@ const videoReference = computed<VideoRefView | undefined>(() => {
     createdBy: r.createdBy,
     updatedAt: r.updatedAt,
     updatedBy: r.updatedBy,
+    // For video kind the file-kind discriminator is "video"; the picker
+    // filters on this string. The legacy envelope may not populate it —
+    // fall back to "video" since this page is reachable only for that kind.
+    fileKind: (r.fileKind as string | null | undefined) ?? "video",
     mimeType: (p.mimeType as string | null | undefined) ?? null,
     fileSizeBytes: (p.fileSizeBytes as number | null | undefined) ?? null,
     durationSeconds: (p.durationSeconds as number | null | undefined) ?? null,
@@ -82,7 +95,7 @@ const videoReferenceAppId = computed<string | undefined>(
   () => videoReference.value?.appId,
 );
 
-// ── content URL + access token (mirror VideoStreamReferencesPane pattern) ────
+// ── content URL (Download only; playback is handed off to /shapes/render). ──
 
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
@@ -92,9 +105,6 @@ function v2BaseUrl(): string {
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
 }
-
-const { data: session } = useAuth();
-const accessToken = computed(() => session.value?.accessToken ?? null);
 
 const videoContentUrl = computed<string | undefined>(() => {
   const appId = videoReferenceAppId.value;
@@ -122,43 +132,32 @@ function onDelete() {
 
 function onRenamed(newName: string) {
   if (videoReference.value) videoReference.value.name = newName;
-  // Re-fetch to capture any server-side updates beyond `name`.
   refreshReferenceV2();
 }
 
-// ── delete (raw fetch — mirrors DataObjectDataReferencesTable line ~175) ────
+function onPickRecipe(payload: { templateAppId: string }) {
+  const focus = videoReferenceAppId.value;
+  if (!focus) return;
+  navigateTo(
+    `/shapes/render?templateAppId=${encodeURIComponent(payload.templateAppId)}` +
+      `&focusShepardId=${encodeURIComponent(focus)}`,
+  );
+}
 
 async function deleteVideoReference() {
   const appId = videoReferenceAppId.value;
-  const doAppId = dataObject.value?.appId;
-  if (!appId || !doAppId) return;
-  const token = accessToken.value;
-  if (!token) {
-    handleError(new Error("Not authenticated"), "deleteVideoReference");
-    return;
-  }
-  const url =
-    `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(doAppId)}` +
-    `/video-stream-references/${encodeURIComponent(appId)}`;
+  if (!appId) return;
   try {
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.ok || response.status === 204) {
-      emitSuccess(
-        `Successfully deleted video reference "${videoReference.value?.name ?? appId}"`,
-      );
-      navigateTo(
-        collectionsPath +
-          routeParams.value.collectionId +
-          dataObjectsPathFragment +
-          routeParams.value.dataObjectId,
-      );
-    } else {
-      handleError(`HTTP ${response.status}`, "delete video reference");
-      showDeleteDialog.value = false;
-    }
+    await useV2ShepardApi(ReferencesApi).value.deleteReference({ appId });
+    emitSuccess(
+      `Successfully deleted video reference "${videoReference.value?.name ?? appId}"`,
+    );
+    navigateTo(
+      collectionsPath +
+        routeParams.value.collectionId +
+        dataObjectsPathFragment +
+        routeParams.value.dataObjectId,
+    );
   } catch (err) {
     handleError(err, "delete video reference");
     showDeleteDialog.value = false;
@@ -220,7 +219,7 @@ watch(videoReference, () => {
               },
               {
                 title: `${collection.name}`,
-                to: collectionsPath + collection.id,
+                to: collectionsPath + routeParams.collectionId,
               },
               {
                 title: dataObject.name,
@@ -263,21 +262,19 @@ watch(videoReference, () => {
               />
             </v-row>
 
-            <v-row v-if="videoContentUrl">
-              <v-col cols="12">
-                <!-- Inline player — same pattern as VideoStreamReferencesPane.
-                     The accessToken travels as ?access_token=… (JWTFilter reads
-                     it as a query-param fallback for native <video src>). -->
-                <VideoPlayer
-                  :src="videoContentUrl"
-                  :access-token="accessToken"
-                />
-              </v-col>
-            </v-row>
-
-            <!-- Metadata chips (mirror VideoStreamReferencesPane) -->
+            <!-- Metadata chips: same set as the pre-PR-4 page minus the
+                 inline <VideoPlayer> — playback now lives in the recipe. -->
             <v-row>
               <v-col cols="12" class="d-flex flex-wrap ga-2">
+                <v-chip
+                  v-if="videoReference.fileKind"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-shape-outline"
+                  data-test="file-kind-chip"
+                >
+                  {{ videoReference.fileKind }}
+                </v-chip>
                 <v-chip
                   v-if="videoReference.durationSeconds != null"
                   size="small"
@@ -356,6 +353,20 @@ watch(videoReference, () => {
                 >
                   Download
                 </v-btn>
+              </v-col>
+            </v-row>
+
+            <!-- Open as … — the VIEW_RECIPE picker. The sibling PR-2 ships the
+                 `VideoPlaybackShape` recipe; until it lands the picker shows
+                 the honest empty state. -->
+            <v-row>
+              <v-col cols="12">
+                <div class="text-subtitle-2 mb-2">Open as…</div>
+                <ViewRecipePicker
+                  :file-kind="videoReference.fileKind"
+                  :focus-shepard-id="videoReferenceAppId"
+                  @select="onPickRecipe"
+                />
               </v-col>
             </v-row>
 
