@@ -16,11 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   Activity,
+  PagedResponseActivity,
   ProvenanceStats,
 } from '../models/index';
 import {
     ActivityFromJSON,
     ActivityToJSON,
+    PagedResponseActivityFromJSON,
+    PagedResponseActivityToJSON,
     ProvenanceStatsFromJSON,
     ProvenanceStatsToJSON,
 } from '../models/index';
@@ -124,7 +127,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
      * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response — paginate via narrowing the time window.
      * [v2] List provenance activities (most recent first).
      */
-    async listActivitiesRaw(requestParameters: ListActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Activity>>> {
+    async listActivitiesRaw(requestParameters: ListActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseActivity>> {
         const queryParameters: any = {};
 
         if (requestParameters['agent'] != null) {
@@ -172,14 +175,14 @@ export class ProvenanceApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ActivityFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseActivityFromJSON(jsonValue));
     }
 
     /**
      * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response — paginate via narrowing the time window.
      * [v2] List provenance activities (most recent first).
      */
-    async listActivities(requestParameters: ListActivitiesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Activity>> {
+    async listActivities(requestParameters: ListActivitiesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseActivity> {
         const response = await this.listActivitiesRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -188,7 +191,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
      * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.
      * [v2] Provenance trail for a single entity (most recent first).
      */
-    async listEntityActivitiesRaw(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Activity>>> {
+    async listEntityActivitiesRaw(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseActivity>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -231,14 +234,14 @@ export class ProvenanceApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ActivityFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseActivityFromJSON(jsonValue));
     }
 
     /**
      * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.
      * [v2] Provenance trail for a single entity (most recent first).
      */
-    async listEntityActivities(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Activity>> {
+    async listEntityActivities(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseActivity> {
         const response = await this.listEntityActivitiesRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -197,6 +197,7 @@ export * from './OrderByItem';
 export * from './OtvisFramesIO';
 export * from './PagedFiles';
 export * from './PagedResponseAdminGitCredentialListItem';
+export * from './PagedResponseActivity';
 export * from './PagedResponseAnnotationV2';
 export * from './PagedResponseContainerSummary';
 export * from './PagedResponseFeatureToggle';

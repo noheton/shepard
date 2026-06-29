@@ -10,6 +10,7 @@ import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.provenance.services.ProvenanceStatsService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
@@ -28,7 +29,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -97,7 +97,7 @@ public class ProvenanceRest {
   @APIResponse(
     responseCode = "200",
     description = "Matching activities, sorted by startedAt DESC.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ActivityIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
@@ -134,7 +134,7 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   private static ActivityIO applyProfile(ActivityIO io, OutputProfile profile) {
@@ -246,7 +246,7 @@ public class ProvenanceRest {
   @APIResponse(
     responseCode = "200",
     description = "Activities targeting the entity, sorted by startedAt DESC.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ActivityIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listEntityActivities(
@@ -271,7 +271,7 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   @GET
