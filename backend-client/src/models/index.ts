@@ -202,6 +202,7 @@ export * from './PagedResponseAnnotationV2';
 export * from './PagedResponseContainerSummary';
 export * from './PagedResponseFeatureToggle';
 export * from './PagedResponseFileGroup';
+export * from './PagedResponseNotebookReference';
 export * from './PagedResponseShepardTemplate';
 export * from './PagedResponseSnapshot';
 export * from './PatchCollectionProperties';
