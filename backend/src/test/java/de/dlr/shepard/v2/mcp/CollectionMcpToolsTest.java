@@ -16,6 +16,8 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import io.quarkiverse.mcp.server.McpException;
@@ -222,5 +224,212 @@ class CollectionMcpToolsTest {
     assertTrue(root.get("containers").has("timeseries"));
     assertTrue(root.get("containers").has("files"));
     assertTrue(root.get("containers").has("structuredData"));
+  }
+
+  // ── MCP-COV-02-1: collection_create ──────────────────────────────────────
+
+  @Test
+  void collectionCreateReturnsCreatedRecord() throws Exception {
+    Collection created = makeCollection(COLL_OGM_ID, COLL_APP_ID, "New Campaign");
+    when(collectionService.createCollection(any(CollectionIO.class))).thenReturn(created);
+
+    String json = tools.collectionCreate("New Campaign", "A test campaign", null);
+
+    var root = new ObjectMapper().readTree(json);
+    assertEquals(COLL_APP_ID, root.get("appId").asText());
+    assertEquals("New Campaign", root.get("name").asText());
+  }
+
+  @Test
+  void collectionCreateThrowsWhenNameBlank() {
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.collectionCreate("  ", null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(collectionService, never()).createCollection(any());
+  }
+
+  @Test
+  void collectionCreateThrowsWhenNameNull() {
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.collectionCreate(null, null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  // ── MCP-COV-02-1: collection_update ──────────────────────────────────────
+
+  @Test
+  void collectionUpdatePreservesUnspecifiedFields() throws Exception {
+    Collection existing = makeCollection(COLL_OGM_ID, COLL_APP_ID, "Old Name");
+    existing.setDescription("old desc");
+    existing.setStatus("DRAFT");
+    Collection updated = makeCollection(COLL_OGM_ID, COLL_APP_ID, "Old Name");
+    updated.setStatus("IN_REVIEW");
+
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+    when(collectionService.getCollection(COLL_OGM_ID)).thenReturn(existing);
+    when(collectionService.updateCollectionByShepardId(eq(COLL_OGM_ID), any(CollectionIO.class)))
+      .thenReturn(updated);
+
+    String json = tools.collectionUpdate(COLL_APP_ID, null, null, "IN_REVIEW");
+
+    var root = new ObjectMapper().readTree(json);
+    assertEquals(COLL_APP_ID, root.get("appId").asText());
+    // Service call happened with preserved name
+    verify(collectionService).updateCollectionByShepardId(eq(COLL_OGM_ID), any(CollectionIO.class));
+  }
+
+  @Test
+  void collectionUpdateThrowsOnUnknownAppId() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.collectionUpdate(COLL_APP_ID, "New Name", null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(collectionService, never()).updateCollectionByShepardId(anyLong(), any());
+  }
+
+  // ── MCP-COV-02-1: collection_delete ──────────────────────────────────────
+
+  @Test
+  void collectionDeleteReturnsDeletedTrue() throws Exception {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+
+    String json = tools.collectionDelete(COLL_APP_ID);
+
+    var root = new ObjectMapper().readTree(json);
+    assertTrue(root.get("deleted").asBoolean());
+    assertEquals(COLL_APP_ID, root.get("appId").asText());
+    verify(collectionService).deleteCollection(COLL_OGM_ID);
+  }
+
+  @Test
+  void collectionDeleteThrowsOnUnknownAppId() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.collectionDelete(COLL_APP_ID)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(collectionService, never()).deleteCollection(anyLong());
+  }
+
+  // ── MCP-COV-02-1: data_object_create ─────────────────────────────────────
+
+  @Test
+  void dataObjectCreateReturnsCreatedRecord() throws Exception {
+    DataObject created = makeDataObject(DO_OGM_ID, DO_APP_ID, "TR-016");
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class)))
+      .thenReturn(created);
+
+    String json = tools.dataObjectCreate(COLL_APP_ID, "TR-016", "Hotfire run 16", "DRAFT");
+
+    var root = new ObjectMapper().readTree(json);
+    assertEquals(DO_APP_ID, root.get("appId").asText());
+    assertEquals("TR-016", root.get("name").asText());
+  }
+
+  @Test
+  void dataObjectCreateThrowsWhenNameBlank() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.dataObjectCreate(COLL_APP_ID, "", null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(dataObjectService, never()).createDataObject(anyLong(), any());
+  }
+
+  @Test
+  void dataObjectCreateThrowsOnUnknownCollection() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.dataObjectCreate(COLL_APP_ID, "TR-016", null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  // ── MCP-COV-02-1: data_object_update ─────────────────────────────────────
+
+  @Test
+  void dataObjectUpdatePreservesExistingName() throws Exception {
+    DataObject existing = makeDataObject(DO_OGM_ID, DO_APP_ID, "TR-004");
+    existing.setDescription("original desc");
+    existing.setStatus("DRAFT");
+    existing.setPredecessors(Collections.emptyList());
+
+    DataObject updated = makeDataObject(DO_OGM_ID, DO_APP_ID, "TR-004");
+    updated.setStatus("IN_REVIEW");
+
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+    when(entityIdResolver.resolveWithLabels(DO_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(DO_OGM_ID, List.of("DataObject")));
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(existing);
+    when(dataObjectService.updateDataObject(eq(COLL_OGM_ID), eq(DO_OGM_ID), any(DataObjectIO.class)))
+      .thenReturn(updated);
+
+    String json = tools.dataObjectUpdate(COLL_APP_ID, DO_APP_ID, null, null, "IN_REVIEW");
+
+    var root = new ObjectMapper().readTree(json);
+    assertEquals(DO_APP_ID, root.get("appId").asText());
+    verify(dataObjectService).updateDataObject(eq(COLL_OGM_ID), eq(DO_OGM_ID), any(DataObjectIO.class));
+  }
+
+  @Test
+  void dataObjectUpdateThrowsOnUnknownDataObject() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+    when(entityIdResolver.resolveWithLabels(DO_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.dataObjectUpdate(COLL_APP_ID, DO_APP_ID, "New Name", null, null)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(dataObjectService, never()).updateDataObject(anyLong(), anyLong(), any());
+  }
+
+  // ── MCP-COV-02-1: data_object_delete ─────────────────────────────────────
+
+  @Test
+  void dataObjectDeleteReturnsDeletedTrue() throws Exception {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(COLL_OGM_ID, List.of("Collection")));
+    when(entityIdResolver.resolveWithLabels(DO_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(DO_OGM_ID, List.of("DataObject")));
+
+    String json = tools.dataObjectDelete(COLL_APP_ID, DO_APP_ID);
+
+    var root = new ObjectMapper().readTree(json);
+    assertTrue(root.get("deleted").asBoolean());
+    assertEquals(DO_APP_ID, root.get("appId").asText());
+    verify(dataObjectService).deleteDataObject(COLL_OGM_ID, DO_OGM_ID);
+  }
+
+  @Test
+  void dataObjectDeleteThrowsOnUnknownCollection() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(
+      McpException.class,
+      () -> tools.dataObjectDelete(COLL_APP_ID, DO_APP_ID)
+    );
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    verify(dataObjectService, never()).deleteDataObject(anyLong(), anyLong());
   }
 }
