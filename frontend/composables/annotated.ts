@@ -78,17 +78,13 @@ abstract class SubjectAnnotated implements Annotated {
 
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     if (!this.subjectAppId) return [];
-    // listAnnotations returns AnnotationV2[] directly — not a paged
-    // { items } envelope. Reading `.items` yielded undefined and crashed
-    // the annotations panel with "reading 'map'" (BUG-ANNOTATIONS-MAP).
-    const list = await this.annotationsApi.value.listAnnotations({
+    const page = await this.annotationsApi.value.listAnnotations({
       subjectAppId: this.subjectAppId,
       subjectKind: this.subjectKind,
       pageSize: 200,
     });
-    const items = Array.isArray(list) ? list : [];
     this._appIdMap.clear();
-    return items.map((item, idx) => {
+    return (page.items ?? []).map((item, idx) => {
       this._appIdMap.set(idx, item.appId);
       return mapAnnotationV2ToLegacy(item, idx);
     });
