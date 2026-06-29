@@ -66,6 +66,33 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
   private String audioCodec;
 
   /**
+   * VID-FFMPEG-TRANSCODE-2026-06-29 — opaque storage locator for the
+   * browser-playable h.264 proxy produced after upload (format
+   * {@code "<providerId>:<locator>"}). Null until the transcode succeeds.
+   * The original {@link #storageLocator} stays as the canonical
+   * download / archive artefact; the proxy is purely a playback aid.
+   */
+  private String proxyStorageLocator;
+
+  /**
+   * VID-FFMPEG-TRANSCODE-2026-06-29 — lifecycle state of the proxy
+   * transcode. Values:
+   * <ul>
+   *   <li>{@code null} — not requested yet (legacy rows pre-transcode
+   *       feature; the read path treats this as
+   *       {@code proxyAvailable=false}).
+   *   <li>{@code "PENDING"} — submitted to the transcode executor;
+   *       {@link #proxyStorageLocator} is still null.
+   *   <li>{@code "READY"} — proxy bytes are in storage; the wire IO
+   *       reports {@code proxyAvailable=true}.
+   *   <li>{@code "FAILED"} — transcode errored (codec unsupported,
+   *       binary missing, timeout). UI falls back to the original
+   *       bytes.
+   * </ul>
+   */
+  private String proxyStatus;
+
+  /**
    * Wall-clock timestamp as nanoseconds since the Unix epoch (UTC). Extracted
    * from ffprobe's {@code format.tags.creation_time} ISO-8601 tag. Null if
    * the tag is absent or unparseable.
@@ -89,7 +116,8 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
     int result = super.hashCode();
     result = prime * result + Objects.hash(
       storageLocator, mimeType, fileSizeBytes, durationSeconds,
-      width, height, frameRate, videoCodec, audioCodec, wallClockTimestamp
+      width, height, frameRate, videoCodec, audioCodec,
+      proxyStorageLocator, proxyStatus, wallClockTimestamp
     );
     return result;
   }
@@ -110,6 +138,8 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
       Objects.equals(frameRate, other.frameRate) &&
       Objects.equals(videoCodec, other.videoCodec) &&
       Objects.equals(audioCodec, other.audioCodec) &&
+      Objects.equals(proxyStorageLocator, other.proxyStorageLocator) &&
+      Objects.equals(proxyStatus, other.proxyStatus) &&
       Objects.equals(wallClockTimestamp, other.wallClockTimestamp)
     );
   }

@@ -9,6 +9,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
+import de.dlr.shepard.plugins.video.transcode.VideoTranscodeOrchestrator;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
 import de.dlr.shepard.storage.StorageException;
@@ -80,6 +81,9 @@ public class VideoStreamReferenceService {
 
   @Inject
   VideoProbeService videoProbeService;
+
+  @Inject
+  VideoTranscodeOrchestrator transcodeOrchestrator;
 
   @Inject
   UserService userService;
@@ -228,6 +232,14 @@ public class VideoStreamReferenceService {
     ref.setUpdatedBy(user);
     VideoStreamReference updated = videoStreamReferenceDAO.createOrUpdate(ref);
     Log.debugf("VID1a/attachBytes: attached content to VideoStreamReference appId=%s (locator=%s)", ref.getAppId(), locator);
+    // VID-FFMPEG-TRANSCODE-2026-06-29 — fire-and-forget enqueue a transcode
+    // to the browser-playable h.264 proxy. Per the secondary-writes rule
+    // this MUST NOT propagate any failure back to the upload caller.
+    try {
+      updated = transcodeOrchestrator.submit(updated);
+    } catch (Exception ex) {
+      Log.warnf(ex, "VID1a/attachBytes: transcode submit failed for appId=%s (upload itself succeeded)", updated.getAppId());
+    }
     return updated;
   }
 
@@ -359,6 +371,13 @@ public class VideoStreamReferenceService {
       "VID1a: created VideoStreamReference appId=%s under DataObject appId=%s (locator=%s)",
       created.getAppId(), dataObjectAppId, locator
     );
+    // VID-FFMPEG-TRANSCODE-2026-06-29 — fire-and-forget enqueue a transcode.
+    // Secondary-writes rule: never propagate to the upload caller.
+    try {
+      created = transcodeOrchestrator.submit(created);
+    } catch (Exception ex) {
+      Log.warnf(ex, "VID1a/create: transcode submit failed for appId=%s (upload itself succeeded)", created.getAppId());
+    }
     return created;
   }
 

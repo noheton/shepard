@@ -100,6 +100,20 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
     io.put("frameRate", ref.getFrameRate());
     io.put("videoCodec", ref.getVideoCodec());
     io.put("audioCodec", ref.getAudioCodec());
+    // VID-FFMPEG-TRANSCODE-2026-06-29 — surface the browser-friendly proxy.
+    // `proxyStatus` is the lifecycle string (NONE / PENDING / READY / FAILED;
+    // null is treated as NONE by consumers). `proxyOid` is the storage
+    // locator's opaque key — the same shape clients already consume for
+    // `storageLocator`. The VideoPlayer reads `proxyAvailable` as the
+    // boolean gate: true → switch to proxy URL, false → fall back to the
+    // original bytes (preserves today's behaviour for non-transcoded refs).
+    String proxyLocator = ref.getProxyStorageLocator();
+    String proxyStatusRaw = ref.getProxyStatus();
+    boolean proxyAvailable = "READY".equalsIgnoreCase(proxyStatusRaw)
+      && proxyLocator != null && !proxyLocator.isBlank();
+    io.put("proxyStatus", proxyStatusRaw);
+    io.put("proxyAvailable", proxyAvailable);
+    io.put("proxyOid", proxyLocator);
     io.put("wallClockTimestamp", ref.getWallClockTimestamp());
     return io;
   }

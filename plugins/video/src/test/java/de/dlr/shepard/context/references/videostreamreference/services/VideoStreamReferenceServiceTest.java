@@ -55,6 +55,7 @@ class VideoStreamReferenceServiceTest {
   FileStorageRegistry fileStorageRegistry;
   FileStorage fileStorage;
   VideoProbeService videoProbeService;
+  de.dlr.shepard.plugins.video.transcode.VideoTranscodeOrchestrator transcodeOrchestrator;
   UserService userService;
   DateHelper dateHelper;
   EntityIdResolver entityIdResolver;
@@ -69,6 +70,7 @@ class VideoStreamReferenceServiceTest {
     fileStorageRegistry = mock(FileStorageRegistry.class);
     fileStorage = mock(FileStorage.class);
     videoProbeService = mock(VideoProbeService.class);
+    transcodeOrchestrator = mock(de.dlr.shepard.plugins.video.transcode.VideoTranscodeOrchestrator.class);
     userService = mock(UserService.class);
     dateHelper = mock(DateHelper.class);
     entityIdResolver = mock(EntityIdResolver.class);
@@ -78,6 +80,7 @@ class VideoStreamReferenceServiceTest {
     service.dataObjectDAO = dataObjectDAO;
     service.fileStorageRegistry = fileStorageRegistry;
     service.videoProbeService = videoProbeService;
+    service.transcodeOrchestrator = transcodeOrchestrator;
     service.userService = userService;
     service.dateHelper = dateHelper;
     service.entityIdResolver = entityIdResolver;
@@ -93,6 +96,9 @@ class VideoStreamReferenceServiceTest {
     when(entityIdResolver.resolveLong(DO_APPID)).thenReturn(DO_OGM_ID);
     when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parentDataObject);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
+    // Orchestrator is mocked; default behaviour returns the entity unchanged so
+    // existing service-level assertions on the returned entity still hold.
+    when(transcodeOrchestrator.submit(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   // ─── listByDataObject ─────────────────────────────────────────────────────
