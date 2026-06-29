@@ -45,10 +45,12 @@ const TS_CONTAINER = {
   containerType: "TIMESERIES" as const,
 };
 
+type ContainerSummary = typeof FILE_CONTAINER | typeof TS_CONTAINER;
+
 /** Build a PagedResponseContainerSummary-shaped mock return value. */
 function pagedContainers(
-  items: typeof FILE_CONTAINER[],
-): { items: typeof FILE_CONTAINER[]; total: number; page: number; pageSize: number } {
+  items: ContainerSummary[],
+): { items: ContainerSummary[]; total: number; page: number; pageSize: number } {
   return { items, total: items.length, page: 0, pageSize: items.length };
 }
 

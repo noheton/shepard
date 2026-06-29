@@ -167,6 +167,22 @@ describe("v2 SubjectAnnotated accessors", () => {
     });
   });
 
+  it("fetchAnnotations tolerates a bare array (pre-envelope backend across the deploy gap)", async () => {
+    // BUG-ANNOTATIONS-MAP-ENVELOPE: the backend migrated listAnnotations to the
+    // PagedResponseIO {items,…} envelope (#2104). A frontend deployed ahead of
+    // that backend (or vice versa) must still render rather than yield an empty
+    // panel — fetchAnnotations reads `.items` when present, else the bare array.
+    mockListAnnotations.mockResolvedValue([WIRE_ANNOTATION]);
+    const { AnnotatedDataObject } = await import("~/composables/annotated");
+
+    const out = await new AnnotatedDataObject(
+      "0192cccc-0000-7000-8000-0000000000ab",
+    ).fetchAnnotations();
+
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ propertyName: "material" });
+  });
+
   it("fetchAnnotations fails soft (returns [], no network call) for an empty appId", async () => {
     const { AnnotatedCollection } = await import("~/composables/annotated");
     const out = await new AnnotatedCollection("").fetchAnnotations();

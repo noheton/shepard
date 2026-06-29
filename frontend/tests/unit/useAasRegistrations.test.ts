@@ -84,8 +84,8 @@ describe("useAasRegistrations — initial load", () => {
 
     expect(registrationsPage.value).not.toBeNull();
     expect(registrationsPage.value?.total).toBe(1);
-    expect(registrationsPage.value?.items[0].status).toBe("SYNCED");
-    expect(registrationsPage.value?.items[0].shellAppId).toBe("coll-app-id-1");
+    expect(registrationsPage.value?.items[0]?.status).toBe("SYNCED");
+    expect(registrationsPage.value?.items[0]?.shellAppId).toBe("coll-app-id-1");
   });
 
   it("passes Authorization Bearer header", async () => {

@@ -82,7 +82,7 @@ describe("useAasShell — init fetch", () => {
     await flush();
 
     const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
-    const shellFetchUrl = calls[0][0] as string;
+    const shellFetchUrl = calls[0]![0] as string;
     expect(shellFetchUrl).toContain(`/v2/aas/shells/${COLLECTION_APP_ID}`);
   });
 

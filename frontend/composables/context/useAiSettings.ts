@@ -38,9 +38,11 @@ export function useAiSettings() {
     }, 5000);
     try {
       await api.value.patchPreferences({
-        // null = RFC 7396 remove; empty string cleared by the user means remove
-        [PREF_BASE_URL]: newBaseUrl.trim() || null,
-        [PREF_MODEL]: newModel.trim() || null,
+        body: {
+          // null = RFC 7396 remove; empty string cleared by the user means remove
+          [PREF_BASE_URL]: newBaseUrl.trim() || null,
+          [PREF_MODEL]: newModel.trim() || null,
+        },
       });
     } catch (error) {
       baseUrl.value = prevBaseUrl;

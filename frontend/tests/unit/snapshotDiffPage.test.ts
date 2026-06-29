@@ -7,7 +7,7 @@
  * Pattern: inline-replication of page helpers (same as pagesShapesRender.test.ts),
  * no Vue mount required.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // ─── Replicated page helpers ──────────────────────────────────────────────────
 // Mirror the logic from frontend/pages/snapshots/diff.vue so changes to the

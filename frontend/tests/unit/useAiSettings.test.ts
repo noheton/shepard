@@ -55,8 +55,10 @@ describe("useAiSettings — PLACEHOLDER-ai-settings", () => {
     await flush();
     await save("  https://ollama.local/v1  ", "llama3");
     expect(mockPatchPreferences).toHaveBeenCalledWith({
-      "ai.baseUrl": "https://ollama.local/v1",
-      "ai.model": "llama3",
+      body: {
+        "ai.baseUrl": "https://ollama.local/v1",
+        "ai.model": "llama3",
+      },
     });
   });
 
@@ -65,8 +67,10 @@ describe("useAiSettings — PLACEHOLDER-ai-settings", () => {
     await flush();
     await save("", "");
     expect(mockPatchPreferences).toHaveBeenCalledWith({
-      "ai.baseUrl": null,
-      "ai.model": null,
+      body: {
+        "ai.baseUrl": null,
+        "ai.model": null,
+      },
     });
   });
 
