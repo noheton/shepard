@@ -66,7 +66,7 @@ async function loadVocabularies() {
       return;
     }
     const body = await res.json();
-    vocabularies.value = Array.isArray(body) ? body : [];
+    vocabularies.value = Array.isArray(body?.items) ? body.items : [];
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : String(e);
   } finally {
