@@ -16,11 +16,13 @@
 import * as runtime from '../runtime';
 import type {
   JsonNode,
+  PagedResponseReferenceV2,
   ReferenceV2,
 } from '../models/index';
 import {
     JsonNodeFromJSON,
     JsonNodeToJSON,
+    PagedResponseReferenceV2FromJSON,
     ReferenceV2FromJSON,
     ReferenceV2ToJSON,
 } from '../models/index';
@@ -210,7 +212,7 @@ export class ReferencesApi extends runtime.BaseAPI {
      * Returns every reference of `kind` attached to `dataObjectAppId` as ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
      * [v2] List references of a kind attached to a DataObject, optionally filtered.
      */
-    async listReferencesRaw(requestParameters: ListReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ReferenceV2>>> {
+    async listReferencesRaw(requestParameters: ListReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseReferenceV2>> {
         const queryParameters: any = {};
 
         if (requestParameters['dataObjectAppId'] != null) {
@@ -246,14 +248,14 @@ export class ReferencesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ReferenceV2FromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseReferenceV2FromJSON(jsonValue));
     }
 
     /**
-     * Returns every reference of `kind` attached to `dataObjectAppId` as ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
+     * Returns every reference of `kind` attached to `dataObjectAppId` wrapped in a standard PagedResponseIO envelope ({items, total, page, pageSize}). For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
      * [v2] List references of a kind attached to a DataObject, optionally filtered.
      */
-    async listReferences(requestParameters: ListReferencesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ReferenceV2>> {
+    async listReferences(requestParameters: ListReferencesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseReferenceV2> {
         const response = await this.listReferencesRaw(requestParameters, initOverrides);
         return await response.value();
     }

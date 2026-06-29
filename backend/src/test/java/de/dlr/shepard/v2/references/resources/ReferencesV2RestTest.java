@@ -14,6 +14,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
@@ -177,14 +178,20 @@ class ReferencesV2RestTest {
   // ─── list ──────────────────────────────────────────────────────────────────
 
   @Test
-  void list_returns200WithFileKindFilter() {
+  @SuppressWarnings("unchecked")
+  void list_returnsPagedEnvelope() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(referencesService.listByDataObject(eq("file"), eq(DO_APP_ID), eq("urdf")))
-      .thenReturn(List.of(new ReferenceV2IO()));
+      .thenReturn(List.of(new ReferenceV2IO(), new ReferenceV2IO()));
 
     var r = resource.list("file", DO_APP_ID, "urdf", securityContext);
     assertEquals(200, r.getStatus());
+    assertNotNull(r.getEntity());
+    var paged = (PagedResponseIO<ReferenceV2IO>) r.getEntity();
+    assertEquals(2, paged.total());
+    assertEquals(0, paged.page());
+    assertEquals(2, paged.items().size());
     verify(referencesService).listByDataObject("file", DO_APP_ID, "urdf");
   }
 
