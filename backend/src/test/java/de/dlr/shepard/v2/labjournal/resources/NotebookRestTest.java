@@ -13,6 +13,7 @@ import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.ws.rs.NotFoundException;
@@ -153,8 +154,8 @@ class NotebookRestTest {
   void returns200EmptyListWhenNoFiles() {
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).isEmpty();
+    var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
+    assertThat(paged.items()).isEmpty();
   }
 
   @Test
@@ -166,7 +167,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   // ─── 200 with results ─────────────────────────────────────────────────────
@@ -178,10 +179,10 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    assertThat(items).hasSize(1);
 
-    var io = list.get(0);
+    var io = items.get(0);
     assertThat(io.getAppId()).isEqualTo("singleton-app-1");
     assertThat(io.getFileName()).isEqualTo("analysis.ipynb");
     assertThat(io.getFileSize()).isEqualTo(8192L);
@@ -199,10 +200,10 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    assertThat(items).hasSize(1);
 
-    var io = list.get(0);
+    var io = items.get(0);
     assertThat(io.getAppId()).isEqualTo("bundle-app-1");
     assertThat(io.getFileName()).isEqualTo("experiment.ipynb");
     assertThat(io.getFileSize()).isEqualTo(4096L);
@@ -222,14 +223,14 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(2);
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    assertThat(items).hasSize(2);
 
     // Singletons come first
-    assertThat(list.get(0).getReferenceKind()).isEqualTo(ReferenceKind.SINGLETON);
-    assertThat(list.get(0).getAppId()).isEqualTo("s-1");
-    assertThat(list.get(1).getReferenceKind()).isEqualTo(ReferenceKind.BUNDLE_FILE);
-    assertThat(list.get(1).getAppId()).isEqualTo("b-1");
+    assertThat(items.get(0).getReferenceKind()).isEqualTo(ReferenceKind.SINGLETON);
+    assertThat(items.get(0).getAppId()).isEqualTo("s-1");
+    assertThat(items.get(1).getReferenceKind()).isEqualTo(ReferenceKind.BUNDLE_FILE);
+    assertThat(items.get(1).getAppId()).isEqualTo("b-1");
   }
 
   @Test
@@ -245,9 +246,9 @@ class NotebookRestTest {
       );
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(2);
-    assertThat(list).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    assertThat(items).hasSize(2);
+    assertThat(items).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
   }
 
   @Test
@@ -258,7 +259,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
@@ -269,7 +270,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
@@ -279,9 +280,9 @@ class NotebookRestTest {
       .thenReturn(List.of(singleton("s-old", "old.ipynb", null)));
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
-    assertThat(list.get(0).getFileSize()).isNull();
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    assertThat(items).hasSize(1);
+    assertThat(items.get(0).getFileSize()).isNull();
   }
 
   // ─── isIpynb helper ───────────────────────────────────────────────────────
