@@ -4,7 +4,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
-import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportListIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportReadIO;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportWriteIO;
 import de.dlr.shepard.v2.notifications.transport.services.NotificationTransportService;
@@ -76,7 +76,7 @@ public class NotificationTransportRest {
   @APIResponse(
     responseCode = "200",
     description = "Current list of transports (may be empty).",
-    content = @Content(schema = @Schema(implementation = NotificationTransportListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
@@ -84,7 +84,7 @@ public class NotificationTransportRest {
         .stream()
         .map(NotificationTransportReadIO::from)
         .toList();
-    return Response.ok(new NotificationTransportListIO(items)).build();
+    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size())).build();
   }
 
   // ─── NTF1-BACKEND-CRUD: POST / PATCH / DELETE ───────────────────────────
