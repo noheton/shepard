@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -249,7 +250,7 @@ class ProvenanceMcpToolsTest {
 
   @Test
   void activityListIncludesAppliedFiltersInEnvelope() throws Exception {
-    when(activityDAO.list(eq("flo"), any(), any(), any(), any(), any()))
+    when(activityDAO.list(eq("flo"), any(), any(), any(), any(), anyInt()))
       .thenReturn(List.of());
 
     String json = tools.activityList("flo", null, null, 100L, 200L, 5);
