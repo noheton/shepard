@@ -79,6 +79,31 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     url: "/shapes/render?renderer=urdf&urdfUrl=%2Furdf-samples%2Fkr210_r2700_2%2Fkuka_quantec_support%2Furdf%2Fkr210_r2700_2.urdf&packagePath=%2Furdf-samples%2Fkr210_r2700_2",
     settle: 18000,
   },
+  {
+    // K — Home page: hero + WAAPI animate-on-mount entrance (#162) + recent
+    // collections digest (#116). The "this is what a researcher sees on
+    // arrival" frame.
+    id: "K-home",
+    url: "/",
+    settle: 6000,
+  },
+  {
+    // L — Personal landing /me (#43): collections digest, sparklines per
+    // collection, last-change timestamps, contributor badges, ORCID badge
+    // (#195 + RDM-002). The "your data follows you" frame.
+    id: "L-me-personal",
+    url: "/me",
+    settle: 7000,
+  },
+  {
+    // M — Unified search across collections + DataObjects (#111 + #112)
+    // with sparklines per collection-row and search-as-you-type filtering.
+    // The "Shepard is queryable" frame — keyword that crosses the 8483-DO
+    // MFFD collection, so results carry real volume.
+    id: "M-search-sparklines",
+    url: "/search?q=tapelaying",
+    settle: 7000,
+  },
 ];
 
 test("capture MFFD presentation surfaces", async ({ page }) => {
