@@ -112,7 +112,10 @@ export const mapVideoReferenceToDataTableElement = (
     },
     actions: {
       elementAppId: ref.appId,
-      showDetails: { enabled: false, pathFragment: "" },
+      // REF-VIDEO-DETAIL-PAGE — Video rows navigate to the appId-keyed
+      // /videostreamreferences/{appId} detail page (same shape as
+      // timeseries/file refs).
+      showDetails: { enabled: true, pathFragment: videoStreamReferencesPathFragment },
     },
   };
 };

@@ -73,7 +73,7 @@ async function fetchReferences() {
         kind: "timeseries",
         dataObjectAppId: appId,
       });
-    refsForContainer.value = (envelope.items ?? []).filter(
+    refsForContainer.value = ((envelope as unknown as { items?: ReferenceV2[] })?.items ?? (Array.isArray(envelope) ? envelope : [])).filter(
       r => tsPayload(r).timeseriesContainerId === props.containerId,
     );
     loaded.value = true;

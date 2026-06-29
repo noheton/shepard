@@ -74,7 +74,7 @@ onMounted(async () => {
       targetAppId: props.dataObject.appId,
       pageSize: 50,
     });
-    activities.value = paged.items;
+    activities.value = Array.isArray(paged) ? paged : ((paged as { items?: unknown[] })?.items ?? []) as Activity[];
   } catch {
     activities.value = [];
   } finally {

@@ -57,7 +57,7 @@ function openSemaAnnotationDialog(appId: string, kind: string) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-function showDetails(pathFragment: string, id: number) {
+function showDetails(pathFragment: string, id: number | string) {
   const route =
     collectionsPath +
     props.collectionId +
@@ -66,6 +66,17 @@ function showDetails(pathFragment: string, id: number) {
     pathFragment +
     id;
   router.push(route);
+}
+
+/**
+ * REF-VIDEO-DETAIL-PAGE — pick the right identifier for the route segment.
+ * Legacy kinds (TimeSeries / File Bundle / Structured Data) navigate by
+ * numeric `elementId`; new kinds (Video, …) navigate by `elementAppId`
+ * (UUID v7). The detail page on the other side decides which it expects.
+ */
+function showDetailsId(item: DataTableElement): number | string | undefined {
+  if (item.actions.elementId != null) return item.actions.elementId;
+  return item.actions.elementAppId;
 }
 
 // ── Delete actions for new kinds ──────────────────────────────────────────────
@@ -398,10 +409,10 @@ function formatDuration(seconds: number | null | undefined): string {
       -->
       <template #[`item.type`]="{ item }: { item: DataTableElement }">
         <a
-          v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+          v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
           href="#"
           class="reference-link d-inline-flex align-center"
-          @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+          @click.prevent="showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
         >
           <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
           {{ item.type }}
@@ -414,10 +425,10 @@ function formatDuration(seconds: number | null | undefined): string {
 
       <template #[`item.name`]="{ item }: { item: DataTableElement }">
         <a
-          v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+          v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
           href="#"
           class="reference-link"
-          @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+          @click.prevent="showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
         >
           {{ item.name }}
         </a>
@@ -511,9 +522,9 @@ function formatDuration(seconds: number | null | undefined): string {
         <ActionContainer>
           <!-- Legacy kinds: navigate to detail page -->
           <ActionButton
-            v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+            v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
             icon="mdi-eye-outline"
-            @click="() => showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+            @click="() => showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
           />
           <!-- Legacy kinds: annotation dialog (v2 appId path) -->
           <ActionButton

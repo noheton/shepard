@@ -191,8 +191,11 @@ async function load() {
       targetAppId: props.targetAppId,
       pageSize: limit.value,
     });
-    activities.value = paged.items ?? [];
-    hasMore.value = paged.items.length >= limit.value;
+    const list: Activity[] = Array.isArray(paged)
+      ? paged
+      : ((paged as unknown as { items?: Activity[] })?.items ?? []);
+    activities.value = list;
+    hasMore.value = list.length >= limit.value;
   } catch {
     activities.value = [];
     hasMore.value = false;

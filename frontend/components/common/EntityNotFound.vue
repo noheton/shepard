@@ -18,6 +18,7 @@ type EntityKind =
   | "FileReference"
   | "TimeseriesReference"
   | "StructuredDataReference"
+  | "VideoStreamReference"
   | "Container";
 
 const props = withDefaults(
@@ -42,6 +43,7 @@ const KIND_LABEL: Record<EntityKind, string> = {
   FileReference: "file reference",
   TimeseriesReference: "timeseries reference",
   StructuredDataReference: "structured-data reference",
+  VideoStreamReference: "video reference",
   Container: "container",
 };
 const KIND_CTA: Record<EntityKind, string> = {
@@ -50,6 +52,7 @@ const KIND_CTA: Record<EntityKind, string> = {
   FileReference: "Back to Data Object",
   TimeseriesReference: "Back to Data Object",
   StructuredDataReference: "Back to Data Object",
+  VideoStreamReference: "Back to Data Object",
   Container: "Browse Containers",
 };
 

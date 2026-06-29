@@ -43,7 +43,7 @@ export function useFetchGitReferences(dataObjectAppId: string) {
         kind: "git",
         dataObjectAppId,
       });
-      gitReferences.value = (envelope.items ?? []).map(toGitReferenceIO);
+      gitReferences.value = ((envelope as unknown as { items?: ReferenceV2[] })?.items ?? (Array.isArray(envelope) ? envelope : [])).map(toGitReferenceIO);
     } catch (error) {
       handleError(error, "listGitReferences");
     } finally {

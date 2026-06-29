@@ -16,25 +16,28 @@
 import * as runtime from '../runtime';
 import type {
   JsonNode,
-  PagedResponseReferenceV2,
   ReferenceV2,
 } from '../models/index';
 import {
     JsonNodeFromJSON,
     JsonNodeToJSON,
-    PagedResponseReferenceV2FromJSON,
     ReferenceV2FromJSON,
     ReferenceV2ToJSON,
 } from '../models/index';
 
 export interface CreateReferenceRequest {
+    dataObjectAppId: string;
+    kind: string;
     jsonNode: JsonNode;
-    dataObjectAppId?: string;
-    kind?: string;
 }
 
 export interface DeleteReferenceRequest {
     appId: string;
+}
+
+export interface DownloadReferenceContentRequest {
+    appId: string;
+    range?: string;
 }
 
 export interface GetReferenceRequest {
@@ -42,14 +45,26 @@ export interface GetReferenceRequest {
 }
 
 export interface ListReferencesRequest {
-    dataObjectAppId?: string;
+    dataObjectAppId: string;
+    kind: string;
     fileKind?: string;
-    kind?: string;
 }
 
 export interface PatchReferenceRequest {
     appId: string;
     jsonNode: JsonNode;
+}
+
+export interface PutReferenceRequest {
+    appId: string;
+    jsonNode: JsonNode;
+}
+
+export interface UploadReferenceContentRequest {
+    appId: string;
+    filename: string;
+    body: Blob;
+    contentLength?: string;
 }
 
 /**
@@ -58,10 +73,24 @@ export interface PatchReferenceRequest {
 export class ReferencesApi extends runtime.BaseAPI {
 
     /**
-     * Creates a reference of `kind` attached to the DataObject identified by `dataObjectAppId`. The body is the per-kind create payload (e.g. `{uri, relationship}` for kind=uri; `{start, end, timeseriesContainerId, timeseries}` for kind=timeseries). Binary kinds are NOT created here — `kind=file` rejects with 400 directing the caller to the multipart `POST /v2/files` entry point.  Auth: Write on the parent DataObject.
+     * Creates a reference of `kind` attached to the DataObject identified by `dataObjectAppId`. The body is the per-kind create payload (e.g. `{uri, relationship}` for kind=uri; `{start, end, timeseriesContainerId, timeseries}` for kind=timeseries; `{name}` for kind=file — APISIMP-KIND-DISCRIMINATOR Option C phase-1: creates a metadata-only node, then call `PUT /v2/references/{appId}/content` to upload bytes).  Auth: Write on the parent DataObject.
      * [v2] Create a non-binary reference of the given kind under a DataObject.
      */
     async createReferenceRaw(requestParameters: CreateReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferenceV2>> {
+        if (requestParameters['dataObjectAppId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectAppId',
+                'Required parameter "dataObjectAppId" was null or undefined when calling createReference().'
+            );
+        }
+
+        if (requestParameters['kind'] == null) {
+            throw new runtime.RequiredError(
+                'kind',
+                'Required parameter "kind" was null or undefined when calling createReference().'
+            );
+        }
+
         if (requestParameters['jsonNode'] == null) {
             throw new runtime.RequiredError(
                 'jsonNode',
@@ -107,7 +136,7 @@ export class ReferencesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a reference of `kind` attached to the DataObject identified by `dataObjectAppId`. The body is the per-kind create payload (e.g. `{uri, relationship}` for kind=uri; `{start, end, timeseriesContainerId, timeseries}` for kind=timeseries). Binary kinds are NOT created here — `kind=file` rejects with 400 directing the caller to the multipart `POST /v2/files` entry point.  Auth: Write on the parent DataObject.
+     * Creates a reference of `kind` attached to the DataObject identified by `dataObjectAppId`. The body is the per-kind create payload (e.g. `{uri, relationship}` for kind=uri; `{start, end, timeseriesContainerId, timeseries}` for kind=timeseries; `{name}` for kind=file — APISIMP-KIND-DISCRIMINATOR Option C phase-1: creates a metadata-only node, then call `PUT /v2/references/{appId}/content` to upload bytes).  Auth: Write on the parent DataObject.
      * [v2] Create a non-binary reference of the given kind under a DataObject.
      */
     async createReference(requestParameters: CreateReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
@@ -162,6 +191,56 @@ export class ReferencesApi extends runtime.BaseAPI {
     }
 
     /**
+     * Streams the binary payload for the reference at `appId`. Only binary reference kinds (`kind=video`, `kind=file`) support this endpoint; non-binary kinds return 400.  **Range requests:** a single `Range: bytes=START-END` header is honoured for kinds whose handler implements range-aware streaming (e.g. `kind=video` returns 206 Partial Content + `Content-Range` for browser-native video scrubbing). An unsatisfiable range returns 416.  **Auth:** Read permission on the parent DataObject. The JWT may be supplied via the `?access_token=…` query param fallback (RFC 6750 §2.3) for HTML5 `<video src>` usage.
+     * [v2] APISIMP-VIDEO-STREAMREF-PATH: download binary content for a reference that supports it.
+     */
+    async downloadReferenceContentRaw(requestParameters: DownloadReferenceContentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling downloadReferenceContent().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters['range'] != null) {
+            headerParameters['Range'] = String(requestParameters['range']);
+        }
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/references/{appId}/content`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Streams the binary payload for the reference at `appId`. Only binary reference kinds (`kind=video`, `kind=file`) support this endpoint; non-binary kinds return 400.  **Range requests:** a single `Range: bytes=START-END` header is honoured for kinds whose handler implements range-aware streaming (e.g. `kind=video` returns 206 Partial Content + `Content-Range` for browser-native video scrubbing). An unsatisfiable range returns 416.  **Auth:** Read permission on the parent DataObject. The JWT may be supplied via the `?access_token=…` query param fallback (RFC 6750 §2.3) for HTML5 `<video src>` usage.
+     * [v2] APISIMP-VIDEO-STREAMREF-PATH: download binary content for a reference that supports it.
+     */
+    async downloadReferenceContent(requestParameters: DownloadReferenceContentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.downloadReferenceContentRaw(requestParameters, initOverrides);
+    }
+
+    /**
      * Resolves the reference (of any kind) at `appId` and returns the unified ReferenceV2IO, including the `kind`, `referenceShape` (singleton/bundle for files), and `fileKind` discriminators plus the per-kind `payload`.  Auth: Read on the parent DataObject.
      * [v2] Get any reference by appId; the entity self-describes its kind.
      */
@@ -212,7 +291,21 @@ export class ReferencesApi extends runtime.BaseAPI {
      * Returns every reference of `kind` attached to `dataObjectAppId` as ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
      * [v2] List references of a kind attached to a DataObject, optionally filtered.
      */
-    async listReferencesRaw(requestParameters: ListReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseReferenceV2>> {
+    async listReferencesRaw(requestParameters: ListReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ReferenceV2>>> {
+        if (requestParameters['dataObjectAppId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectAppId',
+                'Required parameter "dataObjectAppId" was null or undefined when calling listReferences().'
+            );
+        }
+
+        if (requestParameters['kind'] == null) {
+            throw new runtime.RequiredError(
+                'kind',
+                'Required parameter "kind" was null or undefined when calling listReferences().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['dataObjectAppId'] != null) {
@@ -248,14 +341,14 @@ export class ReferencesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseReferenceV2FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ReferenceV2FromJSON));
     }
 
     /**
-     * Returns every reference of `kind` attached to `dataObjectAppId` wrapped in a standard PagedResponseIO envelope ({items, total, page, pageSize}). For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
+     * Returns every reference of `kind` attached to `dataObjectAppId` as ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows to singletons of that file-kind (e.g. `fileKind=urdf`).  Auth: Read on the parent DataObject.
      * [v2] List references of a kind attached to a DataObject, optionally filtered.
      */
-    async listReferences(requestParameters: ListReferencesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseReferenceV2> {
+    async listReferences(requestParameters: ListReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ReferenceV2>> {
         const response = await this.listReferencesRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -314,6 +407,135 @@ export class ReferencesApi extends runtime.BaseAPI {
      */
     async patchReference(requestParameters: PatchReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
         const response = await this.patchReferenceRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Replaces all mutable metadata fields on the reference at `appId`. `name` is required. Kind-specific mutable fields (e.g. `uri`/`relationship` for uri references, time-window fields for timeseries references) are applied from the body — absent fields are left to kind-handler discretion (default: unchanged, matching PATCH semantics). Binary content is NOT modified by this endpoint; use `PUT /v2/references/{appId}/content` for byte payloads.  Auth: Write on the parent DataObject.
+     * [v2] P21-V2-METADATA-EDIT: full-replace editable metadata of any reference by appId.
+     */
+    async putReferenceRaw(requestParameters: PutReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferenceV2>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling putReference().'
+            );
+        }
+
+        if (requestParameters['jsonNode'] == null) {
+            throw new runtime.RequiredError(
+                'jsonNode',
+                'Required parameter "jsonNode" was null or undefined when calling putReference().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/references/{appId}`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: JsonNodeToJSON(requestParameters['jsonNode']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReferenceV2FromJSON(jsonValue));
+    }
+
+    /**
+     * Replaces all mutable metadata fields on the reference at `appId`. `name` is required. Kind-specific mutable fields (e.g. `uri`/`relationship` for uri references, time-window fields for timeseries references) are applied from the body — absent fields are left to kind-handler discretion (default: unchanged, matching PATCH semantics). Binary content is NOT modified by this endpoint; use `PUT /v2/references/{appId}/content` for byte payloads.  Auth: Write on the parent DataObject.
+     * [v2] P21-V2-METADATA-EDIT: full-replace editable metadata of any reference by appId.
+     */
+    async putReference(requestParameters: PutReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
+        const response = await this.putReferenceRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Attaches binary content to the reference at `appId`. The reference must already exist (created via `POST /v2/references?kind=file`). The body is the raw binary payload (`application/octet-stream`). The `filename` query parameter provides the original filename for MIME/fileKind detection and GridFS storage (required).  For references that do not support binary content (`kind=uri`, `kind=timeseries`, `kind=git`, etc.) this returns 400.  Re-uploading (calling PUT a second time on the same appId) replaces the previous content — the old GridFS blob is deleted after the new one is written.  Auth: Write on the parent DataObject.
+     * [v2] APISIMP-KIND-DISCRIMINATOR Option C phase-2: upload binary content to an existing reference node.
+     */
+    async uploadReferenceContentRaw(requestParameters: UploadReferenceContentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferenceV2>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling uploadReferenceContent().'
+            );
+        }
+
+        if (requestParameters['filename'] == null) {
+            throw new runtime.RequiredError(
+                'filename',
+                'Required parameter "filename" was null or undefined when calling uploadReferenceContent().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling uploadReferenceContent().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['filename'] != null) {
+            queryParameters['filename'] = requestParameters['filename'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/octet-stream';
+
+        if (requestParameters['contentLength'] != null) {
+            headerParameters['Content-Length'] = String(requestParameters['contentLength']);
+        }
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/references/{appId}/content`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['body'] as any,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReferenceV2FromJSON(jsonValue));
+    }
+
+    /**
+     * Attaches binary content to the reference at `appId`. The reference must already exist (created via `POST /v2/references?kind=file`). The body is the raw binary payload (`application/octet-stream`). The `filename` query parameter provides the original filename for MIME/fileKind detection and GridFS storage (required).  For references that do not support binary content (`kind=uri`, `kind=timeseries`, `kind=git`, etc.) this returns 400.  Re-uploading (calling PUT a second time on the same appId) replaces the previous content — the old GridFS blob is deleted after the new one is written.  Auth: Write on the parent DataObject.
+     * [v2] APISIMP-KIND-DISCRIMINATOR Option C phase-2: upload binary content to an existing reference node.
+     */
+    async uploadReferenceContent(requestParameters: UploadReferenceContentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
+        const response = await this.uploadReferenceContentRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

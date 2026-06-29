@@ -21,6 +21,7 @@ export interface CollectionRouteParams {
   timeseriesReferenceId?: string;
   fileReferenceId?: string;
   structuredDataReferenceId?: string;
+  videoStreamReferenceId?: string;
 }
 
 export const isCollectionRouteParams = (
@@ -93,5 +94,6 @@ export function parseCollectionRouteParams(
     timeseriesReferenceId: parseIdLike(routeParams.timeseriesReferenceId),
     fileReferenceId: parseIdLike(routeParams.fileReferenceId),
     structuredDataReferenceId: parseIdLike(routeParams.structuredDataReferenceId),
+    videoStreamReferenceId: parseIdLike(routeParams.videoStreamReferenceId),
   };
 }

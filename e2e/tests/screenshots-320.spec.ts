@@ -62,12 +62,12 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     settle: 12000,
   },
   {
-    // I — video reference detail: DataObject landing for a VideoStreamReference
-    // (P11_S_2.Bahn.MP4) where the inline player is rendered alongside the
-    // reference metadata. No dedicated route for video refs — the player lives
-    // on the DO detail page.
+    // I — video reference detail page: the new dedicated route that mirrors
+    // the filereferences/timeseriesereferences shape. Inline VideoPlayer +
+    // metadata + annotation list. Same DataObject as before (P11_S_2teBahn,
+    // VideoStreamReference for P11_S_2.Bahn.MP4).
     id: "I-video-player",
-    url: "/collections/019edb10-c107-7473-ae28-ffc592aba860/dataobjects/019f129e-c45e-703a-97de-079cb19d1052",
+    url: "/collections/019edb10-c107-7473-ae28-ffc592aba860/dataobjects/019f129e-c45e-703a-97de-079cb19d1052/videostreamreferences/019f129f-aa8b-70a6-b908-45e9918d7531",
     settle: 12000,
   },
 ];
@@ -89,16 +89,6 @@ test("capture MFFD presentation surfaces", async ({ page }) => {
     await page.goto(s.url, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(s.settle);
 
-    // I-video-player needs an extra interaction: click the video file name
-    // link in the Data References table to open the player.
-    if (s.id === "I-video-player") {
-      const videoLink = page.getByRole("link", { name: /\.MP4$/i }).first();
-      if (await videoLink.count() > 0) {
-        await videoLink.click();
-        await page.waitForLoadState("domcontentloaded");
-        await page.waitForTimeout(6000);
-      }
-    }
 
     await page.screenshot({ path: `screenshots-320/${s.id}.png`, fullPage: true });
 
