@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import de.dlr.shepard.context.semantic.daos.PredicateDAO;
 import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.context.semantic.entities.Predicate;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import de.dlr.shepard.v2.semantic.io.PredicateIO;
@@ -77,9 +78,9 @@ class VocabularyBrowseRestTest {
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertNotNull(body);
-    assertTrue(body.isEmpty());
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertNotNull(paged);
+    assertTrue(paged.items().isEmpty());
   }
 
   @Test
@@ -93,10 +94,10 @@ class VocabularyBrowseRestTest {
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertEquals(2, body.size());
-    assertTrue(body.stream().anyMatch(v -> "v-dcterms".equals(v.getAppId()) && v.isEnabled()));
-    assertTrue(body.stream().anyMatch(v -> "v-disabled".equals(v.getAppId()) && !v.isEnabled()));
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertEquals(2, paged.items().size());
+    assertTrue(paged.items().stream().anyMatch(v -> "v-dcterms".equals(v.getAppId()) && v.isEnabled()));
+    assertTrue(paged.items().stream().anyMatch(v -> "v-disabled".equals(v.getAppId()) && !v.isEnabled()));
   }
 
   // ─── listPredicatesForVocabulary ─────────────────────────────────────────
@@ -180,8 +181,8 @@ class VocabularyBrowseRestTest {
     Response response = rest.listVocabulariesUsedBy("  ", "collection");
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertTrue(body.isEmpty());
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(paged.items().isEmpty());
     verify(vocabularyDAO, never()).findVocabulariesUsedByEntity("  ", "collection");
   }
 
@@ -190,8 +191,8 @@ class VocabularyBrowseRestTest {
     Response response = rest.listVocabulariesUsedBy(null, "data-object");
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertTrue(body.isEmpty());
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(paged.items().isEmpty());
   }
 
   @Test
@@ -205,9 +206,9 @@ class VocabularyBrowseRestTest {
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("v-dcterms", body.get(0).getAppId());
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertEquals(1, paged.items().size());
+    assertEquals("v-dcterms", paged.items().get(0).getAppId());
     verify(vocabularyDAO).findVocabulariesUsedByEntity(appId, "collection");
   }
 
@@ -220,8 +221,8 @@ class VocabularyBrowseRestTest {
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertTrue(body.isEmpty());
+    PagedResponseIO<VocabularyIO> paged = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(paged.items().isEmpty());
   }
 
   // ─── APISIMP-VOCAB-BROWSE-SCOPE-UNDOCUMENTED: @Parameter regression ───────

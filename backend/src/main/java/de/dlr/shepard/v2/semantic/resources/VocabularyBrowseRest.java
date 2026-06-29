@@ -5,6 +5,7 @@ import de.dlr.shepard.context.semantic.daos.PredicateDAO;
 import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.Predicate;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.PredicateIO;
 import de.dlr.shepard.v2.semantic.io.VocabularyPredicatesIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
@@ -97,7 +98,7 @@ public class VocabularyBrowseRest {
   public Response listVocabularies() {
     List<Vocabulary> all = vocabularyDAO.listAll();
     List<VocabularyIO> out = all.stream().map(VocabularyIO::from).toList();
-    return Response.ok(out).build();
+    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
   }
 
   // ─── GET /v2/semantic/vocabularies/{vocabId}/predicates ───────────────────
@@ -186,11 +187,11 @@ public class VocabularyBrowseRest {
     @QueryParam("scope") @DefaultValue("data-object") String scope
   ) {
     if (entityAppId == null || entityAppId.isBlank()) {
-      return Response.ok(List.of()).build();
+      return Response.ok(new PagedResponseIO<>(List.<VocabularyIO>of(), 0, 0, 0)).build();
     }
     List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
     List<VocabularyIO> out = used.stream().map(VocabularyIO::from).toList();
-    return Response.ok(out).build();
+    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
