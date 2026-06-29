@@ -198,6 +198,43 @@ async function loadUrdf() {
     // Apply any initial jointValues that arrived before the load completed.
     applyJointValues(props.jointValues);
 
+    // URDF-FIT-VIEW: frame the loaded robot. urdf-loader resolves with the
+    // kinematic tree before its STL meshes finish loading asynchronously
+    // through THREE.LoadingManager, so the bbox is empty/tiny at this
+    // moment. Re-fit on each animation frame while the bbox is still
+    // growing (max 60 frames ≈ 1 s of headroom for meshes to arrive). After
+    // the bbox stops growing for 3 consecutive frames we stop re-fitting,
+    // leaving the user in full control via OrbitControls.
+    let stableFrames = 0;
+    let lastDiameter = 0;
+    let framesFitted = 0;
+    const refit = () => {
+      if (!robot || framesFitted > 60) return;
+      framesFitted += 1;
+      robot.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(robot);
+      if (box.isEmpty()) {
+        requestAnimationFrame(refit);
+        return;
+      }
+      const size = box.getSize(new THREE.Vector3());
+      const d = Math.max(size.x, size.y, size.z);
+      if (d > lastDiameter + 1e-4) {
+        lastDiameter = d;
+        stableFrames = 0;
+        fitCameraToObject(robot);
+      } else {
+        stableFrames += 1;
+        if (stableFrames < 3) {
+          requestAnimationFrame(refit);
+          return;
+        }
+        return;
+      }
+      requestAnimationFrame(refit);
+    };
+    requestAnimationFrame(refit);
+
     isLoading.value = false;
     emit("robot-loaded", robot);
   } catch (e) {
@@ -206,6 +243,32 @@ async function loadUrdf() {
     isLoading.value = false;
     emit("load-error", err);
   }
+}
+
+function fitCameraToObject(obj: THREE.Object3D, margin: number = 1.4): void {
+  if (!camera || !controls) return;
+  // Bounding box in world space. Robust to the URDF's Z-up→Y-up rotation we
+  // just applied because Box3.setFromObject walks the world matrices.
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  if (box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  if (!isFinite(maxDim) || maxDim <= 0) return;
+
+  const fovRad = (camera.fov * Math.PI) / 180;
+  const distance = (maxDim / 2) / Math.tan(fovRad / 2) * margin;
+
+  // Keep the original viewing angle (front-right-above) — just scale the
+  // distance and re-anchor on the object center.
+  const dir = new THREE.Vector3(1.2, 1.0, 1.6).normalize();
+  camera.position.copy(center).addScaledVector(dir, distance);
+  camera.near = Math.max(distance / 100, 0.001);
+  camera.far = distance * 10;
+  camera.updateProjectionMatrix();
+  controls.target.copy(center);
+  controls.update();
 }
 
 function applyJointValues(values: Record<string, number> | undefined) {

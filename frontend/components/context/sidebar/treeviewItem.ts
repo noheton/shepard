@@ -108,6 +108,9 @@ export function buildTreeviewItems(
     const item = mapRowToItem(row, parentAppId);
     if (item) items.push(item);
   }
-  items.sort((a, b) => a.id.localeCompare(b.id));
+  // SIDEBAR-NATURAL-SORT-2026-06-29: natural sort by title so "PlyGroup 2"
+  // precedes "PlyGroup 10" (numeric segments compared numerically). Falls
+  // back to default locale comparison for non-numeric tails.
+  items.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }));
   return items;
 }
