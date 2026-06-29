@@ -17,8 +17,8 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.SetEnabled
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadMetadata;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResult;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
-import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleListIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshSnapshotsResultIO;
@@ -250,7 +250,7 @@ public class SemanticAdminRest {
   )
   @APIResponse(
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = OntologyBundleListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role (RFC 7807).")
@@ -269,7 +269,7 @@ public class SemanticAdminRest {
     List<BundleView> merged = configService.listMerged(manifest);
     List<OntologyBundleIO> rows = new ArrayList<>(merged.size());
     for (BundleView v : merged) rows.add(OntologyBundleIO.from(v));
-    return Response.ok(new OntologyBundleListIO(rows)).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   @POST
