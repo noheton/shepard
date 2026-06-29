@@ -167,12 +167,17 @@ describe("v2 SubjectAnnotated accessors", () => {
     });
   });
 
-  it("fetchAnnotations tolerates a bare array (pre-envelope backend across the deploy gap)", async () => {
-    // BUG-ANNOTATIONS-MAP-ENVELOPE: the backend migrated listAnnotations to the
-    // PagedResponseIO {items,…} envelope (#2104). A frontend deployed ahead of
-    // that backend (or vice versa) must still render rather than yield an empty
-    // panel — fetchAnnotations reads `.items` when present, else the bare array.
-    mockListAnnotations.mockResolvedValue([WIRE_ANNOTATION]);
+  it("fetchAnnotations reads rows from the PagedResponseIO envelope", async () => {
+    // BUG-ANNOTATIONS-MAP-ENVELOPE: listAnnotations migrated to the
+    // PagedResponseIO {items,total,page,pageSize} envelope (#2104) and the
+    // generated client was regenerated to match. fetchAnnotations reads the
+    // rows from `.items`; a missing/empty envelope degrades to [] (no crash).
+    mockListAnnotations.mockResolvedValue({
+      items: [WIRE_ANNOTATION],
+      total: 1,
+      page: 0,
+      pageSize: 200,
+    });
     const { AnnotatedDataObject } = await import("~/composables/annotated");
 
     const out = await new AnnotatedDataObject(
