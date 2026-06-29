@@ -23,6 +23,7 @@
  */
 import { ReferencesApi } from "@dlr-shepard/backend-client";
 import EditVideoStreamReferenceDialog from "~/components/context/dataobject/EditVideoStreamReferenceDialog.vue";
+import VideoPlayer from "~/components/common/VideoPlayer.vue";
 import ViewRecipePicker from "~/components/shapes/ViewRecipePicker.vue";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
@@ -111,6 +112,18 @@ const videoContentUrl = computed<string | undefined>(() => {
   if (!appId) return undefined;
   return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
 });
+
+// BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29 — restore inline <VideoPlayer> as
+// the DEFAULT view ("I just want to see the video"). PR-4 stripped it in
+// favour of the picker-only flow, but with no VideoPlaybackShape recipe
+// seeded the picker is empty and the user has no playback. Per the
+// CLAUDE.md "tools in-context first" rule the entity detail page is the
+// canonical entry, so we restore the inline player at the top and keep the
+// ViewRecipePicker as an advanced augmentation in the "More views" section
+// below. Both use the appId-keyed v2 content URL (no v1 client).
+const { data: session } = useAuth();
+const accessToken = computed(() => session.value?.accessToken ?? null);
+const showMoreViews = ref(false);
 
 // ── dialog state ────────────────────────────────────────────────────────────
 
@@ -341,8 +354,23 @@ watch(videoReference, () => {
               </v-col>
             </v-row>
 
+            <!-- BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29: inline <VideoPlayer>
+                 restored as the DEFAULT view. The user wants to just see the
+                 video; the picker stays available as an advanced augmentation
+                 below in "More views". The v2 content URL is appId-keyed
+                 (no v1 client). -->
             <v-row v-if="videoContentUrl">
               <v-col cols="12">
+                <VideoPlayer
+                  :src="videoContentUrl"
+                  :access-token="accessToken"
+                  data-testid="inline-video-player"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row v-if="videoContentUrl">
+              <v-col cols="12" class="d-flex flex-wrap ga-2">
                 <v-btn
                   :href="videoContentUrl"
                   download
@@ -353,22 +381,33 @@ watch(videoReference, () => {
                 >
                   Download
                 </v-btn>
+                <v-btn
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  :prepend-icon="showMoreViews ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  data-testid="video-more-views-toggle"
+                  @click="showMoreViews = !showMoreViews"
+                >
+                  {{ showMoreViews ? "Hide more views" : "More views" }}
+                </v-btn>
               </v-col>
             </v-row>
 
-            <!-- Open as … — the VIEW_RECIPE picker. The sibling PR-2 ships the
-                 `VideoPlaybackShape` recipe; until it lands the picker shows
-                 the honest empty state. -->
-            <v-row>
-              <v-col cols="12">
-                <div class="text-subtitle-2 mb-2">Open as…</div>
-                <ViewRecipePicker
-                  :file-kind="videoReference.fileKind"
-                  :focus-shepard-id="videoReferenceAppId"
-                  @select="onPickRecipe"
-                />
-              </v-col>
-            </v-row>
+            <!-- Advanced augmentation: VIEW_RECIPE picker. Hidden behind the
+                 "More views" toggle so it doesn't clutter the default flow. -->
+            <v-expand-transition>
+              <v-row v-if="showMoreViews">
+                <v-col cols="12">
+                  <div class="text-subtitle-2 mb-2">Open as…</div>
+                  <ViewRecipePicker
+                    :file-kind="videoReference.fileKind"
+                    :focus-shepard-id="videoReferenceAppId"
+                    @select="onPickRecipe"
+                  />
+                </v-col>
+              </v-row>
+            </v-expand-transition>
 
             <v-row align="center" justify="space-between">
               <v-col>

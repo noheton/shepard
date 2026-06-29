@@ -87,7 +87,14 @@ export function useFetchSingletonFileReferences(
         }
         throw new Error(`HTTP ${response.status}`);
       }
-      const unified = (await response.json()) as ReferenceV2IO[];
+      // BUG-DO-DETAIL-A-TOAST-2026-06-29: unwrap the paged envelope shape
+      // { items: [...] } the unified /v2/references list now returns.
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const unified = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
       // Normalise the unified envelope back to the flat shape callers expect.
       references.value = unified
         .filter((r) => r.referenceShape === "singleton" || r.payload?.file !== undefined)

@@ -109,7 +109,16 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
         handleError(fetchError.value, "listVideoStreamReferences");
         return;
       }
-      const raw = (await response.json()) as ReferenceV2IO[];
+      // BUG-DO-DETAIL-A-TOAST-2026-06-29: backend now returns a paged
+      // envelope { items: [...] } on /v2/references list endpoints. Same
+      // unwrap shape as useFetchDataReferences.listReferencesOfKind so a
+      // shipped envelope-flip doesn't surface as ".map is not a function".
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const raw = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
       references.value = raw.map(toVideoStreamReferenceIO);
     } catch (error) {
       const message =

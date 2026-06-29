@@ -90,7 +90,14 @@ export function useFetchSpatialReferencesV2(dataObjectAppId: string) {
         handleError(fetchError.value, "listSpatialReferences");
         return;
       }
-      const raw = (await response.json()) as ReferenceV2IO[];
+      // BUG-DO-DETAIL-A-TOAST-2026-06-29: unwrap the paged envelope shape
+      // { items: [...] } the unified /v2/references list now returns.
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const raw = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
       references.value = raw.map(toSpatialReferenceV2IO);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";

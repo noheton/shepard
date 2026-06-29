@@ -106,6 +106,39 @@ const fileContentUrl = computed<string | undefined>(() => {
   return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
 });
 
+// BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29 (sibling) — restore an inline
+// default viewer for the common quick-look kinds (image, PDF). PR-4 stripped
+// every inline viewer in favour of the picker-only flow; for kinds whose
+// default view is "just show it" the empty picker is poor UX. The
+// ViewRecipePicker stays available below as the "More views" advanced
+// augmentation for richer renderers (URDF, NDT overlay, …).
+const { data: session } = useAuth();
+const accessToken = computed(() => session.value?.accessToken ?? null);
+const showMoreViews = ref(false);
+
+function withAccessToken(url: string): string {
+  const t = accessToken.value;
+  if (!t) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}access_token=${encodeURIComponent(t)}`;
+}
+
+const inlineImageUrl = computed<string | undefined>(() => {
+  if (fileReference.value?.fileKind !== "image") return undefined;
+  if (!fileContentUrl.value) return undefined;
+  return withAccessToken(fileContentUrl.value);
+});
+
+const inlinePdfUrl = computed<string | undefined>(() => {
+  if (fileReference.value?.fileKind !== "pdf") return undefined;
+  if (!fileContentUrl.value) return undefined;
+  return withAccessToken(fileContentUrl.value);
+});
+
+const hasInlineDefaultView = computed(
+  () => !!inlineImageUrl.value || !!inlinePdfUrl.value,
+);
+
 // ── metadata helpers ────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -276,8 +309,34 @@ watch(fileReference, () => {
               </v-col>
             </v-row>
 
-            <v-row v-if="fileContentUrl">
+            <!-- BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29 (sibling): inline
+                 quick-look default for common kinds. Image + PDF are the
+                 "just show it" cases; richer kinds (URDF, NDT, …) go through
+                 the picker below. -->
+            <v-row v-if="inlineImageUrl">
               <v-col cols="12">
+                <v-img
+                  :src="inlineImageUrl"
+                  :alt="fileReference.name"
+                  max-height="600"
+                  contain
+                  data-testid="inline-image-preview"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row v-if="inlinePdfUrl">
+              <v-col cols="12">
+                <iframe
+                  :src="inlinePdfUrl"
+                  style="width: 100%; height: 600px; border: 1px solid rgba(0,0,0,0.12); border-radius: 4px"
+                  data-testid="inline-pdf-preview"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row v-if="fileContentUrl">
+              <v-col cols="12" class="d-flex flex-wrap ga-2">
                 <v-btn
                   :href="fileContentUrl"
                   download
@@ -288,21 +347,33 @@ watch(fileReference, () => {
                 >
                   Download
                 </v-btn>
+                <v-btn
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  :prepend-icon="showMoreViews ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  data-testid="file-more-views-toggle"
+                  @click="showMoreViews = !showMoreViews"
+                >
+                  {{ showMoreViews ? "Hide more views" : "More views" }}
+                </v-btn>
               </v-col>
             </v-row>
 
-            <!-- Open as … — the VIEW_RECIPE picker (PR-1/2/3 ship the recipes
-                 themselves; PR-4 hands the appId off to /shapes/render). -->
-            <v-row>
-              <v-col cols="12">
-                <div class="text-subtitle-2 mb-2">Open as…</div>
-                <ViewRecipePicker
-                  :file-kind="fileReference.fileKind"
-                  :focus-shepard-id="fileReferenceAppId"
-                  @select="onPickRecipe"
-                />
-              </v-col>
-            </v-row>
+            <!-- Picker: ADVANCED when an inline default exists; PRIMARY when
+                 the file-kind has no default quick-look (URDF, KRL, etc.). -->
+            <v-expand-transition>
+              <v-row v-if="showMoreViews || !hasInlineDefaultView">
+                <v-col cols="12">
+                  <div class="text-subtitle-2 mb-2">Open as…</div>
+                  <ViewRecipePicker
+                    :file-kind="fileReference.fileKind"
+                    :focus-shepard-id="fileReferenceAppId"
+                    @select="onPickRecipe"
+                  />
+                </v-col>
+              </v-row>
+            </v-expand-transition>
 
             <v-row align="center" justify="space-between">
               <v-col>

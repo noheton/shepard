@@ -75,6 +75,17 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     // KR210 R2700/2 — the actual robot in the MFFD AFP cell). The URDF +
     // meshes are served from the frontend public dir; Three.js urdf-loader
     // renders the kinematic tree inline.
+    //
+    // KNOWN GAP — see aidocs/16:J-URDF-MAPPING-RECIPE-SEED-2026-06-29.
+    // Today the URDF renders untextured + carries no trace overlay. The
+    // proper fix is to seed a SceneGraphPlayShape MAPPING_RECIPE template
+    // binding the URDF FileRef (019f1479-1142-75b3-9adf-0720d84a1622, DO
+    // 019f1479-0752-7ee5-b709-9eff4c2b4c99 in collection
+    // 019f1472-d0af-709d-85b0-95866094d865) + the joint TimeseriesRef
+    // (019f147a-8b40-7584-ba09-b828b3b4e14b, DO
+    // 019f147a-08fc-7890-b1fb-ee7be35f685f) and point this URL at
+    // /scene-graphs/play/<templateAppId>. Requires API auth this
+    // screenshot turn doesn't have; deferred.
     id: "J-urdf-with-robot",
     url: "/shapes/render?renderer=urdf&urdfUrl=%2Furdf-samples%2Fkr210_r2700_2%2Fkuka_quantec_support%2Furdf%2Fkr210_r2700_2.urdf&packagePath=%2Furdf-samples%2Fkr210_r2700_2",
     settle: 18000,
@@ -96,12 +107,14 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     settle: 7000,
   },
   {
-    // M — Unified search across collections + DataObjects (#111 + #112)
-    // with sparklines per collection-row and search-as-you-type filtering.
-    // The "Shepard is queryable" frame — keyword that crosses the 8483-DO
-    // MFFD collection, so results carry real volume.
-    id: "M-search-sparklines",
-    url: "/search?q=tapelaying",
+    // M — Collections index (the unified gallery view): hero images per
+    // collection, contributor badges, last-update timestamps, per-row
+    // sparklines (#112), per-kind reference counts. The FAIR/HMC card
+    // shape for every dataset at a glance. Replaces the prior
+    // /search?q=tapelaying frame (thin 1-row result, no sparklines) so
+    // the presentation deck shows the actual gallery surface.
+    id: "M-collections-gallery",
+    url: "/collections",
     settle: 7000,
   },
 ];

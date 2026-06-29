@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import {
-  ReferencesApi,
-  type DataObject,
-  type ReferenceV2,
-} from "@dlr-shepard/backend-client";
-import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import type { DataObject, ReferenceV2 } from "@dlr-shepard/backend-client";
 import { readDataObjectAppId } from "~/utils/appId";
 import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
+
+// BUG-DO-DETAIL-A-TOAST-2026-06-29: bypass the generated ReferencesApi
+// client whose `listReferencesRaw` does `jsonValue.map(...)` and throws
+// the moment the backend flips to a PagedResponseIO envelope. Raw fetch
+// + envelope unwrap matches the other v2 reference composables.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
 const props = defineProps<{
   dataObject: DataObject;
@@ -68,12 +76,27 @@ async function fetchReferences() {
   try {
     // V1-EXCEPTION replaced: was useShepardApi(TimeseriesReferenceApi) with numeric IDs.
     // Now uses the v2 unified endpoint keyed by dataObjectAppId (UUID v7).
-    const envelope = await useV2ShepardApi(ReferencesApi)
-      .value.listReferences({
-        kind: "timeseries",
-        dataObjectAppId: appId,
-      });
-    refsForContainer.value = ((envelope as unknown as { items?: ReferenceV2[] })?.items ?? (Array.isArray(envelope) ? envelope : [])).filter(
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=timeseries&dataObjectAppId=${encodeURIComponent(appId)}`;
+    const response = await fetch(url, {
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok && response.status !== 404 && response.status !== 400) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const body = response.ok
+      ? ((await response.json()) as ReferenceV2[] | { items?: ReferenceV2[] })
+      : ([] as ReferenceV2[]);
+    const refs = Array.isArray(body)
+      ? body
+      : ((body as { items?: ReferenceV2[] }).items ?? []);
+    refsForContainer.value = refs.filter(
       r => tsPayload(r).timeseriesContainerId === props.containerId,
     );
     loaded.value = true;
