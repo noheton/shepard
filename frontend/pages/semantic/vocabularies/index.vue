@@ -90,7 +90,19 @@ onMounted(loadVocabularies);
 <template>
   <v-container>
     <div class="d-flex flex-column ga-2 mb-4">
-      <h4 class="text-h4">Vocabularies</h4>
+      <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+        <h4 class="text-h4">Vocabularies</h4>
+        <v-btn
+          to="/semantic/search"
+          variant="tonal"
+          color="primary"
+          size="small"
+          prepend-icon="mdi-magnify"
+          data-testid="vocab-search-link"
+        >
+          Search ontology terms
+        </v-btn>
+      </div>
       <p class="text-body-1 text-medium-emphasis">
         Controlled vocabularies seeded into the internal semantic store.
         Each vocabulary groups one or more predicates available to the

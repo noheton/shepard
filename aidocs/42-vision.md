@@ -253,8 +253,14 @@ These work the same way across every primitive:
   bookkeeping required. PV1b–PV1g (StructuredData, Spatial, Timeseries,
   RO-Crate integration, retention GC) are follow-on slices.
 - **Search.** Across all entities and attributes; semantic-annotation
-  search lights up additionally for ontology terms. Improvements
-  in flight (`aidocs/13`).
+  search lights up additionally for ontology terms. **L4 shipped
+  2026-06-29**: a dedicated `/semantic/search` page lets a researcher
+  type into a box and watch every loaded ontology term filter live
+  (debounced search-as-you-type), then see each matched term *in its
+  place* — a namespace→term tree or an interactive graph view — so you
+  can tell at a glance which vocabulary a term belongs to before you
+  annotate with it. Reachable from the Semantic hub and the
+  Vocabularies page. Further improvements in flight (`aidocs/13`).
 - **Semantic-annotation repositories — internal *or* external.**
   Reference an ontology term by IRI; resolve labels through one of
   three connector types. **External** SPARQL endpoints (the upstream
