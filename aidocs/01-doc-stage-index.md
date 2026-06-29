@@ -74,7 +74,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-24.md`](agent-findings/apisimp-sweep-2026-06-24.md) | API Simplification Sweep — 2026-06-24 | — | 2026-06-28 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25-fire221.md`](agent-findings/apisimp-sweep-2026-06-25-fire221.md) | API Simplification Sweep — 2026-06-25 (fire-221) | — | 2026-06-28 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-25.md`](agent-findings/apisimp-sweep-2026-06-25.md) | API Simplification Sweep — 2026-06-25 (fire-211) | — | 2026-06-28 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire272.md`](agent-findings/apisimp-sweep-2026-06-27-fire272.md) | APISIMP Sweep — 2026-06-27 (fire-272) | 2026-06-27 | 2026-06-27 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-27-fire272.md`](agent-findings/apisimp-sweep-2026-06-27-fire272.md) | APISIMP Sweep — 2026-06-27 (fire-272) | 2026-06-27 | 2026-06-28 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28-fire280.md`](agent-findings/apisimp-sweep-2026-06-28-fire280.md) | APISIMP Sweep — 2026-06-28 (fire-280) | 2026-06-28 | 2026-06-28 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28.md`](agent-findings/apisimp-sweep-2026-06-28.md) | APISIMP — v2 surface simplification sweep (2026-06-28, fire-277) | 2026-06-28 | 2026-06-28 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-28 |

@@ -202,6 +202,7 @@ export * from './PagedResponseContainerSummary';
 export * from './PagedResponseFeatureToggle';
 export * from './PagedResponseFileGroup';
 export * from './PagedResponseNotebookReference';
+export * from './PagedResponseOntologyAlignment';
 export * from './PagedResponseOntologyBundleIO';
 export * from './PagedResponseShepardTemplate';
 export * from './PagedResponseSnapshot';
