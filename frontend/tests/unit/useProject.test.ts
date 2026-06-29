@@ -137,6 +137,25 @@ describe("useProjectList", () => {
     expect(error.value).toBeNull();
   });
 
+  it("unwraps the PagedResponseIO {items,...} envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetchOk({
+        items: [PROJECT_APP_ID, "018f9c5a-7e26-7000-a000-000000000003"],
+        total: 2,
+        page: 0,
+        pageSize: 50,
+      }),
+    );
+
+    const { projectAppIds, error } = useProjectList();
+    await flush();
+
+    expect(projectAppIds.value).toHaveLength(2);
+    expect(projectAppIds.value[0]).toBe(PROJECT_APP_ID);
+    expect(error.value).toBeNull();
+  });
+
   it("records the error on non-ok response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: false,

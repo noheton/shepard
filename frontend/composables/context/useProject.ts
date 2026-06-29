@@ -172,7 +172,13 @@ export function useProjectList() {
         },
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      projectAppIds.value = await response.json();
+      // GET /v2/projects returns the PagedResponseIO {items,...} envelope
+      // (APISIMP-PAGINATION-ENVELOPE). Tolerate both the envelope and a legacy
+      // bare array.
+      const body: unknown = await response.json();
+      projectAppIds.value = Array.isArray(body)
+        ? body
+        : ((body as { items?: string[] })?.items ?? []);
     } catch (e) {
       error.value = "Failed to load Projects";
       handleError(e, "fetching Project list");
