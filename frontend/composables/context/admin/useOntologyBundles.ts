@@ -24,7 +24,7 @@ export interface OntologyBundleIO {
 }
 
 export interface OntologyBundleListIO {
-  bundles: OntologyBundleIO[];
+  items: OntologyBundleIO[];
 }
 
 export interface UploadOntologyMetadata {
@@ -89,7 +89,7 @@ export function useOntologyBundles() {
         return;
       }
       const data = (await response.json()) as OntologyBundleListIO;
-      bundles.value = data.bundles ?? [];
+      bundles.value = data.items ?? [];
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Network error";
       fetchError.value = msg;

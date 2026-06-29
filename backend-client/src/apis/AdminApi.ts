@@ -50,7 +50,7 @@ import type {
   NukeRequest,
   NukeResult,
   OntologyBundleIO,
-  OntologyBundleListIO,
+  PagedResponseOntologyBundleIO,
   OntologyGitIngestResultIO,
   OntologyGitSourceIO,
   PatchFeatureToggle,
@@ -138,8 +138,8 @@ import {
     NukeResultToJSON,
     OntologyBundleIOFromJSON,
     OntologyBundleIOToJSON,
-    OntologyBundleListIOFromJSON,
-    OntologyBundleListIOToJSON,
+    PagedResponseOntologyBundleIOFromJSON,
+    PagedResponseOntologyBundleIOToJSON,
     OntologyGitIngestResultIOFromJSON,
     OntologyGitIngestResultIOToJSON,
     OntologyGitSourceIOFromJSON,
@@ -1393,7 +1393,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Built-ins first (manifest declaration order), then user-uploaded bundles (id ASC). Each row\'s `enabled` is the effective state under the precedence rules (required wins; otherwise \'not in runtime disabledBundles ∪ deploy-time skip-bundles\').
      * [v2] List every pre-seeded + operator-uploaded ontology bundle.
      */
-    async listOntologiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<OntologyBundleListIO>> {
+    async listOntologiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseOntologyBundleIO>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1413,14 +1413,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => OntologyBundleListIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseOntologyBundleIOFromJSON(jsonValue));
     }
 
     /**
      * Built-ins first (manifest declaration order), then user-uploaded bundles (id ASC). Each row\'s `enabled` is the effective state under the precedence rules (required wins; otherwise \'not in runtime disabledBundles ∪ deploy-time skip-bundles\').
      * [v2] List every pre-seeded + operator-uploaded ontology bundle.
      */
-    async listOntologies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<OntologyBundleListIO> {
+    async listOntologies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseOntologyBundleIO> {
         const response = await this.listOntologiesRaw(initOverrides);
         return await response.value();
     }

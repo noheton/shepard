@@ -27,8 +27,8 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.RemoveResu
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.SetEnabledResult;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResult;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
-import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleListIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
@@ -45,6 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+@SuppressWarnings("unchecked")
 class SemanticAdminRestTest {
 
   private OntologyRefreshService refreshService;
@@ -291,10 +292,11 @@ class SemanticAdminRestTest {
     var r = rest.listOntologies(securityContext);
 
     assertEquals(200, r.getStatus());
-    OntologyBundleListIO body = (OntologyBundleListIO) r.getEntity();
-    assertEquals(2, body.getBundles().size());
-    assertEquals("prov-o", body.getBundles().get(0).getId());
-    assertEquals("user", body.getBundles().get(1).getSource());
+    PagedResponseIO<OntologyBundleIO> body = (PagedResponseIO<OntologyBundleIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(2L, body.total());
+    assertEquals("prov-o", body.items().get(0).getId());
+    assertEquals("user", body.items().get(1).getSource());
   }
 
   @Test
@@ -302,8 +304,9 @@ class SemanticAdminRestTest {
     when(configService.listMerged(any())).thenReturn(List.of());
     var r = rest.listOntologies(securityContext);
     assertEquals(200, r.getStatus());
-    OntologyBundleListIO body = (OntologyBundleListIO) r.getEntity();
-    assertTrue(body.getBundles().isEmpty());
+    PagedResponseIO<OntologyBundleIO> body = (PagedResponseIO<OntologyBundleIO>) r.getEntity();
+    assertTrue(body.items().isEmpty());
+    assertEquals(0L, body.total());
   }
 
   @Test
