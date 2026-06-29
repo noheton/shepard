@@ -70,10 +70,11 @@ onMounted(async () => {
   if (!props.dataObject.appId) return;
   loading.value = true;
   try {
-    activities.value = await useV2ShepardApi(ProvenanceApi).value.listActivities({
+    const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.dataObject.appId,
       pageSize: 50,
     });
+    activities.value = paged.items;
   } catch {
     activities.value = [];
   } finally {
