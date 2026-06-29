@@ -11,7 +11,8 @@ export function useFetchFeatureToggles() {
   async function refresh() {
     isLoading.value = true;
     try {
-      features.value = await useV2ShepardApi(AdminApi).value.listFeatureToggles();
+      const page = await useV2ShepardApi(AdminApi).value.listFeatureToggles();
+      features.value = page.items;
     } catch (error) {
       features.value = [];
       handleError(error, "fetching feature toggles");

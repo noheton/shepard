@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
 import de.dlr.shepard.v2.admin.io.FeatureToggleIO;
 import de.dlr.shepard.v2.admin.io.PatchFeatureToggleIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.List;
 import java.util.Optional;
@@ -72,12 +73,13 @@ class AdminFeaturesRestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<FeatureToggleIO> body = (List<FeatureToggleIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals("versioning", body.get(0).getName());
-    assertTrue(body.get(0).isEnabled());
-    assertEquals("spatial-data", body.get(1).getName());
-    assertTrue(!body.get(1).isEnabled());
+    PagedResponseIO<FeatureToggleIO> body = (PagedResponseIO<FeatureToggleIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(2, body.total());
+    assertEquals("versioning", body.items().get(0).getName());
+    assertTrue(body.items().get(0).isEnabled());
+    assertEquals("spatial-data", body.items().get(1).getName());
+    assertTrue(!body.items().get(1).isEnabled());
   }
 
   @Test
@@ -121,9 +123,9 @@ class AdminFeaturesRestTest {
     var r = resource.list();
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<FeatureToggleIO> body = (List<FeatureToggleIO>) r.getEntity();
-    assertNotNull(body.get(0).getSource(), "source must not be null");
-    assertNotNull(body.get(1).getSource(), "source must not be null");
+    PagedResponseIO<FeatureToggleIO> body = (PagedResponseIO<FeatureToggleIO>) r.getEntity();
+    assertNotNull(body.items().get(0).getSource(), "source must not be null");
+    assertNotNull(body.items().get(1).getSource(), "source must not be null");
   }
 
   @Test
@@ -133,8 +135,8 @@ class AdminFeaturesRestTest {
 
     var r = resource.list();
     @SuppressWarnings("unchecked")
-    List<FeatureToggleIO> body = (List<FeatureToggleIO>) r.getEntity();
-    assertEquals("default", body.get(0).getSource());
+    PagedResponseIO<FeatureToggleIO> body = (PagedResponseIO<FeatureToggleIO>) r.getEntity();
+    assertEquals("default", body.items().get(0).getSource());
   }
 
   @Test
