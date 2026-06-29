@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.semantic.resources;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.OntologyAlignmentDAO;
 import de.dlr.shepard.context.semantic.entities.OntologyAlignment;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.OntologyAlignmentIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -82,10 +83,10 @@ public class OntologyAlignmentRest {
   @APIResponse(
     responseCode = "200",
     description =
-      "Array of alignment rows (may be empty if V67 migration has not run yet).",
+      "Paged envelope of alignment rows (may be empty if V67 migration has not run yet).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(implementation = OntologyAlignmentIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -95,6 +96,6 @@ public class OntologyAlignmentRest {
     List<OntologyAlignmentIO> body = entities.stream()
       .map(OntologyAlignmentIO::from)
       .toList();
-    return Response.ok(body).build();
+    return Response.ok(new PagedResponseIO<>(body, body.size(), 0, body.size())).build();
   }
 }
