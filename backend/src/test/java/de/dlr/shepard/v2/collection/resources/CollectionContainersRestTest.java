@@ -12,6 +12,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.collection.daos.CollectionContainersDAO;
 import de.dlr.shepard.v2.collection.io.ContainerSummaryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -79,10 +80,11 @@ class CollectionContainersRestTest {
     var r = resource.list(COLL_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<ContainerSummaryIO>) r.getEntity();
-    assertThat(body).hasSize(2);
-    assertThat(body.get(0).getContainerType()).isEqualTo("TIMESERIES");
-    assertThat(body.get(1).getContainerType()).isEqualTo("FILE");
+    var body = (PagedResponseIO<ContainerSummaryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.total()).isEqualTo(2);
+    assertThat(body.items().get(0).getContainerType()).isEqualTo("TIMESERIES");
+    assertThat(body.items().get(1).getContainerType()).isEqualTo("FILE");
   }
 
   @Test
@@ -91,8 +93,8 @@ class CollectionContainersRestTest {
     var r = resource.list(COLL_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<ContainerSummaryIO>) r.getEntity();
-    assertThat(body).isEmpty();
+    var body = (PagedResponseIO<ContainerSummaryIO>) r.getEntity();
+    assertThat(body.items()).isEmpty();
   }
 
   @Test

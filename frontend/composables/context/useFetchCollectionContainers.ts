@@ -1,5 +1,7 @@
-import { CollectionReferencedContainersApi } from "@dlr-shepard/backend-client";
-import type { ContainerSummaryIO } from "@dlr-shepard/backend-client";
+import {
+  CollectionReferencedContainersApi,
+  type ContainerSummaryIO,
+} from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 export function useFetchCollectionContainers(collectionAppId: Ref<string | null>) {
@@ -13,7 +15,8 @@ export function useFetchCollectionContainers(collectionAppId: Ref<string | null>
   async function fetch(appId: string) {
     isLoading.value = true;
     try {
-      containers.value = await api.value.listReferencedContainers({ collectionAppId: appId });
+      const page = await api.value.listReferencedContainers({ collectionAppId: appId });
+      containers.value = page.items;
     } catch (e) {
       handleError(e, "listReferencedContainers");
     } finally {
