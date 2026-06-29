@@ -259,6 +259,7 @@ export * from './ResolvedChannelIO';
 export * from './ResponseBody';
 export * from './ResultTriple';
 export * from './Roles';
+export * from './PagedResponseRunSummaryIO';
 export * from './RunSummaryIO';
 export * from './SafeDeleteConflict';
 export * from './SearchBody';

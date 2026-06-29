@@ -22,6 +22,7 @@ import type {
   ImportManifestIO,
   IngestEventIO,
   LockStatusIO,
+  PagedResponseRunSummaryIO,
   RunSummaryIO,
 } from '../models/index';
 import {
@@ -39,6 +40,7 @@ import {
     IngestEventIOToJSON,
     LockStatusIOFromJSON,
     LockStatusIOToJSON,
+    PagedResponseRunSummaryIOFromJSON,
     RunSummaryIOFromJSON,
     RunSummaryIOToJSON,
 } from '../models/index';
@@ -570,7 +572,7 @@ export class ImportApi extends runtime.BaseAPI {
      * Returns a list of run IDs known to the in-memory diagnostic log, sorted by start time descending (most recent first). Each entry includes: runId, startedAt, lastEventAt, and lastLevel (most-severe level seen: INFO / WARN / ERROR). The list is populated by both Java-side lock lifecycle events and events ingested from external processes via POST /v2/import/diagnostics/{runId}/events. Runs are evicted after 24 hours; the list does not include runs from before the last server restart.
      * [v2] List recent import runs with diagnostic summary (IMP-DIAG)
      */
-    async listRunsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RunSummaryIO>> {
+    async listRunsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseRunSummaryIO>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -590,14 +592,14 @@ export class ImportApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => RunSummaryIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseRunSummaryIOFromJSON(jsonValue));
     }
 
     /**
      * Returns a list of run IDs known to the in-memory diagnostic log, sorted by start time descending (most recent first). Each entry includes: runId, startedAt, lastEventAt, and lastLevel (most-severe level seen: INFO / WARN / ERROR). The list is populated by both Java-side lock lifecycle events and events ingested from external processes via POST /v2/import/diagnostics/{runId}/events. Runs are evicted after 24 hours; the list does not include runs from before the last server restart.
      * [v2] List recent import runs with diagnostic summary (IMP-DIAG)
      */
-    async listRuns(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RunSummaryIO> {
+    async listRuns(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseRunSummaryIO> {
         const response = await this.listRunsRaw(initOverrides);
         return await response.value();
     }

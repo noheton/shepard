@@ -3,9 +3,12 @@ package de.dlr.shepard.v2.importer.resources;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.QueryParam;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +46,14 @@ class ImportDiagnosticsV2RestTest {
         "@Parameter.description must be non-blank for level");
     assertTrue(ann.description().contains("INFO"),
         "@Parameter.description for level must mention INFO");
+  }
+
+  @Test
+  void listRuns_methodExists() throws NoSuchMethodException {
+    Method method = ImportDiagnosticsV2Rest.class.getMethod(
+        "listRuns",
+        jakarta.ws.rs.core.SecurityContext.class);
+    assertNotNull(method, "listRuns method must exist with (SecurityContext) signature");
   }
 
   @Test
