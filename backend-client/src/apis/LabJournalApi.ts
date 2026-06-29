@@ -18,6 +18,7 @@ import type {
   LabJournalRender,
   LabJournalRevision,
   NotebookReference,
+  PagedResponseNotebookReference,
 } from '../models/index';
 import {
     LabJournalRenderFromJSON,
@@ -26,6 +27,7 @@ import {
     LabJournalRevisionToJSON,
     NotebookReferenceFromJSON,
     NotebookReferenceToJSON,
+    PagedResponseNotebookReferenceFromJSON,
 } from '../models/index';
 
 export interface HistoryRequest {
@@ -96,7 +98,7 @@ export class LabJournalApi extends runtime.BaseAPI {
      * Returns every FileReference (singleton FR1b) and every ShepardFile inside a FileBundleReference (FR1a) whose filename ends with .ipynb (case-insensitive). The result is ordered: singletons first (by their createdAt ascending), then bundle files (by bundle createdAt ascending, then by filename). Returns an empty array when no .ipynb files are attached. Permission: Read on the parent DataObject.
      * [v2] List .ipynb file references attached to a DataObject.
      */
-    async listNotebooksRaw(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<NotebookReference>>> {
+    async listNotebooksRaw(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseNotebookReference>> {
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
@@ -127,14 +129,14 @@ export class LabJournalApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(NotebookReferenceFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseNotebookReferenceFromJSON(jsonValue));
     }
 
     /**
      * Returns every FileReference (singleton FR1b) and every ShepardFile inside a FileBundleReference (FR1a) whose filename ends with .ipynb (case-insensitive). The result is ordered: singletons first (by their createdAt ascending), then bundle files (by bundle createdAt ascending, then by filename). Returns an empty array when no .ipynb files are attached. Permission: Read on the parent DataObject.
      * [v2] List .ipynb file references attached to a DataObject.
      */
-    async listNotebooks(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<NotebookReference>> {
+    async listNotebooks(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseNotebookReference> {
         const response = await this.listNotebooksRaw(requestParameters, initOverrides);
         return await response.value();
     }

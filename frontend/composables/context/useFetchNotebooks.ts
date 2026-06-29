@@ -1,6 +1,7 @@
 import {
   LabJournalApi,
   type NotebookReference,
+  type PagedResponseNotebookReference,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
@@ -12,8 +13,8 @@ export function useFetchNotebooks(dataObjectAppId: string) {
     isLoading.value = true;
     useV2ShepardApi(LabJournalApi)
       .value.listNotebooks({ dataObjectAppId })
-      .then(result => {
-        notebooks.value = result;
+      .then((result: PagedResponseNotebookReference) => {
+        notebooks.value = result.items ?? [];
       })
       .catch(error => {
         handleError(error, "listNotebooks");
