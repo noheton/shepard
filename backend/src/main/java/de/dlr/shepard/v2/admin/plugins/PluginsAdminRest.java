@@ -5,8 +5,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginRegistry;
 import de.dlr.shepard.v2.admin.plugins.io.PluginEntryIO;
-import de.dlr.shepard.v2.admin.plugins.io.PluginListIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginPatchIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -104,7 +104,7 @@ public class PluginsAdminRest {
   @APIResponse(
     responseCode = "200",
     description = "Current plugin registry snapshot.",
-    content = @Content(schema = @Schema(implementation = PluginListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -114,7 +114,7 @@ public class PluginsAdminRest {
     for (PluginEntry entry : entries) {
       rows.add(PluginEntryIO.from(entry, registry.isEnabled(entry.id())));
     }
-    return Response.ok(new PluginListIO(rows)).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   @PATCH
