@@ -3924,3 +3924,14 @@ picks these up. Terse by design.
 - **Symptom:** flo reported "the lazy loading tree crashes the page" on the MFFD AFP collection. Root cause was NOT the tree — `toShortDateString` (frontend/utils/helpers.ts:70) was typed `Date | null` and did `date?.toLocaleDateString(...)`. JSON carries dates as ISO **strings**; a string is not null so `?.` did not guard it → `"2026-..."?.toLocaleDateString` is `undefined` → "is not a function" thrown in `MetadataCreatedField/MetadataUpdatedField` `setup()` → component render crash → blank page. 18 call sites affected.
 - **Fix:** coerce to Date inside the function (handles Date|string|number|null|undefined; returns undefined on null/invalid). `frontend/utils/helpers.ts` + regression test `frontend/tests/unit/toShortDateString.test.ts` (5 cases, the crash case included). Lint clean; new test green; frontend rebuilt + redeployed; live re-verify shows the TypeError gone.
 - **Note:** pre-existing unrelated `vue-tsc` errors remain in `composables/annotated.ts` + `composables/context/useGlobalSearch.ts` (stale `@dlr-shepard/backend-client` regen: `SearchV2Api`→`SearchApi`) — separate debt, did not block `nuxt build`.
+
+### BUG-ANNOTATIONS-MAP — semantic-annotations panel crash "reading 'map'" — SHIPPED 2026-06-29
+- Symptom: collection/entity pages threw "Error while fetching semantic annotations: Cannot read properties of undefined (reading 'map')" (live on AFP collection 019ed455).
+- Root cause: frontend/composables/annotated.ts SubjectAnnotated.fetchAnnotations read page.items.map(); listAnnotations returns AnnotationV2[] directly, so page.items was undefined. (Pre-existing vue-tsc error "Property 'items' does not exist on type 'AnnotationV2[]'" flagged it.)
+- Fix: use the array directly with an Array.isArray guard. Commit 3bb9d4589.
+
+### BUG-SIDEBAR-TREE-FLAT — lazy sidebar tree renders flat — SHIPPED 2026-06-29
+- Symptom: collection sidebar showed a flat list, no parent/child nesting (AFP coll has 37 roots / 8450 children; e.g. Ply 37 has 63 children).
+- Root cause: generated client backend-client/src/apis/DataObjectsApi.ts listDataObjects serialized only annotationFilter,fields,include,name,page,pageSize,status into the query string — NO topLevel, NO parentAppId (stale vs backend, which honors both; verified live ?topLevel=true -> 33 roots, 4 expandable). useTreeviewItems.fetchRoots passed {topLevel:true} but the client dropped it -> request hit the flat default list. parentAppId dropped on expand too.
+- Fix: added topLevel?/parentAppId? to ListDataObjectsRequest + queryParameters serialization; rebuilt client dist; frontend redeployed. Commit 3bb9d4589.
+- Durable follow-up SIDEBAR-CLIENT-REGEN-PARAMS: make the backend OpenAPI declare these two query params on listDataObjects so a future client regen keeps them (don't re-drop the hand-patch).
