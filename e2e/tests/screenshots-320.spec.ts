@@ -89,6 +89,25 @@ test("capture MFFD presentation surfaces", async ({ page }) => {
     await page.goto(s.url, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(s.settle);
 
+    // I-video-player: seek to 2/3 of duration so the first painted frame is
+    // a real image rather than the black pre-decode initial frame (hevc takes
+    // a moment to render its first keyframe in Chromium).
+    if (s.id === "I-video-player") {
+      await page.evaluate(async () => {
+        const v = document.querySelector("video") as HTMLVideoElement | null;
+        if (!v) return;
+        await new Promise<void>((r) => {
+          if (v.readyState >= 1 && Number.isFinite(v.duration)) r();
+          else v.addEventListener("loadedmetadata", () => r(), { once: true });
+        });
+        v.currentTime = (v.duration || 0) * (2 / 3);
+        await new Promise<void>((r) => {
+          if (v.readyState >= 2) r();
+          else v.addEventListener("seeked", () => r(), { once: true });
+        });
+      });
+      await page.waitForTimeout(4000);
+    }
 
     await page.screenshot({ path: `screenshots-320/${s.id}.png`, fullPage: true });
 
