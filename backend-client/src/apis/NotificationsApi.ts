@@ -17,16 +17,24 @@ import * as runtime from '../runtime';
 import type {
   NotificationCountIO,
   NotificationIO,
+  PagedResponse,
 } from '../models/index';
 import {
     NotificationCountIOFromJSON,
     NotificationCountIOToJSON,
     NotificationIOFromJSON,
     NotificationIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface DismissRequest {
     appId: string;
+}
+
+export interface ListNotificationsRequest {
+    page?: number;
+    pageSize?: number;
 }
 
 export interface MarkReadRequest {
@@ -125,11 +133,19 @@ export class NotificationsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns all non-expired notifications visible to the caller, ordered most-recent-first. Includes notifications addressed to the caller\'s username, ALL-audience broadcasts, and (when the caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Capped at 200 rows.
+     * Returns all non-expired notifications visible to the caller, ordered most-recent-first. Includes notifications addressed to the caller\'s username, ALL-audience broadcasts, and (when the caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Service cap: 200 rows.  Pagination (APISIMP-NOTIFICATIONS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all notifications. `X-Total-Count` header carries the total before paging.
      * [v2] List in-app notifications for the authenticated user.
      */
-    async listNotificationsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<NotificationIO>>> {
+    async listNotificationsRaw(requestParameters: ListNotificationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -152,15 +168,15 @@ export class NotificationsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(NotificationIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns all non-expired notifications visible to the caller, ordered most-recent-first. Includes notifications addressed to the caller\'s username, ALL-audience broadcasts, and (when the caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Capped at 200 rows.
+     * Returns all non-expired notifications visible to the caller, ordered most-recent-first. Includes notifications addressed to the caller\'s username, ALL-audience broadcasts, and (when the caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Service cap: 200 rows.  Pagination (APISIMP-NOTIFICATIONS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all notifications. `X-Total-Count` header carries the total before paging.
      * [v2] List in-app notifications for the authenticated user.
      */
-    async listNotifications(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<NotificationIO>> {
-        const response = await this.listNotificationsRaw(initOverrides);
+    async listNotifications(requestParameters: ListNotificationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listNotificationsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -27,9 +27,10 @@ import {
  */
 export interface Permissions {
     /**
-     * 
+     * DEPRECATED (APISIMP-CONTAINERS-PERMS-IO-NUMERIC): internal Neo4j node ID. Use the container's appId for all v2 operations; this field will be removed in a future sweep.
      * @type {number}
      * @memberof Permissions
+     * @deprecated
      */
     readonly entityId: number;
     /**
@@ -57,31 +58,33 @@ export interface Permissions {
      */
     writer: Array<string>;
     /**
-     *
+     * DEPRECATED (APISIMP-CONTAINERS-PERMS-IO-NUMERIC): numeric Neo4j OGM group IDs. Use readerGroupAppIds (UUID v7) to set reader groups; this field is output-only.
      * @type {Array<number>}
      * @memberof Permissions
+     * @deprecated
      */
-    readerGroupIds?: Array<number>;
+    readonly readerGroupIds?: Array<number>;
     /**
-     *
+     * DEPRECATED (APISIMP-CONTAINERS-PERMS-IO-NUMERIC): numeric Neo4j OGM group IDs. Use writerGroupAppIds (UUID v7) to set writer groups; this field is output-only.
      * @type {Array<number>}
      * @memberof Permissions
+     * @deprecated
      */
-    writerGroupIds?: Array<number>;
+    readonly writerGroupIds?: Array<number>;
     /**
-     * Application identifiers (UUID v7) of reader groups, parallel to readerGroupIds.
-     * @type {Array<string | null>}
+     * Application identifiers (UUID v7) of reader groups. Use in PATCH body to set reader groups.
+     * @type {Array<string>}
      * @memberof Permissions
      */
-    readonly readerGroupAppIds?: Array<string | null>;
+    readerGroupAppIds?: Array<string> | null;
     /**
-     * Application identifiers (UUID v7) of writer groups, parallel to writerGroupIds.
-     * @type {Array<string | null>}
+     * Application identifiers (UUID v7) of writer groups. Use in PATCH body to set writer groups.
+     * @type {Array<string>}
      * @memberof Permissions
      */
-    readonly writerGroupAppIds?: Array<string | null>;
+    writerGroupAppIds?: Array<string> | null;
     /**
-     *
+     * 
      * @type {Array<string>}
      * @memberof Permissions
      */
@@ -125,7 +128,7 @@ export function PermissionsFromJSONTyped(json: any, ignoreDiscriminator: boolean
     };
 }
 
-export function PermissionsToJSON(value?: Omit<Permissions, 'entityId'> | null): any {
+export function PermissionsToJSON(value?: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'> | null): any {
     if (value == null) {
         return value;
     }
@@ -135,8 +138,8 @@ export function PermissionsToJSON(value?: Omit<Permissions, 'entityId'> | null):
         'permissionType': PermissionTypeToJSON(value['permissionType']),
         'reader': value['reader'],
         'writer': value['writer'],
-        'readerGroupIds': value['readerGroupIds'],
-        'writerGroupIds': value['writerGroupIds'],
+        'readerGroupAppIds': value['readerGroupAppIds'],
+        'writerGroupAppIds': value['writerGroupAppIds'],
         'manager': value['manager'],
     };
 }

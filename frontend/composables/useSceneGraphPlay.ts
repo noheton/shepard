@@ -76,6 +76,35 @@ export function sceneGraphPlayRouteFor(templateAppId: string): string {
 }
 
 /**
+ * Read a template's `templateKind` via `GET /v2/templates/{appId}`. Returns the
+ * kind string (e.g. "MAPPING_RECIPE", "VIEW_RECIPE") or null when the template
+ * can't be read. Used by the play page to branch: only MAPPING_RECIPE templates
+ * materialize into a scene-graph; a VIEW_RECIPE appId reaching the play route
+ * (e.g. a collection "hero view" pointing at a render-recipe) must hand off to
+ * the /shapes/render playground instead of failing the materialize call.
+ * Backlog: SCENEGRAPH-PLAY-VIEWKIND-BRANCH (aidocs/16 §3962).
+ */
+export async function fetchTemplateKind(templateAppId: string): Promise<string | null> {
+  if (!templateAppId) return null;
+  try {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url = `${v2BaseUrl()}/v2/templates/${encodeURIComponent(templateAppId)}`;
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok) return null;
+    const tpl = (await response.json()) as { templateKind?: string };
+    return tpl.templateKind ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Locate an already-created scene-graph-play template appId from a
  * FileReference's annotations. Returns the literal value of the
  * `urn:shepard:mapping:scenegraph-template-appId` annotation, or null.

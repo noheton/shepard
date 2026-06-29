@@ -20,7 +20,7 @@ export function useFetchPermissionAuditLog() {
   async function refresh() {
     isLoading.value = true;
     try {
-      const rows = await useV2ShepardApi(AdminApi).value.permissionAuditLog({
+      const response = await useV2ShepardApi(AdminApi).value.permissionAuditLog({
         entityAppId: filterEntityAppId.value || undefined,
         actor: filterActor.value || undefined,
         from: filterFrom.value || undefined,
@@ -28,6 +28,7 @@ export function useFetchPermissionAuditLog() {
         page: page.value,
         pageSize: PAGE_SIZE,
       });
+      const rows = (response.items ?? []) as PermissionAuditLogEntry[];
       entries.value = rows;
       hasMore.value = rows.length === PAGE_SIZE;
     } catch (error) {

@@ -36,13 +36,13 @@ const FILE_CONTAINER = {
   id: 1,
   appId: "file-app-id",
   name: "My Files",
-  containerType: "FILE" as const,
+  kind: "file" as const,
 };
 const TS_CONTAINER = {
   id: 2,
   appId: "ts-app-id",
   name: "My Timeseries",
-  containerType: "TIMESERIES" as const,
+  kind: "timeseries" as const,
 };
 
 type ContainerSummary = typeof FILE_CONTAINER | typeof TS_CONTAINER;
@@ -84,7 +84,7 @@ describe("useFetchCollectionContainers", () => {
     const { containers } = useFetchCollectionContainers(appId);
     await flush();
 
-    const fileOnly = containers.value.filter(c => c.containerType === "FILE");
+    const fileOnly = containers.value.filter(c => c.kind === "file");
     expect(fileOnly).toHaveLength(1);
     expect(fileOnly[0]?.name).toBe("My Files");
   });

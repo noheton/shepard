@@ -15,7 +15,7 @@
  *
  * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
-import { TimeseriesContainerChannelListingApi } from "@dlr-shepard/backend-client";
+import { ContainersApi } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
 import {
@@ -233,7 +233,7 @@ function getAuthHeaders(): Record<string, string> {
 // The previous numeric-keyed fetch 404ed against the appId-keyed endpoint,
 // so no Trace3D render could succeed from any entry point.
 
-const channelListingApi = useV2ShepardApi(TimeseriesContainerChannelListingApi);
+const channelListingApi = useV2ShepardApi(ContainersApi);
 
 const channelList = ref<ChannelV2[]>([]);
 
@@ -549,6 +549,16 @@ const canRender = computed(() =>
 // ── bootstrap from query params (ViewRecipeBuilderDialog → this page) ─────────
 onMounted(() => {
   const q = useRoute().query;
+
+  // SCENEGRAPH-PLAY-VIEWKIND-BRANCH: a VIEW_RECIPE template redirected here from
+  // /scene-graphs/play prefills the template field (no focus DataObject yet) so
+  // the user only has to pick a focus DataObject + TS container to render.
+  if (
+    typeof q.templateAppId === "string" && q.templateAppId.length > 0 &&
+    !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography"
+  ) {
+    templateAppId.value = q.templateAppId;
+  }
 
   // TOOLS-CONTEXT-DO-RENDER — when navigated from the in-context Tools
   // menu on a DataObject detail page the URL carries

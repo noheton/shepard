@@ -15,6 +15,7 @@ import {
   default3dViewNameFor,
   sceneGraphPlayRouteFor,
   findSceneGraphTemplateAppId,
+  fetchTemplateKind,
 } from "../../composables/useSceneGraphPlay";
 
 describe("useSceneGraphPlay — buildSceneGraphPlayTemplateBody", () => {
@@ -102,5 +103,16 @@ describe("useSceneGraphPlay — findSceneGraphTemplateAppId", () => {
     expect(
       findSceneGraphTemplateAppId([{ propertyIRI: MAPPING_TEMPLATE_PREDICATE, valueName: "  " }]),
     ).toBeNull();
+  });
+});
+
+describe("useSceneGraphPlay — fetchTemplateKind", () => {
+  // The network path (useAuth + fetch against /v2/templates/{appId}) is covered by
+  // the backend integration tests + the play-page component test. Here we only
+  // exercise the pure guard: an empty/blank appId resolves to null WITHOUT touching
+  // useAuth or fetch (the `if (!templateAppId) return null` early return), so the
+  // helper is safe to call before a route param has populated.
+  it("returns null for an empty appId without performing network I/O", async () => {
+    await expect(fetchTemplateKind("")).resolves.toBeNull();
   });
 });

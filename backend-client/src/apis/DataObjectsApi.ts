@@ -72,20 +72,22 @@ export interface GetRdfRequest {
     appId: string;
 }
 
+export interface GetRdfInCollectionRequest {
+    appId: string;
+    collectionAppId: string;
+}
+
 export interface ListDataObjectsRequest {
     collectionAppId: string;
-    /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation lane filter in format "predicateIri=value". */
     annotationFilter?: string;
     fields?: string;
     include?: string;
     name?: string;
     page?: number;
     pageSize?: number;
-    status?: string;
-    /** SIDEBAR-LAZY-TREE: return only DataObjects with no parent (tree roots). */
-    topLevel?: boolean;
-    /** SIDEBAR-LAZY-TREE: return only the direct children of this DataObject appId. */
     parentAppId?: string;
+    status?: string;
+    topLevel?: boolean;
 }
 
 export interface PatchDataObjectV2Request {
@@ -423,6 +425,55 @@ export class DataObjectsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Collection-scoped alias for `GET /v2/data-objects/{appId}/rdf`. The `collectionAppId` path segment is accepted for URL consistency with the collection-scoped CRUD surface but is not independently validated against the DataObject\'s actual parent — the delegate resolves the parent Collection server-side and enforces Read permission there. Response body is byte-identical to the flat-path endpoint.  Auth: Read on the parent Collection. Returns 404 when no such DataObject exists, 403 when the caller lacks Read.
+     * [v2] Return a Turtle subgraph for the DataObject (collection-scoped alias).
+     */
+    async getRdfInCollectionRaw(requestParameters: GetRdfInCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getRdfInCollection().'
+            );
+        }
+
+        if (requestParameters['collectionAppId'] == null) {
+            throw new runtime.RequiredError(
+                'collectionAppId',
+                'Required parameter "collectionAppId" was null or undefined when calling getRdfInCollection().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/collections/{collectionAppId}/data-objects/{appId}/rdf`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"collectionAppId"}}`, encodeURIComponent(String(requestParameters['collectionAppId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Collection-scoped alias for `GET /v2/data-objects/{appId}/rdf`. The `collectionAppId` path segment is accepted for URL consistency with the collection-scoped CRUD surface but is not independently validated against the DataObject\'s actual parent — the delegate resolves the parent Collection server-side and enforces Read permission there. Response body is byte-identical to the flat-path endpoint.  Auth: Read on the parent Collection. Returns 404 when no such DataObject exists, 403 when the caller lacks Read.
+     * [v2] Return a Turtle subgraph for the DataObject (collection-scoped alias).
+     */
+    async getRdfInCollection(requestParameters: GetRdfInCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.getRdfInCollectionRaw(requestParameters, initOverrides);
+    }
+
+    /**
      * Returns a page of `:DataObject` entities belonging to the Collection identified by `collectionAppId`. Each row in the response carries the full `DataObjectIO` fields plus three per-kind reference counts: `timeseriesCount`, `fileCount`, `structuredDataCount`. Counts reflect non-deleted references only and are computed in a single Cypher round-trip (no N+1 queries).  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. `size` capped at 200 server-side.  Filtering: `name` does a case-insensitive substring match. Each row also carries `referenceIds[]` (legacy long ids of all refs) and `childrenIds[]` (direct child DOs).  Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and `timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and latest data-point timestamps across all timeseries channels. Null on items with no timeseries data. Omitted from the response entirely when `?include=time-bounds` is not requested.  **Payload diet (DB-OPT5).** By default the list response drops fields the collection-detail UI never reads — `description`, `attributes`, and the three deprecated `int` count siblings (`timeseriesReferenceCount`, `fileBundleCount`, `structuredDataReferenceCount`). Use `?include=full` to opt back into the full wire shape (transitional safety valve until a breaking-version bump can drop the deprecated ints unconditionally). For finer-grained control, pass `?fields=appId,name,createdAt,...` (flat CSV of field names; GitHub REST convention). `id`, `appId`, and `name` are always included as resource identity. Unknown field names return 400 with the offending name in the body. Dotted-path nested selection (e.g. `attributes.bench`) is not supported in this iteration — see DB-OPT5-NESTED in the backlog.  Auth: Read on the parent Collection. DataObjects inherit Collection permissions; there is no per-DO permission gate.  Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` to fetch a specific DataObject with full reference detail.
      * [v2] List DataObjects under a Collection.
      */
@@ -460,16 +511,16 @@ export class DataObjectsApi extends runtime.BaseAPI {
             queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
+        if (requestParameters['parentAppId'] != null) {
+            queryParameters['parentAppId'] = requestParameters['parentAppId'];
+        }
+
         if (requestParameters['status'] != null) {
             queryParameters['status'] = requestParameters['status'];
         }
 
         if (requestParameters['topLevel'] != null) {
             queryParameters['topLevel'] = requestParameters['topLevel'];
-        }
-
-        if (requestParameters['parentAppId'] != null) {
-            queryParameters['parentAppId'] = requestParameters['parentAppId'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

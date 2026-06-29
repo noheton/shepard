@@ -34,7 +34,7 @@ const fakeEntry = (id: number, dataObjectId: number, content = "x"): unknown => 
 
 describe("useFetchCollectionLabJournalEntries — single bulk fetch", () => {
   it("issues exactly one API call for the whole collection (the N+1 fix)", async () => {
-    mockList.mockResolvedValue([]);
+    mockList.mockResolvedValue({ items: [] });
     useFetchCollectionLabJournalEntries(ref("collection-app-id-1"));
     await flush();
     expect(mockList).toHaveBeenCalledTimes(1);
@@ -42,17 +42,17 @@ describe("useFetchCollectionLabJournalEntries — single bulk fetch", () => {
   });
 
   it("entries is undefined before the call resolves", () => {
-    let resolveList!: (v: unknown[]) => void;
+    let resolveList!: (v: unknown) => void;
     mockList.mockReturnValue(new Promise(r => { resolveList = r; }));
     const { entries } = useFetchCollectionLabJournalEntries(ref("c-1"));
     // Pre-resolve: undefined.
     expect(entries.value).toBeUndefined();
-    resolveList([]);
+    resolveList({ items: [] });
   });
 
   it("populates entries with the bulk response", async () => {
     const data = [fakeEntry(1, 101), fakeEntry(2, 102)];
-    mockList.mockResolvedValue(data);
+    mockList.mockResolvedValue({ items: data });
     const { entries } = useFetchCollectionLabJournalEntries(ref("c-1"));
     await flush();
     expect(entries.value).toHaveLength(2);
@@ -73,7 +73,7 @@ describe("useFetchCollectionLabJournalEntries — single bulk fetch", () => {
   });
 
   it("re-fetches when collectionAppId ref changes", async () => {
-    mockList.mockResolvedValue([]);
+    mockList.mockResolvedValue({ items: [] });
     const appId = ref<string | null>("c-1");
     useFetchCollectionLabJournalEntries(appId);
     await flush();

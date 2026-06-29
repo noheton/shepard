@@ -16,18 +16,22 @@
 import * as runtime from '../runtime';
 import type {
   CreateShepardTemplate,
-  PagedResponseShepardTemplate,
+  PagedResponse,
   PatchShepardTemplate,
   ShepardTemplate,
+  TemplateFormDescriptor,
 } from '../models/index';
 import {
     CreateShepardTemplateFromJSON,
     CreateShepardTemplateToJSON,
-    PagedResponseShepardTemplateFromJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PatchShepardTemplateFromJSON,
     PatchShepardTemplateToJSON,
     ShepardTemplateFromJSON,
     ShepardTemplateToJSON,
+    TemplateFormDescriptorFromJSON,
+    TemplateFormDescriptorToJSON,
 } from '../models/index';
 
 export interface ExportRequest {
@@ -42,9 +46,19 @@ export interface DeleteTemplateRequest {
     appId: string;
 }
 
+export interface ExportTemplateExcelRequest {
+    templateAppId: string;
+    dataObjectAppId: string;
+}
+
 export interface GetTemplateRequest {
     appId: string;
     flatten?: boolean;
+}
+
+export interface GetTemplateFormRequest {
+    templateAppId: string;
+    ifNoneMatch?: string;
 }
 
 export interface ImportTemplatesRequest {
@@ -205,6 +219,63 @@ export class TemplatesApi extends runtime.BaseAPI {
     }
 
     /**
+     * The read-direction spreadsheet projection of a data-kind template\'s shape (doc 125 §6/D5): walks the urn:btkvs:cell-mapping / urn:btkvs:sheet annotations on the flattened shapeGraph and writes the focused DataObject\'s attribute values into the mapped cells of a generated xlsx workbook. Fields without cell-mappings are skipped silently. The same shape drives the web form (GET …/form), server-side validation (422 violations[]), and — with BTKVS-C2 — the Excel import.
+     * [v2] Export a DataObject as an Excel workbook driven by its template\'s SHACL cell-mappings.
+     */
+    async exportTemplateExcelRaw(requestParameters: ExportTemplateExcelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['templateAppId'] == null) {
+            throw new runtime.RequiredError(
+                'templateAppId',
+                'Required parameter "templateAppId" was null or undefined when calling exportTemplateExcel().'
+            );
+        }
+
+        if (requestParameters['dataObjectAppId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectAppId',
+                'Required parameter "dataObjectAppId" was null or undefined when calling exportTemplateExcel().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['dataObjectAppId'] != null) {
+            queryParameters['dataObjectAppId'] = requestParameters['dataObjectAppId'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/templates/{templateAppId}/export`.replace(`{${"templateAppId"}}`, encodeURIComponent(String(requestParameters['templateAppId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * The read-direction spreadsheet projection of a data-kind template\'s shape (doc 125 §6/D5): walks the urn:btkvs:cell-mapping / urn:btkvs:sheet annotations on the flattened shapeGraph and writes the focused DataObject\'s attribute values into the mapped cells of a generated xlsx workbook. Fields without cell-mappings are skipped silently. The same shape drives the web form (GET …/form), server-side validation (422 violations[]), and — with BTKVS-C2 — the Excel import.
+     * [v2] Export a DataObject as an Excel workbook driven by its template\'s SHACL cell-mappings.
+     */
+    async exportTemplateExcel(requestParameters: ExportTemplateExcelRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.exportTemplateExcelRaw(requestParameters, initOverrides);
+    }
+
+    /**
      * [v2] Read one template by appId.
      */
     async getTemplateRaw(requestParameters: GetTemplateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ShepardTemplate>> {
@@ -250,6 +321,57 @@ export class TemplatesApi extends runtime.BaseAPI {
      */
     async getTemplate(requestParameters: GetTemplateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ShepardTemplate> {
         const response = await this.getTemplateRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * A form is the write-direction projection of a data-kind shape (doc 125 D1): the same flattened shapeGraph the instantiation endpoint validates server-side is compiled here into groups + fields (with DASH editor hints and constraint-scoring defaults) + a server-computed submit block. fields[].path is byte-identical to the violations[].path entries the submit leg\'s 422 returns, so mapping a violation to a field is a dictionary lookup.
+     * [v2] Compile a data-kind template\'s SHACL shape into a form descriptor.
+     */
+    async getTemplateFormRaw(requestParameters: GetTemplateFormRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TemplateFormDescriptor>> {
+        if (requestParameters['templateAppId'] == null) {
+            throw new runtime.RequiredError(
+                'templateAppId',
+                'Required parameter "templateAppId" was null or undefined when calling getTemplateForm().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (requestParameters['ifNoneMatch'] != null) {
+            headerParameters['If-None-Match'] = String(requestParameters['ifNoneMatch']);
+        }
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/templates/{templateAppId}/form`.replace(`{${"templateAppId"}}`, encodeURIComponent(String(requestParameters['templateAppId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TemplateFormDescriptorFromJSON(jsonValue));
+    }
+
+    /**
+     * A form is the write-direction projection of a data-kind shape (doc 125 D1): the same flattened shapeGraph the instantiation endpoint validates server-side is compiled here into groups + fields (with DASH editor hints and constraint-scoring defaults) + a server-computed submit block. fields[].path is byte-identical to the violations[].path entries the submit leg\'s 422 returns, so mapping a violation to a field is a dictionary lookup.
+     * [v2] Compile a data-kind template\'s SHACL shape into a form descriptor.
+     */
+    async getTemplateForm(requestParameters: GetTemplateFormRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TemplateFormDescriptor> {
+        const response = await this.getTemplateFormRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -303,7 +425,7 @@ export class TemplatesApi extends runtime.BaseAPI {
      * Any authenticated user can browse. Retired rows are excluded by default; admins may set ?includeRetired=true to see them too.
      * [v2] List templates (latest non-retired version per name).
      */
-    async listTemplatesRaw(requestParameters: ListTemplatesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
+    async listTemplatesRaw(requestParameters: ListTemplatesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['includeRetired'] != null) {
@@ -343,14 +465,14 @@ export class TemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Any authenticated user can browse. Retired rows are excluded by default; admins may set ?includeRetired=true to see them too.
      * [v2] List templates (latest non-retired version per name).
      */
-    async listTemplates(requestParameters: ListTemplatesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
+    async listTemplates(requestParameters: ListTemplatesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listTemplatesRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -409,7 +531,7 @@ export class TemplatesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Used by the picker UI\'s tag-autocomplete. Optionally narrow to one templateKind.
+     * Used by the picker UI\'s tag-autocomplete. Optionally narrow to one templateKind. Server-side cap: at most 500 distinct tags are returned (alphabetically first 500).
      * [v2] Distinct list of tags across all non-retired templates.
      */
     async tagsRaw(requestParameters: TagsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<string>>> {
@@ -444,7 +566,7 @@ export class TemplatesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Used by the picker UI\'s tag-autocomplete. Optionally narrow to one templateKind.
+     * Used by the picker UI\'s tag-autocomplete. Optionally narrow to one templateKind. Server-side cap: at most 500 distinct tags are returned (alphabetically first 500).
      * [v2] Distinct list of tags across all non-retired templates.
      */
     async tags(requestParameters: TagsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<string>> {

@@ -25,14 +25,22 @@ import {
     GitArtifactPreviewToJSON,
 } from '../models/index';
 
-export interface CheckUpdateRequest {
+export interface CheckGitReferenceUpdateRequest {
     appId: string;
     dataObjectAppId: string;
 }
 
-export interface PreviewRequest {
+export interface CheckGitReferenceUpdateV2Request {
+    appId: string;
+}
+
+export interface PreviewGitReferenceRequest {
     appId: string;
     dataObjectAppId: string;
+}
+
+export interface PreviewGitReferenceV2Request {
+    appId: string;
 }
 
 /**
@@ -41,21 +49,21 @@ export interface PreviewRequest {
 export class GitReferencesApi extends runtime.BaseAPI {
 
     /**
-     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos that the adapter can read anonymously). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference, even when nothing changed (refreshes the timestamp). Returns {currentSha, previousSha, updated, checkedAtMillis}.
-     * [v2] Check whether the upstream Git ref has moved since last resolution (G1d).
+     * APISIMP-GIT-REF-PATH: this path is retired. Use POST /v2/references/{appId}/check-update.
+     * [v2] [GONE] Check-update endpoint moved — use POST /v2/references/{appId}/check-update.
      */
-    async checkUpdateRaw(requestParameters: CheckUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CheckUpdateResultIO>> {
+    async checkGitReferenceUpdateRaw(requestParameters: CheckGitReferenceUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
-                'Required parameter "appId" was null or undefined when calling checkUpdate().'
+                'Required parameter "appId" was null or undefined when calling checkGitReferenceUpdate().'
             );
         }
 
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling checkUpdate().'
+                'Required parameter "dataObjectAppId" was null or undefined when calling checkGitReferenceUpdate().'
             );
         }
 
@@ -82,34 +90,80 @@ export class GitReferencesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * APISIMP-GIT-REF-PATH: this path is retired. Use POST /v2/references/{appId}/check-update.
+     * [v2] [GONE] Check-update endpoint moved — use POST /v2/references/{appId}/check-update.
+     */
+    async checkGitReferenceUpdate(requestParameters: CheckGitReferenceUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.checkGitReferenceUpdateRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, updated, checkedAtMillis}. Requires Write permission on the parent DataObject.
+     * [v2] Check whether the upstream Git ref has moved since last resolution (G1d).
+     */
+    async checkGitReferenceUpdateV2Raw(requestParameters: CheckGitReferenceUpdateV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CheckUpdateResultIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling checkGitReferenceUpdateV2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/references/{appId}/check-update`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
         return new runtime.JSONApiResponse(response, (jsonValue) => CheckUpdateResultIOFromJSON(jsonValue));
     }
 
     /**
-     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos that the adapter can read anonymously). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference, even when nothing changed (refreshes the timestamp). Returns {currentSha, previousSha, updated, checkedAtMillis}.
+     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, updated, checkedAtMillis}. Requires Write permission on the parent DataObject.
      * [v2] Check whether the upstream Git ref has moved since last resolution (G1d).
      */
-    async checkUpdate(requestParameters: CheckUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CheckUpdateResultIO> {
-        const response = await this.checkUpdateRaw(requestParameters, initOverrides);
+    async checkGitReferenceUpdateV2(requestParameters: CheckGitReferenceUpdateV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CheckUpdateResultIO> {
+        const response = await this.checkGitReferenceUpdateV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Resolves the GitReference, picks the caller\'s PAT for the matching git host (via G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to shepard.git.preview.max-bytes (default 1 MB). All non-fatal failure modes are reported as 200 with `available=false` + a `reason` discriminator so the UI can render the explanation inline rather than as an error. Possible reasons: not-tracked, unsupported-host, no-credential, invalid-repo-url, fetch-failed.
-     * [v2] Server-side inline preview of a tracked-artifact GitReference (G1b).
+     * APISIMP-GIT-REF-PATH: this path is retired. Use GET /v2/references/{appId}/preview.
+     * [v2] [GONE] Preview endpoint moved — use GET /v2/references/{appId}/preview.
      */
-    async previewRaw(requestParameters: PreviewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GitArtifactPreview>> {
+    async previewGitReferenceRaw(requestParameters: PreviewGitReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
-                'Required parameter "appId" was null or undefined when calling preview().'
+                'Required parameter "appId" was null or undefined when calling previewGitReference().'
             );
         }
 
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling preview().'
+                'Required parameter "dataObjectAppId" was null or undefined when calling previewGitReference().'
             );
         }
 
@@ -136,15 +190,61 @@ export class GitReferencesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * APISIMP-GIT-REF-PATH: this path is retired. Use GET /v2/references/{appId}/preview.
+     * [v2] [GONE] Preview endpoint moved — use GET /v2/references/{appId}/preview.
+     */
+    async previewGitReference(requestParameters: PreviewGitReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.previewGitReferenceRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Resolves the GitReference by appId, picks the caller\'s PAT for the matching git host (via G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to shepard.git.preview.max-bytes (default 1 MB). All non-fatal failure modes are reported as 200 with `available=false` + a `reason` discriminator so the UI can render the explanation inline rather than as an error. Possible reasons: not-tracked, unsupported-host, no-credential, invalid-repo-url, fetch-failed. The parent DataObject is resolved from the reference — no dataObjectAppId is needed in the URL.
+     * [v2] Server-side inline preview of a tracked-artifact GitReference (G1b).
+     */
+    async previewGitReferenceV2Raw(requestParameters: PreviewGitReferenceV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GitArtifactPreview>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling previewGitReferenceV2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/references/{appId}/preview`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
         return new runtime.JSONApiResponse(response, (jsonValue) => GitArtifactPreviewFromJSON(jsonValue));
     }
 
     /**
-     * Resolves the GitReference, picks the caller\'s PAT for the matching git host (via G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to shepard.git.preview.max-bytes (default 1 MB). All non-fatal failure modes are reported as 200 with `available=false` + a `reason` discriminator so the UI can render the explanation inline rather than as an error. Possible reasons: not-tracked, unsupported-host, no-credential, invalid-repo-url, fetch-failed.
+     * Resolves the GitReference by appId, picks the caller\'s PAT for the matching git host (via G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to shepard.git.preview.max-bytes (default 1 MB). All non-fatal failure modes are reported as 200 with `available=false` + a `reason` discriminator so the UI can render the explanation inline rather than as an error. Possible reasons: not-tracked, unsupported-host, no-credential, invalid-repo-url, fetch-failed. The parent DataObject is resolved from the reference — no dataObjectAppId is needed in the URL.
      * [v2] Server-side inline preview of a tracked-artifact GitReference (G1b).
      */
-    async preview(requestParameters: PreviewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GitArtifactPreview> {
-        const response = await this.previewRaw(requestParameters, initOverrides);
+    async previewGitReferenceV2(requestParameters: PreviewGitReferenceV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GitArtifactPreview> {
+        const response = await this.previewGitReferenceV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

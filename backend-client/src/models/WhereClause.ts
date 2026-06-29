@@ -39,11 +39,18 @@ export interface WhereClause {
      */
     timeBetween: TimeBetween;
     /**
-     * 
+     * Deprecated — use container_app_id_in (UUID v7 strings) instead. Numeric Neo4j container IDs; silently ignored when container_app_id_in is also present.
      * @type {Array<number>}
      * @memberof WhereClause
+     * @deprecated
      */
     containerIdIn?: Array<number>;
+    /**
+     * Timeseries container appIds (UUID v7) to include. Unknown or unauthorised appIds are silently excluded.
+     * @type {Array<string>}
+     * @memberof WhereClause
+     */
+    containerAppIdIn?: Array<string>;
     /**
      * 
      * @type {Array<FilterItem>}
@@ -72,6 +79,7 @@ export function WhereClauseFromJSONTyped(json: any, ignoreDiscriminator: boolean
         
         'timeBetween': TimeBetweenFromJSON(json['time_between']),
         'containerIdIn': json['container_id_in'] == null ? undefined : json['container_id_in'],
+        'containerAppIdIn': json['container_app_id_in'] == null ? undefined : json['container_app_id_in'],
         'filters': json['filters'] == null ? undefined : ((json['filters'] as Array<any>).map(FilterItemFromJSON)),
     };
 }
@@ -84,6 +92,7 @@ export function WhereClauseToJSON(value?: WhereClause | null): any {
         
         'time_between': TimeBetweenToJSON(value['timeBetween']),
         'container_id_in': value['containerIdIn'],
+        'container_app_id_in': value['containerAppIdIn'],
         'filters': value['filters'] == null ? undefined : ((value['filters'] as Array<any>).map(FilterItemToJSON)),
     };
 }

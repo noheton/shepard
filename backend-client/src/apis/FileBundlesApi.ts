@@ -20,7 +20,7 @@ import type {
   FileGroup,
   JsonNode,
   PagedFiles,
-  PagedResponseFileGroup,
+  PagedResponse,
   ShepardFile,
 } from '../models/index';
 import {
@@ -34,7 +34,8 @@ import {
     JsonNodeToJSON,
     PagedFilesFromJSON,
     PagedFilesToJSON,
-    PagedResponseFileGroupFromJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     ShepardFileFromJSON,
     ShepardFileToJSON,
 } from '../models/index';
@@ -305,7 +306,7 @@ export class FileBundlesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the files attached to the `:FileGroup` identified by `groupAppId` within the `:FileBundleReference` identified by `bundleAppId`, paginated.  Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the group\'s full embedded `files[]` for backward compatibility, but UI surfaces that scrub through thousands of frames should consume this paginated route instead.  Query parameters: * `page` — 0-based page index. Default `0`. Values past the last page return an empty `items[]` with the correct `totalElements`/`totalPages`. * `size` — page size. Default `200`; min `1`; max `1000`. Values outside the range are clamped, never reject — the API gives a useful result even when a client supplies an out-of-policy hint.  Auth: Read permission on the parent DataObject (inherited from its Collection).
+     * Returns the files attached to the `:FileGroup` identified by `groupAppId` within the `:FileBundleReference` identified by `bundleAppId`, paginated.  Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the group\'s full embedded `files[]` for backward compatibility, but UI surfaces that scrub through thousands of frames should consume this paginated route instead.  Query parameters: * `page` — 0-based page index. Default `0`. Values past the last page return an empty `items[]` with the correct `totalElements`/`totalPages`. * `pageSize` — page size. Default `200`; min `1`; max `1000`. Values outside the range are clamped, never reject — the API gives a useful result even when a client supplies an out-of-policy hint.  Auth: Read permission on the parent DataObject (inherited from its Collection).
      * [v2] List files in a FileGroup, paginated (MFFD-IMAGEBUNDLE-PAGINATE-1).
      */
     async listGroupFilesRaw(requestParameters: ListGroupFilesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedFiles>> {
@@ -358,7 +359,7 @@ export class FileBundlesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the files attached to the `:FileGroup` identified by `groupAppId` within the `:FileBundleReference` identified by `bundleAppId`, paginated.  Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the group\'s full embedded `files[]` for backward compatibility, but UI surfaces that scrub through thousands of frames should consume this paginated route instead.  Query parameters: * `page` — 0-based page index. Default `0`. Values past the last page return an empty `items[]` with the correct `totalElements`/`totalPages`. * `size` — page size. Default `200`; min `1`; max `1000`. Values outside the range are clamped, never reject — the API gives a useful result even when a client supplies an out-of-policy hint.  Auth: Read permission on the parent DataObject (inherited from its Collection).
+     * Returns the files attached to the `:FileGroup` identified by `groupAppId` within the `:FileBundleReference` identified by `bundleAppId`, paginated.  Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the group\'s full embedded `files[]` for backward compatibility, but UI surfaces that scrub through thousands of frames should consume this paginated route instead.  Query parameters: * `page` — 0-based page index. Default `0`. Values past the last page return an empty `items[]` with the correct `totalElements`/`totalPages`. * `pageSize` — page size. Default `200`; min `1`; max `1000`. Values outside the range are clamped, never reject — the API gives a useful result even when a client supplies an out-of-policy hint.  Auth: Read permission on the parent DataObject (inherited from its Collection).
      * [v2] List files in a FileGroup, paginated (MFFD-IMAGEBUNDLE-PAGINATE-1).
      */
     async listGroupFiles(requestParameters: ListGroupFilesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedFiles> {
@@ -367,10 +368,10 @@ export class FileBundlesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the ordered list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
+     * Returns a paged list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Pagination: `?page=0&pageSize=50` (page zero-based; pageSize capped at 200 server-side).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
      * [v2] List FileGroups under a bundle, ordered by ascending index.
      */
-    async listGroupsRaw(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseFileGroup>> {
+    async listGroupsRaw(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['bundleAppId'] == null) {
             throw new runtime.RequiredError(
                 'bundleAppId',
@@ -409,14 +410,14 @@ export class FileBundlesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFileGroupFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns a paged list of `:FileGroup` nodes belonging to the `:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted by their `index` field ascending (lowest index first), which matches the display order in the UI.  Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached to that group via the FileContainer).  Pagination: `?page=0&pageSize=50` (page zero-based; pageSize capped at 200 server-side).  Auth: Read permission on the parent DataObject (inherited from its Collection).  Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, or `POST /v2/bundles/{bundleAppId}/groups` to add a new group.
      * [v2] List FileGroups under a bundle, ordered by ascending index.
      */
-    async listGroups(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseFileGroup> {
+    async listGroups(requestParameters: ListGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listGroupsRaw(requestParameters, initOverrides);
         return await response.value();
     }

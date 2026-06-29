@@ -1,6 +1,6 @@
 import {
+  ContainersApi,
   SemanticAnnotationsApi,
-  TimeseriesChannelAnnotationsApi,
   TimeseriesContainerApi,
   type AnnotationV2,
   type SemanticAnnotation,
@@ -164,7 +164,7 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
 export class AnnotatedChannel implements Annotated {
   readonly containerAppId: string;
   readonly channelShepardId: string;
-  channelAnnotationsApi = useV2ShepardApi(TimeseriesChannelAnnotationsApi);
+  channelAnnotationsApi = useV2ShepardApi(ContainersApi);
   private readonly _appIdMap = new Map<number, string>();
 
   constructor(containerAppId: string, channelShepardId: string) {
@@ -175,7 +175,7 @@ export class AnnotatedChannel implements Annotated {
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     try {
       const items = await this.channelAnnotationsApi.value.listChannelAnnotations({
-        containerAppId: this.containerAppId,
+        appId: this.containerAppId,
         channelShepardId: this.channelShepardId,
       });
       this._appIdMap.clear();
@@ -200,7 +200,7 @@ export class AnnotatedChannel implements Annotated {
     if (!annotationAppId)
       throw new Error(`No appId cached for channel annotation id=${annotationId}; call fetchAnnotations() first`);
     await this.channelAnnotationsApi.value.deleteChannelAnnotation({
-      containerAppId: this.containerAppId,
+      appId: this.containerAppId,
       channelShepardId: this.channelShepardId,
       annotationAppId,
     });
@@ -209,7 +209,7 @@ export class AnnotatedChannel implements Annotated {
 
   async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
     return this.channelAnnotationsApi.value.createChannelAnnotation({
-      containerAppId: this.containerAppId,
+      appId: this.containerAppId,
       channelShepardId: this.channelShepardId,
       semanticAnnotation: annotation,
     });

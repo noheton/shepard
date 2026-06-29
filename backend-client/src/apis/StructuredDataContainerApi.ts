@@ -57,7 +57,7 @@ export interface DeleteStructuredDataContainerRequest {
 
 export interface EditStructuredDataPermissionsRequest {
     structuredDataContainerId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface GetAllStructuredDataContainersRequest {

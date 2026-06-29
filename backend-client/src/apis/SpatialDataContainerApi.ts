@@ -49,7 +49,7 @@ export interface DeleteSpatialDataContainerRequest {
 
 export interface EditSpatialDataPermissionsRequest {
     spatialDataContainerId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface GetSpatialDataContainerRequest {

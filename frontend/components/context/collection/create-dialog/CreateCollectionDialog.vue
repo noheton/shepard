@@ -50,7 +50,7 @@ const selectedTemplate = ref<ShepardTemplate | null>(null);
 useV2ShepardApi(TemplatesApi)
   .value.listTemplates({ kind: "COLLECTION_RECIPE", pageSize: 200 })
   .then(page => {
-    collectionTemplates.value = page.items.filter(t => !t.retired);
+    collectionTemplates.value = ((page.items ?? []) as ShepardTemplate[]).filter(t => !t.retired);
     if (collectionTemplates.value.length > 0) mode.value = "picker";
   })
   .catch(() => {

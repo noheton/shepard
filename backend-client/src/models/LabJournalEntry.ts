@@ -20,20 +20,20 @@ import { mapValues } from '../runtime';
  */
 export interface LabJournalEntry {
     /**
-     *
+     * DEPRECATED: numeric Neo4j OGM id of the parent DataObject. Use dataObjectAppId (UUID v7) instead.
      * @type {number}
      * @memberof LabJournalEntry
+     * @deprecated
      */
     readonly dataObjectId: number;
     /**
      * UUID v7 appId of the parent DataObject. Preferred over the deprecated dataObjectId.
-     * UI-DO-LABJOURNAL-V2: added to generated type to match LabJournalEntryIO.dataObjectAppId.
      * @type {string}
      * @memberof LabJournalEntry
      */
     readonly dataObjectAppId?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof LabJournalEntry
      */
@@ -120,7 +120,7 @@ export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boo
     };
 }
 
-export function LabJournalEntryToJSON(value?: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'> | null): any {
+export function LabJournalEntryToJSON(value?: Omit<LabJournalEntry, 'dataObjectId'|'dataObjectAppId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'> | null): any {
     if (value == null) {
         return value;
     }

@@ -72,6 +72,7 @@ public class SearchV2Rest {
 
   @GET
   @Operation(
+    operationId = "searchV2",
     summary = "Full-text search returning appId-keyed results",
     description =
       "Searches Collections and DataObjects by name / description and returns a unified " +

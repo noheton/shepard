@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContainerSummaryIO } from "@dlr-shepard/backend-client";
+import type { ContainerV2 } from "@dlr-shepard/backend-client";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import {
   iconForContainerType,
@@ -14,8 +14,8 @@ const props = defineProps<{
 const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
-function containerPath(c: ContainerSummaryIO): string {
-  return `/containers/${urlSegmentForContainerType(c.containerType ?? "")}${c.appId}/`;
+function containerPath(c: ContainerV2): string {
+  return `/containers/${urlSegmentForContainerType(c.kind ?? "")}${c.appId}/`;
 }
 
 function containerIcon(type: string | undefined): string {
@@ -46,11 +46,11 @@ function containerLabel(type: string | undefined): string {
     <v-list v-else density="compact" class="pa-0">
       <v-list-item
         v-for="c in containers"
-        :key="c.appId"
+        :key="c.appId ?? c.id"
         :to="containerPath(c)"
-        :prepend-icon="containerIcon(c.containerType)"
+        :prepend-icon="containerIcon(c.kind)"
         :title="c.name ?? `Container ${c.appId}`"
-        :subtitle="containerLabel(c.containerType)"
+        :subtitle="containerLabel(c.kind)"
         rounded
       />
     </v-list>

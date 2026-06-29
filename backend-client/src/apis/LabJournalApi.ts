@@ -16,22 +16,19 @@
 import * as runtime from '../runtime';
 import type {
   LabJournalRender,
-  LabJournalRevision,
-  NotebookReference,
-  PagedResponseNotebookReference,
+  PagedResponse,
 } from '../models/index';
 import {
     LabJournalRenderFromJSON,
     LabJournalRenderToJSON,
-    LabJournalRevisionFromJSON,
-    LabJournalRevisionToJSON,
-    NotebookReferenceFromJSON,
-    NotebookReferenceToJSON,
-    PagedResponseNotebookReferenceFromJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface HistoryRequest {
     entryAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface ListNotebooksRequest {
@@ -48,10 +45,10 @@ export interface RenderLabJournalRequest {
 export class LabJournalApi extends runtime.BaseAPI {
 
     /**
-     * Returns an append-only revision list for the entry identified by entryAppId. Each element captures the entry\'s content as it existed immediately before the corresponding update was applied. Revisions are ordered newest first (highest revisionNumber first). An empty array is returned when the entry has never been edited. Permission: Read on the parent DataObject.
+     * Returns a paginated, append-only revision list for the entry identified by entryAppId. Each element captures the entry\'s content as it existed immediately before the corresponding update was applied. Revisions are ordered newest first (highest revisionNumber first). An empty items array is returned when the entry has never been edited. Permission: Read on the parent DataObject.
      * [v2] List the edit history of a lab journal entry.
      */
-    async historyRaw(requestParameters: HistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournalRevision>>> {
+    async historyRaw(requestParameters: HistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['entryAppId'] == null) {
             throw new runtime.RequiredError(
                 'entryAppId',
@@ -60,6 +57,14 @@ export class LabJournalApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -82,14 +87,14 @@ export class LabJournalApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LabJournalRevisionFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns an append-only revision list for the entry identified by entryAppId. Each element captures the entry\'s content as it existed immediately before the corresponding update was applied. Revisions are ordered newest first (highest revisionNumber first). An empty array is returned when the entry has never been edited. Permission: Read on the parent DataObject.
+     * Returns a paginated, append-only revision list for the entry identified by entryAppId. Each element captures the entry\'s content as it existed immediately before the corresponding update was applied. Revisions are ordered newest first (highest revisionNumber first). An empty items array is returned when the entry has never been edited. Permission: Read on the parent DataObject.
      * [v2] List the edit history of a lab journal entry.
      */
-    async history(requestParameters: HistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalRevision>> {
+    async history(requestParameters: HistoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.historyRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -98,7 +103,7 @@ export class LabJournalApi extends runtime.BaseAPI {
      * Returns every FileReference (singleton FR1b) and every ShepardFile inside a FileBundleReference (FR1a) whose filename ends with .ipynb (case-insensitive). The result is ordered: singletons first (by their createdAt ascending), then bundle files (by bundle createdAt ascending, then by filename). Returns an empty array when no .ipynb files are attached. Permission: Read on the parent DataObject.
      * [v2] List .ipynb file references attached to a DataObject.
      */
-    async listNotebooksRaw(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseNotebookReference>> {
+    async listNotebooksRaw(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
@@ -129,14 +134,14 @@ export class LabJournalApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseNotebookReferenceFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns every FileReference (singleton FR1b) and every ShepardFile inside a FileBundleReference (FR1a) whose filename ends with .ipynb (case-insensitive). The result is ordered: singletons first (by their createdAt ascending), then bundle files (by bundle createdAt ascending, then by filename). Returns an empty array when no .ipynb files are attached. Permission: Read on the parent DataObject.
      * [v2] List .ipynb file references attached to a DataObject.
      */
-    async listNotebooks(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseNotebookReference> {
+    async listNotebooks(requestParameters: ListNotebooksRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listNotebooksRaw(requestParameters, initOverrides);
         return await response.value();
     }

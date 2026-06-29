@@ -15,31 +15,110 @@
 
 import * as runtime from '../runtime';
 import type {
+  BulkChannelDataRequest,
+  ContainerStats,
   ContainerV2,
+  CopyIngestRequest,
+  DataObject,
   JsonNode,
+  LiveWindowResponseIO,
+  PagedResponse,
   PayloadVersionIO,
   Permissions,
+  PresignedDownloadUrlIO,
+  PresignedUploadRequestIO,
+  PresignedUploadUrlIO,
   Roles,
+  SafeDeleteConflict,
+  SemanticAnnotation,
+  SpatialRolesIO,
+  TimeseriesAnnotationIO,
+  TimeseriesChannelV2,
+  TimeseriesContainerChartViewIO,
+  TimeseriesWithDataPoints,
+  UploadCommitIO,
 } from '../models/index';
 import {
+    BulkChannelDataRequestFromJSON,
+    BulkChannelDataRequestToJSON,
+    ContainerStatsFromJSON,
+    ContainerStatsToJSON,
     ContainerV2FromJSON,
     ContainerV2ToJSON,
+    CopyIngestRequestFromJSON,
+    CopyIngestRequestToJSON,
+    DataObjectFromJSON,
+    DataObjectToJSON,
     JsonNodeFromJSON,
     JsonNodeToJSON,
+    LiveWindowResponseIOFromJSON,
+    LiveWindowResponseIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PayloadVersionIOFromJSON,
     PayloadVersionIOToJSON,
     PermissionsFromJSON,
     PermissionsToJSON,
+    PresignedDownloadUrlIOFromJSON,
+    PresignedDownloadUrlIOToJSON,
+    PresignedUploadRequestIOFromJSON,
+    PresignedUploadRequestIOToJSON,
+    PresignedUploadUrlIOFromJSON,
+    PresignedUploadUrlIOToJSON,
     RolesFromJSON,
     RolesToJSON,
+    SafeDeleteConflictFromJSON,
+    SafeDeleteConflictToJSON,
+    SemanticAnnotationFromJSON,
+    SemanticAnnotationToJSON,
+    SpatialRolesIOFromJSON,
+    SpatialRolesIOToJSON,
+    TimeseriesAnnotationIOFromJSON,
+    TimeseriesAnnotationIOToJSON,
+    TimeseriesChannelV2FromJSON,
+    TimeseriesChannelV2ToJSON,
+    TimeseriesContainerChartViewIOFromJSON,
+    TimeseriesContainerChartViewIOToJSON,
+    TimeseriesWithDataPointsFromJSON,
+    TimeseriesWithDataPointsToJSON,
+    UploadCommitIOFromJSON,
+    UploadCommitIOToJSON,
 } from '../models/index';
 
+export interface CommitUploadRequest {
+    appId: string;
+    uploadCommitIO: UploadCommitIO;
+}
+
+export interface CreateChannelAnnotationRequest {
+    appId: string;
+    channelShepardId: string;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'appId'|'name'|'propertyName'|'valueName'>;
+}
+
 export interface CreateContainerRequest {
+    kind: string;
     jsonNode: JsonNode;
-    kind?: string;
+}
+
+export interface CreateTemporalAnnotationRequest {
+    appId: string;
+    timeseriesAnnotationIO: Omit<TimeseriesAnnotationIO, 'appId'>;
+}
+
+export interface DeleteChannelAnnotationRequest {
+    annotationAppId: string;
+    appId: string;
+    channelShepardId: string;
 }
 
 export interface DeleteContainerRequest {
+    appId: string;
+    force?: boolean;
+}
+
+export interface DeleteTemporalAnnotationRequest {
+    annotationAppId: string;
     appId: string;
 }
 
@@ -48,7 +127,33 @@ export interface DownloadFileRequest {
     range?: string;
 }
 
+export interface GetChartViewRequest {
+    appId: string;
+}
+
 export interface GetContainerRequest {
+    appId: string;
+}
+
+export interface GetContainerBulkChannelDataRequest {
+    appId: string;
+    bulkChannelDataRequest: BulkChannelDataRequest;
+}
+
+export interface GetContainerChannelDataRequest {
+    appId: string;
+    shepardId: string;
+    end: number;
+    start: number;
+    downsample?: string;
+    maxPoints?: number;
+}
+
+export interface GetContainerChannelSpatialRolesRequest {
+    appId: string;
+}
+
+export interface GetContainerLinkedDataObjectsRequest {
     appId: string;
 }
 
@@ -56,18 +161,83 @@ export interface GetContainerRolesRequest {
     appId: string;
 }
 
+export interface GetContainerStatsRequest {
+    appId: string;
+}
+
+export interface GetDownloadUrlRequest {
+    appId: string;
+    oid: string;
+}
+
+export interface GetLiveWindowRequest {
+    appId: string;
+    device?: string;
+    field?: string;
+    location?: string;
+    measurement?: string;
+    shepardId?: string;
+    symbolicName?: string;
+    windowSeconds?: number;
+    withBoundaryPoints?: boolean;
+}
+
 export interface GetPermissionsRequest {
     appId: string;
 }
 
+export interface GetTemporalAnnotationRequest {
+    annotationAppId: string;
+    appId: string;
+}
+
+export interface GetThumbnailRequest {
+    appId: string;
+    oid: string;
+    size?: number;
+}
+
+export interface GetUploadUrlRequest {
+    appId: string;
+    presignedUploadRequestIO: PresignedUploadRequestIO;
+}
+
+export interface IngestContainerChannelDataRequest {
+    appId: string;
+    shepardId: string;
+    copyIngestRequest: CopyIngestRequest;
+}
+
+export interface ListChannelAnnotationsRequest {
+    appId: string;
+    channelShepardId: string;
+}
+
+export interface ListContainerChannelsRequest {
+    appId: string;
+    page?: number;
+    pageSize?: number;
+}
+
 export interface ListContainersRequest {
-    kind?: string;
+    kind: string;
     name?: string;
+    page?: number;
+    pageSize?: number;
+}
+
+export interface ListTemporalAnnotationsRequest {
+    appId: string;
 }
 
 export interface ListVersionsRequest {
     appId: string;
     fileName: string;
+}
+
+export interface PatchChartViewRequest {
+    appId: string;
+    timeseriesContainerChartViewIO: TimeseriesContainerChartViewIO;
 }
 
 export interface PatchContainerRequest {
@@ -80,16 +250,154 @@ export interface PatchPermissionsRequest {
     jsonNode: JsonNode;
 }
 
+export interface PutContainerRequest {
+    appId: string;
+    jsonNode: JsonNode;
+}
+
+export interface UpdateTemporalAnnotationRequest {
+    annotationAppId: string;
+    appId: string;
+    timeseriesAnnotationIO: Omit<TimeseriesAnnotationIO, 'appId'>;
+}
+
 /**
  * 
  */
 export class ContainersApi extends runtime.BaseAPI {
 
     /**
+     * After the PUT upload completes, call this to create the ShepardFile record and attach it to the container. Returns 415 when the kind does not support presigned uploads.  Auth: Write on the container.
+     * [v2] Register a file uploaded via presigned PUT.
+     */
+    async commitUploadRaw(requestParameters: CommitUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling commitUpload().'
+            );
+        }
+
+        if (requestParameters['uploadCommitIO'] == null) {
+            throw new runtime.RequiredError(
+                'uploadCommitIO',
+                'Required parameter "uploadCommitIO" was null or undefined when calling commitUpload().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/upload-url/commit`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: UploadCommitIOToJSON(requestParameters['uploadCommitIO']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * After the PUT upload completes, call this to create the ShepardFile record and attach it to the container. Returns 415 when the kind does not support presigned uploads.  Auth: Write on the container.
+     * [v2] Register a file uploaded via presigned PUT.
+     */
+    async commitUpload(requestParameters: CommitUploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.commitUploadRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Attach a semantic annotation to a timeseries channel.
+     */
+    async createChannelAnnotationRaw(requestParameters: CreateChannelAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SemanticAnnotation>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling createChannelAnnotation().'
+            );
+        }
+
+        if (requestParameters['channelShepardId'] == null) {
+            throw new runtime.RequiredError(
+                'channelShepardId',
+                'Required parameter "channelShepardId" was null or undefined when calling createChannelAnnotation().'
+            );
+        }
+
+        if (requestParameters['semanticAnnotation'] == null) {
+            throw new runtime.RequiredError(
+                'semanticAnnotation',
+                'Required parameter "semanticAnnotation" was null or undefined when calling createChannelAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SemanticAnnotationToJSON(requestParameters['semanticAnnotation']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SemanticAnnotationFromJSON(jsonValue));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Attach a semantic annotation to a timeseries channel.
+     */
+    async createChannelAnnotation(requestParameters: CreateChannelAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SemanticAnnotation> {
+        const response = await this.createChannelAnnotationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Creates a container of `kind` (file | timeseries | structured-data). The body is the per-kind create payload — today `{name}` for every core kind. Plugin kinds (e.g. hdf) reject with 400 until their module ships a ContainerKindHandler.  Auth: any authenticated user (containers are top-level; the creator becomes owner).
      * [v2] Create a container of the given kind.
      */
     async createContainerRaw(requestParameters: CreateContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ContainerV2>> {
+        if (requestParameters['kind'] == null) {
+            throw new runtime.RequiredError(
+                'kind',
+                'Required parameter "kind" was null or undefined when calling createContainer().'
+            );
+        }
+
         if (requestParameters['jsonNode'] == null) {
             throw new runtime.RequiredError(
                 'jsonNode',
@@ -140,7 +448,124 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Deletes the container at `appId` via the owning kind\'s deleter.  Auth: Write on the container.
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Create a temporal annotation on a container.
+     */
+    async createTemporalAnnotationRaw(requestParameters: CreateTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling createTemporalAnnotation().'
+            );
+        }
+
+        if (requestParameters['timeseriesAnnotationIO'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesAnnotationIO',
+                'Required parameter "timeseriesAnnotationIO" was null or undefined when calling createTemporalAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/temporal-annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: TimeseriesAnnotationIOToJSON(requestParameters['timeseriesAnnotationIO']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Create a temporal annotation on a container.
+     */
+    async createTemporalAnnotation(requestParameters: CreateTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
+        const response = await this.createTemporalAnnotationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Remove a semantic annotation from a timeseries channel.
+     */
+    async deleteChannelAnnotationRaw(requestParameters: DeleteChannelAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['annotationAppId'] == null) {
+            throw new runtime.RequiredError(
+                'annotationAppId',
+                'Required parameter "annotationAppId" was null or undefined when calling deleteChannelAnnotation().'
+            );
+        }
+
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling deleteChannelAnnotation().'
+            );
+        }
+
+        if (requestParameters['channelShepardId'] == null) {
+            throw new runtime.RequiredError(
+                'channelShepardId',
+                'Required parameter "channelShepardId" was null or undefined when calling deleteChannelAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Remove a semantic annotation from a timeseries channel.
+     */
+    async deleteChannelAnnotation(requestParameters: DeleteChannelAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteChannelAnnotationRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Deletes the container at `appId` via the owning kind\'s deleter. Safe-delete by default: returns 409 if the container has active DataObject references. Pass `?force=true` to delete regardless (surviving references will be orphaned, matching the upstream v1 behaviour).  Auth: Write on the container.
      * [v2] Delete any container by appId; dispatched by kind.
      */
     async deleteContainerRaw(requestParameters: DeleteContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -152,6 +577,10 @@ export class ContainersApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['force'] != null) {
+            queryParameters['force'] = requestParameters['force'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -178,11 +607,64 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Deletes the container at `appId` via the owning kind\'s deleter.  Auth: Write on the container.
+     * Deletes the container at `appId` via the owning kind\'s deleter. Safe-delete by default: returns 409 if the container has active DataObject references. Pass `?force=true` to delete regardless (surviving references will be orphaned, matching the upstream v1 behaviour).  Auth: Write on the container.
      * [v2] Delete any container by appId; dispatched by kind.
      */
     async deleteContainer(requestParameters: DeleteContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.deleteContainerRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Delete a container temporal annotation.
+     */
+    async deleteTemporalAnnotationRaw(requestParameters: DeleteTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['annotationAppId'] == null) {
+            throw new runtime.RequiredError(
+                'annotationAppId',
+                'Required parameter "annotationAppId" was null or undefined when calling deleteTemporalAnnotation().'
+            );
+        }
+
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling deleteTemporalAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/temporal-annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Delete a container temporal annotation.
+     */
+    async deleteTemporalAnnotation(requestParameters: DeleteTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteTemporalAnnotationRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -236,6 +718,53 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
+     * Returns the curated channel-selection list shared by all users viewing this timeseries container. An empty list means \"no curated view — show all channels\" (the frontend default). Only `timeseries` kind containers support this; other kinds answer 415.  Auth: Read on the container.
+     * [v2] Read the persisted chart-view configuration for a timeseries container.
+     */
+    async getChartViewRaw(requestParameters: GetChartViewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesContainerChartViewIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getChartView().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/chart-view`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesContainerChartViewIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns the curated channel-selection list shared by all users viewing this timeseries container. An empty list means \"no curated view — show all channels\" (the frontend default). Only `timeseries` kind containers support this; other kinds answer 415.  Auth: Read on the container.
+     * [v2] Read the persisted chart-view configuration for a timeseries container.
+     */
+    async getChartView(requestParameters: GetChartViewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesContainerChartViewIO> {
+        const response = await this.getChartViewRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Resolves the container (of any kind) at `appId` and returns the unified ContainerV2IO, including the `kind` discriminator and the per-kind read-only `payload` (e.g. `oid`).  Auth: Read on the container.
      * [v2] Get any container by appId; the entity self-describes its kind.
      */
@@ -279,6 +808,241 @@ export class ContainersApi extends runtime.BaseAPI {
      */
     async getContainer(requestParameters: GetContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ContainerV2> {
         const response = await this.getContainerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch raw data for multiple channels in one call.
+     */
+    async getContainerBulkChannelDataRaw(requestParameters: GetContainerBulkChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesWithDataPoints>>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getContainerBulkChannelData().'
+            );
+        }
+
+        if (requestParameters['bulkChannelDataRequest'] == null) {
+            throw new runtime.RequiredError(
+                'bulkChannelDataRequest',
+                'Required parameter "bulkChannelDataRequest" was null or undefined when calling getContainerBulkChannelData().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/data/bulk`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: BulkChannelDataRequestToJSON(requestParameters['bulkChannelDataRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesWithDataPointsFromJSON));
+    }
+
+    /**
+     * Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch raw data for multiple channels in one call.
+     */
+    async getContainerBulkChannelData(requestParameters: GetContainerBulkChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesWithDataPoints>> {
+        const response = await this.getContainerBulkChannelDataRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Resolves the single-field shepardId to the legacy 5-tuple internally and returns data points for the requested time window. `start` and `end` are nanoseconds since Unix epoch (e.g. `Date.now() * 1_000_000` in JS). Accepts optional LTTB downsampling via ?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch data points for a channel by shepardId.
+     */
+    async getContainerChannelDataRaw(requestParameters: GetContainerChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesWithDataPoints>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getContainerChannelData().'
+            );
+        }
+
+        if (requestParameters['shepardId'] == null) {
+            throw new runtime.RequiredError(
+                'shepardId',
+                'Required parameter "shepardId" was null or undefined when calling getContainerChannelData().'
+            );
+        }
+
+        if (requestParameters['end'] == null) {
+            throw new runtime.RequiredError(
+                'end',
+                'Required parameter "end" was null or undefined when calling getContainerChannelData().'
+            );
+        }
+
+        if (requestParameters['start'] == null) {
+            throw new runtime.RequiredError(
+                'start',
+                'Required parameter "start" was null or undefined when calling getContainerChannelData().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['downsample'] != null) {
+            queryParameters['downsample'] = requestParameters['downsample'];
+        }
+
+        if (requestParameters['end'] != null) {
+            queryParameters['end'] = requestParameters['end'];
+        }
+
+        if (requestParameters['maxPoints'] != null) {
+            queryParameters['maxPoints'] = requestParameters['maxPoints'];
+        }
+
+        if (requestParameters['start'] != null) {
+            queryParameters['start'] = requestParameters['start'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/{shepardId}/data`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"shepardId"}}`, encodeURIComponent(String(requestParameters['shepardId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesWithDataPointsFromJSON(jsonValue));
+    }
+
+    /**
+     * Resolves the single-field shepardId to the legacy 5-tuple internally and returns data points for the requested time window. `start` and `end` are nanoseconds since Unix epoch (e.g. `Date.now() * 1_000_000` in JS). Accepts optional LTTB downsampling via ?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch data points for a channel by shepardId.
+     */
+    async getContainerChannelData(requestParameters: GetContainerChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesWithDataPoints> {
+        const response = await this.getContainerChannelDataRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Scans the container\'s channels for axis-role annotations and returns one shepardId per role. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Return per-axis channel assignments for the Trace3D view recipe.
+     */
+    async getContainerChannelSpatialRolesRaw(requestParameters: GetContainerChannelSpatialRolesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SpatialRolesIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getContainerChannelSpatialRoles().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/spatial-roles`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SpatialRolesIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Scans the container\'s channels for axis-role annotations and returns one shepardId per role. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] Return per-axis channel assignments for the Trace3D view recipe.
+     */
+    async getContainerChannelSpatialRoles(requestParameters: GetContainerChannelSpatialRolesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SpatialRolesIO> {
+        const response = await this.getContainerChannelSpatialRolesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns the distinct DataObjects whose references point at the container at `appId`, as DataObjectIO[]. Supported for `file`, `structured-data` and `timeseries` kind containers; other kinds answer 415.  Auth: Read on the container.
+     * [v2] List DataObjects linked to a container by appId.
+     */
+    async getContainerLinkedDataObjectsRaw(requestParameters: GetContainerLinkedDataObjectsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<DataObject>>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getContainerLinkedDataObjects().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/linked-data-objects`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DataObjectFromJSON));
+    }
+
+    /**
+     * Returns the distinct DataObjects whose references point at the container at `appId`, as DataObjectIO[]. Supported for `file`, `structured-data` and `timeseries` kind containers; other kinds answer 415.  Auth: Read on the container.
+     * [v2] List DataObjects linked to a container by appId.
+     */
+    async getContainerLinkedDataObjects(requestParameters: GetContainerLinkedDataObjectsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<DataObject>> {
+        const response = await this.getContainerLinkedDataObjectsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -330,6 +1094,186 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
+     * Returns point count, channel count, estimated uncompressed size, and recent ingest rate for the container at `appId`. Supported for `timeseries` kind; other kinds answer 415.  Auth: Read on the container.
+     * [v2] Storage and ingestion statistics for a container by appId.
+     */
+    async getContainerStatsRaw(requestParameters: GetContainerStatsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ContainerStats>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getContainerStats().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/stats`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ContainerStatsFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns point count, channel count, estimated uncompressed size, and recent ingest rate for the container at `appId`. Supported for `timeseries` kind; other kinds answer 415.  Auth: Read on the container.
+     * [v2] Storage and ingestion statistics for a container by appId.
+     */
+    async getContainerStats(requestParameters: GetContainerStatsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ContainerStats> {
+        const response = await this.getContainerStatsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the download itself. Returns 415 when the kind does not support presigned downloads.  Auth: Read on the container.
+     * [v2] Obtain a presigned GET URL to download a file directly from storage.
+     */
+    async getDownloadUrlRaw(requestParameters: GetDownloadUrlRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PresignedDownloadUrlIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getDownloadUrl().'
+            );
+        }
+
+        if (requestParameters['oid'] == null) {
+            throw new runtime.RequiredError(
+                'oid',
+                'Required parameter "oid" was null or undefined when calling getDownloadUrl().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/files/{oid}/download-url`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"oid"}}`, encodeURIComponent(String(requestParameters['oid']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PresignedDownloadUrlIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the download itself. Returns 415 when the kind does not support presigned downloads.  Auth: Read on the container.
+     * [v2] Obtain a presigned GET URL to download a file directly from storage.
+     */
+    async getDownloadUrl(requestParameters: GetDownloadUrlRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PresignedDownloadUrlIO> {
+        const response = await this.getDownloadUrlRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns the last `windowSeconds` of data for a single channel. Channel lookup: `shepardId` (preferred) or 5-tuple filter. Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch the most recent N seconds of a timeseries channel.
+     */
+    async getLiveWindowRaw(requestParameters: GetLiveWindowRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LiveWindowResponseIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getLiveWindow().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['device'] != null) {
+            queryParameters['device'] = requestParameters['device'];
+        }
+
+        if (requestParameters['field'] != null) {
+            queryParameters['field'] = requestParameters['field'];
+        }
+
+        if (requestParameters['location'] != null) {
+            queryParameters['location'] = requestParameters['location'];
+        }
+
+        if (requestParameters['measurement'] != null) {
+            queryParameters['measurement'] = requestParameters['measurement'];
+        }
+
+        if (requestParameters['shepardId'] != null) {
+            queryParameters['shepardId'] = requestParameters['shepardId'];
+        }
+
+        if (requestParameters['symbolicName'] != null) {
+            queryParameters['symbolicName'] = requestParameters['symbolicName'];
+        }
+
+        if (requestParameters['windowSeconds'] != null) {
+            queryParameters['windowSeconds'] = requestParameters['windowSeconds'];
+        }
+
+        if (requestParameters['withBoundaryPoints'] != null) {
+            queryParameters['withBoundaryPoints'] = requestParameters['withBoundaryPoints'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/live-window`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => LiveWindowResponseIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns the last `windowSeconds` of data for a single channel. Channel lookup: `shepardId` (preferred) or 5-tuple filter. Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] Fetch the most recent N seconds of a timeseries channel.
+     */
+    async getLiveWindow(requestParameters: GetLiveWindowRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LiveWindowResponseIO> {
+        const response = await this.getLiveWindowRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Returns the current permissions for the container at `appId`.  Auth: Manage on the container (CONTAINER-PERMS-V2).
      * [v2] Get permissions for a container by appId.
      */
@@ -377,10 +1321,358 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Auth: authenticated; per-container Read is enforced by the underlying list query.
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] Read a single container temporal annotation by appId.
+     */
+    async getTemporalAnnotationRaw(requestParameters: GetTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
+        if (requestParameters['annotationAppId'] == null) {
+            throw new runtime.RequiredError(
+                'annotationAppId',
+                'Required parameter "annotationAppId" was null or undefined when calling getTemporalAnnotation().'
+            );
+        }
+
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getTemporalAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/temporal-annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] Read a single container temporal annotation by appId.
+     */
+    async getTemporalAnnotation(requestParameters: GetTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
+        const response = await this.getTemporalAnnotationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. Valid sizes: 64, 200, 400; any other value is normalised to 400. Returns 415 when the container kind does not support thumbnails.  Auth: Read on the container.
+     * [v2] Get a PNG thumbnail for a file payload.
+     */
+    async getThumbnailRaw(requestParameters: GetThumbnailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Blob>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getThumbnail().'
+            );
+        }
+
+        if (requestParameters['oid'] == null) {
+            throw new runtime.RequiredError(
+                'oid',
+                'Required parameter "oid" was null or undefined when calling getThumbnail().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/payload/{oid}/thumbnail`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"oid"}}`, encodeURIComponent(String(requestParameters['oid']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.BlobApiResponse(response);
+    }
+
+    /**
+     * Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. Valid sizes: 64, 200, 400; any other value is normalised to 400. Returns 415 when the container kind does not support thumbnails.  Auth: Read on the container.
+     * [v2] Get a PNG thumbnail for a file payload.
+     */
+    async getThumbnail(requestParameters: GetThumbnailRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Blob> {
+        const response = await this.getThumbnailRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns a short-lived PUT URL and the assigned oid. Upload file bytes with a single HTTP PUT to uploadUrl, then call POST .../upload-url/commit with the oid. Returns 415 when the container kind does not support presigned uploads.  Auth: Write on the container.
+     * [v2] Obtain a presigned PUT URL to upload a file directly to storage.
+     */
+    async getUploadUrlRaw(requestParameters: GetUploadUrlRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PresignedUploadUrlIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling getUploadUrl().'
+            );
+        }
+
+        if (requestParameters['presignedUploadRequestIO'] == null) {
+            throw new runtime.RequiredError(
+                'presignedUploadRequestIO',
+                'Required parameter "presignedUploadRequestIO" was null or undefined when calling getUploadUrl().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/upload-url`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: PresignedUploadRequestIOToJSON(requestParameters['presignedUploadRequestIO']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PresignedUploadUrlIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns a short-lived PUT URL and the assigned oid. Upload file bytes with a single HTTP PUT to uploadUrl, then call POST .../upload-url/commit with the oid. Returns 415 when the container kind does not support presigned uploads.  Auth: Write on the container.
+     * [v2] Obtain a presigned PUT URL to upload a file directly to storage.
+     */
+    async getUploadUrl(requestParameters: GetUploadUrlRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PresignedUploadUrlIO> {
+        const response = await this.getUploadUrlRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by shepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be unique within the batch. Non-timeseries container kinds answer 415.  Auth: Write on the container.
+     * [v2] High-throughput COPY ingest for a single channel.
+     */
+    async ingestContainerChannelDataRaw(requestParameters: IngestContainerChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling ingestContainerChannelData().'
+            );
+        }
+
+        if (requestParameters['shepardId'] == null) {
+            throw new runtime.RequiredError(
+                'shepardId',
+                'Required parameter "shepardId" was null or undefined when calling ingestContainerChannelData().'
+            );
+        }
+
+        if (requestParameters['copyIngestRequest'] == null) {
+            throw new runtime.RequiredError(
+                'copyIngestRequest',
+                'Required parameter "copyIngestRequest" was null or undefined when calling ingestContainerChannelData().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/{shepardId}/data/ingest`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"shepardId"}}`, encodeURIComponent(String(requestParameters['shepardId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CopyIngestRequestToJSON(requestParameters['copyIngestRequest']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by shepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be unique within the batch. Non-timeseries container kinds answer 415.  Auth: Write on the container.
+     * [v2] High-throughput COPY ingest for a single channel.
+     */
+    async ingestContainerChannelData(requestParameters: IngestContainerChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.ingestContainerChannelDataRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] List semantic annotations on a timeseries channel.
+     */
+    async listChannelAnnotationsRaw(requestParameters: ListChannelAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SemanticAnnotation>>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling listChannelAnnotations().'
+            );
+        }
+
+        if (requestParameters['channelShepardId'] == null) {
+            throw new runtime.RequiredError(
+                'channelShepardId',
+                'Required parameter "channelShepardId" was null or undefined when calling listChannelAnnotations().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SemanticAnnotationFromJSON));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] List semantic annotations on a timeseries channel.
+     */
+    async listChannelAnnotations(requestParameters: ListChannelAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SemanticAnnotation>> {
+        const response = await this.listChannelAnnotationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns one entry per channel in the container, each carrying its stable single-field identity (shepardId) plus the legacy 5-tuple. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] List all channels of a TimeseriesContainer by appId.
+     */
+    async listContainerChannelsRaw(requestParameters: ListContainerChannelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesChannelV2>>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling listContainerChannels().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/channels`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesChannelV2FromJSON));
+    }
+
+    /**
+     * Returns one entry per channel in the container, each carrying its stable single-field identity (shepardId) plus the legacy 5-tuple. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * [v2] List all channels of a TimeseriesContainer by appId.
+     */
+    async listContainerChannels(requestParameters: ListContainerChannelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesChannelV2>> {
+        const response = await this.listContainerChannelsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all containers. `X-Total-Count` header carries the total before paging.  Auth: authenticated; per-container Read is enforced by the underlying list query.
      * [v2] List containers of a kind, optionally filtered by name.
      */
-    async listContainersRaw(requestParameters: ListContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ContainerV2>>> {
+    async listContainersRaw(requestParameters: ListContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+        if (requestParameters['kind'] == null) {
+            throw new runtime.RequiredError(
+                'kind',
+                'Required parameter "kind" was null or undefined when calling listContainers().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['kind'] != null) {
@@ -389,6 +1681,14 @@ export class ContainersApi extends runtime.BaseAPI {
 
         if (requestParameters['name'] != null) {
             queryParameters['name'] = requestParameters['name'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -412,20 +1712,67 @@ export class ContainersApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ContainerV2FromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Auth: authenticated; per-container Read is enforced by the underlying list query.
+     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all containers. `X-Total-Count` header carries the total before paging.  Auth: authenticated; per-container Read is enforced by the underlying list query.
      * [v2] List containers of a kind, optionally filtered by name.
      */
-    async listContainers(requestParameters: ListContainersRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ContainerV2>> {
+    async listContainers(requestParameters: ListContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listContainersRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Returns the complete upload history for the file identified by `fileName` within the container at `appId`, ordered by `versionNumber` ascending (oldest first). Supported for `file` and `structured-data` kind containers. Other kinds answer 415.  Auth: Read on the container. (APISIMP-PV-UNIFY — replaces per-kind `/v2/file-containers/{appId}/files/{name}/versions` and `/v2/structured-data-containers/{appId}/files/{name}/versions`.)
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] List all temporal annotations on a container.
+     */
+    async listTemporalAnnotationsRaw(requestParameters: ListTemporalAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesAnnotationIO>>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling listTemporalAnnotations().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/temporal-annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesAnnotationIOFromJSON));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Read on the container.
+     * [v2] List all temporal annotations on a container.
+     */
+    async listTemporalAnnotations(requestParameters: ListTemporalAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesAnnotationIO>> {
+        const response = await this.listTemporalAnnotationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns the complete upload history for the file identified by `fileName` within the container at `appId`, ordered by `versionNumber` ascending (oldest first). Supported for `file` and `structured-data` kind containers. Other kinds answer 415.  Auth: Read on the container.
      * [v2] List all payload versions for a named file in a container by appId.
      */
     async listVersionsRaw(requestParameters: ListVersionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<PayloadVersionIO>>> {
@@ -470,11 +1817,68 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the complete upload history for the file identified by `fileName` within the container at `appId`, ordered by `versionNumber` ascending (oldest first). Supported for `file` and `structured-data` kind containers. Other kinds answer 415.  Auth: Read on the container. (APISIMP-PV-UNIFY — replaces per-kind `/v2/file-containers/{appId}/files/{name}/versions` and `/v2/structured-data-containers/{appId}/files/{name}/versions`.)
+     * Returns the complete upload history for the file identified by `fileName` within the container at `appId`, ordered by `versionNumber` ascending (oldest first). Supported for `file` and `structured-data` kind containers. Other kinds answer 415.  Auth: Read on the container.
      * [v2] List all payload versions for a named file in a container by appId.
      */
     async listVersions(requestParameters: ListVersionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<PayloadVersionIO>> {
         const response = await this.listVersionsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Replaces the persisted selectedChannels list. Write permission required. Only `timeseries` kind containers support this; other kinds answer 415.  Auth: Write on the container.
+     * [v2] RFC 7396 merge-patch the chart-view configuration for a timeseries container.
+     */
+    async patchChartViewRaw(requestParameters: PatchChartViewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesContainerChartViewIO>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling patchChartView().'
+            );
+        }
+
+        if (requestParameters['timeseriesContainerChartViewIO'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerChartViewIO',
+                'Required parameter "timeseriesContainerChartViewIO" was null or undefined when calling patchChartView().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/merge-patch+json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/chart-view`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: TimeseriesContainerChartViewIOToJSON(requestParameters['timeseriesContainerChartViewIO']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesContainerChartViewIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Replaces the persisted selectedChannels list. Write permission required. Only `timeseries` kind containers support this; other kinds answer 415.  Auth: Write on the container.
+     * [v2] RFC 7396 merge-patch the chart-view configuration for a timeseries container.
+     */
+    async patchChartView(requestParameters: PatchChartViewRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesContainerChartViewIO> {
+        const response = await this.patchChartViewRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -589,6 +1993,127 @@ export class ContainersApi extends runtime.BaseAPI {
      */
     async patchPermissions(requestParameters: PatchPermissionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Permissions> {
         const response = await this.patchPermissionsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Replaces all mutable metadata fields on the container at `appId`. `name` is required; `status` is applied from the body and reset to null when absent (unlike PATCH which leaves absent keys unchanged). Kind-specific payload fields (e.g. OID, default collection) are read-only and are ignored.  Auth: Write on the container.
+     * [v2] P21-V2-METADATA-EDIT: full-replace editable metadata of any container by appId.
+     */
+    async putContainerRaw(requestParameters: PutContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ContainerV2>> {
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling putContainer().'
+            );
+        }
+
+        if (requestParameters['jsonNode'] == null) {
+            throw new runtime.RequiredError(
+                'jsonNode',
+                'Required parameter "jsonNode" was null or undefined when calling putContainer().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: JsonNodeToJSON(requestParameters['jsonNode']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ContainerV2FromJSON(jsonValue));
+    }
+
+    /**
+     * Replaces all mutable metadata fields on the container at `appId`. `name` is required; `status` is applied from the body and reset to null when absent (unlike PATCH which leaves absent keys unchanged). Kind-specific payload fields (e.g. OID, default collection) are read-only and are ignored.  Auth: Write on the container.
+     * [v2] P21-V2-METADATA-EDIT: full-replace editable metadata of any container by appId.
+     */
+    async putContainer(requestParameters: PutContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ContainerV2> {
+        const response = await this.putContainerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Update a container temporal annotation (merge-patch).
+     */
+    async updateTemporalAnnotationRaw(requestParameters: UpdateTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
+        if (requestParameters['annotationAppId'] == null) {
+            throw new runtime.RequiredError(
+                'annotationAppId',
+                'Required parameter "annotationAppId" was null or undefined when calling updateTemporalAnnotation().'
+            );
+        }
+
+        if (requestParameters['appId'] == null) {
+            throw new runtime.RequiredError(
+                'appId',
+                'Required parameter "appId" was null or undefined when calling updateTemporalAnnotation().'
+            );
+        }
+
+        if (requestParameters['timeseriesAnnotationIO'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesAnnotationIO',
+                'Required parameter "timeseriesAnnotationIO" was null or undefined when calling updateTemporalAnnotation().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/containers/{appId}/temporal-annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
+            method: 'PATCH',
+            headers: headerParameters,
+            query: queryParameters,
+            body: TimeseriesAnnotationIOToJSON(requestParameters['timeseriesAnnotationIO']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Non-timeseries kinds answer 415.  Auth: Write on the container.
+     * [v2] Update a container temporal annotation (merge-patch).
+     */
+    async updateTemporalAnnotation(requestParameters: UpdateTemporalAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
+        const response = await this.updateTemporalAnnotationRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

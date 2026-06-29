@@ -55,7 +55,7 @@ import {
 export interface CreateAnnotationForTimeseriesRequest {
     timeseriesContainerId: number;
     timeseriesId: number;
-    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'>;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'appId'|'name'|'propertyName'|'valueName'>;
 }
 
 export interface CreateTimeseriesRequest {
@@ -84,7 +84,7 @@ export interface DeleteTimeseriesContainerRequest {
 
 export interface EditTimeseriesPermissionsRequest {
     timeseriesContainerId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface ExportTimeseriesRequest {

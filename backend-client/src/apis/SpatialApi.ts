@@ -22,8 +22,8 @@ import {
     ReferenceV2ToJSON,
 } from '../models/index';
 
-export interface PromoteRequest {
-    fileReferenceAppId?: string;
+export interface PromoteFileReferenceToSpatialRequest {
+    fileReferenceAppId: string;
 }
 
 /**
@@ -35,7 +35,14 @@ export class SpatialApi extends runtime.BaseAPI {
      * Given the appId of a singleton FileReference holding a pointcloud / trajectory (.las/.laz/.ply/.e57/.pcd/.xyz/.pts or a named pointcloud/trajectory file), mints a SpatialDataReference + its backing SpatialDataContainer on the same DataObject and enqueues the spatial-importer sidecar (container promotionState=pending). Idempotent: re-promoting the same file returns the existing spatial reference (200).  Auth: Write on the parent DataObject.
      * [v2] Promote an eligible FileReference into a spatial reference (in-context, per-file).
      */
-    async promoteRaw(requestParameters: PromoteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferenceV2>> {
+    async promoteFileReferenceToSpatialRaw(requestParameters: PromoteFileReferenceToSpatialRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReferenceV2>> {
+        if (requestParameters['fileReferenceAppId'] == null) {
+            throw new runtime.RequiredError(
+                'fileReferenceAppId',
+                'Required parameter "fileReferenceAppId" was null or undefined when calling promoteFileReferenceToSpatial().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['fileReferenceAppId'] != null) {
@@ -70,8 +77,8 @@ export class SpatialApi extends runtime.BaseAPI {
      * Given the appId of a singleton FileReference holding a pointcloud / trajectory (.las/.laz/.ply/.e57/.pcd/.xyz/.pts or a named pointcloud/trajectory file), mints a SpatialDataReference + its backing SpatialDataContainer on the same DataObject and enqueues the spatial-importer sidecar (container promotionState=pending). Idempotent: re-promoting the same file returns the existing spatial reference (200).  Auth: Write on the parent DataObject.
      * [v2] Promote an eligible FileReference into a spatial reference (in-context, per-file).
      */
-    async promote(requestParameters: PromoteRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
-        const response = await this.promoteRaw(requestParameters, initOverrides);
+    async promoteFileReferenceToSpatial(requestParameters: PromoteFileReferenceToSpatialRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReferenceV2> {
+        const response = await this.promoteFileReferenceToSpatialRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

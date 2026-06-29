@@ -13,6 +13,12 @@
  */
 
 import { mapValues } from '../runtime';
+import type { GroupIO } from './GroupIO';
+import {
+    GroupIOFromJSON,
+    GroupIOFromJSONTyped,
+    GroupIOToJSON,
+} from './GroupIO';
 import type { PropertyIO } from './PropertyIO';
 import {
     PropertyIOFromJSON,
@@ -50,6 +56,18 @@ export interface ShapeBuildRequestIO {
      * @memberof ShapeBuildRequestIO
      */
     properties?: Array<PropertyIO> | null;
+    /**
+     * sh:PropertyGroup declarations (form sections, doc 125 §4.2). Null/empty = none.
+     * @type {Array<GroupIO>}
+     * @memberof ShapeBuildRequestIO
+     */
+    groups?: Array<GroupIO> | null;
+    /**
+     * sh:targetNode IRI. Shapes meant to fire on the validate-on-instantiate seam target urn:shepard:instance:candidate (the stable candidate-graph URI).
+     * @type {string}
+     * @memberof ShapeBuildRequestIO
+     */
+    targetNode?: string | null;
 }
 
 /**
@@ -73,6 +91,8 @@ export function ShapeBuildRequestIOFromJSONTyped(json: any, ignoreDiscriminator:
         'targetClass': json['targetClass'] == null ? undefined : json['targetClass'],
         'closed': json['closed'] == null ? undefined : json['closed'],
         'properties': json['properties'] == null ? undefined : ((json['properties'] as Array<any>).map(PropertyIOFromJSON)),
+        'groups': json['groups'] == null ? undefined : ((json['groups'] as Array<any>).map(GroupIOFromJSON)),
+        'targetNode': json['targetNode'] == null ? undefined : json['targetNode'],
     };
 }
 
@@ -86,6 +106,8 @@ export function ShapeBuildRequestIOToJSON(value?: ShapeBuildRequestIO | null): a
         'targetClass': value['targetClass'],
         'closed': value['closed'],
         'properties': value['properties'] == null ? undefined : ((value['properties'] as Array<any>).map(PropertyIOToJSON)),
+        'groups': value['groups'] == null ? undefined : ((value['groups'] as Array<any>).map(GroupIOToJSON)),
+        'targetNode': value['targetNode'],
     };
 }
 

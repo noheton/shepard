@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * Compact DataObject reference — appId, name, status.
+ * Compact DataObject reference — appId, name, status, createdAt, createdBy.
  * @export
  * @interface DataObjectSummary
  */
@@ -37,6 +37,18 @@ export interface DataObjectSummary {
      * @memberof DataObjectSummary
      */
     readonly status?: string;
+    /**
+     * PRED-V2-SHAPE: creation timestamp. Null for pre-OGM rows.
+     * @type {Date}
+     * @memberof DataObjectSummary
+     */
+    readonly createdAt?: Date | null;
+    /**
+     * PRED-V2-SHAPE: display name of the creator.
+     * @type {string}
+     * @memberof DataObjectSummary
+     */
+    readonly createdBy?: string | null;
 }
 
 /**
@@ -59,10 +71,12 @@ export function DataObjectSummaryFromJSONTyped(json: any, ignoreDiscriminator: b
         'appId': json['appId'] == null ? undefined : json['appId'],
         'name': json['name'] == null ? undefined : json['name'],
         'status': json['status'] == null ? undefined : json['status'],
+        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
     };
 }
 
-export function DataObjectSummaryToJSON(value?: Omit<DataObjectSummary, 'appId'|'name'|'status'> | null): any {
+export function DataObjectSummaryToJSON(value?: Omit<DataObjectSummary, 'appId'|'name'|'status'|'createdAt'|'createdBy'> | null): any {
     if (value == null) {
         return value;
     }

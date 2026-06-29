@@ -29,6 +29,12 @@ export interface SemanticAnnotation {
      * 
      * @type {string}
      * @memberof SemanticAnnotation
+     */
+    readonly appId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SemanticAnnotation
      * @deprecated
      */
     readonly name: string;
@@ -108,6 +114,7 @@ export function SemanticAnnotationFromJSONTyped(json: any, ignoreDiscriminator: 
     return {
         
         'id': json['id'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'name': json['name'],
         'propertyName': json['propertyName'],
         'propertyIRI': json['propertyIRI'],
@@ -120,7 +127,7 @@ export function SemanticAnnotationFromJSONTyped(json: any, ignoreDiscriminator: 
     };
 }
 
-export function SemanticAnnotationToJSON(value?: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'> | null): any {
+export function SemanticAnnotationToJSON(value?: Omit<SemanticAnnotation, 'id'|'appId'|'name'|'propertyName'|'valueName'> | null): any {
     if (value == null) {
         return value;
     }

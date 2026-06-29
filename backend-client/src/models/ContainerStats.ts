@@ -16,45 +16,45 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface TimeseriesContainerStats
+ * @interface ContainerStats
  */
-export interface TimeseriesContainerStats {
+export interface ContainerStats {
     /**
      * Total data points across all channels in this container.
      * @type {number}
-     * @memberof TimeseriesContainerStats
+     * @memberof ContainerStats
      */
     pointCount: number;
     /**
-     * Number of distinct channels (measurement × device × location × field tuples).
+     * Number of distinct channels.
      * @type {number}
-     * @memberof TimeseriesContainerStats
+     * @memberof ContainerStats
      */
     channelCount: number;
     /**
      * Uncompressed size estimate in bytes (pointCount × 28).
      * @type {number}
-     * @memberof TimeseriesContainerStats
+     * @memberof ContainerStats
      */
     estimatedSizeBytes: number;
     /**
      * Data points inserted in the last 10 seconds.
      * @type {number}
-     * @memberof TimeseriesContainerStats
+     * @memberof ContainerStats
      */
     recentPointsLast10s: number;
     /**
      * Estimated ingest rate in bytes per second (recentPointsLast10s × 28 / 10).
      * @type {number}
-     * @memberof TimeseriesContainerStats
+     * @memberof ContainerStats
      */
     ingestRateBytesPerSec: number;
 }
 
 /**
- * Check if a given object implements the TimeseriesContainerStats interface.
+ * Check if a given object implements the ContainerStats interface.
  */
-export function instanceOfTimeseriesContainerStats(value: object): value is TimeseriesContainerStats {
+export function instanceOfContainerStats(value: object): value is ContainerStats {
     if (!('pointCount' in value) || value['pointCount'] === undefined) return false;
     if (!('channelCount' in value) || value['channelCount'] === undefined) return false;
     if (!('estimatedSizeBytes' in value) || value['estimatedSizeBytes'] === undefined) return false;
@@ -63,11 +63,11 @@ export function instanceOfTimeseriesContainerStats(value: object): value is Time
     return true;
 }
 
-export function TimeseriesContainerStatsFromJSON(json: any): TimeseriesContainerStats {
-    return TimeseriesContainerStatsFromJSONTyped(json, false);
+export function ContainerStatsFromJSON(json: any): ContainerStats {
+    return ContainerStatsFromJSONTyped(json, false);
 }
 
-export function TimeseriesContainerStatsFromJSONTyped(json: any, ignoreDiscriminator: boolean): TimeseriesContainerStats {
+export function ContainerStatsFromJSONTyped(json: any, ignoreDiscriminator: boolean): ContainerStats {
     if (json == null) {
         return json;
     }
@@ -81,7 +81,7 @@ export function TimeseriesContainerStatsFromJSONTyped(json: any, ignoreDiscrimin
     };
 }
 
-export function TimeseriesContainerStatsToJSON(value?: TimeseriesContainerStats | null): any {
+export function ContainerStatsToJSON(value?: ContainerStats | null): any {
     if (value == null) {
         return value;
     }

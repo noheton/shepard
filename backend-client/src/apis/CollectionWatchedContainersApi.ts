@@ -16,11 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   CreateWatchIO,
+  PagedResponse,
   WatchIO,
 } from '../models/index';
 import {
     CreateWatchIOFromJSON,
     CreateWatchIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     WatchIOFromJSON,
     WatchIOToJSON,
 } from '../models/index';
@@ -37,6 +40,8 @@ export interface DeleteWatchedContainerRequest {
 
 export interface ListWatchedContainersRequest {
     collectionAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 /**
@@ -147,10 +152,10 @@ export class CollectionWatchedContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns one `WatchIO` row per `:Watch` edge attached to the Collection identified by `collectionAppId`. A Watch is a link from a Collection to a Container the Collection does NOT own through any DataObject reference — useful for live-data Collections that surface containers shared from elsewhere (e.g. the home-showcase demo Collection watches three home-energy TimeseriesContainers it doesn\'t own).  Each `WatchIO` carries:   - `appId` (UUID v7 of the Watch edge itself).   - `containerKind` (`TIMESERIES` / `FILE` / `STRUCTURED_DATA`).   - `containerAppId`.   - `containerName` (inlined when the caller has Read on the target, else null).   - `containerAvailability` (`available` / `forbidden` / `deleted` / `error`) — tells the UI whether to render the row as clickable, permission-denied, tombstoned, or error.   - `since` (millis when the watch was added).   - `addedBy` (username).  Auth: Read on the Collection. The per-container availability check filters out container details the caller can\'t see, but the watch row itself is always returned so the operator knows the link exists.  Next step: `POST /v2/collections/{collectionAppId}/watched-containers` to add a watch, or click the target container\'s appId in the UI.
+     * Returns one `WatchIO` row per `:Watch` edge attached to the Collection identified by `collectionAppId`. A Watch is a link from a Collection to a Container the Collection does NOT own through any DataObject reference — useful for live-data Collections that surface containers shared from elsewhere (e.g. the home-showcase demo Collection watches three home-energy TimeseriesContainers it doesn\'t own).  Each `WatchIO` carries:   - `appId` (UUID v7 of the Watch edge itself).   - `containerKind` (`TIMESERIES` / `FILE` / `STRUCTURED_DATA`).   - `containerAppId`.   - `containerName` (inlined when the caller has Read on the target, else null).   - `containerAvailability` (`available` / `forbidden` / `deleted` / `error`) — tells the UI whether to render the row as clickable, permission-denied, tombstoned, or error.   - `since` (millis when the watch was added).   - `addedBy` (username).  Auth: Read on the Collection. The per-container availability check filters out container details the caller can\'t see, but the watch row itself is always returned so the operator knows the link exists.  Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all watches. `X-Total-Count` header carries the total before paging.  Next step: `POST /v2/collections/{collectionAppId}/watched-containers` to add a watch, or click the target container\'s appId in the UI.
      * [v2] List containers this Collection is watching (WATCH1).
      */
-    async listWatchedContainersRaw(requestParameters: ListWatchedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<WatchIO>>> {
+    async listWatchedContainersRaw(requestParameters: ListWatchedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -159,6 +164,14 @@ export class CollectionWatchedContainersApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -177,14 +190,14 @@ export class CollectionWatchedContainersApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(WatchIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns one `WatchIO` row per `:Watch` edge attached to the Collection identified by `collectionAppId`. A Watch is a link from a Collection to a Container the Collection does NOT own through any DataObject reference — useful for live-data Collections that surface containers shared from elsewhere (e.g. the home-showcase demo Collection watches three home-energy TimeseriesContainers it doesn\'t own).  Each `WatchIO` carries:   - `appId` (UUID v7 of the Watch edge itself).   - `containerKind` (`TIMESERIES` / `FILE` / `STRUCTURED_DATA`).   - `containerAppId`.   - `containerName` (inlined when the caller has Read on the target, else null).   - `containerAvailability` (`available` / `forbidden` / `deleted` / `error`) — tells the UI whether to render the row as clickable, permission-denied, tombstoned, or error.   - `since` (millis when the watch was added).   - `addedBy` (username).  Auth: Read on the Collection. The per-container availability check filters out container details the caller can\'t see, but the watch row itself is always returned so the operator knows the link exists.  Next step: `POST /v2/collections/{collectionAppId}/watched-containers` to add a watch, or click the target container\'s appId in the UI.
+     * Returns one `WatchIO` row per `:Watch` edge attached to the Collection identified by `collectionAppId`. A Watch is a link from a Collection to a Container the Collection does NOT own through any DataObject reference — useful for live-data Collections that surface containers shared from elsewhere (e.g. the home-showcase demo Collection watches three home-energy TimeseriesContainers it doesn\'t own).  Each `WatchIO` carries:   - `appId` (UUID v7 of the Watch edge itself).   - `containerKind` (`TIMESERIES` / `FILE` / `STRUCTURED_DATA`).   - `containerAppId`.   - `containerName` (inlined when the caller has Read on the target, else null).   - `containerAvailability` (`available` / `forbidden` / `deleted` / `error`) — tells the UI whether to render the row as clickable, permission-denied, tombstoned, or error.   - `since` (millis when the watch was added).   - `addedBy` (username).  Auth: Read on the Collection. The per-container availability check filters out container details the caller can\'t see, but the watch row itself is always returned so the operator knows the link exists.  Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all watches. `X-Total-Count` header carries the total before paging.  Next step: `POST /v2/collections/{collectionAppId}/watched-containers` to add a watch, or click the target container\'s appId in the UI.
      * [v2] List containers this Collection is watching (WATCH1).
      */
-    async listWatchedContainers(requestParameters: ListWatchedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<WatchIO>> {
+    async listWatchedContainers(requestParameters: ListWatchedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listWatchedContainersRaw(requestParameters, initOverrides);
         return await response.value();
     }

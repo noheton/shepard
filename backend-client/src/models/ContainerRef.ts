@@ -32,18 +32,6 @@ export interface ContainerRef {
      */
     readonly containerName?: string;
     /**
-     * Legacy long OGM id of the container node. Used by /v2/timeseries-containers/{containerId}/stats and /shepard/api/timeseriesContainers/{containerId}/available.
-     * @type {number}
-     * @memberof ContainerRef
-     */
-    readonly containerId?: number;
-    /**
-     * Legacy long id of the reference node (upstream-compat). Used by /shepard/api/.../timeseriesReferences/{referenceId}/payload.
-     * @type {number}
-     * @memberof ContainerRef
-     */
-    readonly referenceId?: number;
-    /**
      * UUID v7 of the reference node. Null on pre-L2a rows.
      * @type {string}
      * @memberof ContainerRef
@@ -70,13 +58,11 @@ export function ContainerRefFromJSONTyped(json: any, ignoreDiscriminator: boolea
         
         'containerAppId': json['containerAppId'] == null ? undefined : json['containerAppId'],
         'containerName': json['containerName'] == null ? undefined : json['containerName'],
-        'containerId': json['containerId'] == null ? undefined : json['containerId'],
-        'referenceId': json['referenceId'] == null ? undefined : json['referenceId'],
         'referenceAppId': json['referenceAppId'] == null ? undefined : json['referenceAppId'],
     };
 }
 
-export function ContainerRefToJSON(value?: Omit<ContainerRef, 'containerAppId'|'containerName'|'containerId'|'referenceId'|'referenceAppId'> | null): any {
+export function ContainerRefToJSON(value?: Omit<ContainerRef, 'containerAppId'|'containerName'|'referenceAppId'> | null): any {
     if (value == null) {
         return value;
     }

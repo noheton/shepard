@@ -17,7 +17,7 @@ import * as runtime from '../runtime';
 
 export interface QueryGetRequest {
     repoAppId: string;
-    query?: string;
+    query: string;
 }
 
 export interface QueryPostRequest {
@@ -39,6 +39,13 @@ export class SemanticSPARQLProxyApi extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'repoAppId',
                 'Required parameter "repoAppId" was null or undefined when calling queryGet().'
+            );
+        }
+
+        if (requestParameters['query'] == null) {
+            throw new runtime.RequiredError(
+                'query',
+                'Required parameter "query" was null or undefined when calling queryGet().'
             );
         }
 

@@ -15,9 +15,12 @@
 
 import * as runtime from '../runtime';
 import type {
+  PagedResponse,
   Publication,
 } from '../models/index';
 import {
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PublicationFromJSON,
     PublicationToJSON,
 } from '../models/index';
@@ -25,6 +28,12 @@ import {
 export interface ListPublicationsRequest {
     appId: string;
     kind: string;
+}
+
+export interface ListPublicationsFlatRequest {
+    entityAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface PublishRequest {
@@ -44,8 +53,9 @@ export interface RetirePublicationRequest {
 export class PublishApi extends runtime.BaseAPI {
 
     /**
-     * Returns every :Publication row attached to the entity ordered by mintedAt DESC. Includes retired rows (digitalObjectMutability = \'retired\') so callers can render the full publication history. Clients wanting only active Publications should filter digitalObjectMutability != \'retired\' client-side. Auth: Read permission on the entity. No pagination — entities rarely have more than a handful of Publication rows.
+     * Returns every :Publication row attached to the entity ordered by mintedAt DESC. Includes retired rows (digitalObjectMutability = \'retired\') so callers can render the full publication history. Clients wanting only active Publications should filter digitalObjectMutability != \'retired\' client-side. Auth: Read permission on the entity. No pagination — entities rarely have more than a handful of Publication rows.  DEPRECATED (APISIMP-PUBLICATIONS-KIND-PATH-SEGMENT): use the kind-agnostic alias GET /v2/publications?entityAppId={appId} instead — it does not require the caller to know the entity-kind URL segment. This path is kept for backward compatibility.
      * [v2] List Publications attached to an entity (most-recent first).
+     * @deprecated
      */
     async listPublicationsRaw(requestParameters: ListPublicationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Publication>>> {
         if (requestParameters['appId'] == null) {
@@ -89,11 +99,71 @@ export class PublishApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every :Publication row attached to the entity ordered by mintedAt DESC. Includes retired rows (digitalObjectMutability = \'retired\') so callers can render the full publication history. Clients wanting only active Publications should filter digitalObjectMutability != \'retired\' client-side. Auth: Read permission on the entity. No pagination — entities rarely have more than a handful of Publication rows.
+     * Returns every :Publication row attached to the entity ordered by mintedAt DESC. Includes retired rows (digitalObjectMutability = \'retired\') so callers can render the full publication history. Clients wanting only active Publications should filter digitalObjectMutability != \'retired\' client-side. Auth: Read permission on the entity. No pagination — entities rarely have more than a handful of Publication rows.  DEPRECATED (APISIMP-PUBLICATIONS-KIND-PATH-SEGMENT): use the kind-agnostic alias GET /v2/publications?entityAppId={appId} instead — it does not require the caller to know the entity-kind URL segment. This path is kept for backward compatibility.
      * [v2] List Publications attached to an entity (most-recent first).
+     * @deprecated
      */
     async listPublications(requestParameters: ListPublicationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Publication>> {
         const response = await this.listPublicationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns the same list as GET /v2/{kind}/{appId}/publications without requiring the caller to know the entity-kind URL segment. Pass any publishable entity\'s appId; the server resolves the entity kind internally. Ordered mintedAt DESC (most-recent first). Includes retired rows (digitalObjectMutability = \'retired\'). Auth: Read permission on the entity.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging (kept during deprecation window).
+     * [v2] List Publications by entityAppId (kind-agnostic).
+     */
+    async listPublicationsFlatRaw(requestParameters: ListPublicationsFlatRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+        if (requestParameters['entityAppId'] == null) {
+            throw new runtime.RequiredError(
+                'entityAppId',
+                'Required parameter "entityAppId" was null or undefined when calling listPublicationsFlat().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['entityAppId'] != null) {
+            queryParameters['entityAppId'] = requestParameters['entityAppId'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/publications`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns the same list as GET /v2/{kind}/{appId}/publications without requiring the caller to know the entity-kind URL segment. Pass any publishable entity\'s appId; the server resolves the entity kind internally. Ordered mintedAt DESC (most-recent first). Includes retired rows (digitalObjectMutability = \'retired\'). Auth: Read permission on the entity.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging (kept during deprecation window).
+     * [v2] List Publications by entityAppId (kind-agnostic).
+     */
+    async listPublicationsFlat(requestParameters: ListPublicationsFlatRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listPublicationsFlatRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

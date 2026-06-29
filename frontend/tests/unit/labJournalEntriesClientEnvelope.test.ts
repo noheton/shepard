@@ -41,24 +41,17 @@ function apiReturning(body: unknown): CollectionLabJournalEntriesApi {
 }
 
 describe("CollectionLabJournalEntriesApi envelope deserialization", () => {
-  it("unwraps the PagedResponseIO {items,...} envelope to an array", async () => {
+  it("returns the PagedResponse envelope with items[]", async () => {
     const api = apiReturning({ items: [ENTRY], total: 1, page: 0, pageSize: 50 });
     const out = await api.listLabJournalEntries({ collectionAppId: "c1" });
-    expect(Array.isArray(out)).toBe(true);
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ id: 7, journalContent: "consolidation force nominal" });
+    expect(Array.isArray(out.items)).toBe(true);
+    expect(out.items).toHaveLength(1);
+    expect((out.items ?? [])[0]).toMatchObject({ id: 7, journalContent: "consolidation force nominal" });
   });
 
-  it("still tolerates the legacy bare array (partial-deploy safety)", async () => {
-    const api = apiReturning([ENTRY]);
-    const out = await api.listLabJournalEntries({ collectionAppId: "c1" });
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ id: 7 });
-  });
-
-  it("degrades to [] for an empty envelope (no crash)", async () => {
+  it("returns an envelope with empty/absent items as undefined-safe", async () => {
     const api = apiReturning({ total: 0, page: 0, pageSize: 50 });
     const out = await api.listLabJournalEntries({ collectionAppId: "c1" });
-    expect(out).toEqual([]);
+    expect(out.items ?? []).toEqual([]);
   });
 });

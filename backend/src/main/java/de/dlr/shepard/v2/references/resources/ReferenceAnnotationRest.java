@@ -131,7 +131,7 @@ public class ReferenceAnnotationRest {
 
   @GET
   @Operation(
-    operationId = "listReferenceAnnotations",
+    operationId = "listReferenceAnnotationsV2",
     summary = "List all annotations on a reference.",
     description =
       "Returns all annotations attached to the reference identified by `appId` (UUID v7). " +
@@ -155,7 +155,7 @@ public class ReferenceAnnotationRest {
 
   @POST
   @Operation(
-    operationId = "createReferenceAnnotation",
+    operationId = "createReferenceAnnotationV2",
     summary = "Create an annotation on a reference.",
     description =
       "Creates an annotation on the reference identified by `appId`. The body is kind-specific:\n\n" +
@@ -185,7 +185,7 @@ public class ReferenceAnnotationRest {
   @GET
   @Path("/{annotationAppId}")
   @Operation(
-    operationId = "getReferenceAnnotation",
+    operationId = "getReferenceAnnotationV2",
     summary = "Get a single annotation by appId.",
     description =
       "Returns the annotation identified by `annotationAppId` within the reference `appId`. " +
@@ -212,7 +212,7 @@ public class ReferenceAnnotationRest {
   @PATCH
   @Path("/{annotationAppId}")
   @Operation(
-    operationId = "patchReferenceAnnotation",
+    operationId = "patchReferenceAnnotationV2",
     summary = "Partially update an annotation (merge-patch).",
     description =
       "Applies a merge-patch to the annotation. Only non-null fields in the body are applied; " +
@@ -244,7 +244,7 @@ public class ReferenceAnnotationRest {
   @DELETE
   @Path("/{annotationAppId}")
   @Operation(
-    operationId = "deleteReferenceAnnotation",
+    operationId = "deleteReferenceAnnotationV2",
     summary = "Delete an annotation from a reference.",
     description =
       "Removes the annotation identified by `annotationAppId` from the reference `appId`. " +

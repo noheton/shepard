@@ -25,7 +25,7 @@ import {
     ProblemJsonToJSON,
 } from '../models/index';
 
-export interface FeedRequest {
+export interface GetUnhideFeedRequest {
     page?: number;
     pageSize?: number;
     validate?: boolean;
@@ -40,7 +40,7 @@ export class UnhideApi extends runtime.BaseAPI {
      * Lists every Collection on this shepard instance in the schema.org / metadata4ing JSON-LD shape that Unhide\'s inward-mappings consume. Cursor-paginated via ?page=N&page-size=N (page-size capped at 1000). When :UnhideConfig.enabled=false the endpoint returns 503 unhide.feed.disabled; when feedPublic=false, a matching X-API-KEY header is required (use POST /v2/admin/unhide/harvest-key/rotate to mint). UH1e: pass ?validate=true to receive a structural validation report (application/json) instead of the feed — useful for operators diagnosing feed correctness before registering with Unhide. Auth gates (enabled/feedPublic) still apply.
      * [v2] Helmholtz Unhide harvest feed (schema.org + metadata4ing JSON-LD).
      */
-    async feedRaw(requestParameters: FeedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedIO>> {
+    async getUnhideFeedRaw(requestParameters: GetUnhideFeedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FeedIO>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -83,8 +83,8 @@ export class UnhideApi extends runtime.BaseAPI {
      * Lists every Collection on this shepard instance in the schema.org / metadata4ing JSON-LD shape that Unhide\'s inward-mappings consume. Cursor-paginated via ?page=N&page-size=N (page-size capped at 1000). When :UnhideConfig.enabled=false the endpoint returns 503 unhide.feed.disabled; when feedPublic=false, a matching X-API-KEY header is required (use POST /v2/admin/unhide/harvest-key/rotate to mint). UH1e: pass ?validate=true to receive a structural validation report (application/json) instead of the feed — useful for operators diagnosing feed correctness before registering with Unhide. Auth gates (enabled/feedPublic) still apply.
      * [v2] Helmholtz Unhide harvest feed (schema.org + metadata4ing JSON-LD).
      */
-    async feed(requestParameters: FeedRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedIO> {
-        const response = await this.feedRaw(requestParameters, initOverrides);
+    async getUnhideFeed(requestParameters: GetUnhideFeedRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FeedIO> {
+        const response = await this.getUnhideFeedRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -15,7 +15,7 @@ export function useFetchTemplates() {
         includeRetired,
         pageSize: 200,
       });
-      templates.value = page.items;
+      templates.value = (page.items ?? []) as ShepardTemplate[];
     } catch (error) {
       templates.value = [];
       handleError(error, "fetching templates");

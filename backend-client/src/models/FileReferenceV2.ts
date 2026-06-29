@@ -70,6 +70,12 @@ export interface FileReferenceV2 {
     readonly revision?: number;
     /**
      * 
+     * @type {string}
+     * @memberof FileReferenceV2
+     */
+    uniqueId?: string;
+    /**
+     * 
      * @type {number}
      * @memberof FileReferenceV2
      */
@@ -130,6 +136,7 @@ export function FileReferenceV2FromJSONTyped(json: any, ignoreDiscriminator: boo
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'dataObjectId': json['dataObjectId'] == null ? undefined : json['dataObjectId'],
         'type': json['type'] == null ? undefined : json['type'],
         'appId': json['appId'] == null ? undefined : json['appId'],
@@ -145,6 +152,7 @@ export function FileReferenceV2ToJSON(value?: Omit<FileReferenceV2, 'id'|'create
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
     };
 }
 

@@ -15,11 +15,14 @@
 
 import * as runtime from '../runtime';
 import type {
+  PagedResponse,
   ProjectByAnnotationIO,
   ProjectIO,
   SubCollectionsIO,
 } from '../models/index';
 import {
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     ProjectByAnnotationIOFromJSON,
     ProjectByAnnotationIOToJSON,
     ProjectIOFromJSON,
@@ -40,6 +43,11 @@ export interface ByAnnotationRequest {
 
 export interface GetProjectRequest {
     appId: string;
+}
+
+export interface ListProjectsRequest {
+    page?: number;
+    pageSize?: number;
 }
 
 export interface SubCollectionsRequest {
@@ -168,11 +176,19 @@ export class ProjectsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the appIds of every Collection that carries `urn:shepard:project = \"true\"`. Returned in name-order. The list is always-visible — the frontend `/projects` route uses this to render its tile grid.  For each appId in the response, follow up with `GET /v2/projects/{appId}` for the Project envelope (with programmes and aggregate counts).
+     * Returns the appIds of every Collection that carries `urn:shepard:project = \"true\"`. Returned in name-order. The list is always-visible — the frontend `/projects` route uses this to render its tile grid.  Pagination (APISIMP-PROJECTS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all projects. `X-Total-Count` header carries the total before paging.  For each appId in the response, follow up with `GET /v2/projects/{appId}` for the Project envelope (with programmes and aggregate counts).
      * [v2] List Project appIds.
      */
-    async listProjectsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<string>>> {
+    async listProjectsRaw(requestParameters: ListProjectsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -191,15 +207,15 @@ export class ProjectsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse<any>(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns the appIds of every Collection that carries `urn:shepard:project = \"true\"`. Returned in name-order. The list is always-visible — the frontend `/projects` route uses this to render its tile grid.  For each appId in the response, follow up with `GET /v2/projects/{appId}` for the Project envelope (with programmes and aggregate counts).
+     * Returns the appIds of every Collection that carries `urn:shepard:project = \"true\"`. Returned in name-order. The list is always-visible — the frontend `/projects` route uses this to render its tile grid.  Pagination (APISIMP-PROJECTS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all projects. `X-Total-Count` header carries the total before paging.  For each appId in the response, follow up with `GET /v2/projects/{appId}` for the Project envelope (with programmes and aggregate counts).
      * [v2] List Project appIds.
      */
-    async listProjects(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<string>> {
-        const response = await this.listProjectsRaw(initOverrides);
+    async listProjects(requestParameters: ListProjectsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listProjectsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

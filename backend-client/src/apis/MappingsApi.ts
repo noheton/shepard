@@ -30,7 +30,7 @@ export interface MaterializeRequest {
 /**
  * 
  */
-export class MappingsV2Api extends runtime.BaseAPI {
+export class MappingsApi extends runtime.BaseAPI {
 
     /**
      * Binds the supplied input reference appIds through the recipe\'s shape and runs the registered TransformExecutor, returning a derived reference appId or a played view-model. 404 when the template/executor is absent; 422 when templateKind != MAPPING_RECIPE or the body declares no mappingRecipeShape.

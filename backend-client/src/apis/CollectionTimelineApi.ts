@@ -22,6 +22,11 @@ import {
     CollectionTimelineIOToJSON,
 } from '../models/index';
 
+export interface CrossTimelineRequest {
+    binSizeDays?: number;
+    collections?: Array<string>;
+}
+
 export interface TimelineRequest {
     collectionAppId: string;
     binSizeDays?: number;
@@ -31,6 +36,50 @@ export interface TimelineRequest {
  * 
  */
 export class CollectionTimelineApi extends runtime.BaseAPI {
+
+    /**
+     * Merges DataObjects from two or more Collections into a single swimlane envelope. The response shape is identical to the single-collection `GET /v2/collections/{appId}/timeline` endpoint — the UI renders them the same way.  Pass each Collection\'s appId via `?collections=id` (repeat for each Collection, or use a single comma-separated value for convenience).  Auth: caller must have Read on every listed Collection. The first missing or inaccessible Collection short-circuits with 404 or 403.  Use case: programme-level comparisons — e.g. MFFD Q1 + Q2 shells on the same axis, or LUMEN campaign across test blocks.
+     * [v2] Cross-collection timeline overlay.
+     */
+    async crossTimelineRaw(requestParameters: CrossTimelineRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionTimelineIO>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['binSizeDays'] != null) {
+            queryParameters['binSizeDays'] = requestParameters['binSizeDays'];
+        }
+
+        if (requestParameters['collections'] != null) {
+            queryParameters['collections'] = requestParameters['collections'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/collections/timeline`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionTimelineIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Merges DataObjects from two or more Collections into a single swimlane envelope. The response shape is identical to the single-collection `GET /v2/collections/{appId}/timeline` endpoint — the UI renders them the same way.  Pass each Collection\'s appId via `?collections=id` (repeat for each Collection, or use a single comma-separated value for convenience).  Auth: caller must have Read on every listed Collection. The first missing or inaccessible Collection short-circuits with 404 or 403.  Use case: programme-level comparisons — e.g. MFFD Q1 + Q2 shells on the same axis, or LUMEN campaign across test blocks.
+     * [v2] Cross-collection timeline overlay.
+     */
+    async crossTimeline(requestParameters: CrossTimelineRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionTimelineIO> {
+        const response = await this.crossTimelineRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Returns a swimlane envelope where each lane is a distinct process-type (derived from the `urn:shepard:mffd:process-type` SemanticAnnotation on each DataObject) and each bin within a lane counts the DataObjects whose `createdAt` falls in that bin\'s day window. NCR (`NCR_OPEN`, `CONCESSION_PENDING`) and `REJECTED` counts are overlaid per-bin so the UI can render stacked colour-coded bars.  DataObjects without a `urn:shepard:mffd:process-type` annotation collect into a synthetic `unclassified` lane — so the Timeline still surfaces activity for non-MFFD Collections (LUMEN, home-showcase) without misleadingly hiding it.  Adaptive bin size: `?binSizeDays=` accepts 1, 7, 30, 90, or 365 (non-ladder values snap upward). When the campaign span divided by the requested bin size would produce more than ~730 bins per lane, the server auto-coarsens upward through the ladder until it fits. The actual bin size used is echoed in the response\'s `binSizeDays` field.  Auth: Read permission on the Collection (inherited by DataObjects).  Performance target: ≤ 2 s for an MFFD-scale Collection (≈ 8.2k DataObjects, 5 lanes). Cached for 5 minutes via Cache-Control.

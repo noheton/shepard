@@ -47,7 +47,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
     const out = await new AnnotatedChannel(CONTAINER, CHANNEL).fetchAnnotations();
 
     expect(mockList).toHaveBeenCalledWith({
-      containerAppId: CONTAINER,
+      appId: CONTAINER,
       channelShepardId: CHANNEL,
     });
     expect(out).toHaveLength(1);
@@ -82,7 +82,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
     await a.deleteAnnotation(5);
 
     expect(mockDelete).toHaveBeenCalledWith({
-      containerAppId: CONTAINER,
+      appId: CONTAINER,
       channelShepardId: CHANNEL,
       annotationAppId: ANNO_APP_ID,
     });
@@ -107,7 +107,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
     );
 
     expect(mockCreate).toHaveBeenCalledWith({
-      containerAppId: CONTAINER,
+      appId: CONTAINER,
       channelShepardId: CHANNEL,
       semanticAnnotation: body,
     });

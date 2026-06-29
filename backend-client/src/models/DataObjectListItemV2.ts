@@ -72,6 +72,12 @@ export interface DataObjectListItemV2 {
      * @type {string}
      * @memberof DataObjectListItemV2
      */
+    uniqueId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DataObjectListItemV2
+     */
     description?: string | null;
     /**
      * 
@@ -128,11 +134,11 @@ export interface DataObjectListItemV2 {
      */
     readonly successorIds: Array<number>;
     /**
-     * 
-     * @type {Array<number>}
+     * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows.
+     * @type {Array<string>}
      * @memberof DataObjectListItemV2
      */
-    predecessorIds?: Array<number>;
+    predecessorAppIds?: Array<string> | null;
     /**
      * 
      * @type {Array<number>}
@@ -220,6 +226,18 @@ export interface DataObjectListItemV2 {
      * @memberof DataObjectListItemV2
      */
     readonly provenanceMode?: DataObjectListItemV2ProvenanceModeEnum | null;
+    /**
+     * appId (UUID v7) of the parent DataObject, or null when top-level. appId-native linkage for the sidebar tree (replaces the suppressed numeric parentId).
+     * @type {string}
+     * @memberof DataObjectListItemV2
+     */
+    readonly parentAppId?: string | null;
+    /**
+     * appIds (UUID v7) of direct non-deleted children (empty for a leaf). appId-native linkage for the sidebar tree (replaces the suppressed numeric childrenIds).
+     * @type {Array<string>}
+     * @memberof DataObjectListItemV2
+     */
+    readonly childrenAppIds?: Array<string>;
 }
 
 
@@ -303,6 +321,7 @@ export function DataObjectListItemV2FromJSONTyped(json: any, ignoreDiscriminator
         'name': json['name'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'description': json['description'] == null ? undefined : json['description'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'status': json['status'] == null ? undefined : json['status'],
@@ -313,7 +332,7 @@ export function DataObjectListItemV2FromJSONTyped(json: any, ignoreDiscriminator
         'collectionId': json['collectionId'],
         'referenceIds': json['referenceIds'],
         'successorIds': json['successorIds'],
-        'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
+        'predecessorAppIds': json['predecessorAppIds'] == null ? undefined : json['predecessorAppIds'],
         'childrenIds': json['childrenIds'],
         'parentId': json['parentId'],
         'incomingIds': json['incomingIds'],
@@ -328,23 +347,26 @@ export function DataObjectListItemV2FromJSONTyped(json: any, ignoreDiscriminator
         'timeBoundsStart': json['timeBoundsStart'] == null ? undefined : json['timeBoundsStart'],
         'timeBoundsEnd': json['timeBoundsEnd'] == null ? undefined : json['timeBoundsEnd'],
         'provenanceMode': json['provenanceMode'] == null ? undefined : json['provenanceMode'],
+        'parentAppId': json['parentAppId'] == null ? undefined : json['parentAppId'],
+        'childrenAppIds': json['childrenAppIds'] == null ? undefined : json['childrenAppIds'],
     };
 }
 
-export function DataObjectListItemV2ToJSON(value?: Omit<DataObjectListItemV2, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'collectionId'|'referenceIds'|'successorIds'|'childrenIds'|'incomingIds'|'timeseriesReferenceCount'|'fileBundleCount'|'structuredDataReferenceCount'|'attachedTemplateAppId'|'videoStreamReferenceCount'|'timeseriesCount'|'fileCount'|'structuredDataCount'|'timeBoundsStart'|'timeBoundsEnd'|'provenanceMode'> | null): any {
+export function DataObjectListItemV2ToJSON(value?: Omit<DataObjectListItemV2, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'collectionId'|'referenceIds'|'successorIds'|'childrenIds'|'incomingIds'|'timeseriesReferenceCount'|'fileBundleCount'|'structuredDataReferenceCount'|'attachedTemplateAppId'|'videoStreamReferenceCount'|'timeseriesCount'|'fileCount'|'structuredDataCount'|'timeBoundsStart'|'timeBoundsEnd'|'provenanceMode'|'parentAppId'|'childrenAppIds'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
         'description': value['description'],
         'attributes': value['attributes'],
         'status': value['status'],
         'license': value['license'],
         'accessRights': value['accessRights'],
         'embargoEndDate': value['embargoEndDate'],
-        'predecessorIds': value['predecessorIds'],
+        'predecessorAppIds': value['predecessorAppIds'],
         'parentId': value['parentId'],
     };
 }

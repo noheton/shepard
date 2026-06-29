@@ -20,6 +20,7 @@ import type {
   ShapeBuildResponseIO,
   ShapeValidationReportIO,
   ShapeValidationRequestIO,
+  ShapesApplicableResponseIO,
   ShapesRenderRequestIO,
   ShapesRenderResponseIO,
 } from '../models/index';
@@ -34,6 +35,8 @@ import {
     ShapeValidationReportIOToJSON,
     ShapeValidationRequestIOFromJSON,
     ShapeValidationRequestIOToJSON,
+    ShapesApplicableResponseIOFromJSON,
+    ShapesApplicableResponseIOToJSON,
     ShapesRenderRequestIOFromJSON,
     ShapesRenderRequestIOToJSON,
     ShapesRenderResponseIOFromJSON,
@@ -42,6 +45,10 @@ import {
 
 export interface BuildRequest {
     shapeBuildRequestIO: ShapeBuildRequestIO;
+}
+
+export interface ListApplicableShapesRequest {
+    focusAppId: string;
 }
 
 export interface PredicatesRequest {
@@ -104,6 +111,53 @@ export class ShapesApi extends runtime.BaseAPI {
      */
     async build(requestParameters: BuildRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ShapeBuildResponseIO> {
         const response = await this.buildRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * One discovery for both directions of the shapes UX (doc 125 §5.3). VIEW entries are non-retired VIEW_RECIPE templates attached to the focus entity, consumed via POST /v2/shapes/render. FORM entries are non-retired data-kind templates carrying a shapeGraph (scoped to the owning Collection\'s allow-list when non-empty), consumed via GET /v2/templates/{appId}/form. An empty items list is a valid response — never an error.
+     * [v2] List the renderable views (mode=VIEW) and fillable forms (mode=FORM) applicable to a focus entity.
+     */
+    async listApplicableShapesRaw(requestParameters: ListApplicableShapesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ShapesApplicableResponseIO>> {
+        if (requestParameters['focusAppId'] == null) {
+            throw new runtime.RequiredError(
+                'focusAppId',
+                'Required parameter "focusAppId" was null or undefined when calling listApplicableShapes().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['focusAppId'] != null) {
+            queryParameters['focusAppId'] = requestParameters['focusAppId'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/shapes/applicable`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ShapesApplicableResponseIOFromJSON(jsonValue));
+    }
+
+    /**
+     * One discovery for both directions of the shapes UX (doc 125 §5.3). VIEW entries are non-retired VIEW_RECIPE templates attached to the focus entity, consumed via POST /v2/shapes/render. FORM entries are non-retired data-kind templates carrying a shapeGraph (scoped to the owning Collection\'s allow-list when non-empty), consumed via GET /v2/templates/{appId}/form. An empty items list is a valid response — never an error.
+     * [v2] List the renderable views (mode=VIEW) and fillable forms (mode=FORM) applicable to a focus entity.
+     */
+    async listApplicableShapes(requestParameters: ListApplicableShapesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ShapesApplicableResponseIO> {
+        const response = await this.listApplicableShapesRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

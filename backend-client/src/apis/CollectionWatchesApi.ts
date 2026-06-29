@@ -16,10 +16,13 @@
 import * as runtime from '../runtime';
 import type {
   CollectionWatcherIO,
+  PagedResponse,
 } from '../models/index';
 import {
     CollectionWatcherIOFromJSON,
     CollectionWatcherIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface GetMyCollectionWatchRequest {
@@ -28,6 +31,8 @@ export interface GetMyCollectionWatchRequest {
 
 export interface ListCollectionWatchesRequest {
     collectionAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface UnwatchRequest {
@@ -87,10 +92,10 @@ export class CollectionWatchesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the complete list of users currently watching this Collection. Each item carries `username` and `since` (epoch millis when the watch was registered). The list is unordered and is not paginated — the number of watchers is expected to be small relative to the DataObject count.  Auth: Read permission on the Collection.
+     * Returns the list of users currently watching this Collection. Each item carries `username` and `since` (epoch millis when the watch was registered).  Pagination (APISIMP-PAGINATION-LIST-WATCHERS): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all watchers. `X-Total-Count` header carries the total watcher count before paging.  Auth: Read permission on the Collection.
      * [v2] List all watchers for this Collection (CW1).
      */
-    async listCollectionWatchesRaw(requestParameters: ListCollectionWatchesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<CollectionWatcherIO>>> {
+    async listCollectionWatchesRaw(requestParameters: ListCollectionWatchesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -99,6 +104,14 @@ export class CollectionWatchesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -117,14 +130,14 @@ export class CollectionWatchesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(CollectionWatcherIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns the complete list of users currently watching this Collection. Each item carries `username` and `since` (epoch millis when the watch was registered). The list is unordered and is not paginated — the number of watchers is expected to be small relative to the DataObject count.  Auth: Read permission on the Collection.
+     * Returns the list of users currently watching this Collection. Each item carries `username` and `since` (epoch millis when the watch was registered).  Pagination (APISIMP-PAGINATION-LIST-WATCHERS): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all watchers. `X-Total-Count` header carries the total watcher count before paging.  Auth: Read permission on the Collection.
      * [v2] List all watchers for this Collection (CW1).
      */
-    async listCollectionWatches(requestParameters: ListCollectionWatchesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<CollectionWatcherIO>> {
+    async listCollectionWatches(requestParameters: ListCollectionWatchesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listCollectionWatchesRaw(requestParameters, initOverrides);
         return await response.value();
     }

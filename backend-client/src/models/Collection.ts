@@ -122,19 +122,20 @@ export interface Collection {
      */
     readonly incomingIds: Array<number>;
     /**
-     * @deprecated Use defaultFileContainerAppId instead.
+     * 
      * @type {number}
      * @memberof Collection
+     * @deprecated
      */
     defaultFileContainerId?: number | null;
     /**
-     * AppId (UUID v7) of the default file container. Nullable when none is set.
+     * 
      * @type {string}
      * @memberof Collection
      */
     readonly defaultFileContainerAppId?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Collection
      */
@@ -250,7 +251,7 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'|'defaultFileContainerAppId'> | null): any {
+export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'> | null): any {
     if (value == null) {
         return value;
     }

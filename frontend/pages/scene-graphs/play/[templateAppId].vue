@@ -19,6 +19,7 @@
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
 import BindChannelsDialog from "~/components/scene-graph/BindChannelsDialog.vue";
 import { materializeMapping } from "~/composables/useMaterializeMapping";
+import { fetchTemplateKind } from "~/composables/useSceneGraphPlay";
 import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
 
 useHead({ title: "Scene-graph 3D view | shepard" });
@@ -55,6 +56,24 @@ async function load() {
   error.value = null;
   envelope.value = null;
   try {
+    // SCENEGRAPH-PLAY-VIEWKIND-BRANCH (aidocs/16 §3962): this page materializes
+    // MAPPING_RECIPE templates only. A VIEW_RECIPE appId reaches here when a
+    // collection "hero view" points at a render-recipe (small-multiples,
+    // trace-3d, …) rather than a scene-graph. Branch on templateKind so a
+    // VIEW_RECIPE is handed to the /shapes/render playground instead of failing
+    // the MAPPING_RECIPE-only materialize call with a raw, misleading error.
+    const kind = await fetchTemplateKind(templateAppId.value);
+    if (kind === "VIEW_RECIPE") {
+      await navigateTo(
+        `/shapes/render?templateAppId=${encodeURIComponent(templateAppId.value)}`,
+      );
+      return;
+    }
+    if (kind && kind !== "MAPPING_RECIPE") {
+      error.value =
+        `This template is a ${kind}, not a playable scene-graph (MAPPING_RECIPE).`;
+      return;
+    }
     const result = await materializeMapping(templateAppId.value, {});
     if (result.outputKind !== "VIEW" || !result.viewModel) {
       error.value = "This template did not materialize into a 3D view.";
