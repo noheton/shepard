@@ -44,9 +44,14 @@ const sampleGrants: InstanceAdminGrantIO[] = [
   { username: "bob", source: "IdP", grantedBy: null, grantedAt: null },
 ];
 
+/** Build a PagedResponseIO-shaped mock for the GET /v2/admin/instance-admins response. */
+function pagedGrants(items: InstanceAdminGrantIO[]) {
+  return { items, total: items.length, page: 0, pageSize: items.length };
+}
+
 describe("useInstanceAdmins — refresh()", () => {
   it("populates grants on successful GET", async () => {
-    mockFetchOk(sampleGrants);
+    mockFetchOk(pagedGrants(sampleGrants));
     const { grants, error, refresh } = useInstanceAdmins();
     await refresh();
     expect(grants.value).toEqual(sampleGrants);
@@ -62,7 +67,7 @@ describe("useInstanceAdmins — refresh()", () => {
   });
 
   it("uses the /v2/admin/instance-admins URL with Bearer token", async () => {
-    mockFetchOk(sampleGrants);
+    mockFetchOk(pagedGrants(sampleGrants));
     const { refresh } = useInstanceAdmins();
     await refresh();
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
@@ -86,7 +91,7 @@ describe("useInstanceAdmins — grant()", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(newGrant), text: () => Promise.resolve("") })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([...sampleGrants, newGrant]), text: () => Promise.resolve("") });
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(pagedGrants([...sampleGrants, newGrant])), text: () => Promise.resolve("") });
     vi.stubGlobal("fetch", fetchMock);
 
     const { grant, grants } = useInstanceAdmins();
@@ -114,7 +119,7 @@ describe("useInstanceAdmins — revoke()", () => {
     // Seed list first via refresh, then revoke.
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(sampleGrants), text: () => Promise.resolve("") })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(pagedGrants(sampleGrants)), text: () => Promise.resolve("") })
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve("") });
     vi.stubGlobal("fetch", fetchMock);
 

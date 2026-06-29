@@ -41,7 +41,6 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -111,17 +110,15 @@ public class InstanceAdminRest {
     description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
   )
   @APIResponse(
-    description = "List of all active Neo4j-side instance-admin grants with audit metadata.",
+    description = "Paged list of all active Neo4j-side instance-admin grants with audit metadata.",
     responseCode = "200",
-    content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = InstanceAdminGrantIO.class)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    return Response.ok(grants).build();
+    return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size())).build();
   }
 
   @POST
@@ -182,17 +179,15 @@ public class InstanceAdminRest {
     description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges."
   )
   @APIResponse(
-    description = "List of BasicEntity nodes that have no `:has_permissions` edge; an empty array means no orphans.",
+    description = "Paged list of BasicEntity nodes that have no `:has_permissions` edge; empty items means no orphans.",
     responseCode = "200",
-    content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditEntryIO.class)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response permissionAudit(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans();
-    return Response.ok(orphans).build();
+    return Response.ok(new PagedResponseIO<>(orphans, orphans.size(), 0, orphans.size())).build();
   }
 
   /**
