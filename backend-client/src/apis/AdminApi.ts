@@ -29,6 +29,7 @@ import type {
   EpicMinterConfigIO,
   EpicTestConnectionIO,
   FeatureToggle,
+  PagedResponseFeatureToggle,
   FileMigrationStateIO,
   FileMigrationTriggerIO,
   GrantInstanceAdmin,
@@ -96,6 +97,7 @@ import {
     EpicTestConnectionIOToJSON,
     FeatureToggleFromJSON,
     FeatureToggleToJSON,
+    PagedResponseFeatureToggleFromJSON,
     FileMigrationStateIOFromJSON,
     FileMigrationStateIOToJSON,
     FileMigrationTriggerIOFromJSON,
@@ -1247,7 +1249,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns all registered feature toggles with their current enabled state. Changes made via PATCH take effect immediately in the running JVM but are not persisted across restarts — the config-property value is restored on next startup.
      * [v2] List runtime feature toggles.
      */
-    async listFeatureTogglesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FeatureToggle>>> {
+    async listFeatureTogglesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseFeatureToggle>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1267,14 +1269,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FeatureToggleFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFeatureToggleFromJSON(jsonValue));
     }
 
     /**
      * Returns all registered feature toggles with their current enabled state. Changes made via PATCH take effect immediately in the running JVM but are not persisted across restarts — the config-property value is restored on next startup.
      * [v2] List runtime feature toggles.
      */
-    async listFeatureToggles(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FeatureToggle>> {
+    async listFeatureToggles(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseFeatureToggle> {
         const response = await this.listFeatureTogglesRaw(initOverrides);
         return await response.value();
     }
