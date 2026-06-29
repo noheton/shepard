@@ -39,6 +39,23 @@ public class UserIOTest {
   }
 
   @Test
+  public void effectiveRoles_isOmittedFromJson_whenNull() throws Exception {
+    var io = new UserIO();
+    io.setUsername("bob");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).doesNotContain("effectiveRoles");
+  }
+
+  @Test
+  public void effectiveRoles_isSerialised_whenSet() throws Exception {
+    var io = new UserIO();
+    io.setUsername("bob");
+    io.setEffectiveRoles(List.of("instance-admin"));
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).contains("\"effectiveRoles\":[\"instance-admin\"]");
+  }
+
+  @Test
   public void orcid_isSerialised_whenSet() throws Exception {
     var io = new UserIO();
     io.setUsername("bob");

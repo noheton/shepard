@@ -1,5 +1,7 @@
 package de.dlr.shepard.auth.users.endpoints;
 
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
@@ -14,6 +16,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -30,6 +33,9 @@ public class UserRest {
   @Inject
   UserService userService;
 
+  @Inject
+  AuthenticationContext authenticationContext;
+
   @GET
   @Tag(name = Constants.USER)
   @Operation(description = "Get current user")
@@ -41,7 +47,12 @@ public class UserRest {
   @APIResponse(responseCode = "400", description = "bad request")
   public Response getCurrentUser() {
     User currentUser = userService.getCurrentUser();
-    return Response.ok(new UserIO(currentUser)).build();
+    UserIO io = new UserIO(currentUser);
+    JWTPrincipal principal = authenticationContext.getPrincipal();
+    if (principal != null) {
+      io.setEffectiveRoles(Arrays.asList(principal.getRoles()));
+    }
+    return Response.ok(io).build();
   }
 
   @GET

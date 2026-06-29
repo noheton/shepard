@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.common.subscription.entities.Subscription;
+import java.util.List;
 import java.util.UUID;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -88,6 +89,23 @@ public class UserIO {
   @Schema(required = true,
     description = "PROV1l — when true, identity is omitted from :Activity records (GDPR opt-out). Default false.")
   private boolean anonymizeInProvenance;
+
+  /**
+   * ROLE-GRANT-STALE-SESSION fix: live role set resolved from both the
+   * IdP-claim roles AND Neo4j {@code :HAS_ROLE} grants at the time of
+   * this request. Populated only on the self-view ({@code GET
+   * /shepard/api/users} / {@code GET /v2/users/me}) where the caller is
+   * the authenticated principal — set to {@code null} when looking up
+   * another user's profile so it is omitted from the JSON wire.
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from the wire when
+   * null so {@code /shepard/api/users/{username}} for a third-party lookup
+   * remains byte-for-byte compatible with upstream 5.2.0.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, readOnly = true,
+    description = "Live effective roles resolved from IdP claims and Neo4j :HAS_ROLE grants. Null on third-party lookups.")
+  private List<String> effectiveRoles;
 
   public UserIO(User user) {
     this.username = user.getUsername();
