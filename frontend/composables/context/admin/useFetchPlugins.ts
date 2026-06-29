@@ -76,14 +76,13 @@ export function useFetchPlugins() {
         handleError(fetchError.value, "listPlugins");
         return;
       }
-      // The endpoint returns `{ plugins: [...] }` (a wrapper object), not a
-      // bare array — spreading the object directly threw "p is not iterable".
+      // The endpoint returns PagedResponseIO `{ items: [...], total, page, pageSize }`.
       const body = (await response.json()) as
         | PluginEntryIO[]
-        | { plugins?: PluginEntryIO[] };
+        | { items?: PluginEntryIO[] };
       const raw: PluginEntryIO[] = Array.isArray(body)
         ? body
-        : (body?.plugins ?? []);
+        : (body?.items ?? []);
       plugins.value = [...raw].sort(
         (a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state],
       );
