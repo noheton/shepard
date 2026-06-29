@@ -70,6 +70,15 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     url: "/collections/019edb10-c107-7473-ae28-ffc592aba860/dataobjects/019f129e-c45e-703a-97de-079cb19d1052/videostreamreferences/019f129f-aa8b-70a6-b908-45e9918d7531",
     settle: 12000,
   },
+  {
+    // J — URDF viewer for the real KR210 R2700/2 kinematic model (KUKA
+    // KR210 R2700/2 — the actual robot in the MFFD AFP cell). The URDF +
+    // meshes are served from the frontend public dir; Three.js urdf-loader
+    // renders the kinematic tree inline.
+    id: "J-urdf-with-robot",
+    url: "/shapes/render?renderer=urdf&urdfUrl=%2Furdf-samples%2Fkr210_r2700_2%2Fkuka_quantec_support%2Furdf%2Fkr210_r2700_2.urdf&packagePath=%2Furdf-samples%2Fkr210_r2700_2",
+    settle: 18000,
+  },
 ];
 
 test("capture MFFD presentation surfaces", async ({ page }) => {
