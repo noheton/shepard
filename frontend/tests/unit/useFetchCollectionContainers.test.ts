@@ -45,9 +45,16 @@ const TS_CONTAINER = {
   containerType: "TIMESERIES" as const,
 };
 
+/** Build a PagedResponseContainerSummary-shaped mock return value. */
+function pagedContainers(
+  items: typeof FILE_CONTAINER[],
+): { items: typeof FILE_CONTAINER[]; total: number; page: number; pageSize: number } {
+  return { items, total: items.length, page: 0, pageSize: items.length };
+}
+
 describe("useFetchCollectionContainers", () => {
   it("starts with empty containers when appId is null", () => {
-    mockListReferencedContainers.mockResolvedValue([]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([]));
     const appId = ref<string | null>(null);
     const { containers, isLoading } = useFetchCollectionContainers(appId);
     // null appId — no fetch triggered
@@ -57,7 +64,7 @@ describe("useFetchCollectionContainers", () => {
   });
 
   it("fetches containers when appId is non-null on init", async () => {
-    mockListReferencedContainers.mockResolvedValue([FILE_CONTAINER, TS_CONTAINER]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([FILE_CONTAINER, TS_CONTAINER]));
     const appId = ref<string | null>("coll-app-id");
     const { containers, isLoading } = useFetchCollectionContainers(appId);
     await flush();
@@ -70,7 +77,7 @@ describe("useFetchCollectionContainers", () => {
   });
 
   it("file containers are present in raw list, caller can filter by containerType", async () => {
-    mockListReferencedContainers.mockResolvedValue([FILE_CONTAINER, TS_CONTAINER]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([FILE_CONTAINER, TS_CONTAINER]));
     const appId = ref<string | null>("coll-app-id");
     const { containers } = useFetchCollectionContainers(appId);
     await flush();
@@ -81,14 +88,14 @@ describe("useFetchCollectionContainers", () => {
   });
 
   it("re-fetches when collectionAppId changes", async () => {
-    mockListReferencedContainers.mockResolvedValue([FILE_CONTAINER]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([FILE_CONTAINER]));
     const appId = ref<string | null>("coll-a");
     const { containers } = useFetchCollectionContainers(appId);
     await flush();
     expect(containers.value).toHaveLength(1);
 
     const newContainer = { ...FILE_CONTAINER, id: 99, name: "Other Files" };
-    mockListReferencedContainers.mockResolvedValue([newContainer]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([newContainer]));
     appId.value = "coll-b";
     await flush();
 
@@ -100,7 +107,7 @@ describe("useFetchCollectionContainers", () => {
   });
 
   it("does not fetch when appId changes to null", async () => {
-    mockListReferencedContainers.mockResolvedValue([FILE_CONTAINER]);
+    mockListReferencedContainers.mockResolvedValue(pagedContainers([FILE_CONTAINER]));
     const appId = ref<string | null>("coll-a");
     const { containers } = useFetchCollectionContainers(appId);
     await flush();
