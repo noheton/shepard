@@ -1,11 +1,12 @@
 package de.dlr.shepard.v2.admin.users;
 
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -100,9 +101,6 @@ public class AdminUserGitCredentialRest {
       );
     }
   }
-
-  /** ADM-USR-GIT-BACKEND-1 — list envelope. */
-  public record AdminGitCredentialListIO(List<AdminGitCredentialListItemIO> items) {}
 
   /** ADM-USR-GIT-BACKEND-1 — rotate body: caller supplies a fresh PAT. */
   public record AdminGitCredentialRotateIO(String newPat) {}
@@ -218,7 +216,7 @@ public class AdminUserGitCredentialRest {
   @APIResponse(
     responseCode = "200",
     description = "List of credentials (may be empty).",
-    content = @Content(schema = @Schema(implementation = AdminGitCredentialListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
@@ -235,7 +233,7 @@ public class AdminUserGitCredentialRest {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    return Response.ok(new AdminGitCredentialListIO(items)).build();
+    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size())).build();
   }
 
   @POST
