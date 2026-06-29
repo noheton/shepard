@@ -66,7 +66,14 @@ export class CollectionLabJournalEntriesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LabJournalEntryFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => {
+            // Backend migrated this endpoint to the PagedResponseIO {items,...}
+            // envelope (APISIMP-PAGINATION-ENVELOPE). Tolerate both the envelope
+            // and the legacy bare array so a partial-deploy never crashes the UI
+            // with "s.map is not a function".
+            const rows = Array.isArray(jsonValue) ? jsonValue : (jsonValue?.items ?? []);
+            return rows.map(LabJournalEntryFromJSON);
+        });
     }
 
     /**
