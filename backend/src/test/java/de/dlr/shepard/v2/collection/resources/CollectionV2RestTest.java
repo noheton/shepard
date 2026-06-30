@@ -122,14 +122,25 @@ class CollectionV2RestTest {
   }
 
   @Test
-  void listClampsOversizePageSizeToMax200() {
-    when(collectionService.getAllCollections(any())).thenReturn(List.of());
-    // Asking for 500 must be clamped to 200 server-side.
-    Response r = resource.list(null, 0, 500);
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
-    assertEquals(200, body.pageSize());
+  void list_pageSizeParam_hasMinConstraint() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize must have @Min constraint");
+    assertEquals(1L, param.getAnnotation(jakarta.validation.constraints.Min.class).value(), "pageSize @Min must be 1");
+  }
+
+  @Test
+  void list_pageSizeParam_hasMaxConstraint() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize must have @Max constraint");
+    assertEquals(200L, param.getAnnotation(jakarta.validation.constraints.Max.class).value(), "pageSize @Max must be 200");
   }
 
   // ── get ────────────────────────────────────────────────────────────────────
