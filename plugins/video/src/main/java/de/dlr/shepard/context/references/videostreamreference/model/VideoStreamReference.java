@@ -5,7 +5,6 @@ import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**
@@ -27,7 +26,6 @@ import org.neo4j.ogm.annotation.NodeEntity;
 @VideoPayload
 @NodeEntity
 @Data
-@ToString(callSuper = true)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class VideoStreamReference extends BasicReference {
