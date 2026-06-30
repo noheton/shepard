@@ -7,6 +7,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotListItemIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -95,14 +96,6 @@ public class SnapshotListRest {
     return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
-  /** SNAPSHOT-LIST-1-REST — page envelope. */
-  public record SnapshotListPageIO(
-    List<SnapshotListItemIO> items,
-    long total,
-    int page,
-    int pageSize
-  ) {}
-
   @GET
   @Operation(
     operationId = "listSnapshots",
@@ -123,7 +116,7 @@ public class SnapshotListRest {
   @APIResponse(
     responseCode = "200",
     description = "Snapshot page (may be empty).",
-    content = @Content(schema = @Schema(implementation = SnapshotListPageIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "collectionAppId supplied but does not resolve to an existing Collection.")
@@ -181,6 +174,6 @@ public class SnapshotListRest {
       }
     }
 
-    return Response.ok(new SnapshotListPageIO(filtered, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize)).build();
   }
 }

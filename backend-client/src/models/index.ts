@@ -292,7 +292,6 @@ export * from './SnapshotDiff';
 export * from './SnapshotDiffEntry';
 export * from './SnapshotEntry';
 export * from './SnapshotListItem';
-export * from './SnapshotListPageIO';
 export * from './SpatialDataContainer';
 export * from './SpatialDataPoint';
 export * from './SpatialDataReference';

@@ -19,8 +19,9 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
+import de.dlr.shepard.context.snapshot.io.SnapshotListItemIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
-import de.dlr.shepard.v2.snapshot.resources.SnapshotListRest.SnapshotListPageIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -95,7 +96,7 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.items()).isEmpty();
     assertThat(body.total()).isEqualTo(0L);
     assertThat(body.page()).isEqualTo(0);
@@ -113,7 +114,7 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
     var item = body.items().get(0);
     assertThat(item.appId()).isEqualTo("snap-1");
@@ -140,7 +141,7 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
     assertThat(body.items().get(0).appId()).isEqualTo("snap-a");
     // Total still reports the unfiltered count per the class Javadoc.
@@ -155,7 +156,7 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.items()).isEmpty();
   }
 
@@ -172,7 +173,7 @@ class SnapshotListRestTest {
 
     Response r = rest.list(COLL_A_APP, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
     assertThat(body.total()).isEqualTo(1L);
     verify(snapshotService).listByCollection(eq(COLL_A_APP), anyInt(), anyInt());
@@ -202,7 +203,7 @@ class SnapshotListRestTest {
     when(snapshotService.countAll()).thenReturn(0L);
     Response r = rest.list(null, -3, 9999, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.page()).isEqualTo(0);
     assertThat(body.pageSize()).isEqualTo(200);
   }
@@ -213,7 +214,7 @@ class SnapshotListRestTest {
     when(snapshotService.countAll()).thenReturn(0L);
     Response r = rest.list(null, 3, 25, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO body = (SnapshotListPageIO) r.getEntity();
+    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.page()).isEqualTo(3);
     assertThat(body.pageSize()).isEqualTo(25);
   }

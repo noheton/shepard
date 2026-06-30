@@ -465,7 +465,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28-fire284.md`](agent-findings/apisimp-sweep-2026-06-28-fire284.md) | API Simplification Sweep — fire-284 (2026-06-28) | 2026-06-28 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-29-fire311.md`](agent-findings/apisimp-sweep-2026-06-29-fire311.md) | API Simplification Sweep — fire-311 (2026-06-29) | 2026-06-29 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-29.md`](agent-findings/apisimp-sweep-2026-06-29.md) | API Simplification Sweep — fire-295 (2026-06-29) | 2026-06-29 | 2026-06-29 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire316.md`](agent-findings/apisimp-sweep-2026-06-30-fire316.md) | API Simplification Sweep — fire-316 (2026-06-30) | 2026-06-30 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire316.md`](agent-findings/apisimp-sweep-2026-06-30-fire316.md) | API Simplification Sweep — fire-316 (2026-06-30) | 2026-06-30 | 2026-06-30 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30.md`](agent-findings/apisimp-sweep-2026-06-30.md) | API Simplification Sweep — fire-313 (2026-06-30) | 2026-06-30 | 2026-06-30 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-29 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-29 |
