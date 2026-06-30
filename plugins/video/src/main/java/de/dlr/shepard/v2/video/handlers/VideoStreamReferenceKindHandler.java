@@ -16,8 +16,8 @@ import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import de.dlr.shepard.v2.video.daos.VideoAnnotationDAO;
 import de.dlr.shepard.v2.video.model.VideoAnnotation;
 import io.quarkus.logging.Log;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.MediaType;
@@ -45,7 +45,7 @@ import java.util.Map;
  * durationSeconds, width, height, frameRate, videoCodec, audioCodec,
  * wallClockTimestamp}.
  */
-@RequestScoped
+@Singleton
 public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
