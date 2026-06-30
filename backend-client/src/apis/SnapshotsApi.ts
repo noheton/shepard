@@ -20,7 +20,6 @@ import type {
   Snapshot,
   SnapshotDataObjects,
   SnapshotDiff,
-  SnapshotListPageIO,
 } from '../models/index';
 import {
     PagedResponseFromJSON,
@@ -33,8 +32,6 @@ import {
     SnapshotDataObjectsToJSON,
     SnapshotDiffFromJSON,
     SnapshotDiffToJSON,
-    SnapshotListPageIOFromJSON,
-    SnapshotListPageIOToJSON,
 } from '../models/index';
 
 export interface CreateCollectionSnapshotRequest {
@@ -398,7 +395,7 @@ export class SnapshotsApi extends runtime.BaseAPI {
      * Returns one page of `:Snapshot` rows the caller has Read on, ordered newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` scopes the result to a single Collection; when absent, the list spans every Collection the caller can read.  Response envelope: `{ items[], total, page, pageSize }`. **`total` reports the unfiltered count** (every snapshot in scope, not just the ones the caller can read) — so a caller looking at `items.length` vs. `total` can infer how many they can\'t see. The page is post-filtered to the readable subset, so `items.length` may be lower than `pageSize` even when more snapshots exist.  Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up).
      * [v2] List snapshots the caller can read (paginated, optionally scoped to one Collection).
      */
-    async listSnapshotsRaw(requestParameters: ListSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SnapshotListPageIO>> {
+    async listSnapshotsRaw(requestParameters: ListSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['collectionAppId'] != null) {
@@ -430,14 +427,14 @@ export class SnapshotsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SnapshotListPageIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns one page of `:Snapshot` rows the caller has Read on, ordered newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` scopes the result to a single Collection; when absent, the list spans every Collection the caller can read.  Response envelope: `{ items[], total, page, pageSize }`. **`total` reports the unfiltered count** (every snapshot in scope, not just the ones the caller can read) — so a caller looking at `items.length` vs. `total` can infer how many they can\'t see. The page is post-filtered to the readable subset, so `items.length` may be lower than `pageSize` even when more snapshots exist.  Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up).
      * [v2] List snapshots the caller can read (paginated, optionally scoped to one Collection).
      */
-    async listSnapshots(requestParameters: ListSnapshotsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SnapshotListPageIO> {
+    async listSnapshots(requestParameters: ListSnapshotsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listSnapshotsRaw(requestParameters, initOverrides);
         return await response.value();
     }
