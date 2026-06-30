@@ -21,6 +21,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
@@ -153,7 +155,7 @@ public class CollectionV2Rest {
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400",
-    description = "Bean Validation rejected the query — `page` or `pageSize` is negative.")
+    description = "Bean Validation rejected the query — `page` is negative, or `pageSize` is outside [1, 200].")
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
@@ -161,11 +163,9 @@ public class CollectionV2Rest {
     @QueryParam(Constants.QP_NAME) String name,
     @Parameter(description = "0-based page index. Default 0. Negative values are rejected (400).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Page size. Default 50; clamped server-side to [1, 200]. Negative values are rejected (400).")
-    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
+    @Parameter(description = "Page size. Default 50. Must be between 1 and 200 inclusive (400 otherwise).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     // Load all user-visible collections without DB-side pagination so we can
     // compute the true filtered total, then paginate in memory (same pattern
@@ -178,10 +178,10 @@ public class CollectionV2Rest {
         .toList();
 
     int total = all.size();
-    int from = (int) Math.min((long) safePage * safeSize, total);
-    int to = (int) Math.min((long) from + safeSize, total);
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
 
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, safePage, safeSize))
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
       .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
