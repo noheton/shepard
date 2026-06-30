@@ -348,6 +348,29 @@ class SemanticAnnotationV2RestTest {
     assertThat(resource.update(ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
   }
 
+  @Test
+  void update_methodAnnotationIsPatch_notPut() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    assertThat(m.getAnnotation(jakarta.ws.rs.PATCH.class))
+        .as("update() must carry @PATCH (RFC 5789 / RFC 7396 merge-patch)")
+        .isNotNull();
+    assertThat(m.getAnnotation(jakarta.ws.rs.PUT.class))
+        .as("update() must NOT carry @PUT — PUT implies full-replacement semantics")
+        .isNull();
+  }
+
+  @Test
+  void update_consumesIncludesMergePatchJson() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    var consumes = m.getAnnotation(jakarta.ws.rs.Consumes.class);
+    assertThat(consumes).as("update() must carry method-level @Consumes").isNotNull();
+    assertThat(java.util.Arrays.asList(consumes.value()))
+        .as("@Consumes must include 'application/merge-patch+json'")
+        .contains("application/merge-patch+json");
+  }
+
   // ─── delete ──────────────────────────────────────────────────────────────
 
   @Test

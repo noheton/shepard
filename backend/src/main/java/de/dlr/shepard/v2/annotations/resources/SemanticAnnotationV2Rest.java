@@ -27,8 +27,8 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -261,7 +261,7 @@ public class SemanticAnnotationV2Rest {
       "Returns the full AnnotationV2 for the annotation identified by `appId` (UUID v7). " +
       "404 when the annotation does not exist. Auth: caller must be able to Read the " +
       "subject entity (inherited from its Collection).\n\n" +
-      "Next step: `PUT /v2/annotations/{appId}` to update, " +
+      "Next step: `PATCH /v2/annotations/{appId}` to update, " +
       "`DELETE /v2/annotations/{appId}` to delete, or " +
       "`GET /v2/annotations/{appId}/export/turtle` for the Turtle export."
   )
@@ -456,8 +456,9 @@ public class SemanticAnnotationV2Rest {
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────
 
-  @PUT
+  @PATCH
   @Path("/{appId}")
+  @Consumes({"application/merge-patch+json", MediaType.APPLICATION_JSON})
   @Operation(
     operationId = "updateAnnotation",
     summary = "Update (merge-patch) an annotation.",
@@ -546,7 +547,7 @@ public class SemanticAnnotationV2Rest {
     // entity so the 200 response body carries the new sourceActivityAppId.
     String activityAppId = recordAnnotationActivity(
       "UPDATE", annotation.getAppId(), caller, startedAtMillis,
-      "PUT /v2/annotations/" + appId + " — updated annotation"
+      "PATCH /v2/annotations/" + appId + " — updated annotation"
     );
     if (activityAppId != null) {
       annotation.setSourceActivityAppId(activityAppId);
@@ -570,7 +571,7 @@ public class SemanticAnnotationV2Rest {
       "- `'manager-only'` — only collection managers may delete.\n\n" +
       "Returns `204 No Content` on success.\n\n" +
       "Note: this is a hard delete. For soft-delete (set `validUntilMillis`), use " +
-      "`PUT /v2/annotations/{appId}` with `{\"validUntilMillis\": <now>}`."
+      "`PATCH /v2/annotations/{appId}` with `{\"validUntilMillis\": <now>}`."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -662,7 +663,7 @@ public class SemanticAnnotationV2Rest {
     try {
       long endedAtMillis = System.currentTimeMillis();
       int httpStatus = "CREATE".equals(actionKind) ? 201 : 200;
-      String method   = "CREATE".equals(actionKind) ? "POST" : "PUT";
+      String method   = "CREATE".equals(actionKind) ? "POST" : "PATCH";
       String path     = "v2/annotations" + ("CREATE".equals(actionKind) ? "" : "/" + annotationAppId);
 
       Activity activity = provenanceService.record(
