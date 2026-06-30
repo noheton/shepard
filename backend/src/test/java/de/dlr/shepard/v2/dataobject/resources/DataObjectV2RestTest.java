@@ -968,10 +968,12 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals("018f-pred-0010", body.get(0).getAppId());
-    assertEquals("018f-pred-0009", body.get(1).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
+    assertEquals("018f-pred-0010", body.items().get(0).getAppId());
+    assertEquals("018f-pred-0009", body.items().get(1).getAppId());
   }
 
   @Test
@@ -988,9 +990,11 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-succ-0100", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.page());
+    assertEquals(1, body.pageSize());
+    assertEquals("018f-succ-0100", body.items().get(0).getAppId());
   }
 
   @Test

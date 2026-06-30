@@ -831,12 +831,14 @@ public class DataObjectV2Rest {
       "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted predecessors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
+      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -857,7 +859,7 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findPredecessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(result).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
   }
 
   @GET
@@ -869,12 +871,14 @@ public class DataObjectV2Rest {
       "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted successors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
+      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -895,7 +899,7 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findSuccessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(result).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
