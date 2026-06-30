@@ -636,8 +636,8 @@ public class ContainersV2Rest {
     @PathParam("appId") String appId,
     @Parameter(description = "0-based page index. Default `0`. Values past the last page return an empty items list.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Number of channels per page. Default `200`. Must be >= 0.")
-    @QueryParam("pageSize") @DefaultValue("200") @PositiveOrZero int pageSize,
+    @Parameter(description = "Number of channels per page. Default `200`. Must be between 1 and 500 (400 on violation).")
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);

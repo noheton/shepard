@@ -150,9 +150,7 @@ public class DataObjectV2Rest {
       "(no N+1 queries).\n\n" +
       "Pagination: omit `page` / `pageSize` to get the first 50; supply both to " +
       "paginate. `pageSize` must be between 1 and 200 inclusive (400 on violation).\n\n" +
-      "Filtering: `name` does a case-insensitive substring match. Each row " +
-      "also carries `referenceIds[]` (legacy long ids of all refs) and " +
-      "`childrenIds[]` (direct child DOs).\n\n" +
+      "Filtering: `name` does a case-insensitive substring match.\n\n" +
       "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
       "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
       "latest data-point timestamps across all timeseries channels. Null on items " +
@@ -348,15 +346,12 @@ public class DataObjectV2Rest {
       "Unknown profile → 406 RFC 7807 `dataobject.unsupported-profile`. Shape contract: " +
       "`backend/src/main/resources/shapes/m4i-dataobject-shape.ttl`. Design: aidocs/semantics/94 §4.3.\n\n" +
       "The response includes `id` (legacy long), `appId` (UUID v7, canonical), `name`, " +
-      "`description`, `status`, `attributes` (string-to-string map), `referenceIds[]` " +
-      "(legacy long ids of all references — timeseries, file, structured-data — attached " +
-      "to this DataObject), `childrenIds[]` (direct child DataObjects), and timestamps.\n\n" +
+      "`description`, `status`, `attributes` (string-to-string map), and timestamps.\n\n" +
       "Auth: Read permission on the parent Collection (DataObjects inherit Collection " +
       "permissions; there is no per-DataObject permission node). Returns 404 when either " +
       "`collectionAppId` or `dataObjectAppId` is unknown, or when the DataObject does not " +
       "belong to the stated Collection.\n\n" +
-      "Next step: use the `referenceIds` values with the upstream " +
-      "`GET /shepard/api/...` reference endpoints to fetch payload, or " +
+      "Next step: `GET /v2/references?dataObjectAppId={dataObjectAppId}` to list all references, or " +
       "`PATCH /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` to update."
   )
   @APIResponse(
