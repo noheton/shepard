@@ -37,7 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/admin/storage-overview")
 @RequestScoped
 @RolesAllowed("instance-admin")
-@Tag(name = "Admin storage overview")
+@Tag(name = "Admin")
 public class AdminStorageOverviewRest {
 
   @PersistenceContext

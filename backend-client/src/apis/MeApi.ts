@@ -404,7 +404,7 @@ export class MeApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/me/role-in/{collectionAppId}`.replace(`{${"collectionAppId"}}`, encodeURIComponent(String(requestParameters['collectionAppId']))),
+            path: `/v2/users/me/role-in/{collectionAppId}`.replace(`{${"collectionAppId"}}`, encodeURIComponent(String(requestParameters['collectionAppId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
