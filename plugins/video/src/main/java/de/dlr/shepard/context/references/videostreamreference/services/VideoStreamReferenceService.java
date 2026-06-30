@@ -393,7 +393,33 @@ public class VideoStreamReferenceService {
    * @throws StorageException         on storage-tier read failure
    */
   public StorageGetResponse getPayload(VideoStreamReference ref) throws StorageException {
+    return getPayload(ref, false);
+  }
+
+  /**
+   * VIDEO-HEVC-TRANSCODE-BACKFILL — proxy-aware payload retrieval.
+   *
+   * <p>When {@code preferSource} is {@code false} (the default) and the
+   * reference has a {@code proxyStatus = "READY"} + non-blank
+   * {@code proxyStorageLocator}, this returns the browser-friendly h.264 proxy
+   * bytes instead of the original (HEVC) source. When {@code preferSource} is
+   * {@code true}, the original {@code storageLocator} is returned — preserving
+   * an escape hatch for archive / download-the-original flows.
+   *
+   * @param ref          the reference entity
+   * @param preferSource when true, force-serve the original source bytes even if
+   *                     a READY proxy exists
+   */
+  public StorageGetResponse getPayload(VideoStreamReference ref, boolean preferSource) throws StorageException {
     String locatorRaw = ref.getStorageLocator();
+    if (!preferSource) {
+      String proxyLocator = ref.getProxyStorageLocator();
+      String proxyStatus = ref.getProxyStatus();
+      if (proxyLocator != null && !proxyLocator.isBlank()
+        && proxyStatus != null && proxyStatus.equalsIgnoreCase("READY")) {
+        locatorRaw = proxyLocator;
+      }
+    }
     if (locatorRaw == null || locatorRaw.isBlank()) {
       throw new NotFoundException("VideoStreamReference has no stored file (upload may have failed)");
     }

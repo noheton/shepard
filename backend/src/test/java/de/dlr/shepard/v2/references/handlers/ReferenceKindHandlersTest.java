@@ -234,6 +234,48 @@ class ReferenceKindHandlersTest {
     assertEquals("urdf", onlyUrdf.get(0).getFileKind());
   }
 
+  // ─── FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30 — downloadContent ────────
+
+  @Test
+  void file_downloadContent_fullBody_returns200WithHeaders() {
+    byte[] bytes = "robot { joint1 }".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    var stream = new java.io.ByteArrayInputStream(bytes);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream(
+      "oid-x", stream, "robot.urdf", (long) bytes.length);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+    when(singletonService.getByAppId("file-1")).thenReturn(fileRef());
+
+    var resp = fileHandler.downloadContent("file-1", null);
+    assertEquals(200, resp.getStatus());
+    assertEquals("attachment; filename=\"robot.urdf\"", resp.getHeaderString("Content-Disposition"));
+    assertEquals("bytes", resp.getHeaderString("Accept-Ranges"));
+    assertEquals(String.valueOf(bytes.length), resp.getHeaderString("Content-Length"));
+  }
+
+  @Test
+  void file_downloadContent_missingOid_returns404() {
+    when(singletonService.getPayload("missing-1"))
+      .thenThrow(new NotFoundException("Singleton FileReference appId=missing-1 has no attached file"));
+    var resp = fileHandler.downloadContent("missing-1", null);
+    assertEquals(404, resp.getStatus());
+  }
+
+  @Test
+  void file_downloadContent_rangeRequest_returns206WithContentRange() {
+    byte[] bytes = new byte[1024];
+    for (int i = 0; i < bytes.length; i++) bytes[i] = (byte) (i & 0xff);
+    var stream = new java.io.ByteArrayInputStream(bytes);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream(
+      "oid-y", stream, "big.bin", (long) bytes.length);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+    when(singletonService.getByAppId("file-1")).thenReturn(fileRef());
+
+    var resp = fileHandler.downloadContent("file-1", "bytes=0-99");
+    assertEquals(206, resp.getStatus());
+    assertEquals("bytes 0-99/1024", resp.getHeaderString("Content-Range"));
+    assertEquals("100", resp.getHeaderString("Content-Length"));
+  }
+
   // ─── timeseries handler ────────────────────────────────────────────────────
 
   private TimeseriesReference tsRef() {

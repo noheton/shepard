@@ -187,6 +187,19 @@ public interface ReferenceKindHandler {
   }
 
   /**
+   * VIDEO-HEVC-TRANSCODE-BACKFILL — variant that carries a hint string from the
+   * dispatcher. Default implementation forwards to the 2-arg overload so
+   * existing handlers (file, future kinds) ignore the hint transparently. The
+   * video kind handler overrides this to honour {@code prefer=source} (forces
+   * the original source bytes rather than the browser-friendly proxy).
+   *
+   * @param prefer hint from the {@code ?prefer=} query parameter; may be null.
+   */
+  default Response downloadContent(String appId, String rangeHeader, String prefer) {
+    return downloadContent(appId, rangeHeader);
+  }
+
+  /**
    * APISIMP-ANNOTATION-SUBRESOURCE-COLLISION — whether this kind supports
    * sub-resource annotations at {@code /v2/references/{appId}/annotations}.
    * Kinds that support annotations override this to return {@code true} and

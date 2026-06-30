@@ -415,6 +415,7 @@ public class ReferencesV2Rest {
   public Response downloadContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
+    @QueryParam("prefer") String prefer,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -424,7 +425,7 @@ public class ReferencesV2Rest {
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Read, caller);
     if (gate != null) return gate;
     try {
-      return resolved.get().handler().downloadContent(appId, rangeHeader);
+      return resolved.get().handler().downloadContent(appId, rangeHeader, prefer);
     } catch (UnsupportedOperationException uoe) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Not supported", Response.Status.BAD_REQUEST, uoe.getMessage());
     } catch (NotFoundException nfe) {

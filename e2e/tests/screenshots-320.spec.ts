@@ -79,27 +79,19 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     settle: 12000,
   },
   {
-    // J — URDF viewer for the real KR210 R2700/2 kinematic model (KUKA
-    // KR210 R2700/2 — the actual robot in the MFFD AFP cell). The URDF +
-    // meshes are served from the frontend public dir; Three.js urdf-loader
-    // renders the kinematic tree inline.
+    // J — SceneGraphPlay rendering the real KR210 R2700/2 kinematic model
+    // driven by MFFD joint telemetry. MAPPING_RECIPE template seeded
+    // 2026-06-30 against URDF FileReference 019f1479-1142-75b3-9adf-0720d84a1622
+    // + joint TimeseriesReference 019f147a-8b40-7584-ba09-b828b3b4e14b with
+    // joint_1..joint_6 bindings on device KR210-R2700-2.
     //
-    // KNOWN GAP — see aidocs/16:FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30.
-    // The proper SceneGraphPlay path is
-    // `/scene-graphs/play/019f16d8-2fc7-76e8-b066-f713e2fb713d` (the
-    // MAPPING_RECIPE template seeded 2026-06-30 against URDF FileReference
-    // 019f1479-1142-... + joint TimeseriesReference 019f147a-8b40-... with
-    // joint_1..joint_6 bindings on device KR210-R2700-2). Materialization
-    // works end-to-end, but the play page's URDF-blob loader hits
-    // `GET /v2/references/{appId}/content`, which 400s for file-kind refs
-    // because `FileReferenceKindHandler.downloadContent(...)` is not
-    // overridden — that's a separate backend slice (~10 lines + tests in
-    // the kind handler reusing `SingletonFileReferenceService.getPayload`)
-    // queued as `FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30`. Until that
-    // ships, J keeps the legacy /shapes/render path (untextured robot, no
-    // trace overlay) rather than regressing to an error banner.
+    // Unblocked by FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30 (the
+    // FileReferenceKindHandler.downloadContent override that serves
+    // singleton-file bytes via the unified /v2/references/{appId}/content
+    // endpoint) — pairs with J-URDF-MAPPING-RECIPE-SEED-2026-06-29 (the
+    // template seed) for end-to-end coverage of the SceneGraphPlay flow.
     id: "J-urdf-with-robot",
-    url: "/shapes/render?renderer=urdf&urdfUrl=%2Furdf-samples%2Fkr210_r2700_2%2Fkuka_quantec_support%2Furdf%2Fkr210_r2700_2.urdf&packagePath=%2Furdf-samples%2Fkr210_r2700_2",
+    url: "/scene-graphs/play/019f16d8-2fc7-76e8-b066-f713e2fb713d",
     settle: 18000,
   },
   {

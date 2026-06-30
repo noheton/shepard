@@ -60,4 +60,34 @@ public class VideoStreamReferenceDAO extends VersionableEntityDAO<VideoStreamRef
     var iter = findByQuery(query, Map.of("appId", appId)).iterator();
     return iter.hasNext() ? iter.next() : null;
   }
+
+  /**
+   * VIDEO-HEVC-TRANSCODE-BACKFILL — list non-deleted video references whose
+   * proxy is missing or failed, optionally narrowed by codec.
+   *
+   * <p>Backs the {@code POST /v2/admin/video/transcode-backfill} endpoint. The
+   * codec filter accepts a single codec string (e.g. {@code "hevc"},
+   * {@code "h265"}). When {@code limit > 0}, the result is truncated.
+   *
+   * @param codec optional case-insensitive codec filter; null or blank → all
+   * @param limit max rows to return; non-positive → no cap
+   */
+  public List<VideoStreamReference> findBackfillCandidates(String codec, int limit) {
+    StringBuilder cypher = new StringBuilder("MATCH ")
+      .append(CypherQueryHelper.getObjectPart("r", "VideoStreamReference", false))
+      .append(" WHERE (r.proxyStatus IS NULL OR r.proxyStatus = 'FAILED') ")
+      .append(" AND coalesce(r.deleted, false) = false ")
+      .append(" AND r.storageLocator IS NOT NULL AND r.storageLocator <> '' ");
+    Map<String, Object> params = new java.util.HashMap<>();
+    if (codec != null && !codec.isBlank()) {
+      cypher.append(" AND toLower(r.videoCodec) = $codec ");
+      params.put("codec", codec.toLowerCase());
+    }
+    cypher.append(" ").append(CypherQueryHelper.getReturnPart("r"));
+    if (limit > 0) {
+      cypher.append(" LIMIT ").append(limit);
+    }
+    var queryResult = findByQuery(cypher.toString(), params);
+    return StreamSupport.stream(queryResult.spliterator(), false).collect(Collectors.toList());
+  }
 }

@@ -211,13 +211,25 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
    */
   @Override
   public Response downloadContent(String appId, String rangeHeader) {
+    return downloadContent(appId, rangeHeader, null);
+  }
+
+  /**
+   * VIDEO-HEVC-TRANSCODE-BACKFILL — when {@code prefer=source} is set, force-
+   * serve the original (HEVC) source bytes; otherwise, prefer the browser-
+   * friendly h.264 proxy when {@code proxyStatus = "READY"}. This is the read-
+   * path consumer of PR-2a's proxy fields + PR-2b's backfill stamping.
+   */
+  @Override
+  public Response downloadContent(String appId, String rangeHeader, String prefer) {
     VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
     if (ref == null || ref.isDeleted()) {
       return problem(Response.Status.NOT_FOUND, "No VideoStreamReference with appId " + appId);
     }
+    boolean preferSource = prefer != null && prefer.equalsIgnoreCase("source");
     StorageGetResponse payload;
     try {
-      payload = videoStreamReferenceService.getPayload(ref);
+      payload = videoStreamReferenceService.getPayload(ref, preferSource);
     } catch (NotFoundException nfe) {
       return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (StorageNotInstalledException ex) {
