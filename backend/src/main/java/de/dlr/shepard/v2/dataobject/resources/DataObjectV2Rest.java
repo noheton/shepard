@@ -151,6 +151,20 @@ public class DataObjectV2Rest {
       "(no N+1 queries).\n\n" +
       "Pagination: omit `page` / `pageSize` to get the first 50; supply both to " +
       "paginate. `pageSize` must be between 1 and 200 inclusive (400 on violation).\n\n" +
+      "**Pagination envelope (diverges from other v2 list endpoints):** This endpoint " +
+      "returns a plain JSON array in the response body. Pagination metadata is carried " +
+      "in two response headers instead of a `PagedResponseIO` body envelope:\n\n" +
+      "- `Content-Range: dataobjects START-END/TOTAL` — zero-based index of the first " +
+      "and last returned item followed by the total match count " +
+      "(e.g. `dataobjects 0-49/8514`). Follows RFC 7233 §4.2 extension syntax.\n" +
+      "- `X-Total-Count: TOTAL` — bare integer total for callers that only need the count.\n\n" +
+      "All other paginated `/v2/` list endpoints return a `PagedResponseIO` body " +
+      "envelope (`{items, total, page, pageSize}`). This endpoint predates that " +
+      "convention and retains header-based metadata for backwards compatibility. " +
+      "Callers (including `useListDataObjects.ts`) must read these headers; the body " +
+      "envelope is absent. Migration to `PagedResponseIO` is tracked as " +
+      "`APISIMP-DO-LIST-CONTENT-RANGE` in the backlog (a coordinated backend + " +
+      "frontend two-commit change).\n\n" +
       "Filtering: `name` does a case-insensitive substring match.\n\n" +
       "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
       "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
