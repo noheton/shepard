@@ -23,14 +23,15 @@ import org.neo4j.ogm.annotation.NodeEntity;
  * {@link de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}.
  *
  * <p>VID1b: extracted from backend into {@code shepard-plugin-video}.
- * Implements {@link VideoPayload} so that {@code DataObjectIO} can count
+ * Carries {@link VideoPayload} annotation so that {@code DataObjectIO} can count
  * video references without a direct import of this class.
  */
+@VideoPayload
 @NodeEntity
 @Data
 @ToString(callSuper = true)
 @NoArgsConstructor
-public class VideoStreamReference extends BasicReference implements VideoPayload {
+public class VideoStreamReference extends BasicReference {
 
   /**
    * Opaque storage locator in the format {@code "<providerId>:<locator>"}

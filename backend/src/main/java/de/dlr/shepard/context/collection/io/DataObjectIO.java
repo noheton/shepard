@@ -173,7 +173,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.structuredDataReferenceCount = (int) dataObject.getReferences().stream()
         .filter(r -> r instanceof StructuredDataReference).count();
     this.videoStreamReferenceCount = (int) dataObject.getReferences().stream()
-        .filter(r -> r instanceof VideoPayload).count();
+        .filter(r -> r.getClass().isAnnotationPresent(VideoPayload.class)).count();
     this.attachedTemplateAppId = dataObject.getAttachedTemplateAppId();
   }
 
