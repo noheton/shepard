@@ -120,7 +120,7 @@ public class DataObjectDetailV2IO extends DataObjectIO {
   /**
    * API1 — appIds (UUID v7) of the {@code :TimeseriesReference} nodes attached to
    * this DataObject. Use a value here to navigate to the linked timeseries container
-   * via {@code GET /v2/timeseries-containers/{appId}}. Null (omitted from JSON) when
+   * via {@code GET /v2/containers/{appId}}. Null (omitted from JSON) when
    * no timeseries references exist.
    *
    * <p>Unlike the parent-class {@link DataObjectIO#getReferenceIds()} long array —
@@ -132,7 +132,7 @@ public class DataObjectDetailV2IO extends DataObjectIO {
     readOnly = true,
     nullable = true,
     description = "appIds (UUID v7) of TimeseriesReference nodes on this DataObject. " +
-      "Use with GET /v2/timeseries-containers/{appId} to reach the container. " +
+      "Use with GET /v2/containers/{appId} to reach the container. " +
       "Null when none exist."
   )
   @JsonInclude(JsonInclude.Include.NON_NULL)
