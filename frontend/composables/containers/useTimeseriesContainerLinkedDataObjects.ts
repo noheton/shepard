@@ -52,7 +52,7 @@ export function useTimeseriesContainerLinkedDataObjects(containerAppId: string |
         },
       });
       if (response.ok) {
-        dataObjects.value = (await response.json()) as DataObject[];
+        dataObjects.value = ((await response.json()) as { items: DataObject[] }).items ?? [];
       } else {
         handleError(
           new Error(`HTTP ${response.status}`),

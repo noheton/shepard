@@ -547,6 +547,8 @@ class ContainersV2RestTest {
     when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of(v)));
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
     assertEquals(200, r.getStatus());
+    var page = (PagedResponseIO<?>) r.getEntity();
+    assertEquals(1, page.total());
   }
 
   @Test
@@ -555,6 +557,8 @@ class ContainersV2RestTest {
     when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of()));
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
     assertEquals(200, r.getStatus());
+    var page = (PagedResponseIO<?>) r.getEntity();
+    assertEquals(0, page.total());
   }
 
   @Test
@@ -607,6 +611,8 @@ class ContainersV2RestTest {
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of(doIo)));
     var r = resource.getLinkedDataObjects(APP_ID, securityContext);
     assertEquals(200, r.getStatus());
+    var page = (PagedResponseIO<?>) r.getEntity();
+    assertEquals(1, page.total());
   }
 
   @Test
@@ -615,6 +621,8 @@ class ContainersV2RestTest {
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of()));
     var r = resource.getLinkedDataObjects(APP_ID, securityContext);
     assertEquals(200, r.getStatus());
+    var page = (PagedResponseIO<?>) r.getEntity();
+    assertEquals(0, page.total());
   }
 
   @Test
