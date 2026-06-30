@@ -1,31 +1,21 @@
 package de.dlr.shepard.v2.video.handlers;
 
-import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.common.util.HttpRangeUtil;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import de.dlr.shepard.context.references.videostreamreference.services.VideoStreamReferenceService;
-import de.dlr.shepard.storage.StorageException;
-import de.dlr.shepard.storage.StorageGetResponse;
-import de.dlr.shepard.storage.StorageNotInstalledException;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import de.dlr.shepard.v2.video.daos.VideoAnnotationDAO;
 import de.dlr.shepard.v2.video.model.VideoAnnotation;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +29,24 @@ import java.util.Map;
  *
  * <p>Video references are binary (multipart upload via
  * {@code POST /v2/video-stream-references}) — the {@link #create} method
- * always rejects with 400, matching the {@code FileReferenceKindHandler} shape.
+ * accepts a name-only body and returns a stub reference; bytes are attached
+ * via {@code PUT /v2/references/{appId}/content}.
  *
  * <p>Payload key set: {@code storageLocator, mimeType, fileSizeBytes,
  * durationSeconds, width, height, frameRate, videoCodec, audioCodec,
  * wallClockTimestamp}.
+ *
+ * <p><b>CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD</b> — all methods that
+ * declare a {@code VideoStreamReference} local variable have been extracted
+ * to {@link VideoStreamReferenceKindHandlerLogic} (a plain, non-CDI class).
+ * This is necessary because {@code ClassTransformingBuildStep} uses
+ * {@code ClassWriter(COMPUTE_FRAMES)} and recomputes frames for <em>all</em>
+ * methods in every CDI bean it processes; a frame-merge in those methods would
+ * trigger {@code getCommonSuperClass(VideoStreamReference, …)} → load
+ * {@code BasicReference} from {@code backend.jar} (provided-scope, absent from
+ * the narrow transformation class-loader) → {@code NoClassDefFoundError}.
+ * The handler's own methods are now trivial one-line delegates whose frames
+ * contain no {@code VideoStreamReference} locals, so no problematic merge occurs.
  */
 @RequestScoped
 public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
@@ -78,44 +81,13 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
     return videoStreamReferenceService.findByAppId(appId);
   }
 
+  /**
+   * Delegates to {@link VideoStreamReferenceKindHandlerLogic#toIO} — see that
+   * class for the rationale.
+   */
   @Override
   public ReferenceV2IO toIO(BasicReference reference) {
-    VideoStreamReference ref = (VideoStreamReference) reference;
-    ReferenceV2IO io = new ReferenceV2IO(ref, kind());
-    io.setReferenceShape("stream");
-    io.put("storageLocator", ref.getStorageLocator());
-    io.put("mimeType", ref.getMimeType());
-    // Canonical size key for the unified /v2/references surface. The singleton
-    // file reference exposes its size as `fileSize` (via the ShepardFile blob);
-    // video historically exposed only `fileSizeBytes`, so a generic consumer
-    // reading `fileSize` (e.g. the stringer importer's stored-size verification)
-    // got nothing and retry-looped (IMPORT-VIDEO-MP4-SHORTUPLOAD). Emit both:
-    // `fileSize` for cross-kind consistency, `fileSizeBytes` for the existing
-    // video-player frontend that already reads it.
-    io.put("fileSize", ref.getFileSizeBytes());
-    io.put("fileSizeBytes", ref.getFileSizeBytes());
-    io.put("durationSeconds", ref.getDurationSeconds());
-    io.put("width", ref.getWidth());
-    io.put("height", ref.getHeight());
-    io.put("frameRate", ref.getFrameRate());
-    io.put("videoCodec", ref.getVideoCodec());
-    io.put("audioCodec", ref.getAudioCodec());
-    // VID-FFMPEG-TRANSCODE-2026-06-29 — surface the browser-friendly proxy.
-    // `proxyStatus` is the lifecycle string (NONE / PENDING / READY / FAILED;
-    // null is treated as NONE by consumers). `proxyOid` is the storage
-    // locator's opaque key — the same shape clients already consume for
-    // `storageLocator`. The VideoPlayer reads `proxyAvailable` as the
-    // boolean gate: true → switch to proxy URL, false → fall back to the
-    // original bytes (preserves today's behaviour for non-transcoded refs).
-    String proxyLocator = ref.getProxyStorageLocator();
-    String proxyStatusRaw = ref.getProxyStatus();
-    boolean proxyAvailable = "READY".equalsIgnoreCase(proxyStatusRaw)
-      && proxyLocator != null && !proxyLocator.isBlank();
-    io.put("proxyStatus", proxyStatusRaw);
-    io.put("proxyAvailable", proxyAvailable);
-    io.put("proxyOid", proxyLocator);
-    io.put("wallClockTimestamp", ref.getWallClockTimestamp());
-    return io;
+    return VideoStreamReferenceKindHandlerLogic.toIO((VideoStreamReference) reference, kind());
   }
 
   /**
@@ -128,56 +100,22 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
    */
   @Override
   public ReferenceV2IO create(String dataObjectAppId, Map<String, Object> body) {
-    Object nameObj = body != null ? body.get("name") : null;
-    if (!(nameObj instanceof String name) || name.isBlank()) {
-      throw new BadRequestException("'name' is required and must be a non-blank string for kind=video");
-    }
-    VideoStreamReference created = videoStreamReferenceService.createMetadataNode(dataObjectAppId, name);
-    return toIO(created);
+    return VideoStreamReferenceKindHandlerLogic.create(dataObjectAppId, body, videoStreamReferenceService, kind());
   }
 
   @Override
   public ReferenceV2IO patch(String appId, Map<String, Object> patch) {
-    VideoStreamReference ref = videoStreamReferenceService.findByAppId(appId);
-    if (ref == null) throw new NotFoundException("No VideoStreamReference with appId " + appId);
-    boolean changed = false;
-    if (patch != null && patch.containsKey("name")) {
-      Object v = patch.get("name");
-      if (!(v instanceof String s) || s.isBlank()) {
-        throw new BadRequestException("'name' must be a non-blank string");
-      }
-      if (!s.equals(ref.getName())) {
-        ref.setName(s);
-        changed = true;
-      }
-    }
-    if (changed) {
-      User user = userService.getCurrentUser();
-      ref.setUpdatedAt(dateHelper.getDate());
-      ref.setUpdatedBy(user);
-      ref = videoStreamReferenceDAO.createOrUpdate(ref);
-    }
-    return toIO(ref);
+    return VideoStreamReferenceKindHandlerLogic.patch(appId, patch, videoStreamReferenceDAO, videoStreamReferenceService, userService, dateHelper, kind());
   }
 
   @Override
   public void delete(String appId) {
-    VideoStreamReference ref = videoStreamReferenceService.findByAppId(appId);
-    if (ref == null) throw new NotFoundException("No VideoStreamReference with appId " + appId);
-    videoStreamReferenceService.delete(ref);
+    VideoStreamReferenceKindHandlerLogic.delete(appId, videoStreamReferenceService);
   }
 
   @Override
   public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind) {
-    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
-      throw new BadRequestException("dataObjectAppId is required");
-    }
-    List<VideoStreamReference> refs = videoStreamReferenceService.listByDataObject(dataObjectAppId);
-    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
-    for (VideoStreamReference ref : refs) {
-      if (ref != null && !ref.isDeleted()) out.add(toIO(ref));
-    }
-    return out;
+    return VideoStreamReferenceKindHandlerLogic.listByDataObject(dataObjectAppId, subKind, videoStreamReferenceService, kind());
   }
 
   /**
@@ -188,100 +126,22 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
    */
   @Override
   public ReferenceV2IO uploadContent(String appId, InputStream input, String filename, long declaredSize) {
-    VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
-    if (ref == null || ref.isDeleted()) throw new NotFoundException("No VideoStreamReference with appId " + appId);
-    String mimeType = detectMimeType(filename);
-    try {
-      VideoStreamReference updated = videoStreamReferenceService.attachBytes(ref, filename, mimeType, declaredSize, input);
-      return toIO(updated);
-    } catch (StorageNotInstalledException ex) {
-      throw new jakarta.ws.rs.ServiceUnavailableException(ex.getMessage());
-    } catch (StorageException ex) {
-      Log.errorf("VID1a/uploadContent: storage error appId=%s: %s", appId, ex.getMessage());
-      throw new jakarta.ws.rs.InternalServerErrorException(ex.getMessage());
-    }
+    return VideoStreamReferenceKindHandlerLogic.uploadContent(appId, input, filename, declaredSize, videoStreamReferenceDAO, videoStreamReferenceService, kind());
   }
 
-  /**
-   * APISIMP-VIDEO-STREAMREF-PATH — range-aware binary download.
-   *
-   * <p>Serves {@code GET /v2/references/{appId}/content} for {@code kind=video}.
-   * Honours a single {@code Range: bytes=START-END} header; returns 206 Partial
-   * Content for browser-native video scrubbing.
-   */
   @Override
   public Response downloadContent(String appId, String rangeHeader) {
-    return downloadContent(appId, rangeHeader, null);
+    return VideoStreamReferenceKindHandlerLogic.downloadContent(appId, rangeHeader, null, videoStreamReferenceDAO, videoStreamReferenceService);
   }
 
   /**
    * VIDEO-HEVC-TRANSCODE-BACKFILL — when {@code prefer=source} is set, force-
    * serve the original (HEVC) source bytes; otherwise, prefer the browser-
-   * friendly h.264 proxy when {@code proxyStatus = "READY"}. This is the read-
-   * path consumer of PR-2a's proxy fields + PR-2b's backfill stamping.
+   * friendly h.264 proxy when {@code proxyStatus = "READY"}.
    */
   @Override
   public Response downloadContent(String appId, String rangeHeader, String prefer) {
-    VideoStreamReference ref = videoStreamReferenceDAO.findByAppId(appId);
-    if (ref == null || ref.isDeleted()) {
-      return problem(Response.Status.NOT_FOUND, "No VideoStreamReference with appId " + appId);
-    }
-    boolean preferSource = prefer != null && prefer.equalsIgnoreCase("source");
-    StorageGetResponse payload;
-    try {
-      payload = videoStreamReferenceService.getPayload(ref, preferSource);
-    } catch (NotFoundException nfe) {
-      return problem(Response.Status.NOT_FOUND, nfe.getMessage());
-    } catch (StorageNotInstalledException ex) {
-      return problem(Response.Status.SERVICE_UNAVAILABLE, ex.getMessage());
-    } catch (StorageException ex) {
-      Log.errorf("VID1a/downloadContent: storage error appId=%s: %s", appId, ex.getMessage());
-      return problem(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
-    }
-
-    String filename = payload.fileName() != null && !payload.fileName().isBlank()
-      ? payload.fileName() : ref.getName();
-    String contentType = payload.contentType() != null
-      ? payload.contentType()
-      : (ref.getMimeType() != null ? ref.getMimeType() : MediaType.APPLICATION_OCTET_STREAM);
-    Long total = payload.sizeBytes() != null ? payload.sizeBytes() : ref.getFileSizeBytes();
-
-    if (rangeHeader == null || rangeHeader.isBlank()) {
-      Response.ResponseBuilder rb = Response.ok(payload.stream(), contentType)
-        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-        .header("Accept-Ranges", "bytes");
-      if (total != null) rb.header("Content-Length", total);
-      return rb.build();
-    }
-
-    if (total == null || total <= 0) {
-      Log.warnf("VID1a/downloadContent: Range header present but total size unknown — serving full body (appId={})", appId);
-      return Response.ok(payload.stream(), contentType)
-        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-        .header("Accept-Ranges", "bytes")
-        .build();
-    }
-
-    long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
-    if (range == null) {
-      try { if (payload.stream() != null) payload.stream().close(); } catch (IOException ioe) { /* ignore */ }
-      return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
-        .header("Content-Range", "bytes */" + total)
-        .header("Accept-Ranges", "bytes")
-        .build();
-    }
-    long start = range[0];
-    long end = range[1];
-    long length = end - start + 1;
-    StreamingOutput ranged = HttpRangeUtil.sliceStream(payload.stream(), start, length);
-    return Response.status(Response.Status.PARTIAL_CONTENT)
-      .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-      .header("Content-Length", length)
-      .header("Content-Range", "bytes " + start + "-" + end + "/" + total)
-      .header("Accept-Ranges", "bytes")
-      .entity(ranged)
-      .type(contentType)
-      .build();
+    return VideoStreamReferenceKindHandlerLogic.downloadContent(appId, rangeHeader, prefer, videoStreamReferenceDAO, videoStreamReferenceService);
   }
 
   // ─── annotation sub-resource (APISIMP-ANNOTATION-SUBRESOURCE-COLLISION) ──
@@ -366,30 +226,6 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
     m.put("aiGenerated", a.isAiGenerated());
     m.put("confidence", a.getConfidence());
     return m;
-  }
-
-  private static Response problem(Response.Status status, String detail) {
-    String type = switch (status) {
-      case NOT_FOUND -> "urn:shepard:error:not-found";
-      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
-      default -> "urn:shepard:error:internal";
-    };
-    return Response.status(status)
-      .type("application/problem+json")
-      .entity(new de.dlr.shepard.common.exceptions.ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
-      .build();
-  }
-
-  private static String detectMimeType(String filename) {
-    if (filename == null) return MediaType.APPLICATION_OCTET_STREAM;
-    String lower = filename.toLowerCase();
-    if (lower.endsWith(".mp4") || lower.endsWith(".m4v")) return "video/mp4";
-    if (lower.endsWith(".mov")) return "video/quicktime";
-    if (lower.endsWith(".avi")) return "video/x-msvideo";
-    if (lower.endsWith(".mkv")) return "video/x-matroska";
-    if (lower.endsWith(".webm")) return "video/webm";
-    if (lower.endsWith(".ts")) return "video/mp2t";
-    return MediaType.APPLICATION_OCTET_STREAM;
   }
 
   private static String requireLabel(Map<String, Object> body) {

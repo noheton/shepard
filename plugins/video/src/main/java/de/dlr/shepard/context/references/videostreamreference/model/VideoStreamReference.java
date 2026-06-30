@@ -1,13 +1,10 @@
 package de.dlr.shepard.context.references.videostreamreference.model;
 
-import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
-import java.util.Objects;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**
@@ -23,14 +20,15 @@ import org.neo4j.ogm.annotation.NodeEntity;
  * {@link de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}.
  *
  * <p>VID1b: extracted from backend into {@code shepard-plugin-video}.
- * Implements {@link VideoPayload} so that {@code DataObjectIO} can count
+ * Carries {@link VideoPayload} annotation so that {@code DataObjectIO} can count
  * video references without a direct import of this class.
  */
+@VideoPayload
 @NodeEntity
 @Data
-@ToString(callSuper = true)
 @NoArgsConstructor
-public class VideoStreamReference extends BasicReference implements VideoPayload {
+@EqualsAndHashCode(callSuper = true)
+public class VideoStreamReference extends BasicReference {
 
   /**
    * Opaque storage locator in the format {@code "<providerId>:<locator>"}
@@ -108,39 +106,5 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
   /** For testing purposes only. */
   public VideoStreamReference(long id) {
     super(id);
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + Objects.hash(
-      storageLocator, mimeType, fileSizeBytes, durationSeconds,
-      width, height, frameRate, videoCodec, audioCodec,
-      proxyStorageLocator, proxyStatus, wallClockTimestamp
-    );
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!super.equals(obj)) return false;
-    if (!(obj instanceof VideoStreamReference)) return false;
-    VideoStreamReference other = (VideoStreamReference) obj;
-    return (
-      Objects.equals(storageLocator, other.storageLocator) &&
-      Objects.equals(mimeType, other.mimeType) &&
-      Objects.equals(fileSizeBytes, other.fileSizeBytes) &&
-      Objects.equals(durationSeconds, other.durationSeconds) &&
-      Objects.equals(width, other.width) &&
-      Objects.equals(height, other.height) &&
-      Objects.equals(frameRate, other.frameRate) &&
-      Objects.equals(videoCodec, other.videoCodec) &&
-      Objects.equals(audioCodec, other.audioCodec) &&
-      Objects.equals(proxyStorageLocator, other.proxyStorageLocator) &&
-      Objects.equals(proxyStatus, other.proxyStatus) &&
-      Objects.equals(wallClockTimestamp, other.wallClockTimestamp)
-    );
   }
 }
