@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 101 |
+| `deployed` | 102 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **495** |
+| **total docs** | **496** |
 | **UNTAGGED** | **0** |
 
 ## fragment (74)
@@ -423,7 +423,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-06-29 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-06-29 |
 
-## deployed (101)
+## deployed (102)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -465,6 +465,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28-fire284.md`](agent-findings/apisimp-sweep-2026-06-28-fire284.md) | API Simplification Sweep — fire-284 (2026-06-28) | 2026-06-28 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-29-fire311.md`](agent-findings/apisimp-sweep-2026-06-29-fire311.md) | API Simplification Sweep — fire-311 (2026-06-29) | 2026-06-29 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-29.md`](agent-findings/apisimp-sweep-2026-06-29.md) | API Simplification Sweep — fire-295 (2026-06-29) | 2026-06-29 | 2026-06-29 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-30.md`](agent-findings/apisimp-sweep-2026-06-30.md) | API Simplification Sweep — fire-313 (2026-06-30) | 2026-06-30 | — |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-06-29 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-06-29 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-06-29 |
