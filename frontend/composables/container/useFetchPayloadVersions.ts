@@ -66,7 +66,7 @@ export function useFetchPayloadVersions(
         handleError(error.value + (body ? `: ${body.slice(0, 120)}` : ""), "fetchPayloadVersions");
         return;
       }
-      versions.value = (await resp.json()) as PayloadVersionIO[];
+      versions.value = ((await resp.json()) as { items: PayloadVersionIO[] }).items ?? [];
     } catch (err) {
       error.value = err instanceof Error ? err.message : "Network error";
       handleError(error.value, "fetchPayloadVersions");

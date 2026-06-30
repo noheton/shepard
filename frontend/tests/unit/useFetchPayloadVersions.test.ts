@@ -72,7 +72,7 @@ describe("useFetchPayloadVersions", () => {
 
   it("populates versions on success and sends correct URL + auth header", async () => {
     const data = [mockVersion(1), mockVersion(2)];
-    mockFetchOk(data);
+    mockFetchOk({ items: data, total: 2, page: 0, pageSize: 2 });
 
     const { versions, isLoading, error, load } = useFetchPayloadVersions(
       "container-app-id",
@@ -118,7 +118,7 @@ describe("useFetchPayloadVersions", () => {
     expect(error.value).not.toBeNull();
 
     const fresh = [mockVersion(1)];
-    mockFetchOk(fresh);
+    mockFetchOk({ items: fresh, total: 1, page: 0, pageSize: 1 });
     await load();
 
     expect(error.value).toBeNull();

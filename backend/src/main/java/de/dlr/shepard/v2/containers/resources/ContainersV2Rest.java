@@ -491,7 +491,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Version list (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PayloadVersionIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -520,7 +520,8 @@ public class ContainersV2Rest {
           null))
         .build();
     }
-    return Response.ok(versionsOpt.get()).build();
+    List<PayloadVersionIO> versionList = versionsOpt.get();
+    return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())).build();
   }
 
   // ─── stats ───────────────────────────────────────────────────────────────
@@ -583,7 +584,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "List of linked DataObjects (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -608,7 +609,8 @@ public class ContainersV2Rest {
           null))
         .build();
     }
-    return Response.ok(linkedOpt.get()).build();
+    List<DataObjectIO> linkedList = linkedOpt.get();
+    return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())).build();
   }
 
   // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
