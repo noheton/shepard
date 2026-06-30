@@ -149,15 +149,21 @@ public class VideoTranscodeOrchestrator {
       return ref;
     }
 
-    // Stamp PENDING synchronously so the wire IO reflects in-flight state.
+    // CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: stamp PENDING on the ref object
+    // in-place and persist via createOrUpdate, but do NOT store the DAO return value
+    // in a VideoStreamReference local variable.  Declaring a VSR local in a CDI bean
+    // method triggers ClassTransformingBuildStep.getCommonSuperClass(VSR, …) which
+    // tries to load BasicReference from the narrowed transformation classloader →
+    // NoClassDefFoundError.  Returning `ref` (already mutated with PENDING) is safe
+    // because callers only need the proxyStatus field for the upload response IO.
     ref.setProxyStatus(TranscodeStatus.PENDING.name());
-    VideoStreamReference saved = videoStreamReferenceDAO.createOrUpdate(ref);
+    videoStreamReferenceDAO.createOrUpdate(ref);  // persist PENDING; ignore return
 
     // Capture the data the worker needs as immutable scalars (no Neo4j
     // entity instance leaks across thread boundaries).
-    String appId = saved.getAppId();
-    String sourceLocatorRaw = saved.getStorageLocator();
-    String name = saved.getName() != null ? saved.getName() : "video";
+    String appId = ref.getAppId();
+    String sourceLocatorRaw = ref.getStorageLocator();
+    String name = ref.getName() != null ? ref.getName() : "video";
     FileStorage storage = storageOpt.get();
     TranscodingProvider provider = providerOpt.get();
     int br = bitrateKbps > 0 ? bitrateKbps : TranscodeRequest.DEFAULT_BITRATE_KBPS;
@@ -165,7 +171,7 @@ public class VideoTranscodeOrchestrator {
     long to = timeoutSeconds > 0 ? timeoutSeconds : TranscodeRequest.DEFAULT_TIMEOUT_SECONDS;
 
     executor().submit(() -> runWorker(appId, sourceLocatorRaw, name, provider, storage, br, mh, to));
-    return saved;
+    return ref;
   }
 
   /**
@@ -215,22 +221,20 @@ public class VideoTranscodeOrchestrator {
   }
 
   private void stampReady(String appId, StorageLocator proxyLocator) {
-    VideoStreamReference cur = videoStreamReferenceDAO.findByAppId(appId);
-    if (cur == null) {
-      Log.warnf("VID-FFMPEG-TRANSCODE: ref %s vanished while transcoding", appId);
-      return;
-    }
-    cur.setProxyStatus(TranscodeStatus.READY.name());
-    cur.setProxyStorageLocator(proxyLocator.providerId() + ":" + proxyLocator.locator());
-    videoStreamReferenceDAO.createOrUpdate(cur);
+    // CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: use stampProxy (Cypher) instead of
+    // findByAppId + mutate + createOrUpdate so no VideoStreamReference local lives in
+    // this CDI bean method — avoids getCommonSuperClass(VSR,…) → NoClassDefFoundError.
+    videoStreamReferenceDAO.stampProxy(
+      appId,
+      TranscodeStatus.READY.name(),
+      proxyLocator.providerId() + ":" + proxyLocator.locator()
+    );
     Log.infof("VID-FFMPEG-TRANSCODE: ref %s proxy READY (%s)", appId, proxyLocator);
   }
 
   private void stampFailed(String appId, String reason) {
-    VideoStreamReference cur = videoStreamReferenceDAO.findByAppId(appId);
-    if (cur == null) return;
-    cur.setProxyStatus(TranscodeStatus.FAILED.name());
-    videoStreamReferenceDAO.createOrUpdate(cur);
+    // CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: same Cypher-only approach.
+    videoStreamReferenceDAO.stampProxy(appId, TranscodeStatus.FAILED.name(), null);
     Log.warnf("VID-FFMPEG-TRANSCODE: ref %s proxy FAILED (%s)", appId, reason);
   }
 

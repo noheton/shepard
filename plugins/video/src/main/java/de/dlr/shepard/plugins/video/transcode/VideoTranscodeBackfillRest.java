@@ -97,23 +97,29 @@ public class VideoTranscodeBackfillRest {
     int submitted = 0;
     int skipped = 0;
     List<Map<String, Object>> jobs = new ArrayList<>(candidates.size());
-    for (VideoStreamReference ref : candidates) {
+    // CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: use indexed loop, not for-each, so
+    // no VideoStreamReference local variable is declared in this CDI bean method.
+    // candidates.get(i) returns Object at bytecode level (type erasure) — CHECKCAST
+    // is inserted by javac but the result is used on the stack, never stored in a
+    // VideoStreamReference-typed local slot.  orchestrator.submit() return value is
+    // also discarded (submit mutates the ref in-place for PENDING status).
+    for (int i = 0; i < candidates.size(); i++) {
       Map<String, Object> row = new LinkedHashMap<>();
-      row.put("appId", ref.getAppId());
-      row.put("name", ref.getName());
-      row.put("videoCodec", ref.getVideoCodec());
-      row.put("priorProxyStatus", ref.getProxyStatus());
+      row.put("appId", candidates.get(i).getAppId());
+      row.put("name", candidates.get(i).getName());
+      row.put("videoCodec", candidates.get(i).getVideoCodec());
+      row.put("priorProxyStatus", candidates.get(i).getProxyStatus());
       if (dryRun) {
         row.put("status", "dryRun");
         skipped++;
       } else {
         try {
-          VideoStreamReference after = orchestrator.submit(ref);
-          row.put("status", after != null ? after.getProxyStatus() : "skipped");
+          orchestrator.submit(candidates.get(i));
+          row.put("status", candidates.get(i).getProxyStatus());
           submitted++;
         } catch (RuntimeException ex) {
           Log.warnf("VIDEO-HEVC-TRANSCODE-BACKFILL: submit failed for appId=%s: %s",
-            ref.getAppId(), ex.getMessage());
+            candidates.get(i).getAppId(), ex.getMessage());
           row.put("status", "error");
           row.put("error", ex.getMessage());
           skipped++;

@@ -72,6 +72,33 @@ public class VideoStreamReferenceDAO extends VersionableEntityDAO<VideoStreamRef
    * @param codec optional case-insensitive codec filter; null or blank → all
    * @param limit max rows to return; non-positive → no cap
    */
+  /**
+   * CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD — stamp proxy fields via Cypher
+   * directly, without loading the entity into a Java local variable.  Loading
+   * a {@link VideoStreamReference} inside a CDI bean's method triggers
+   * {@code ClassTransformingBuildStep.getCommonSuperClass(VideoStreamReference,…)}
+   * which tries to load {@code BasicReference} from the narrowed transformation
+   * classloader and throws {@code NoClassDefFoundError}.
+   *
+   * @param appId              the reference's appId
+   * @param proxyStatus        new proxyStatus value (e.g. "READY", "FAILED", "PENDING")
+   * @param proxyStorageLocator new locator string, or {@code null} to leave unchanged
+   */
+  public void stampProxy(String appId, String proxyStatus, String proxyStorageLocator) {
+    if (proxyStorageLocator != null) {
+      session.query(
+        "MATCH (r:VideoStreamReference {appId: $appId}) " +
+        "SET r.proxyStatus = $status, r.proxyStorageLocator = $loc",
+        Map.of("appId", appId, "status", proxyStatus, "loc", proxyStorageLocator)
+      );
+    } else {
+      session.query(
+        "MATCH (r:VideoStreamReference {appId: $appId}) SET r.proxyStatus = $status",
+        Map.of("appId", appId, "status", proxyStatus)
+      );
+    }
+  }
+
   public List<VideoStreamReference> findBackfillCandidates(String codec, int limit) {
     StringBuilder cypher = new StringBuilder("MATCH ")
       .append(CypherQueryHelper.getObjectPart("r", "VideoStreamReference", false))
