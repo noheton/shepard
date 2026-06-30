@@ -295,14 +295,24 @@
       </plugin>
       <!--
         CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: pre-generate META-INF/jandex.idx
-        so Quarkus treats this JAR as a "library" (CDI-discovered but NOT subject
-        to ClassTransformingBuildStep bytecode transformation with COMPUTE_FRAMES).
-        Without this, quarkus.index-dependency causes ClassTransformingBuildStep
-        to transform VideoStreamReferenceKindHandler's downloadContent method with
-        ASM COMPUTE_FRAMES, which calls getCommonSuperClass for BasicReference —
-        a class in backend.jar that is not in the narrowed transformation classloader.
-        With a pre-generated Jandex index, quarkus.index-dependency is not needed
-        and ClassTransformingBuildStep does not process this JAR's classes.
+        so Quarkus discovers this JAR's CDI beans directly, without needing
+        quarkus.index-dependency (which was removed in commit 4 / fire-321).
+
+        NOTE: the Jandex index alone does NOT prevent ClassTransformingBuildStep
+        from transforming CDI beans in this JAR. ClassTransformingBuildStep uses
+        ClassWriter(COMPUTE_FRAMES), which re-derives ALL method frames for every
+        CDI bean class it processes. When those frames involve VideoStreamReference
+        as a local variable, computeAllFrames calls getCommonSuperClass, which
+        must load BasicReference (VideoStreamReference's superclass in backend.jar).
+        BasicReference is provided-scope to the plugin and absent from the narrowed
+        transformation class-loader, causing NoClassDefFoundError.
+
+        The actual fix (commit 5 / fire-322) is VideoStreamReferenceKindHandlerLogic:
+        a package-private, non-CDI class that holds all method bodies declaring a
+        VideoStreamReference local variable. Arc never registers a transformer for
+        non-CDI classes, so ClassTransformingBuildStep skips it. The CDI bean
+        (VideoStreamReferenceKindHandler) becomes trivial one-line delegates whose
+        frames contain no VideoStreamReference locals → no problematic merge.
       -->
       <plugin>
         <groupId>io.smallrye</groupId>
