@@ -491,8 +491,9 @@ public class ReferencesV2Rest {
     try {
       List<ReferenceV2IO> all = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
       int total = all.size();
-      int from = Math.min(page * pageSize, total);
-      int to = Math.min(from + pageSize, total);
+      long fromLong = (long) page * pageSize;
+      int from = (int) Math.min(fromLong, (long) total);
+      int to = (int) Math.min(fromLong + pageSize, (long) total);
       List<ReferenceV2IO> pageItems = all.subList(from, to);
       return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
     } catch (BadRequestException bre) {
