@@ -656,8 +656,9 @@ public class DataObjectV2Rest {
       if (!p.isDeleted()) all.add(new DataObjectSummaryIO(p));
     }
     int total = all.size();
-    int from = Math.min(page * pageSize, total);
-    int to = Math.min(from + pageSize, total);
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
     return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
@@ -767,8 +768,9 @@ public class DataObjectV2Rest {
       if (!s.isDeleted()) all.add(new DataObjectSummaryIO(s));
     }
     int total = all.size();
-    int from = Math.min(page * pageSize, total);
-    int to = Math.min(from + pageSize, total);
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
     return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
@@ -814,8 +816,9 @@ public class DataObjectV2Rest {
       if (!c.isDeleted()) all.add(new DataObjectSummaryIO(c));
     }
     int total = all.size();
-    int from = Math.min(page * pageSize, total);
-    int to = Math.min(from + pageSize, total);
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
     return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
