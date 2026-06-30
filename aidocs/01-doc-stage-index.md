@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 74 |
-| `concept` | 33 |
+| `concept` | 34 |
 | `idea` | 13 |
 | `feature-defined` | 134 |
 | `audited-by-personas` | 78 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 103 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **497** |
+| **total docs** | **498** |
 | **UNTAGGED** | **0** |
 
 ## fragment (74)
@@ -122,7 +122,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-06-29 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-06-29 |
 
-## concept (33)
+## concept (34)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -130,6 +130,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-11.md`](agent-findings/apisimp-sweep-2026-06-11.md) | APISIMP — v2 surface simplification sweep (2026-06-11) | 2026-06-11 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12-2.md`](agent-findings/apisimp-sweep-2026-06-12-2.md) | APISIMP Sweep — 2026-06-12 (pass 2) | 2026-06-12 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12.md`](agent-findings/apisimp-sweep-2026-06-12.md) | APISIMP Sweep — 2026-06-12 | 2026-06-12 | 2026-06-29 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire325.md`](agent-findings/apisimp-sweep-2026-06-30-fire325.md) | APISIMP Sweep — 2026-06-30 (fire-325) | 2026-06-30 | — |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-29 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-29 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-06-29 |
