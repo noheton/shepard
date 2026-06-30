@@ -23,6 +23,7 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import de.dlr.shepard.v2.dataobject.io.PredecessorEdgePatchIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -620,12 +621,13 @@ public class DataObjectV2Rest {
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct predecessor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct predecessors (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -633,6 +635,10 @@ public class DataObjectV2Rest {
   public Response predecessors(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
@@ -645,11 +651,14 @@ public class DataObjectV2Rest {
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject p : d.getPredecessors()) {
-      if (!p.isDeleted()) result.add(new DataObjectSummaryIO(p));
+      if (!p.isDeleted()) all.add(new DataObjectSummaryIO(p));
     }
-    return Response.ok(result)
+    int total = all.size();
+    int from = Math.min(page * pageSize, total);
+    int to = Math.min(from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -723,12 +732,13 @@ public class DataObjectV2Rest {
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct successor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct successors (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -736,6 +746,10 @@ public class DataObjectV2Rest {
   public Response successors(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
@@ -748,11 +762,14 @@ public class DataObjectV2Rest {
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject s : d.getSuccessors()) {
-      if (!s.isDeleted()) result.add(new DataObjectSummaryIO(s));
+      if (!s.isDeleted()) all.add(new DataObjectSummaryIO(s));
     }
-    return Response.ok(result).build();
+    int total = all.size();
+    int from = Math.min(page * pageSize, total);
+    int to = Math.min(from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
   @GET
@@ -762,12 +779,13 @@ public class DataObjectV2Rest {
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct child of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct children (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -775,6 +793,10 @@ public class DataObjectV2Rest {
   public Response children(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
@@ -787,11 +809,14 @@ public class DataObjectV2Rest {
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject c : d.getChildren()) {
-      if (!c.isDeleted()) result.add(new DataObjectSummaryIO(c));
+      if (!c.isDeleted()) all.add(new DataObjectSummaryIO(c));
     }
-    return Response.ok(result).build();
+    int total = all.size();
+    int from = Math.min(page * pageSize, total);
+    int to = Math.min(from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
   @GET
