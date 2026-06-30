@@ -293,6 +293,28 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
       </plugin>
+      <!--
+        CRIT-QUARKUS-CLASSTRANSFORM-VIDEOPAYLOAD: pre-generate META-INF/jandex.idx
+        so Quarkus treats this JAR as a "library" (CDI-discovered but NOT subject
+        to ClassTransformingBuildStep bytecode transformation with COMPUTE_FRAMES).
+        Without this, quarkus.index-dependency causes ClassTransformingBuildStep
+        to transform VideoStreamReferenceKindHandler's downloadContent method with
+        ASM COMPUTE_FRAMES, which calls getCommonSuperClass for BasicReference —
+        a class in backend.jar that is not in the narrowed transformation classloader.
+        With a pre-generated Jandex index, quarkus.index-dependency is not needed
+        and ClassTransformingBuildStep does not process this JAR's classes.
+      -->
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>3.2.3</version>
+        <executions>
+          <execution>
+            <id>make-index</id>
+            <goals><goal>jandex</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
