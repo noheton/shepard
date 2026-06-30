@@ -35,14 +35,22 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     settle: 7000,
   },
   {
-    // F — single SVDX DataObject landing: shows the contained .svdx file
-    // ("Scope Project_AutoSave_19_04_29.svdx") with metadata, download, and
-    // any parsed-out references. (The file-reference detail page hangs in a
-    // spinner — tracked as a separate L2-class bug; the DO landing is the
-    // closest "show me what's in this svdx" we have today.)
-    id: "F-svdx-content",
-    url: "/collections/019ed455-67f7-7725-bf2d-7cd1b67aca9f/dataobjects/019ed587-b219-70a1-ac9b-66ab742f45ed",
-    settle: 9000,
+    // F — TimeseriesContainer detail for the MFFD AFP tapelaying container
+    // (019ede2a-60ec-7ac1-899d-3fe4c6263cbb). Same container as C (Trace3D)
+    // and G (force trace); the container holds X/Y/Z + temperature +
+    // pressure + joint channels at MFFD scale (192 channels total). The
+    // frame shows the container header, the channel-overview chart pane,
+    // and the channel-inventory table (paginated; first page lists area_mm2,
+    // TOWBORDERDETECTRANGE_MM[1], Brake_Act_Percent_INT[3], TemperaturPly,
+    // TapeForce_TapeActForce[1], fitError2, CutCounter, E1_MotorTemperature,
+    // VC_FeedLength3, fitCorrelation0). Replaces the earlier SVDX landing
+    // (uninspiring; SVDX-CSV-SIBLINGS-MISSING blocks timeseries materialisation
+    // for that file). The chart pane reads empty by default ("No data points
+    // yet — enable live mode to stream"); the channel-inventory table below
+    // is the "all the rich signals at MFFD scale" narrative.
+    id: "F-ts-container-chart",
+    url: "/containers/timeseries/019ede2a-60ec-7ac1-899d-3fe4c6263cbb",
+    settle: 10000,
   },
   {
     // G — robot cell: Trace3D of the AFP TCP path colored by tape consolidation
@@ -76,16 +84,20 @@ const SURFACES: { id: string; url: string; settle: number }[] = [
     // meshes are served from the frontend public dir; Three.js urdf-loader
     // renders the kinematic tree inline.
     //
-    // KNOWN GAP — see aidocs/16:J-URDF-MAPPING-RECIPE-SEED-2026-06-29.
-    // Today the URDF renders untextured + carries no trace overlay. The
-    // proper fix is to seed a SceneGraphPlayShape MAPPING_RECIPE template
-    // binding the URDF FileRef (019f1479-1142-75b3-9adf-0720d84a1622, DO
-    // 019f1479-0752-7ee5-b709-9eff4c2b4c99 in collection
-    // 019f1472-d0af-709d-85b0-95866094d865) + the joint TimeseriesRef
-    // (019f147a-8b40-7584-ba09-b828b3b4e14b, DO
-    // 019f147a-08fc-7890-b1fb-ee7be35f685f) and point this URL at
-    // /scene-graphs/play/<templateAppId>. Requires API auth this
-    // screenshot turn doesn't have; deferred.
+    // KNOWN GAP — see aidocs/16:FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30.
+    // The proper SceneGraphPlay path is
+    // `/scene-graphs/play/019f16d8-2fc7-76e8-b066-f713e2fb713d` (the
+    // MAPPING_RECIPE template seeded 2026-06-30 against URDF FileReference
+    // 019f1479-1142-... + joint TimeseriesReference 019f147a-8b40-... with
+    // joint_1..joint_6 bindings on device KR210-R2700-2). Materialization
+    // works end-to-end, but the play page's URDF-blob loader hits
+    // `GET /v2/references/{appId}/content`, which 400s for file-kind refs
+    // because `FileReferenceKindHandler.downloadContent(...)` is not
+    // overridden — that's a separate backend slice (~10 lines + tests in
+    // the kind handler reusing `SingletonFileReferenceService.getPayload`)
+    // queued as `FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30`. Until that
+    // ships, J keeps the legacy /shapes/render path (untextured robot, no
+    // trace overlay) rather than regressing to an error banner.
     id: "J-urdf-with-robot",
     url: "/shapes/render?renderer=urdf&urdfUrl=%2Furdf-samples%2Fkr210_r2700_2%2Fkuka_quantec_support%2Furdf%2Fkr210_r2700_2.urdf&packagePath=%2Furdf-samples%2Fkr210_r2700_2",
     settle: 18000,
