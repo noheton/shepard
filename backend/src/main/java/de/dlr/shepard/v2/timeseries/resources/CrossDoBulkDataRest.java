@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/data-objects/cross-timeseries-bulk")
 @RequestScoped
-@Tag(name = "Timeseries cross-DataObject view")
+@Tag(name = "Timeseries")
 public class CrossDoBulkDataRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/timeseries-cross-do.unauthorized";
