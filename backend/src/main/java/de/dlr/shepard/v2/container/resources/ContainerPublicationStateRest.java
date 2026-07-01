@@ -53,7 +53,7 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Container lifecycle")
+@Tag(name = "Containers")
 public class ContainerPublicationStateRest {
 
   private static final String PT_NOT_FOUND = "/problems/container-publication-state.not-found";
