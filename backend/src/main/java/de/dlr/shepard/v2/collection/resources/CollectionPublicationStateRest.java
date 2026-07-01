@@ -54,7 +54,7 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection lifecycle")
+@Tag(name = "Collections")
 public class CollectionPublicationStateRest {
 
   private static final String PT_NOT_FOUND = "/problems/publication-state.not-found";

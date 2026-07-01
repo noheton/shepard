@@ -63,7 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{appId}/templates")
 @RequestScoped
-@Tag(name = "Collection templates")
+@Tag(name = "Collections")
 public class CollectionTemplatesRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-templates.unauthorized";

@@ -64,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection hero-view")
+@Tag(name = "Collections")
 public class CollectionSceneGraphRest {
 
   static final String MAPPING_RECIPE_KIND = "MAPPING_RECIPE";
