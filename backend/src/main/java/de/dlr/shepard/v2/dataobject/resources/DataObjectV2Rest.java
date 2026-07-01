@@ -113,6 +113,7 @@ public class DataObjectV2Rest {
   private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/data-objects.not-found";
   private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/data-objects.unauthorized";
   private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/data-objects.forbidden";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/data-objects.internal";
 
   @Inject
   DataObjectService dataObjectService;
@@ -331,7 +332,8 @@ public class DataObjectV2Rest {
     try {
       body = writer.writeValueAsString(result);
     } catch (JsonProcessingException e) {
-      throw new RuntimeException("Failed to serialise DataObject list response", e);
+      return problem(PROBLEM_TYPE_INTERNAL, "Internal server error",
+        Response.Status.INTERNAL_SERVER_ERROR, "Failed to serialise DataObject list response");
     }
 
     return Response.ok(body, MediaType.APPLICATION_JSON)
