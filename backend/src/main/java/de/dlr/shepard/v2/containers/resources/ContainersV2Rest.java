@@ -201,6 +201,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/file")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
   @Operation(
+    operationId = "downloadFile",
     summary = "Download the single-file payload of a container by appId.",
     description =
       "Streams the raw single-file payload for the container at `appId`, when its " +
@@ -481,6 +482,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/files/{fileName}/versions")
   @Operation(
+    operationId = "listVersions",
     summary = "List all payload versions for a named file in a container by appId.",
     description =
       "Returns the complete upload history for the file identified by `fileName` within " +
@@ -1276,6 +1278,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/permissions")
   @Operation(
+    operationId = "getPermissions",
     summary = "Get permissions for a container by appId.",
     description =
       "Returns the current permissions for the container at `appId`.\n\n" +
@@ -1306,6 +1309,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/permissions")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchPermissions",
     summary = "Merge-patch permissions for a container by appId.",
     description =
       "RFC 7396 merge-patch the permissions for the container at `appId`. " +
@@ -1426,6 +1430,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/payload/{oid}/thumbnail")
   @Produces("image/png")
   @Operation(
+    operationId = "getThumbnail",
     summary = "Get a PNG thumbnail for a file payload.",
     description =
       "Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. " +
@@ -1461,6 +1466,7 @@ public class ContainersV2Rest {
   @POST
   @Path("/{appId}/upload-url")
   @Operation(
+    operationId = "getUploadUrl",
     summary = "Obtain a presigned PUT URL to upload a file directly to storage.",
     description =
       "Returns a short-lived PUT URL and the assigned oid. Upload file bytes with a single " +
@@ -1493,6 +1499,7 @@ public class ContainersV2Rest {
   @POST
   @Path("/{appId}/upload-url/commit")
   @Operation(
+    operationId = "commitUpload",
     summary = "Register a file uploaded via presigned PUT.",
     description =
       "After the PUT upload completes, call this to create the ShepardFile record and attach it " +
@@ -1524,6 +1531,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/files/{oid}/download-url")
   @Operation(
+    operationId = "getDownloadUrl",
     summary = "Obtain a presigned GET URL to download a file directly from storage.",
     description =
       "Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the " +

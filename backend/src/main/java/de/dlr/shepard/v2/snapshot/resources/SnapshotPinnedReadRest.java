@@ -91,6 +91,7 @@ public class SnapshotPinnedReadRest {
    */
   @GET
   @Operation(
+    operationId = "getDataObjects",
     summary = "List DataObjects captured in a snapshot.",
     description =
       "Returns the appIds of all DataObject nodes that were captured in the given snapshot " +

@@ -98,6 +98,7 @@ public class ImportDiagnosticsV2Rest {
   @GET
   @Path("/diagnostics/{runId}")
   @Operation(
+    operationId = "getEvents",
     summary = "Get diagnostic events for an import run (IMP-DIAG)",
     description =
       "Returns all in-memory diagnostic events for the given runId (= ImportLock.lockId), " +
@@ -145,6 +146,7 @@ public class ImportDiagnosticsV2Rest {
   @GET
   @Path("/runs")
   @Operation(
+    operationId = "listRuns",
     summary = "List recent import runs with diagnostic summary (IMP-DIAG)",
     description =
       "Returns a list of run IDs known to the in-memory diagnostic log, sorted by " +
@@ -178,6 +180,7 @@ public class ImportDiagnosticsV2Rest {
   @POST
   @Path("/diagnostics/{runId}/events")
   @Operation(
+    operationId = "ingestEvent",
     summary = "Push a single diagnostic event from an external importer (IMP-DIAG)",
     description =
       "Ingests a single structured diagnostic event into the in-memory log for the " +
@@ -218,6 +221,7 @@ public class ImportDiagnosticsV2Rest {
   @POST
   @Path("/diagnostics/{runId}/events/batch")
   @Operation(
+    operationId = "ingestBatch",
     summary = "Push a batch of diagnostic events from an external importer (IMP-DIAG)",
     description =
       "Ingests multiple structured diagnostic events into the in-memory log for the " +

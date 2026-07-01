@@ -80,6 +80,7 @@ public class SnapshotDiffRest {
    */
   @GET
   @Operation(
+    operationId = "diff",
     summary = "Diff two snapshots.",
     description =
       "Compares the entity sets of snapshot A (base) and snapshot B (head). " +

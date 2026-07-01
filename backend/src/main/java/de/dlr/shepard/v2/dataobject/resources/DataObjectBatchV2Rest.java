@@ -96,6 +96,7 @@ public class DataObjectBatchV2Rest {
 
   @POST
   @Operation(
+    operationId = "batch",
     summary = "Bulk-create DataObjects across one or more Collections (HTTP 207).",
     description =
       "Accepts a JSON array of DataObject creation requests (1–500 items) and returns " +

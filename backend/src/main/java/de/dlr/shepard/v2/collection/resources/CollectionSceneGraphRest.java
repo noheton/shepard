@@ -132,6 +132,7 @@ public class CollectionSceneGraphRest {
 
   @PUT
   @Operation(
+    operationId = "link",
     summary = "Link / replace the Collection's hero view.",
     description =
       "Sets `:Collection.sceneGraphAppId` to the supplied MAPPING_RECIPE "
@@ -194,6 +195,7 @@ public class CollectionSceneGraphRest {
 
   @DELETE
   @Operation(
+    operationId = "unlink",
     summary = "Unlink the Collection's hero view.",
     description =
       "Clears `:Collection.sceneGraphAppId`. Does NOT delete the MAPPING_RECIPE "

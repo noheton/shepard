@@ -94,6 +94,7 @@ public class NotebookRest {
   @Path("/{dataObjectAppId}/notebooks")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "listNotebooks",
     summary = "List .ipynb file references attached to a DataObject.",
     description =
       "Returns every FileReference (singleton FR1b) and every ShepardFile inside a " +

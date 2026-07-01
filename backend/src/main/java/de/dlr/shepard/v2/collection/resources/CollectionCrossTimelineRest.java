@@ -83,6 +83,7 @@ public class CollectionCrossTimelineRest {
 
   @GET
   @Operation(
+    operationId = "crossTimeline",
     summary = "Cross-collection timeline overlay.",
     description =
       "Merges DataObjects from two or more Collections into a single swimlane " +

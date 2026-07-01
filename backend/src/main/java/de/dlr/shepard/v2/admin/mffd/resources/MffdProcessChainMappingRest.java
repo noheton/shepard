@@ -76,6 +76,7 @@ public class MffdProcessChainMappingRest {
   @POST
   @Consumes({ MEDIA_TYPE_YAML, MEDIA_TYPE_APPLICATION_YAML, MediaType.TEXT_PLAIN })
   @Operation(
+    operationId = "apply",
     summary = "Apply a MFFD process-chain mapping YAML payload (admin-only).",
     description = "Parses the YAML body, matches source and target DataObjects via " +
     "their urn:shepard:mffd:* SemanticAnnotation predicates, and MERGEs " +

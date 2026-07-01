@@ -169,6 +169,7 @@ public class SemanticSparqlRest {
   @Path("/{repoAppId}/sparql")
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryGet",
     summary = "Execute a read-only SPARQL SELECT or ASK query (GET form).",
     description =
       "Accepts a SPARQL query via the `query` URL parameter and proxies it to the backend " +
@@ -230,6 +231,7 @@ public class SemanticSparqlRest {
   @Consumes(FORM_URL_ENCODED)
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryPost",
     summary = "Execute a read-only SPARQL SELECT or ASK query (POST form variant).",
     description =
       "Identical semantics to the GET variant, but accepts the query as a URL-encoded " +

@@ -93,6 +93,7 @@ public class TemplatePortabilityRest {
   @Produces({ MEDIA_TYPE_YAML, MEDIA_TYPE_APPLICATION_YAML })
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Operation(
+    operationId = "export",
     summary = "Export all templates as a YAML document (admin-only, T1f).",
     description = "Returns every non-retired ShepardTemplate as a YAML list. " +
     "The output is directly importable via POST /v2/templates/import. " +
@@ -148,6 +149,7 @@ public class TemplatePortabilityRest {
   @Produces("application/json")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Operation(
+    operationId = "importTemplates",
     summary = "Import templates from a YAML document (admin-only, T1f).",
     description = "Accepts a YAML list of templates in the same shape as GET /v2/templates/export. " +
     "Each entry is body-validated via TemplateBodyValidator. " +

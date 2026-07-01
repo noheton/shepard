@@ -147,6 +147,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/refresh-ontologies")
   @Operation(
+    operationId = "refreshOntologies",
     summary = "Refresh bundled ontologies against their pinned canonical URLs.",
     description = "Walks every bundle in ontologies-manifest.json (or the subset named in " +
     "request.bundles), fetches each bundle's canonicalUrl, recomputes its SHA-256, and " +
@@ -214,6 +215,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/refresh-snapshots")
   @Operation(
+    operationId = "refreshSnapshots",
     summary = "Refresh stale SemanticAnnotation label snapshots.",
     description =
       "Pages through every :SemanticAnnotation node in batches of 500, "
@@ -243,6 +245,7 @@ public class SemanticAdminRest {
   @GET
   @Path("/ontologies")
   @Operation(
+    operationId = "listOntologies",
     summary = "List every pre-seeded + operator-uploaded ontology bundle.",
     description = "Built-ins first (manifest declaration order), then user-uploaded bundles " +
     "(id ASC). Each row's `enabled` is the effective state under the precedence rules " +
@@ -275,6 +278,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/ontologies/{bundleId}/disable")
   @Operation(
+    operationId = "disableOntology",
     summary = "Runtime-disable an ontology bundle.",
     description = "Adds the id to :SemanticConfig.disabledBundles. The bundle stops seeding on " +
     "the next startup. Refused (409 RFC 7807 semantic.bundle.required) for bundles whose " +
@@ -295,6 +299,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/ontologies/{bundleId}/enable")
   @Operation(
+    operationId = "enableOntology",
     summary = "Runtime-enable a previously-disabled ontology bundle.",
     description = "Removes the id from :SemanticConfig.disabledBundles. No-op if the id is not " +
     "currently disabled. The bundle seeds on the next startup."
@@ -356,6 +361,7 @@ public class SemanticAdminRest {
   @Path("/ontologies")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
+    operationId = "uploadOntology",
     summary = "Upload an operator-supplied ontology bundle.",
     description = "Multipart: file=<ttl bytes> plus metadata={\"id\":...,\"name\":...," +
     "\"iriPrefix\":...,\"canonicalUrl\":...,\"license\":...}. Server SHA-256s the bytes, " +
@@ -473,6 +479,7 @@ public class SemanticAdminRest {
   @DELETE
   @Path("/ontologies/{bundleId}")
   @Operation(
+    operationId = "deleteOntology",
     summary = "Remove an operator-uploaded ontology bundle.",
     description = "Drops the on-disk TTL + the :UserOntologyBundle catalogue row. Refused " +
     "(409 RFC 7807 semantic.bundle.builtin-not-removable) for built-in bundle ids — those " +

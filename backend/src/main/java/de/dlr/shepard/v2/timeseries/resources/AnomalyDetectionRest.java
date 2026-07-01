@@ -150,6 +150,7 @@ public class AnomalyDetectionRest {
 
   @POST
   @Operation(
+    operationId = "detect",
     summary = "Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.",
     description =
       "Fetches the timeseries data linked to the `:TimeseriesReference` identified by " +

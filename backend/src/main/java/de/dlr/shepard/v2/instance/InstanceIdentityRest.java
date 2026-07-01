@@ -47,6 +47,7 @@ public class InstanceIdentityRest {
 
   @GET
   @Operation(
+    operationId = "getIdentity",
     summary = "Read this instance's organisational identity (ROR-based).",
     description = "Returns the configured ROR id, organisation name, and computed " +
     "ror.org URL. All three fields are absent when no ROR id has been configured. " +

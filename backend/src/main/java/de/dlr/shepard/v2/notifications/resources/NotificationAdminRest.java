@@ -57,6 +57,7 @@ public class NotificationAdminRest {
   @POST
   @Path("/test")
   @Operation(
+    operationId = "sendTest",
     summary = "Send a test in-app notification.",
     description = "Publishes a test notification to validate that the notification system is working. " +
     "The notification appears in the target audience's bell panel within one poll cycle (~30 seconds). " +

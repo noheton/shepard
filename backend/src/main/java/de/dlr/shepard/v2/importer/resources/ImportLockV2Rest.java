@@ -69,6 +69,7 @@ public class ImportLockV2Rest {
 
   @GET
   @Operation(
+    operationId = "getCurrent",
     summary = "Get current import lock status (IMP-LOCK)",
     description =
       "Returns the most recent import lock regardless of status, so callers can tell " +
@@ -94,6 +95,7 @@ public class ImportLockV2Rest {
 
   @POST
   @Operation(
+    operationId = "acquire",
     summary = "Acquire an import lock (IMP-LOCK)",
     description =
       "Creates a new RUNNING import lock for the specified collection. " +
@@ -134,6 +136,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/heartbeat")
   @Operation(
+    operationId = "heartbeat",
     summary = "Extend import lock heartbeat (IMP-LOCK)",
     description =
       "Updates lastHeartbeatAt to now for the specified RUNNING lock. " +
@@ -168,6 +171,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/release")
   @Operation(
+    operationId = "release",
     summary = "Release import lock on completion (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to COMPLETED status (normal import completion). " +
@@ -199,6 +203,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/abandon")
   @Operation(
+    operationId = "abandon",
     summary = "Abandon import lock on error (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to FAILED status with an error description. " +
@@ -239,6 +244,7 @@ public class ImportLockV2Rest {
   @Path("/{lockId}")
   @RolesAllowed("instance-admin")
   @Operation(
+    operationId = "cancel",
     summary = "Admin cancel an import lock (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to CANCELLED status. " +

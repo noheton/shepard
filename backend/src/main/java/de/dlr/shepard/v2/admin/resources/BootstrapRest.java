@@ -41,6 +41,7 @@ public class BootstrapRest {
   @POST
   @Tag(name = "Admin")
   @Operation(
+    operationId = "bootstrap",
     description = "Consume the one-shot bootstrap token + grant instance-admin to a user. " +
     "Unauthenticated — the token is the auth proof. Token-replay returns 403."
   )

@@ -121,6 +121,7 @@ public class SnapshotRest {
   @GET
   @Path("/manifest")
   @Operation(
+    operationId = "manifest",
     summary = "Read the full snapshot manifest.",
     description =
       "Returns every (entityAppId, revision) pair captured at snapshot time. " +

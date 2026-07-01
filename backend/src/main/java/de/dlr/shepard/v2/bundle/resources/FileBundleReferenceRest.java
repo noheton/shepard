@@ -121,6 +121,7 @@ public class FileBundleReferenceRest {
   @GET
   @Path("/{bundleAppId}")
   @Operation(
+    operationId = "getBundle",
     summary = "Get a FileBundleReference with its FileGroups by appId.",
     description =
       "Returns the full `FileBundleReferenceIO` for the `:FileBundleReference` identified " +
@@ -167,6 +168,7 @@ public class FileBundleReferenceRest {
   @GET
   @Path("/{bundleAppId}/groups")
   @Operation(
+    operationId = "listGroups",
     summary = "List FileGroups under a bundle, ordered by ascending index.",
     description =
       "Returns a paged list of `:FileGroup` nodes belonging to the " +
@@ -209,6 +211,7 @@ public class FileBundleReferenceRest {
   @POST
   @Path("/{bundleAppId}/groups")
   @Operation(
+    operationId = "createGroup",
     summary = "Create a new FileGroup under a bundle.",
     description =
       "Creates a `:FileGroup` node and links it to the `:FileBundleReference` identified " +
@@ -263,6 +266,7 @@ public class FileBundleReferenceRest {
   @GET
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Operation(
+    operationId = "getGroup",
     summary = "Get a single FileGroup with its files.",
     description =
       "Returns the `FileGroupIO` for the `:FileGroup` identified by `groupAppId` (UUID v7) " +
@@ -306,6 +310,7 @@ public class FileBundleReferenceRest {
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchGroup",
     summary = "RFC 7396 merge-patch on a FileGroup.",
     description =
       "Applies a partial update to the `:FileGroup` identified by `groupAppId` within " +
@@ -362,6 +367,7 @@ public class FileBundleReferenceRest {
   @DELETE
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Operation(
+    operationId = "deleteGroup",
     summary = "Delete a FileGroup from a bundle.",
     description =
       "Removes the `:FileGroup` identified by `groupAppId` from the `:FileBundleReference` " +
@@ -414,6 +420,7 @@ public class FileBundleReferenceRest {
   @GET
   @Path("/{bundleAppId}/groups/{groupAppId}/files")
   @Operation(
+    operationId = "listGroupFiles",
     summary = "List files in a FileGroup, paginated (MFFD-IMAGEBUNDLE-PAGINATE-1).",
     description =
       "Returns the files attached to the `:FileGroup` identified by `groupAppId` " +
@@ -487,6 +494,7 @@ public class FileBundleReferenceRest {
   @Path("/{bundleAppId}/groups/{groupAppId}/files")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
+    operationId = "uploadFileIntoGroup",
     summary = "Upload one file into a specific FileGroup.",
     description =
       "Accepts a `multipart/form-data` body with a single `file` part and stores the " +

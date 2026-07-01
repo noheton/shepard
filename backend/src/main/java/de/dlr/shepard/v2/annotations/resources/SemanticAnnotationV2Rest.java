@@ -200,6 +200,7 @@ public class SemanticAnnotationV2Rest {
   @GET
   @Path("/find")
   @Operation(
+    operationId = "find",
     summary = "Text search over annotation values and predicate names.",
     description =
       "Case-insensitive substring search over annotation value names and predicate names. " +
@@ -295,6 +296,7 @@ public class SemanticAnnotationV2Rest {
   @Path("/{appId}/export/turtle")
   @Produces("text/turtle")
   @Operation(
+    operationId = "exportTurtle",
     summary = "Export one annotation as OA-framed Turtle.",
     description =
       "Produces a minimal Turtle document containing both the 'flat triple' form " +

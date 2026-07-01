@@ -46,6 +46,7 @@ public class InstanceCapabilitiesRest {
 
   @GET
   @Operation(
+    operationId = "getCapabilities",
     summary = "List the IDs of plugins that are currently ENABLED on this instance.",
     description = "Returns only ENABLED plugin IDs — a lightweight capability probe for the " +
     "frontend so it can gate plugin-specific UI surfaces (e.g. the Unhide Publishing panel). " +
