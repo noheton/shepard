@@ -51,6 +51,16 @@ const {
   revoke: revokeBlob,
 } = useUrdfReferenceBlob();
 
+// URDF-KUKA-ORANGE-2026-07-01 — provide a packagePath so `package://kuka_quantec_support/…`
+// URIs in the URDF resolve against the /urdf-samples/kr210_r2700_2/ tree on
+// this frontend host. This is the interim fix ahead of the annotation-driven
+// URDF-PACKAGE-PATH-FROM-ANNOTATION row (aidocs/16 §SCENEGRAPH-CANVAS-MESH):
+// each URDF FileReference should carry its packagePath as a semantic
+// annotation and be resolved at render time. For today's single-URDF
+// showcase the frontend-static default is correct; when a second URDF ships
+// the annotation must land alongside it.
+const urdfPackagePath = computed<string>(() => "/urdf-samples/kr210_r2700_2");
+
 async function load() {
   loading.value = true;
   error.value = null;
@@ -156,7 +166,11 @@ onUnmounted(revokeBlob);
 
         <div v-else-if="urdfUrl" class="play-canvas">
           <ClientOnly>
-            <UrdfCanvas :urdf-url="urdfUrl" label="Scene-graph 3D view" />
+            <UrdfCanvas
+              :urdf-url="urdfUrl"
+              :package-path="urdfPackagePath"
+              label="Scene-graph 3D view"
+            />
             <template #fallback>
               <v-skeleton-loader type="image" height="500" />
             </template>

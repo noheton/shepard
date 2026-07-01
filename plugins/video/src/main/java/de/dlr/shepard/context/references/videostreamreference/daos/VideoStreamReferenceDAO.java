@@ -100,21 +100,44 @@ public class VideoStreamReferenceDAO extends VersionableEntityDAO<VideoStreamRef
   }
 
   public List<VideoStreamReference> findBackfillCandidates(String codec, int limit) {
-    StringBuilder cypher = new StringBuilder("MATCH ")
-      .append(CypherQueryHelper.getObjectPart("r", "VideoStreamReference", false))
-      .append(" WHERE (r.proxyStatus IS NULL OR r.proxyStatus = 'FAILED') ")
-      .append(" AND coalesce(r.deleted, false) = false ")
-      .append(" AND r.storageLocator IS NOT NULL AND r.storageLocator <> '' ");
     Map<String, Object> params = new java.util.HashMap<>();
     if (codec != null && !codec.isBlank()) {
-      cypher.append(" AND toLower(r.videoCodec) = $codec ");
       params.put("codec", codec.toLowerCase());
     }
-    cypher.append(" ").append(CypherQueryHelper.getReturnPart("r"));
+    var queryResult = findByQuery(buildBackfillCypher(codec, limit), params);
+    return StreamSupport.stream(queryResult.spliterator(), false).collect(Collectors.toList());
+  }
+
+  /**
+   * VIDEO-HEVC-TRANSCODE-BACKFILL-2026-07-01 — build the candidate query as a
+   * pure String helper so the WHERE-clause invariants can be unit-tested
+   * without Neo4j.
+   *
+   * <p>Historic bug shape: the inline property-match {@code {deleted: FALSE}}
+   * from {@link CypherQueryHelper#getObjectPart} silently excludes rows whose
+   * {@code deleted} property is <em>unset</em>. Current data has {@code deleted}
+   * explicit on every {@code :VideoStreamReference}, but the additive-schema
+   * rule ({@code CLAUDE.md} — new columns nullable, read paths null-coalesce)
+   * says the DAO must be robust to unset. We therefore drop the property-match
+   * form here and use an explicit {@code (r.deleted IS NULL OR r.deleted = false)}
+   * WHERE clause. Equivalent on today's data, correct on tomorrow's.
+   *
+   * <p>Package-private for {@link VideoStreamReferenceDAOTest}.
+   */
+  static String buildBackfillCypher(String codec, int limit) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (r:VideoStreamReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND (r.proxyStatus IS NULL OR r.proxyStatus = 'FAILED') " +
+      "AND r.storageLocator IS NOT NULL AND r.storageLocator <> '' "
+    );
+    if (codec != null && !codec.isBlank()) {
+      cypher.append("AND toLower(r.videoCodec) = $codec ");
+    }
+    cypher.append(CypherQueryHelper.getReturnPart("r"));
     if (limit > 0) {
       cypher.append(" LIMIT ").append(limit);
     }
-    var queryResult = findByQuery(cypher.toString(), params);
-    return StreamSupport.stream(queryResult.spliterator(), false).collect(Collectors.toList());
+    return cypher.toString();
   }
 }
