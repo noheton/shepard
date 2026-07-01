@@ -38,7 +38,7 @@ public class UserAvatarByAppIdRest {
 
   @GET
   @Produces("image/*")
-  @Operation(summary = "Get a user's avatar. No authentication required; returns 404 if none uploaded.")
+  @Operation(operationId = "getUserAvatar", summary = "Get a user's avatar. No authentication required; returns 404 if none uploaded.")
   @APIResponse(responseCode = "200", description = "Avatar bytes.")
   @APIResponse(responseCode = "404", description = "No avatar for this user.")
   public Response getAvatar(@PathParam("appId") String appId) {
