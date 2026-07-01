@@ -53,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/references/{appId}/annotations")
 @RequestScoped
-@Tag(name = "Reference annotations")
+@Tag(name = "References")
 public class ReferenceAnnotationRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/reference-annotations.unauthorized";

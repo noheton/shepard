@@ -61,7 +61,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import jobs")
+@Tag(name = "Import")
 public class ImportJobsV2Rest {
 
   @Inject

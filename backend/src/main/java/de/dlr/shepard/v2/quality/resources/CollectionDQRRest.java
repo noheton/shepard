@@ -54,7 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Data quality requirements")
+@Tag(name = "Data quality")
 public class CollectionDQRRest {
 
   static final String PT_UNAUTHORIZED = "/problems/dqr.unauthorized";
