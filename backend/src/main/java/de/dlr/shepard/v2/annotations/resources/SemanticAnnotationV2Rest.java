@@ -77,7 +77,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Semantic annotations")
+@Tag(name = "Semantics")
 public class SemanticAnnotationV2Rest {
 
   static final int MAX_PAGE_SIZE = 200;
