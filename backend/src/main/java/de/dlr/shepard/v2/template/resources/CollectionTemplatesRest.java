@@ -86,7 +86,7 @@ public class CollectionTemplatesRest {
 
   @GET
   @Path("/allowed")
-  @Operation(summary = "List templates the Collection owner has curated as allowed inside this Collection.")
+  @Operation(operationId = "listAllowed", summary = "List templates the Collection owner has curated as allowed inside this Collection.")
   @APIResponse(
     responseCode = "200",
     description = "Allowed templates (retired excluded) wrapped in a PagedResponseIO envelope.",
@@ -111,7 +111,7 @@ public class CollectionTemplatesRest {
 
   @GET
   @Path("/used")
-  @Operation(summary = "List templates the Collection has cited via :USES_TEMPLATE.")
+  @Operation(operationId = "listUsed", summary = "List templates the Collection has cited via :USES_TEMPLATE.")
   @APIResponse(
     responseCode = "200",
     description = "Used templates (includes retired rows) wrapped in a PagedResponseIO envelope.",
