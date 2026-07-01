@@ -95,7 +95,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/semantic")
 @RequestScoped
-@Tag(name = "Semantic SPARQL proxy")
+@Tag(name = "Semantics")
 public class SemanticSparqlRest {
 
   // ─── Media types ──────────────────────────────────────────────────────────

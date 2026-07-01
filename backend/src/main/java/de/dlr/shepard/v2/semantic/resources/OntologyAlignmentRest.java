@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/semantic/ontology/alignment")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Ontology alignment registry")
+@Tag(name = "Semantics")
 public class OntologyAlignmentRest {
 
   @Inject

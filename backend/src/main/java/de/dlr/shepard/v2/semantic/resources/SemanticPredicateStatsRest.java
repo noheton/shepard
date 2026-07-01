@@ -61,7 +61,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Semantic predicate statistics")
+@Tag(name = "Semantics")
 public class SemanticPredicateStatsRest {
 
   static final String PROBLEM_TYPE_BAD_IRI = "/problems/semantic.predicate.bad-iri";
