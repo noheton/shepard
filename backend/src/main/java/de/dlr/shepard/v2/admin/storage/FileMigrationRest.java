@@ -81,6 +81,7 @@ public class FileMigrationRest {
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid adapter ids or migration already running.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response trigger(FileMigrationTriggerIO body) {
     if (body == null
@@ -112,6 +113,7 @@ public class FileMigrationRest {
     description = "Current migration state.",
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response status() {
     return Response.ok(FileMigrationStateIO.from(migrationService.getState())).build();
@@ -146,6 +148,7 @@ public class FileMigrationRest {
     responseCode = "409",
     description = "The :ShepardFile has nothing to roll back (previousProviderId is null)."
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "500", description = "Storage adapter failure during rollback.")
   public Response rollback(

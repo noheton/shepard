@@ -74,6 +74,7 @@ public class NotificationAdminRest {
     description = "Test notification delivered via transport.",
     content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
   @APIResponse(
     responseCode = "404",

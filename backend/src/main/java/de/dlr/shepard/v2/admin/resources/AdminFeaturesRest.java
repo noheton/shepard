@@ -58,6 +58,7 @@ public class AdminFeaturesRest {
     description = "Current state of all feature toggles.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
     List<FeatureToggleIO> result = registry.list()
@@ -80,6 +81,7 @@ public class AdminFeaturesRest {
     description = "Updated state of the toggle.",
     content = @Content(schema = @Schema(implementation = FeatureToggleIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "404", description = "No toggle registered under that name.")
   public Response patch(

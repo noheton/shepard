@@ -78,6 +78,7 @@ public class NotificationTransportRest {
     description = "Current list of transports (may be empty).",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
     List<NotificationTransportReadIO> items = service.listAll()
@@ -109,6 +110,7 @@ public class NotificationTransportRest {
     description = "kind missing/invalid or name missing (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response create(NotificationTransportWriteIO body) {
     NotificationTransportWriteIO patch = body == null ? new NotificationTransportWriteIO() : body;
@@ -155,6 +157,7 @@ public class NotificationTransportRest {
     description = "Updated transport.",
     content = @Content(schema = @Schema(implementation = NotificationTransportReadIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No transport with that appId.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patch(@PathParam("appId") String appId, NotificationTransportWriteIO body) {
@@ -191,6 +194,7 @@ public class NotificationTransportRest {
       "Returns 204 on success, 404 when the appId is unknown."
   )
   @APIResponse(responseCode = "204", description = "Transport deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No transport with that appId.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response delete(@PathParam("appId") String appId) {
