@@ -1,5 +1,42 @@
 <template>
   <div>
+    <!-- Bulk-selection action bar (visible when ≥1 item is checked) -->
+    <v-toolbar
+      v-if="selectedAppIds.size > 0"
+      density="compact"
+      color="primary-container"
+      class="mb-2 rounded"
+      flat
+    >
+      <v-checkbox-btn
+        :model-value="allPageSelected"
+        :indeterminate="somePageSelected && !allPageSelected"
+        color="primary"
+        density="compact"
+        class="ml-2"
+        aria-label="Select all on page"
+        @update:model-value="toggleSelectAll"
+      />
+      <span class="text-body-2 font-weight-medium ml-1">
+        {{ selectedAppIds.size }} selected
+      </span>
+      <v-spacer />
+      <v-btn
+        variant="text"
+        size="small"
+        prepend-icon="mdi-tag-multiple-outline"
+        data-testid="bulk-annotate-btn"
+        @click="showBulkDialog = true"
+      >Bulk annotate</v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        icon="mdi-close"
+        aria-label="Clear selection"
+        @click="clearSelection"
+      />
+    </v-toolbar>
+
     <!-- Search + status filter row -->
     <div class="d-flex flex-wrap align-center ga-2 pb-3">
       <v-text-field
@@ -45,6 +82,16 @@
     <v-table v-else density="compact" class="do-panel-table">
       <thead>
         <tr>
+          <th style="width: 1%; padding-right: 0">
+            <v-checkbox-btn
+              :model-value="allPageSelected"
+              :indeterminate="somePageSelected && !allPageSelected"
+              color="primary"
+              density="compact"
+              aria-label="Select all on page"
+              @update:model-value="toggleSelectAll"
+            />
+          </th>
           <th>Name</th>
           <th style="width: 1%; white-space: nowrap">Status</th>
           <th style="width: 1%; white-space: nowrap" title="References attached to this DataObject">Refs</th>
@@ -61,8 +108,18 @@
           class="do-row"
           tabindex="0"
           @keydown.enter="navigateTo(row)"
-          @click="navigateTo(row)"
+          @click.exact="navigateTo(row)"
         >
+          <td style="padding-right: 0" @click.stop>
+            <v-checkbox-btn
+              v-if="row.appId"
+              :model-value="selectedAppIds.has(row.appId)"
+              color="primary"
+              density="compact"
+              :aria-label="`Select ${row.name}`"
+              @update:model-value="toggleRow(row.appId!)"
+            />
+          </td>
           <td>
             <v-icon
               :icon="templateIconFor(row.attachedTemplateAppId, 'DataObject')"
@@ -182,6 +239,14 @@
         />
       </div>
     </div>
+
+    <!-- SEMANTIC-ANNOTATE-BULK-UI-1: bulk annotation dialog -->
+    <BulkAnnotationDialog
+      v-model:show-dialog="showBulkDialog"
+      :subject-app-ids="Array.from(selectedAppIds)"
+      subject-kind="DataObject"
+      @bulk-annotated="onBulkAnnotated"
+    />
   </div>
 </template>
 
@@ -191,6 +256,7 @@ import { useRouter, useRoute } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
 import { useTemplateIconByAppId } from "~/composables/useTemplateIconByAppId";
+import BulkAnnotationDialog from "~/components/semantic/BulkAnnotationDialog.vue";
 
 const props = defineProps<{
   collectionId: number;
@@ -247,6 +313,29 @@ function onSearchChange() {
 watch(statusFilter, () => { page.value = 0; });
 
 const pageSize = 25;
+
+// ─── SEMANTIC-ANNOTATE-BULK-UI-1: multi-select state ─────────────────────────
+
+const selectedAppIds = ref<Set<string>>(new Set());
+const showBulkDialog = ref(false);
+
+// Clear selection when navigating to a different page so stale appIds don't carry over.
+watch(page, () => { selectedAppIds.value = new Set(); });
+
+function toggleRow(appId: string) {
+  const next = new Set(selectedAppIds.value);
+  if (next.has(appId)) next.delete(appId);
+  else next.add(appId);
+  selectedAppIds.value = next;
+}
+
+function clearSelection() {
+  selectedAppIds.value = new Set();
+}
+
+function onBulkAnnotated(succeeded: number, failed: number) {
+  if (failed === 0) clearSelection();
+}
 
 // Reset page on annotation filter change (lane drill-down → page 0)
 watch(annotationFilter, () => { page.value = 0; });
@@ -366,6 +455,26 @@ function timeBoundsTooltip(startNs: number, endNs: number): string {
 // Server-side status filter: rows already contain only the matching status.
 // Alias for template compatibility.
 const pagedItems = rows;
+
+// ─── SEMANTIC-ANNOTATE-BULK-UI-1: page-level selection computeds ─────────────
+
+const pageAppIds = computed<string[]>(() =>
+  pagedItems.value.map(r => r.appId).filter((id): id is string => id !== null),
+);
+
+const allPageSelected = computed(() =>
+  pageAppIds.value.length > 0 && pageAppIds.value.every(id => selectedAppIds.value.has(id)),
+);
+const somePageSelected = computed(() =>
+  pageAppIds.value.some(id => selectedAppIds.value.has(id)),
+);
+
+function toggleSelectAll(v: boolean) {
+  const next = new Set(selectedAppIds.value);
+  if (v) pageAppIds.value.forEach(id => next.add(id));
+  else pageAppIds.value.forEach(id => next.delete(id));
+  selectedAppIds.value = next;
+}
 
 /**
  * Build a route href for a DataObject row.
