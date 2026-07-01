@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/references/{appId}/detect-anomalies")
 @RequestScoped
-@Tag(name = "Timeseries annotations")
+@Tag(name = "Timeseries")
 public class AnomalyDetectionRest {
 
   @Inject
