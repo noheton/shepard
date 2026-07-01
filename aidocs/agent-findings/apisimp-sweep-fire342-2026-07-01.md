@@ -1,5 +1,5 @@
 ---
-stage: concept
+stage: deployed
 last-stage-change: 2026-07-01
 ---
 
