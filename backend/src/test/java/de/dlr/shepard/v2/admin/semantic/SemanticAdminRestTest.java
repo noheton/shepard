@@ -765,10 +765,21 @@ class SemanticAdminRestTest {
   }
 
   @Test
-  void upload_blankMetadata_returns400() throws Exception {
+  void upload_blankMetadata_returns400Problem() throws Exception {
     FileUpload fu = makeFileUpload("@prefix x: <http://x/> .".getBytes(StandardCharsets.UTF_8));
     var r = rest.uploadOntology(fu, "", securityContext);
     assertEquals(400, r.getStatus());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals(SemanticAdminRest.PROBLEM_TYPE_BUNDLE_BAD_METADATA, body.type());
+  }
+
+  @Test
+  void upload_nullMetadata_returns400Problem() throws Exception {
+    FileUpload fu = makeFileUpload("@prefix x: <http://x/> .".getBytes(StandardCharsets.UTF_8));
+    var r = rest.uploadOntology(fu, null, securityContext);
+    assertEquals(400, r.getStatus());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals(SemanticAdminRest.PROBLEM_TYPE_BUNDLE_BAD_METADATA, body.type());
   }
 
   @Test

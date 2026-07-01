@@ -390,10 +390,19 @@ public class SemanticAdminRest {
       );
     }
 
+    if (metadataJson == null || metadataJson.isBlank()) {
+      return problem(
+        PROBLEM_TYPE_BUNDLE_BAD_METADATA,
+        "Missing metadata part",
+        Status.BAD_REQUEST,
+        "Multipart upload must include a 'metadata' part with JSON ontology metadata."
+      );
+    }
+
     UploadMetadata meta;
     try {
       meta = parseMetadata(metadataJson);
-    } catch (RuntimeException ex) {
+    } catch (IllegalArgumentException ex) {
       return problem(
         PROBLEM_TYPE_BUNDLE_BAD_METADATA,
         "Invalid metadata",
@@ -553,9 +562,6 @@ public class SemanticAdminRest {
 
   /** Parse the multipart 'metadata' JSON part into the service-layer DTO. */
   private static UploadMetadata parseMetadata(String json) {
-    if (json == null || json.isBlank()) {
-      throw new IllegalArgumentException("metadata part is required");
-    }
     try {
       var node = new ObjectMapper().readTree(json);
       String id = textOrNull(node, "id");
