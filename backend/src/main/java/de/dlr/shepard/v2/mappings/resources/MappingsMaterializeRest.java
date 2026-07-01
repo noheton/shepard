@@ -96,6 +96,7 @@ public class MappingsMaterializeRest {
   @Path("/{templateAppId}/materialize")
   @RolesAllowed("authenticated")
   @org.eclipse.microprofile.openapi.annotations.Operation(
+    operationId = "materialize",
     summary = "Materialize a MAPPING_RECIPE template into a derived output.",
     description = "Binds the supplied input reference appIds through the recipe's shape and runs the " +
     "registered TransformExecutor, returning a derived reference appId or a played view-model. " +
