@@ -13,6 +13,8 @@ import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationItemResultIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -38,6 +40,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -82,6 +85,7 @@ public class SemanticAnnotationV2Rest {
 
   static final int MAX_PAGE_SIZE = 200;
   static final int DEFAULT_PAGE_SIZE = 50;
+  static final int BULK_CREATE_MAX = 100;
 
   static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/annotations.unauthorized";
   static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/annotations.bad-request";
@@ -454,6 +458,153 @@ public class SemanticAnnotationV2Rest {
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
+  }
+
+  // ─── BULK CREATE ───────────────────────────────────────────────────────────
+
+  @POST
+  @Path("/bulk")
+  @Operation(
+    operationId = "bulkCreateAnnotations",
+    summary = "Bulk-create up to " + BULK_CREATE_MAX + " semantic annotations in one round-trip.",
+    description =
+      "SEMANTIC-ANNOTATE-BULK-REST-1 — creates up to " + BULK_CREATE_MAX + " `:SemanticAnnotation` " +
+      "nodes in one HTTP call. Each entry uses the same shape as `POST /v2/annotations`. " +
+      "The batch is **best-effort per row**: a validation or permission failure on one row " +
+      "records `ok=false` for that row but does NOT abort subsequent rows.\n\n" +
+      "Auth: each row's subject entity is checked for Write permission independently. " +
+      "Rows whose caller lacks Write on the subject entity are silently failed (ok=false). " +
+      "`sourceMode` defaults to `'human'`; set `X-AI-Agent` header to auto-derive `'ai'`.\n\n" +
+      "Returns `200 OK` with a `BulkAnnotationResult` body regardless of per-row outcomes — " +
+      "inspect `.results[].ok` and `.failed` to identify failures.\n\n" +
+      "This endpoint is the REST counterpart to the MCP `semantic_annotate_bulk` tool " +
+      "(MCP-COV-05). Non-MCP callers (CLI sweeps, Python notebooks, UI mass-annotation) " +
+      "should prefer this endpoint over N serial `POST /v2/annotations` calls."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Batch processed. Inspect `.results[].ok` and `.failed` for per-row outcomes.",
+    content = @Content(schema = @Schema(implementation = BulkAnnotationResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Empty items list or more than " + BULK_CREATE_MAX + " rows (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response bulkCreate(
+    List<CreateAnnotationIO> items,
+    @Context SecurityContext sc,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader
+  ) {
+    String caller = callerName(sc);
+    if (caller == null) return unauthorized();
+
+    if (items == null || items.isEmpty()) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Empty batch", Response.Status.BAD_REQUEST,
+        "items must contain at least one entry.");
+    }
+    if (items.size() > BULK_CREATE_MAX) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Batch too large", Response.Status.BAD_REQUEST,
+        "Batch size " + items.size() + " exceeds the limit of " + BULK_CREATE_MAX +
+        " — split into multiple POST /v2/annotations/bulk calls.");
+    }
+
+    List<BulkAnnotationItemResultIO> results = new ArrayList<>(items.size());
+    int succeeded = 0;
+
+    for (CreateAnnotationIO body : items) {
+      String subjectAppId = body == null ? null : body.getSubjectAppId();
+      try {
+        if (body == null) throw new IllegalArgumentException("Null annotation entry.");
+
+        if (blank(body.getSubjectAppId()))
+          throw new IllegalArgumentException("subjectAppId is required.");
+        if (blank(body.getSubjectKind()))
+          throw new IllegalArgumentException("subjectKind is required.");
+        if (blank(body.getPredicateIri()))
+          throw new IllegalArgumentException("predicateIri is required.");
+
+        boolean hasLiteral = !blank(body.getObjectLiteral());
+        boolean hasIri = !blank(body.getObjectIri());
+        boolean hasNumeric = body.getNumericValue() != null;
+        if (!hasLiteral && !hasIri && !hasNumeric) {
+          throw new IllegalArgumentException(
+            "At least one of objectLiteral, objectIri, or numericValue is required.");
+        }
+        if (hasLiteral && hasIri) {
+          throw new IllegalArgumentException(
+            "Provide exactly one of objectLiteral or objectIri, not both.");
+        }
+
+        // Permission check — per-row; denied rows fail gracefully.
+        Response gate = checkWriteAccessForSubject(body.getSubjectAppId(), body.getSubjectKind(), caller);
+        if (gate != null) {
+          results.add(new BulkAnnotationItemResultIO(false, null, subjectAppId,
+            "Write access denied for subject " + body.getSubjectAppId()));
+          continue;
+        }
+
+        // PROJ-SEMA-WRITE-GATE-1 check
+        String shaclViolation = projectAnnotationConstraints.check(
+          body.getSubjectAppId(), body.getSubjectKind(), body.getPredicateIri(),
+          body.getObjectLiteral(), body.getObjectIri());
+        if (shaclViolation != null) {
+          results.add(new BulkAnnotationItemResultIO(false, null, subjectAppId,
+            "Project constraint: " + shaclViolation));
+          continue;
+        }
+
+        SemanticAnnotation annotation = new SemanticAnnotation();
+        annotation.setAppId(AppIdGenerator.next());
+        annotation.setSubjectKind(body.getSubjectKind());
+        annotation.setSubjectAppId(body.getSubjectAppId());
+        annotation.setPropertyIRI(body.getPredicateIri());
+        annotation.setPropertyName(body.getPredicateLabel());
+        annotation.setVocabularyId(body.getVocabularyId());
+        annotation.setValueIRI(body.getObjectIri());
+        annotation.setValueName(hasLiteral ? body.getObjectLiteral() : null);
+        annotation.setNumericValue(body.getNumericValue());
+        annotation.setUnitIRI(body.getUnitIri());
+        String resolvedSourceMode = body.getSourceMode() != null
+          ? body.getSourceMode()
+          : (aiAgentHeader != null && !aiAgentHeader.isBlank() ? "ai" : "human");
+        annotation.setSourceMode(resolvedSourceMode);
+        annotation.setSourceActivityAppId(body.getSourceActivityAppId());
+        annotation.setAgentUsername(caller);
+        annotation.setValidFromMillis(body.getValidFromMillis());
+        annotation.setValidUntilMillis(body.getValidUntilMillis());
+        annotation.setConfidence(body.getConfidence() != null ? body.getConfidence() : 1.0);
+
+        annotationDAO.createOrUpdate(annotation);
+        succeeded++;
+        results.add(new BulkAnnotationItemResultIO(true, annotation.getAppId(), subjectAppId, null));
+
+      } catch (RuntimeException e) {
+        String msg = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+        results.add(new BulkAnnotationItemResultIO(false, null, subjectAppId, msg));
+      }
+    }
+
+    int failed = items.size() - succeeded;
+    Log.infof(
+      "SemanticAnnotationV2Rest.bulkCreate: requested=%d succeeded=%d failed=%d caller=%s",
+      items.size(), succeeded, failed, caller);
+
+    // CLAUDE.md: secondary writes are fire-and-forget; record one summary Activity.
+    try {
+      long now = System.currentTimeMillis();
+      provenanceService.record(
+        "BULK_CREATE", "SemanticAnnotation", null, caller,
+        "POST /v2/annotations/bulk — " + succeeded + "/" + items.size() + " created",
+        "POST", "v2/annotations/bulk", 200, now, now);
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEMANTIC-ANNOTATE-BULK-REST-1: provenance capture skipped");
+    } finally {
+      try {
+        if (requestContext != null) {
+          requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+        }
+      } catch (RuntimeException ignored) { /* best-effort */ }
+    }
+
+    return Response.ok(new BulkAnnotationResultIO(items.size(), succeeded, failed, results)).build();
   }
 
   // ─── UPDATE ────────────────────────────────────────────────────────────────
