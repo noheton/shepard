@@ -23,6 +23,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.v2.collection.io.CollectionV2IO;
+import de.dlr.shepard.v2.collection.io.CreateCollectionV2IO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
@@ -195,20 +196,45 @@ class CollectionV2RestTest {
 
   @Test
   void createReturns201WithMintedAppId() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("new collection");
 
     Collection created = new Collection();
     created.setShepardId(99L);
     created.setAppId("018f9c5a-9999-7000-a000-000000000099");
     created.setName("new collection");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
     assertEquals(201, r.getStatus());
     CollectionIO io = (CollectionIO) r.getEntity();
     assertEquals("018f9c5a-9999-7000-a000-000000000099", io.getAppId());
+  }
+
+  @Test
+  void createWithDefaultFileContainerAppId_translatesFieldToCollectionIO() {
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
+    body.setName("with default fc");
+    body.setDefaultFileContainerAppId("018f9c5a-fc00-7000-a000-000000000001");
+
+    Collection created = new Collection();
+    created.setShepardId(55L);
+    created.setAppId("018f9c5a-5555-7000-a000-000000000055");
+    created.setName("with default fc");
+
+    // Capture the CollectionIO that the service receives to verify appId translation.
+    org.mockito.ArgumentCaptor<CollectionIO> captor = org.mockito.ArgumentCaptor.forClass(CollectionIO.class);
+    when(collectionService.createCollection(captor.capture())).thenReturn(created);
+
+    Response r = resource.create(body);
+
+    assertEquals(201, r.getStatus());
+    assertEquals("018f9c5a-fc00-7000-a000-000000000001",
+      captor.getValue().getDefaultFileContainerAppId(),
+      "defaultFileContainerAppId must be translated into the CollectionIO passed to the service");
+    assertEquals(null, captor.getValue().getDefaultFileContainerId(),
+      "defaultFileContainerId must NOT be set (v2 input does not carry the legacy Long)");
   }
 
   // ── patch ─────────────────────────────────────────────────────────────────
@@ -278,7 +304,7 @@ class CollectionV2RestTest {
 
   @Test
   void createWithPromptLogModePersistsIt() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("with prompt log mode");
     body.setPromptLogMode("BODY_RAW");
 
@@ -287,7 +313,7 @@ class CollectionV2RestTest {
     created.setAppId("018f9c5a-8888-7000-a000-000000000088");
     created.setName("with prompt log mode");
     created.setPromptLogMode("BODY_RAW");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
@@ -361,7 +387,7 @@ class CollectionV2RestTest {
 
   @Test
   void createWithHeroImageUrlPersistsIt() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("with hero");
     body.setHeroImageUrl("https://example.com/banner.jpg");
 
@@ -370,7 +396,7 @@ class CollectionV2RestTest {
     created.setAppId("018f9c5a-7777-7000-a000-000000000077");
     created.setName("with hero");
     created.setHeroImageUrl("https://example.com/banner.jpg");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
