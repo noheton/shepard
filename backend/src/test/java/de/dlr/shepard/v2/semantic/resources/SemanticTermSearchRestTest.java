@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -122,9 +123,10 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("label", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty(), "Expected empty list when no :Resource nodes exist");
+    assertTrue(body.items().isEmpty(), "Expected empty list when no :Resource nodes exist");
+    assertEquals(0, body.total());
   }
 
   // ─── Matching terms ───────────────────────────────────────────────────────
@@ -146,15 +148,16 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("Acti", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertEquals(2, body.size());
-    assertEquals("http://www.w3.org/ns/prov#Activity", body.get(0).uri());
-    assertEquals("Activity", body.get(0).label());
-    assertEquals("An activity is something that occurs over a period of time.", body.get(0).description());
-    assertEquals("http://www.w3.org/ns/prov#Agent", body.get(1).uri());
-    assertEquals("Agent", body.get(1).label());
-    assertNotNull(body.get(1)); // description null — record field is null
+    assertEquals(2, body.items().size());
+    assertEquals(2, body.total());
+    assertEquals("http://www.w3.org/ns/prov#Activity", body.items().get(0).uri());
+    assertEquals("Activity", body.items().get(0).label());
+    assertEquals("An activity is something that occurs over a period of time.", body.items().get(0).description());
+    assertEquals("http://www.w3.org/ns/prov#Agent", body.items().get(1).uri());
+    assertEquals("Agent", body.items().get(1).label());
+    assertNotNull(body.items().get(1)); // description null — record field is null
   }
 
   @Test
@@ -174,9 +177,10 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("term", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
-    assertEquals(1, body.size(), "Row with null URI must be skipped");
-    assertEquals("http://example.org/term", body.get(0).uri());
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertEquals(1, body.items().size(), "Row with null URI must be skipped");
+    assertEquals(1, body.total());
+    assertEquals("http://example.org/term", body.items().get(0).uri());
   }
 
   @Test
@@ -192,9 +196,9 @@ class SemanticTermSearchRestTest {
     Response r = nullSessionRest.search("label", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty(), "Should return empty list when session is null");
+    assertTrue(body.items().isEmpty(), "Should return empty list when session is null");
   }
 
   @Test
@@ -211,9 +215,9 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("label", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
   }
 
   @Test
@@ -226,9 +230,9 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("label", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
   }
 
   // ─── stripLangSuffix ──────────────────────────────────────────────────────
@@ -267,12 +271,12 @@ class SemanticTermSearchRestTest {
     Response r = rest.search("Anomaly", 20, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("Anomaly Detected", body.get(0).label(), "Lang suffix must be stripped from label");
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("Anomaly Detected", body.items().get(0).label(), "Lang suffix must be stripped from label");
     assertEquals(
       "A significant off-nominal event was detected.",
-      body.get(0).description(),
+      body.items().get(0).description(),
       "Lang suffix must be stripped from description"
     );
   }
