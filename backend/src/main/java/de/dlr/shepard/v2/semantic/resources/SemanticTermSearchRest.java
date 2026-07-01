@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.semantic.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -191,8 +192,8 @@ public class SemanticTermSearchRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Each item has `uri`, `label`, and optionally `description`.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TermSuggestionIO.class))
+    description = "Paged list of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Items carry `uri`, `label`, and optionally `description`.",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
@@ -229,7 +230,7 @@ public class SemanticTermSearchRest {
 
     // 4 — query
     List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit);
-    return Response.ok(results).build();
+    return Response.ok(new PagedResponseIO<>(results, results.size(), 0, effectiveLimit)).build();
   }
 
   // ─── query logic ──────────────────────────────────────────────────────────
