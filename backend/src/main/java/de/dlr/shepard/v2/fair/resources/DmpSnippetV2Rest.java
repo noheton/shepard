@@ -58,7 +58,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces({ "text/markdown", MediaType.APPLICATION_JSON })
 @RequestScoped
 @Authenticated
-@Tag(name = "FAIR DMP snippet")
+@Tag(name = "Collections")
 public class DmpSnippetV2Rest {
 
   static final String PT_UNAUTHORIZED = "/problems/fair.dmp-snippet.unauthorized";
