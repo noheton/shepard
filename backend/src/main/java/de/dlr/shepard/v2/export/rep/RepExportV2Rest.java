@@ -50,7 +50,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collection regulatory evidence pack")
+@Tag(name = "Collections")
 public class RepExportV2Rest {
 
   @Inject

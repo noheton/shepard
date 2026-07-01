@@ -64,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection timeline")
+@Tag(name = "Collections")
 public class CollectionCrossTimelineRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-cross-timeline.unauthorized";

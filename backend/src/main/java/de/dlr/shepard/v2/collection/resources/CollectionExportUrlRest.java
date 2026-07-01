@@ -62,7 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collection export URL")
+@Tag(name = "Collections")
 public class CollectionExportUrlRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-export-url.unauthorized";

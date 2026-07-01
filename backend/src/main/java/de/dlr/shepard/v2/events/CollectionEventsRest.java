@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/collections/{collectionAppId}/events")
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection events")
+@Tag(name = "Collections")
 public class CollectionEventsRest {
 
   @Inject

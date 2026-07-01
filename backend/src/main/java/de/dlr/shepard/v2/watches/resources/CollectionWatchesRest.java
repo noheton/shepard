@@ -52,7 +52,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection watched containers")
+@Tag(name = "Collections")
 public class CollectionWatchesRest {
 
   @Inject

@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collection stream export")
+@Tag(name = "Collections")
 public class CollectionStreamExportRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-stream-export.unauthorized";
