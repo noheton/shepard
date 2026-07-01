@@ -93,6 +93,7 @@ public class ContainerPublicationStateRest {
     description = "Current publication state.",
     content = @Content(schema = @Schema(implementation = PublicationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Container with that appId.")
   public Response get(
     @PathParam("containerAppId") String containerAppId,

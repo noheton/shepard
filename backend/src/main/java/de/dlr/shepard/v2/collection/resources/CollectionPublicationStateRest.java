@@ -87,6 +87,7 @@ public class CollectionPublicationStateRest {
     description = "Current publication state.",
     content = @Content(schema = @Schema(implementation = PublicationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response get(
     @PathParam("collectionAppId") String collectionAppId,
