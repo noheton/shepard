@@ -53,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Admin — git credential preseed")
+@Tag(name = "Admin")
 public class AdminUserGitCredentialRest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/admin-git-credentials.bad-request";
