@@ -63,6 +63,7 @@ public class LedgerAnchorRest {
   @POST
   @Path("/anchor")
   @Operation(
+    operationId = "anchor",
     summary = "Anchor Activity records on a distributed ledger.",
     description = "Computes a SHA-256 digest of each requested Activity's JSON-LD " +
     "serialisation and submits it to the configured ledger provider (Bloxberg or " +
@@ -96,6 +97,7 @@ public class LedgerAnchorRest {
   @GET
   @Path("/anchor/{jobId}")
   @Operation(
+    operationId = "getJob",
     summary = "Poll an anchor job by jobId.",
     description = "Returns current status (queued | running | complete | failed) and a " +
     "human-readable summary.  Poll until status is 'complete' or 'failed'."
@@ -124,6 +126,7 @@ public class LedgerAnchorRest {
   @GET
   @Path("/data-objects/{appId}/ledger-anchors")
   @Operation(
+    operationId = "getAnchorsForDataObject",
     summary = "List ledger anchors for a DataObject.",
     description = "Returns all Activity nodes linked to the given DataObject that carry " +
     "a non-null ledgerAnchor field.  Useful for auditors who need to verify tamper " +

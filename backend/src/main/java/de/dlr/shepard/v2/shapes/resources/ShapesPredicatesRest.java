@@ -70,6 +70,7 @@ public class ShapesPredicatesRest {
   @Path("/predicates")
   @RolesAllowed("authenticated")
   @Operation(
+    operationId = "predicates",
     summary = "List the shepard: predicate vocabulary with substrate routing.",
     description = "Returns the predicate_vocabulary table entries mapping each known " +
     "shepard: predicate URI to its authoritative storage substrate " +

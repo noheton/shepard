@@ -66,6 +66,7 @@ public class IndependenceProofRest {
 
   @POST
   @Operation(
+    operationId = "check",
     summary = "Check whether two DataObject sets are mutually independent.",
     description =
       "Runs two checks against the two supplied DataObject appId sets:\n\n" +

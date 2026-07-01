@@ -131,6 +131,7 @@ public class CollectionWatchersRest {
 
   @POST
   @Operation(
+    operationId = "watch",
     summary = "Start watching this Collection (CW1).",
     description =
       "Subscribes the caller to notifications for this Collection. " +
@@ -159,6 +160,7 @@ public class CollectionWatchersRest {
   @DELETE
   @Path("me")
   @Operation(
+    operationId = "unwatch",
     summary = "Stop watching this Collection (CW1).",
     description =
       "Unsubscribes the caller from notifications for this Collection. " +

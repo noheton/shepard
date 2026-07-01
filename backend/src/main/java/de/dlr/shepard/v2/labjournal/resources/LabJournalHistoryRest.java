@@ -81,6 +81,7 @@ public class LabJournalHistoryRest {
   @Path("/{entryAppId}/history")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "history",
     summary = "List the edit history of a lab journal entry.",
     description =
       "Returns a paginated, append-only revision list for the entry identified by entryAppId. " +

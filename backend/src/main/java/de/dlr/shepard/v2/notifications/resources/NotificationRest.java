@@ -89,6 +89,7 @@ public class NotificationRest {
   @GET
   @Path("/count")
   @Operation(
+    operationId = "count",
     summary = "Count unread in-app notifications for the authenticated user.",
     description = "Returns a single object with the unread notification count. Poll this endpoint " +
     "(e.g. every 30 seconds) to drive the bell-icon badge without fetching full payloads."
@@ -111,6 +112,7 @@ public class NotificationRest {
   @PATCH
   @Path("/{appId}/read")
   @Operation(
+    operationId = "markRead",
     summary = "Mark a notification as read.",
     description = "Marks the notification identified by its appId as read. The notification must be " +
     "visible to the authenticated user."
@@ -139,6 +141,7 @@ public class NotificationRest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "dismiss",
     summary = "Dismiss (delete) a notification.",
     description = "Permanently removes the notification from the caller's notification list. " +
     "The notification must be visible to the authenticated user."

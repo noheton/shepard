@@ -65,6 +65,7 @@ public class RepExportV2Rest {
   @POST
   @Path("/{appId}/export/regulatory-evidence")
   @Operation(
+    operationId = "buildRepExport",
     summary = "Build a BagIt Regulatory Evidence Pack (REP) for a Collection.",
     description =
       "Builds a BagIt 1.0 (RFC 8493) bag containing:\n" +
@@ -111,6 +112,7 @@ public class RepExportV2Rest {
   @GET
   @Path("/{appId}/export/regulatory-evidence/latest")
   @Operation(
+    operationId = "getLatestRepExport",
     summary = "Retrieve the most recent REP export for a Collection.",
     description =
       "Returns the most recently built Regulatory Evidence Pack for the given Collection. " +

@@ -154,6 +154,7 @@ public class ImportV2Rest {
   @GET
   @Path("/plans/{commitId}")
   @Operation(
+    operationId = "getPlan",
     summary = "Get an import plan by commitId (IMP1)",
     description =
       "Returns the validation plan associated with a commitId. " +
@@ -181,6 +182,7 @@ public class ImportV2Rest {
   @GET
   @Path("/context")
   @Operation(
+    operationId = "getContext",
     summary = "Get the current collection state for importers/agents (IMP1)",
     description =
       "Returns a snapshot of the target collection — DataObject count and a " +

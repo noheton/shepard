@@ -137,6 +137,7 @@ public class CollectionTemplatesRest {
   @PUT
   @Path("/allowed")
   @Operation(
+    operationId = "setAllowed",
     summary = "Replace the allowed-template set for this Collection.",
     description = "Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204; follow up with GET .../allowed to see the new set."
   )
@@ -160,6 +161,7 @@ public class CollectionTemplatesRest {
   @POST
   @Path("/from/{templateAppId}")
   @Operation(
+    operationId = "instantiate",
     summary = "Instantiate this Collection from a template — records :USES_TEMPLATE and returns the recipe body.",
     description = "Stamps the :USES_TEMPLATE edge (idempotent) so the Collection's provenance trail records " +
     "which template it was created from. Returns the template body so the client (frontend / CLI) can " +

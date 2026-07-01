@@ -87,6 +87,7 @@ public class CrossDoBulkDataRest {
 
   @POST
   @Operation(
+    operationId = "getCrossDoBulkData",
     summary = "Fetch one channel-predicate series across many DataObjects (TS-CROSS-DO-VIEW-1).",
     description =
       "Resolves each DataObject (by appId) to the channel whose `SemanticAnnotation.propertyIRI` " +

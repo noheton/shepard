@@ -138,6 +138,7 @@ public class ProjectsRest {
   @GET
   @Path("/{appId}/sub-collections")
   @Operation(
+    operationId = "subCollections",
     summary = "List a Project's sub-Collections.",
     description =
       "Returns every Collection that declares this Project as a parent via " +
@@ -167,6 +168,7 @@ public class ProjectsRest {
   @GET
   @Path("/{appId}/by-annotation/{predicate}/{value}")
   @Operation(
+    operationId = "byAnnotation",
     summary = "Cross-Collection by-annotation roll-up over a Project.",
     description =
       "Returns every DataObject across the Project's sub-Collections whose " +

@@ -89,6 +89,7 @@ public class DmpSnippetV2Rest {
   @GET
   @Path("/{appId}/dmp-snippet")
   @Operation(
+    operationId = "getDmpSnippet",
     summary = "Generate a FAIR DMP snippet for a Collection.",
     description =
       "Returns a copy-paste-ready Markdown Data Management Plan (DMP) block pre-filled with " +

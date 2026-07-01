@@ -72,6 +72,7 @@ public class SemanticPredicateStatsRest {
   @GET
   @Path("/{predicateIriBase64}/stats")
   @Operation(
+    operationId = "getPredicateStats",
     summary = "Per-predicate usage statistics across all :SemanticAnnotation rows.",
     description =
       "Returns aggregate counts and a sample of annotated entities for the given predicate IRI. " +

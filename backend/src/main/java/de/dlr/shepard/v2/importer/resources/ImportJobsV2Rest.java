@@ -97,6 +97,7 @@ public class ImportJobsV2Rest {
 
   @POST
   @Operation(
+    operationId = "executeImport",
     summary = "Execute a validated import plan (IMP2)",
     description =
       "Consumes the commitId issued by POST /v2/import/validate and runs the import. " +

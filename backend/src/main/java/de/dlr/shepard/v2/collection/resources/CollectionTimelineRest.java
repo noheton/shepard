@@ -83,6 +83,7 @@ public class CollectionTimelineRest {
 
   @GET
   @Operation(
+    operationId = "timeline",
     summary = "Process-chain timeline (swimlane chronograph) for a Collection.",
     description =
       "Returns a swimlane envelope where each lane is a distinct process-type " +

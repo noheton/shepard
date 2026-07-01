@@ -81,6 +81,7 @@ public class VocabularyBrowseRest {
    */
   @GET
   @Operation(
+    operationId = "listVocabularies",
     summary = "List all vocabularies.",
     description =
       "Returns every :Vocabulary node seeded into the internal semantic store, " +
@@ -114,6 +115,7 @@ public class VocabularyBrowseRest {
   @GET
   @Path("/{vocabId}/predicates")
   @Operation(
+    operationId = "listPredicatesForVocabulary",
     summary = "List predicates declared by one vocabulary.",
     description =
       "Returns every :Predicate node whose `vocabularyAppId` equals the path " +
@@ -163,6 +165,7 @@ public class VocabularyBrowseRest {
   @GET
   @Path("/used-by/{entityAppId}")
   @Operation(
+    operationId = "listVocabulariesUsedBy",
     summary = "List vocabularies referenced by an entity's annotations.",
     description =
       "Returns the subset of :Vocabulary nodes whose terms are referenced by at " +

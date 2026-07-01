@@ -58,6 +58,7 @@ public class MeRoleInRest {
 
   @GET
   @Operation(
+    operationId = "roleIn",
     summary = "Caller's effective role in a Collection.",
     description =
       "Returns the caller's effective capabilities on the Collection identified by " +

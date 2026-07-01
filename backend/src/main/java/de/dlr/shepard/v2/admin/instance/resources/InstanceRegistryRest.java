@@ -63,6 +63,7 @@ public class InstanceRegistryRest {
   @GET
   @PermitAll
   @Operation(
+    operationId = "getRegistry",
     summary = "Read the current :InstanceRegistry singleton.",
     description = "Returns the list of registered peer Shepard instances. " +
     "Public endpoint — no JWT required (same posture as /v2/instance/capabilities). " +
@@ -83,6 +84,7 @@ public class InstanceRegistryRest {
   @PATCH
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Operation(
+    operationId = "patchRegistry",
     summary = "RFC 7396 merge-patch the :InstanceRegistry singleton.",
     description = "Replaces the 'instances' list atomically (RFC 7396 array semantics). " +
     "Absent = leave current list alone; null = clear the list (set to []); " +

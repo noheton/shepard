@@ -106,6 +106,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "listInstanceAdmins",
     summary = "List Neo4j-side instance-admin grants.",
     description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
   )
@@ -126,6 +127,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "grantInstanceAdmin",
     summary = "Grant the instance-admin role to a user.",
     description = "Creates a `:InstanceAdminGrant` node in Neo4j recording who granted the role and when. The OIDC role is unaffected by this call."
   )
@@ -151,6 +153,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "revokeInstanceAdmin",
     summary = "Revoke the Neo4j-side instance-admin grant from a user.",
     description = "Removes the `:InstanceAdminGrant` node for the named user. The OIDC role (if any) is not affected by this call."
   )
@@ -175,6 +178,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "permissionAudit",
     summary = "List entities with orphaned permissions.",
     description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges."
   )
@@ -208,6 +212,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "permissionAuditLog",
     description = "F3: Query the Postgres permission audit log. Returns GRANT/REVOKE/UPDATE events " +
                   "sorted by occurred_at DESC. Supports optional filters: entityAppId, actor, " +
                   "from/to (ISO-8601), and pagination via page/size."
@@ -289,6 +294,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "nuke",
     summary = "Nuclear instance reset — wipes all research data (confirmation phrase required).",
     description =
       "Deletes every Collection, DataObject, Reference, Container, LabJournalEntry, " +

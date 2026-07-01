@@ -631,6 +631,7 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/predecessors")
   @Operation(
+    operationId = "predecessors",
     summary = "List direct predecessors of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
@@ -684,6 +685,7 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}/predecessors/{predecessorAppId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "patchPredecessorEdge",
     summary = "QM1b — set the PROV-O / FAIR²R relationship type on an existing predecessor edge.",
     description =
       "Sets / replaces the relationship type for the predecessor edge from the DataObject " +
@@ -743,6 +745,7 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/successors")
   @Operation(
+    operationId = "successors",
     summary = "List direct successors of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
@@ -791,6 +794,7 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/children")
   @Operation(
+    operationId = "children",
     summary = "List direct children of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
@@ -839,6 +843,7 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/predecessor-chain")
   @Operation(
+    operationId = "predecessorChain",
     summary = "Traverse the predecessor chain up to a given depth.",
     description =
       "Traverses the `has_successor` edges backwards from the DataObject identified by " +
@@ -879,6 +884,7 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/successor-chain")
   @Operation(
+    operationId = "successorChain",
     summary = "Traverse the successor chain up to a given depth.",
     description =
       "Traverses the `has_successor` edges forwards from the DataObject identified by " +

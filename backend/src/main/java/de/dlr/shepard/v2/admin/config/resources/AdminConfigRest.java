@@ -70,6 +70,7 @@ public class AdminConfigRest {
 
   @GET
   @Operation(
+    operationId = "listFeatures",
     summary = "List runtime-configurable features.",
     description = "Returns one row per registered config feature — the {feature} path segment " +
     "plus a description. Use the returned keys with GET|PATCH /v2/admin/config/{feature}."

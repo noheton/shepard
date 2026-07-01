@@ -61,6 +61,7 @@ public class CollectionEventsRest {
   @GET
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
+    operationId = "subscribe",
     summary = "Subscribe to the Collection change-feed (P13).",
     description =
       "Opens a persistent SSE stream. The server emits one event per change " +

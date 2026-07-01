@@ -239,6 +239,7 @@ public class AdminUserGitCredentialRest {
   @POST
   @Path("/{appId}/rotate")
   @Operation(
+    operationId = "rotate",
     summary = "Rotate a git credential's PAT (admin-only).",
     description =
       "Replaces the encrypted PAT on the named credential and stamps " +

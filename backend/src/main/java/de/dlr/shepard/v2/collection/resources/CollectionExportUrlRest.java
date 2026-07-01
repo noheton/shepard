@@ -87,6 +87,7 @@ public class CollectionExportUrlRest {
   @POST
   @Path("/{appId}/export-url")
   @Operation(
+    operationId = "getExportUrl",
     summary = "Build and upload an RO-Crate ZIP to S3, returning a presigned download URL.",
     description = "Builds the collection's RO-Crate ZIP export, uploads it to the active " +
     "S3-compatible storage backend under exports/<uuid>.zip, and returns a presigned GET URL " +

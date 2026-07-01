@@ -74,6 +74,7 @@ public class UserGroupV2Rest {
 
   @GET
   @Operation(
+    operationId = "listUserGroups",
     summary = "List all user groups the caller can read.",
     description = "Returns user groups the caller has at least Read permission on. Supports pagination and ordering."
   )
@@ -143,6 +144,7 @@ public class UserGroupV2Rest {
   @PATCH
   @Path("/{appId}")
   @Operation(
+    operationId = "patchUserGroup",
     summary = "Partially update a user group (RFC 7396 merge-patch).",
     description = "Fields present in the body replace the current value; absent fields are preserved. " +
     "Mutable fields: `name` (string), `usernames` (array of strings)."
@@ -230,6 +232,7 @@ public class UserGroupV2Rest {
   @Path("/{appId}/permissions")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchUserGroupPermissions",
     summary = "Merge-patch permissions for a user group (RFC 7396).",
     description =
       "RFC 7396 merge-patch the permissions for the user group at `appId`. " +

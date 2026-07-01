@@ -108,6 +108,7 @@ public class CollectionDQRRest {
 
   @POST
   @Operation(
+    operationId = "assign",
     summary = "Assign a new DQR to this Collection (TPL10).",
     description =
       "Creates a new Data Quality Requirement node and attaches it to the Collection " +
@@ -145,6 +146,7 @@ public class CollectionDQRRest {
   @DELETE
   @Path("{dqrAppId}")
   @Operation(
+    operationId = "remove",
     summary = "Remove a DQR from this Collection (TPL10).",
     description =
       "Deletes the Data Quality Requirement node and detaches all its relationships. " +
@@ -171,6 +173,7 @@ public class CollectionDQRRest {
   @POST
   @Path("evaluate")
   @Operation(
+    operationId = "evaluate",
     summary = "Evaluate all enabled DQRs for this Collection (TPL10).",
     description =
       "Runs every enabled Data Quality Requirement assigned to this Collection and " +

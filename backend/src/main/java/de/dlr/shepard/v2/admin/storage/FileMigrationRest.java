@@ -63,6 +63,7 @@ public class FileMigrationRest {
 
   @POST
   @Operation(
+    operationId = "trigger",
     summary = "Trigger a file-storage migration.",
     description = "Copies every ShepardFile whose providerId equals sourceProviderId to the " +
     "targetProviderId adapter, then flips the providerId in Neo4j. Migration runs in the " +
@@ -101,6 +102,7 @@ public class FileMigrationRest {
   @GET
   @Path("/status")
   @Operation(
+    operationId = "status",
     summary = "Get the current file-storage migration status.",
     description = "Returns the in-memory state of the most recent migration job (IDLE when none " +
     "has been triggered since the last restart)."
@@ -118,6 +120,7 @@ public class FileMigrationRest {
   @POST
   @Path("/rollback/{appId}")
   @Operation(
+    operationId = "rollback",
     summary = "Roll back a single file's storage-adapter swap.",
     description =
       "FS1e3 — per-file rollback. Re-writes the file's bytes from the current adapter (providerId) " +

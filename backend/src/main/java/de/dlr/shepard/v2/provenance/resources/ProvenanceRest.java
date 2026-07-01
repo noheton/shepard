@@ -99,6 +99,7 @@ public class ProvenanceRest {
   @GET
   @Path("/activities")
   @Operation(
+    operationId = "listActivities",
     summary = "List provenance activities (most recent first).",
     description = "Filterable by agent / target / time window. Casual users see only their own " +
     "rows; instance-admins see all. Caps at 1000 rows per response.\n\n" +
@@ -169,6 +170,7 @@ public class ProvenanceRest {
   @Path("/activities")
   @Produces(ProvJsonRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listActivitiesProvJson",
     summary = "List provenance activities as W3C PROV-JSON (most recent first).",
     description = "Same query semantics as the JSON variant; output shape conforms to a small subset " +
     "of the W3C PROV-JSON Submission (activity / agent / entity / wasAssociatedWith / used / " +
@@ -213,6 +215,7 @@ public class ProvenanceRest {
   @Path("/activities")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listActivitiesJsonLd",
     summary = "List provenance activities as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
     description = "Same query semantics as the plain-JSON variant. Triggered by " +
     "Accept: application/ld+json. Pass profile=\"https://w3id.org/nfdi4ing/metadata4ing/\" " +
@@ -265,6 +268,7 @@ public class ProvenanceRest {
   @GET
   @Path("/entity/{appId}")
   @Operation(
+    operationId = "listEntityActivities",
     summary = "Provenance trail for a single entity (most recent first).",
     description = "Returns every captured Activity whose targetAppId matches the supplied entity. " +
     "Casual users see only rows whose acting Agent is themselves; instance-admins see all rows " +
@@ -313,6 +317,7 @@ public class ProvenanceRest {
   @Path("/entity/{appId}")
   @Produces(ProvJsonRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listEntityActivitiesProvJson",
     summary = "Per-entity provenance trail as W3C PROV-JSON.",
     description = "Same query semantics as the JSON variant of the per-entity endpoint; output shape " +
     "conforms to a small subset of W3C PROV-JSON. Triggered by Accept: application/prov+json."
@@ -346,6 +351,7 @@ public class ProvenanceRest {
   @Path("/entity/{appId}")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listEntityActivitiesJsonLd",
     summary = "Per-entity provenance trail as JSON-LD (PROV-O / metadata4ing).",
     description = "Same query semantics as the plain-JSON variant. Triggered by " +
     "Accept: application/ld+json; the m4i profile parameter switches to the metadata4ing flavour " +
@@ -387,6 +393,7 @@ public class ProvenanceRest {
   @GET
   @Path("/count")
   @Operation(
+    operationId = "countActivities",
     summary = "Count provenance activities matching the same filter set.",
     description = "Cheap variant of /activities that returns only the row count, for dashboard tiles."
   )
@@ -428,6 +435,7 @@ public class ProvenanceRest {
   @Path("/count")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "countActivitiesJsonLd",
     summary = "Row count as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
     description = "JSON-LD variant of /count — wraps the integer as " +
     "shepard:numberOfActivities under a typed @context. Same query semantics + " +
@@ -475,6 +483,7 @@ public class ProvenanceRest {
   @GET
   @Path("/stats")
   @Operation(
+    operationId = "stats",
     summary = "Aggregated provenance stats — totals + sparkline buckets + action-kind histogram.",
     description = "Rolls a single window into one payload for the dashboard. " +
     "scope = instance (admin-only) | collection (any auth user) | user (self or admin). " +
