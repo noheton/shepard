@@ -97,6 +97,7 @@ public class InstanceRegistryRest {
     description = "Updated registry returned in the same shape as GET.",
     content = @Content(schema = @Schema(implementation = InstanceRegistryIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patchRegistry(InstanceRegistryPatchIO body) {
     InstanceRegistryPatchIO patch = body == null ? new InstanceRegistryPatchIO() : body;
