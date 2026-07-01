@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 75 |
+| `fragment` | 76 |
 | `concept` | 36 |
 | `idea` | 13 |
 | `feature-defined` | 134 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 106 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **504** |
+| **total docs** | **505** |
 | **UNTAGGED** | **0** |
 
-## fragment (75)
+## fragment (76)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -78,6 +78,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28-fire280.md`](agent-findings/apisimp-sweep-2026-06-28-fire280.md) | APISIMP Sweep — 2026-06-28 (fire-280) | 2026-06-28 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-28.md`](agent-findings/apisimp-sweep-2026-06-28.md) | APISIMP — v2 surface simplification sweep (2026-06-28, fire-277) | 2026-06-28 | 2026-06-29 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire332.md`](agent-findings/apisimp-sweep-2026-06-30-fire332.md) | APISIMP Sweep — 2026-06-30 (fire-332) | 2026-06-30 | 2026-06-30 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-01-fire348.md`](agent-findings/apisimp-sweep-2026-07-01-fire348.md) | APISIMP Sweep — 2026-07-01 (fire-348) | 2026-07-01 | — |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-06-29 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-29 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-06-29 |
