@@ -40,11 +40,11 @@ const {
 } = useFetchCollection(collectionIdStr);
 // V2-SWEEP Wave 3: the remaining `collectionNumericId` consumers are the
 // still-v1-backed child components (CollectionLineageGraph,
-// CollectionCrossTrackViewPane, CollectionDataObjectsPanel, MffdNdtGridCard,
+// CollectionCrossTrackViewPane, CollectionDataObjectsPanel,
 // CreateDataObjectDialog blank form) and the v1 streaming export below —
 // each a documented exception resolved from the loaded v2 entity's `.id`
-// (never the route param). Backlog: LINEAGE-V2 / SIDEBAR-V2-CREATE /
-// EXPORT-V2-STREAM in aidocs/16.
+// (never the route param). MffdNdtGridCard migrated to v2 (V2UI-MFFD-NDT-ANNO-V2).
+// Backlog: LINEAGE-V2 / SIDEBAR-V2-CREATE / EXPORT-V2-STREAM in aidocs/16.
 const collectionNumericId = computed<number | undefined>(() =>
   resolveNumericId(collection.value?.id, routeParams.value.collectionId),
 );
@@ -258,8 +258,10 @@ const collectionSceneGraphAppId = computed<string | null>(() => {
 // `urn:shepard:mffd:section` predicate. The widget renders only when the
 // probe flips `hasData` to true, so collections without OTvis data
 // pay only the probe cost (1 list + 5 small annotation fetches).
-const mffdNdtCollectionIdRef = computed<number | null>(() => collectionNumericId.value ?? null);
-const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
+// V2UI-MFFD-NDT-ANNO-V2: probe and card now keyed by appId (collectionIdStr
+// is the v2 UUID route param); collectionNumericId no longer needed here.
+const mffdNdtAppIdRef = computed<string | null>(() => collectionIdStr ?? null);
+const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtAppIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
 // this instance (INST2 — GET /v2/instance/capabilities, fetched in
@@ -547,8 +549,8 @@ useHead({
                  widget's own fetch (full per-DO annotation pull) only
                  fires once it's mounted. -->
             <MffdNdtGridCard
-              v-if="mffdNdtHasData === true && collectionNumericId"
-              :collection-id="collectionNumericId"
+              v-if="mffdNdtHasData === true && collectionIdStr"
+              :collection-app-id="collectionIdStr"
             />
 
             <!-- Always-visible: Semantic Annotation chips. Out of the
