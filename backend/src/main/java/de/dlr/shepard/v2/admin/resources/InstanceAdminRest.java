@@ -115,6 +115,7 @@ public class InstanceAdminRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
@@ -137,6 +138,7 @@ public class InstanceAdminRest {
     content = @Content(schema = @Schema(implementation = InstanceAdminGrantIO.class))
   )
   @APIResponse(description = "No user with that username found in the system.", responseCode = "404")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response grantInstanceAdmin(
     @Context SecurityContext securityContext,
@@ -159,6 +161,7 @@ public class InstanceAdminRest {
   )
   @APIResponse(description = "Neo4j-side instance-admin grant revoked successfully.", responseCode = "204")
   @APIResponse(description = "No Neo4j-side instance-admin grant found for that username.", responseCode = "404")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response revokeInstanceAdmin(
     @Context SecurityContext securityContext,
@@ -187,6 +190,7 @@ public class InstanceAdminRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response permissionAudit(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
@@ -224,6 +228,7 @@ public class InstanceAdminRest {
       schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   @APIResponse(description = "The `from` or `to` query parameter is not a valid ISO-8601 instant string.", responseCode = "400")
   public Response permissionAuditLog(
@@ -309,6 +314,7 @@ public class InstanceAdminRest {
     content = @Content(schema = @Schema(implementation = NukeResultIO.class))
   )
   @APIResponse(responseCode = "400", description = "Wrong confirmation phrase.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Not an instance-admin.")
   public Response nuke(
     @Context SecurityContext securityContext,
