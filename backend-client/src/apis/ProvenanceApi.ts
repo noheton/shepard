@@ -38,7 +38,7 @@ export interface CountActivitiesRequest {
 
 export interface ListActivitiesRequest {
     agent?: string;
-    pageSize?: number;
+    limit?: number;
     since?: number;
     targetAppId?: string;
     targetKind?: string;
@@ -135,8 +135,8 @@ export class ProvenanceApi extends runtime.BaseAPI {
             queryParameters['agent'] = requestParameters['agent'];
         }
 
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['pageSize'] = requestParameters['pageSize'];
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
         if (requestParameters['since'] != null) {
