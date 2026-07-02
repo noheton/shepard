@@ -58,7 +58,6 @@ public class InstanceCapabilitiesRest {
     description = "Current set of enabled plugin IDs.",
     content = @Content(schema = @Schema(implementation = InstanceCapabilitiesIO.class))
   )
-  @APIResponse(responseCode = "200", description = "Public endpoint — no authentication required.")
   public Response getCapabilities() {
     List<PluginEntry> entries = registry.list();
     List<InstanceCapabilitiesIO.PluginInfo> plugins = new ArrayList<>(entries.size());
