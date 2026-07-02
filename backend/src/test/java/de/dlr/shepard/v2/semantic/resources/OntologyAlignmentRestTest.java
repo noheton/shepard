@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.OntologyAlignmentDAO;
 import de.dlr.shepard.context.semantic.entities.OntologyAlignment;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.OntologyAlignmentIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
@@ -83,20 +82,19 @@ class OntologyAlignmentRestTest {
   // ─── Functional tests ─────────────────────────────────────────────────────
 
   @Test
-  void emptyRegistry_returns200WithEmptyPagedResponse() {
+  void emptyRegistry_returns200WithEmptyArray() {
     when(dao.findAll()).thenReturn(List.of());
 
     Response r = rest.list();
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<OntologyAlignmentIO> body = (PagedResponseIO<OntologyAlignmentIO>) r.getEntity();
+    List<OntologyAlignmentIO> body = (List<OntologyAlignmentIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.items().isEmpty(), "Empty DAO must produce empty items in PagedResponseIO");
-    assertEquals(0, body.total(), "total() must be 0 for empty registry");
+    assertTrue(body.isEmpty(), "Empty DAO must produce empty array");
   }
 
   @Test
-  void populatedRegistry_returns200WithPagedResponse() {
+  void populatedRegistry_returns200WithItems() {
     OntologyAlignment e1 = makeEntity(
       "app-1", "Collection", "http://purl.obolibrary.org/obo/IAO_0000100",
       "rdfs:subClassOf", "HIGH", "aidocs/semantics/96-upper-ontology-alignment.md", 1000L
@@ -110,12 +108,11 @@ class OntologyAlignmentRestTest {
     Response r = rest.list();
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<OntologyAlignmentIO> body = (PagedResponseIO<OntologyAlignmentIO>) r.getEntity();
+    List<OntologyAlignmentIO> body = (List<OntologyAlignmentIO>) r.getEntity();
     assertNotNull(body);
-    assertEquals(2, body.items().size(), "Two entities must produce two IO objects");
-    assertEquals(2, body.total(), "total() must equal item count");
+    assertEquals(2, body.size(), "Two entities must produce two IO objects");
 
-    OntologyAlignmentIO io1 = body.items().get(0);
+    OntologyAlignmentIO io1 = body.get(0);
     assertEquals("app-1", io1.appId());
     assertEquals("Collection", io1.shepardConcept());
     assertEquals("http://purl.obolibrary.org/obo/IAO_0000100", io1.upperOntologyUri());
