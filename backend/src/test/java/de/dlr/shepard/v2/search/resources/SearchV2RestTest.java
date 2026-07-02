@@ -87,7 +87,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50);
+    Response resp = resource.search("LUMEN", 0, 50, 0, 50);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -121,7 +121,7 @@ class SearchV2RestTest {
     owningCollection.setAppId(COLL_APP_ID);
     when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(owningCollection);
 
-    Response resp = resource.search("TR-004", 0, 50);
+    Response resp = resource.search("TR-004", 0, 50, 0, 50);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -138,20 +138,20 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryReturnsBadRequest() {
-    Response resp = resource.search("  ", 0, 50);
+    Response resp = resource.search("  ", 0, 50, 0, 50);
     assertEquals(400, resp.getStatus());
   }
 
   @Test
   void nullQueryReturnsBadRequest() {
-    Response resp = resource.search(null, 0, 50);
+    Response resp = resource.search(null, 0, 50, 0, 50);
     assertEquals(400, resp.getStatus());
   }
 
   /** APISIMP-SEARCH-BAD-REQUEST-PLAIN-STRING — 400 must use problem+json, not plain text. */
   @Test
   void badRequestReturnsProblemJson() {
-    Response resp = resource.search(null, 0, 50);
+    Response resp = resource.search(null, 0, 50, 0, 50);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json",
         resp.getMediaType().toString(),
@@ -160,7 +160,7 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryAlsoReturnsProblemJson() {
-    Response resp = resource.search("   ", 0, 50);
+    Response resp = resource.search("   ", 0, 50, 0, 50);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json", resp.getMediaType().toString());
   }
@@ -179,7 +179,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("x"), any(), eq(Optional.of(200)), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("x");
 
-    Response resp = resource.search("x", 0, 9999);
+    Response resp = resource.search("x", 0, 9999, 0, 50);
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
     assertEquals(200, result.getPageSize());
@@ -202,7 +202,7 @@ class SearchV2RestTest {
       .filter(f -> f.getType() == long.class || f.getType() == Long.class)
       .map(Field::getName)
       .collect(Collectors.toList());
-    assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
+    assertTrue(longFields.stream().allMatch(n -> n.equals("total") || n.equals("doTotal")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
   }
 
   /** Regression: successful search response must carry X-Total-Count header matching body total. */
@@ -223,7 +223,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50);
+    Response resp = resource.search("LUMEN", 0, 50, 0, 50);
 
     assertEquals(200, resp.getStatus());
     Object header = resp.getHeaders().getFirst("X-Total-Count");
@@ -233,7 +233,7 @@ class SearchV2RestTest {
   /** Regression: pageSize @PathParam on search() must carry @Min(1) and @Max(200). */
   @Test
   void pageSizeAnnotationHasMinOneAndMax200() throws NoSuchMethodException {
-    Method searchMethod = SearchV2Rest.class.getMethod("search", String.class, int.class, int.class);
+    Method searchMethod = SearchV2Rest.class.getMethod("search", String.class, int.class, int.class, int.class, int.class);
     Parameter pageSizeParam = searchMethod.getParameters()[2];
     List<Class<? extends Annotation>> annotationTypes = Arrays.stream(pageSizeParam.getAnnotations())
       .map(Annotation::annotationType)
