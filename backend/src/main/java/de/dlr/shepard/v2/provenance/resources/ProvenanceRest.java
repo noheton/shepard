@@ -288,7 +288,7 @@ public class ProvenanceRest {
     @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
     @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
     @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
-    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -302,7 +302,7 @@ public class ProvenanceRest {
     try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
     catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
-    int eff = pageSize == null ? 100 : pageSize;
+    int eff = limit == null ? 100 : limit;
     OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
       .list(agentFilter, null, entityAppId, since, until, eff)
@@ -329,7 +329,7 @@ public class ProvenanceRest {
     @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
     @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
     @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
-    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
@@ -342,7 +342,7 @@ public class ProvenanceRest {
     try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
     catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
-    int eff = pageSize == null ? 100 : pageSize;
+    int eff = limit == null ? 100 : limit;
     List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
     return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
@@ -365,7 +365,7 @@ public class ProvenanceRest {
     @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
     @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
     @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
-    @Parameter(description = "Max rows (pageSize). Defaults to 100; capped at 1000.") @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
@@ -383,7 +383,7 @@ public class ProvenanceRest {
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
 
-    int eff = pageSize == null ? 100 : pageSize;
+    int eff = limit == null ? 100 : limit;
     List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
     return Response.ok(provJsonLdRenderer.render(rows, profile))
       .type(jsonLdMediaTypeFor(profile))
