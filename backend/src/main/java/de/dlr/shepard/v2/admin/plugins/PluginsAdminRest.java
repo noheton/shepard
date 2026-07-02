@@ -71,8 +71,22 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * "admin-configurable" pattern with the persistent-override
  * variant.
  *
+ * <p>Why not {@link de.dlr.shepard.v2.admin.config.resources.AdminConfigRest ConfigRegistry}?
+ * {@code GET/PATCH /v2/admin/config/{feature}} uses a flat key namespace: one feature key maps
+ * to one JSON value-shape handled by its {@code ConfigDescriptor}. Plugins need a
+ * <em>per-plugin-id</em> path segment — the identity is not a feature key but a plugin id from
+ * the classpath scan. Folding plugins into ConfigRegistry would require either a synthetic
+ * nested key ({@code config/plugins/file-format-thermography}) or structural changes to
+ * {@code ConfigRegistry} to support a sub-keyed collection. Both add surface for no gain —
+ * this endpoint is the right shape: per-id PATCH with id validation and registry-lookup that
+ * the generic {@code ConfigDescriptor} interface cannot express cleanly. The toggle is
+ * persisted (not transient), which makes it suitable for a future {@code ConfigDescriptor}
+ * wrapper if the key-namespace decision changes; that migration is tracked as
+ * APISIMP-PLUGINS-ADMIN-BESPOKE option (a) in {@code aidocs/16}.
+ *
  * @see PluginRegistry
  * @see de.dlr.shepard.plugin.PluginEntry
+ * @see de.dlr.shepard.v2.admin.config.resources.AdminConfigRest
  */
 @Path("/v2/admin/plugins")
 @Produces(MediaType.APPLICATION_JSON)
