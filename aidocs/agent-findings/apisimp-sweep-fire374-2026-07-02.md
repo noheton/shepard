@@ -1,5 +1,5 @@
 ---
-stage: fragment
+stage: deployed
 last-stage-change: 2026-07-02
 ---
 
@@ -82,7 +82,7 @@ this is a pure parameter-validation inconsistency.
 
 | ID | Size | Status |
 |----|------|--------|
-| APISIMP-AAS-SHELLS-SOFT-CAPS | XS | ⏳ queued |
+| APISIMP-AAS-SHELLS-SOFT-CAPS | XS | ✅ shipped (fire-374) |
 
 Plugin REST surface is clean except for the AAS soft-cap pattern (F1).
 All core v2 REST findings from prior sweeps are either shipped or in-flight.
