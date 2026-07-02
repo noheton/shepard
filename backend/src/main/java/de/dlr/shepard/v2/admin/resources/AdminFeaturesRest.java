@@ -29,7 +29,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/admin/features")
+// Path is /v2/admin/runtime-toggles (not /features) because these toggles are
+// transient (JVM-lifetime only, not persisted). The /features namespace is
+// reserved for ConfigRegistry-backed, persisted feature config (see ConfigRest).
+@Path("/v2/admin/runtime-toggles")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")

@@ -1222,7 +1222,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/admin/features`,
+            path: `/v2/admin/runtime-toggles`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1642,7 +1642,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/admin/features/{name}`.replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
+            path: `/v2/admin/runtime-toggles/{name}`.replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
