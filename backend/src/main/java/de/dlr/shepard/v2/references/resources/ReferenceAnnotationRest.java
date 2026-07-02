@@ -160,8 +160,8 @@ public class ReferenceAnnotationRest {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
       List<Map<String, Object>> rows = r.handler().listAnnotations(appId);
       int total = rows.size();
-      int from = Math.min(page * limit, total);
-      List<Map<String, Object>> slice = rows.subList(from, Math.min(from + limit, total));
+      int from = (int) Math.min((long) page * limit, (long) total);
+      List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + limit, (long) total));
       return Response.ok(new PagedResponseIO<>(slice, total, page, limit)).build();
     });
   }
