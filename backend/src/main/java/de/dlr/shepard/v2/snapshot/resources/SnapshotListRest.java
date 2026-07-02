@@ -11,6 +11,8 @@ import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -131,7 +133,7 @@ public class SnapshotListRest {
     @Parameter(description =
       "Page size (default 50). Server-side clamp: [1, 200] — values outside this "
       + "range are silently clamped to the nearest boundary.")
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc != null && sc.getUserPrincipal() != null

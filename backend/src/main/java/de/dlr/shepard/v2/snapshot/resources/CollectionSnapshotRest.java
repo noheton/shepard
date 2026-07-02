@@ -10,6 +10,8 @@ import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -184,7 +186,7 @@ public class CollectionSnapshotRest {
     @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") int page,
     @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize,
     @Context SecurityContext sc
   ) {
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
