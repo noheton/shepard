@@ -289,7 +289,11 @@ public class SnapshotMcpTools {
         added,
         removed,
         changed,
-        unchangedCount
+        unchangedCount,
+        added.size(),
+        removed.size(),
+        changed.size(),
+        false
       );
       return support.toJson(diff);
     });

@@ -7,11 +7,15 @@ import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO.DiffEntry;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -22,6 +26,7 @@ import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -33,6 +38,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * added, removed, or changed in revision between them. Entities with identical
  * revisions are counted but not listed (the set can be arbitrarily large).
  *
+ * <p>Server-side cap: each of the {@code added}, {@code removed}, and {@code changed}
+ * lists is capped at {@code ceil(?maxItems / 3)} entries (default {@code ?maxItems=5000},
+ * max {@code 20000}). When any list is capped, {@code truncated=true} is set and the
+ * {@code totalAdded}/{@code totalRemoved}/{@code totalChanged} counts reflect the full
+ * uncapped diff.
+ *
  * <p>Auth: authenticated caller required (401 when unauthenticated). In v1 no
  * additional per-collection permission gate is applied — snapshots are metadata
  * only; a stricter per-collection gate can be added in a future revision when
@@ -41,14 +52,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * <p>Error conditions:
  * <ul>
  *   <li>401 — unauthenticated caller.</li>
- *   <li>400 — {@code aAppId} equals {@code bAppId} (self-diff is meaningless).</li>
+ *   <li>400 — {@code aAppId} equals {@code bAppId} (self-diff is meaningless),
+ *       or {@code ?maxItems} is outside [1, 20000].</li>
  *   <li>404 — snapshot A or snapshot B not found or soft-deleted.</li>
  * </ul>
  *
  * <p>All result lists are sorted by {@code entityAppId} ascending for
  * deterministic output.
  *
- * <p>Cross-references: {@code aidocs/41} §7; {@code aidocs/16} V2e;
+ * <p>Cross-references: {@code aidocs/41} §7; {@code aidocs/16} V2e,
+ * {@code APISIMP-SNAPSHOT-DIFF-UNCAPPED};
  * API-version policy (CLAUDE.md — all new endpoints under {@code /v2/}).
  */
 @Produces(MediaType.APPLICATION_JSON)
@@ -57,6 +70,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Tag(name = "Snapshots")
 public class SnapshotDiffRest {
+
+  /** Default cap across all three diff lists (added + removed + changed). */
+  static final int DEFAULT_MAX_ITEMS = 5000;
+
+  /** Hard upper bound on ?maxItems to protect response budget. */
+  static final int HARD_MAX_ITEMS = 20000;
 
   @Inject
   SnapshotService snapshotService;
@@ -72,11 +91,16 @@ public class SnapshotDiffRest {
   /**
    * Diff two snapshots.
    *
-   * @param aAppId the application-level identifier of snapshot A (base).
-   * @param bAppId the application-level identifier of snapshot B (head).
-   * @param sc     the JAX-RS security context.
-   * @return 200 with a {@link SnapshotDiffIO}; 400 when A and B are the same;
-   *         401 unauthenticated; 404 when either snapshot is unknown or deleted.
+   * @param aAppId    the application-level identifier of snapshot A (base).
+   * @param bAppId    the application-level identifier of snapshot B (head).
+   * @param sc        the JAX-RS security context.
+   * @param maxItems  server-side cap on the total number of diff items returned across all
+   *                  three lists (default 5000, max 20000). Each list is capped at
+   *                  {@code ceil(maxItems/3)} entries; {@code truncated} is set to
+   *                  {@code true} when any list is capped.
+   * @return 200 with a {@link SnapshotDiffIO}; 400 when A and B are the same or
+   *         {@code maxItems} is out of range; 401 unauthenticated; 404 when either
+   *         snapshot is unknown or deleted.
    */
   @GET
   @Operation(
@@ -88,6 +112,9 @@ public class SnapshotDiffRest {
       "(in A, not in B), or changed revision (present in both with different revision), " +
       "plus a count of unchanged entities (same revision in both). " +
       "All lists are sorted by entityAppId ascending. " +
+      "Each list is capped at ceil(?maxItems/3) entries (default maxItems=5000, max 20000); " +
+      "when any list is capped, truncated=true and totalAdded/totalRemoved/totalChanged " +
+      "reflect the full uncapped counts. " +
       "Requires an authenticated caller; no per-collection permission gate in v1."
   )
   @APIResponse(
@@ -97,7 +124,7 @@ public class SnapshotDiffRest {
   )
   @APIResponse(
     responseCode = "400",
-    description = "aAppId and bAppId are the same (self-diff is not useful).",
+    description = "aAppId and bAppId are the same (self-diff is not useful), or ?maxItems is outside [1, 20000].",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -105,7 +132,9 @@ public class SnapshotDiffRest {
   public Response diff(
     @PathParam("aAppId") String aAppId,
     @PathParam("bAppId") String bAppId,
-    @Context SecurityContext sc
+    @Context SecurityContext sc,
+    @Parameter(description = "Cap on the total number of items returned across added + removed + changed lists. Each list is capped at ceil(maxItems/3). Default 5000, max 20000.")
+    @QueryParam("maxItems") @DefaultValue("5000") @Min(1) @Max(HARD_MAX_ITEMS) int maxItems
   ) {
     // Auth gate — must be authenticated
     if (sc.getUserPrincipal() == null) {
@@ -166,6 +195,27 @@ public class SnapshotDiffRest {
     removed.sort(String::compareTo);
     changed.sort((x, y) -> x.entityAppId().compareTo(y.entityAppId()));
 
+    // Record full totals before capping
+    int totalAdded = added.size();
+    int totalRemoved = removed.size();
+    int totalChanged = changed.size();
+
+    // Apply per-list cap: each list gets ceil(maxItems / 3) entries
+    int perListCap = (maxItems + 2) / 3;
+    boolean truncated = false;
+    if (added.size() > perListCap) {
+      added = added.subList(0, perListCap);
+      truncated = true;
+    }
+    if (removed.size() > perListCap) {
+      removed = removed.subList(0, perListCap);
+      truncated = true;
+    }
+    if (changed.size() > perListCap) {
+      changed = changed.subList(0, perListCap);
+      truncated = true;
+    }
+
     SnapshotDiffIO diff = new SnapshotDiffIO(
       snapshotA.getAppId(),
       snapshotB.getAppId(),
@@ -174,7 +224,11 @@ public class SnapshotDiffRest {
       added,
       removed,
       changed,
-      unchangedCount
+      unchangedCount,
+      totalAdded,
+      totalRemoved,
+      totalChanged,
+      truncated
     );
 
     return Response.ok(diff).build();
