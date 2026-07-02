@@ -151,7 +151,7 @@ public class VocabularyBrowseRest {
     List<Predicate> rows = predicateDAO.listByVocabulary(vocabId);
     List<PredicateIO> all = rows.stream().map(PredicateIO::from).toList();
     int total = all.size();
-    int from = Math.min(page * pageSize, total);
+    int from = (int) Math.min((long) page * pageSize, total);
     int to = Math.min(from + pageSize, total);
     return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
