@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.admin.resources;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +57,7 @@ class InstanceAdminListRestTest {
 
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
-    assertEquals(List.class, entity.getClass(),
+    assertInstanceOf(List.class, entity,
         "listInstanceAdmins must return a plain List, not PagedResponseIO");
   }
 
@@ -68,7 +69,7 @@ class InstanceAdminListRestTest {
 
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
-    assertEquals(List.class, entity.getClass(),
+    assertInstanceOf(List.class, entity,
         "permissionAudit must return a plain List, not PagedResponseIO");
   }
 
