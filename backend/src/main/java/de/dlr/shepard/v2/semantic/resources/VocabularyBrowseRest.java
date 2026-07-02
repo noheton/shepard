@@ -7,11 +7,13 @@ import de.dlr.shepard.context.semantic.entities.Predicate;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.PredicateIO;
-import de.dlr.shepard.v2.semantic.io.VocabularyPredicatesIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -99,7 +101,7 @@ public class VocabularyBrowseRest {
   public Response listVocabularies() {
     List<Vocabulary> all = vocabularyDAO.listAll();
     List<VocabularyIO> out = all.stream().map(VocabularyIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
+    return Response.ok(out).build();
   }
 
   // ─── GET /v2/semantic/vocabularies/{vocabId}/predicates ───────────────────
@@ -119,20 +121,26 @@ public class VocabularyBrowseRest {
     summary = "List predicates declared by one vocabulary.",
     description =
       "Returns every :Predicate node whose `vocabularyAppId` equals the path " +
-      "parameter, ordered by label ASC. The response envelope echoes " +
-      "`vocabularyAppId` for caller convenience. " +
+      "parameter, ordered by label ASC, paged via `?page=`/`?pageSize=` " +
+      "(default page 0, pageSize 50, max 200). " +
       "Auth: any authenticated user. " +
       "Returns 404 when the vocabulary does not exist; returns 200 with " +
-      "`predicates: []` when the vocabulary exists but has no predicates yet."
+      "`items: []` when the vocabulary exists but has no predicates yet."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Predicates declared by this vocabulary (may be empty).",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyPredicatesIO.class))
+    description = "Paged predicates for this vocabulary (may be empty).",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PredicateIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No vocabulary with this appId.")
-  public Response listPredicatesForVocabulary(@PathParam("vocabId") String vocabId) {
+  public Response listPredicatesForVocabulary(
+    @PathParam("vocabId") String vocabId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size (default 50, max 200).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     if (vocabId == null || vocabId.isBlank()) {
       return notFound(vocabId);
     }
@@ -141,8 +149,11 @@ public class VocabularyBrowseRest {
       return notFound(vocabId);
     }
     List<Predicate> rows = predicateDAO.listByVocabulary(vocabId);
-    List<PredicateIO> mapped = rows.stream().map(PredicateIO::from).toList();
-    return Response.ok(new VocabularyPredicatesIO(vocabId, mapped)).build();
+    List<PredicateIO> all = rows.stream().map(PredicateIO::from).toList();
+    int total = all.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, (long) total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
   // ─── GET /v2/semantic/vocabularies/used-by/{entityAppId} ──────────────────
@@ -190,11 +201,11 @@ public class VocabularyBrowseRest {
     @QueryParam("scope") @DefaultValue("data-object") String scope
   ) {
     if (entityAppId == null || entityAppId.isBlank()) {
-      return Response.ok(new PagedResponseIO<>(List.<VocabularyIO>of(), 0, 0, 0)).build();
+      return Response.ok(List.<VocabularyIO>of()).build();
     }
     List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
     List<VocabularyIO> out = used.stream().map(VocabularyIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
+    return Response.ok(out).build();
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
