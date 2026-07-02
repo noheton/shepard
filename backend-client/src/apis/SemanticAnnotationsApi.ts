@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   AnnotationV2,
+  BulkAnnotationResult,
   CreateAnnotationV2,
   PagedResponse,
   UpdateAnnotationV2,
@@ -23,6 +24,7 @@ import type {
 import {
     AnnotationV2FromJSON,
     AnnotationV2ToJSON,
+    BulkAnnotationResultFromJSON,
     CreateAnnotationV2FromJSON,
     CreateAnnotationV2ToJSON,
     PagedResponseFromJSON,
@@ -69,10 +71,65 @@ export interface UpdateAnnotationRequest {
     updateAnnotationV2: UpdateAnnotationV2;
 }
 
+export interface BulkCreateAnnotationsRequest {
+    createAnnotationV2: Array<CreateAnnotationV2>;
+    xAIAgent?: string;
+}
+
 /**
- * 
+ *
  */
 export class SemanticAnnotationsApi extends runtime.BaseAPI {
+
+    /**
+     * Bulk-create up to 100 semantic annotations in one round-trip. Best-effort per row.
+     * [v2] Bulk-create semantic annotations.
+     */
+    async bulkCreateAnnotationsRaw(requestParameters: BulkCreateAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BulkAnnotationResult>> {
+        if (requestParameters['createAnnotationV2'] == null) {
+            throw new runtime.RequiredError(
+                'createAnnotationV2',
+                'Required parameter "createAnnotationV2" was null or undefined when calling bulkCreateAnnotations().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xAIAgent'] != null) {
+            headerParameters['X-AI-Agent'] = String(requestParameters['xAIAgent']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/annotations/bulk`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['createAnnotationV2'].map(CreateAnnotationV2ToJSON),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BulkAnnotationResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Bulk-create up to 100 semantic annotations in one round-trip. Best-effort per row.
+     * [v2] Bulk-create semantic annotations.
+     */
+    async bulkCreateAnnotations(requestParameters: BulkCreateAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BulkAnnotationResult> {
+        const response = await this.bulkCreateAnnotationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Creates a `:SemanticAnnotation` node for the given subject entity. The server mints `appId` (UUID v7) for the new annotation.  Required fields: `subjectAppId`, `subjectKind`, `predicateIri`. Exactly one of `objectLiteral` / `objectIri` must be non-null.  Auth: caller must be able to Write the subject entity (inherited from its Collection). `sourceMode` defaults to `\'human\'` if not provided. `confidence` defaults to `1.0` for human writes.  Returns `201 Created` with the full AnnotationV2 body.
