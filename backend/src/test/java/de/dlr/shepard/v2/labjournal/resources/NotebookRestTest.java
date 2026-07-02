@@ -13,7 +13,6 @@ import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.ws.rs.NotFoundException;
@@ -32,7 +31,6 @@ import org.mockito.MockitoAnnotations;
  * <p>No CDI container or network required — fields are injected directly,
  * matching the pattern from {@link LabJournalRenderRestTest}.
  */
-@SuppressWarnings("unchecked")
 class NotebookRestTest {
 
   static final String DO_APP_ID = "01957000-0000-7000-8000-000000000002";
@@ -154,8 +152,7 @@ class NotebookRestTest {
   void returns200EmptyListWhenNoFiles() {
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
-    assertThat(paged.items()).isEmpty();
+    assertThat((List<?>) r.getEntity()).isEmpty();
   }
 
   @Test
@@ -167,7 +164,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
+    assertThat((List<?>) r.getEntity()).isEmpty();
   }
 
   // ─── 200 with results ─────────────────────────────────────────────────────
@@ -179,7 +176,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
     assertThat(items).hasSize(1);
 
     var io = items.get(0);
@@ -200,7 +197,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
     assertThat(items).hasSize(1);
 
     var io = items.get(0);
@@ -223,7 +220,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
     assertThat(items).hasSize(2);
 
     // Singletons come first
@@ -246,7 +243,7 @@ class NotebookRestTest {
       );
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
     assertThat(items).hasSize(2);
     assertThat(items).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
   }
@@ -259,7 +256,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
+    assertThat((List<?>) r.getEntity()).isEmpty();
   }
 
   @Test
@@ -270,7 +267,7 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
+    assertThat((List<?>) r.getEntity()).isEmpty();
   }
 
   @Test
@@ -280,7 +277,7 @@ class NotebookRestTest {
       .thenReturn(List.of(singleton("s-old", "old.ipynb", null)));
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
     assertThat(items).hasSize(1);
     assertThat(items.get(0).getFileSize()).isNull();
   }

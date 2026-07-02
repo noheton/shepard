@@ -7,7 +7,6 @@ import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.BatchIngestIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.EventIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.IngestEventIO;
 import de.dlr.shepard.v2.importer.io.ImportDiagnosticsIO.RunSummaryIO;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.importer.services.ImportDiagnosticsLog;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
@@ -26,6 +25,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -161,7 +161,7 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Run summary list",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = RunSummaryIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response listRuns(@Context SecurityContext sc) {
@@ -172,7 +172,7 @@ public class ImportDiagnosticsV2Rest {
         .map(RunSummaryIO::from)
         .toList();
 
-    return Response.ok(new PagedResponseIO<>(runs, runs.size(), 0, runs.size())).build();
+    return Response.ok(runs).build();
   }
 
   // ─── POST /v2/import/diagnostics/{runId}/events ───────────────────────────
