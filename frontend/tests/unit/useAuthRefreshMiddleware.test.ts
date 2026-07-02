@@ -223,7 +223,7 @@ describe("useAuthRefreshMiddleware", () => {
       return {
         response,
         fetch: makeRetryFetch(),
-        url: "https://api.example.com/v2/admin/features",
+        url: "https://api.example.com/v2/admin/runtime-toggles",
         init: { headers: { Authorization: "Bearer stale-token" } },
       } as unknown as ResponseContext;
     }

@@ -90,8 +90,8 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | Build-time vs runtime feature toggle mechanism | `@IfBuildProperty` only | `@ConditionalOnFeature` + runtime-toggleable | **✓ ↑** | A3 |
-| Runtime feature-toggle admin API (`GET /v2/admin/features`, `PATCH /v2/admin/features/{name}`) | none | `FeatureToggleRegistry` + `AdminFeaturesRest`; `@RolesAllowed("instance-admin")`; in-process override, not persisted across restart. **APISIMP-FEATURES-LIST-ENVELOPE (fire-299)** — `GET /v2/admin/features` list envelope migrated from bare JSON array to standard `PagedResponseIO<FeatureToggleIO>` (`{items:[…], total, page, pageSize}`); `backend-client` `PagedResponseFeatureToggle` model added; `AdminApi.listFeatureToggles()` return type updated; `useFetchFeatureToggles.ts` reads `page.items`. | **✓ ↑** | A3b |
-| Toggle `source` field (`"default"` / `"config"` / `"runtime"`) on each toggle entry returned by `GET /v2/admin/features` and `PATCH /v2/admin/features/{name}` | none | `FeatureToggleEntry.getSource()` — returns `"runtime"` when overridden by PATCH, `"config"` when an `application.properties` key is present, `"default"` otherwise. `FeatureToggleIO` carries the field; no new endpoints, no schema change. 3 new `AdminFeaturesRestTest` cases. | **✓ ↑** | DX7 |
+| Runtime feature-toggle admin API (`GET /v2/admin/runtime-toggles`, `PATCH /v2/admin/runtime-toggles/{name}`) | none | `FeatureToggleRegistry` + `AdminFeaturesRest`; `@RolesAllowed("instance-admin")`; in-process override, not persisted across restart. **APISIMP-FEATURES-LIST-ENVELOPE (fire-299)** — list envelope migrated from bare JSON array to standard `PagedResponseIO<FeatureToggleIO>`; **APISIMP-FEATURES-ADMIN-BESPOKE (fire-356)** — path renamed from `/v2/admin/features` → `/v2/admin/runtime-toggles` to distinguish transient toggles from persisted `/v2/admin/config/{feature}` surface. | **✓ ↑** | A3b |
+| Toggle `source` field (`"default"` / `"config"` / `"runtime"`) on each toggle entry returned by `GET /v2/admin/runtime-toggles` and `PATCH /v2/admin/runtime-toggles/{name}` | none | `FeatureToggleEntry.getSource()` — returns `"runtime"` when overridden by PATCH, `"config"` when an `application.properties` key is present, `"default"` otherwise. `FeatureToggleIO` carries the field; no new endpoints, no schema change. 3 new `AdminFeaturesRestTest` cases. | **✓ ↑** | DX7 |
 | Spatial-data namespace alias (`shepard.spatial-data.*` → `shepard.infrastructure.spatial.*`) | only old names | both names resolve; old logs deprecation warning; removal v6.0 | **✓ ↑** | A3c / `aidocs/platform/A3c-namespace-migration.md` |
 | Permission cache TTL/max-size config | hard-coded global defaults | `shepard.permissions.cache.ttl` (`PT5M`) + `.max-size` (`10000`) | **✓ ↑** | A4 |
 | Runtime-mutable provenance config (`enabled`, `captureReads`, `retentionDays`) via `:ProvenanceConfig` singleton + `GET/PATCH /v2/admin/config/provenance` | deploy-time props only | `ProvenanceConfigDescriptor` in ConfigRegistry; `ProvenanceCaptureFilter` + `ProvenanceRetentionJob` read from service at runtime | **✓ ↑** | FTOGGLE-PROV-1 |
@@ -426,8 +426,8 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | `POST /v2/admin/instance-admins` (grant role) | ✓ shipped | A0 / `aidocs/51 §10` |
 | `DELETE /v2/admin/instance-admins/{username}` (revoke role) | ✓ shipped | A0 / `aidocs/51 §10` |
 | `GET /v2/admin/permission-audit` (list orphan-permissions entities) | ✓ shipped | A0 / `aidocs/51 §8` |
-| `GET /v2/admin/features` (list runtime feature toggles) | ✓ shipped | A3b |
-| `PATCH /v2/admin/features/{name}` (set toggle enabled/disabled) | ✓ shipped | A3b |
+| `GET /v2/admin/runtime-toggles` (list runtime feature toggles; renamed from `/v2/admin/features` in fire-356) | ✓ shipped | A3b |
+| `PATCH /v2/admin/runtime-toggles/{name}` (set toggle enabled/disabled; renamed from `/v2/admin/features/{name}` in fire-356) | ✓ shipped | A3b |
 | (None of the L2c/L2d/L2e `/v2/...` URL forms have shipped yet — those land at L2d.) | | |
 
 ### 14a.3 New `/v2/...` endpoints — designed (queued)
@@ -463,7 +463,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1c-f — queued | `aidocs/46` |
 | `POST /v2/file-containers/{containerAppId}/upload-url`, `POST /v2/file-containers/{containerAppId}/upload-url/commit`, `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` | FS1c — ✓ shipped | `aidocs/45 §7` |
 | `GET /v2/artifacts/{type}/{id}/url` | FS1g | `aidocs/45` |
-| `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped | — |
+| `GET /v2/admin/runtime-toggles`, `PATCH /v2/admin/runtime-toggles/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped (renamed fire-356) | — |
 | `GET /v2/processes`, `POST /v2/processes/import` | PR1a, PR1c | `aidocs/40 §2` |
 | `POST /v2/hdf-containers`, `GET /v2/hdf-containers/{appId}{,/file,/datasets/{path}/value}`, `POST /v2/data-objects/{id}/hdf-references`, `POST /api-keys/{id}/hsds-token` | A5a-e | `aidocs/35` |
 | `POST /v2/sql/timeseries` | P10a+P10b+P10c — ✓ shipped | `aidocs/29` |
