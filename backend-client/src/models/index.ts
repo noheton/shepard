@@ -45,6 +45,8 @@ export * from './BasicReferenceV2';
 export * from './BatchIngestIO';
 export * from './BootstrapRequest';
 export * from './BootstrapResponse';
+export * from './BulkAnnotationItemResult';
+export * from './BulkAnnotationResult';
 export * from './BulkChannelDataRequest';
 export * from './CellMappingIO';
 export * from './CellMappingIO1';

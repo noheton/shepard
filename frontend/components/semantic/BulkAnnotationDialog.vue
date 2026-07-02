@@ -14,10 +14,12 @@
  *     @bulk-annotated="onBulkDone"
  *   />
  */
+import { SemanticAnnotationsApi, type BulkAnnotationResult } from "@dlr-shepard/backend-client";
 import {
   useTermSearch,
   type TermSuggestion,
 } from "~/composables/context/useTermSearch";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const props = defineProps<{
   subjectAppIds: string[];
@@ -46,9 +48,9 @@ const valueSuggestions = ref<TermSuggestion[]>([]);
 const valueLoading = ref(false);
 
 const processing = ref(false);
+const lastResult = ref<BulkAnnotationResult | null>(null);
 
-interface BulkResult { succeeded: number; failed: number }
-const lastResult = ref<BulkResult | null>(null);
+const annotationsApi = useV2ShepardApi(SemanticAnnotationsApi);
 
 const isValid = computed(
   () => propertyIri.value.trim() !== "" && valueIri.value.trim() !== "",
@@ -65,28 +67,6 @@ function reset() {
 }
 
 watch(showDialog, (v) => { if (v) reset(); });
-
-// ─── Base URL + auth ──────────────────────────────────────────────────────────
-
-function v2BaseUrl(): string {
-  const config = useRuntimeConfig().public;
-  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
-  return (config.backendApiUrl as string)
-    .replace(/\/shepard\/api\/?$/, "")
-    .replace(/\/$/, "");
-}
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const { data: session } = useAuth();
-  const accessToken = session.value?.accessToken;
-  if (!accessToken) throw new Error("Not authenticated");
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-}
 
 // ─── Predicate autocomplete ───────────────────────────────────────────────────
 
@@ -153,17 +133,8 @@ async function onSubmit() {
       predicateLabel: propertyPreview.value?.label ?? null,
       ...(isIri ? { objectIri: valueIri.value } : { objectLiteral: valueIri.value }),
     }));
-    const resp = await fetch(`${v2BaseUrl()}/v2/annotations/bulk`, {
-      method: "POST",
-      headers: await authHeaders(),
-      body: JSON.stringify(items),
-    });
-    if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      throw new Error(`HTTP ${resp.status}: ${text}`);
-    }
-    const body = await resp.json() as { succeeded: number; failed: number };
-    lastResult.value = { succeeded: body.succeeded, failed: body.failed };
+    const body = await annotationsApi.value.bulkCreateAnnotations({ createAnnotationV2: items });
+    lastResult.value = body;
     emitSuccess(
       `Bulk annotated: ${body.succeeded}/${items.length} succeeded.`,
     );
