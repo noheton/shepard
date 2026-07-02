@@ -72,7 +72,7 @@ onMounted(async () => {
   try {
     const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.dataObject.appId,
-      pageSize: 50,
+      limit: 50,
     });
     activities.value = Array.isArray(paged) ? paged : ((paged as { items?: unknown[] })?.items ?? []) as Activity[];
   } catch {
