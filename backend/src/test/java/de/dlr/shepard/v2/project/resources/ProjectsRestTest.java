@@ -202,6 +202,40 @@ class ProjectsRestTest {
   }
 
   @Test
+  void byAnnotation_returns422_whenValueBlank() {
+    Response r = resource.byAnnotation(
+      PROJECT_APP_ID, "urn:shepard:mffd:layer", "  ",
+      "identity", true, 0, 100);
+    assertEquals(422, r.getStatus());
+  }
+
+  @Test
+  void byAnnotation_returns422_whenValueNull() {
+    Response r = resource.byAnnotation(
+      PROJECT_APP_ID, "urn:shepard:mffd:layer", null,
+      "identity", true, 0, 100);
+    assertEquals(422, r.getStatus());
+  }
+
+  /** APISIMP-PROJECT-BY-ANNOTATION-IRI-PATH: predicate must be a @QueryParam, not @PathParam. */
+  @Test
+  void byAnnotation_predicateIsQueryParam() throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("predicate");
+    assertNotNull(param, "predicate must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.ws.rs.QueryParam.class),
+        "predicate must have @QueryParam annotation");
+  }
+
+  /** APISIMP-PROJECT-BY-ANNOTATION-IRI-PATH: value must be a @QueryParam, not @PathParam. */
+  @Test
+  void byAnnotation_valueIsQueryParam() throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("value");
+    assertNotNull(param, "value must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.ws.rs.QueryParam.class),
+        "value must have @QueryParam annotation");
+  }
+
+  @Test
   void byAnnotation_includeAnnotations_flagsThrough() {
     when(projectsService.isProject(PROJECT_APP_ID)).thenReturn(true);
     ProjectByAnnotationIO io = new ProjectByAnnotationIO();
