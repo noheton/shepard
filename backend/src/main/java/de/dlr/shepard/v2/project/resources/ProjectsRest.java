@@ -222,7 +222,7 @@ public class ProjectsRest {
           "Number of results per page. Default 100. Maximum 500. " +
           "Values above 500 are clamped to 500."
       )
-      @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
+      @QueryParam("pageSize") @DefaultValue("100") @Max(500) @Min(1) int pageSize) {
 
     if (predicate == null || predicate.isBlank()) {
       return problem422("Missing predicate", "Predicate path parameter must be non-blank.");

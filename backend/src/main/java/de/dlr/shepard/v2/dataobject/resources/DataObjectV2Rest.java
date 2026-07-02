@@ -868,7 +868,7 @@ public class DataObjectV2Rest {
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
     @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
-    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @QueryParam("depth") @DefaultValue("10") @Max(50) @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
@@ -909,7 +909,7 @@ public class DataObjectV2Rest {
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
     @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
-    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @QueryParam("depth") @DefaultValue("10") @Max(50) @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
