@@ -3,7 +3,6 @@ package de.dlr.shepard.v2.importer.resources;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.QueryParam;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
