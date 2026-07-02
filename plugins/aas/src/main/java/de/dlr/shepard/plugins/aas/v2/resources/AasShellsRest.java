@@ -14,6 +14,9 @@ import de.dlr.shepard.plugins.aas.v2.io.AasShellIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -96,17 +99,15 @@ public class AasShellsRest {
       content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listShells(
-      @Parameter(description = "Zero-based page number (default 0).")
-      @QueryParam("page") @DefaultValue("0") int page,
-      @Parameter(description = "Page size (default 50, server cap 200).")
-      @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
+      @Parameter(description = "Zero-based page number (default 0). Returns 400 when negative.")
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size, range [1, 200]. Default 50. Returns 400 when out of range.")
+      @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
 
     if (aasDisabled()) return aasDisabledResponse();
 
     String username = authenticationContext.getCurrentUserName();
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(pageSize, 1), 200);
-    var params = new QueryParamHelper().withPageAndSize(safePage, safeSize);
+    var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     long total = collectionDAO.countAllCollectionsByShepardId(username);
 
     List<AasShellIO> shells = collectionDAO
@@ -115,7 +116,7 @@ public class AasShellsRest {
         .map(mappingService::toShell)
         .toList();
 
-    return Response.ok(new PagedResponseIO<>(shells, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(shells, total, page, pageSize)).build();
   }
 
   @GET
@@ -174,10 +175,10 @@ public class AasShellsRest {
       @Parameter(description = "Base64url-encoded Shell IRI per IDTA-01002-3-2 §4.3, " +
           "or bare Collection appId.")
       @PathParam("aasId") String aasId,
-      @Parameter(description = "Zero-based page number (default 0).")
-      @QueryParam("page") @DefaultValue("0") int page,
-      @Parameter(description = "Page size (default 50, server cap 200).")
-      @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
+      @Parameter(description = "Zero-based page number (default 0). Returns 400 when negative.")
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size, range [1, 200]. Default 50. Returns 400 when out of range.")
+      @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
 
     if (aasDisabled()) return aasDisabledResponse();
 
@@ -187,12 +188,10 @@ public class AasShellsRest {
     if (collection == null) {
       return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(pageSize, 1), 200);
     long total = dataObjectDAO.countTopLevelByCollectionAppId(appId);
-    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId, safePage, safeSize);
+    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId, page, pageSize);
     return Response.ok(
-        new PagedResponseIO<>(mappingService.toSubmodelRefs(dataObjects), total, safePage, safeSize)
+        new PagedResponseIO<>(mappingService.toSubmodelRefs(dataObjects), total, page, pageSize)
     ).build();
   }
 
