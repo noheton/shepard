@@ -54,13 +54,9 @@ const sample: OntologyAlignmentIO[] = [
   },
 ];
 
-function envelope(items: OntologyAlignmentIO[]) {
-  return { items, total: items.length, page: 0, pageSize: items.length };
-}
-
 describe("useOntologyAlignment — refresh()", () => {
   it("populates alignments on successful GET", async () => {
-    mockFetchOk(envelope(sample));
+    mockFetchOk(sample);
     const { alignments, error, refresh } = useOntologyAlignment();
     await refresh();
     expect(alignments.value).toEqual(sample);
@@ -68,7 +64,7 @@ describe("useOntologyAlignment — refresh()", () => {
   });
 
   it("hits the correct endpoint with an auth header when available", async () => {
-    mockFetchOk(envelope(sample));
+    mockFetchOk(sample);
     const { refresh } = useOntologyAlignment();
     await refresh();
     const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
@@ -88,11 +84,11 @@ describe("useOntologyAlignment — refresh()", () => {
   });
 
   it("refreshes idempotently — second refresh replaces, not appends", async () => {
-    mockFetchOk(envelope(sample));
+    mockFetchOk(sample);
     const { alignments, refresh } = useOntologyAlignment();
     await refresh();
     expect(alignments.value).toHaveLength(2);
-    mockFetchOk(envelope([sample[0]!]));
+    mockFetchOk([sample[0]!]);
     await refresh();
     expect(alignments.value).toHaveLength(1);
     expect(alignments.value[0]?.shepardConcept).toBe("Collection");

@@ -28,7 +28,6 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.SetEnabled
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResult;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
@@ -292,11 +291,10 @@ class SemanticAdminRestTest {
     var r = rest.listOntologies(securityContext);
 
     assertEquals(200, r.getStatus());
-    PagedResponseIO<OntologyBundleIO> body = (PagedResponseIO<OntologyBundleIO>) r.getEntity();
-    assertEquals(2, body.items().size());
-    assertEquals(2L, body.total());
-    assertEquals("prov-o", body.items().get(0).getId());
-    assertEquals("user", body.items().get(1).getSource());
+    List<OntologyBundleIO> body = (List<OntologyBundleIO>) r.getEntity();
+    assertEquals(2, body.size());
+    assertEquals("prov-o", body.get(0).getId());
+    assertEquals("user", body.get(1).getSource());
   }
 
   @Test
@@ -304,9 +302,8 @@ class SemanticAdminRestTest {
     when(configService.listMerged(any())).thenReturn(List.of());
     var r = rest.listOntologies(securityContext);
     assertEquals(200, r.getStatus());
-    PagedResponseIO<OntologyBundleIO> body = (PagedResponseIO<OntologyBundleIO>) r.getEntity();
-    assertTrue(body.items().isEmpty());
-    assertEquals(0L, body.total());
+    List<OntologyBundleIO> body = (List<OntologyBundleIO>) r.getEntity();
+    assertTrue(body.isEmpty());
   }
 
   @Test

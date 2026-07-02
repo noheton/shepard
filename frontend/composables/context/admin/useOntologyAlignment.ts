@@ -64,8 +64,7 @@ export function useOntologyAlignment() {
         { headers },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const envelope = (await response.json()) as { items: OntologyAlignmentIO[] };
-      alignments.value = envelope.items ?? [];
+      alignments.value = (await response.json()) as OntologyAlignmentIO[];
     } catch (e) {
       error.value = "Failed to load ontology alignment registry";
       handleError(e, "fetching ontology alignment");
