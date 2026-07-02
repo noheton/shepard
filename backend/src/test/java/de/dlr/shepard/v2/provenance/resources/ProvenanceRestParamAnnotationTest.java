@@ -38,21 +38,21 @@ class ProvenanceRestParamAnnotationTest {
   }
 
   @Test
-  void listActivitiesProvJson_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesProvJson_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesProvJson",
       String.class, String.class, String.class, String.class, String.class,
       Integer.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "pageSize"), "listActivitiesProvJson.pageSize");
+    assertDocumented(queryParam(m, "limit"), "listActivitiesProvJson.limit");
   }
 
   @Test
-  void listActivitiesJsonLd_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesJsonLd_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesJsonLd",
       String.class, String.class, String.class, String.class, String.class,
       Integer.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "pageSize"), "listActivitiesJsonLd.pageSize");
+    assertDocumented(queryParam(m, "limit"), "listActivitiesJsonLd.limit");
   }
 
   @Test
