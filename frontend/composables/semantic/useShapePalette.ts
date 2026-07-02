@@ -172,8 +172,9 @@ export function useShapePalette() {
         vocabulary.value = [];
         return;
       }
-      const rows = (await res.json()) as PredicateVocabularyEntry[];
-      vocabulary.value = (Array.isArray(rows) ? rows : []).map((r) => ({
+      const envelope = (await res.json()) as { items: PredicateVocabularyEntry[] };
+      const rows = Array.isArray(envelope?.items) ? envelope.items : [];
+      vocabulary.value = rows.map((r) => ({
         uri: r.predicateUri,
         label: null,
         description: r.description ?? null,
