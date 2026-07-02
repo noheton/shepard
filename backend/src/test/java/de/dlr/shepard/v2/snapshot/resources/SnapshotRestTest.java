@@ -242,7 +242,7 @@ class SnapshotRestTest {
     assertThat(r.getStatus()).isEqualTo(403);
   }
 
-  // ── SnapshotRest — GET manifest ───────────────────────────────────────────
+  // ── SnapshotRest — GET manifest (APISIMP-SNAPSHOT-MANIFEST-FAKE-PAGED) ───
 
   @Test
   void manifest_returns200_withEntries() {
@@ -254,7 +254,7 @@ class SnapshotRestTest {
     e2.setRevision(7L);
     when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(List.of(e1, e2));
 
-    Response r = snapshotRest.manifest(SNAP_APP_ID, sc);
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<SnapshotEntryIO> body = (PagedResponseIO<SnapshotEntryIO>) r.getEntity();
     assertThat(body.items()).hasSize(2);
@@ -264,16 +264,68 @@ class SnapshotRestTest {
   }
 
   @Test
+  void manifest_paginatesCorrectly_firstPage() {
+    List<SnapshotEntry> entries = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      SnapshotEntry e = new SnapshotEntry();
+      e.setEntityAppId("id-" + i);
+      e.setRevision((long) i);
+      entries.add(e);
+    }
+    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(entries);
+
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 2, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    PagedResponseIO<SnapshotEntryIO> body = (PagedResponseIO<SnapshotEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.items().get(0).entityAppId()).isEqualTo("id-0");
+    assertThat(body.total()).isEqualTo(5L);
+  }
+
+  @Test
+  void manifest_paginatesCorrectly_secondPage() {
+    List<SnapshotEntry> entries = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      SnapshotEntry e = new SnapshotEntry();
+      e.setEntityAppId("id-" + i);
+      e.setRevision((long) i);
+      entries.add(e);
+    }
+    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(entries);
+
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 1, 2, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    PagedResponseIO<SnapshotEntryIO> body = (PagedResponseIO<SnapshotEntryIO>) r.getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.items().get(0).entityAppId()).isEqualTo("id-2");
+    assertThat(body.total()).isEqualTo(5L);
+  }
+
+  @Test
+  void manifest_paginatesCorrectly_beyondLastPage_returnsEmpty() {
+    SnapshotEntry e = new SnapshotEntry();
+    e.setEntityAppId("id-0");
+    e.setRevision(0L);
+    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(List.of(e));
+
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 5, 200, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    PagedResponseIO<SnapshotEntryIO> body = (PagedResponseIO<SnapshotEntryIO>) r.getEntity();
+    assertThat(body.items()).isEmpty();
+    assertThat(body.total()).isEqualTo(1L);
+  }
+
+  @Test
   void manifest_returns401_whenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    Response r = snapshotRest.manifest(SNAP_APP_ID, sc);
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(401);
   }
 
   @Test
   void manifest_returns404_whenSnapshotNotFound() {
     when(snapshotService.findByAppId(SNAP_APP_ID)).thenReturn(null);
-    Response r = snapshotRest.manifest(SNAP_APP_ID, sc);
+    Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
