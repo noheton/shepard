@@ -86,7 +86,8 @@ describe("fetchChannelListByAppId (UX612-C2)", () => {
 
     expect(listChannels).toHaveBeenCalledWith({
       appId: CONTAINER_APP_ID,
-      pageSize: 1000,
+      // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+      pageSize: 500,
     });
     expect(list).toHaveLength(2);
   });

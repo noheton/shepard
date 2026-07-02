@@ -59,7 +59,8 @@ export function useFetchV2Channels(containerAppId: string) {
     loading.value = true;
     try {
       const res = await fetch(
-        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=2000`,
+        // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=500`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;

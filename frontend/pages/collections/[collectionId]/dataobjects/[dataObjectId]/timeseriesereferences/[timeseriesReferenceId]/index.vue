@@ -357,7 +357,8 @@ watch(
     try {
       const data = await channelListingApi.value.listContainerChannels({
         appId,
-        pageSize: 1000,
+        // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+        pageSize: 500,
       });
       channelsV2.value = data ?? [];
     } catch {

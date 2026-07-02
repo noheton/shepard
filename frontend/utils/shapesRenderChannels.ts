@@ -78,7 +78,10 @@ export async function fetchChannelListByAppId(
   const appId = containerAppId.trim();
   if (!appId) return [];
   try {
-    return await api.listContainerChannels({ appId, pageSize: 1000 });
+    // 500 is the server-side @Max on listChannels pageSize
+    // (APISIMP-CHANNEL-PAGESZ-MAX); larger values 400 with a constraint
+    // violation and the Trace3D render sees an empty channel list.
+    return await api.listContainerChannels({ appId, pageSize: 500 });
   } catch {
     return [];
   }
