@@ -77,26 +77,26 @@ class ReferenceAnnotationRestTest {
   @Test
   void list_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertThat(resource.list(REF_ID, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.list(REF_ID, 0, 200, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void list_returns404WhenRefMissing() {
     when(referencesService.resolveByAppId(REF_ID)).thenReturn(Optional.empty());
-    assertThat(resource.list(REF_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.list(REF_ID, 0, 200, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void list_returns404WhenKindDoesNotSupportAnnotations() {
     when(handler.supportsAnnotations()).thenReturn(false);
-    assertThat(resource.list(REF_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.list(REF_ID, 0, 200, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void list_returns403WhenNoReadPermission() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER))
       .thenReturn(false);
-    assertThat(resource.list(REF_ID, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.list(REF_ID, 0, 200, sc).getStatus()).isEqualTo(403);
   }
 
   // ── list ────────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ class ReferenceAnnotationRestTest {
     Map<String, Object> ann = Map.of("appId", ANN_ID, "label", "spike");
     when(handler.listAnnotations(REF_ID)).thenReturn(List.of(ann));
 
-    var r = resource.list(REF_ID, sc);
+    var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
@@ -119,12 +119,48 @@ class ReferenceAnnotationRestTest {
   @Test
   void list_returns200WithEmptyList() {
     when(handler.listAnnotations(REF_ID)).thenReturn(Collections.emptyList());
-    var r = resource.list(REF_ID, sc);
+    var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
     assertThat(page.items()).isEmpty();
     assertThat(page.total()).isEqualTo(0);
+  }
+
+  @Test
+  void list_paginationSlicesCorrectly() {
+    List<Map<String, Object>> allAnns = List.of(
+      Map.of("appId", "a1", "label", "first"),
+      Map.of("appId", "a2", "label", "second"),
+      Map.of("appId", "a3", "label", "third")
+    );
+    when(handler.listAnnotations(REF_ID)).thenReturn(allAnns);
+
+    // page=0, limit=2 → first two items, total=3
+    var r0 = resource.list(REF_ID, 0, 2, sc);
+    assertThat(r0.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var p0 = (PagedResponseIO<Map<String, Object>>) r0.getEntity();
+    assertThat(p0.total()).isEqualTo(3);
+    assertThat(p0.items()).hasSize(2);
+    assertThat(p0.items().get(0).get("label")).isEqualTo("first");
+
+    // page=1, limit=2 → third item only
+    var r1 = resource.list(REF_ID, 1, 2, sc);
+    assertThat(r1.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var p1 = (PagedResponseIO<Map<String, Object>>) r1.getEntity();
+    assertThat(p1.total()).isEqualTo(3);
+    assertThat(p1.items()).hasSize(1);
+    assertThat(p1.items().get(0).get("label")).isEqualTo("third");
+
+    // page=5, limit=2 → beyond end → empty items, total still 3
+    var r2 = resource.list(REF_ID, 5, 2, sc);
+    assertThat(r2.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var p2 = (PagedResponseIO<Map<String, Object>>) r2.getEntity();
+    assertThat(p2.total()).isEqualTo(3);
+    assertThat(p2.items()).isEmpty();
   }
 
   // ── create ──────────────────────────────────────────────────────────────
