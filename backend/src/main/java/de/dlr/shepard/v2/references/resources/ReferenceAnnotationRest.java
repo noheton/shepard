@@ -10,9 +10,12 @@ import de.dlr.shepard.v2.references.services.ReferencesV2Service.ResolvedReferen
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -20,6 +23,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -134,22 +138,31 @@ public class ReferenceAnnotationRest {
     operationId = "listReferenceAnnotationsV2",
     summary = "List all annotations on a reference.",
     description =
-      "Returns all annotations attached to the reference identified by `appId` (UUID v7). " +
+      "Returns annotations attached to the reference identified by `appId` (UUID v7). " +
       "The response shape is kind-specific: timeseries annotations carry `startNs`/`endNs` " +
       "(nanoseconds since Unix epoch); video annotations carry `startSeconds`/`endSeconds` " +
       "(seconds from the start of the video). Common fields across all kinds: `appId`, " +
       "`label`, `description`, `aiGenerated`, `confidence`.\n\n" +
+      "Pagination: `?page=0&limit=200` (default). `limit` is capped at 1000.\n\n" +
       "Returns 404 when no reference with that appId exists, or when the reference kind " +
       "does not support annotations. Auth: Read permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "200", description = "Array of annotation maps (may be empty).")
+  @APIResponse(responseCode = "200", description = "Paged array of annotation maps (may be empty).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No reference with that appId, or kind does not support annotations.")
-  public Response list(@PathParam("appId") String appId, @Context SecurityContext sc) {
+  public Response list(
+    @PathParam("appId") String appId,
+    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @QueryParam("limit") @DefaultValue("200") @Min(1) @Max(1000) int limit,
+    @Context SecurityContext sc
+  ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
       List<Map<String, Object>> rows = r.handler().listAnnotations(appId);
-      return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
+      int total = rows.size();
+      int from = (int) Math.min((long) page * limit, (long) total);
+      List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + limit, (long) total));
+      return Response.ok(new PagedResponseIO<>(slice, total, page, limit)).build();
     });
   }
 
