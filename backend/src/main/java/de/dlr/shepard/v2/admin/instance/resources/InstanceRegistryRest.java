@@ -5,12 +5,10 @@ import de.dlr.shepard.v2.admin.instance.io.InstanceRegistryIO;
 import de.dlr.shepard.v2.admin.instance.io.InstanceRegistryPatchIO;
 import de.dlr.shepard.v2.admin.instance.io.RegisteredInstanceIO;
 import de.dlr.shepard.v2.admin.instance.services.InstanceRegistryService;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -25,30 +23,21 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * FE-PROV-INSTANCE-REGISTRY — admin REST surface for the instance registry singleton.
+ * APISIMP-INSTANCE-REGISTRY-BESPOKE — admin write surface for the instance registry.
  *
- * <p>Lives under {@code /v2/admin/instances}. The GET endpoint is intentionally
- * public (no JWT required) — it is used by the frontend badge hover to resolve
- * an instance ID to a friendly name before the user authenticates. The same
- * posture as {@code /v2/instance/capabilities}. Only the PATCH endpoint requires
- * the instance-admin role.
- *
- * <p><b>Auth design note.</b> {@code @RolesAllowed} is placed on PATCH only, NOT
- * at the class level. Placing it at the class level would cause the JAX-RS role
- * check to block GET even when {@code JWTFilter} bypasses the JWT check — the
- * auth layers are independent. GET carries {@code @PermitAll} explicitly to
- * signal the intentional posture.
- *
- * <p>Path {@code /v2/admin/instances} is registered in
- * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry#PUBLIC_PATHS}
- * so {@link de.dlr.shepard.common.filters.JWTFilter} skips the JWT check for
- * this exact path.
+ * <p>Exposes only {@code PATCH /v2/admin/instances} (operator-only). The public
+ * read has been moved to
+ * {@link de.dlr.shepard.v2.instance.InstanceRegistryPublicRest} at
+ * {@code GET /v2/instance/registry}, consistent with the established pattern that
+ * {@code /v2/admin/} paths are operator-only and public reads live under
+ * {@code /v2/instance/}.
  *
  * <p>RFC 7396 PATCH semantics: {@code instances} is an atomic array field.
  * Sending {@code {"instances": []}} replaces the list with empty. Omitting
  * {@code instances} leaves the current list unchanged.
  *
  * @see InstanceRegistryService
+ * @see de.dlr.shepard.v2.instance.InstanceRegistryPublicRest
  */
 @Path("/v2/admin/instances")
 @Produces(MediaType.APPLICATION_JSON)
@@ -59,27 +48,6 @@ public class InstanceRegistryRest {
 
   @Inject
   InstanceRegistryService service;
-
-  @GET
-  @PermitAll
-  @Operation(
-    operationId = "getRegistry",
-    summary = "Read the current :InstanceRegistry singleton.",
-    description = "Returns the list of registered peer Shepard instances. " +
-    "Public endpoint — no JWT required (same posture as /v2/instance/capabilities). " +
-    "Used by the frontend badge hover to resolve an instance ID to a friendly name " +
-    "before the user authenticates. An empty 'instances' list means no peer " +
-    "instances have been registered yet."
-  )
-  @APIResponse(
-    responseCode = "200",
-    description = "Current instance registry.",
-    content = @Content(schema = @Schema(implementation = InstanceRegistryIO.class))
-  )
-  public Response getRegistry() {
-    InstanceRegistryIO registry = service.current();
-    return Response.ok(registry).build();
-  }
 
   @PATCH
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)

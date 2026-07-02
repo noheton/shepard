@@ -80,7 +80,7 @@ explaining the intentional split.
 
 ---
 
-### F3 — APISIMP-INSTANCE-REGISTRY-BESPOKE
+### F3 — APISIMP-INSTANCE-REGISTRY-BESPOKE ✅ DONE (fire-355 2026-07-02)
 
 | | |
 |---|---|
@@ -115,7 +115,7 @@ the previously filed `APISIMP-PERMISSION-AUDIT-NEO4J-ID` (blocked on L2 migratio
 
 **2 findings.**
 
-### F4 — APISIMP-TERM-SEARCH-NO-PAGE
+### F4 — APISIMP-TERM-SEARCH-NO-PAGE ✅ DONE (PR #2228 merged fire-355 2026-07-02)
 
 | | |
 |---|---|

@@ -51,6 +51,16 @@ describe("useInstanceRegistryAdmin — refresh()", () => {
     expect(instances.value).toEqual([ROW]);
   });
 
+  it("GETs from /v2/instance/registry (APISIMP-INSTANCE-REGISTRY-BESPOKE)", async () => {
+    // Verify the GET uses the new non-admin public path.
+    const fetchFn = mockFetchSequence({ instances: [ROW] });
+    useInstanceRegistryAdmin();
+    await Promise.resolve();
+    const firstCall = fetchFn.mock.calls[0] as [string, RequestInit];
+    expect(firstCall[0]).toContain("/v2/instance/registry");
+    expect(firstCall[0]).not.toContain("/v2/admin/instances");
+  });
+
   it("treats an empty list as the default-empty registry, not an error", async () => {
     // The composable auto-refreshes at construction; provide two responses
     // so the explicit refresh() call has its own mocked response.
