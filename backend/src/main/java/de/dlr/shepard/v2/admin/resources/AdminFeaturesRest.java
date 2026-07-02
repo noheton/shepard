@@ -5,7 +5,6 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.FeatureToggleIO;
 import de.dlr.shepard.v2.admin.io.PatchFeatureToggleIO;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -21,6 +20,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -59,7 +59,7 @@ public class AdminFeaturesRest {
   @APIResponse(
     responseCode = "200",
     description = "Current state of all feature toggles.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FeatureToggleIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -68,7 +68,7 @@ public class AdminFeaturesRest {
       .stream()
       .map(e -> new FeatureToggleIO(e.getName(), e.isEnabled(), e.getDescription(), e.getSource()))
       .toList();
-    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
+    return Response.ok(result).build();
   }
 
   @PATCH
