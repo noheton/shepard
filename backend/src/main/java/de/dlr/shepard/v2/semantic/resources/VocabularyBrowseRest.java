@@ -152,7 +152,7 @@ public class VocabularyBrowseRest {
     List<PredicateIO> all = rows.stream().map(PredicateIO::from).toList();
     int total = all.size();
     int from = (int) Math.min((long) page * pageSize, total);
-    int to = Math.min(from + pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, (long) total);
     return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
