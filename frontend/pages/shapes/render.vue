@@ -47,17 +47,21 @@ useHead({ title: "Shape render playground | shepard" });
 const templateAppId   = ref("");
 const focusShepardId  = ref("");
 
-// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput +
-// DataObjectPrefillableInput round-trip to a numeric DO id; we resolve to
-// the appId via getDataObject() to populate `focusShepardId`. Power users
-// who already have an appId (from MCP / scripts) flip showRawAppIds = true
-// and type it in directly.
-const pickerCollectionId = ref<number | undefined>(undefined);
+// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput
+// now uses appId (SEARCH-V2-2). DataObjectPrefillableInput still resolves to
+// a numeric DO id; we look up the appId via v2 endpoint to populate
+// `focusShepardId`. Power users who already have an appId (from MCP /
+// scripts) flip showRawAppIds = true and type it in directly.
+//
+// SEARCH-V2-3: DataObjectPrefillableInput will also migrate to appId; until
+// then, its v-if guards on `pickerCollectionAppId` but passes collectionId=0
+// (graceful degradation — DO picker won't find results without numeric id).
+const pickerCollectionAppId = ref<string | undefined>(undefined);
 const pickerDataObjectId = ref<number | undefined>(undefined);
 const showRawAppIds      = ref(false);
 
 watch(pickerDataObjectId, async newId => {
-  if (!newId || !pickerCollectionId.value) {
+  if (!newId || !pickerCollectionAppId.value) {
     focusShepardId.value = "";
     return;
   }
@@ -71,7 +75,7 @@ watch(pickerDataObjectId, async newId => {
     // never sees the legacy long.
     const url =
       `${getV2Base()}/v2/collections/` +
-      `${encodeURIComponent(String(pickerCollectionId.value))}/data-objects/` +
+      `${encodeURIComponent(pickerCollectionAppId.value)}/data-objects/` +
       `${encodeURIComponent(String(newId))}`;
     const resp = await fetch(url, { headers: getAuthHeaders() });
     if (!resp.ok) {
@@ -714,11 +718,13 @@ onMounted(() => {
       </v-col>
       <v-col cols="12" md="5">
         <template v-if="!showRawAppIds">
-          <CollectionPrefillableInput v-model:collection-id="pickerCollectionId" />
+          <CollectionPrefillableInput v-model:collection-app-id="pickerCollectionAppId" />
+          <!-- SEARCH-V2-3: DataObjectPrefillableInput still needs numeric
+               collectionId; passes 0 as placeholder until it migrates to appId. -->
           <DataObjectPrefillableInput
-            v-if="pickerCollectionId"
+            v-if="pickerCollectionAppId"
             v-model:data-object-id="pickerDataObjectId"
-            :collection-id="pickerCollectionId"
+            :collection-id="0"
             class="mt-2"
           />
           <p
