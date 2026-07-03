@@ -394,6 +394,51 @@ class AasShellsRestTest {
     assertEquals(2, body.pageSize());
   }
 
+  // --- APISIMP-AAS-GET-SHELL-UNCAPPED: SHELL_MAX_SUBMODELS cap ---
+
+  @Test
+  void getShellCapsTruncatesAt500WhenCollectionHas501DataObjects() {
+    Collection c = makeCollection("big-col", "Big");
+    // Build 501 mock DataObjects
+    List<DataObject> bigList = new java.util.ArrayList<>();
+    for (int i = 0; i < AasShellsRest.SHELL_MAX_SUBMODELS + 1; i++) {
+      bigList.add(org.mockito.Mockito.mock(DataObject.class));
+    }
+    AasShellIO shell = makeShell("big-col");
+    when(collectionDAO.findByAppId(eq("big-col"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("big-col"))).thenReturn(bigList);
+    // Expect toShell to be called with exactly SHELL_MAX_SUBMODELS elements
+    when(mappingService.toShell(eq(c), eq(bigList.subList(0, AasShellsRest.SHELL_MAX_SUBMODELS))))
+        .thenReturn(shell);
+
+    var r = resource.getShell("big-col");
+
+    assertEquals(200, r.getStatus());
+    assertEquals("true", r.getHeaderString("X-Shepard-Truncated"));
+    assertEquals(String.valueOf(AasShellsRest.SHELL_MAX_SUBMODELS),
+        r.getHeaderString("X-Shepard-Truncated-At"));
+  }
+
+  @Test
+  void getShellNoTruncationHeaderWhenAt500DataObjects() {
+    Collection c = makeCollection("ok-col", "Ok");
+    List<DataObject> list = new java.util.ArrayList<>();
+    for (int i = 0; i < AasShellsRest.SHELL_MAX_SUBMODELS; i++) {
+      list.add(org.mockito.Mockito.mock(DataObject.class));
+    }
+    AasShellIO shell = makeShell("ok-col");
+    when(collectionDAO.findByAppId(eq("ok-col"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("ok-col"))).thenReturn(list);
+    when(mappingService.toShell(eq(c), eq(list))).thenReturn(shell);
+
+    var r = resource.getShell("ok-col");
+
+    assertEquals(200, r.getStatus());
+    assertTrue(r.getHeaderString("X-Shepard-Truncated") == null
+        || !r.getHeaderString("X-Shepard-Truncated").equals("true"),
+        "No truncation header when exactly at cap");
+  }
+
   // --- aasDisabledResponse (APISIMP-AAS-SHELLS-DISABLED-ENVELOPE) ---
 
   @Test
