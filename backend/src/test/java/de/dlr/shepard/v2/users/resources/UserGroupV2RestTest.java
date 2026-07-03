@@ -213,6 +213,26 @@ class UserGroupV2RestTest {
     assertEquals(400, r.getStatus());
   }
 
+  @Test
+  void patchUserGroup_usernamesAt501_returns400() {
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("usernames");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroup(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchUserGroup_usernamesAt500_returns200() {
+    when(service.patchUserGroupByAppId(eq(APP_ID), isNull(), any()))
+      .thenReturn(stubGroup(APP_ID, GROUP_NAME));
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("usernames");
+    for (int i = 0; i < 500; i++) arr.add("user-" + i); // exactly 500 — allowed
+    Response r = resource.patchUserGroup(APP_ID, patch);
+    assertEquals(200, r.getStatus());
+  }
+
   // ── DELETE /v2/user-groups/{appId} ───────────────────────────────────
 
   @Test
@@ -318,6 +338,44 @@ class UserGroupV2RestTest {
     } catch (InvalidPathException e) {
       assertNotNull(e);
     }
+  }
+
+  // ── APISIMP-USERGROUP-PATCH-UNCAPPED — size guard tests ─────────────────
+
+  @Test
+  void patchPermissions_oversizedReader_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("reader");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_oversizedWriter_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("writer");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_oversizedManager_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("manager");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
   }
 
   // ── APISIMP-USERGROUP-ORDERBY — reflection regression tests ─────────────
