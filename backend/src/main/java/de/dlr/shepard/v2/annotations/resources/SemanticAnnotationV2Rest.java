@@ -25,6 +25,8 @@ import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -173,9 +175,9 @@ public class SemanticAnnotationV2Rest {
       + "vocabulary are returned.")
     @QueryParam("vocabId") String vocabId,
     @Parameter(description = "Zero-based page index (default 0).")
-    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size — number of annotations per page (default 50, range 1–200).")
-    @QueryParam("pageSize") @DefaultValue("50") @Max(200) int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerName(sc);
@@ -231,9 +233,9 @@ public class SemanticAnnotationV2Rest {
       + "Optional — omit to search across all vocabularies.")
     @QueryParam("vocabId") String vocabId,
     @Parameter(description = "Zero-based page index (default 0).")
-    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size — number of annotations per page (default 50, range 1–200).")
-    @QueryParam("pageSize") @DefaultValue("50") @Max(200) int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerName(sc);
