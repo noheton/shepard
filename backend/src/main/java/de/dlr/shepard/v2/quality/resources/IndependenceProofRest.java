@@ -7,6 +7,7 @@ import de.dlr.shepard.v2.quality.services.IndependenceProofService;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -88,9 +89,9 @@ public class IndependenceProofRest {
     description = "Check completed. Inspect `independent` and the two lists for details.",
     content = @Content(schema = @Schema(implementation = IndependenceProofResultIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Request body missing or setA/setB is null/empty.")
+  @APIResponse(responseCode = "400", description = "Request body missing, setA/setB is null/empty, or either set exceeds 500 elements.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  public Response check(IndependenceProofRequestIO body) {
+  public Response check(@Valid IndependenceProofRequestIO body) {
     if (body == null) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing request body",
         Response.Status.BAD_REQUEST, "Request body is required.");
