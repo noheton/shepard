@@ -203,7 +203,7 @@ class ContentMcpToolsTest {
 
     when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(List.of(ann));
 
-    String json = tools.listAnnotations(DO_APP_ID);
+    String json = tools.listAnnotations(DO_APP_ID, null, null);
     var root = new ObjectMapper().readTree(json);
 
     assertEquals(1, root.size());
@@ -224,7 +224,7 @@ class ContentMcpToolsTest {
 
     when(semanticAnnotationService.getAllAnnotationsByShepardId(anyLong())).thenReturn(List.of(ann));
 
-    String json = tools.listAnnotations(DO_APP_ID);
+    String json = tools.listAnnotations(DO_APP_ID, null, null);
     var root = new ObjectMapper().readTree(json);
     var row = root.get(0);
     assertNotNull(row.get("numericValue"));
@@ -236,8 +236,43 @@ class ContentMcpToolsTest {
   void listAnnotationsThrowsInvalidParamsWhenDataObjectUnknown() {
     when(entityIdResolver.resolveWithLabels(DO_APP_ID)).thenThrow(new NotFoundException());
 
-    McpException ex = assertThrows(McpException.class, () -> tools.listAnnotations(DO_APP_ID));
+    McpException ex = assertThrows(McpException.class, () -> tools.listAnnotations(DO_APP_ID, null, null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  @Test
+  void listAnnotationsPaginates_page1of2() throws Exception {
+    // Build 3 annotations; request page=1, pageSize=2 → returns only the 3rd
+    SemanticAnnotation a1 = ann("ann-a1", "prop1");
+    SemanticAnnotation a2 = ann("ann-a2", "prop2");
+    SemanticAnnotation a3 = ann("ann-a3", "prop3");
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(List.of(a1, a2, a3));
+
+    String json = tools.listAnnotations(DO_APP_ID, 1, 2);
+    var root = new ObjectMapper().readTree(json);
+
+    assertEquals(1, root.size(), "page 1 with pageSize=2 of 3 total must return 1 row");
+    assertEquals("ann-a3", root.get(0).get("appId").asText());
+  }
+
+  @Test
+  void listAnnotationsCapsPagesizeAt200() throws Exception {
+    // 5 annotations, pageSize=999 → clamped to 200, all 5 returned on page 0
+    List<SemanticAnnotation> anns = new java.util.ArrayList<>();
+    for (int i = 0; i < 5; i++) anns.add(ann("ann-" + i, "p" + i));
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(anns);
+
+    String json = tools.listAnnotations(DO_APP_ID, 0, 999);
+    var root = new ObjectMapper().readTree(json);
+
+    assertEquals(5, root.size(), "all 5 fit within the 200-cap on page 0");
+  }
+
+  private static SemanticAnnotation ann(String appId, String propertyName) {
+    SemanticAnnotation a = new SemanticAnnotation();
+    a.setAppId(appId);
+    a.setPropertyName(propertyName);
+    return a;
   }
 
   // ── file_upload (MCP-COV-04) ──────────────────────────────────────────────
