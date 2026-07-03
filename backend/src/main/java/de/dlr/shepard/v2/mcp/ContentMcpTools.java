@@ -181,6 +181,8 @@ public class ContentMcpTools {
       "Use this to read the structured side of a DataObject — the part beyond " +
       "the free-text `attributes` map you got back from `get_data_object`. " +
       "Annotations bridge to FAIR vocabularies (CHAMEO, QUDT, Material OWL, …).\n\n" +
+      "Pagination: default page=0, pageSize=50 (max 200). Call again with page=1 " +
+      "if the returned array has exactly `pageSize` rows (more pages likely exist).\n\n" +
       "Each row:\n" +
       "  appId             — annotation identifier.\n" +
       "  propertyName, propertyIRI       — what is being described.\n" +
@@ -195,15 +197,25 @@ public class ContentMcpTools {
       "Returns an empty array if the DataObject has no annotations yet."
   )
   public String listAnnotations(
-    @ToolArg(description = "UUID v7 of the DataObject (from `list_data_objects` or `get_data_object → appId`).") String dataObjectAppId
+    @ToolArg(description = "UUID v7 of the DataObject (from `list_data_objects` or `get_data_object → appId`).") String dataObjectAppId,
+    @ToolArg(required = false, description = "Zero-based page index. Default 0.") Integer page,
+    @ToolArg(required = false, description = "Page size, capped at 200. Default 50.") Integer pageSize
   ) {
     return support.run("list_annotations", () -> {
       contextBridge.bind();
       long ogmId = support.resolveOfType(dataObjectAppId, "DataObject", "dataObjectAppId");
 
+      int safePage = page != null ? Math.max(page, 0) : 0;
+      int safeSize = pageSize != null ? Math.min(Math.max(pageSize, 1), 200) : 50;
+
       List<SemanticAnnotation> annotations = semanticAnnotationService.getAllAnnotationsByShepardId(ogmId);
-      List<Map<String, Object>> result = new ArrayList<>(annotations.size());
-      for (SemanticAnnotation a : annotations) {
+      int total = annotations.size();
+      int from = Math.min(safePage * safeSize, total);
+      int to = Math.min(from + safeSize, total);
+      List<SemanticAnnotation> page1 = annotations.subList(from, to);
+
+      List<Map<String, Object>> result = new ArrayList<>(page1.size());
+      for (SemanticAnnotation a : page1) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("appId", a.getAppId());
         row.put("propertyName", a.getPropertyName());
