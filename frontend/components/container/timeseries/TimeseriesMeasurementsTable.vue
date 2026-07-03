@@ -56,12 +56,9 @@ function channelShepardId(ch: TimeseriesEntity): string | null {
   return resolveShepardId(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field);
 }
 
-// TS-ANNOT-V2: prefer v2 AnnotatedChannel when shepardId is resolved;
-// fall back to v1 AnnotatedTimeseries for channels without a shepardId yet.
-function annotatedFor(ch: TimeseriesEntity) {
-  const sid = channelShepardId(ch);
-  if (sid) return new AnnotatedChannel(props.containerAppId, sid);
-  return new AnnotatedTimeseries(ch);
+// Called only inside v-if="channelShepardId(item)" blocks — sid is always truthy here.
+function annotatedFor(ch: TimeseriesEntity): Annotated {
+  return new AnnotatedChannel(props.containerAppId, channelShepardId(ch)!);
 }
 
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
@@ -125,8 +122,8 @@ const itemsPerPage = 10;
             :channel-shepard-id="channelShepardId(item)"
           />
 
-          <!-- annotations -->
-          <v-table>
+          <!-- annotations: only for v2 channels that have a shepardId -->
+          <v-table v-if="channelShepardId(item)">
             <tbody>
               <tr class="semantic-row">
                 <td

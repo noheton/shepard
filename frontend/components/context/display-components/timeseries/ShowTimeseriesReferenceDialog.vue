@@ -13,11 +13,9 @@ import type {
   ResponseError,
   SemanticAnnotation,
   Timeseries,
-  TimeseriesEntity,
   TimeseriesReference,
   TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
-import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
 import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
 import { useFetchV2Channels } from "~/composables/container/useFetchV2Channels";
 import type { Metrics } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
@@ -28,7 +26,6 @@ import { channelMatchesSearch } from "~/utils/timeseriesChannelFilter";
 type TimeseriesMetrics = {
   metrics?: Metrics;
   annotations: SemanticAnnotation[];
-  timeseriesObj?: TimeseriesEntity;
   shepardId?: string | null;
 };
 
@@ -82,15 +79,10 @@ function channelLabel(ts: Timeseries): string {
   return parts.join(" · ");
 }
 
-// TS-ANNOT-V2: returns v2 AnnotatedChannel when shepardId resolved; falls back to
-// v1 AnnotatedTimeseries (pre-TS-SEMANTIC-01 channels) or AnnotatedReference.
 function annotatedFor(ts: Timeseries) {
   const m = timeseriesMetrics.value[getTimeseriesKey(ts)];
   if (props.containerAppId && m?.shepardId) {
     return new AnnotatedChannel(props.containerAppId, m.shepardId);
-  }
-  if (m?.timeseriesObj) {
-    return new AnnotatedTimeseries(m.timeseriesObj);
   }
   return new AnnotatedReference(props.timeseriesReference?.appId ?? "", "TimeseriesReference");
 }
@@ -122,26 +114,13 @@ watch(
             metrics.FREQUENCY = `${toFormattedDouble(freq.toString(), 9)} Hz`;
           }
 
-          const timeseriesObj = await useFetchTimeseries(
-            props.timeseriesContainerId,
-            ts.measurement,
-            ts.device,
-            ts.location,
-            ts.symbolicName,
-            ts.field,
-          );
-
           const shepardId = resolveShepardId(ts.measurement, ts.device, ts.location, ts.symbolicName, ts.field);
           let annotations: SemanticAnnotation[] = [];
           if (shepardId && props.containerAppId) {
-            // TS-ANNOT-V2: v2 path — channel has a shepardId from TS-SEMANTIC-01
             annotations = await new AnnotatedChannel(props.containerAppId, shepardId).fetchAnnotations().catch(() => []);
-          } else if (timeseriesObj?.id) {
-            // TS-ANNOT-V2: v1 fallback — channel predates TS-SEMANTIC-01 (see aidocs/16)
-            annotations = await new AnnotatedTimeseries(timeseriesObj).fetchAnnotations().catch(() => []);
           }
 
-          return [getTimeseriesKey(ts), { metrics, annotations, timeseriesObj, shepardId }] as const;
+          return [getTimeseriesKey(ts), { metrics, annotations, shepardId }] as const;
         }),
       );
       timeseriesMetrics.value = Object.fromEntries(data);
