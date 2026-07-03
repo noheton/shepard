@@ -26,6 +26,8 @@ interface AutoCompleteItem {
 
 interface DataObjectAutocompleteProps {
   collectionId: number;
+  /** UUID v7 of the owning collection — when supplied, search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
   initialDataObjectId?: number | null;
   inputLabel: string;
   isDisabled?: boolean;
@@ -49,13 +51,14 @@ const { dataObjectSearchResults, startSearch, isLoading } = useDataObjectSearch(
   () => {
     hideNoDataMessage.value = false;
   },
+  props.collectionAppId,
 );
 
 const { isPending, start } = useTimeoutFn(() => {
   if (!searchString.value) {
     hideNoDataMessage.value = true;
   }
-  startSearch(props.collectionId);
+  startSearch(props.collectionId, props.collectionAppId);
 }, 350);
 
 const onSelection = (selectedItem: AutoCompleteItem | null) => {

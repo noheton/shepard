@@ -978,6 +978,7 @@ async function saveEmbargoEdit() {
                       v-if="showAddRelationshipDialog"
                       v-model:show-dialog="showAddRelationshipDialog"
                       :collection-id="collection.id"
+                      :collection-app-id="collection.appId ?? undefined"
                       :data-object-id="dataObject.id"
                       :data-object-app-id="dataObject.appId ?? undefined"
                     />

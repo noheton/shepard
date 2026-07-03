@@ -42,6 +42,8 @@ async function fetchDataObjectV2(
 
 const props = defineProps<{
   collectionId: number;
+  /** UUID v7 of the owning collection — when supplied, search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
   isRequired?: boolean;
 }>();
 
@@ -60,6 +62,7 @@ const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
   () => {
     searchDone.value = true;
   },
+  props.collectionAppId,
 );
 
 function reset() {
@@ -126,7 +129,7 @@ watch(searchString, (newValue, _) => {
     :is-loading="isLoading"
     :item-list="itemList"
     :label="`Data Object Name or ID...${props.isRequired ? `*` : ``}`"
-    :start-search="() => startSearch(collectionId)"
+    :start-search="() => startSearch(collectionId, collectionAppId)"
     clearable
     density="compact"
     @click:clear="reset"
