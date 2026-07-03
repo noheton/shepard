@@ -56,6 +56,14 @@ function channelShepardId(ch: TimeseriesEntity): string | null {
   return resolveShepardId(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field);
 }
 
+// TS-ANNOT-V2: prefer v2 AnnotatedChannel when shepardId is resolved;
+// fall back to v1 AnnotatedTimeseries for channels without a shepardId yet.
+function annotatedFor(ch: TimeseriesEntity) {
+  const sid = channelShepardId(ch);
+  if (sid) return new AnnotatedChannel(props.containerAppId, sid);
+  return new AnnotatedTimeseries(ch);
+}
+
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
   props.measurements.map(value => ({
     ...value,
@@ -136,7 +144,7 @@ const itemsPerPage = 10;
                 </td>
                 <td class="annotation-list">
                   <SemanticAnnotationList
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :can-delete="isAllowedToEditData"
                     @annotations="annotations => (item.annotations.value = annotations)"
                   />
@@ -147,7 +155,7 @@ const itemsPerPage = 10;
                        one click. Pre-fills from symbolicName for best UX. UI18 -->
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :prefill="item.symbolicName ?? undefined"
                     filter-vocab="qudt"
                     button-icon="mdi-ruler"
@@ -155,7 +163,7 @@ const itemsPerPage = 10;
                   />
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :prefill="item.symbolicName ?? undefined"
                   />
                 </td>
