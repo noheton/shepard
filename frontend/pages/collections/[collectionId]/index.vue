@@ -38,13 +38,13 @@ const {
   isError: isCollectionError,
   notFound: isCollectionNotFound,
 } = useFetchCollection(collectionIdStr);
-// V2-SWEEP Wave 3: the remaining `collectionNumericId` consumers are the
-// still-v1-backed child components (CollectionLineageGraph,
+// V2-SWEEP Wave 3 / LINEAGE-V2: remaining `collectionNumericId` consumers are
 // CollectionCrossTrackViewPane, CollectionDataObjectsPanel,
-// CreateDataObjectDialog blank form) and the v1 streaming export below —
+// CreateDataObjectDialog blank form, and the v1 streaming export below —
 // each a documented exception resolved from the loaded v2 entity's `.id`
-// (never the route param). MffdNdtGridCard migrated to v2 (V2UI-MFFD-NDT-ANNO-V2).
-// Backlog: LINEAGE-V2 / SIDEBAR-V2-CREATE / EXPORT-V2-STREAM in aidocs/16.
+// (never the route param). CollectionLineageGraph migrated to appId (LINEAGE-V2).
+// MffdNdtGridCard migrated to v2 (V2UI-MFFD-NDT-ANNO-V2).
+// Backlog: SIDEBAR-V2-CREATE / EXPORT-V2-STREAM in aidocs/16.
 const collectionNumericId = computed<number | undefined>(() =>
   resolveNumericId(collection.value?.id, routeParams.value.collectionId),
 );
@@ -676,7 +676,7 @@ useHead({
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Dataset Lineage">
                   <div class="pt-2 pb-2">
-                    <CollectionLineageGraph v-if="collectionNumericId" :collection-id="collectionNumericId" />
+                    <CollectionLineageGraph v-if="collectionAppId" :collection-app-id="collectionAppId" />
                   </div>
                 </ExpansionPanelItem>
                 <!-- TS-CROSS-DO-VIEW-2-FE — cross-DataObject small-multiples view.

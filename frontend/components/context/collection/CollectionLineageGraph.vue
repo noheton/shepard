@@ -61,13 +61,12 @@ if (import.meta.client) {
 }
 
 const props = defineProps<{
-  collectionId: number;
-  collectionAppId?: string;
+  collectionAppId: string;
+  collectionId?: number;
 }>();
 
 const router = useRouter();
-const collectionAppIdRef = computed(() => props.collectionAppId ?? null);
-const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, collectionAppIdRef);
+const { dataObjects, loading } = useFetchAllDataObjects(props.collectionAppId, props.collectionId);
 
 // ---------------------------------------------------------------------------
 // Type-narrowing helpers — DataObjectListItemV2 carries extra fields, but the
@@ -390,7 +389,7 @@ function onChartClick(rawParams: unknown): void {
   // numeric Neo4j id. The dataObjects payload (DataObjectListItemV2) carries
   // both — look up by numeric id and emit the appId when present. Falls back
   // to the numeric id on the rare row that lacks an appId (legacy v1 path).
-  const colSegment = props.collectionAppId ?? props.collectionId;
+  const colSegment = props.collectionAppId;
   const matched = dataObjects.value.find(
     d => (d as unknown as { id?: number }).id === doId,
   );

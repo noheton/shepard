@@ -1,10 +1,10 @@
 /**
- * PERF6 + V2-SWEEP Wave 4 — useFetchAllDataObjects singleton cache (v2-only)
+ * PERF6 + V2-SWEEP Wave 4 + LINEAGE-V2 — useFetchAllDataObjects singleton cache (v2-only)
  *
  * Verifies:
- *   1. Same collectionId → same ref identity, API called once
- *   2. Different collectionIds → separate refs, API called twice
- *   3. Concurrent callers with same collectionId → only one in-flight fetch
+ *   1. Same collectionAppId → same ref identity, API called once
+ *   2. Different collectionAppIds → separate refs, API called twice
+ *   3. Concurrent callers with same collectionAppId → only one in-flight fetch
  *   4. Cache invalidation → refetch on next call
  *   5. Error on first fetch does not leave stale truthy data
  *   6. After TTL expiry the composable refetches
@@ -53,12 +53,12 @@ function makeDo(id: number) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-describe("PERF6 — same collectionId returns shared ref", () => {
-  it("two callers with same collectionId receive the same dataObjects ref identity", async () => {
+describe("PERF6 — same collectionAppId returns shared ref", () => {
+  it("two callers with same collectionAppId receive the same dataObjects ref identity", async () => {
     mockListDataObjects.mockResolvedValue([makeDo(1), makeDo(2)]);
 
-    const a = useFetchAllDataObjects(42);
-    const b = useFetchAllDataObjects(42);
+    const a = useFetchAllDataObjects("coll-uuid-42");
+    const b = useFetchAllDataObjects("coll-uuid-42");
 
     await flush();
 
@@ -66,11 +66,11 @@ describe("PERF6 — same collectionId returns shared ref", () => {
     expect(a.dataObjects).toBe(b.dataObjects);
   });
 
-  it("two callers with same collectionId fire only one API request", async () => {
+  it("two callers with same collectionAppId fire only one API request", async () => {
     mockListDataObjects.mockResolvedValue([makeDo(1)]);
 
-    useFetchAllDataObjects(42);
-    useFetchAllDataObjects(42);
+    useFetchAllDataObjects("coll-uuid-42");
+    useFetchAllDataObjects("coll-uuid-42");
 
     await flush();
 
@@ -80,23 +80,23 @@ describe("PERF6 — same collectionId returns shared ref", () => {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-describe("PERF6 — different collectionIds are independent", () => {
-  it("two callers with different collectionIds receive different dataObjects refs", async () => {
+describe("PERF6 — different collectionAppIds are independent", () => {
+  it("two callers with different collectionAppIds receive different dataObjects refs", async () => {
     mockListDataObjects.mockResolvedValue([]);
 
-    const a = useFetchAllDataObjects(1);
-    const b = useFetchAllDataObjects(2);
+    const a = useFetchAllDataObjects("coll-uuid-1");
+    const b = useFetchAllDataObjects("coll-uuid-2");
 
     await flush();
 
     expect(a.dataObjects).not.toBe(b.dataObjects);
   });
 
-  it("two callers with different collectionIds fire two API requests", async () => {
+  it("two callers with different collectionAppIds fire two API requests", async () => {
     mockListDataObjects.mockResolvedValue([]);
 
-    useFetchAllDataObjects(1);
-    useFetchAllDataObjects(2);
+    useFetchAllDataObjects("coll-uuid-1");
+    useFetchAllDataObjects("coll-uuid-2");
 
     await flush();
 
@@ -113,9 +113,9 @@ describe("PERF6 — concurrent callers attach to in-flight fetch", () => {
       new Promise(r => { resolveFirst = r; }),
     );
 
-    const a = useFetchAllDataObjects(10);
+    const a = useFetchAllDataObjects("coll-uuid-10");
     // Second caller arrives while first is still in flight.
-    const b = useFetchAllDataObjects(10);
+    const b = useFetchAllDataObjects("coll-uuid-10");
 
     // Resolve the first fetch.
     resolveFirst([makeDo(5)]);
@@ -133,16 +133,16 @@ describe("PERF6 — concurrent callers attach to in-flight fetch", () => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe("PERF6 — invalidateDataObjectsCache forces refetch", () => {
-  it("invalidating a specific collectionId causes the next call to refetch", async () => {
+  it("invalidating a specific collectionAppId causes the next call to refetch", async () => {
     mockListDataObjects.mockResolvedValue([makeDo(1)]);
 
-    useFetchAllDataObjects(99);
+    useFetchAllDataObjects("coll-uuid-99");
     await flush();
     expect(mockListDataObjects).toHaveBeenCalledTimes(1);
 
     // Invalidate and call again.
-    invalidateDataObjectsCache(99);
-    useFetchAllDataObjects(99);
+    invalidateDataObjectsCache("coll-uuid-99");
+    useFetchAllDataObjects("coll-uuid-99");
     await flush();
 
     expect(mockListDataObjects).toHaveBeenCalledTimes(2);
@@ -151,15 +151,15 @@ describe("PERF6 — invalidateDataObjectsCache forces refetch", () => {
   it("invalidating without argument clears all entries", async () => {
     mockListDataObjects.mockResolvedValue([]);
 
-    useFetchAllDataObjects(1);
-    useFetchAllDataObjects(2);
+    useFetchAllDataObjects("coll-uuid-1");
+    useFetchAllDataObjects("coll-uuid-2");
     await flush();
     expect(mockListDataObjects).toHaveBeenCalledTimes(2);
 
     mockListDataObjects.mockClear();
     invalidateDataObjectsCache(); // no argument = full clear
-    useFetchAllDataObjects(1);
-    useFetchAllDataObjects(2);
+    useFetchAllDataObjects("coll-uuid-1");
+    useFetchAllDataObjects("coll-uuid-2");
     await flush();
 
     expect(mockListDataObjects).toHaveBeenCalledTimes(2);
@@ -172,7 +172,7 @@ describe("PERF6 — error on first load yields empty array (no crash)", () => {
   it("sets dataObjects to [] on first-load error", async () => {
     mockListDataObjects.mockRejectedValue(new Error("Network failure"));
 
-    const { dataObjects, loading } = useFetchAllDataObjects(77);
+    const { dataObjects, loading } = useFetchAllDataObjects("coll-uuid-77");
     await flush();
 
     expect(dataObjects.value).toEqual([]);
@@ -187,13 +187,13 @@ describe("PERF6 — TTL expiry triggers a fresh fetch", () => {
     vi.useFakeTimers();
     mockListDataObjects.mockResolvedValue([makeDo(1)]);
 
-    useFetchAllDataObjects(55);
+    useFetchAllDataObjects("coll-uuid-55");
     // Flush with fake timers: run microtasks then let async settle.
     await vi.runAllTimersAsync();
     expect(mockListDataObjects).toHaveBeenCalledTimes(1);
 
     // Well within TTL — second caller should NOT refetch.
-    useFetchAllDataObjects(55);
+    useFetchAllDataObjects("coll-uuid-55");
     await vi.runAllTimersAsync();
     expect(mockListDataObjects).toHaveBeenCalledTimes(1);
   });
@@ -202,7 +202,7 @@ describe("PERF6 — TTL expiry triggers a fresh fetch", () => {
     vi.useFakeTimers();
     mockListDataObjects.mockResolvedValue([makeDo(1)]);
 
-    useFetchAllDataObjects(55);
+    useFetchAllDataObjects("coll-uuid-55");
     await vi.runAllTimersAsync();
     expect(mockListDataObjects).toHaveBeenCalledTimes(1);
 
@@ -210,7 +210,7 @@ describe("PERF6 — TTL expiry triggers a fresh fetch", () => {
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
 
     mockListDataObjects.mockResolvedValue([makeDo(2)]);
-    useFetchAllDataObjects(55);
+    useFetchAllDataObjects("coll-uuid-55");
     await vi.runAllTimersAsync();
 
     expect(mockListDataObjects).toHaveBeenCalledTimes(2);
@@ -219,12 +219,11 @@ describe("PERF6 — TTL expiry triggers a fresh fetch", () => {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-describe("PERF6 — v2 path used when collectionAppId is provided", () => {
-  it("calls listDataObjects (v2) when appId ref resolves to a non-null string", async () => {
+describe("PERF6 — v2 path always used (LINEAGE-V2: string key)", () => {
+  it("calls listDataObjects (v2) with the supplied collectionAppId string", async () => {
     mockListDataObjects.mockResolvedValue([makeDo(3)]);
-    const appIdRef = ref<string | null>("collection-uuid-abc");
 
-    const { dataObjects } = useFetchAllDataObjects(30, appIdRef);
+    const { dataObjects } = useFetchAllDataObjects("collection-uuid-abc");
     await flush();
 
     expect(mockListDataObjects).toHaveBeenCalledTimes(1);
