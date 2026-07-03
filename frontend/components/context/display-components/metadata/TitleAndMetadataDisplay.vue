@@ -21,6 +21,8 @@ interface TitleAndMetadataDisplayProps {
       id: number;
       type: ContainerType;
       availability?: "available" | "deleted" | "forbidden" | "error";
+      /** When provided, routes the link via appId and suppresses the raw numeric ID display. */
+      appId?: string;
     };
   };
   /** TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: MDI icon key to show before the title. */
@@ -76,6 +78,7 @@ const { advancedMode } = useAdvancedMode();
           :container-id="entity.container.id"
           :availability="entity.container.availability ?? 'available'"
           :container-type="entity.container.type"
+          :container-app-id="entity.container.appId"
         />
       </MetadataColumn>
 
