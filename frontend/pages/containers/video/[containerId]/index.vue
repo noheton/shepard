@@ -1,19 +1,17 @@
 <script setup lang="ts">
-// /containers/video/[containerId] — video container scaffold (VID2).
+// /containers/video/[containerId] — video container page (VID1a functional).
 //
-// UX-SPATIAL-VIEWER-OR-BANNER: this page is a scaffold showing a clear
-// "in development" banner so a user navigating here does not see a blank
-// or a 404. The actual video stream viewer (VID2) is not yet implemented.
+// VID1a: replaced the "in development" banner (UX-SPATIAL-VIEWER-OR-BANNER)
+// with a real VideoStreamReferencesPane. containerId is passed as the
+// dataObjectAppId because VideoStreamReferences live on DataObjects and no
+// dedicated /v2/video-containers/{id} endpoint exists yet (VID2 deferred).
 //
-// Video stream references live on DataObjects
-//   GET /v2/data-objects/{appId}/video-stream-references
-// and are not backed by a separate container type yet. This page is
-// pre-wired for when VID2 ships a /v2/video-containers/{id} endpoint.
-//
-// Three-branch state machine (mirrors the pattern in NotFoundPanel.test.ts):
-//   v-if="!!container"       → data loaded, show name + banner
+// Three-branch state machine:
+//   v-if="!!container"       → data loaded, show video player surface
 //   v-else-if="isFetchError" → show NotFoundPanel
 //   v-else                   → show CenteredLoadingSpinner
+
+import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
 
 const route = useRoute();
 const containerId = computed(() => String(route.params.containerId ?? ""));
@@ -82,16 +80,15 @@ useHead({
             </v-row>
           </v-container>
         </v-col>
-        <!-- UX-SPATIAL-VIEWER-OR-BANNER: video viewer is in development (VID2).
-             This banner replaces a blank page so users know the container exists.
-             Remove once the real VID2 viewer ships. -->
         <v-col cols="12" class="mt-4">
-          <v-alert
-            type="info"
-            variant="tonal"
-            prepend-icon="mdi-video-outline"
-            title="Video stream viewer — in development (VID2)"
-            text="The in-browser video viewer is not yet available. Video stream references are accessible from the DataObject detail page. Check back when VID2 ships."
+          <!-- VID1a: video references pane.
+               containerId is passed as dataObjectAppId because VideoStreamReferences
+               live on DataObjects. When VID2 ships a /v2/video-containers/{id}
+               endpoint, resolve linked DataObjects from the container instead. -->
+          <VideoStreamReferencesPane
+            :data-object-app-id="containerId"
+            :can-upload="false"
+            :can-edit="false"
           />
         </v-col>
       </v-row>
