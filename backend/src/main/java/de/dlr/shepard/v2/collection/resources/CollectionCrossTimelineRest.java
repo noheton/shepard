@@ -72,6 +72,8 @@ public class CollectionCrossTimelineRest {
   private static final String PT_FORBIDDEN    = "/problems/collection-cross-timeline.forbidden";
   private static final String PT_BAD_REQUEST  = "/problems/collection-cross-timeline.bad-request";
 
+  static final int MAX_COLLECTIONS = 20;
+
   @Inject
   CollectionTimelineDAO timelineDAO;
 
@@ -91,7 +93,8 @@ public class CollectionCrossTimelineRest {
       "`GET /v2/collections/{appId}/timeline` endpoint — the UI renders them " +
       "the same way.\n\n" +
       "Pass each Collection's appId via `?collections=id` (repeat for each " +
-      "Collection, or use a single comma-separated value for convenience).\n\n" +
+      "Collection, or use a single comma-separated value for convenience). " +
+      "At most " + MAX_COLLECTIONS + " Collections may be merged in one call.\n\n" +
       "Auth: caller must have Read on every listed Collection. The first " +
       "missing or inaccessible Collection short-circuits with 404 or 403.\n\n" +
       "Use case: programme-level comparisons — e.g. MFFD Q1 + Q2 shells on the " +
@@ -106,7 +109,7 @@ public class CollectionCrossTimelineRest {
     description = "Merged timeline envelope (same shape as the single-collection endpoint).",
     content = @Content(schema = @Schema(implementation = CollectionTimelineIO.class))
   )
-  @APIResponse(responseCode = "400", description = "No valid collection appIds supplied.")
+  @APIResponse(responseCode = "400", description = "No valid collection appIds supplied, or more than " + MAX_COLLECTIONS + " collections requested.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on at least one listed Collection.")
   @APIResponse(responseCode = "404", description = "At least one listed Collection was not found.")
@@ -140,6 +143,12 @@ public class CollectionCrossTimelineRest {
       return problem(PT_BAD_REQUEST, "No collections specified",
         Response.Status.BAD_REQUEST,
         "Provide at least one Collection appId via ?collections=<appId>");
+    }
+    if (collectionAppIds.size() > MAX_COLLECTIONS) {
+      return problem(PT_BAD_REQUEST, "Too many collections",
+        Response.Status.BAD_REQUEST,
+        "At most " + MAX_COLLECTIONS + " collections may be merged in one call; got " +
+        collectionAppIds.size());
     }
 
     for (String appId : collectionAppIds) {
