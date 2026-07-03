@@ -139,6 +139,7 @@ const hasInlineDefaultView = computed(
   () => !!inlineImageUrl.value || !!inlinePdfUrl.value,
 );
 
+
 // ── metadata helpers ────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -331,6 +332,22 @@ watch(fileReference, () => {
                   :src="inlinePdfUrl"
                   style="width: 100%; height: 600px; border: 1px solid rgba(0,0,0,0.12); border-radius: 4px"
                   data-testid="inline-pdf-preview"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- SCENEGRAPH-NAV-02: in-context "Open in 3D view / Create 3D view"
+                 affordance for URDF / RDK FileReferences.
+                 `OpenIn3dViewButton` self-qualifies: it fetches annotations and
+                 checks for urn:shepard:urdf:* / urn:shepard:rdk:* predicates or
+                 filename extension, then either routes to the existing
+                 MAPPING_RECIPE play template or mints a new one.
+                 Per "tool entry points are in-context first" (CLAUDE.md). -->
+            <v-row v-if="fileReference.name && fileReferenceAppId">
+              <v-col cols="12">
+                <OpenIn3dViewButton
+                  :file-reference-name="fileReference.name"
+                  :file-reference-app-id="fileReferenceAppId"
                 />
               </v-col>
             </v-row>
