@@ -67,6 +67,9 @@ public class UserGroupV2Rest {
   @Inject
   UserGroupService service;
 
+  private static final String PT_BAD_REQUEST = "/problems/user-groups.bad-request";
+  private static final int MAX_MEMBERS = 500;
+
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
@@ -160,12 +163,16 @@ public class UserGroupV2Rest {
   @Parameter(name = "appId", description = "UUID v7 application identifier.")
   public Response patchUserGroup(@PathParam("appId") String appId, JsonNode body) {
     if (body == null || body.isNull()) {
-      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+      return problem(PT_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
           "patch body must not be null");
     }
     String newName = body.has("name") ? body.get("name").textValue() : null;
     List<String> newUsernames = null;
     if (body.has("usernames") && body.get("usernames").isArray()) {
+      if (body.get("usernames").size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many members", Response.Status.BAD_REQUEST,
+            "usernames list may not exceed " + MAX_MEMBERS + " elements; got " + body.get("usernames").size());
+      }
       newUsernames = StreamSupport.stream(body.get("usernames").spliterator(), false)
         .map(JsonNode::textValue)
         .toList();
@@ -255,7 +262,7 @@ public class UserGroupV2Rest {
     @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body
   ) {
     if (body == null || !body.isObject()) {
-      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+      return problem(PT_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
           "PATCH body must be a JSON object");
     }
     var group = service.getUserGroupByAppId(appId);
@@ -268,18 +275,38 @@ public class UserGroupV2Rest {
       current.setOwner(ownerStr);
     }
     if (patch.containsKey("reader") && patch.get("reader") instanceof java.util.List<?> readerList) {
+      if (readerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many readers", Response.Status.BAD_REQUEST,
+            "reader list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setReader(readerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("writer") && patch.get("writer") instanceof java.util.List<?> writerList) {
+      if (writerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many writers", Response.Status.BAD_REQUEST,
+            "writer list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setWriter(writerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("manager") && patch.get("manager") instanceof java.util.List<?> managerList) {
+      if (managerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many managers", Response.Status.BAD_REQUEST,
+            "manager list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
+      if (rgl.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many reader groups", Response.Status.BAD_REQUEST,
+            "readerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
     }
     if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
+      if (wgl.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many writer groups", Response.Status.BAD_REQUEST,
+            "writerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
     }
     var updated = service.updateUserGroupPermissions(current, group.getId());
