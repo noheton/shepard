@@ -552,14 +552,19 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
   // ── APISIMP-CONT-NS-COLLAPSE-4: temporal annotations ─────────────────────
 
   @Override
-  public Optional<Response> listTemporalAnnotations(String appId) {
+  public Optional<Response> listTemporalAnnotations(String appId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(appId).getId();
-    List<TimeseriesAnnotationIO> rows = annotationDAO
+    List<TimeseriesAnnotationIO> all = annotationDAO
         .findByContainerId(containerId)
         .stream()
         .map(TimeseriesAnnotationIO::new)
-        .toList();
-    return Optional.of(Response.ok(rows).build());
+        .collect(Collectors.toList());
+    int total = all.size();
+    int from = (int) Math.min((long) page * pageSize, (long) total);
+    List<TimeseriesAnnotationIO> slice = all.subList(from, (int) Math.min((long) from + pageSize, (long) total));
+    return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build());
   }
 
   @Override
