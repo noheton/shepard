@@ -1208,7 +1208,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns all registered feature toggles with their current enabled state. Changes made via PATCH take effect immediately in the running JVM but are not persisted across restarts — the config-property value is restored on next startup.
      * [v2] List runtime feature toggles.
      */
-    async listFeatureTogglesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+    async listFeatureTogglesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FeatureToggle>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1228,14 +1228,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FeatureToggleFromJSON));
     }
 
     /**
      * Returns all registered feature toggles with their current enabled state. Changes made via PATCH take effect immediately in the running JVM but are not persisted across restarts — the config-property value is restored on next startup.
      * [v2] List runtime feature toggles.
      */
-    async listFeatureToggles(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+    async listFeatureToggles(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FeatureToggle>> {
         const response = await this.listFeatureTogglesRaw(initOverrides);
         return await response.value();
     }
