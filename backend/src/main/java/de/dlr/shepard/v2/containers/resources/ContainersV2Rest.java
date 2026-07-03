@@ -1102,7 +1102,7 @@ public class ContainersV2Rest {
     return result.get();
   }
 
-  // ── APISIMP-CONT-NS-COLLAPSE-4: temporal annotations ───────────────────────
+  // ── APISIMP-CONT-NS-COLLAPSE-4 / APISIMP-CONTAINER-TEMPORAL-ANNOTATIONS-UNCAPPED ──
 
   @GET
   @Path("/{appId}/temporal-annotations")
@@ -1110,18 +1110,21 @@ public class ContainersV2Rest {
     operationId = "listTemporalAnnotations",
     summary = "List all temporal annotations on a container.",
     description =
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 500.\n\n" +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "JSON array of TimeseriesAnnotationIO records; may be empty.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY,
-      implementation = TimeseriesAnnotationIO.class)))
+    description = "Paged list of temporal annotations with X-Total-Count header (may be empty).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
   public Response listTemporalAnnotations(
       @PathParam("appId") String appId,
+      @Parameter(description = "Zero-based page index (default 0).")
+        @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+      @Parameter(description = "Items per page, capped at 500 (default 200).")
+        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1132,7 +1135,7 @@ public class ContainersV2Rest {
         Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    var result = resolved.get().handler().listTemporalAnnotations(appId);
+    var result = resolved.get().handler().listTemporalAnnotations(appId, page, pageSize);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");

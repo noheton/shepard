@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
@@ -72,21 +73,41 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
   @Test
   void list_returnsPresent200_withEmptyArray() {
     when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of());
-    var result = handler.listTemporalAnnotations(CONTAINER_APP_ID);
+    var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 200);
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
-    assertThat((List<?>) result.get().getEntity()).isEmpty();
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<TimeseriesAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).isEmpty();
+    assertThat(body.total()).isEqualTo(0);
   }
 
   @Test
   void list_returnsPresent200_withAnnotations() {
     when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of(annotation));
-    var result = handler.listTemporalAnnotations(CONTAINER_APP_ID);
+    var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 200);
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
-    List<?> rows = (List<?>) result.get().getEntity();
-    assertThat(rows).hasSize(1);
-    assertThat(((TimeseriesAnnotationIO) rows.get(0)).getLabel()).isEqualTo("anomaly");
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<TimeseriesAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).hasSize(1);
+    assertThat(body.items().get(0).getLabel()).isEqualTo("anomaly");
+    assertThat(body.total()).isEqualTo(1);
+    assertThat(result.get().getHeaderString("X-Total-Count")).isEqualTo("1");
+  }
+
+  @Test
+  void list_paginationSlicesCorrectly() {
+    var a1 = makeAnnotation(1L, "event-a", 1_000L, 2_000L);
+    var a2 = makeAnnotation(2L, "event-b", 2_000L, 3_000L);
+    var a3 = makeAnnotation(3L, "event-c", 3_000L, 4_000L);
+    when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of(a1, a2, a3));
+    var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 2);
+    assertThat(result).isPresent();
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<TimeseriesAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.total()).isEqualTo(3);
   }
 
   // ── create ────────────────────────────────────────────────────────────────
@@ -199,5 +220,17 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(204);
     verify(annotationDAO).unlinkAndDeleteFromContainer(eq(CONTAINER_ID), eq(annotation));
+  }
+
+  // ── helpers ─────────────────────────────────────────────────────────────
+
+  private static TimeseriesAnnotation makeAnnotation(
+      long id, String label, long startNs, long endNs) {
+    var a = new TimeseriesAnnotation(id);
+    a.setAppId("ann-" + id);
+    a.setLabel(label);
+    a.setStartNs(startNs);
+    a.setEndNs(endNs);
+    return a;
   }
 }
