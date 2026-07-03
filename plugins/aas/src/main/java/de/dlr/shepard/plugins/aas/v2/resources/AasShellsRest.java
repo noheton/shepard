@@ -52,6 +52,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "AAS")
 public class AasShellsRest {
 
+  static final int SHELL_MAX_SUBMODELS = 500;
+
   @Inject
   AasConfigService aasConfigService;
 
@@ -128,7 +130,11 @@ public class AasShellsRest {
           "(`urn:shepard:collection:{appId}`) per IDTA-01002-3-2 §4.3, or " +
           "(b) the bare shepard Collection appId. " +
           "Returns 404 when the Shell does not exist or the caller lacks read access " +
-          "(404-on-no-read discipline — not 403). See `aidocs/integrations/52-aas-backend-integration.md §7`.")
+          "(404-on-no-read discipline — not 403). " +
+          "Inline submodel references are capped at " + SHELL_MAX_SUBMODELS + "; " +
+          "when the Collection has more top-level DataObjects the response carries " +
+          "`X-Shepard-Truncated: true` and `X-Shepard-Truncated-At: " + SHELL_MAX_SUBMODELS + "`. " +
+          "See `aidocs/integrations/52-aas-backend-integration.md §7`.")
   @APIResponse(
       responseCode = "200",
       description = "Shell for the requested Collection.",
@@ -149,7 +155,14 @@ public class AasShellsRest {
       return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
     List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
-    return Response.ok(mappingService.toShell(collection, dataObjects)).build();
+    boolean truncated = dataObjects.size() > SHELL_MAX_SUBMODELS;
+    List<DataObject> capped = truncated ? dataObjects.subList(0, SHELL_MAX_SUBMODELS) : dataObjects;
+    Response.ResponseBuilder rb = Response.ok(mappingService.toShell(collection, capped));
+    if (truncated) {
+      rb.header("X-Shepard-Truncated", "true")
+        .header("X-Shepard-Truncated-At", SHELL_MAX_SUBMODELS);
+    }
+    return rb.build();
   }
 
   @GET
