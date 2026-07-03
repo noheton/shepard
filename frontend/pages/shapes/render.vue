@@ -39,6 +39,7 @@ import TemplateAutocomplete from "~/components/context/templates/TemplateAutocom
 import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
 import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
 import type { DataObject } from "@dlr-shepard/backend-client";
+import SvdxChannelChartView from "~/components/shapes/SvdxChannelChartView.vue";
 
 useHead({ title: "Shape render playground | shepard" });
 
@@ -482,12 +483,13 @@ const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
 // ── renderer dispatch helpers ─────────────────────────────────────────────────
 
-const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "unknown">(() => {
+const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "svdx-channel-chart" | "unknown">(() => {
   const r = renderer.value?.toLowerCase() ?? "";
   if (r === "trace-3d" || r === "tresjs") return "trace-3d";
   if (r === "urdf")                        return "urdf";
   if (r === "thermography")                return "thermography";
   if (r === "table")                       return "table";
+  if (r === "svdx-channel-chart")          return "svdx-channel-chart";
   return "unknown";
 });
 
@@ -807,8 +809,17 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
+    <!-- ── SVDX channel catalogue ───────────────────────────────────────────
+         Pure manifest catalogue from the SvdxChannelChartShape VIEW_RECIPE.
+         No TS container ID or time-window needed — the backend resolves the
+         channel list from the .svdx annotations on the focus entity.
+         Backlog: SVDX-CHANNEL-CHART-VUE-2026-06-29. -->
+    <template v-if="rendererKind === 'svdx-channel-chart'">
+      <SvdxChannelChartView :bindings="bindings" />
+    </template>
+
     <!-- ── binding declarations ───────────────────────────────────────────── -->
-    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography'">
+    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography' && rendererKind !== 'svdx-channel-chart'">
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
           <v-icon>mdi-link-variant</v-icon>
@@ -991,7 +1002,7 @@ onMounted(() => {
         <v-alert v-else type="warning" variant="tonal" class="mt-2" density="compact">
           <strong>Unsupported renderer: <code>{{ renderer ?? "(none)" }}</code></strong>
           — {{ tracePoints.length }} points were fetched but no frontend component handles this renderer hint yet.
-          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>.
+          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>, <code>svdx-channel-chart</code>.
         </v-alert>
 
       </template>
