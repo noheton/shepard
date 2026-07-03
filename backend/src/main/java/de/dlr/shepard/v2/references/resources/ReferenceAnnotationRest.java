@@ -143,7 +143,7 @@ public class ReferenceAnnotationRest {
       "(nanoseconds since Unix epoch); video annotations carry `startSeconds`/`endSeconds` " +
       "(seconds from the start of the video). Common fields across all kinds: `appId`, " +
       "`label`, `description`, `aiGenerated`, `confidence`.\n\n" +
-      "Pagination: `?page=0&limit=200` (default). `limit` is capped at 1000.\n\n" +
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 1000.\n\n" +
       "Returns 404 when no reference with that appId exists, or when the reference kind " +
       "does not support annotations. Auth: Read permission on the parent DataObject."
   )
@@ -154,15 +154,15 @@ public class ReferenceAnnotationRest {
   public Response list(
     @PathParam("appId") String appId,
     @QueryParam("page") @DefaultValue("0") @Min(0) int page,
-    @QueryParam("limit") @DefaultValue("200") @Min(1) @Max(1000) int limit,
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
     @Context SecurityContext sc
   ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
       List<Map<String, Object>> rows = r.handler().listAnnotations(appId);
       int total = rows.size();
-      int from = (int) Math.min((long) page * limit, (long) total);
-      List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + limit, (long) total));
-      return Response.ok(new PagedResponseIO<>(slice, total, page, limit))
+      int from = (int) Math.min((long) page * pageSize, (long) total);
+      List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + pageSize, (long) total));
+      return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
           .header("X-Total-Count", total)
           .build();
     });
