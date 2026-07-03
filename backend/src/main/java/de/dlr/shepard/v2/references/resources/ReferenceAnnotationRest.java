@@ -147,7 +147,7 @@ public class ReferenceAnnotationRest {
       "Returns 404 when no reference with that appId exists, or when the reference kind " +
       "does not support annotations. Auth: Read permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "200", description = "Paged array of annotation maps (may be empty).")
+  @APIResponse(responseCode = "200", description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No reference with that appId, or kind does not support annotations.")
@@ -162,7 +162,9 @@ public class ReferenceAnnotationRest {
       int total = rows.size();
       int from = (int) Math.min((long) page * limit, (long) total);
       List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + limit, (long) total));
-      return Response.ok(new PagedResponseIO<>(slice, total, page, limit)).build();
+      return Response.ok(new PagedResponseIO<>(slice, total, page, limit))
+          .header("X-Total-Count", total)
+          .build();
     });
   }
 
