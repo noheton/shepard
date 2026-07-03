@@ -16,9 +16,8 @@
  * Hover sync: hovering a cell highlights the same x on every other cell.
  * Cell click: navigates to that DO's detail page.
  */
-import { DataObjectApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useCrossDoBulkData } from "~/composables/containers/useCrossDoBulkData";
+import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import {
   applyDoCap,
   gridPosition,
@@ -44,7 +43,7 @@ if (import.meta.client) {
 const props = withDefaults(
   defineProps<{
     collectionId: number;
-    collectionAppId?: string;
+    collectionAppId: string;
     /**
      * Annotation predicate IRI used to pick the channel on each DataObject.
      * Defaults to TCP temperature for the AFP-layup MFFD case. The
@@ -57,7 +56,6 @@ const props = withDefaults(
     columns?: number;
   }>(),
   {
-    collectionAppId: undefined,
     channelPredicate: "urn:shepard:afp:tcp-temperature-c",
     downsampleTo: 500,
     columns: 4,
@@ -69,10 +67,18 @@ const props = withDefaults(
 const dataObjectAppIds = ref<string[]>([]);
 const totalCount = ref(0);
 const truncationBanner = ref<string | null>(null);
-const fetching = ref(false);
 const initialError = ref<string | null>(null);
 
 const { series, loading, error, fetchCrossDo } = useCrossDoBulkData();
+
+const collectionAppIdRef = computed(() => props.collectionAppId);
+const { dataObjects: allDataObjects, loading: doLoading } = useFetchAllDataObjects(
+  props.collectionId,
+  collectionAppIdRef,
+);
+// doLoading tracks the DO list fetch; the template combines it with `loading`
+// (cross-track fetch) via `fetching || loading`.
+const fetching = doLoading;
 
 const cells = computed<NormalisedCell[]>(() => series.value.map(toCell));
 const xRange = computed(() => sharedXRange(cells.value));
@@ -91,29 +97,33 @@ const DEFAULT_END_NS = 3_154_000_000_000_000; // ~year in ns
 
 // ── Data flow ────────────────────────────────────────────────────────────
 
-async function loadDataObjectAppIds(): Promise<void> {
-  fetching.value = true;
-  initialError.value = null;
-  try {
-    const dos = await useShepardApi(DataObjectApi)
-      .value.getAllDataObjects({ collectionId: props.collectionId });
-    totalCount.value = dos.length;
-    const appIds = dos.map(d => d.appId ?? "").filter(Boolean);
-    const capped = applyDoCap(appIds, 100);
-    dataObjectAppIds.value = capped.kept;
-    truncationBanner.value = capped.banner;
-  } catch (e) {
-    initialError.value = (e as Error).message ?? String(e);
-  } finally {
-    fetching.value = false;
-  }
-}
-
-async function refresh(): Promise<void> {
-  await loadDataObjectAppIds();
-  if (dataObjectAppIds.value.length === 0) return;
+// React to the DO list arriving (or changing) and trigger the cross-track
+// fetch. { immediate: true } handles the initial cold-cache load — fires
+// once right away with [] (no-op), then again when the composable resolves.
+watch(allDataObjects, async (dos) => {
+  totalCount.value = dos.length;
+  const appIds = dos
+    .map(d => (d as unknown as { appId?: string }).appId ?? "")
+    .filter(Boolean);
+  const capped = applyDoCap(appIds, 100);
+  dataObjectAppIds.value = capped.kept;
+  truncationBanner.value = capped.banner;
+  if (capped.kept.length === 0) return;
   await fetchCrossDo({
-    dataObjectAppIds: dataObjectAppIds.value,
+    dataObjectAppIds: capped.kept,
+    channelPredicate: props.channelPredicate,
+    start: DEFAULT_START_NS,
+    end: DEFAULT_END_NS,
+    downsampleTo: props.downsampleTo,
+  });
+}, { immediate: true });
+
+// Manual reload — re-runs the cross-track fetch with the already-loaded DOs.
+async function refresh(): Promise<void> {
+  const kept = dataObjectAppIds.value;
+  if (kept.length === 0) return;
+  await fetchCrossDo({
+    dataObjectAppIds: kept,
     channelPredicate: props.channelPredicate,
     start: DEFAULT_START_NS,
     end: DEFAULT_END_NS,
@@ -189,10 +199,6 @@ function clearHover(): void {
   crossTime.value = null;
 }
 
-// Auto-load on mount.
-onMounted(() => {
-  void refresh();
-});
 </script>
 
 <template>
