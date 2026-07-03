@@ -137,7 +137,7 @@ class ReferenceAnnotationRestTest {
     );
     when(handler.listAnnotations(REF_ID)).thenReturn(allAnns);
 
-    // page=0, limit=2 → first two items, total=3
+    // page=0, pageSize=2 → first two items, total=3
     var r0 = resource.list(REF_ID, 0, 2, sc);
     assertThat(r0.getStatus()).isEqualTo(200);
     assertThat(r0.getHeaders().getFirst("X-Total-Count")).isEqualTo(3);
@@ -147,7 +147,7 @@ class ReferenceAnnotationRestTest {
     assertThat(p0.items()).hasSize(2);
     assertThat(p0.items().get(0).get("label")).isEqualTo("first");
 
-    // page=1, limit=2 → third item only
+    // page=1, pageSize=2 → third item only
     var r1 = resource.list(REF_ID, 1, 2, sc);
     assertThat(r1.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
