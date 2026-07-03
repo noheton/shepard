@@ -513,14 +513,20 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
   // ── APISIMP-CONT-NS-COLLAPSE-4: channel annotations ──────────────────────
 
   @Override
-  public Optional<Response> listChannelAnnotations(String appId, String channelShepardId) {
+  public Optional<Response> listChannelAnnotations(
+      String appId, String channelShepardId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(appId).getId();
-    List<SemanticAnnotation> annotations =
-        annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerId, channelShepardId);
-    List<SemanticAnnotationIO> result = annotations.stream()
-        .map(SemanticAnnotationIO::new)
-        .collect(Collectors.toList());
-    return Optional.of(Response.ok(result).build());
+    List<SemanticAnnotationIO> all =
+        annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerId, channelShepardId)
+            .stream()
+            .map(SemanticAnnotationIO::new)
+            .collect(Collectors.toList());
+    int total = all.size();
+    int from = (int) Math.min((long) page * pageSize, (long) total);
+    List<SemanticAnnotationIO> slice = all.subList(from, (int) Math.min((long) from + pageSize, (long) total));
+    return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build());
   }
 
   @Override

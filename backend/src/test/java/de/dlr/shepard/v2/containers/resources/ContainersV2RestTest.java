@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
@@ -1072,5 +1073,58 @@ class ContainersV2RestTest {
     org.junit.jupiter.api.Assertions.assertFalse(
         desc.isBlank(),
         "getLiveWindow withBoundaryPoints @Parameter description must be present — got: '" + desc + "'");
+  }
+
+  // ─── APISIMP-CONTAINER-CHANNEL-ANNOTATIONS-UNCAPPED ─────────────────────────
+
+  @Test
+  void listChannelAnnotations_xTotalCountHeaderIsPresent() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
+    when(handler.listChannelAnnotations(eq(APP_ID), eq("ch-1"), eq(0), eq(200)))
+        .thenReturn(Optional.of(
+            Response.ok(new PagedResponseIO<>(List.of(), 0, 0, 200))
+                .header("X-Total-Count", 0)
+                .build()));
+    var r = resource.listChannelAnnotations(APP_ID, "ch-1", 0, 200, securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("0", r.getHeaderString("X-Total-Count"));
+  }
+
+  @Test
+  void listChannelAnnotations_pageParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "listChannelAnnotations", String.class, String.class,
+        int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "page".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "listChannelAnnotations page @Parameter description must be present — got: '" + desc + "'");
+  }
+
+  @Test
+  void listChannelAnnotations_pageSizeParamHasParameterAnnotation() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "listChannelAnnotations", String.class, String.class,
+        int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    String desc = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "pageSize".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> {
+          var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+          return ann != null ? ann.description() : "";
+        })
+        .findFirst().orElse("");
+    org.junit.jupiter.api.Assertions.assertFalse(
+        desc.isBlank(),
+        "listChannelAnnotations pageSize @Parameter description must be present — got: '" + desc + "'");
   }
 }
