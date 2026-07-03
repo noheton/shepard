@@ -144,6 +144,35 @@ class CollectionCrossTimelineRestTest {
   }
 
   @Test
+  void returns400WhenMoreThanMaxCollectionsSupplied() {
+    List<String> tooMany = new java.util.ArrayList<>();
+    for (int i = 0; i < CollectionCrossTimelineRest.MAX_COLLECTIONS + 1; i++) {
+      tooMany.add("coll-appid-" + i);
+    }
+    Response r = resource.crossTimeline(tooMany, 1, sc);
+    assertThat(r.getStatus()).isEqualTo(400);
+    verify(timelineDAO, never()).aggregateMulti(org.mockito.ArgumentMatchers.anyList());
+  }
+
+  @Test
+  void returns200WithExactlyMaxCollections() {
+    List<String> atLimit = new java.util.ArrayList<>();
+    for (int i = 0; i < CollectionCrossTimelineRest.MAX_COLLECTIONS; i++) {
+      String id = "coll-appid-" + i;
+      atLimit.add(id);
+      when(entityIdResolver.resolveLong(id)).thenReturn((long) (200 + i));
+      when(permissionsService.isAccessTypeAllowedForUser(
+          eq((long) (200 + i)), eq(AccessType.Read), eq(CALLER), anyLong()))
+        .thenReturn(true);
+    }
+    when(timelineDAO.aggregateMulti(atLimit))
+      .thenReturn(new CollectionTimelineDAO.TimelineAggregate(List.of(), 0L, null, null));
+
+    Response r = resource.crossTimeline(atLimit, 1, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+  }
+
+  @Test
   void returns404WhenFirstCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_A)).thenThrow(new NotFoundException());
 
