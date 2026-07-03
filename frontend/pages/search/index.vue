@@ -381,6 +381,11 @@ useHead({
                       </v-row>
                       <v-row v-if="showCollectionInput">
                         <v-col>
+                          <!-- V1-EXCEPTION (SEARCH-V2-2): v1 SearchScope.collectionId needs
+                               a numeric id. `selectedCollectionId` is undefined when a
+                               collection is picked from v2 search (no numeric id returned),
+                               causing the scope to be unfiltered — acceptable degradation
+                               until SEARCH-V2-3 migrates the advanced-search scope to appId. -->
                           <CollectionPrefillableInput
                             v-model:collection-id="selectedCollectionId"
                             :is-required="
