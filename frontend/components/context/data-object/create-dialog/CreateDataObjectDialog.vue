@@ -217,6 +217,7 @@ async function createDataObject() {
             <ParentInput
               v-model:parent-id="dataObjectToCreate.parentId"
               :collection-id="collectionId"
+              :collection-app-id="collectionAppId"
             />
           </v-col>
         </v-row>
@@ -225,6 +226,7 @@ async function createDataObject() {
             <PredecessorInput
               v-model:predecessor-ids="dataObjectToCreate.predecessorIds"
               :collection-id="collectionId"
+              :collection-app-id="collectionAppId"
             />
           </v-col>
         </v-row>
