@@ -1,12 +1,9 @@
 import {
   ContainersApi,
   SemanticAnnotationsApi,
-  TimeseriesContainerApi,
   type AnnotationV2,
   type SemanticAnnotation,
-  type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "./common/api/useShepardApi";
 import { useV2ShepardApi } from "./common/api/useV2ShepardApi";
 
 export type AnnotationToAdd = Omit<
@@ -216,47 +213,3 @@ export class AnnotatedChannel implements Annotated {
   }
 }
 
-// ─── Per-Timeseries-channel annotations (covered by upstream API) ───────────
-//
-// V1 FALLBACK (named exception): the upstream numeric-id-keyed
-// `/shepard/api/.../timeseries/{id}/annotations` route. The `TimeseriesEntity`
-// here carries its own numeric `id` + `containerId` from the v1 timeseries
-// content surface (parts of timeseries channel content have no v2 twin yet —
-// see CLAUDE.md named-fallback set). Backlog: V2UI-TS-ANNO-V2 in aidocs/16.
-
-export class AnnotatedTimeseries implements Annotated {
-  api = useShepardApi(TimeseriesContainerApi);
-  entity: TimeseriesEntity;
-
-  constructor(entity: TimeseriesEntity) {
-    if (entity.id === undefined || entity.containerId === undefined) {
-      throw new Error(
-        "The annotated timeseries entity does not have an id or a container!",
-      );
-    }
-    this.entity = entity;
-  }
-
-  deleteAnnotation(annotationId: number): Promise<void> {
-    return this.api.value.deleteAnnotationOfTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-      semanticAnnotationId: annotationId,
-    });
-  }
-
-  fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.api.value.getAllAnnotationsOfTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-    });
-  }
-
-  addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.api.value.createAnnotationForTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-      semanticAnnotation: annotation,
-    });
-  }
-}
