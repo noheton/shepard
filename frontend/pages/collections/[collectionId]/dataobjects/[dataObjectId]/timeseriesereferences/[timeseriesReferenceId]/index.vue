@@ -168,6 +168,10 @@ const containerAppId = computed<string | undefined>(
 );
 const channelListingApi = useV2ShepardApi(ContainersApi);
 
+// Resolved container name — fetched from GET /v2/containers/{appId} so the
+// header shows the human-readable name rather than "unknown name (ID: …)".
+const containerName = ref<string | undefined>(undefined);
+
 // Chart payload — the bulk points feeding the Channel Overview chart and the
 // client-side per-channel metrics.
 const chartPayload = ref<TimeseriesWithDataPoints[] | undefined>(undefined);
@@ -348,19 +352,23 @@ async function loadBulkChannelData() {
   }
 }
 
-// Resolve the container's v2 channels (shepardId carriers) whenever the
-// container appId becomes known.
+// Resolve the container's v2 channels (shepardId carriers) and name whenever
+// the container appId becomes known.
 watch(
   containerAppId,
   async (appId) => {
     if (!appId) return;
     try {
-      const data = await channelListingApi.value.listContainerChannels({
-        appId,
-        // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
-        pageSize: 500,
-      });
-      channelsV2.value = data ?? [];
+      const [channels, container] = await Promise.all([
+        channelListingApi.value.listContainerChannels({
+          appId,
+          // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+          pageSize: 500,
+        }),
+        channelListingApi.value.getContainer({ appId }).catch(() => undefined),
+      ]);
+      channelsV2.value = channels ?? [];
+      containerName.value = container?.name;
     } catch {
       // Best-effort; falls back to no auto-populate.
       channelsV2.value = [];
@@ -506,12 +514,14 @@ watch(timeseriesReference, () => {
                   type: 'Timeseries',
                   container: {
                     title:
+                      containerName ??
                       timeseriesReference.referencedContainerName ??
                       'unknown name',
                     id: timeseriesReference.timeseriesContainerId ?? 0,
                     type: 'TIMESERIES',
                     availability:
                       timeseriesReference.referencedContainerAvailability,
+                    appId: containerAppId,
                   },
                 }"
                 id-label="ID"
