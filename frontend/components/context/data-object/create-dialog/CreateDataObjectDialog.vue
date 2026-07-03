@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {
   CollectionTemplatesApi,
-  DataObjectApi,
+  DataObjectsApi,
   type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
@@ -103,33 +102,32 @@ async function createDataObject() {
   const dataObjectToSave = dataObjectToCreate.value;
   if (dataObjectToSave === undefined) return;
   if (isValid.value === false) return;
+  // SIDEBAR-V2-CREATE: guard; both sidebar call sites always provide collectionAppId.
+  if (!props.collectionAppId) return;
 
-  useShepardApi(DataObjectApi)
-    .value.createDataObject({
-      collectionId: props.collectionId,
-      dataObject: {
+  useV2ShepardApi(DataObjectsApi)
+    .value.createDataObjectV2({
+      collectionAppId: props.collectionAppId,
+      createDataObjectV2: {
         ...dataObjectToSave,
         predecessorIds: uniqueNumbersOf(
-          dataObjectToSave.predecessorIds?.filter(entry => entry != -1) ?? [],
+          dataObjectToSave.predecessorIds?.filter(entry => entry !== -1) ?? [],
         ),
       },
     })
     .then(response => {
       emitSuccess(`Successfully created data object "${dataObjectToSave.name}"`);
       emit("data-object-created");
-      // V2-SWEEP Wave 1: routes carry appIds, never numeric Neo4j ids. The
-      // v1 create response includes the minted appId; fall back to the
-      // numeric id only for pre-appId legacy instances.
       router.push(
         collectionsPath +
-          (props.collectionAppId ?? props.collectionId) +
+          props.collectionAppId +
           dataObjectsPathFragment +
           (response.appId ?? response.id),
       );
       showDialog.value = false;
     })
     .catch(error => {
-      handleError(error, "createDataObject");
+      handleError(error, "createDataObjectV2");
     });
 }
 </script>
