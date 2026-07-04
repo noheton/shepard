@@ -219,7 +219,7 @@ public class VocabularyBrowseRest {
       null
     );
     return Response.status(Status.NOT_FOUND)
-      .type(MediaType.APPLICATION_JSON)
+      .type("application/problem+json")
       .entity(body)
       .build();
   }

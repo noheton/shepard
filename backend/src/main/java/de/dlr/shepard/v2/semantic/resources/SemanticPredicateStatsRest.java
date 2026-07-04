@@ -137,7 +137,7 @@ public class SemanticPredicateStatsRest {
       null
     );
     return Response.status(Status.BAD_REQUEST)
-      .type(MediaType.APPLICATION_JSON)
+      .type("application/problem+json")
       .entity(body)
       .build();
   }

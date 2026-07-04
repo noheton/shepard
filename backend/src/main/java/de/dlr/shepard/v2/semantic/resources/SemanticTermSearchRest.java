@@ -337,6 +337,6 @@ public class SemanticTermSearchRest {
 
   static Response problem(Status status, String type, String title, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type(MediaType.APPLICATION_JSON).entity(body).build();
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
