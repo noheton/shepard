@@ -142,8 +142,9 @@ const onAddPermission = () => {
     searchCallback = (member: Member) =>
       instanceOfUser(member) && member.username === memberSelected.username;
   } else {
+    // SEARCH-V2-4: groups carry id=0 sentinel; use appId for equality.
     searchCallback = (member: Member) =>
-      instanceOfUserGroup(member) && member.id === memberSelected.id;
+      instanceOfUserGroup(member) && member.appId === memberSelected.appId;
   }
   addMemberPermission(memberSelected, searchCallback);
   resetAdditionalPermission();

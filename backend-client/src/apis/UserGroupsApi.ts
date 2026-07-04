@@ -58,6 +58,8 @@ export interface GetUserGroupV2Request {
 }
 
 export interface ListUserGroupsRequest {
+    /** Optional name search (case-insensitive contains). When set, ordering params are ignored. */
+    q?: string;
     page?: number;
     pageSize?: number;
     orderBy?: UserGroupAttributes;
@@ -296,6 +298,10 @@ export class UserGroupsApi extends runtime.BaseAPI {
      */
     async listUserGroupsRaw(requestParameters: ListUserGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
+        }
 
         if (requestParameters['page'] != null) {
             queryParameters['page'] = requestParameters['page'];

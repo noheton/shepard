@@ -4,6 +4,8 @@ import {
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
+// SEARCH-V2-4: groups from search now carry id=0 (v2 does not expose numeric Neo4j id);
+// equality is keyed on appId.
 import {
   SearchType,
   useMemberSearch,
@@ -43,7 +45,9 @@ const mapToAutocompleteItem = (member: Member): AutoCompleteItem => {
     };
   else
     return {
-      title: `${member.name} (User Group, ID: ${member.id})`,
+      title: member.appId
+        ? `${member.name} (${member.appId.slice(-8)})`
+        : member.name,
       value: member as UserGroup,
     };
 };

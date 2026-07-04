@@ -2,6 +2,7 @@
 import {
   instanceOfUser,
   instanceOfUserGroup,
+  type UserGroup,
 } from "@dlr-shepard/backend-client";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
@@ -77,8 +78,9 @@ function deleteUserPermissions(deletedMember: MemberPermissions) {
         );
       }
 
+      // SEARCH-V2-4: groups carry id=0 sentinel; use appId for equality.
       if (instanceOfUserGroup(deletedMember.member)) {
-        return memberPermissions.member.id !== deletedMember.member.id;
+        return (memberPermissions.member as UserGroup).appId !== (deletedMember.member as UserGroup).appId;
       }
 
       return true;
@@ -109,8 +111,9 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
       );
     }
 
+    // SEARCH-V2-4: groups carry id=0 sentinel; use appId for equality.
     if (instanceOfUserGroup(memberPermissions.member)) {
-      return memberPermissions.member.id === entry.member.id;
+      return memberPermissions.member.appId === (entry.member as UserGroup).appId;
     }
 
     return false;
