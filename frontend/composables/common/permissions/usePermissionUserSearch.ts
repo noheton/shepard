@@ -1,10 +1,14 @@
 import {
+  UserApi,
   type ResponseError,
-  SearchApi,
   type User,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../api/useShepardApi";
+import { useV2ShepardApi } from "../api/useV2ShepardApi";
 
+/**
+ * SEARCH-V2-4: migrated from v1 SearchApi POST /search/users to
+ * GET /v2/users?q= via useV2ShepardApi.
+ */
 export function usePermissionUserSearch(
   searchString: Ref<string | undefined>,
   onSearchDone: () => void,
@@ -17,23 +21,15 @@ export function usePermissionUserSearch(
 
     isLoading.value = true;
 
-    const searchStringParam = buildUserQueryString(query);
-
-    const searchResponse = await useShepardApi(SearchApi)
-      .value.searchUsers({
-        userSearchBody: {
-          searchParams: {
-            query: searchStringParam,
-          },
-        },
-      })
+    const users = await useV2ShepardApi(UserApi)
+      .value.searchUsersV2({ q: query })
       .catch(e => {
         handleError(e as ResponseError, "searching for users.");
         return undefined;
       });
 
-    if (searchResponse && searchResponse.results) {
-      ownerSearchResults.value = searchResponse.results;
+    if (users) {
+      ownerSearchResults.value = users;
     }
     isLoading.value = false;
     onSearchDone();

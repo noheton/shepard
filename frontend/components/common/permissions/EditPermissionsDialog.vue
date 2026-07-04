@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {
   instanceOfUser,
-  instanceOfUserGroup,
+  instanceOfUserGroupV2,
   PermissionType,
   type Permissions,
   type ResponseError,
@@ -143,7 +143,7 @@ const onAddPermission = () => {
       instanceOfUser(member) && member.username === memberSelected.username;
   } else {
     searchCallback = (member: Member) =>
-      instanceOfUserGroup(member) && member.id === memberSelected.id;
+      instanceOfUserGroupV2(member) && member.appId === memberSelected.appId;
   }
   addMemberPermission(memberSelected, searchCallback);
   resetAdditionalPermission();

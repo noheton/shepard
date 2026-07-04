@@ -26,6 +26,10 @@ export interface GetUserRequest {
     username: string;
 }
 
+export interface SearchUsersV2Request {
+    q: string;
+}
+
 /**
  * 
  */
@@ -68,6 +72,56 @@ export class UserApi extends runtime.BaseAPI {
      */
     async getCurrentUser(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<User> {
         const response = await this.getCurrentUserRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Search users by text (v2)
+     * GET /v2/users?q= — OR-contains across username, firstName, lastName, email.
+     * SEARCH-V2-4: v2-only endpoint; must be used with useV2ShepardApi.
+     */
+    async searchUsersV2Raw(requestParameters: SearchUsersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<User>>> {
+        if (requestParameters['q'] == null) {
+            throw new runtime.RequiredError(
+                'q',
+                'Required parameter "q" was null or undefined when calling searchUsersV2().'
+            );
+        }
+
+        const queryParameters: any = {};
+        queryParameters['q'] = requestParameters['q'];
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/users`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => (jsonValue as any[]).map(UserFromJSON));
+    }
+
+    /**
+     * Search users by text (v2)
+     * GET /v2/users?q= — OR-contains across username, firstName, lastName, email.
+     * SEARCH-V2-4: v2-only endpoint; must be used with useV2ShepardApi.
+     */
+    async searchUsersV2(requestParameters: SearchUsersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<User>> {
+        const response = await this.searchUsersV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

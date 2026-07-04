@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {
   instanceOfUser,
-  instanceOfUserGroup,
+  instanceOfUserGroupV2,
 } from "@dlr-shepard/backend-client";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
@@ -77,8 +77,8 @@ function deleteUserPermissions(deletedMember: MemberPermissions) {
         );
       }
 
-      if (instanceOfUserGroup(deletedMember.member)) {
-        return memberPermissions.member.id !== deletedMember.member.id;
+      if (instanceOfUserGroupV2(deletedMember.member)) {
+        return memberPermissions.member.appId !== deletedMember.member.appId;
       }
 
       return true;
@@ -109,8 +109,8 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
       );
     }
 
-    if (instanceOfUserGroup(memberPermissions.member)) {
-      return memberPermissions.member.id === entry.member.id;
+    if (instanceOfUserGroupV2(memberPermissions.member)) {
+      return memberPermissions.member.appId === entry.member.appId;
     }
 
     return false;

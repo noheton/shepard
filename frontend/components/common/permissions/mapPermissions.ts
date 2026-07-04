@@ -1,17 +1,15 @@
 import {
   instanceOfUser,
-  instanceOfUserGroup,
+  instanceOfUserGroupV2,
   UserApi,
+  UserGroupsApi,
   type Permissions,
   type User,
-  type UserGroup,
+  type UserGroupV2,
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import {
-  useUserGroupsV2,
-  type UserGroupV2,
-} from "~/composables/context/useUserGroupsV2";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
@@ -86,35 +84,21 @@ async function mapPermissionRoleUserGroups(
       if (!appId) return;
       const existing = userPermissions.find(
         userPermission =>
-          instanceOfUserGroup(userPermission.member) &&
+          instanceOfUserGroupV2(userPermission.member) &&
           userPermission.member.appId === appId,
       );
       if (existing) {
         existing.roleList.push(groupRole);
         return;
       }
-      const userGroup: UserGroup = await fetchUserGroupByAppId(appId);
+      const userGroup: UserGroupV2 = await fetchUserGroupByAppId(appId);
       userPermissions.push({ member: userGroup, roleList: [groupRole] });
     }),
   );
 }
 
-function v2ToUserGroup(v2: UserGroupV2): UserGroup {
-  return {
-    id: 0,
-    name: v2.name,
-    appId: v2.appId,
-    createdAt: v2.createdAt ? new Date(v2.createdAt) : new Date(0),
-    createdBy: v2.createdBy ?? "",
-    updatedAt: v2.updatedAt != null ? new Date(v2.updatedAt) : null,
-    updatedBy: v2.updatedBy ?? null,
-    usernames: v2.usernames ?? [],
-  };
-}
-
-async function fetchUserGroupByAppId(appId: string): Promise<UserGroup> {
-  const v2Group = await useUserGroupsV2().getUserGroup(appId);
-  return v2ToUserGroup(v2Group);
+async function fetchUserGroupByAppId(appId: string): Promise<UserGroupV2> {
+  return useV2ShepardApi(UserGroupsApi).value.getUserGroupV2({ appId });
 }
 
 async function fetchUser(username: string) {
@@ -132,7 +116,7 @@ export const mapMemberPermissions = (
   );
 
   const userGroups = memberPermissionsList.filter(memberPermissions =>
-    instanceOfUserGroup(memberPermissions.member),
+    instanceOfUserGroupV2(memberPermissions.member),
   );
 
   const mapUsernames = (role: UserRole): string[] => {
@@ -144,7 +128,7 @@ export const mapMemberPermissions = (
   const mapGroupAppIds = (role: UserRole): string[] => {
     return userGroups
       .filter(memberPermissions => memberPermissions.roleList.includes(role))
-      .map(memberPermissions => (memberPermissions.member as UserGroup).appId)
+      .map(memberPermissions => (memberPermissions.member as UserGroupV2).appId)
       .filter((appId): appId is string => !!appId);
   };
 

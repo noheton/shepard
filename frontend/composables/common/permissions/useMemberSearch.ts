@@ -1,12 +1,18 @@
 import {
-  SearchApi,
+  UserApi,
+  UserGroupsApi,
+  UserGroupV2FromJSON,
   type ResponseError,
   type User,
-  type UserGroup,
+  type UserGroupV2,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../api/useShepardApi";
+import { useV2ShepardApi } from "../api/useV2ShepardApi";
 
-export type Member = User | UserGroup;
+/**
+ * SEARCH-V2-4: Member is now User | UserGroupV2 — only v2 appId-keyed types.
+ * Previously User | UserGroup (v1 numeric-id type).
+ */
+export type Member = User | UserGroupV2;
 
 export enum SearchType {
   USER,
@@ -27,47 +33,40 @@ export function useMemberSearch(
 
     isLoading.value = true;
 
-    const userSearchStringParam = buildUserQueryString(query);
-    const userGroupSearchStringParam = buildUserGroupQueryString(query);
-
-    const searchApi = useShepardApi(SearchApi);
+    const userApi = useV2ShepardApi(UserApi);
+    const groupApi = useV2ShepardApi(UserGroupsApi);
 
     const userSearchResponse =
       searchType === SearchType.USER || searchType === SearchType.MEMBER
-        ? await useShepardApi(SearchApi)
-            .value.searchUsers({
-              userSearchBody: {
-                searchParams: {
-                  query: userSearchStringParam,
-                },
-              },
-            })
+        ? await userApi.value
+            .searchUsersV2({ q: query })
             .catch(e => {
               handleError(e as ResponseError, "searching for users.");
               return undefined;
             })
         : undefined;
+
     const userGroupSearchResponse =
       searchType === SearchType.GROUP || searchType === SearchType.MEMBER
-        ? await searchApi.value
-            .searchUserGroups({
-              userSearchBody: {
-                searchParams: {
-                  query: userGroupSearchStringParam,
-                },
-              },
-            })
+        ? await groupApi.value
+            .listUserGroups({ q: query, pageSize: 50 })
             .catch(e => {
               handleError(e as ResponseError, "searching for user groups.");
               return undefined;
             })
         : undefined;
-    if (userSearchResponse && userSearchResponse.results) {
-      searchResults.value = userSearchResponse.results;
+
+    searchResults.value = [];
+
+    if (userSearchResponse) {
+      searchResults.value = userSearchResponse;
     }
 
-    if (userGroupSearchResponse && userGroupSearchResponse.results) {
-      searchResults.value.push(...userGroupSearchResponse.results);
+    if (userGroupSearchResponse?.items) {
+      const groups: UserGroupV2[] = (userGroupSearchResponse.items as unknown[]).map(
+        item => UserGroupV2FromJSON(item),
+      );
+      searchResults.value.push(...groups);
     }
 
     isLoading.value = false;

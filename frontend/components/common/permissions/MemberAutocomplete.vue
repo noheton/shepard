@@ -2,7 +2,7 @@
 import {
   instanceOfUser,
   type User,
-  type UserGroup,
+  type UserGroupV2,
 } from "@dlr-shepard/backend-client";
 import {
   SearchType,
@@ -43,8 +43,8 @@ const mapToAutocompleteItem = (member: Member): AutoCompleteItem => {
     };
   else
     return {
-      title: `${member.name} (User Group, ID: ${member.id})`,
-      value: member as UserGroup,
+      title: `${member.name} (User Group)`,
+      value: member as UserGroupV2,
     };
 };
 

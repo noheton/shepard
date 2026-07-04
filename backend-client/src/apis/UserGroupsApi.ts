@@ -62,6 +62,8 @@ export interface ListUserGroupsRequest {
     pageSize?: number;
     orderBy?: UserGroupAttributes;
     orderDesc?: boolean;
+    /** SEARCH-V2-4: OR-contains filter across user-group name. Maps to ?q= on GET /v2/user-groups. */
+    q?: string;
 }
 
 export interface PatchUserGroupRequest {
@@ -311,6 +313,10 @@ export class UserGroupsApi extends runtime.BaseAPI {
 
         if (requestParameters['orderDesc'] != null) {
             queryParameters['orderDesc'] = requestParameters['orderDesc'];
+        }
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
