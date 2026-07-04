@@ -26,6 +26,11 @@ export interface GetUserRequest {
     username: string;
 }
 
+export interface SearchUsersV2Request {
+    /** Search string (required). OR-matched across username, firstName, lastName, email. */
+    q: string;
+}
+
 /**
  * 
  */
@@ -115,6 +120,55 @@ export class UserApi extends runtime.BaseAPI {
      */
     async getUser(requestParameters: GetUserRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<User> {
         const response = await this.getUserRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Search users by text (v2)
+     * Searches users by username, firstName, lastName and email with a case-insensitive OR-contains query.
+     * SEARCH-V2-4-PRE: replaces the v1 POST /shepard/api/search/users for this fork's own callers.
+     */
+    async searchUsersV2Raw(requestParameters: SearchUsersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<User>>> {
+        if (requestParameters['q'] == null) {
+            throw new runtime.RequiredError(
+                'q',
+                'Required parameter "q" was null or undefined when calling searchUsersV2().'
+            );
+        }
+
+        const queryParameters: any = {};
+        queryParameters['q'] = requestParameters['q'];
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/users`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(UserFromJSON));
+    }
+
+    /**
+     * Search users by text (v2)
+     * SEARCH-V2-4-PRE: replaces the v1 POST /shepard/api/search/users for this fork's own callers.
+     */
+    async searchUsersV2(requestParameters: SearchUsersV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<User>> {
+        const response = await this.searchUsersV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
