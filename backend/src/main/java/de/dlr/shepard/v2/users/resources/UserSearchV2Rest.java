@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -53,15 +54,12 @@ public class UserSearchV2Rest {
   @Operation(
     operationId = "searchUsersV2",
     summary = "Search users by text (v2)",
-    description =
-      "Searches users by username, firstName, lastName and email with a case-insensitive " +
-      "OR-contains query. Returns a flat list of matching users. " +
-      "No numeric Neo4j id is exposed. Requires authentication."
+    description = "Searches users by username, firstName, lastName and email with a case-insensitive OR-contains query. Returns a flat list of matching users. No numeric Neo4j id is exposed. Requires authentication."
   )
   @APIResponse(
     responseCode = "200",
     description = "List of matching users.",
-    content = @Content(schema = @Schema(type = "array", implementation = UserIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter 'q' is blank or missing.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
