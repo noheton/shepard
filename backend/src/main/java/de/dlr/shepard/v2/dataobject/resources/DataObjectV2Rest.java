@@ -1076,7 +1076,7 @@ public class DataObjectV2Rest {
     );
     return Response.status(Response.Status.NOT_ACCEPTABLE)
       .entity(body)
-      .type(MediaType.APPLICATION_JSON)
+      .type("application/problem+json")
       .build();
   }
 }

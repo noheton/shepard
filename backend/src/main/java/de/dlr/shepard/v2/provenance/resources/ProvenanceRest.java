@@ -635,7 +635,7 @@ public class ProvenanceRest {
     );
     return Response.status(Response.Status.NOT_ACCEPTABLE)
       .entity(body)
-      .type(MediaType.APPLICATION_JSON)
+      .type("application/problem+json")
       .build();
   }
 
