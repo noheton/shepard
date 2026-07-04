@@ -68,6 +68,10 @@
     <apache.commons.version>3.20.0</apache.commons.version>
     <neo4j-cypher-dsl.version>2025.3.0</neo4j-cypher-dsl.version>
     <uuid-creator.version>6.1.1</uuid-creator.version>
+    <!-- testcontainers specialty modules (neo4j, mongodb, postgresql, junit-jupiter) are
+         NOT managed by Quarkus BOM >= 3.37.0 — explicit version required. Pin to the
+         same version used by Quarkus 3.27.2 BOM (1.21.4); all modules are co-versioned. -->
+    <testcontainers.version>1.21.4</testcontainers.version>
     <!-- Jena SHACL validator (Apache-2.0). Pulled in for the
          non-TS SHACL changeover scope (aidocs/98 + 100 + 101). The
          in-process validator reads candidate RDF + shape graphs as
@@ -450,8 +454,10 @@
       <version>0.29.0</version>
     </dependency>
     <!-- DX1 — ShepardTestStack testcontainer support (aidocs/16 DX1).
-         Versions managed by the Quarkus BOM (quarkus.platform.version).
-         No explicit <version> needed here. -->
+         quarkus-test-common and quarkus-test-security are version-managed by
+         the Quarkus BOM. org.testcontainers:testcontainers is also BOM-managed.
+         The specialty modules (neo4j/mongodb/postgresql/junit-jupiter) are NOT
+         managed by the Quarkus BOM >= 3.37.0 — they use ${testcontainers.version}. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-test-common</artifactId>
@@ -470,21 +476,25 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>neo4j</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>mongodb</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- MFFD-NDT-QUALITY-1 — TIFF reader for thermography frame analysis.
