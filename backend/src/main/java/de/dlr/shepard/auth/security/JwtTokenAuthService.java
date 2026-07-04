@@ -187,9 +187,9 @@ public class JwtTokenAuthService {
 
   Jws<Claims> parseAccessTokenFromHeader(String header) {
     String token = header.startsWith("Bearer ") ? header.substring(7) : header;
-    var parser = Jwts.parserBuilder().setSigningKey(oidcPublicKey).build();
+    var parser = Jwts.parser().verifyWith(oidcPublicKey).build();
     try {
-      Jws<Claims> jws = parser.parseClaimsJws(token);
+      Jws<Claims> jws = parser.parseSignedClaims(token);
       Log.debugf("Valid token: %s", jws.getBody().getId());
       return jws;
     } catch (ExpiredJwtException ex) {
@@ -208,7 +208,8 @@ public class JwtTokenAuthService {
     var body = jws.getBody();
     String keyId = body.getId();
     String subject = body.getSubject();
-    String audience = body.getAudience();
+    Set<String> audienceSet = body.getAudience();
+    String audience = (audienceSet != null && !audienceSet.isEmpty()) ? audienceSet.iterator().next() : null;
     String issuedFor = body.get("azp", String.class);
 
     if (subject == null || subject.isEmpty()) {

@@ -156,7 +156,7 @@ public class ApiKeyAuthService {
       return null;
     }
     try {
-      Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+      Jws<Claims> jws = Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
       Log.debugf("Valid token: %s", jws.getBody().getId());
       return jws;
     } catch (ExpiredJwtException ex) {
