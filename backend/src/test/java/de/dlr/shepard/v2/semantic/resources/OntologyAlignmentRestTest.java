@@ -82,7 +82,7 @@ class OntologyAlignmentRestTest {
   // ─── Functional tests ─────────────────────────────────────────────────────
 
   @Test
-  void emptyRegistry_returns200WithEmptyList() {
+  void emptyRegistry_returns200WithEmptyArray() {
     when(dao.findAll()).thenReturn(List.of());
 
     Response r = rest.list();
@@ -90,11 +90,11 @@ class OntologyAlignmentRestTest {
     @SuppressWarnings("unchecked")
     List<OntologyAlignmentIO> body = (List<OntologyAlignmentIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty(), "Empty DAO must produce empty list in response");
+    assertTrue(body.isEmpty(), "Empty DAO must produce empty array");
   }
 
   @Test
-  void populatedRegistry_returns200WithAllRows() {
+  void populatedRegistry_returns200WithItems() {
     OntologyAlignment e1 = makeEntity(
       "app-1", "Collection", "http://purl.obolibrary.org/obo/IAO_0000100",
       "rdfs:subClassOf", "HIGH", "aidocs/semantics/96-upper-ontology-alignment.md", 1000L

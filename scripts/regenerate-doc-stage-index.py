@@ -49,6 +49,15 @@ FRONT_MATTER_RE = re.compile(
 # in this front-matter shape.
 KV_RE = re.compile(r"^([A-Za-z0-9_\-]+):\s*(.*?)\s*$")
 
+# CI-BASELINE-5: regex to normalize last-touched date columns in --check mode.
+# Matches `| YYYY-MM-DD |` or `| — |` at end-of-line (the last-touched column).
+_DATE_COL_RE = re.compile(r'\| (?:\d{4}-\d{2}-\d{2}|—) \|$', re.MULTILINE)
+
+
+def _normalize_dates(s: str) -> str:
+    """Strip last-touched date values so --check is stable across git versions."""
+    return _DATE_COL_RE.sub('| — |', s)
+
 
 def parse_front_matter(text: str) -> dict[str, str]:
     """Return a dict of front-matter keys, or {} if no front-matter."""
@@ -81,7 +90,7 @@ def git_last_touched(path: Path) -> str:
     """Return `YYYY-MM-DD` of the last commit that touched the file, or `—`."""
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(path)],
+            ["git", "log", "-1", "--first-parent", "--format=%ad", "--date=short", "--", str(path)],
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
@@ -98,6 +107,11 @@ def collect_docs() -> list[dict]:
     rows: list[dict] = []
     for path in sorted(AIDOCS_DIR.rglob("*.md")):
         if path == INDEX_PATH:
+            continue
+        # Auto-generated dispatcher-run logs are operational records, not
+        # lifecycle-staged design docs — exclude them so a routine that forgets
+        # the `stage:` frontmatter never drifts the index (DISPATCHER-REGEN-INDEX-1).
+        if "agent-findings/dispatcher-runs/" in path.as_posix():
             continue
         text = path.read_text(encoding="utf-8")
         fm = parse_front_matter(text)
@@ -285,7 +299,12 @@ def main() -> int:
 
     if args.check:
         existing = INDEX_PATH.read_text(encoding="utf-8") if INDEX_PATH.exists() else ""
-        drift = existing != rendered
+        # CI-BASELINE-5: normalize last-touched date columns before comparing so
+        # git-version-sensitive `git log` output on GitHub's synthetic merge commits
+        # doesn't cause spurious DRIFT failures. Structural drift (new docs, stage
+        # changes, title changes) is still caught; only the cosmetic date column is
+        # exempted from the comparison.
+        drift = _normalize_dates(existing) != _normalize_dates(rendered)
         if drift:
             print(f"DRIFT: {INDEX_PATH} is out of date. Run without --check to update.",
                   file=sys.stderr)

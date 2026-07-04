@@ -50,6 +50,24 @@ public class FileGroupService {
   }
 
   /**
+   * @param bundleAppId parent bundle's appId.
+   * @param page zero-based page index.
+   * @param pageSize maximum items per page (server cap 200).
+   * @return one page of groups under the bundle, ordered by ascending {@code index}.
+   */
+  public List<FileGroup> listGroups(String bundleAppId, int page, int pageSize) {
+    return fileGroupDAO.findByBundleAppId(bundleAppId, page, pageSize);
+  }
+
+  /**
+   * @param bundleAppId parent bundle's appId.
+   * @return total count of groups attached to that bundle.
+   */
+  public long countGroups(String bundleAppId) {
+    return fileGroupDAO.countByBundleAppId(bundleAppId);
+  }
+
+  /**
    * @param appId the group's own appId.
    * @return the group, or {@code null} when no match.
    */

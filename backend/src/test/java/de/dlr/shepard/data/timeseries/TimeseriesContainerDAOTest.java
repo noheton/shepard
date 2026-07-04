@@ -252,43 +252,46 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
   @Test
   public void findLinkedDataObjects_returnsEmptyListWhenNoneLinked() {
     String containerAppId = "01900000-0000-7000-8000-000000000001";
-    String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:TimeseriesContainer) " +
-      "WHERE c.appId = $containerAppId " +
-      "  AND (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN DISTINCT do";
-    Map<String, Object> params = Map.of("containerAppId", containerAppId);
-
-    when(session.query(DataObject.class, query, params)).thenReturn(List.of());
+    // Production returns rows of {neo4jId}; an empty result means no links.
+    org.neo4j.ogm.model.Result empty = resultOf(List.of());
+    when(session.query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
+      .thenReturn(empty);
 
     List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
 
-    verify(session).query(DataObject.class, query, params);
     assertTrue(result.isEmpty());
   }
 
   @Test
   public void findLinkedDataObjects_returnsTwoDataObjects() {
     String containerAppId = "01900000-0000-7000-8000-000000000002";
-    String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:TimeseriesContainer) " +
-      "WHERE c.appId = $containerAppId " +
-      "  AND (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN DISTINCT do";
-    Map<String, Object> params = Map.of("containerAppId", containerAppId);
 
     DataObject do1 = new DataObject();
     do1.setName("Experiment A");
     DataObject do2 = new DataObject();
     do2.setName("Experiment B");
 
-    when(session.query(DataObject.class, query, params)).thenReturn(List.of(do1, do2));
+    // Production resolves DataObjects in two steps: a row query that yields
+    // neo4jIds, then session.load per id. Build the Result mock first to avoid
+    // nesting stubbing inside the outer when(...) call.
+    org.neo4j.ogm.model.Result rows =
+      resultOf(List.of(Map.of("neo4jId", 1L), Map.of("neo4jId", 2L)));
+    when(session.query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
+      .thenReturn(rows);
+    when(session.load(DataObject.class, 1L, 1)).thenReturn(do1);
+    when(session.load(DataObject.class, 2L, 1)).thenReturn(do2);
 
     List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
 
-    verify(session).query(DataObject.class, query, params);
     assertEquals(2, result.size());
     assertEquals("Experiment A", result.get(0).getName());
     assertEquals("Experiment B", result.get(1).getName());
+  }
+
+  /** Build an OGM Result over the given rows (it is just an Iterable of maps). */
+  private static org.neo4j.ogm.model.Result resultOf(List<Map<String, Object>> rows) {
+    org.neo4j.ogm.model.Result result = org.mockito.Mockito.mock(org.neo4j.ogm.model.Result.class);
+    when(result.iterator()).thenReturn(rows.iterator());
+    return result;
   }
 }

@@ -81,3 +81,78 @@ Captured during the UX walk dispatch — see
   what didn't, show a "Some data couldn't load — retry" banner) would
   let the user at least see the DO name / attributes / Jupyter notebooks
   panes when only the breadcrumb-resolver fails. (Step 4.)
+
+---
+
+## 2026-06-12
+
+Captured during the shapes-for-displays UX audit — full report at
+`aidocs/agent-findings/ux-shapes-displays-and-journeys-2026-06-12.md`,
+evidence in `aidocs/agent-findings/screenshots/ux-2026-06-12/`. Walk
+scripts: `e2e/scripts/ux-walk-2026-06-12.mjs` + `ux-walk2-2026-06-12.mjs`.
+Auth: flo/flo-demo, 3840×2160.
+
+- **TS reference detail page never loads — either id shape.** appId route →
+  perpetual spinner with NO error at all; numeric route (what the refs table
+  actually pushes) → spinner + "Error while listDataObjects:" toast with an
+  EMPTY message body. The chart, CSV export and "Visualize in 3D" are all
+  behind this page. (`08*.png`)
+- **Trace3D render always fails with "Channel 'x' returned 0 points. Check
+  the container ID and time window."** — the real cause is the page fetching
+  `/v2/timeseries-containers/{numericId}/channels` against an appId-keyed
+  endpoint (404). The error blames the user for a backend id-shape
+  mismatch. (`17-shapes-render-from-dialog-4k.png`)
+- **"Render view" Tools-menu item appears only where it cannot work.**
+  Hidden on all LUMEN DOs (no attached template), shown on `coupon-valid`
+  whose template is a DATAOBJECT_RECIPE → raw `422 : {"error":"render not
+  yet supported for templateKind=DATAOBJECT_RECIPE…"}` dumped into the
+  alert. (`07/18-…png`)
+- **"Create template for this DataObject" / "…for this Collection" → hard
+  404.** Routes to `/admin/templates`, which doesn't exist (templates are an
+  `/admin` fragment). (`13-admin-templates-route-4k.png`)
+- **Reference-name links are `href="#"`** — middle-click opens nothing,
+  copy-link copies `#`, and the JS push uses numeric ids.
+- **Console TypeError `t?.toLocaleDateString is not a function` twice per
+  collection/DO page load** — a date prop somewhere receives a string.
+- **Guaranteed 404s on every authed page**: `/v2/users/{id}/avatar` +
+  `/v2/data-objects/{appId}/publications`. Console + network panel are
+  permanently red; real failures drown.
+- **TS container page fires `GET /v2/timeseries-containers//channels`**
+  (empty appId) → 405, when reached via numeric route.
+- **Tools tile mis-describes the render playground** as "Render URDF / mesh /
+  spatial-shape previews" — its actual job is projecting VIEW_RECIPEs onto
+  DataObjects. (`12-tools-landing-4k.png`)
+- **Template autocomplete options render full-paragraph descriptions** — at
+  4K each option is a 5-line wall of text; scanning 5 options means reading
+  ~600 words. (`19-template-autocomplete-open-4k.png`)
+- **"TS container ID (numeric)" text field on the render page** asks the
+  user to transcribe a Neo4j-internal id from another page — banned shape
+  (UI pulls from references), and the only way to find it is URL-reading.
+- **`PlaceholderImplStatus` footers with backlog rows + design-doc paths**
+  render for regular users on `/shapes/render`. Power-user/debug info in
+  the default layer.
+
+## 1920×1080 pass — 2026-06-13 (UI-1920 audit)
+
+- **Single-column tool pages stretch to ~1800px at 1920** (and full-bleed at
+  4K). `/semantic/sparql` and `/tools/form-preview` use a bare `<v-container>`
+  whose xl/xxl breakpoint max-width is ~1800px — query text, prose subtitles
+  and single appId pickers run edge-to-edge at >120 chars/line. Fixed in-PR
+  with a `max-width: 1200px` cap (UI-1920-SPARQL-WIDTH / UI-1920-FORM-PREVIEW-WIDTH).
+- **Inconsistent width strategy across tool pages.** `/shapes/render` + `/tools`
+  cap at `2400px` (4K-tuned, `LAYOUT-4K-CENTERED-EMPTY-001`); sparql/form-preview
+  had no cap at all. No single shared "readable tool page" width token.
+- **`/me` profile: large dead left gutter at 1920.** The 2-column flex (Profile
+  nav + content card) starts the content card at x≈675 with ~480px empty space
+  on the far left; the layout was proportioned for a wider canvas. Filed
+  UI-1920-ME-GUTTER.
+- **Full-bleed list rows on Home.** "Shared with me" rows put the collection
+  name at x≈30 and "View →" at x≈1860 — ~1830px of horizontal eye-travel per
+  row at 1920. Filed UI-1920-HOME-WIDEROWS.
+- **TS-container chart legend clips the 3rd 5-tuple label** (`rpm_fuel_pu…`) and
+  packs 3 very long labels in one row with a 1/4 pager. Width-bound, not
+  1920-specific, but acute at 1920. Filed UI-1920-TS-LEGEND.
+- **TR-004 DataObject detail hangs on a perpetual spinner at 1920** (main pane
+  never renders; CONTENTS sidebar shows only "Publications"). Pre-existing
+  plumbing bug (appId/numeric-id seam, matches prior 4K audit C1) — blocked
+  auditing the DO detail layout + the new ActionMenuButton at 1920.

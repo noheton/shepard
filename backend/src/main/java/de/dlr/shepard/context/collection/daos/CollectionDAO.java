@@ -156,6 +156,25 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     return iter.hasNext() ? iter.next() : null;
   }
 
+  /** Returns the non-deleted Collection with {@code appId}, or {@code null}. Permission-agnostic. */
+  public Collection findByAppId(String appId) {
+    if (appId == null || appId.isBlank()) return null;
+    String query = "MATCH (c:Collection {appId: $appId, deleted: false}) RETURN c";
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
+  /** Returns the number of Collections readable by {@code username} (version-head only). */
+  public long countAllCollectionsByShepardId(String username) {
+    String query = "MATCH %s WHERE %s AND %s RETURN COUNT(c)".formatted(
+        CypherQueryHelper.getObjectPartWithVersion("c", "Collection", false, "v"),
+        CypherQueryHelper.getReadableByQuery("c", username),
+        CypherQueryHelper.getVersionHeadPart("v")
+    );
+    var it = session.query(Long.class, query, Map.of()).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
   /** Returns the total number of non-deleted Collections (permission-agnostic). */
   public long countAll() {
     var result = session.query(

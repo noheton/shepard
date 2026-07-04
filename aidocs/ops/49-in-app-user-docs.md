@@ -114,6 +114,8 @@ screenshots, links forward to the reference for depth. Lives at
   publication?"
 - `docs/help/process-step.md` — "How do I follow a templated
   process?"
+- `docs/help/build-a-template.md` — "How do I build a template?"
+  (V2CONV-B6 visual shape editor)
 - `docs/help/find-data.md` — "How do I find a dataset I (or someone
   else) created?"
 - `docs/help/annotate.md` — "How do I tag data with an ontology
@@ -133,6 +135,8 @@ deep-dives:
 |---|---|
 | Collection | `docs/reference/collection.md` |
 | DataObject | `docs/reference/data-object.md` |
+| References *(unified `/v2/references`, V2CONV-A2)* | `docs/reference/references.md` |
+| Containers *(unified `/v2/containers`, V2CONV-A3)* | `docs/reference/containers.md` |
 | FileReference | `docs/reference/file-reference.md` |
 | StructuredDataReference | `docs/reference/structured-data-reference.md` |
 | TimeseriesReference | `docs/reference/timeseries-reference.md` |
@@ -145,6 +149,7 @@ deep-dives:
 | Provenance / activity log *(post-PROV1h)* | `docs/reference/provenance.md` |
 | Versions / Snapshots *(post-V2)* | `docs/reference/snapshots.md` |
 | Templates *(post-T1)* | `docs/reference/templates.md` |
+| Template editor *(post-V2CONV-B6)* | `docs/reference/template-editor.md` |
 | Processes *(post-PR1)* | `docs/reference/processes.md` |
 | API keys + ORCID + profile *(post-U1)* | `docs/reference/profile.md` |
 | AI features *(post-AI1)* | `docs/reference/ai-features.md` |

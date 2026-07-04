@@ -33,7 +33,7 @@ if (
   props.containerType &&
   props.containerType === ContainerType.File
 ) {
-  const containerAccessor = new FileContainerAccessor(containerId.value);
+  const containerAccessor = new FileContainerAccessor(String(containerId.value));
   await containerAccessor.fetchData();
 
   if (containerAccessor.fileContainer.value) {

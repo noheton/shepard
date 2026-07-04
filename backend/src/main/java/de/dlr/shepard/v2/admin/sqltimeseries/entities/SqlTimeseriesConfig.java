@@ -82,6 +82,14 @@ public class SqlTimeseriesConfig implements HasAppId {
   @Property("maxDurationIso")
   private String maxDurationIso;
 
+  /**
+   * FTOGGLE-SQL-ENABLE-1 — whether the SQL timeseries endpoint is enabled.
+   * {@code null} → use the deploy-time default ({@code shepard.timeseries.sql.enabled}, default {@code true}).
+   * When non-null, the runtime value wins over the deploy-time property.
+   */
+  @Property("enabled")
+  private Boolean enabled;
+
   /** For testing purposes only. */
   public SqlTimeseriesConfig(long id) {
     this.id = id;

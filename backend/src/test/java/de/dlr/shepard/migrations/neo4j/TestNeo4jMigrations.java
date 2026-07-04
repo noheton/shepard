@@ -626,4 +626,196 @@ public class TestNeo4jMigrations {
         "V95 re-run must remain idempotent for " + constraintName);
     }
   }
+
+  /**
+   * TPL-SEED-MFFD-1 — V100 seeds eight MFFD process-step ShepardTemplates
+   * (DATAOBJECT_RECIPE), one per process in the MFFD AFP→assembly chain.
+   *
+   * <p>This test asserts:
+   * <ul>
+   *   <li>All 8 expected templates exist after V100, by name + version 1.</li>
+   *   <li>Each carries the {@code source = 'V100-mffd'} rollback handle,
+   *       {@code templateKind = 'DATAOBJECT_RECIPE'}, {@code retired = false},
+   *       a non-null {@code appId} (V18 unique-constraint surface), and a
+   *       non-blank JSON body that contains the {@code dataObject} top-level
+   *       key (the validator's well-formedness gate).</li>
+   *   <li>The {@code MFFD AFP Layup} template's body carries the
+   *       step-specific {@code tcp-temperature-c} attribute and the
+   *       {@code urn:shepard:mffd:process-type} annotation — one spot-check
+   *       per the advisor's "don't over-assert" guidance.</li>
+   *   <li>Re-running V100 is a no-op (count stays 8).</li>
+   * </ul>
+   */
+  @Test
+  public void testV100_MffdProcessTemplatesSeed() {
+    runMigrations("V100");
+
+    String[] expectedNames = {
+      "MFFD AFP Layup",
+      "MFFD Ultrasonic Welding",
+      "MFFD Resistance Welding",
+      "MFFD Stud Welding",
+      "MFFD NDT Inspection",
+      "MFFD Frame Welding",
+      "MFFD Stringer Connection",
+      "MFFD LBR Cleats Assembly",
+    };
+
+    // Assertion 1: every template exists by {name, version: 1} with correct shape.
+    for (String name : expectedNames) {
+      var count = (Number) session
+        .query(
+          "MATCH (t:ShepardTemplate {name: $name, version: 1, source: 'V100-mffd'}) " +
+          "WHERE t.templateKind = 'DATAOBJECT_RECIPE' " +
+          "  AND t.retired = false " +
+          "  AND t.appId IS NOT NULL " +
+          "  AND t.body IS NOT NULL " +
+          "  AND t.body CONTAINS '\"dataObject\"' " +
+          "RETURN count(t) AS c",
+          Map.of("name", name)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V100 must seed template " + name + " with the expected canonical shape");
+    }
+
+    // Assertion 2: total count across the V100-tagged set is exactly 8.
+    var total = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, total.intValue(),
+      "V100 must seed exactly 8 MFFD process-step templates");
+
+    // Assertion 3: every appId is unique (the V18 constraint already enforces
+    // this; a positive assertion documents the contract).
+    var distinctAppIds = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) " +
+        "RETURN count(DISTINCT t.appId) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, distinctAppIds.intValue(),
+      "every seeded MFFD template must carry a unique appId");
+
+    // Assertion 4: spot-check — AFP Layup carries the step-specific
+    // tcp-temperature-c attribute and the canonical process-type annotation.
+    var afpSpot = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {name: 'MFFD AFP Layup', source: 'V100-mffd'}) " +
+        "WHERE t.body CONTAINS 'tcp-temperature-c' " +
+        "  AND t.body CONTAINS 'urn:shepard:mffd:process-type' " +
+        "  AND t.body CONTAINS 'CF/LMPAEK' " +
+        "RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(1, afpSpot.intValue(),
+      "MFFD AFP Layup body must embed tcp-temperature-c + process-type + material annotations");
+
+    // Assertion 5: NDT Inspection enumerates inspection-method values
+    // — the EN 9100 audit-trail anchor for the rework loop.
+    var ndtSpot = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {name: 'MFFD NDT Inspection', source: 'V100-mffd'}) " +
+        "WHERE t.body CONTAINS 'ULTRASONIC' " +
+        "  AND t.body CONTAINS 'THERMOGRAPHY' " +
+        "  AND t.body CONTAINS 'inspection-method' " +
+        "  AND t.body CONTAINS 'result' " +
+        "RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(1, ndtSpot.intValue(),
+      "MFFD NDT Inspection body must enumerate inspection-method values and carry a result field");
+
+    // Assertion 6: idempotency — re-run V100, count stays 8.
+    runMigrations("V100");
+    var totalAfterRerun = (Number) session
+      .query(
+        "MATCH (t:ShepardTemplate {source: 'V100-mffd'}) RETURN count(t) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(8, totalAfterRerun.intValue(),
+      "V100 re-run must remain idempotent — no duplicate templates");
+  }
+
+  /**
+   * V2CONV-B4 — V111 dissolves the bespoke scene-graph stored graph. Seeds a
+   * :DigitalTwinScene + :CoordinateFrame + :Joint plus two :Collection hero
+   * links (one at the scene, one at a non-scene template appId), runs V111, and
+   * asserts the nodes + constraints are gone, the scene-pointing link is
+   * cleared, the template-pointing link survives, and a re-run is a no-op.
+   */
+  @Test
+  public void testV111_B4DissolveScenegraph() {
+    runMigrations("V110");
+
+    String sceneAppId = "b4-scene-" + randomElement;
+    String templateAppId = "b4-template-" + randomElement;
+    String collWithScene = "b4-coll-scene-" + randomElement;
+    String collWithTemplate = "b4-coll-template-" + randomElement;
+
+    session.query(
+      "CREATE (s:DigitalTwinScene {appId: $s, name: 'sc'})"
+        + " CREATE (f:CoordinateFrame {appId: $s + '-f', name: 'base'})"
+        + " CREATE (j:Joint {appId: $s + '-j', name: 'j1'})"
+        + " CREATE (s)-[:HAS_FRAME]->(f)"
+        + " CREATE (s)-[:HAS_JOINT]->(j)"
+        + " CREATE (c1:Collection {appId: $c1, name: 'with-scene', sceneGraphAppId: $s})"
+        + " CREATE (c2:Collection {appId: $c2, name: 'with-template', sceneGraphAppId: $t})",
+      Map.of("s", sceneAppId, "t", templateAppId, "c1", collWithScene, "c2", collWithTemplate)
+    );
+
+    runMigrations("V111");
+
+    for (String label : new String[] { "DigitalTwinScene", "CoordinateFrame", "Joint" }) {
+      var count = (Number) session
+        .query("MATCH (n:" + label + ") RETURN count(n) AS c", Map.of())
+        .iterator().next().get("c");
+      assertEquals(0, count.intValue(), "V111 must DETACH DELETE all :" + label + " nodes");
+    }
+
+    for (String cn : new String[] {
+      "appId_unique_DigitalTwinScene", "appId_unique_CoordinateFrame", "appId_unique_Joint"
+    }) {
+      var count = (Number) session
+        .query("SHOW CONSTRAINTS YIELD name WHERE name = $cn RETURN count(*) AS c", Map.of("cn", cn))
+        .iterator().next().get("c");
+      assertEquals(0, count.intValue(), "V111 must drop the " + cn + " constraint");
+    }
+
+    var clearedSg = session
+      .query("MATCH (c:Collection {appId: $c1}) RETURN c.sceneGraphAppId AS sg", Map.of("c1", collWithScene))
+      .iterator().next().get("sg");
+    assertEquals(null, clearedSg, "V111 must clear sceneGraphAppId pointing at a deleted scene");
+
+    var keptSg = session
+      .query("MATCH (c:Collection {appId: $c2}) RETURN c.sceneGraphAppId AS sg", Map.of("c2", collWithTemplate))
+      .iterator().next().get("sg");
+    assertEquals(templateAppId, keptSg,
+      "V111 must NOT clear a hero link pointing at a MAPPING_RECIPE template appId");
+
+    runMigrations("V111");
+    var rerunCount = (Number) session
+      .query("MATCH (n:DigitalTwinScene) RETURN count(n) AS c", Map.of())
+      .iterator().next().get("c");
+    assertEquals(0, rerunCount.intValue(), "V111 re-run must stay a no-op");
+  }
 }

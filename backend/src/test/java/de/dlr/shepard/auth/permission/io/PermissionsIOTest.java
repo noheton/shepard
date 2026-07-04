@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.file.entities.FileContainer;
@@ -55,6 +56,35 @@ public class PermissionsIOTest {
     var converted = new PermissionsIO(perm);
     assertEquals(col.getShepardId(), converted.getEntityId());
     assertNull(converted.getOwner());
+  }
+
+  @Test
+  public void testReaderGroupAppIds() {
+    var perm = new Permissions(5L);
+    Collection col = new Collection(123L);
+    col.setShepardId(134L);
+    perm.setEntities(new ArrayList<>(List.of(col)));
+
+    UserGroup g1 = new UserGroup(10L);
+    g1.setAppId("018f-appid-reader-group");
+    UserGroup g2 = new UserGroup(11L);
+    // g2 has no appId (legacy node — null is expected in the output array)
+    UserGroup g3 = new UserGroup(12L);
+    g3.setAppId("018f-appid-writer-group");
+    perm.setReaderGroups(List.of(g1, g2));
+    perm.setWriterGroups(List.of(g3));
+
+    var converted = new PermissionsIO(perm);
+    assertEquals(2, converted.getReaderGroupIds().length);
+    assertEquals(10L, converted.getReaderGroupIds()[0]);
+    assertEquals(11L, converted.getReaderGroupIds()[1]);
+    assertEquals(2, converted.getReaderGroupAppIds().length);
+    assertEquals("018f-appid-reader-group", converted.getReaderGroupAppIds()[0]);
+    assertNull(converted.getReaderGroupAppIds()[1]);
+    assertEquals(1, converted.getWriterGroupIds().length);
+    assertEquals(12L, converted.getWriterGroupIds()[0]);
+    assertEquals(1, converted.getWriterGroupAppIds().length);
+    assertEquals("018f-appid-writer-group", converted.getWriterGroupAppIds()[0]);
   }
 
   @Test

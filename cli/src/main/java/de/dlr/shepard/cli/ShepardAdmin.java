@@ -9,7 +9,9 @@ import de.dlr.shepard.cli.commands.JupyterCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
+import de.dlr.shepard.cli.commands.SqlTimeseriesCommand;
 import de.dlr.shepard.cli.commands.StorageCommand;
+import de.dlr.shepard.cli.commands.ThermographyCommand;
 import de.dlr.shepard.cli.plugin.CliPluginBootstrap;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -52,7 +54,9 @@ import picocli.CommandLine.Command;
     MigrationsCommand.class,
     PluginsCommand.class,
     SemanticCommand.class,
+    SqlTimeseriesCommand.class,
     StorageCommand.class,
+    ThermographyCommand.class,
   }
 )
 public final class ShepardAdmin implements Runnable {

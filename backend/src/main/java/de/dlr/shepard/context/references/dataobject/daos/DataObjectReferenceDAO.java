@@ -63,6 +63,24 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
     return result;
   }
 
+  /**
+   * Looks up a DataObjectReference by its application-level UUID v7 ({@code appId}).
+   * V2-SWEEP-004-1: required by {@code DataObjectReferenceKindHandler}.
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching {@link DataObjectReference}, or {@code null} when not found
+   */
+  public DataObjectReference findByAppId(String appId) {
+    String query =
+      "MATCH %s WHERE r.appId = $appId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "DataObjectReference", false)
+        ) +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? it.next() : null;
+  }
+
   @Override
   public Class<DataObjectReference> getEntityType() {
     return DataObjectReference.class;

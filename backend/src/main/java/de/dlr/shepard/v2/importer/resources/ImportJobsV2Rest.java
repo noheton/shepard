@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
@@ -60,7 +61,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import (IMP2)")
+@Tag(name = "Import")
 public class ImportJobsV2Rest {
 
   @Inject
@@ -84,10 +85,19 @@ public class ImportJobsV2Rest {
   @Inject
   TimeseriesDataPointRepository timeseriesDataPointRepository;
 
+  private static final String PT_NOT_FOUND      = "/problems/import-jobs.not-found";
+  private static final String PT_CONFLICT       = "/problems/import-jobs.conflict";
+  private static final String PT_GONE           = "/problems/import-jobs.gone";
+  private static final String PT_UNPROCESSABLE  = "/problems/import-jobs.unprocessable";
+  private static final String PT_INTERNAL_ERROR = "/problems/import-jobs.internal-error";
+  private static final String PT_UNAUTHORIZED   = "/problems/import-jobs.unauthorized";
+  private static final String PT_FORBIDDEN      = "/problems/import-jobs.forbidden";
+
   // ─── POST /v2/import/jobs ─────────────────────────────────────────────────
 
   @POST
   @Operation(
+    operationId = "executeImport",
     summary = "Execute a validated import plan (IMP2)",
     description =
       "Consumes the commitId issued by POST /v2/import/validate and runs the import. " +
@@ -122,32 +132,29 @@ public class ImportJobsV2Rest {
     @Context SecurityContext sc
   ) {
     String caller = caller(sc);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "authentication required");
 
     // ── 1. Resolve plan ─────────────────────────────────────────────────────
     ImportPlan plan = importPlanDAO.findByCommitId(request.commitId());
     if (plan == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("No plan found for commitId: " + request.commitId())
-        .build();
+      return problem(PT_NOT_FOUND, "Plan not found", Response.Status.NOT_FOUND,
+        "No plan found for commitId: " + request.commitId());
     }
 
     // ── 2. Status checks ────────────────────────────────────────────────────
     switch (plan.getStatus()) {
       case "USED" -> {
-        return Response.status(Response.Status.CONFLICT)
-          .entity("Plan already executed (status=USED): " + request.commitId())
-          .build();
+        return problem(PT_CONFLICT, "Plan already executed", Response.Status.CONFLICT,
+          "Plan already executed (status=USED): " + request.commitId());
       }
       case "INVALIDATED" -> {
-        return Response.status(422)
-          .entity("Plan was INVALIDATED — cannot execute a plan with hard validation errors.")
-          .build();
+        return problem(PT_UNPROCESSABLE, "Plan invalidated", 422,
+          "Plan was INVALIDATED — cannot execute a plan with hard validation errors.");
       }
       case "EXPIRED" -> {
-        return Response.status(Response.Status.GONE)
-          .entity("Plan has expired (status=EXPIRED): " + request.commitId())
-          .build();
+        return problem(PT_GONE, "Plan expired", Response.Status.GONE,
+          "Plan has expired (status=EXPIRED): " + request.commitId());
       }
       default -> { /* VALID — continue */ }
     }
@@ -156,30 +163,28 @@ public class ImportJobsV2Rest {
     if (plan.getExpiresAt() != null && plan.getExpiresAt() < System.currentTimeMillis()) {
       plan.setStatus("EXPIRED");
       importPlanDAO.createOrUpdate(plan);
-      return Response.status(Response.Status.GONE)
-        .entity("Plan has expired (TTL exceeded): " + request.commitId())
-        .build();
+      return problem(PT_GONE, "Plan expired", Response.Status.GONE,
+        "Plan has expired (TTL exceeded): " + request.commitId());
     }
 
     // ── 4. Pre-IMP2 plan guard (manifestJson == null) ───────────────────────
     if (plan.getManifestJson() == null) {
-      return Response.status(Response.Status.GONE)
-        .entity("Plan predates IMP2 (no stored manifest) — re-validate to obtain a " +
-          "new commitId: " + request.commitId())
-        .build();
+      return problem(PT_GONE, "Plan predates IMP2", Response.Status.GONE,
+        "Plan predates IMP2 (no stored manifest) — re-validate to obtain a " +
+          "new commitId: " + request.commitId());
     }
 
     // ── 5. Write permission on target Collection ─────────────────────────────
     Optional<Long> collOgmId = collectionPropertiesDAO.findCollectionIdByAppId(
       plan.getCollectionAppId());
     if (collOgmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Target collection not found: " + plan.getCollectionAppId())
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "Target collection not found: " + plan.getCollectionAppId());
     }
     if (!permissionsService.isAccessTypeAllowedForUser(
         collOgmId.get(), AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Write permission required", Response.Status.FORBIDDEN,
+        "caller lacks Write permission on the target collection");
     }
 
     // ── 6. Fingerprint re-verification ───────────────────────────────────────
@@ -189,18 +194,15 @@ public class ImportJobsV2Rest {
       Log.warnf("IMP2: collection fingerprint mismatch for plan %s — collection has changed " +
         "since validation. expected=%s actual=%s",
         request.commitId(), plan.getCollectionFingerprint(), currentFingerprint);
-      return Response.status(Response.Status.CONFLICT)
-        .entity("Collection has changed since this plan was validated — " +
-          "re-validate to obtain a fresh commitId.")
-        .build();
+      return problem(PT_CONFLICT, "Collection changed since validation", Response.Status.CONFLICT,
+        "Collection has changed since this plan was validated — re-validate to obtain a fresh commitId.");
     }
 
     // ── 7. Import lock ────────────────────────────────────────────────────────
     ImportLock lock = lockService.acquire(plan.getCollectionAppId(), caller);
     if (lock == null) {
-      return Response.status(Response.Status.CONFLICT)
-        .entity("A concurrent import is already running for this collection — try again later.")
-        .build();
+      return problem(PT_CONFLICT, "Concurrent import running", Response.Status.CONFLICT,
+        "A concurrent import is already running for this collection — try again later.");
     }
 
     // ── 8. Execute ────────────────────────────────────────────────────────────
@@ -213,9 +215,9 @@ public class ImportJobsV2Rest {
       // Mark plan USED even on unexpected error — commitId is one-shot.
       plan.setStatus("USED");
       importPlanDAO.createOrUpdate(plan);
-      return Response.serverError()
-        .entity("Import execution failed unexpectedly: " + e.getMessage())
-        .build();
+      return problem(PT_INTERNAL_ERROR, "Import execution failed",
+        Response.Status.INTERNAL_SERVER_ERROR,
+        "Import execution failed unexpectedly: " + e.getMessage());
     } finally {
       // Lock release is best-effort in the finally block.
       // The normal release path is called below; if an exception bypasses that,
@@ -249,6 +251,16 @@ public class ImportJobsV2Rest {
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
+  private static Response problem(String type, String title, int status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status, detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   private static String caller(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;

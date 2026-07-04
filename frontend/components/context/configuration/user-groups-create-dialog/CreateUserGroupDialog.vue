@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { PermissionType, type UserGroup } from "@dlr-shepard/backend-client";
+import { PermissionType } from "@dlr-shepard/backend-client";
 import { createUserGroup } from "~/composables/context/useCreateUserGroup";
+import type { UserGroupV2 } from "~/composables/context/useUserGroupsV2";
 
 const isValid = ref(true);
 const userGroupTitle = ref<string>("");
@@ -13,7 +14,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 const titleError = ref<boolean>(false);
 
 const emit = defineEmits<{
-  (e: "user-group-created", userGroupId: UserGroup): void;
+  (e: "user-group-created", userGroup: UserGroupV2): void;
 }>();
 
 const validationRules = [

@@ -1,28 +1,34 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotEntryIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -52,7 +58,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/snapshots/{snapshotAppId}")
 @RequestScoped
-@Tag(name = "Snapshots (v2)")
+@Tag(name = "Snapshots")
 public class SnapshotRest {
 
   @Inject
@@ -64,6 +70,15 @@ public class SnapshotRest {
   @Inject
   EntityIdResolver entityIdResolver;
 
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_FORBIDDEN = "/problems/snapshots.forbidden";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /**
    * Read snapshot metadata.
    *
@@ -74,6 +89,7 @@ public class SnapshotRest {
    */
   @GET
   @Operation(
+    operationId = "getSnapshot",
     summary = "Read snapshot metadata.",
     description = "Returns name, description, snapshotCapturedAt, snapshotCreatedByUsername, collectionAppId, and entryCount. Requires Read permission on the root Collection."
   )
@@ -88,10 +104,10 @@ public class SnapshotRest {
   public Response read(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
     // Auth gate
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -100,50 +116,63 @@ public class SnapshotRest {
   }
 
   /**
-   * Read the full snapshot manifest.
+   * Read the snapshot manifest with real pagination.
    *
    * @param snapshotAppId the application-level identifier of the snapshot.
+   * @param page          zero-based page index (default 0).
+   * @param pageSize      entries per page, 1–1000 (default 200).
    * @param sc            the JAX-RS security context.
-   * @return 200 with an array of {@code {entityAppId, revision}} pairs;
+   * @return 200 with a paged {@code {items, total, page, pageSize}} envelope;
    *         401 unauthenticated; 403 forbidden; 404 unknown or deleted snapshot.
    */
   @GET
   @Path("/manifest")
   @Operation(
-    summary = "Read the full snapshot manifest.",
+    operationId = "manifest",
+    summary = "Read the snapshot manifest (paginated).",
     description =
-      "Returns every (entityAppId, revision) pair captured at snapshot time. " +
-      "Ordered by entityAppId ascending for deterministic diff tooling. " +
-      "Requires Read permission on the root Collection."
+      "Returns (entityAppId, revision) pairs captured at snapshot time, " +
+      "ordered by entityAppId ascending for deterministic diff tooling. " +
+      "Use ?page= and ?pageSize= (default 200, max 1000) to paginate large " +
+      "snapshots. Requires Read permission on the root Collection."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot manifest.",
+    description = "Paginated snapshot manifest.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = SnapshotEntryIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the root Collection.")
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
-  public Response manifest(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
+  public Response manifest(
+      @PathParam("snapshotAppId") String snapshotAppId,
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+      @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
 
-    List<SnapshotEntryIO> entries = snapshotService
+    List<SnapshotEntryIO> allEntries = snapshotService
       .findEntries(snapshot.getId())
       .stream()
       .map(SnapshotEntryIO::new)
       .toList();
 
-    return Response.ok(entries).build();
+    int total = allEntries.size();
+    int from = Math.min(page * pageSize, total);
+    int to = Math.min(from + pageSize, total);
+    List<SnapshotEntryIO> pageEntries = allEntries.subList(from, to);
+
+    return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize)).build();
   }
 
   /**
@@ -158,6 +187,7 @@ public class SnapshotRest {
    */
   @DELETE
   @Operation(
+    operationId = "deleteSnapshot",
     summary = "Delete a snapshot.",
     description =
       "Soft-deletes the snapshot and all its SnapshotEntry rows. " +
@@ -169,10 +199,10 @@ public class SnapshotRest {
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
   public Response delete(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Write, caller);
     if (gate != null) return gate;
@@ -193,16 +223,16 @@ public class SnapshotRest {
    */
   private Response checkCollectionAccess(Snapshot snapshot, AccessType accessType, String caller) {
     if (snapshot.getCollection() == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Snapshot has no associated Collection.");
     }
     long collectionOgmId;
     try {
       collectionOgmId = entityIdResolver.resolveLong(snapshot.getCollection().getAppId());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "Root Collection for this Snapshot not found.");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(collectionOgmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks permission on the root Collection.");
     }
     return null;
   }

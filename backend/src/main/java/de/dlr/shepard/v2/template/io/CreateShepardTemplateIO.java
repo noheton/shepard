@@ -33,4 +33,18 @@ public class CreateShepardTemplateIO {
 
   @Schema(required = false, nullable = true, description = "Author-supplied tags for picker filtering.")
   private List<String> tags;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "MDI icon name with the 'mdi-' prefix, e.g. 'mdi-layers'. Null means use the per-kind default. Design: aidocs/integrations/122."
+  )
+  private String iconKey;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "appId of the parent template to extend (single-parent inheritance). Must share this template's templateKind. Null means a root template. Design: aidocs/integrations/123."
+  )
+  private String parentTemplateAppId;
 }

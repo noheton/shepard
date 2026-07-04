@@ -1,8 +1,8 @@
 import {
   GitCredentialsApi,
-  type CreateGitCredentialIO,
-  type GitCredentialIO,
-  type PatchGitCredentialIO,
+  type CreateGitCredential,
+  type GitCredential,
+  type PatchGitCredential,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
@@ -12,11 +12,11 @@ export function useManageGitCredentials() {
 
   const api = useV2ShepardApi(GitCredentialsApi);
 
-  async function create(body: CreateGitCredentialIO): Promise<GitCredentialIO | null> {
+  async function create(body: CreateGitCredential): Promise<GitCredential | null> {
     isSaving.value = true;
     saveError.value = null;
     try {
-      return await api.value.createCredential(body);
+      return await api.value.createGitCredential({ createGitCredential: body });
     } catch (error) {
       saveError.value = "Failed to create git credential.";
       handleError(error, "creating git credential");
@@ -26,11 +26,11 @@ export function useManageGitCredentials() {
     }
   }
 
-  async function patch(appId: string, body: PatchGitCredentialIO): Promise<GitCredentialIO | null> {
+  async function patch(appId: string, body: PatchGitCredential): Promise<GitCredential | null> {
     isSaving.value = true;
     saveError.value = null;
     try {
-      return await api.value.patchCredential(appId, body);
+      return await api.value.patchGitCredential({ appId, patchGitCredential: body });
     } catch (error) {
       saveError.value = "Failed to update git credential.";
       handleError(error, "updating git credential");
@@ -44,7 +44,7 @@ export function useManageGitCredentials() {
     isSaving.value = true;
     saveError.value = null;
     try {
-      await api.value.deleteCredential(appId);
+      await api.value.deleteGitCredential({ appId });
       return true;
     } catch (error) {
       saveError.value = "Failed to delete git credential.";

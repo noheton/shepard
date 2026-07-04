@@ -191,6 +191,25 @@ public class SnapshotService {
   }
 
   /**
+   * SNAPSHOT-LIST-1-REST — paginated list across all collections,
+   * newest first. No permission filter is applied; the REST layer is
+   * responsible for scoping the result to the caller's readable subset.
+   */
+  public List<Snapshot> listAll(int page, int size) {
+    return snapshotDAO.findAll(page, size);
+  }
+
+  /** SNAPSHOT-LIST-1-REST — total unfiltered snapshot count for the envelope. */
+  public long countAll() {
+    return snapshotDAO.countAll();
+  }
+
+  /** SNAPSHOT-LIST-1-REST — total per-collection snapshot count for the envelope. */
+  public long countByCollection(String collectionAppId) {
+    return snapshotDAO.countByCollectionAppId(collectionAppId);
+  }
+
+  /**
    * Returns the {@link Snapshot} identified by {@code snapshotAppId}, or
    * {@code null} when none exists or the snapshot is soft-deleted.
    *

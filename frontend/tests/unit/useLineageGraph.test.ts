@@ -181,17 +181,17 @@ describe("baseGraphSeriesConfig", () => {
 
   it("sets lineStyle curveness", () => {
     const cfg = baseGraphSeriesConfig();
-    expect((cfg.lineStyle as any).curveness).toBe(0.15);
+    expect((cfg.lineStyle as Record<string, unknown>).curveness).toBe(0.15);
   });
 
   it("sets emphasis.focus to 'adjacency'", () => {
     const cfg = baseGraphSeriesConfig();
-    expect((cfg.emphasis as any).focus).toBe("adjacency");
+    expect((cfg.emphasis as Record<string, unknown>).focus).toBe("adjacency");
   });
 
   it("sets label.color to 'inherit'", () => {
     const cfg = baseGraphSeriesConfig();
-    expect((cfg.label as any).color).toBe("inherit");
+    expect((cfg.label as Record<string, unknown>).color).toBe("inherit");
   });
 
   it("does NOT include layout (callers must specify their own)", () => {

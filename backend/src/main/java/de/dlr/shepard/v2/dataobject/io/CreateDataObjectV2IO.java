@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import java.util.List;
@@ -32,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties({"id"})
 @Schema(
   name = "CreateDataObjectV2",
   description =

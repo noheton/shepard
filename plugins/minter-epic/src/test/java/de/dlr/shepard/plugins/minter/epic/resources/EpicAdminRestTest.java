@@ -14,11 +14,8 @@ import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialSetIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigPatchIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicTestConnectionIO;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
-import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService.EpicPatch;
-import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService.ReadOnlyFieldException;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -66,92 +63,6 @@ class EpicAdminRestTest {
     Path p = EpicAdminRest.class.getAnnotation(Path.class);
     assertThat(p).isNotNull();
     assertThat(p.value()).isEqualTo("/v2/admin/minters/epic");
-  }
-
-  // ─── GET /config ────────────────────────────────────────────────────────
-
-  @Test
-  void getConfig_returnsMaskedIO() {
-    EpicMinterConfig cfg = new EpicMinterConfig();
-    cfg.setEnabled(true);
-    cfg.setApiBaseUrl("https://handle.argo.grnet.gr/api");
-    cfg.setHandlePrefix("21.T11148");
-    cfg.setCredentialKey("gcm1:secret");
-    cfg.setCredentialHash("0123456789abcdef".repeat(4));
-    when(service.current()).thenReturn(cfg);
-
-    Response r = rest.getConfig();
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    EpicMinterConfigIO body = (EpicMinterConfigIO) r.getEntity();
-    assertThat(body.enabled()).isTrue();
-    assertThat(body.handlePrefix()).isEqualTo("21.T11148");
-    assertThat(body.credentialSet()).isTrue();
-    assertThat(body.credentialFingerprint()).isEqualTo("01234567");
-
-    // CRITICAL — the IO must never serialise the cipher or the full hash.
-    String rendered = body.toString();
-    assertThat(rendered).doesNotContain("gcm1:secret");
-    assertThat(rendered).doesNotContain("0123456789abcdef0123456789abcdef");
-  }
-
-  @Test
-  void getConfig_returnsCredentialSetFalseWhenNoCredential() {
-    EpicMinterConfig cfg = new EpicMinterConfig();
-    cfg.setEnabled(false);
-    when(service.current()).thenReturn(cfg);
-
-    Response r = rest.getConfig();
-
-    EpicMinterConfigIO body = (EpicMinterConfigIO) r.getEntity();
-    assertThat(body.credentialSet()).isFalse();
-    assertThat(body.credentialFingerprint()).isNull();
-  }
-
-  // ─── PATCH /config ──────────────────────────────────────────────────────
-
-  @Test
-  void patchConfig_appliesAndReturnsMaskedIO() {
-    EpicMinterConfig saved = new EpicMinterConfig();
-    saved.setEnabled(true);
-    saved.setApiBaseUrl("https://handle.argo.grnet.gr/api");
-    when(service.patch(any(EpicPatch.class), anyString())).thenReturn(saved);
-
-    EpicMinterConfigPatchIO patch = new EpicMinterConfigPatchIO();
-    patch.setEnabled(true);
-
-    Response r = rest.patchConfig(patch, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    EpicMinterConfigIO body = (EpicMinterConfigIO) r.getEntity();
-    assertThat(body.enabled()).isTrue();
-  }
-
-  @Test
-  void patchConfig_acceptsNullBodyAsNoOp() {
-    EpicMinterConfig saved = new EpicMinterConfig();
-    when(service.patch(any(EpicPatch.class), anyString())).thenReturn(saved);
-
-    Response r = rest.patchConfig(null, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-  }
-
-  @Test
-  void patchConfig_rejectsCredentialHashWithProblemJson() {
-    when(service.patch(any(EpicPatch.class), anyString()))
-      .thenThrow(new ReadOnlyFieldException("credentialHash"));
-
-    EpicMinterConfigPatchIO patch = new EpicMinterConfigPatchIO();
-    patch.setCredentialHash("anything");
-
-    Response r = rest.patchConfig(patch, security);
-
-    assertThat(r.getStatus()).isEqualTo(400);
-    assertThat(r.getMediaType().toString()).contains("application/problem+json");
-    ProblemJson body = (ProblemJson) r.getEntity();
-    assertThat(body.title()).contains("read-only");
-    assertThat(body.detail()).contains("credentialHash");
   }
 
   // ─── POST /credential ───────────────────────────────────────────────────

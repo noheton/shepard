@@ -1,5 +1,11 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.mongoDB.NamedInputStream;
+import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
@@ -13,7 +19,15 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +45,14 @@ import java.util.Map;
 @ApplicationScoped
 public class ContentMcpTools {
 
+  /**
+   * Hard cap on {@code file_upload} base64 payload size (decoded bytes).
+   * 10 MiB — anything larger should use the multipart REST endpoint
+   * {@code POST /v2/files} directly; JSON-RPC over MCP is not the right
+   * transport for large payloads.
+   */
+  static final int FILE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
   @Inject
   FileContainerService fileContainerService;
 
@@ -39,6 +61,15 @@ public class ContentMcpTools {
 
   @Inject
   SemanticAnnotationService semanticAnnotationService;
+
+  @Inject
+  SingletonFileReferenceService singletonFileReferenceService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  AuthenticationContext authenticationContext;
 
   @Inject
   McpContextBridge contextBridge;
@@ -59,10 +90,11 @@ public class ContentMcpTools {
       "  fileSize       — bytes (may be null on legacy uploads).\n" +
       "  providerId     — backing storage provider id (S3 / MinIO / local).\n" +
       "  createdAt      — upload timestamp.\n\n" +
-      "Phase 1 limitation: file content (bytes) is NOT retrievable through MCP. " +
-      "To download, point a client at " +
-      "`/shepard/api/fileContainers/{numericContainerId}/files/{oid}/file` with the " +
-      "same Bearer token. A native download MCP tool is on the Phase 2 roadmap."
+      "For singleton FR1b FileReferences (one-file-per-reference shape — the default " +
+      "for new uploads per CLAUDE.md), use `file_upload` to create and `file_content` " +
+      "to download the bytes — both bypass the FileContainer envelope entirely. The " +
+      "tool here lists files inside the legacy bundle shape (`FileContainer` →\n" +
+      "`FileBundleReference`)."
   )
   public String listFiles(
     @ToolArg(description = "UUID v7 of the FileContainer (from `get_data_object → containers.files[].containerAppId`). NOT a TimeseriesContainer or StructuredDataContainer appId.") String containerAppId
@@ -149,6 +181,8 @@ public class ContentMcpTools {
       "Use this to read the structured side of a DataObject — the part beyond " +
       "the free-text `attributes` map you got back from `get_data_object`. " +
       "Annotations bridge to FAIR vocabularies (CHAMEO, QUDT, Material OWL, …).\n\n" +
+      "Pagination: default page=0, pageSize=50 (max 200). Call again with page=1 " +
+      "if the returned array has exactly `pageSize` rows (more pages likely exist).\n\n" +
       "Each row:\n" +
       "  appId             — annotation identifier.\n" +
       "  propertyName, propertyIRI       — what is being described.\n" +
@@ -163,15 +197,25 @@ public class ContentMcpTools {
       "Returns an empty array if the DataObject has no annotations yet."
   )
   public String listAnnotations(
-    @ToolArg(description = "UUID v7 of the DataObject (from `list_data_objects` or `get_data_object → appId`).") String dataObjectAppId
+    @ToolArg(description = "UUID v7 of the DataObject (from `list_data_objects` or `get_data_object → appId`).") String dataObjectAppId,
+    @ToolArg(required = false, description = "Zero-based page index. Default 0.") Integer page,
+    @ToolArg(required = false, description = "Page size, capped at 200. Default 50.") Integer pageSize
   ) {
     return support.run("list_annotations", () -> {
       contextBridge.bind();
       long ogmId = support.resolveOfType(dataObjectAppId, "DataObject", "dataObjectAppId");
 
+      int safePage = page != null ? Math.max(page, 0) : 0;
+      int safeSize = pageSize != null ? Math.min(Math.max(pageSize, 1), 200) : 50;
+
       List<SemanticAnnotation> annotations = semanticAnnotationService.getAllAnnotationsByShepardId(ogmId);
-      List<Map<String, Object>> result = new ArrayList<>(annotations.size());
-      for (SemanticAnnotation a : annotations) {
+      int total = annotations.size();
+      int from = Math.min(safePage * safeSize, total);
+      int to = Math.min(from + safeSize, total);
+      List<SemanticAnnotation> page1 = annotations.subList(from, to);
+
+      List<Map<String, Object>> result = new ArrayList<>(page1.size());
+      for (SemanticAnnotation a : page1) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("appId", a.getAppId());
         row.put("propertyName", a.getPropertyName());
@@ -196,5 +240,218 @@ public class ContentMcpTools {
 
   private static String repoName(SemanticRepository repo) {
     return repo == null ? null : repo.getName();
+  }
+
+  // ─── file_upload (MCP-COV-04) ───────────────────────────────────────────────
+
+  @Tool(
+    name = "file_upload",
+    description =
+      "Upload a small file and attach it to a DataObject as a singleton FR1b " +
+      "FileReference (per the CLAUDE.md `singleton FileReference for one-file uploads` " +
+      "rule). Returns the new FileReference appId; that appId resolves directly to the " +
+      "bytes via `file_content`.\n\n" +
+      "Bytes travel as a **base64-encoded string** inside the JSON-RPC envelope. The " +
+      "decoded payload is capped at " + FILE_UPLOAD_MAX_BYTES + " bytes (~10 MiB); " +
+      "anything larger must use the two-step REST API directly: " +
+      "`POST /v2/references?kind=file&dataObjectAppId=...` with JSON body `{\"name\":\"...\"}` " +
+      "to create the metadata node, then " +
+      "`PUT /v2/references/{appId}/content?filename=...` with `application/octet-stream` body — " +
+      "JSON-RPC is not a streaming transport.\n\n" +
+      "Parameters:\n" +
+      "  parentDataObjectAppId — UUID v7 of the DataObject the new Reference attaches to.\n" +
+      "  name                  — human-readable display name for the Reference.\n" +
+      "  filename              — original filename (preserved in the embedded ShepardFile;\n" +
+      "                          used as `name` when `name` is omitted).\n" +
+      "  contentBase64         — base64-encoded file bytes (required).\n" +
+      "  mimeType              — informational; not currently stored (annotation hook).\n\n" +
+      "Permission: Write on the parent DataObject (inherited from its Collection).\n\n" +
+      "Response: {appId, name, dataObjectAppId, filename, fileSize, md5}."
+  )
+  public String fileUpload(
+    @ToolArg(description = "UUID v7 of the DataObject to attach the new singleton FileReference to.") String parentDataObjectAppId,
+    @ToolArg(required = false, description = "Display name for the Reference (defaults to filename when omitted).") String name,
+    @ToolArg(description = "Original filename of the upload (used as display name when name is omitted).") String filename,
+    @ToolArg(description = "File bytes as a base64-encoded string. Hard cap " + FILE_UPLOAD_MAX_BYTES + " bytes (decoded).") String contentBase64,
+    @ToolArg(required = false, description = "Informational MIME type; not yet stored. Use a semantic annotation on the returned appId to record it durably.") String mimeType
+  ) {
+    return support.run("file_upload", () -> {
+      contextBridge.bind();
+
+      if (parentDataObjectAppId == null || parentDataObjectAppId.isBlank()) {
+        throw McpToolSupport.invalidParams("parentDataObjectAppId is required.");
+      }
+      if (filename == null || filename.isBlank()) {
+        throw McpToolSupport.invalidParams("filename is required (used as display name when name is omitted).");
+      }
+      if (contentBase64 == null || contentBase64.isBlank()) {
+        throw McpToolSupport.invalidParams("contentBase64 is required (base64-encoded file bytes).");
+      }
+
+      byte[] decoded;
+      try {
+        decoded = Base64.getDecoder().decode(contentBase64.trim());
+      } catch (IllegalArgumentException iae) {
+        throw McpToolSupport.invalidParams("contentBase64 is not valid base64: " + iae.getMessage());
+      }
+      if (decoded.length == 0) {
+        throw McpToolSupport.invalidParams("contentBase64 decoded to zero bytes.");
+      }
+      if (decoded.length > FILE_UPLOAD_MAX_BYTES) {
+        throw McpToolSupport.invalidParams(
+          "Decoded payload is " + decoded.length + " bytes; max " + FILE_UPLOAD_MAX_BYTES +
+          " for MCP. For larger uploads use the two-step REST API: " +
+          "POST /v2/references?kind=file&dataObjectAppId=... (JSON body {name}) " +
+          "then PUT /v2/references/{appId}/content?filename=... (octet-stream body)."
+        );
+      }
+
+      String caller = authenticationContext.getCurrentUserName();
+      if (caller == null || caller.isBlank()) {
+        throw new NotAuthorizedException("Authentication required for file_upload.");
+      }
+
+      Long parentOgmId = singletonFileReferenceService.getDataObjectOgmId(parentDataObjectAppId);
+      if (parentOgmId == null) {
+        throw McpToolSupport.invalidParams("No DataObject found for parentDataObjectAppId=" + parentDataObjectAppId);
+      }
+      if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller)) {
+        throw new ForbiddenException(
+          "Caller " + caller + " lacks Write permission on DataObject " + parentDataObjectAppId
+        );
+      }
+
+      String referenceName = (name != null && !name.isBlank()) ? name : filename;
+      FileReference created;
+      try (InputStream is = new ByteArrayInputStream(decoded)) {
+        created = singletonFileReferenceService.createSingleton(
+          parentDataObjectAppId,
+          referenceName,
+          filename,
+          is,
+          (long) decoded.length
+        );
+      } catch (IOException ioe) {
+        // ByteArrayInputStream.close() doesn't throw, but the compiler doesn't know that.
+        throw new RuntimeException("Failed to close in-memory upload stream", ioe);
+      } catch (NotFoundException nfe) {
+        throw McpToolSupport.invalidParams("Parent DataObject vanished mid-upload: " + parentDataObjectAppId);
+      } catch (BadRequestException bre) {
+        throw McpToolSupport.invalidParams(bre.getMessage() == null ? "Upload rejected" : bre.getMessage());
+      }
+
+      Map<String, Object> result = new LinkedHashMap<>();
+      result.put("appId", created.getAppId());
+      result.put("name", created.getName());
+      result.put("dataObjectAppId", parentDataObjectAppId);
+      ShepardFile f = created.getFile();
+      if (f != null) {
+        result.put("filename", f.getFilename());
+        result.put("fileSize", f.getFileSize());
+        result.put("md5", f.getMd5());
+      } else {
+        // Degenerate row — service contract says this shouldn't happen on the
+        // happy path, but we project an explicit null so the agent can detect it.
+        result.put("filename", null);
+        result.put("fileSize", null);
+        result.put("md5", null);
+      }
+      if (mimeType != null && !mimeType.isBlank()) {
+        // Echo the caller-supplied mimeType so an agent can confirm the value;
+        // it isn't yet stored on the Reference (see tool description).
+        result.put("mimeTypeHint", mimeType);
+      }
+      return support.toJson(result);
+    });
+  }
+
+  // ─── file_content (MCP-COV-04) ──────────────────────────────────────────────
+
+  @Tool(
+    name = "file_content",
+    description =
+      "Download the bytes of a singleton FR1b FileReference by appId. Returns the bytes " +
+      "as a base64-encoded string inside the JSON-RPC envelope.\n\n" +
+      "Hard cap " + FILE_UPLOAD_MAX_BYTES + " bytes (decoded). When the stored file " +
+      "exceeds the cap, the tool returns an error pointing the caller at the multipart " +
+      "REST endpoint `GET /v2/files/{appId}/content` (which supports Range requests).\n\n" +
+      "Permission: Read on the parent DataObject (inherited from its Collection).\n\n" +
+      "Response: {appId, filename, fileSize, contentBase64}."
+  )
+  public String fileContent(
+    @ToolArg(description = "UUID v7 of the singleton FileReference (returned by file_upload, or `get_data_object → fileReferenceAppIds[]` for FR1b shapes).") String fileReferenceAppId
+  ) {
+    return support.run("file_content", () -> {
+      contextBridge.bind();
+
+      if (fileReferenceAppId == null || fileReferenceAppId.isBlank()) {
+        throw McpToolSupport.invalidParams("fileReferenceAppId is required.");
+      }
+
+      FileReference ref = singletonFileReferenceService.getByAppId(fileReferenceAppId);
+      if (ref == null) {
+        throw McpToolSupport.invalidParams("No singleton FileReference found for appId=" + fileReferenceAppId);
+      }
+      if (ref.isDeleted()) {
+        throw McpToolSupport.invalidParams("FileReference is soft-deleted: " + fileReferenceAppId);
+      }
+
+      String caller = authenticationContext.getCurrentUserName();
+      if (caller == null || caller.isBlank()) {
+        throw new NotAuthorizedException("Authentication required for file_content.");
+      }
+      // Check Read against the parent DataObject (same pattern as
+      // FileReferenceV2Rest.checkAccess on the REST side).
+      Long parentOgmId = ref.getDataObject() == null ? null : ref.getDataObject().getId();
+      if (parentOgmId == null) {
+        throw McpToolSupport.invalidParams(
+          "FileReference " + fileReferenceAppId + " has no parent DataObject link (graph inconsistency)."
+        );
+      }
+      if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Read, caller)) {
+        throw new ForbiddenException(
+          "Caller " + caller + " lacks Read permission on the parent DataObject of " + fileReferenceAppId
+        );
+      }
+
+      NamedInputStream payload;
+      try {
+        payload = singletonFileReferenceService.getPayload(fileReferenceAppId);
+      } catch (NotFoundException nfe) {
+        throw McpToolSupport.invalidParams("Underlying bytes missing for " + fileReferenceAppId);
+      }
+
+      long size = payload.getSize() == null ? -1 : payload.getSize();
+      if (size > FILE_UPLOAD_MAX_BYTES) {
+        throw McpToolSupport.invalidParams(
+          "Stored file is " + size + " bytes; max " + FILE_UPLOAD_MAX_BYTES + " for MCP. " +
+          "Use the REST endpoint GET /v2/files/" + fileReferenceAppId + "/content " +
+          "(supports Range requests) instead."
+        );
+      }
+
+      byte[] bytes;
+      try (InputStream in = payload.getInputStream()) {
+        bytes = in.readNBytes(FILE_UPLOAD_MAX_BYTES + 1);
+      } catch (IOException ioe) {
+        throw new RuntimeException("Failed to read file content for " + fileReferenceAppId, ioe);
+      }
+      if (bytes.length > FILE_UPLOAD_MAX_BYTES) {
+        // Defence in depth: the stored-size check above is the canonical guard,
+        // but in degenerate rows fileSize may be null. This branch catches the
+        // null-size + actually-big case.
+        throw McpToolSupport.invalidParams(
+          "Stored file exceeds " + FILE_UPLOAD_MAX_BYTES + " bytes. " +
+          "Use the REST endpoint GET /v2/files/" + fileReferenceAppId + "/content instead."
+        );
+      }
+
+      Map<String, Object> result = new LinkedHashMap<>();
+      result.put("appId", fileReferenceAppId);
+      result.put("filename", payload.getName());
+      result.put("fileSize", bytes.length);
+      result.put("contentBase64", Base64.getEncoder().encodeToString(bytes));
+      return support.toJson(result);
+    });
   }
 }

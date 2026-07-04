@@ -11,6 +11,7 @@ import { useCreateFileContainer } from "~/composables/data/useCreateFileContaine
 import { useCreateSpatialDataContainer } from "~/composables/data/useCreateSpatialDataContainer";
 import { useCreateStructuredDataContainer } from "~/composables/data/useCreateStructuredDataContainer";
 import { useCreateTimeseriesContainer } from "~/composables/data/useCreateTimeseriesContainer";
+import type { V2Container } from "~/composables/container/createV2Container";
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -35,6 +36,7 @@ async function saveChanges() {
     | TimeseriesContainer
     | StructuredDataContainer
     | SpatialDataContainer
+    | V2Container
     | undefined = undefined;
 
   if (containerType.value == "FILE") {
@@ -63,7 +65,7 @@ async function saveChanges() {
   }
 
   if (!newContainer) return;
-  emit("container-created", newContainer.id, newContainer.type);
+  emit("container-created", newContainer.id, newContainer.type as ContainerType);
   showDialog.value = false;
 }
 </script>

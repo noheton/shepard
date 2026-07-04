@@ -1,10 +1,14 @@
 package de.dlr.shepard.v2.admin.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -71,6 +75,45 @@ class InstanceAdminServiceTest extends BaseTestCase {
   void revokeInstanceAdmin_returnsTrueWhenEdgeDeleted() {
     when(roleDAO.revokeRole("alice", Constants.INSTANCE_ADMIN_ROLE)).thenReturn(true);
     assertTrue(service.revokeInstanceAdmin("alice"));
+  }
+
+  @Test
+  void grantInstanceAdmin_stampsRoleChangedAt() {
+    // ROLE-GRANT-STALE-SESSION-02 — on successful grant the affected
+    // :User node gets a fresh `roleChangedAt` so subsequent JWT validation
+    // rejects any session predating this moment.
+    User u = new User("alice");
+    when(userDAO.find("alice")).thenReturn(u);
+    when(roleDAO.grantRole(anyString(), anyString(), anyString(), anyLong())).thenReturn(true);
+
+    long before = System.currentTimeMillis();
+    service.grantInstanceAdmin("alice", "admin");
+    long after = System.currentTimeMillis();
+
+    assertNotNull(u.getRoleChangedAt(), "grant must stamp roleChangedAt");
+    long stamped = u.getRoleChangedAt().getTime();
+    assertTrue(stamped >= before && stamped <= after, "stamp must be inside the call window");
+    verify(userDAO).createOrUpdate(u);
+  }
+
+  @Test
+  void revokeInstanceAdmin_stampsRoleChangedAtWhenEdgeDeleted() {
+    User u = new User("alice");
+    when(userDAO.find("alice")).thenReturn(u);
+    when(roleDAO.revokeRole("alice", Constants.INSTANCE_ADMIN_ROLE)).thenReturn(true);
+
+    assertTrue(service.revokeInstanceAdmin("alice"));
+    assertNotNull(u.getRoleChangedAt(), "revoke must stamp roleChangedAt on success");
+    verify(userDAO).createOrUpdate(u);
+  }
+
+  @Test
+  void revokeInstanceAdmin_doesNotStampWhenNoEdge() {
+    // Revoke that doesn't delete an edge (user never had the role) must
+    // not invalidate the user's active session.
+    when(roleDAO.revokeRole("ghost", Constants.INSTANCE_ADMIN_ROLE)).thenReturn(false);
+    org.junit.jupiter.api.Assertions.assertFalse(service.revokeInstanceAdmin("ghost"));
+    verify(userDAO, never()).createOrUpdate(any(User.class));
   }
 
   @Test

@@ -12,6 +12,12 @@ export enum UserFragments {
   // moved here from the top-level header link per user choice;
   // standalone /semantic/* routes remain valid for bookmarking + sharing
   SEMANTIC = "semantic",
+  // ----- TPL-ME-BROWSE-1 (2026-05-31) -----
+  // Non-admin browse-mine surface for ShepardTemplate. `GET /v2/templates`
+  // is authenticated-user-readable (admin gate is only for write); without
+  // this pane, researchers couldn't see what templates exist on the
+  // instance except via the in-create-flow picker dropdown.
+  TEMPLATES = "templates",
 }
 
 export const UserMenuEntries: MenuEntry[] = [
@@ -51,5 +57,11 @@ export const UserMenuEntries: MenuEntry[] = [
     name: "Semantic",
     fragment: UserFragments.SEMANTIC,
     icon: "mdi-library-outline",
+  },
+  // ----- TPL-ME-BROWSE-1 (2026-05-31) -----
+  {
+    name: "Templates",
+    fragment: UserFragments.TEMPLATES,
+    icon: "mdi-shape-outline",
   },
 ];

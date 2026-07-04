@@ -19,6 +19,7 @@ import picocli.CommandLine.Command;
     VideoStatusCommand.class,
     VideoSetFfprobeEnabledCommand.class,
     VideoSetMaxFileSizeCommand.class,
+    VideoTranscodeBackfillCommand.class,
   }
 )
 public final class VideoCommand implements Runnable {

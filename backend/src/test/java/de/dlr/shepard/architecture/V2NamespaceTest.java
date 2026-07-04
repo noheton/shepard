@@ -71,6 +71,17 @@ class V2NamespaceTest {
    * {@code /v2/} prefix as {@code de.dlr.shepard.v2..}.
    */
   private static final String PLUGINS_PACKAGE = "de.dlr.shepard.plugins";
+  /**
+   * V2CONV-A6: Tier-0 fileformat plugins (thermography, robotics) use the
+   * singular {@code de.dlr.shepard.plugin.fileformat.*} package convention
+   * that predates the `de.dlr.shepard.plugins.*` plural convention.  When
+   * these plugins were upgraded to Tier-1 (with REST resources on the
+   * {@code /v2/} shelf) their package was kept consistent with the existing
+   * Tier-0 classes rather than renamed to the plural form, so both
+   * conventions are valid plugin packages and equally entitled to the
+   * {@code /v2/} prefix.
+   */
+  private static final String PLUGIN_PACKAGE = "de.dlr.shepard.plugin";
   private static final String V2_PREFIX_WITH_SLASH = "/v2/";
   private static final String V2_PREFIX_NO_SLASH = "v2/";
   private static final String API_PREFIX_WITH_SLASH = "/shepard/api/";
@@ -94,7 +105,7 @@ class V2NamespaceTest {
     // pure-v2 package is empty (the plugins package already has
     // contributors).
     ArchRuleDefinition.classes()
-      .that(are(inV2Package()).or(are(inPluginsPackage())))
+      .that(are(inV2Package()).or(are(inPluginsPackage())).or(are(inPluginPackage())))
       .and()
       .areAnnotatedWith(Path.class)
       // MicroProfile REST *client* interfaces are annotated with @Path for
@@ -123,6 +134,10 @@ class V2NamespaceTest {
       .and()
       // PM1a phase 3: plugin modules are an equal-tier /v2/ tenant.
       .resideOutsideOfPackage(PLUGINS_PACKAGE + "..")
+      .and()
+      // V2CONV-A6: Tier-0 fileformat plugins (thermography, robotics) use the
+      // singular `de.dlr.shepard.plugin.*` convention — equally entitled to /v2/.
+      .resideOutsideOfPackage(PLUGIN_PACKAGE + "..")
       .and()
       .areAnnotatedWith(Path.class)
       .should(notHaveJaxRsPathStartingWith(V2_PREFIX_WITH_SLASH, V2_PREFIX_NO_SLASH))
@@ -153,6 +168,10 @@ class V2NamespaceTest {
       .and()
       .resideOutsideOfPackage("de.dlr.shepard.plugins..")
       .and()
+      // V2CONV-A6: Tier-0 fileformat plugins (thermography, robotics) use the
+      // singular `de.dlr.shepard.plugin.*` convention — equally entitled to /v2/.
+      .resideOutsideOfPackage(PLUGIN_PACKAGE + "..")
+      .and()
       .areAnnotatedWith(Path.class)
       .should(haveJaxRsPathStartingWith(API_PREFIX_WITH_SLASH, API_PREFIX_NO_SLASH))
       .check(shepardClasses);
@@ -176,6 +195,17 @@ class V2NamespaceTest {
       public boolean test(JavaClass javaClass) {
         String pkg = javaClass.getPackageName();
         return pkg.equals(PLUGINS_PACKAGE) || pkg.startsWith(PLUGINS_PACKAGE + ".");
+      }
+    };
+  }
+
+  /** Singular-form plugin package (V2CONV-A6: fileformat-thermography, fileformat-robotics). */
+  private static DescribedPredicate<JavaClass> inPluginPackage() {
+    return new DescribedPredicate<>("reside in package " + PLUGIN_PACKAGE + "..") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        String pkg = javaClass.getPackageName();
+        return pkg.equals(PLUGIN_PACKAGE) || pkg.startsWith(PLUGIN_PACKAGE + ".");
       }
     };
   }

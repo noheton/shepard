@@ -19,6 +19,7 @@ import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesRefe
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.v2.admin.qualityscoring.services.TimeseriesQualityScoringConfigService;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
@@ -51,6 +52,9 @@ class TimeseriesQualityScoringJobTest {
   @Mock
   TimeseriesDataPointRepository timeseriesDataPointRepository;
 
+  @Mock
+  TimeseriesQualityScoringConfigService configService;
+
   TimeseriesQualityScoringJob job;
   TimeseriesQualityScorer scorer;
 
@@ -65,8 +69,9 @@ class TimeseriesQualityScoringJobTest {
     job.scorer = scorer;
     job.timeseriesRepository = timeseriesRepository;
     job.timeseriesDataPointRepository = timeseriesDataPointRepository;
-    job.enabled = true;
-    job.batchSize = 100;
+    job.qualityScoringConfigService = configService;
+    when(configService.isEnabled()).thenReturn(true);
+    when(configService.effectiveBatchSize()).thenReturn(100);
   }
 
   // ---------------------------------------------------------------
@@ -103,7 +108,7 @@ class TimeseriesQualityScoringJobTest {
 
   @Test
   void runIsNoOpWhenDisabled() {
-    job.enabled = false;
+    when(configService.isEnabled()).thenReturn(false);
     job.runScoring();
     verify(dao, never()).findNeedingScoring(anyLong(), anyInt());
     verify(dao, never()).createOrUpdate(any());
@@ -134,7 +139,7 @@ class TimeseriesQualityScoringJobTest {
 
   @Test
   void runClampsAbsurdlyHighBatchSize() {
-    job.batchSize = 1_000_000;
+    when(configService.effectiveBatchSize()).thenReturn(1_000_000);
     when(dao.findNeedingScoring(anyLong(), anyInt())).thenReturn(List.of());
     job.runScoring();
     ArgumentCaptor<Integer> limit = ArgumentCaptor.forClass(Integer.class);
@@ -144,7 +149,7 @@ class TimeseriesQualityScoringJobTest {
 
   @Test
   void runClampsNegativeBatchSize() {
-    job.batchSize = -5;
+    when(configService.effectiveBatchSize()).thenReturn(-5);
     when(dao.findNeedingScoring(anyLong(), anyInt())).thenReturn(List.of());
     job.runScoring();
     ArgumentCaptor<Integer> limit = ArgumentCaptor.forClass(Integer.class);

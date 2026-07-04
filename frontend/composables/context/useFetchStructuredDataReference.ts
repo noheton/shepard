@@ -12,17 +12,49 @@ import type {
 } from "~/components/context/display-components/structured-data-references/structuredDataReferenceTypes";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+// BUG-COLL-APPID-ROUTE-007-REFPAGE: accept the numeric ids as a plain number, a
+// Ref, or a getter and resolve them at fetch time. The reference detail page's
+// route params are now the v2 appId (UUID), so the NUMERIC ids these v1
+// `/shepard/api/...` endpoints require only become available once the loaded v2
+// entities resolve. The composable defers its first fetch until all three ids
+// are present and re-fetches when they appear.
 export function useFetchStructuredDataReference(
-  collectionId: number,
-  dataObjectId: number,
-  structuredDataReferenceId: number,
+  collectionIdInput: MaybeRefOrGetter<number | undefined>,
+  dataObjectIdInput: MaybeRefOrGetter<number | undefined>,
+  structuredDataReferenceIdInput: MaybeRefOrGetter<number | undefined>,
 ) {
   const structuredDataReference = ref<
     StructuredDataReferenceWithContainerMeta | undefined
   >(undefined);
   const structuredData = ref<StructuredDataMeta[]>([]);
+  // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
+  const notFound = ref<boolean>(false);
 
-  async function fetchStructuredDataReference() {
+  function ids():
+    | {
+        collectionId: number;
+        dataObjectId: number;
+        structuredDataReferenceId: number;
+      }
+    | undefined {
+    const collectionId = toValue(collectionIdInput);
+    const dataObjectId = toValue(dataObjectIdInput);
+    const structuredDataReferenceId = toValue(structuredDataReferenceIdInput);
+    if (
+      collectionId == null ||
+      dataObjectId == null ||
+      structuredDataReferenceId == null
+    )
+      return undefined;
+    return { collectionId, dataObjectId, structuredDataReferenceId };
+  }
+
+  async function fetchStructuredDataReference(
+    collectionId: number,
+    dataObjectId: number,
+    structuredDataReferenceId: number,
+  ) {
+    notFound.value = false;
     useShepardApi(StructuredDataReferenceApi)
       .value.getStructuredDataReference({
         collectionId,
@@ -40,8 +72,12 @@ export function useFetchStructuredDataReference(
         };
       })
       .catch(error => {
-        handleError(error, "getStructuredDataReference");
         structuredDataReference.value = undefined;
+        if ((error as ResponseError)?.response?.status === 404) {
+          notFound.value = true;
+          return;
+        }
+        handleError(error, "getStructuredDataReference");
       });
   }
 
@@ -68,9 +104,11 @@ export function useFetchStructuredDataReference(
       });
   }
 
-  async function fetchReferencedStructuredDataPayload(): Promise<
-    StructuredDataPayload[]
-  > {
+  async function fetchReferencedStructuredDataPayload(
+    collectionId: number,
+    dataObjectId: number,
+    structuredDataReferenceId: number,
+  ): Promise<StructuredDataPayload[]> {
     return useShepardApi(StructuredDataReferenceApi)
       .value.getStructuredDataPayload({
         collectionId,
@@ -95,7 +133,9 @@ export function useFetchStructuredDataReference(
   }
 
   watch(structuredDataReference, async () => {
+    const resolved = ids();
     if (
+      resolved &&
       structuredDataReference.value &&
       !isDeleted(structuredDataReference.value.structuredDataContainerId) &&
       structuredDataReference.value.referencedContainerAvailability ===
@@ -103,7 +143,11 @@ export function useFetchStructuredDataReference(
     ) {
       const [referencedStructuredDataPayload, existingStructuredData] =
         await Promise.all([
-          fetchReferencedStructuredDataPayload(),
+          fetchReferencedStructuredDataPayload(
+            resolved.collectionId,
+            resolved.dataObjectId,
+            resolved.structuredDataReferenceId,
+          ),
           fetchExistingStructuredDataInContainer(
             structuredDataReference.value.structuredDataContainerId,
           ),
@@ -128,7 +172,32 @@ export function useFetchStructuredDataReference(
     }
   });
 
-  fetchStructuredDataReference();
+  // No-arg refresh using resolved ids — called from page-level event handlers.
+  async function refreshStructuredData() {
+    const resolved = ids();
+    if (resolved)
+      await fetchStructuredDataReference(
+        resolved.collectionId,
+        resolved.dataObjectId,
+        resolved.structuredDataReferenceId,
+      );
+  }
 
-  return { structuredDataReference, structuredData, refreshStructuredData: fetchStructuredDataReference };
+  // Fetch once all ids are resolvable; re-fetch when they first appear (the
+  // route-param-is-appId case where the numeric ids arrive after the v2 load).
+  watch(ids, resolved => {
+    if (resolved)
+      fetchStructuredDataReference(
+        resolved.collectionId,
+        resolved.dataObjectId,
+        resolved.structuredDataReferenceId,
+      );
+  }, { immediate: true });
+
+  return {
+    structuredDataReference,
+    structuredData,
+    notFound,
+    refreshStructuredData,
+  };
 }

@@ -5,7 +5,7 @@ import type { TimeseriesSeries } from "~/components/common/chart/types";
 
 const props = defineProps<{
   channel: TimeseriesEntity;
-  containerId: number;
+  containerAppId: string;
   /**
    * TS-IDc — when supplied, the lazy fetch resolves the channel via the
    * single-field v2 path-param endpoint instead of the legacy 5-tuple
@@ -26,7 +26,7 @@ const rootEl = ref<HTMLElement | null>(null);
 // more than performance.
 const useDownsample = ref(true);
 const { data, loading, downsampled, refetch } = useChannelPreviewLazy(
-  props.containerId,
+  props.containerAppId,
   props.channel,
   rootEl,
   { channelShepardId: props.channelShepardId },

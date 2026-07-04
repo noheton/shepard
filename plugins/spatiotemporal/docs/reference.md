@@ -1,7 +1,7 @@
 ---
 title: spatiotemporal — Reference
 stage: deployed
-last-stage-change: 2026-05-27
+last-stage-change: 2026-06-10
 audience: power-user, plugin-author
 ---
 
@@ -200,6 +200,61 @@ create/list responses.
 | `POST` | `/shepard/api/collections/{cId}/dataObjects/{doId}/spatialDataReferences` | Create a `SpatialDataReference` linking a DataObject to a container. |
 | `GET` | `/shepard/api/collections/{cId}/dataObjects/{doId}/spatialDataReferences/{refId}` | Get a single reference. |
 | `DELETE` | `/shepard/api/collections/{cId}/dataObjects/{doId}/spatialDataReferences/{refId}` | Remove a reference. |
+
+> **Note:** the `/shepard/api/…/spatialDataReferences` + `/shepard/api/spatialDataContainers`
+> numeric-id resources above are **frozen upstream-byte-compat** (they appear in
+> `openapi-5.4.0.json`). Third-party upstream clients depend on them; they are
+> not extended. The fork's own callers (frontend, importer, MCP) use the
+> `/v2/` surface below.
+
+### Unified reference surface — `kind=spatial` (SPATIAL-UNIFY)
+
+Spatial data is a reference kind on the unified `/v2/references` surface,
+addressed by the reference `appId` (UUID v7) like File / TimeSeries / Video.
+The `SpatialDataContainer` behind a reference is a storage primitive — users
+never pick a container from a list; the container `appId` is exposed only so the
+viewer can resolve bytes.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v2/references?kind=spatial&dataObjectAppId={appId}` | List spatial references on a DataObject (unified `ReferenceV2IO[]`). |
+| `GET` | `/v2/references/{appId}` | Get a spatial reference (the entity self-describes `kind=spatial`). |
+| `POST` | `/v2/references?kind=spatial&dataObjectAppId={appId}` | Create a spatial reference bound to an existing container (`{spatialDataContainerAppId, …}`). |
+| `DELETE` | `/v2/references/{appId}` | Delete a spatial reference. |
+| `POST` | `/v2/spatial/promote?fileReferenceAppId={appId}` | **In-context promote** (per-file, one-click): mint a spatial reference + backing container from an eligible pointcloud/trajectory FileReference. |
+
+The `kind=spatial` `ReferenceV2IO.payload` carries: `geometryFilter`,
+`measurementsFilter`, `startTime`, `endTime`, `metadata`, `limit`, `skip`,
+`spatialDataContainerAppId`, `promotionState`.
+
+**`POST /v2/spatial/promote` — worked example.** Given a singleton FileReference
+holding a pointcloud (`.las/.laz/.ply/.e57/.pcd/.xyz/.pts` or a named pointcloud/
+trajectory file), Write on the parent DataObject:
+
+```bash
+curl -X POST \
+  -H "X-API-KEY: $KEY" \
+  "http://localhost:8080/v2/spatial/promote?fileReferenceAppId=019e7244-0000-7000-8000-000000000001"
+```
+
+Response `201` (or `200` when already promoted — the call is **idempotent**):
+
+```json
+{
+  "appId": "019e7244-0000-7000-8000-000000000aaa",
+  "name": "TPS 3D pointclouds.0",
+  "kind": "spatial",
+  "payload": {
+    "spatialDataContainerAppId": "019e7244-0000-7000-8000-000000000ccc",
+    "promotionState": "pending"
+  }
+}
+```
+
+The minted container is marked `promotionState=pending`; the Python
+`spatial-importer` sidecar drains that queue and streams the points into the
+PostGIS hypertable (SPATIAL-UNIFY-004-SIDECAR). The promote records a typed
+`:Activity` automatically via the core `ProvenanceCaptureFilter`.
 
 ## BrushTraceShape
 

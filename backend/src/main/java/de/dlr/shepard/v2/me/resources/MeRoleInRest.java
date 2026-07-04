@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.me.resources;
 
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.v2.me.io.MeRoleInIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -40,10 +41,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * </ul>
  */
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/v2/me/role-in/{collectionAppId}")
+@Path("/v2/users/me/role-in/{collectionAppId}")
 @RequestScoped
 @Tag(name = "Me")
 public class MeRoleInRest {
+
+  private static final String PT_UNAUTHORIZED = "/problems/me.role-in.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/me.role-in.not-found";
+  private static final String PT_FORBIDDEN = "/problems/me.role-in.forbidden";
 
   @Inject
   CollectionPropertiesDAO collectionDAO;
@@ -53,6 +58,7 @@ public class MeRoleInRest {
 
   @GET
   @Operation(
+    operationId = "roleIn",
     summary = "Caller's effective role in a Collection.",
     description =
       "Returns the caller's effective capabilities on the Collection identified by " +
@@ -80,10 +86,12 @@ public class MeRoleInRest {
   @APIResponse(responseCode = "404", description = "No Collection with the supplied appId.")
   public Response roleIn(@PathParam("collectionAppId") String collectionAppId, @Context SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to query role membership.");
 
     var ogmId = collectionDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PT_NOT_FOUND, "Collection not found",
+        Response.Status.NOT_FOUND, "No Collection with appId '" + collectionAppId + "'.");
 
     Roles roles = permissionsService.getUserRolesOnEntity(ogmId.get(), caller);
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
@@ -97,8 +105,14 @@ public class MeRoleInRest {
     boolean canRead = canWrite || roles.isReader();
 
     if (!canRead && !canWrite && !canManage && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Access denied",
+          Response.Status.FORBIDDEN, "Caller has no roles on Collection '" + collectionAppId + "' and is not an instance admin.");
     }
     return Response.ok(new MeRoleInIO(collectionAppId, canRead, canWrite, canManage, isAdmin)).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

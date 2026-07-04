@@ -1,62 +1,46 @@
+import type { PermissionType } from "@dlr-shepard/backend-client";
 import {
-  type PermissionType,
-  SearchApi,
-  UserGroupApi,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+  useUserGroupsV2,
+  type UserGroupV2,
+} from "~/composables/context/useUserGroupsV2";
 
-const userGroupSearchStringParam = (name: string) =>
-  JSON.stringify({
-    property: "name",
-    value: name,
-    operator: "eq",
-  });
-
+/**
+ * V2-SWEEP-002-3 — creates a user group via the appId-keyed `/v2/user-groups`
+ * surface, then applies the initial permission type via
+ * `PATCH /v2/user-groups/{appId}/permissions`.
+ *
+ * Both operations are v2 (shipped in V2-SWEEP-002 + V2-SWEEP-002-PERMISSIONS,
+ * 2026-06-10). The `resolveNumericIdByName` bridge is no longer needed.
+ */
 export async function createUserGroup(
   userGroupName: string,
   permissionType: PermissionType,
-) {
+): Promise<UserGroupV2 | null> {
+  const { createUserGroup: createV2, patchUserGroupPermissions } =
+    useUserGroupsV2();
+
+  let created: UserGroupV2;
   try {
-    const searchResults = await useShepardApi(SearchApi).value.searchUserGroups(
-      {
-        userSearchBody: {
-          searchParams: {
-            query: userGroupSearchStringParam(userGroupName),
-          },
-        },
-      },
+    created = await createV2({ name: userGroupName, usernames: [] });
+  } catch {
+    handleError(
+      `User group name "${userGroupName}" could not be created (it may already exist)`,
+      "creating user group",
     );
-
-    if (searchResults.results && searchResults.results.length > 0) {
-      handleError(
-        `User group name "${userGroupName}" already exists`,
-        "creating user group",
-      );
-      return null;
-    }
-
-    const userGroupApi = useShepardApi(UserGroupApi);
-
-    const createdUserGroup = await userGroupApi.value.createUserGroup({
-      userGroup: {
-        name: userGroupName,
-        usernames: [],
-      },
-    });
-    await userGroupApi.value.editUserGroupPermissions({
-      userGroupId: createdUserGroup.id,
-      permissions: {
-        permissionType: permissionType,
-        reader: [],
-        writer: [],
-        manager: [],
-      },
-    });
-
-    emitSuccess(`Successfully created user group "${createdUserGroup.name}"`);
-    return createdUserGroup;
-  } catch (error) {
-    handleError(error, "creating user group");
     return null;
+  }
+
+  try {
+    await patchUserGroupPermissions(created.appId, {
+      permissionType,
+      reader: [],
+      writer: [],
+      manager: [],
+    });
+    emitSuccess(`Successfully created user group "${created.name}"`);
+    return created;
+  } catch (error) {
+    handleError(error, "setting user group permissions");
+    return created;
   }
 }

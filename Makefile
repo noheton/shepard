@@ -36,12 +36,12 @@ HEALTH_TIMEOUT ?= 120
 # ADR-0023 two-pass dance: backend install (no plugins) → plugins install → backend package.
 # Required whenever a plugin module changes; safe to run even when only backend changed.
 build-plugins:
-	cd backend && $(MVN) -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q
-	# wiki-writer must install before ai (ai has a provided dep on wiki-writer).
-	# Both must install before video (backend now depends on all three transitively).
-	cd plugins/wiki-writer && $(MVN) -Dmaven.test.skip=true install -q
-	cd plugins/ai && $(MVN) -Dmaven.test.skip=true install -q
-	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
+	# Single source of truth for the full ordered plugin install — also used by
+	# .github/workflows/ci.yml + codeql.yml. Installs the backend's always-on
+	# fileformat-svdx/-thermography deps, the backend+cli stubs, then every
+	# with-plugins plugin. Previously this list was duplicated here and in each
+	# CI workflow and drifted (svdx/thermography missing from CI → red main).
+	MVN="$(MVN)" bash scripts/install-plugins.sh
 
 build-backend: build-plugins
 	# `clean` removes stale class files from previously killed builds.
@@ -54,6 +54,11 @@ image-backend: build-backend
 	docker build -t $(BACKEND_IMAGE) ./backend
 
 build-frontend:
+	# Refresh the file:../backend-client dep first — npm version-caches file: deps
+	# (the package stays 1.0.0 across regens), so a stale generated client silently
+	# survives `npm install`. Force a clean re-copy so the build always uses the
+	# current client (the V2-SWEEP-001-CLIENT-REGEN stale-client incident, 2026-06-12).
+	rm -rf frontend/node_modules/@dlr-shepard && cd frontend && npm install
 	cd frontend && npm run build
 
 image-frontend: build-frontend
@@ -91,6 +96,26 @@ wait-for-health:
 	done; \
 	echo "  ✗ backend did not become healthy within $(HEALTH_TIMEOUT)s"; \
 	echo "    Check: docker compose logs backend --tail 100"; \
+	exit 1
+
+# Frontend has no Docker healthcheck, and Nuxt SSR takes ~20-40s to accept
+# connections after recreate — smoke-fast racing that warmup produced two
+# false-FAIL redeploys on 2026-06-12 (HTTP 000 on GET / and /login).
+wait-for-frontend:
+	@ip=$$(docker inspect infrastructure-frontend-1 --format '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$v.IPAddress}}{{end}}' 2>/dev/null); \
+	url="http://$${ip:-localhost}:3000/"; \
+	echo "Waiting for frontend at $$url (timeout=90s)..."; \
+	t=90; \
+	while [ $$t -gt 0 ]; do \
+	  code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$$url" 2>/dev/null); \
+	  if [ "$$code" = "200" ] || [ "$$code" = "302" ]; then \
+	    echo "  ✓ frontend responding ($$code)"; \
+	    exit 0; \
+	  fi; \
+	  sleep 3; t=$$((t - 3)); \
+	done; \
+	echo "  ✗ frontend did not respond within 90s"; \
+	echo "    Check: docker compose logs frontend --tail 100"; \
 	exit 1
 
 # Post-deploy smoke test. Defaults to localhost; for prod:
@@ -134,11 +159,13 @@ redeploy-backend: preflight-env image-backend
 redeploy-frontend: preflight-env image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate frontend
 	@$(MAKE) wait-for-health
+	@$(MAKE) wait-for-frontend
 	@$(MAKE) smoke-fast
 
 redeploy: preflight-env image-backend image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend frontend
 	@$(MAKE) wait-for-health
+	@$(MAKE) wait-for-frontend
 	@$(MAKE) smoke-fast
 
 # Escape hatch: full rebuild + deploy WITHOUT the post-deploy verification. Use

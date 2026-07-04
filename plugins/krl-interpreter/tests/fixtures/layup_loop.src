@@ -1,0 +1,12 @@
+DEF layup_loop()
+  DECL INT ply
+  DECL INT pass
+  FOR ply = 1 TO 8
+    FOR pass = 1 TO 4 STEP 1
+      PTP {X 0, Y 0, Z 500, A 0, B 0, C 0}
+      LIN {X 100, Y 0, Z 500, A 0, B 0, C 0}
+      LIN {X 100, Y 200, Z 500, A 0, B 0, C 0}
+    ENDFOR
+    WAIT SEC 0.5
+  ENDFOR
+END

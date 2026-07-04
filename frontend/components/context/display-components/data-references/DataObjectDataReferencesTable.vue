@@ -5,6 +5,10 @@ import type { DataTableElement } from "./dataTableElement";
 import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
 import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
+import {
+  usePromoteToSpatial,
+  isSpatialEligibleName,
+} from "~/composables/context/usePromoteToSpatial";
 
 interface DataObjectDataReferencesTableProps {
   collectionId: number;
@@ -20,13 +24,25 @@ interface DataObjectDataReferencesTableProps {
 const props = defineProps<DataObjectDataReferencesTableProps>();
 const router = useRouter();
 
-// ── Legacy annotation dialog (v1 AnnotatedReference path — numeric id) ───────
-const selectedReferenceId = ref<number>(0);
+// ── Legacy-kind annotation dialog (now v2 appId path) ────────────────────────
+// The "legacy" TimeSeries / File Bundle / Structured Data rows are annotated
+// via the same v2 /v2/annotations surface as the new kinds — keyed by the
+// reference's appId + concrete kind, not the dropped numeric id.
+const selectedReferenceAppId = ref<string>("");
+const selectedReferenceKind = ref<string>("DataObjectReference");
 const showAddAnnotationDialog = ref(false);
 
-function openAddAnnotationDialog(dataTableElementId: number) {
-  selectedReferenceId.value = dataTableElementId;
+function openAddAnnotationDialog(appId: string, kind: string) {
+  selectedReferenceAppId.value = appId;
+  selectedReferenceKind.value = kind;
   showAddAnnotationDialog.value = true;
+}
+
+function legacyKindFor(type: RefKind): string {
+  if (type === "TimeSeries") return "TimeseriesReference";
+  if (type === "File Bundle") return "FileReference";
+  if (type === "Structured Data") return "StructuredDataReference";
+  return "DataObjectReference";
 }
 
 // ── SEMA-V6 annotation dialog (appId path — new kinds) ───────────────────────
@@ -41,7 +57,7 @@ function openSemaAnnotationDialog(appId: string, kind: string) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-function showDetails(pathFragment: string, id: number) {
+function showDetails(pathFragment: string, id: number | string) {
   const route =
     collectionsPath +
     props.collectionId +
@@ -50,6 +66,17 @@ function showDetails(pathFragment: string, id: number) {
     pathFragment +
     id;
   router.push(route);
+}
+
+/**
+ * REF-VIDEO-DETAIL-PAGE — pick the right identifier for the route segment.
+ * Legacy kinds (TimeSeries / File Bundle / Structured Data) navigate by
+ * numeric `elementId`; new kinds (Video, …) navigate by `elementAppId`
+ * (UUID v7). The detail page on the other side decides which it expects.
+ */
+function showDetailsId(item: DataTableElement): number | string | undefined {
+  if (item.actions.elementId != null) return item.actions.elementId;
+  return item.actions.elementAppId;
 }
 
 // ── Delete actions for new kinds ──────────────────────────────────────────────
@@ -61,6 +88,15 @@ const deleteTarget = ref<DataTableElement | null>(null);
 function openDeleteDialog(item: DataTableElement) {
   deleteTarget.value = item;
   showDeleteDialog.value = true;
+}
+
+// ── REF-EDIT-4: rename dialog for FileBundleReference rows ───────────────────
+const showEditBundleDialog = ref(false);
+const editBundleTarget = ref<DataTableElement | null>(null);
+
+function openEditBundleDialog(item: DataTableElement) {
+  editBundleTarget.value = item;
+  showEditBundleDialog.value = true;
 }
 
 const { data: session } = useAuth();
@@ -75,6 +111,34 @@ function v2BaseUrl(): string {
 }
 
 const emit = defineEmits<{ (e: "refresh"): void }>();
+
+// ── SPATIAL-UNIFY-004: in-context "Promote to spatial" on eligible File rows ──
+const { promote: promoteToSpatial, isPromoting } = usePromoteToSpatial();
+
+/** True when a File row's filename is an eligible pointcloud/trajectory. */
+function isPromotableFile(item: DataTableElement): boolean {
+  return item.type === "File" && isSpatialEligibleName(item.meta.filename ?? item.name);
+}
+
+async function onPromoteToSpatial(item: DataTableElement) {
+  const appId = item.meta.appId;
+  if (!appId) return;
+  const ok = await promoteToSpatial(appId);
+  if (ok) emit("refresh");
+}
+
+const router2 = useRouter();
+/**
+ * SPATIAL-UNIFY-005 — "View as pointcloud" opens the 3D viewer for a spatial
+ * reference's backing container. The container appId is resolved from the
+ * reference (the user never picks a container). Falls back to no-op when the
+ * container hasn't materialised yet (promotion pending).
+ */
+function viewAsPointcloud(item: DataTableElement) {
+  const containerAppId = item.meta.spatialContainerAppId;
+  if (!containerAppId) return;
+  router2.push(`/containers/spatialdata/${encodeURIComponent(containerAppId)}`);
+}
 
 async function confirmDelete() {
   const item = deleteTarget.value;
@@ -91,11 +155,13 @@ async function confirmDelete() {
     return;
   }
 
-  // FR1b singletons: DELETE /v2/files/{appId}
-  if (item.type === "File" || item.type === "Notebook") {
+  // FR1b singletons + Spatial: V2CONV-A2 / SPATIAL-UNIFY DELETE
+  // /v2/references/{appId} (unified surface). The kind is resolved from the
+  // entity server-side, so spatial deletes through the same path.
+  if (item.type === "File" || item.type === "Notebook" || item.type === "Spatial") {
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
-    const url = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}`;
+    const url = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}`;
     try {
       const response = await fetch(url, {
         method: "DELETE",
@@ -163,6 +229,7 @@ const kindCounts = computed<Record<RefKind, number>>(() => {
     Notebook: 0,
     Git: 0,
     Video: 0,
+    Spatial: 0,
   };
   for (const item of allTableItems.value) counts[item.type]++;
   return counts;
@@ -183,6 +250,7 @@ const kindIcons: Record<RefKind, string> = {
   Notebook: "mdi-notebook-outline",
   Git: "mdi-git",
   Video: "mdi-video-outline",
+  Spatial: "mdi-cube-scan",
 };
 const KIND_ORDER: RefKind[] = [
   "TimeSeries",
@@ -192,6 +260,7 @@ const KIND_ORDER: RefKind[] = [
   "Notebook",
   "Git",
   "Video",
+  "Spatial",
 ];
 
 const headers = [
@@ -228,7 +297,7 @@ const headers = [
 const itemsPerPage = 10;
 
 /** True for new-kind rows that have appId but no detail page yet. */
-const NEW_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook", "Git", "Video"]);
+const NEW_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook", "Git", "Video", "Spatial"]);
 
 /** True for kinds whose download URL is the FR1b singleton content endpoint. */
 const SINGLETON_FILE_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook"]);
@@ -236,6 +305,7 @@ const SINGLETON_FILE_KINDS: ReadonlySet<RefKind> = new Set(["File", "Notebook"])
 function semaKindFor(type: RefKind): string {
   if (type === "Git") return "GitReference";
   if (type === "Video") return "VideoStreamReference";
+  if (type === "Spatial") return "SpatialDataReference";
   if (type === "File" || type === "Notebook") return "FileReference";
   return "DataObjectReference";
 }
@@ -266,14 +336,14 @@ const jupyterAffordanceVisible = computed(
 function jupyterLaunchUrl(appId: string): string | null {
   const cfg = jupyterConfig.value;
   if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
-  const downloadUrl = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  const downloadUrl = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
   const hubBase = cfg.hubUrl.replace(/\/$/, "");
   return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
 }
 
 /** Build the direct download URL for a FR1b singleton appId. */
 function singletonDownloadUrl(appId: string): string {
-  return `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
 }
 
 /** Format a byte count as B / KB / MB / GB. */
@@ -339,10 +409,10 @@ function formatDuration(seconds: number | null | undefined): string {
       -->
       <template #[`item.type`]="{ item }: { item: DataTableElement }">
         <a
-          v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+          v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
           href="#"
           class="reference-link d-inline-flex align-center"
-          @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+          @click.prevent="showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
         >
           <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
           {{ item.type }}
@@ -355,10 +425,10 @@ function formatDuration(seconds: number | null | undefined): string {
 
       <template #[`item.name`]="{ item }: { item: DataTableElement }">
         <a
-          v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+          v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
           href="#"
           class="reference-link"
-          @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+          @click.prevent="showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
         >
           {{ item.name }}
         </a>
@@ -383,11 +453,12 @@ function formatDuration(seconds: number | null | undefined): string {
         <template v-if="!NEW_KINDS.has(item.type)">
           <DataObjectDataMetaCell :meta="value" />
           <SemanticAnnotationList
-            :key="value.id"
+            v-if="value.appId"
+            :key="value.appId"
             :can-delete="isAllowedToEditCollection"
             :limit="4"
             :annotated="
-              new AnnotatedReference(collectionId, dataObjectId, value.id!)
+              new AnnotatedReference(value.appId, legacyKindFor(item.type))
             "
           />
         </template>
@@ -451,15 +522,22 @@ function formatDuration(seconds: number | null | undefined): string {
         <ActionContainer>
           <!-- Legacy kinds: navigate to detail page -->
           <ActionButton
-            v-if="item.actions.showDetails.enabled && item.actions.elementId != null"
+            v-if="item.actions.showDetails.enabled && showDetailsId(item) != null"
             icon="mdi-eye-outline"
-            @click="() => showDetails(item.actions.showDetails.pathFragment, item.actions.elementId!)"
+            @click="() => showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
           />
-          <!-- Legacy kinds: legacy annotation dialog -->
+          <!-- Legacy kinds: annotation dialog (v2 appId path) -->
           <ActionButton
-            v-if="isAllowedToEditCollection && !NEW_KINDS.has(item.type) && item.actions.elementId != null"
+            v-if="isAllowedToEditCollection && !NEW_KINDS.has(item.type) && item.meta.appId"
             icon="mdi-tag-outline"
-            @click="() => openAddAnnotationDialog(item.actions.elementId!)"
+            @click="() => openAddAnnotationDialog(item.meta.appId!, legacyKindFor(item.type))"
+          />
+          <!-- REF-EDIT-4: rename action for FileBundleReference rows -->
+          <ActionButton
+            v-if="isAllowedToEditCollection && item.type === 'File Bundle' && item.meta.appId"
+            icon="mdi-pencil-outline"
+            aria-label="Rename file bundle reference"
+            @click="() => openEditBundleDialog(item)"
           />
           <!-- New kinds: SEMA-V6 annotation dialog -->
           <ActionButton
@@ -500,6 +578,42 @@ function formatDuration(seconds: number | null | undefined): string {
           >
             Open in JupyterHub
           </v-btn>
+          <!-- SPATIAL-UNIFY-004: in-context "Promote to spatial" on eligible File rows -->
+          <v-btn
+            v-if="isAllowedToEditCollection && isPromotableFile(item) && item.meta.appId"
+            variant="text"
+            density="comfortable"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-cube-scan"
+            :loading="isPromoting"
+            :data-testid="`promote-spatial-${item.meta.appId}`"
+            @click="() => onPromoteToSpatial(item)"
+          >
+            Promote to spatial
+          </v-btn>
+          <!-- SPATIAL-UNIFY-005: "View as pointcloud" on Spatial rows (in-context viewer entry) -->
+          <v-btn
+            v-if="item.type === 'Spatial' && item.meta.spatialContainerAppId"
+            variant="text"
+            density="comfortable"
+            size="small"
+            prepend-icon="mdi-rotate-3d"
+            :data-testid="`view-pointcloud-${item.meta.appId}`"
+            @click="() => viewAsPointcloud(item)"
+          >
+            View as pointcloud
+          </v-btn>
+          <!-- SPATIAL-UNIFY: "promoting…" chip while the importer streams points -->
+          <v-chip
+            v-if="item.type === 'Spatial' && item.meta.promotionState === 'pending'"
+            size="x-small"
+            variant="tonal"
+            color="info"
+            prepend-icon="mdi-progress-clock"
+          >
+            promoting…
+          </v-chip>
           <!-- New kinds: delete action -->
           <ActionButton
             v-if="isAllowedToEditCollection && NEW_KINDS.has(item.type)"
@@ -512,16 +626,12 @@ function formatDuration(seconds: number | null | undefined): string {
     </DataTable>
   </div>
 
-  <!-- Legacy annotation dialog (v1 path, numeric id) -->
+  <!-- Legacy-kind annotation dialog (v2 appId path) -->
   <AddAnnotationDialog
-    v-if="showAddAnnotationDialog"
+    v-if="showAddAnnotationDialog && selectedReferenceAppId"
     v-model:show-dialog="showAddAnnotationDialog"
     :annotated="
-      new AnnotatedReference(
-        props.collectionId,
-        props.dataObjectId,
-        selectedReferenceId,
-      )
+      new AnnotatedReference(selectedReferenceAppId, selectedReferenceKind)
     "
   />
 
@@ -539,6 +649,15 @@ function formatDuration(seconds: number | null | undefined): string {
     v-model:show-dialog="showDeleteDialog"
     :prompt-text="`Delete ${deleteTarget.type} reference to ${deleteTarget.name}?`"
     @confirmed="confirmDelete"
+  />
+
+  <!-- REF-EDIT-4: rename dialog for FileBundleReference -->
+  <EditFileBundleReferenceDialog
+    v-if="showEditBundleDialog && editBundleTarget?.meta.appId"
+    v-model:show-dialog="showEditBundleDialog"
+    :file-bundle-reference-app-id="editBundleTarget.meta.appId!"
+    :current-name="editBundleTarget.name"
+    @saved="() => emit('refresh')"
   />
 </template>
 

@@ -70,9 +70,17 @@ jobs:
           # `security-and-quality` set; trade-off is longer analysis (acceptable).
           queries: security-extended
 
+      # The backend's always-on fileformat plugins + the with-plugins set must be
+      # in ~/.m2 before the manual build, or `mvn package` fails at dependency
+      # resolution (and CodeQL reports it as a build failure, not a finding).
+      # Same single source of truth as ci.yml + `make build-plugins`.
+      - name: Install in-tree plugins (scripts/install-plugins.sh)
+        if: matrix.language == 'java-kotlin'
+        run: bash scripts/install-plugins.sh
+
       - name: Build Java (manual mode)
         if: matrix.language == 'java-kotlin'
-        run: cd ${{ matrix.working-dir }} && mvn -B -DskipTests package
+        run: cd ${{ matrix.working-dir }} && mvn -B -Dmaven.test.skip=true package
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3

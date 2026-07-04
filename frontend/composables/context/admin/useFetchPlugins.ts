@@ -76,7 +76,13 @@ export function useFetchPlugins() {
         handleError(fetchError.value, "listPlugins");
         return;
       }
-      const raw = (await response.json()) as PluginEntryIO[];
+      // The endpoint returns PagedResponseIO `{ items: [...], total, page, pageSize }`.
+      const body = (await response.json()) as
+        | PluginEntryIO[]
+        | { items?: PluginEntryIO[] };
+      const raw: PluginEntryIO[] = Array.isArray(body)
+        ? body
+        : (body?.items ?? []);
       plugins.value = [...raw].sort(
         (a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state],
       );

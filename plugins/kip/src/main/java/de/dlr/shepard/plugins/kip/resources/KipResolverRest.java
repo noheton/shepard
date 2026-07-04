@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.kip.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.plugins.kip.io.KipRecordIO;
 import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
@@ -16,8 +17,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -68,7 +67,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/.well-known/kip")
 @RequestScoped
-@Tag(name = "KIP resolver (public)")
+@Tag(name = "KIP resolver")
 public class KipResolverRest {
 
   /**
@@ -89,6 +88,7 @@ public class KipResolverRest {
   @GET
   @Path("/{suffix:.+}")
   @Operation(
+    operationId = "resolveKipRecord",
     summary = "Resolve a PID minted by this shepard to its HMC Kernel Information Profile record.",
     description = "Public endpoint (no auth). Returns a small JSON-LD-flavoured record per " +
     "aidocs/66 §3.2 — `kernelInformationProfile` envelope with `id`, `landingPage`, " +
@@ -114,7 +114,7 @@ public class KipResolverRest {
     if (suffix == null || suffix.isBlank()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/kip.pid.not-found",
+        "/problems/kip.pid.not-found",
         "No publication with that PID suffix",
         "PID suffix must not be empty."
       );
@@ -123,7 +123,7 @@ public class KipResolverRest {
     if (publication.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/kip.pid.not-found",
+        "/problems/kip.pid.not-found",
         "No publication with that PID suffix",
         "No :Publication row at this shepard has pid=" + suffix + "."
       );
@@ -218,11 +218,10 @@ public class KipResolverRest {
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("type", type);
-    body.put("title", title);
-    body.put("status", status.getStatusCode());
-    body.put("detail", detail);
-    return Response.status(status).type("application/problem+json").entity(body).build();
+    return Response
+      .status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null))
+      .build();
   }
 }

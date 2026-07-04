@@ -38,6 +38,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -78,6 +79,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       because these repository types do not speak the SPARQL protocol.</li>
  * </ul>
  *
+ * <p><b>Reserved repoAppId aliases.</b> The literal string {@code "internal"}
+ * is intercepted before the {@code findByAppId} lookup and resolved to the
+ * bootstrapped {@code :SemanticRepository {type: INTERNAL}} row (V49). The
+ * frontend playground defaults to this alias so users do not have to
+ * memorise the V49-minted UUID v7. See {@link #INTERNAL_ALIAS} (C3 / task #244).
+ *
  * <p><b>Response format.</b> The upstream response is passed through
  * verbatim with {@code Content-Type: application/sparql-results+json}.
  * When the upstream returns a non-200 status the endpoint maps it to a
@@ -88,7 +95,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/semantic")
 @RequestScoped
-@Tag(name = "Semantic SPARQL proxy (v2, N1f)")
+@Tag(name = "Semantics")
 public class SemanticSparqlRest {
 
   // ─── Media types ──────────────────────────────────────────────────────────
@@ -98,6 +105,19 @@ public class SemanticSparqlRest {
 
   /** SPARQL 1.1 Protocol form content-type. */
   static final String FORM_URL_ENCODED = "application/x-www-form-urlencoded";
+
+  // ─── Reserved repository aliases ──────────────────────────────────────────
+
+  /**
+   * C3 / task #244 — reserved alias the frontend playground defaults to
+   * when no specific repository has been picked. Resolves to the
+   * bootstrapped {@code :SemanticRepository {type: INTERNAL}} row from the
+   * V49 migration via
+   * {@link SemanticRepositoryDAO#findInternal()}. A literal {@code "internal"}
+   * value in the {@code repoAppId} path parameter is intercepted by
+   * {@link #executeSparql} before the normal {@code findByAppId} lookup.
+   */
+  static final String INTERNAL_ALIAS = "internal";
 
   // ─── RFC 7807 problem type tokens ─────────────────────────────────────────
 
@@ -149,6 +169,7 @@ public class SemanticSparqlRest {
   @Path("/{repoAppId}/sparql")
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryGet",
     summary = "Execute a read-only SPARQL SELECT or ASK query (GET form).",
     description =
       "Accepts a SPARQL query via the `query` URL parameter and proxies it to the backend " +
@@ -184,6 +205,15 @@ public class SemanticSparqlRest {
   @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
+    @Parameter(
+      required = true,
+      description =
+        "URL-encoded SPARQL 1.1 SELECT or ASK query string. Must be non-empty — null or blank " +
+        "returns 400. Only `SELECT` and `ASK` query forms are accepted; any mutation form " +
+        "(`CONSTRUCT`, `INSERT`, `DELETE`, `UPDATE`, …) is rejected with 400 before reaching " +
+        "the backend. For queries longer than ~2 KB prefer the POST form variant " +
+        "(`application/x-www-form-urlencoded`, field name `query`) to avoid proxy URL-length limits."
+    )
     @QueryParam("query") String query,
     @Context SecurityContext sc
   ) {
@@ -201,6 +231,7 @@ public class SemanticSparqlRest {
   @Consumes(FORM_URL_ENCODED)
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryPost",
     summary = "Execute a read-only SPARQL SELECT or ASK query (POST form variant).",
     description =
       "Identical semantics to the GET variant, but accepts the query as a URL-encoded " +
@@ -250,8 +281,14 @@ public class SemanticSparqlRest {
       return problem(Status.UNAUTHORIZED, PROBLEM_TYPE_AUTH, "Authentication required.", "SPARQL proxy requires an authenticated user.");
     }
 
-    // 2 — look up repository
-    SemanticRepository repo = semanticRepositoryDAO.findByAppId(repoAppId);
+    // 2 — look up repository (C3: resolve the reserved "internal" alias to
+    //                       the bootstrapped INTERNAL row first).
+    SemanticRepository repo;
+    if (INTERNAL_ALIAS.equalsIgnoreCase(repoAppId)) {
+      repo = semanticRepositoryDAO.findInternal();
+    } else {
+      repo = semanticRepositoryDAO.findByAppId(repoAppId);
+    }
     if (repo == null || repo.isDeleted()) {
       return problem(Status.NOT_FOUND, PROBLEM_TYPE_NOT_FOUND, "Semantic repository not found.", "No repository with appId: " + repoAppId);
     }

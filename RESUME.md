@@ -155,3 +155,35 @@ Update at every pivot:
 - Session ending → save final state; next /resume reads this file
 
 Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not append-only journal.
+
+## 2026-06-17 — Full instance reset COMPLETE + MFFD scaffolding seeded
+- Reset done: all substrates wiped (Neo4j fresh, TS 0 rows, mongo/garage fresh), Keycloak preserved. Backend+frontend healthy.
+- Fixed 3 fresh-DB boot bugs (commit on main, rebased d1df38676): pgcrypto/pg_stat_statements extension privilege (init script pre-creates as superuser); V1.17.0 refresh_continuous_aggregate-in-txn (sidecar .sql.conf executeInTransaction=false); stale SHEPARD_PERMISSIONS_DEFAULT_OWNER unset. Runbook 13 corrected (host bind mounts, not named volumes).
+- Auth bootstrap: admin user (username=7eead942..., appId 019ed455-...) materialized via Keycloak password grant (admin/admin-demo, scope=openid profile email). Granted instance-admin via :HAS_ROLE Cypher. Minted import key -> /root/.claude/uploads/mffd-import-key-2026-06-17.txt (X-API-KEY, instance-admin, verified 200).
+- v2 base is /v2/... (root-path /), NOT /shepard/api/v2/... (that 404s).
+- MFFD scaffolding seeded (seed-mffd-collections.py, ONLY mffd, no other examples):
+  - Project "MFFD Upper Shell — Project" = 019ed455-62cd-75b5-951e-b837ffdace16
+  - mffd-afp-tapelaying  = 019ed455-66f4-7aea-8cb3-5c0b34a737df
+  - mffd-bridge-welding  = 019ed455-6781-755e-87dd-eb3f2f3dbba3   (W3 target)
+  - mffd-spot-welding    = 019ed455-67f7-7725-bf2d-7cd1b67aca9f
+  - mffd-ndt-thermography= 019ed455-6866-71f1-b0bf-0f83a3e3aaa9
+  - mffd-cell            = 019ed455-68d9-7e00-8aa0-0191e99fc117
+  - UserGroups: mffd-afp-team, mffd-welding-team, mffd-ndt-team, mffd-cell-team
+- BRIDGE WAVE (user picked "bridge first/validate"): source = LOCAL /mnt/pve/unas/dump/dataset/4-Brückenschweißen/{bridgewelding/,manifest.json}. manifest = {collections.bridgewelding:{id:163811, dos:{<1031 DOs>}}}; each DO has ts_refs/file_refs/structured_refs[{ref_id,ref_name,file}]; payloads in bridgewelding/<DO>/{structured,...}; 3.7GB total.
+- BLOCKER/FINDING: README's `shepard-importer --source shepard-export-manifest` CLI is FICTIONAL. import-mffd.py = thermography-frame importer (no manifest replay); mffd-import-v15.py LOCAL MODE = 0-byte TS placeholders. The bridge manifest-replay importer must be BUILT (read manifest -> create DO per entry in mffd-bridge-welding -> recreate file/ts/structured refs + upload payloads -> annotate urn:shepard:source:provenance; completeness-non-negotiable retry-forever).
+
+## 2026-06-17 — MFFD waves W3/W8a/W6 done (one-after-another)
+- W3 bridge: 1031 DOs / 3930 file / 1031 struct refs. merged 87a7492f4.
+- W8a spot-welding: 21 DOs / 21 file refs / 4260 svdx parser annos (20/21; 651MB file parsed 0 — parser edge case). merged 08c534891.
+- W6 thermography: 744 DOs / 744 file refs / parser 744/744 / scope+layer+phase+status annos. merged d7854e942. Importer self-fixed 10 empty-payload uploads + 50 partial-anno backfills.
+- GRAPH CRUFT (post-import prune needed, MFFD-GRAPH-PRUNE): iterative imports left 3178 soft-deleted DataObjects + orphan annotations (1088 otvis-file annos point at dead DOs). LIVE data is correct (deleted=false queries exact); tombstones are cruft. Prune after all waves.
+- Backlog filed: P24 (v2 structured-data surface), P25 (bulk DO+ref create), F9 (reference-annotation 403 — confirmed PERMANENT not lag).
+- Next: W2 tapelaying (TS-export, coll 48297, real timeseries — heaviest), then W5 cell (rdk→urdf), W8b stringer (247GB zip).
+
+## 2026-06-17 — W2 pass B DONE; pass A pending; W5 done
+- W5 cell: MFZ DO + MFZ.rdk FileReference + 10 rdk parser annos. merged f612b1cbf.
+- W2 pass B (structure+lineage): 8457 Track/Ply DOs + 8400 predecessor (has_successor) + 8450 parent (has_child) edges, graph-verified, idempotent. merged d9235b885. Importer: examples/mffd-showcase/scripts/mffd-tapelaying-import.py. Lineage sub-pass SERIALIZED (workers=1) — parallel bidirectional-edge writes raced backend's successor-list validation (400); 5 manual serial retries cleared them; fix committed.
+- W2 pass A (TPS->BrushTrace): NOT blocked by infra. spatiotemporal v6 plugin IS enabled (/v2/containers?kind=spatial -> 400=exists). Script's --pass A falsely STOPPED probing the DISABLED v1 path /shepard/api/spatialDataContainers (404). Needs rework to v2 kind=spatial + BrushTrace ingest. Backlog: W2-PASS-A-SPATIAL.
+- Raw 355GB TPS payloads deferred (W2-TPS-RAW-1, disk-gated: 344GB free < 355GB).
+- MFFD import status: W3 bridge ✓, W8a spot-welding ✓, W6 thermography ✓, W5 cell ✓, W2 pass B ✓. REMAINING: W2 pass A (spatial rework), W8b stringer (247GB zip, disk+parser). Wiki transform also pending.
+- Graph cruft to prune post-import (MFFD-GRAPH-PRUNE): ~3178+ soft-deleted DOs + orphan annotations from iterative imports; live (deleted=false) data is correct.

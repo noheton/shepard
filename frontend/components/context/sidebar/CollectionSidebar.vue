@@ -13,15 +13,32 @@ const {
   isAllowedToEditPermissions,
   isOwner,
 } = useFetchCollectionOfRouteParams(routeParams);
+// V2-SWEEP Wave 1 (2026-06-10): the tree loads from the v2 appId-keyed list
+// (`GET /v2/collections/{collectionAppId}/data-objects`) using the route
+// param directly — no numeric-collection-id gate (the BUG-COLL-APPID-ROUTE-006
+// plumbing this replaces left the sidebar spinning on appId-only data).
 const {
   treeviewItems,
   openedTreeviewItems,
   loading,
-  loadChildrenOfItem,
+  loadError,
   refreshItems,
   collapseItem,
+  // SIDEBAR-LAZY-TREE (2026-06-25): Vuetify `load-children` Promise callback —
+  // fires once on first expand of a node whose `children` is an empty array,
+  // fetching that node's direct children via `?parentAppId=…`.
+  loadChildren,
 } = useTreeviewItems(routeParams);
 const { advancedMode: _advancedMode } = useAdvancedMode();
+
+// SIDEBAR-V2-CREATE (aidocs/16): CreateDataObjectDialog's blank form still
+// uses the v1 `createDataObject` + v1-backed Parent/Predecessor inputs (no
+// v2 create wired in the dialog yet). Per the documented-exception rule the
+// numeric id is resolved from the loaded v2 Collection entity's `.id` at
+// call time — never from the route param.
+const collectionNumericId = computed<number | undefined>(() =>
+  collection.value?.id ?? undefined,
+);
 
 const collectionAppId = computed<string | undefined>(() => {
   const raw = (collection.value as unknown as { appId?: string | null })?.appId;
@@ -114,9 +131,9 @@ const filteredItems = computed<TreeviewItem[]>(() => {
 function collectAncestorIds(
   items: TreeviewItem[],
   needle: string,
-): Set<number> {
+): Set<string> {
   const lower = needle.toLowerCase();
-  const ids = new Set<number>();
+  const ids = new Set<string>();
 
   function walk(node: TreeviewItem): boolean {
     const selfMatch = node.title.toLowerCase().includes(lower);
@@ -143,30 +160,18 @@ function collectAncestorIds(
  * While filtering, we augment the user's opened set with ancestors of matches
  * so matched children are immediately visible without a manual expand.
  */
-const effectiveOpenedItems = computed<number[]>(() => {
+const effectiveOpenedItems = computed<string[]>(() => {
   const needle = filterText.value.trim();
   if (!needle || !treeviewItems.value) return openedTreeviewItems.value;
   const ancestors = collectAncestorIds(treeviewItems.value, needle);
   if (ancestors.size === 0) return openedTreeviewItems.value;
-  const merged = new Set<number>([...openedTreeviewItems.value, ...ancestors]);
+  const merged = new Set<string>([...openedTreeviewItems.value, ...ancestors]);
   return Array.from(merged);
 });
 
-async function onOpenClicked(expandGroup: {
-  id: unknown;
-  value: boolean;
-  path: unknown[];
-}) {
-  if (!treeviewItems.value) return;
-  // do not handle any specific case when closing group
-  if (expandGroup.value === false) return;
-  if (typeof expandGroup.id !== "number") return;
-
-  loadChildrenOfItem(expandGroup.id);
-}
-
 function onActivated(activeItems: unknown) {
   if (Array.isArray(activeItems) && activeItems.length) {
+    // V2-SWEEP Wave 1: item values are appIds — the route carries the appId.
     router.push(
       collectionsPath +
         routeParams.value.collectionId +
@@ -176,9 +181,10 @@ function onActivated(activeItems: unknown) {
   }
 }
 
-function onDeleted(deletedItemId: number) {
+function onDeleted(deletedItemId: string) {
   collapseItem(deletedItemId);
   refreshItems();
+  // V2-SWEEP Wave 1: both sides are appId strings now.
   if (routeParams.value.dataObjectId === deletedItemId) {
     router.push(collectionsPath + routeParams.value.collectionId);
   }
@@ -274,6 +280,7 @@ const { mobile } = useDisplay();
           v-if="!loading && !!treeviewItems && treeviewItems.length > 0"
           :opened="effectiveOpenedItems"
           :items="filteredItems"
+          :load-children="loadChildren"
           class="treeview"
           item-value="id"
           activatable
@@ -284,9 +291,8 @@ const { mobile } = useDisplay();
           mandatory
           collapse-icon="mdi-chevron-down"
           expand-icon="mdi-chevron-right"
-          @update:opened="(val: number[]) => openedTreeviewItems = val"
+          @update:opened="(val: string[]) => openedTreeviewItems = val"
           @update:activated="onActivated"
-          @click:open="onOpenClicked"
         >
           <template #prepend="{ item }">
             <v-icon
@@ -297,6 +303,7 @@ const { mobile } = useDisplay();
           </template>
 
           <template #title="{ item }">
+            <!-- V2-SWEEP Wave 1: item.id is the appId — links carry appIds. -->
             <CollectionSidebarEntry
               :title="item.title"
               :is-focused="routeParams.dataObjectId === item.id"
@@ -314,8 +321,9 @@ const { mobile } = useDisplay();
               v-if="isAllowedToEditCollection"
               :collection-id="routeParams.collectionId"
               :collection-app-id="collectionAppId"
+              :collection-numeric-id="collectionNumericId"
               :data-object-id="item.id"
-              :parent-id="item.parentId"
+              :data-object-numeric-id="item.numericId"
               :item-name="item.title"
               @data-object-created="refreshItems"
               @data-object-updated="refreshItems"
@@ -336,10 +344,23 @@ const { mobile } = useDisplay();
           No loaded items match "{{ filterText.trim() }}". Expand more tree branches and search again.
         </div>
 
-        <CenteredLoadingSpinner v-if="loading || !treeviewItems" />
+        <CenteredLoadingSpinner v-if="(loading || !treeviewItems) && !loadError" />
+
+        <!-- BUG-COLL-APPID-ROUTE-006: explicit error state — replaces the
+             pre-006 "permanent loading spinner when the v1 list 400'd"
+             failure mode. Shows on the LUMEN regression case the operator
+             surfaced 2026-06-03. -->
+        <div
+          v-if="loadError"
+          class="px-6 py-4 text-medium-emphasis text-body-2"
+          style="max-width: 240px"
+        >
+          <v-icon size="small" class="mr-1" color="warning">mdi-alert-outline</v-icon>
+          Couldn't load the DataObject tree. Reload the page to retry.
+        </div>
 
         <StartHereIntro
-          v-if="treeviewItems && treeviewItems.length === 0"
+          v-if="!loadError && treeviewItems && treeviewItems.length === 0"
           class="mb-8"
         />
       </div>
@@ -366,10 +387,13 @@ const { mobile } = useDisplay();
       </v-expansion-panel>
     </v-expansion-panels>
   </div>
+  <!-- SIDEBAR-V2-CREATE (aidocs/16): the create dialog's blank form is still
+       v1-backed and needs the numeric collection id, resolved from the loaded
+       v2 Collection entity (never the route param). -->
   <CreateDataObjectDialog
     v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
-    :collection-id="routeParams.collectionId"
+    :collection-id="(collectionNumericId as unknown as number)"
     :collection-app-id="collectionAppId"
     @data-object-created="refreshItems"
   />

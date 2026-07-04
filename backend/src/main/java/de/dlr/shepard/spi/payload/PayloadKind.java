@@ -1,5 +1,7 @@
 package de.dlr.shepard.spi.payload;
 
+import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
+import de.dlr.shepard.v2.shapes.builder.ViewRecipeSpec;
 import java.util.List;
 
 /**
@@ -27,6 +29,13 @@ import java.util.List;
  * regardless of toggle state — Neo4j-OGM needs the types registered
  * so that Cypher results against pre-existing nodes deserialize
  * correctly even when the REST surface is disabled.
+ *
+ * <p>V2CONV-B7: Implementations may optionally override
+ * {@link #shapeDescriptor()} to declare the canonical SHACL data-shape
+ * for their DataObject type. When non-null, {@code KindShapeSeeder}
+ * compiles the spec to a {@code ShepardTemplate (DATAOBJECT_RECIPE)}
+ * at startup and seeds it idempotently — no hand-authored {@code .ttl}
+ * file is required.
  */
 public interface PayloadKind {
 
@@ -46,4 +55,45 @@ public interface PayloadKind {
    * after extraction).
    */
   List<String> entityPackages();
+
+  /**
+   * V2CONV-B7 — optional SHACL data-shape descriptor for this payload kind.
+   *
+   * <p>When non-null, {@code KindShapeSeeder} compiles the returned
+   * {@link ShapeSpec} to canonical SHACL Turtle at startup and seeds
+   * (or idempotently updates) a {@code ShepardTemplate} of kind
+   * {@code DATAOBJECT_RECIPE} whose name is
+   * {@code "<name()>-data-shape"}. This removes the need for
+   * hand-authored shape {@code .ttl} files for standard property-set
+   * shapes.
+   *
+   * <p>The default implementation returns {@code null} — existing
+   * payload kinds are unaffected.
+   *
+   * @return a {@link ShapeSpec} describing the SHACL NodeShape for
+   *         DataObjects of this kind, or {@code null} to opt out
+   */
+  default ShapeSpec shapeDescriptor() {
+    return null;
+  }
+
+  /**
+   * V2CONV-B8 — optional VIEW_RECIPE descriptor for this payload kind.
+   *
+   * <p>When non-null, {@code KindShapeSeeder} seeds (or idempotently
+   * updates) a {@code ShepardTemplate} of kind {@code VIEW_RECIPE}
+   * whose name is {@code "<name()>-view-shape"}. The seeded template
+   * body is immediately consumable by {@code POST /v2/shapes/render}
+   * and drives the renderer SPI dispatch via
+   * {@link de.dlr.shepard.spi.view.ViewRecipeRendererRegistry}.
+   *
+   * <p>The default implementation returns {@code null} — existing
+   * payload kinds are unaffected.
+   *
+   * @return a {@link ViewRecipeSpec} describing the default view recipe
+   *         for DataObjects of this kind, or {@code null} to opt out
+   */
+  default ViewRecipeSpec viewShapeDescriptor() {
+    return null;
+  }
 }

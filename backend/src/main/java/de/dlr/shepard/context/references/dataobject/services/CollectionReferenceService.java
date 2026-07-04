@@ -20,6 +20,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequestScoped
@@ -210,6 +211,61 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
    *                              referenced collection or the referenced
    *                              collection cannot be found
    */
+  /**
+   * Looks up a CollectionReference by its application-level UUID v7 without permission
+   * checks. Used by the v2 REST handler to resolve the parent DataObject for access
+   * gating before invoking mutating operations.
+   * V2-SWEEP-004-1.
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching {@link CollectionReference}, or {@code null}
+   */
+  public CollectionReference findByAppId(String appId) {
+    return collectionReferenceDAO.findByAppId(appId);
+  }
+
+  /**
+   * Applies a partial (RFC 7396 merge-patch) update to a CollectionReference looked up
+   * by its application-level UUID v7 ({@code appId}).
+   *
+   * <p>Mutable fields: {@code name}, {@code relationship}.
+   * Absent keys are left unchanged. {@code name} must not be set to {@code null} or
+   * blank. {@code relationship} may be set to {@code null} to clear it.
+   * V2-SWEEP-004-1.
+   *
+   * @param appId UUID v7 of the reference to patch
+   * @param patch key/value map of fields to update (RFC 7396 semantics)
+   * @return the updated {@link CollectionReference}
+   * @throws InvalidPathException if no reference with that appId exists
+   * @throws IllegalArgumentException if a required field is set to blank or null
+   */
+  public CollectionReference patchReferenceByAppId(String appId, Map<String, Object> patch) {
+    CollectionReference ref = collectionReferenceDAO.findByAppId(appId);
+    if (ref == null) {
+      String msg = "CollectionReference with appId %s not found".formatted(appId);
+      Log.error(msg);
+      throw new InvalidPathException(msg);
+    }
+
+    if (patch.containsKey("name")) {
+      Object v = patch.get("name");
+      if (v == null || v.toString().isBlank()) {
+        throw new IllegalArgumentException("name must not be blank");
+      }
+      ref.setName(v.toString());
+    }
+    if (patch.containsKey("relationship")) {
+      Object v = patch.get("relationship");
+      ref.setRelationship(v != null ? v.toString() : null);
+    }
+
+    User user = userService.getCurrentUser();
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(user);
+
+    return collectionReferenceDAO.createOrUpdate(ref);
+  }
+
   public Collection getPayload(
     long collectionShepardId,
     long dataObjectShepardId,

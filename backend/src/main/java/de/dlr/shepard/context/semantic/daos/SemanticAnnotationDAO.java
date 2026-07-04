@@ -189,6 +189,113 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
   }
 
 
+  // ── SEMA-V6-PRED-UI: per-predicate usage statistics ─────────────────────
+
+  /**
+   * SEMA-V6-PRED-UI — total {@link SemanticAnnotation} rows whose
+   * {@code propertyIRI} equals the given IRI (exact match, no prefix walk).
+   *
+   * @param predicateIri the property IRI to count
+   * @return number of matching annotations; 0 when the IRI is blank or unused
+   */
+  public long countByPredicate(String predicateIri) {
+    if (predicateIri == null || predicateIri.isBlank()) return 0L;
+    String query = "MATCH (a:SemanticAnnotation) WHERE a.propertyIRI = $piri RETURN count(a) AS cnt";
+    org.neo4j.ogm.model.Result result = session.query(query, Map.of("piri", predicateIri));
+    for (Map<String, Object> row : result.queryResults()) {
+      Object cnt = row.get("cnt");
+      if (cnt instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
+  /**
+   * SEMA-V6-PRED-UI — most-used object values for a predicate, ordered by
+   * descending frequency. Groups on the {@code (valueIRI, valueName)} pair so
+   * literal-valued and IRI-valued annotations each aggregate sensibly.
+   *
+   * <p>Each returned map carries three keys:
+   * <ul>
+   *   <li>{@code objectIri} — the {@code valueIRI} (null when the annotation is literal-only).</li>
+   *   <li>{@code objectLabel} — the {@code valueName} (may be null for IRI-only).</li>
+   *   <li>{@code count} — number of annotations carrying this pair.</li>
+   * </ul>
+   *
+   * @param predicateIri the property IRI to scope the lookup
+   * @param limit        maximum number of distinct value rows to return
+   * @return list of {@code {objectIri, objectLabel, count}} maps; empty list when none found
+   */
+  public List<Map<String, Object>> topValuesForPredicate(String predicateIri, int limit) {
+    if (predicateIri == null || predicateIri.isBlank()) return List.of();
+    int effectiveLimit = Math.max(1, limit);
+    String query =
+      "MATCH (a:SemanticAnnotation) WHERE a.propertyIRI = $piri " +
+      "WITH coalesce(a.valueIRI, '') AS iri, coalesce(a.valueName, '') AS label " +
+      "RETURN iri AS objectIri, label AS objectLabel, count(*) AS cnt " +
+      "ORDER BY cnt DESC, label ASC " +
+      "LIMIT $lim";
+    Map<String, Object> params = new java.util.HashMap<>();
+    params.put("piri", predicateIri);
+    params.put("lim", (long) effectiveLimit);
+    List<Map<String, Object>> out = new ArrayList<>();
+    org.neo4j.ogm.model.Result result = session.query(query, params);
+    for (Map<String, Object> row : result.queryResults()) {
+      Map<String, Object> shaped = new java.util.LinkedHashMap<>();
+      Object iri = row.get("objectIri");
+      Object label = row.get("objectLabel");
+      Object cnt = row.get("cnt");
+      shaped.put("objectIri", (iri == null || iri.toString().isEmpty()) ? null : iri.toString());
+      shaped.put("objectLabel", (label == null || label.toString().isEmpty()) ? null : label.toString());
+      shaped.put("count", cnt instanceof Number n ? n.longValue() : 0L);
+      out.add(shaped);
+    }
+    return out;
+  }
+
+  /**
+   * SEMA-V6-PRED-UI — sample entities annotated with a given predicate.
+   *
+   * <p>Walks {@code :SemanticAnnotation.subjectAppId} back to the entity node
+   * so the result spans every label kind (DataObject, FileReference,
+   * Collection, AnnotatableTimeseries, …). The entity type is read from
+   * Neo4j {@code labels(e)} with the legacy
+   * {@link SemanticAnnotation#getSubjectKind() subjectKind} property as
+   * fallback when no entity node resolves (orphaned annotation).
+   *
+   * @param predicateIri the property IRI to scope the lookup
+   * @param limit        maximum sample entities to return
+   * @return list of {@code {appId, name, type}} maps; empty when none found
+   */
+  public List<Map<String, Object>> sampleEntitiesForPredicate(String predicateIri, int limit) {
+    if (predicateIri == null || predicateIri.isBlank()) return List.of();
+    int effectiveLimit = Math.max(1, limit);
+    String query =
+      "MATCH (a:SemanticAnnotation) WHERE a.propertyIRI = $piri AND a.subjectAppId IS NOT NULL " +
+      "WITH DISTINCT a.subjectAppId AS appId, a.subjectKind AS legacyKind " +
+      "LIMIT $lim " +
+      "OPTIONAL MATCH (e {appId: appId}) " +
+      "RETURN appId AS appId, " +
+      "       coalesce(e.name, e.label) AS name, " +
+      "       coalesce(head(labels(e)), legacyKind) AS type";
+    Map<String, Object> params = new java.util.HashMap<>();
+    params.put("piri", predicateIri);
+    params.put("lim", (long) effectiveLimit);
+    List<Map<String, Object>> out = new ArrayList<>();
+    org.neo4j.ogm.model.Result result = session.query(query, params);
+    for (Map<String, Object> row : result.queryResults()) {
+      Map<String, Object> shaped = new java.util.LinkedHashMap<>();
+      Object appId = row.get("appId");
+      Object name = row.get("name");
+      Object type = row.get("type");
+      if (appId == null) continue;
+      shaped.put("appId", appId.toString());
+      shaped.put("name", name == null ? null : name.toString());
+      shaped.put("type", type == null ? null : type.toString());
+      out.add(shaped);
+    }
+    return out;
+  }
+
   // N1l — paginated load for the snapshot-refresh job
   public List<SemanticAnnotation> findPaginated(int skip, int limit) {
     String query =

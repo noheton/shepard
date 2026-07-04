@@ -1,0 +1,59 @@
+&ACCESS RVP
+&REL 5
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM DISKPATH = KRC:\R1\Program
+DEF ply5_layup ( )
+
+;FOLD INI
+   ;FOLD BASISTECH INI
+      GLOBAL INTERRUPT DECL 3 WHEN $STOPMESS == TRUE DO IR_STOPM ( )
+      INTERRUPT ON 3
+      BAS (#INITMOV, 0 )
+   ;ENDFOLD (BASISTECH INI)
+;ENDFOLD (INI)
+
+; --------------------------------------------------------------
+; Synthetic MFFD AFP Ply 5 layup motion — KRL-INTERPRETER showcase
+; --------------------------------------------------------------
+; Robot:   KUKA KR210 R3100 (substituted as KR210 L150 in the URDF)
+; Cell:    MFFD upper-fuselage AFP station, ZLP Augsburg (synthetic)
+; Process: Ply 5 of automated fibre placement layup, 5-pass raster
+;          across the tool surface at constant TCP height, return
+;          to home pose between passes.
+; Exercises parser tier-1: PTP, LIN, FOR loop, $BASE / $TOOL,
+; frame literals, named E6POS targets.
+; --------------------------------------------------------------
+
+; Set the AFP cell base frame (cartesian origin in cell coordinates)
+$BASE = {X 1500, Y 0, Z 800, A 0, B 0, C 0}
+
+; Set the AFP head TCP (offset from flange centre)
+$TOOL = {X 0, Y 0, Z 250, A 0, B 0, C 0}
+
+; --- Move to safe home pose ---
+PTP {A1 0, A2 -90, A3 90, A4 0, A5 0, A6 0}
+
+; --- Approach the layup start corner ---
+LIN {X 0, Y 0, Z 100, A 0, B 0, C 0}
+LIN {X 0, Y 0, Z 0, A 0, B 0, C 0}
+
+; --- Raster layup: 5 passes, 100 mm pitch, 800 mm sweep length ---
+FOR i = 1 TO 5
+   ; Sweep across the tool surface in +X direction
+   LIN {X 800, Y i*100, Z 0, A 0, B 0, C 0}
+   ; Lift off the surface
+   LIN {X 800, Y i*100, Z 30, A 0, B 0, C 0}
+   ; Return in -X direction at safe height
+   LIN {X 0, Y (i+1)*100, Z 30, A 0, B 0, C 0}
+   ; Lower onto the next pass start
+   LIN {X 0, Y (i+1)*100, Z 0, A 0, B 0, C 0}
+ENDFOR
+
+; --- Retract clear of the tool ---
+LIN {X 0, Y 600, Z 200, A 0, B 0, C 0}
+
+; --- Return to home ---
+PTP {A1 0, A2 -90, A3 90, A4 0, A5 0, A6 0}
+
+END

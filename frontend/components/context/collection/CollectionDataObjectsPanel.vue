@@ -1,5 +1,42 @@
 <template>
   <div>
+    <!-- Bulk-selection action bar (visible when ≥1 item is checked) -->
+    <v-toolbar
+      v-if="selectedAppIds.size > 0"
+      density="compact"
+      color="primary-container"
+      class="mb-2 rounded"
+      flat
+    >
+      <v-checkbox-btn
+        :model-value="allPageSelected"
+        :indeterminate="somePageSelected && !allPageSelected"
+        color="primary"
+        density="compact"
+        class="ml-2"
+        aria-label="Select all on page"
+        @update:model-value="toggleSelectAll"
+      />
+      <span class="text-body-2 font-weight-medium ml-1">
+        {{ selectedAppIds.size }} selected
+      </span>
+      <v-spacer />
+      <v-btn
+        variant="text"
+        size="small"
+        prepend-icon="mdi-tag-multiple-outline"
+        data-testid="bulk-annotate-btn"
+        @click="showBulkDialog = true"
+      >Bulk annotate</v-btn>
+      <v-btn
+        variant="text"
+        size="small"
+        icon="mdi-close"
+        aria-label="Clear selection"
+        @click="clearSelection"
+      />
+    </v-toolbar>
+
     <!-- Search + status filter row -->
     <div class="d-flex flex-wrap align-center ga-2 pb-3">
       <v-text-field
@@ -23,6 +60,16 @@
           variant="tonal"
         >{{ s }}</v-chip>
       </v-chip-group>
+      <!-- COLL-TIMELINE-DRILLDOWN-FILTER-2: active lane chip from timeline drill-down -->
+      <v-chip
+        v-if="activeProcessTypeLane"
+        size="small"
+        color="primary"
+        variant="tonal"
+        closable
+        prepend-icon="mdi-filter"
+        @click:close="clearProcessTypeLane"
+      >{{ activeProcessTypeLane }}</v-chip>
     </div>
 
     <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate aria-label="Loading datasets" />
@@ -35,6 +82,16 @@
     <v-table v-else density="compact" class="do-panel-table">
       <thead>
         <tr>
+          <th style="width: 1%; padding-right: 0">
+            <v-checkbox-btn
+              :model-value="allPageSelected"
+              :indeterminate="somePageSelected && !allPageSelected"
+              color="primary"
+              density="compact"
+              aria-label="Select all on page"
+              @update:model-value="toggleSelectAll"
+            />
+          </th>
           <th>Name</th>
           <th style="width: 1%; white-space: nowrap">Status</th>
           <th style="width: 1%; white-space: nowrap" title="References attached to this DataObject">Refs</th>
@@ -50,11 +107,26 @@
           :key="row.id"
           class="do-row"
           tabindex="0"
-          @keydown.enter="navigateTo(row.id)"
-          @click="navigateTo(row.id)"
+          @keydown.enter="navigateTo(row)"
+          @click.exact="navigateTo(row)"
         >
+          <td style="padding-right: 0" @click.stop>
+            <v-checkbox-btn
+              v-if="row.appId"
+              :model-value="selectedAppIds.has(row.appId)"
+              color="primary"
+              density="compact"
+              :aria-label="`Select ${row.name}`"
+              @update:model-value="toggleRow(row.appId!)"
+            />
+          </td>
           <td>
-            <NuxtLink :to="`/collections/${props.collectionId}/dataobjects/${row.id}`" class="reference-link">
+            <v-icon
+              :icon="templateIconFor(row.attachedTemplateAppId, 'DataObject')"
+              size="small"
+              class="mr-1 text-medium-emphasis"
+            />
+            <NuxtLink :to="rowHref(row)" class="reference-link">
               {{ row.name }}
             </NuxtLink>
           </td>
@@ -167,14 +239,24 @@
         />
       </div>
     </div>
+
+    <!-- SEMANTIC-ANNOTATE-BULK-UI-1: bulk annotation dialog -->
+    <BulkAnnotationDialog
+      v-model:show-dialog="showBulkDialog"
+      :subject-app-ids="Array.from(selectedAppIds)"
+      subject-kind="DataObject"
+      @bulk-annotated="onBulkAnnotated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
 import { useTimeoutFn } from "@vueuse/core";
+import { useTemplateIconByAppId } from "~/composables/useTemplateIconByAppId";
+import BulkAnnotationDialog from "~/components/semantic/BulkAnnotationDialog.vue";
 
 const props = defineProps<{
   collectionId: number;
@@ -182,9 +264,34 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const route = useRoute();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
 
-const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED", "NCR_OPEN", "REJECTED"] as const;
+// COLL-TIMELINE-DRILLDOWN-FILTER-2: read ?process-type=<lane> from the URL
+// (emitted by CollectionTimelinePane.vue drillDownPath() on bin click).
+// Derive the annotation filter as "urn:shepard:mffd:process-type=<lane>".
+const PROCESS_TYPE_PREDICATE = "urn:shepard:mffd:process-type";
+const activeProcessTypeLane = computed<string | null>(() => {
+  const v = route.query['process-type'];
+  return typeof v === 'string' && v.length > 0 ? v : null;
+});
+const annotationFilter = computed<string | undefined>(() =>
+  activeProcessTypeLane.value != null
+    ? `${PROCESS_TYPE_PREDICATE}=${activeProcessTypeLane.value}`
+    : undefined
+);
+
+function clearProcessTypeLane() {
+  const q = { ...route.query };
+  delete q['process-type'];
+  void router.replace({ query: q });
+}
+
+const STATUSES = [
+  "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
+  // MFG1 / QM1a — EN 9100 quality-engineering statuses
+  "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "CONCESSION_PENDING",
+] as const;
 type Status = (typeof STATUSES)[number];
 
 const searchInput = ref("");
@@ -207,11 +314,38 @@ watch(statusFilter, () => { page.value = 0; });
 
 const pageSize = 25;
 
+// ─── SEMANTIC-ANNOTATE-BULK-UI-1: multi-select state ─────────────────────────
+
+const selectedAppIds = ref<Set<string>>(new Set());
+const showBulkDialog = ref(false);
+
+// Clear selection when navigating to a different page so stale appIds don't carry over.
+watch(page, () => { selectedAppIds.value = new Set(); });
+
+function toggleRow(appId: string) {
+  const next = new Set(selectedAppIds.value);
+  if (next.has(appId)) next.delete(appId);
+  else next.add(appId);
+  selectedAppIds.value = next;
+}
+
+function clearSelection() {
+  selectedAppIds.value = new Set();
+}
+
+function onBulkAnnotated(succeeded: number, failed: number) {
+  if (failed === 0) clearSelection();
+}
+
+// Reset page on annotation filter change (lane drill-down → page 0)
+watch(annotationFilter, () => { page.value = 0; });
+
 const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   collectionId: props.collectionId,
   collectionAppId,
   name: serverName,
   status: statusFilter,
+  annotationFilter,
   page,
   pageSize,
   includeTimeBounds: true,
@@ -234,6 +368,14 @@ function onJumpToPage() {
 
 interface Row {
   id: number;
+  /**
+   * v2 appId (UUID v7) for route construction. The v2 list endpoint
+   * always emits `appId` as identity (DB-OPT5 default fields). When the
+   * v1 fallback path emits a row without an `appId` we fall back to the
+   * numeric id for the link, which the route param parser still accepts
+   * via the legacy /collections/123 deep-link path.
+   */
+  appId: string | null;
   name: string;
   status: string | null;
   refCount: number;
@@ -246,11 +388,14 @@ interface Row {
   createdAt: Date;
   timeBoundsStart: number | null;
   timeBoundsEnd: number | null;
+  /** TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: appId of the template this DO was created from. */
+  attachedTemplateAppId: string | null;
 }
 
 const rows = computed<Row[]>(() =>
   rawItems.value.map(d => ({
     id: d.id,
+    appId: (d as unknown as { appId?: string | null }).appId ?? null,
     name: d.name ?? `#${d.id}`,
     status: (d.status as string) ?? null,
     refCount: (d.referenceIds ?? []).length,
@@ -263,8 +408,16 @@ const rows = computed<Row[]>(() =>
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
     timeBoundsStart: d.timeBoundsStart ?? null,
     timeBoundsEnd: d.timeBoundsEnd ?? null,
+    attachedTemplateAppId: d.attachedTemplateAppId ?? null,
   })),
 );
+
+// TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: lazily fetch the template for
+// each unique attachedTemplateAppId on the current page and cache by appId.
+const rowTemplateAppIds = computed(() =>
+  rows.value.map(r => r.attachedTemplateAppId),
+);
+const { iconFor: templateIconFor } = useTemplateIconByAppId(rowTemplateAppIds);
 
 // Time-bounds derived values — null-safe
 const anyTimeBounds = computed(() => rows.value.some(r => r.timeBoundsStart != null));
@@ -303,8 +456,44 @@ function timeBoundsTooltip(startNs: number, endNs: number): string {
 // Alias for template compatibility.
 const pagedItems = rows;
 
-function navigateTo(dataObjectId: number) {
-  router.push(`/collections/${props.collectionId}/dataobjects/${dataObjectId}`);
+// ─── SEMANTIC-ANNOTATE-BULK-UI-1: page-level selection computeds ─────────────
+
+const pageAppIds = computed<string[]>(() =>
+  pagedItems.value.map(r => r.appId).filter((id): id is string => id !== null),
+);
+
+const allPageSelected = computed(() =>
+  pageAppIds.value.length > 0 && pageAppIds.value.every(id => selectedAppIds.value.has(id)),
+);
+const somePageSelected = computed(() =>
+  pageAppIds.value.some(id => selectedAppIds.value.has(id)),
+);
+
+function toggleSelectAll(v: boolean) {
+  const next = new Set(selectedAppIds.value);
+  if (v) pageAppIds.value.forEach(id => next.add(id));
+  else pageAppIds.value.forEach(id => next.delete(id));
+  selectedAppIds.value = next;
+}
+
+/**
+ * Build a route href for a DataObject row.
+ *
+ * Per CLAUDE.md "frontend builds on /v2/ exclusively + appId routes":
+ * routes carry the v2 appId (UUID v7), never the numeric Neo4j id. We
+ * prefer the parent collection's appId + the row's appId; if either is
+ * absent (legacy v1-only fallback path) we fall back to the numeric id —
+ * the route param parser (`parseIdLike`) accepts both shapes so the link
+ * still resolves on the destination page.
+ */
+function rowHref(row: { id: number; appId: string | null }): string {
+  const colSegment = props.collectionAppId ?? props.collectionId;
+  const doSegment = row.appId ?? row.id;
+  return `/collections/${colSegment}/dataobjects/${doSegment}`;
+}
+
+function navigateTo(row: { id: number; appId: string | null }) {
+  router.push(rowHref(row));
 }
 
 function statusColor(status: string): string {
@@ -315,8 +504,12 @@ function statusColor(status: string): string {
     PUBLISHED: "success",
     ARCHIVED: "default",
     FAILED: "red",
-    NCR_OPEN: "orange",
-    REJECTED: "deep-orange",
+    // MFG1 / QM1a — EN 9100 quality-engineering statuses
+    NCR_OPEN: "error",
+    ON_HOLD: "orange",
+    REJECTED: "error",
+    CERTIFIED: "success",
+    CONCESSION_PENDING: "warning",
   } as Record<string, string>)[status] ?? "grey";
 }
 

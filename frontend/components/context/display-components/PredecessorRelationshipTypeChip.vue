@@ -2,11 +2,12 @@
 /**
  * PROV1k — compact chip that labels the relationship type of a predecessor link.
  *
- * Displays a coloured Vuetify chip for one of the three PROV-O / FAIR²R
+ * Displays a coloured Vuetify chip for one of the PROV-O / FAIR²R
  * relationship types that PROV1k introduces:
- *   - prov:wasInformedBy   (default / generic) — grey
- *   - prov:wasRevisionOf   (direct revision)   — blue
- *   - fair2r:repairs        (rework / NCR fix)   — orange
+ *   - prov:wasInformedBy   (default / generic — QM1b "normal")  — grey
+ *   - prov:wasRevisionOf   (direct revision — QM1b "re-test")    — blue
+ *   - fair2r:repairs        (rework / NCR fix — QM1b "rework")    — orange
+ *   - fair2r:concession     (concession / use-as-is — QM1b)       — amber
  *
  * Renders nothing (null slot) when relationshipType is absent or unknown,
  * so callers with pre-PROV1k data are unaffected.
@@ -37,6 +38,12 @@ const RELATIONSHIP_CONFIG: Record<
     label: "repairs",
     tooltip:
       "fair2r:repairs — rework / NCR-repair relationship (e.g. after a non-conformance)",
+  },
+  "fair2r:concession": {
+    color: "amber",
+    label: "concession",
+    tooltip:
+      "fair2r:concession — the successor was accepted under a concession ('use-as-is') after the predecessor failed its acceptance criterion",
   },
 };
 

@@ -15,6 +15,7 @@ const collectionModel = defineModel<CollectionReferenceData>({
         @search-ended="
           value => {
             collectionModel.referencedCollectionId = value?.id;
+            collectionModel.referencedCollectionAppId = value?.appId ?? undefined;
             collectionModel.referenceName = value?.name;
           }
         "

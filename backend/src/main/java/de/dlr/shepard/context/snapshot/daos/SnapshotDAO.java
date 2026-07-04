@@ -48,6 +48,67 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
   }
 
   /**
+   * SNAPSHOT-LIST-1-REST — paginated list across all Collections, ordered
+   * newest-first. No permission filter is applied here (the REST layer
+   * scopes the result to the caller's readable subset; this DAO returns
+   * the raw page).
+   *
+   * @param page zero-based page (clamped to {@code >= 0}).
+   * @param size page size (clamped to {@code [1, 200]}).
+   * @return ordered list of non-deleted snapshots for this page.
+   */
+  public List<Snapshot> findAll(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 200);
+    long skip = (long) safePage * (long) safeSize;
+    String query =
+      "MATCH (s:Snapshot) " +
+      "WHERE (s.deleted IS NULL OR s.deleted = false) " +
+      "RETURN s " +
+      "ORDER BY s.snapshotCapturedAtMs DESC " +
+      "SKIP $skip LIMIT $limit";
+    return StreamSupport
+      .stream(
+        findByQuery(query, Map.of("skip", skip, "limit", (long) safeSize)).spliterator(),
+        false
+      )
+      .toList();
+  }
+
+  /**
+   * SNAPSHOT-LIST-1-REST — count of all non-deleted snapshots (no permission
+   * scoping; used to populate the envelope {@code total} field on the global
+   * list endpoint).
+   */
+  public long countAll() {
+    String query =
+      "MATCH (s:Snapshot) WHERE (s.deleted IS NULL OR s.deleted = false) RETURN count(s) AS total";
+    return countFromQuery(query, Map.of());
+  }
+
+  /**
+   * SNAPSHOT-LIST-1-REST — count for a single Collection (mirrors the filter
+   * in {@link #findByCollectionAppId(String, int, int)}).
+   */
+  public long countByCollectionAppId(String collectionAppId) {
+    String query =
+      "MATCH (s:Snapshot)-[:SNAPSHOT_OF]->(c:Collection {appId: $collectionAppId}) " +
+      "WHERE (s.deleted IS NULL OR s.deleted = false) " +
+      "RETURN count(s) AS total";
+    return countFromQuery(query, Map.of("collectionAppId", collectionAppId));
+  }
+
+  private long countFromQuery(String query, Map<String, Object> params) {
+    org.neo4j.ogm.model.Result r = session.query(query, params);
+    if (r == null) return 0L;
+    for (Map<String, Object> row : r.queryResults()) {
+      Object t = row.get("total");
+      if (t instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
+  /**
    * Returns all non-deleted {@link Snapshot} nodes whose root collection
    * carries the given {@code collectionAppId}, ordered by creation time
    * descending (newest snapshot first).

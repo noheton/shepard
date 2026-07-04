@@ -35,11 +35,32 @@ public class AasRegistrationDAO extends GenericDAO<AasRegistration> {
   }
 
   /**
-   * List every outbox row across all registries. Used by the admin listing
-   * endpoint {@code GET /v2/admin/aas/registrations} (AAS1-reg Commit 3).
+   * Total count of outbox rows across all registries. Used for the
+   * {@code PagedResponseIO} envelope on
+   * {@code GET /v2/admin/aas/registrations}.
    */
-  public List<AasRegistration> listAll() {
-    return List.copyOf(findAll());
+  public long countAll() {
+    var result = session.query(
+      "MATCH (r:AasRegistration) RETURN count(r) AS total",
+      Map.of()
+    );
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * Paginated list of every outbox row across all registries. Used by the
+   * admin listing endpoint {@code GET /v2/admin/aas/registrations}.
+   */
+  public List<AasRegistration> listAll(int page, int pageSize) {
+    List<AasRegistration> out = new ArrayList<>();
+    findByQuery(
+      "MATCH (r:AasRegistration) RETURN r ORDER BY r.shellAppId, r.registryUrl SKIP $skip LIMIT $limit",
+      Map.of("skip", (long) page * pageSize, "limit", (long) pageSize)
+    ).forEach(out::add);
+    return out;
   }
 
   /**

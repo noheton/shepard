@@ -141,11 +141,26 @@ public class JenaShaclValidator {
             renderPath(e),
             renderNode(e.value()),
             e.severity() == null ? "Violation" : e.severity().level().getLocalName(),
-            e.message() == null ? "" : e.message()
+            e.message() == null ? "" : e.message(),
+            renderConstraint(e)
           )
         );
       }
       return new Report(jena.conforms(), null, null, List.copyOf(findings));
+    }
+
+    /**
+     * The SHACL constraint-component IRI behind a finding (e.g.
+     * {@code http://www.w3.org/ns/shacl#PatternConstraintComponent}) — the
+     * {@code sh:sourceConstraintComponent} of the report entry. Nullable when
+     * the engine doesn't supply one (FORM-422-FIELDS, doc 125 §5.2).
+     */
+    private static String renderConstraint(ReportEntry e) {
+      try {
+        return renderNode(e.sourceConstraintComponent());
+      } catch (Exception ex) {
+        return null;
+      }
     }
 
     /** Caller-side problem: malformed Turtle or shape structure. */
@@ -185,13 +200,20 @@ public class JenaShaclValidator {
   /**
    * One SHACL violation. All string fields nullable except
    * {@code severity}, which is one of
-   * {@code "Violation" | "Warning" | "Info"}.
+   * {@code "Violation" | "Warning" | "Info"}. {@code constraint} is the
+   * {@code sh:sourceConstraintComponent} IRI (FORM-422-FIELDS).
    */
   public record Finding(
     String focusNode,
     String resultPath,
     String value,
     String severity,
-    String message
-  ) {}
+    String message,
+    String constraint
+  ) {
+    /** Pre-FORM-422-FIELDS compatibility constructor (no constraint component). */
+    public Finding(String focusNode, String resultPath, String value, String severity, String message) {
+      this(focusNode, resultPath, value, severity, message, null);
+    }
+  }
 }

@@ -7,4 +7,3 @@ export * from "./useFetchDataObjectMap";
 export * from "./useFetchDataReferences";
 export * from "./useFetchNotebooks";
 export * from "./useFetchRelatedEntities";
-export * from "./useJupyterPreference";

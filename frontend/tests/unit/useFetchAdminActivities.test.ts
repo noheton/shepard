@@ -36,9 +36,13 @@ function makeActivity(n: number) {
   };
 }
 
+function makePaged(items: ReturnType<typeof makeActivity>[]) {
+  return { items, total: items.length, page: 0, pageSize: items.length };
+}
+
 describe("useFetchAdminActivities — initial load", () => {
   it("calls listActivities on construction with default limit=100", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     useFetchAdminActivities();
     await flush();
     expect(mockListActivities).toHaveBeenCalledTimes(1);
@@ -49,7 +53,7 @@ describe("useFetchAdminActivities — initial load", () => {
 
   it("populates activities on successful response", async () => {
     const data = [makeActivity(1), makeActivity(2)];
-    mockListActivities.mockResolvedValue(data);
+    mockListActivities.mockResolvedValue(makePaged(data));
     const { activities } = useFetchAdminActivities();
     await flush();
     expect(activities.value).toHaveLength(2);
@@ -59,14 +63,14 @@ describe("useFetchAdminActivities — initial load", () => {
   it("sets hasMore=true when response length equals limit", async () => {
     // 100 rows returned = exactly the batch size → assume more exist
     const data = Array.from({ length: 100 }, (_, i) => makeActivity(i));
-    mockListActivities.mockResolvedValue(data);
+    mockListActivities.mockResolvedValue(makePaged(data));
     const { hasMore } = useFetchAdminActivities();
     await flush();
     expect(hasMore.value).toBe(true);
   });
 
   it("sets hasMore=false when response length is below limit", async () => {
-    mockListActivities.mockResolvedValue([makeActivity(1)]);
+    mockListActivities.mockResolvedValue(makePaged([makeActivity(1)]));
     const { hasMore } = useFetchAdminActivities();
     await flush();
     expect(hasMore.value).toBe(false);
@@ -80,11 +84,11 @@ describe("useFetchAdminActivities — initial load", () => {
   });
 
   it("isLoading starts true and resets to false after resolve", async () => {
-    let resolve!: (v: unknown[]) => void;
+    let resolve!: (v: object) => void;
     mockListActivities.mockReturnValue(new Promise(r => { resolve = r; }));
     const { isLoading } = useFetchAdminActivities();
     expect(isLoading.value).toBe(true);
-    resolve([]);
+    resolve(makePaged([]));
     await flush();
     expect(isLoading.value).toBe(false);
   });
@@ -92,7 +96,7 @@ describe("useFetchAdminActivities — initial load", () => {
 
 describe("useFetchAdminActivities — filter params passed to API", () => {
   it("passes agent filter to listActivities when set", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { filterAgent, applyFilters } = useFetchAdminActivities();
     await flush(); // settle initial load
 
@@ -104,7 +108,7 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
   });
 
   it("passes targetKind filter to listActivities when set", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { filterTargetKind, applyFilters } = useFetchAdminActivities();
     await flush();
 
@@ -116,7 +120,7 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
   });
 
   it("passes targetAppId filter to listActivities when set", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { filterTargetAppId, applyFilters } = useFetchAdminActivities();
     await flush();
 
@@ -128,7 +132,7 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
   });
 
   it("omits filter params that are empty strings", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { filterAgent, applyFilters } = useFetchAdminActivities();
     await flush();
 
@@ -141,7 +145,7 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
   });
 
   it("applyFilters resets limit to 100 before re-fetching", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { loadMore, applyFilters } = useFetchAdminActivities();
     await flush();
 
@@ -159,7 +163,7 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
 
 describe("useFetchAdminActivities — loadMore", () => {
   it("bumps limit by 100 on each loadMore call", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { loadMore } = useFetchAdminActivities();
     await flush();
 
@@ -175,7 +179,7 @@ describe("useFetchAdminActivities — loadMore", () => {
 
 describe("useFetchAdminActivities — resetFilters", () => {
   it("clears all three filter refs and re-fetches with limit=100", async () => {
-    mockListActivities.mockResolvedValue([]);
+    mockListActivities.mockResolvedValue(makePaged([]));
     const { filterAgent, filterTargetKind, filterTargetAppId, resetFilters } =
       useFetchAdminActivities();
     await flush();

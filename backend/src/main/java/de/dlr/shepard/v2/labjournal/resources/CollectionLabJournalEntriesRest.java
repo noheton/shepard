@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -9,12 +11,17 @@ import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -25,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -55,8 +63,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/lab-journal-entries")
 @RequestScoped
-@Tag(name = "Collections — lab journal entries (UI-020)")
+@Tag(name = "Collections")
 public class CollectionLabJournalEntriesRest {
+
+  private static final String PT_UNAUTHORIZED = "/problems/lab-journal.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/lab-journal.not-found";
+  private static final String PT_FORBIDDEN = "/problems/lab-journal.forbidden";
 
   @Inject
   CollectionLabJournalEntriesDAO entriesDAO;
@@ -69,6 +81,7 @@ public class CollectionLabJournalEntriesRest {
 
   @GET
   @Operation(
+    operationId = "listLabJournalEntries",
     summary = "Bulk list all lab journal entries for a collection (UI-020).",
     description =
       "Walks Collection → DataObject → LabJournalEntry once and returns every " +
@@ -77,32 +90,38 @@ public class CollectionLabJournalEntriesRest {
       "round-trips. Returns an empty array when the collection has no data " +
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +
-      "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read."
+      "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.\n\n" +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total entry count before paging."
   )
   @APIResponse(
     responseCode = "200",
-    description = "All lab journal entries in the collection (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = LabJournalEntryIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection with appId: " + collectionAppId);
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the Collection.");
     }
 
     List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId);
@@ -124,6 +143,16 @@ public class CollectionLabJournalEntriesRest {
       }
       ios.add(new LabJournalEntryIO(e));
     }
-    return Response.ok(ios).build();
+    long total = ios.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(ios.subList(from, to), total, page, pageSize))
+        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+        .build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

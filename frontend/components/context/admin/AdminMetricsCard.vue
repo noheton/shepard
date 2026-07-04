@@ -43,8 +43,8 @@ function formatUptime(millis: number): string {
   return parts.join(' ');
 }
 
-function formatCacheRatio(ratio: number | null): string {
-  if (ratio === null) return '—';
+function formatCacheRatio(ratio: number | null | undefined): string {
+  if (ratio == null) return '—';
   return `${(ratio * 100).toFixed(1)}%`;
 }
 
@@ -104,7 +104,7 @@ function heapColor(m: AdminMetricsSummary): string {
                 {{ metrics.httpRequestsTotal.toLocaleString() }} total
               </v-chip>
               <v-chip
-                v-if="metrics.httpMeanRequestMillis !== null"
+                v-if="metrics.httpMeanRequestMillis != null"
                 color="secondary"
                 variant="tonal"
                 size="small"
@@ -119,7 +119,7 @@ function heapColor(m: AdminMetricsSummary): string {
             <div class="text-caption text-medium-emphasis mb-1">Permissions Cache</div>
             <div class="d-flex align-center ga-2 flex-wrap">
               <v-chip
-                :color="metrics.permissionsCacheHitRatio !== null && metrics.permissionsCacheHitRatio >= 0.8 ? 'success' : 'warning'"
+                :color="metrics.permissionsCacheHitRatio != null && metrics.permissionsCacheHitRatio >= 0.8 ? 'success' : 'warning'"
                 variant="tonal"
                 size="small"
               >

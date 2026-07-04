@@ -5,7 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * PV1a — wire shape for one {@link de.dlr.shepard.data.file.entities.PayloadVersion}
  * record returned by
- * {@code GET /v2/file-containers/{containerAppId}/files/{originalName}/versions}.
+ * {@code GET /v2/containers/{appId}/files/{fileName}/versions}.
  *
  * @param appId         UUID v7 identifier of this version node.
  * @param versionNumber Monotonically-increasing counter scoped to

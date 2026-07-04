@@ -166,7 +166,23 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-vis-trace3d</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <dependency>

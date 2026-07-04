@@ -59,10 +59,17 @@ public record ShapeValidationReportIO(
     @Schema(description = "Severity: Violation | Warning | Info.")
     String severity,
     @Schema(description = "sh:resultMessage where the shape supplies one; empty string otherwise.")
-    String message
+    String message,
+    @Schema(description = "SHACL constraint-component IRI (sh:sourceConstraintComponent). Nullable.", nullable = true)
+    String constraint
   ) {
+    /** Pre-FORM-422-FIELDS compatibility constructor (no constraint component). */
+    public FindingIO(String focusNode, String resultPath, String value, String severity, String message) {
+      this(focusNode, resultPath, value, severity, message, null);
+    }
+
     static FindingIO from(JenaShaclValidator.Finding f) {
-      return new FindingIO(f.focusNode(), f.resultPath(), f.value(), f.severity(), f.message());
+      return new FindingIO(f.focusNode(), f.resultPath(), f.value(), f.severity(), f.message(), f.constraint());
     }
   }
 }

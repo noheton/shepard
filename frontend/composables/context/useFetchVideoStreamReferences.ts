@@ -1,16 +1,22 @@
 /**
  * UI3a (aidocs/85 §2.2) / UI6 (aidocs/16) — fetch VideoStreamReferences for
- * a DataObject.
+ * a DataObject via the unified `/v2/references?kind=video` surface.
  *
- * `VideoStreamReference` is a VID1a entity served at
- * `/v2/data-objects/{dataObjectAppId}/video-stream-references`.
- * It is **not yet regenerated into `@dlr-shepard/backend-client`**, so this
- * composable uses a raw `fetch` call with a manually-typed response shape that
- * mirrors `VideoStreamReferenceIO` exactly.
+ * PLUGIN-REF-HANDLER-FE-REPOINT: migrated from the plugin-specific
+ * `/v2/data-objects/{appId}/video-stream-references` path to the unified
+ * `GET /v2/references?kind=video&dataObjectAppId={appId}` endpoint now that
+ * the `video` ReferenceKindHandler is installed (merged in bfab5f04b).
  *
- * When the backend-client is regenerated (post-VID1a), swap the raw fetch for
- * `useV2ShepardApi(VideoStreamReferenceApi).value.list(...)` and delete this
- * file.
+ * The per-kind `payload` map carries:
+ *   storageLocator, mimeType, fileSizeBytes, durationSeconds, width, height,
+ *   frameRate, videoCodec, audioCodec, wallClockTimestamp
+ * which are mapped back to the typed `VideoStreamReferenceIO` interface so
+ * consumers (`VideoStreamReferencesPane.vue`, `dataTableElementMappingUtil.ts`)
+ * require no changes.
+ *
+ * The `/download` URL builder stays on the plugin-specific path — it is a
+ * kind-specific binary op outside the unified surface (PLUGIN-REF-HANDLER-*
+ * in aidocs/16).
  */
 
 export interface VideoStreamReferenceIO {
@@ -30,6 +36,16 @@ export interface VideoStreamReferenceIO {
   wallClockTimestamp?: number | null;
 }
 
+interface ReferenceV2IO {
+  appId: string;
+  id?: number;
+  name?: string | null;
+  createdAt?: string | null;
+  createdBy?: string | null;
+  kind: string;
+  payload: Record<string, unknown>;
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;
@@ -37,6 +53,26 @@ function v2BaseUrl(): string {
   return (config.backendApiUrl as string)
     .replace(/\/shepard\/api\/?$/, "")
     .replace(/\/$/, "");
+}
+
+function toVideoStreamReferenceIO(r: ReferenceV2IO): VideoStreamReferenceIO {
+  const p = r.payload;
+  return {
+    appId: r.appId,
+    id: r.id,
+    name: r.name,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    mimeType: (p.mimeType as string | null | undefined) ?? null,
+    fileSizeBytes: (p.fileSizeBytes as number | null | undefined) ?? null,
+    durationSeconds: (p.durationSeconds as number | null | undefined) ?? null,
+    width: (p.width as number | null | undefined) ?? null,
+    height: (p.height as number | null | undefined) ?? null,
+    frameRate: (p.frameRate as number | null | undefined) ?? null,
+    videoCodec: (p.videoCodec as string | null | undefined) ?? null,
+    audioCodec: (p.audioCodec as string | null | undefined) ?? null,
+    wallClockTimestamp: (p.wallClockTimestamp as number | null | undefined) ?? null,
+  };
 }
 
 export function useFetchVideoStreamReferences(dataObjectAppId: string) {
@@ -56,7 +92,9 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
       return;
     }
 
-    const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/video-stream-references`;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=video&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
 
     try {
       const response = await fetch(url, {
@@ -71,7 +109,17 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
         handleError(fetchError.value, "listVideoStreamReferences");
         return;
       }
-      references.value = (await response.json()) as VideoStreamReferenceIO[];
+      // BUG-DO-DETAIL-A-TOAST-2026-06-29: backend now returns a paged
+      // envelope { items: [...] } on /v2/references list endpoints. Same
+      // unwrap shape as useFetchDataReferences.listReferencesOfKind so a
+      // shipped envelope-flip doesn't surface as ".map is not a function".
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const raw = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
+      references.value = raw.map(toVideoStreamReferenceIO);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Network error";
@@ -83,11 +131,13 @@ export function useFetchVideoStreamReferences(dataObjectAppId: string) {
   }
 
   /**
-   * Builds the direct-download URL for a VideoStreamReference.
-   * VID1a provides a raw file download; VID1b+ will add HLS segmented delivery.
+   * APISIMP-VIDEO-STREAMREF-PATH: download URL now routes through the unified
+   * GET /v2/references/{appId}/content endpoint (range-aware, same 206 semantics).
+   * The old /v2/data-objects/{doId}/video-stream-references/{appId}/download path
+   * returns 410 Gone.
    */
   function downloadUrl(appId: string): string {
-    return `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}/video-stream-references/${encodeURIComponent(appId)}/download`;
+    return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
   }
 
   refresh();

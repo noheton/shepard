@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -12,6 +13,9 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.v2.collection.io.CollectionV2IO;
+import de.dlr.shepard.v2.collection.io.CreateCollectionV2IO;
+import de.dlr.shepard.v2.collection.io.UpdateCollectionV2IO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -19,6 +23,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
@@ -36,14 +42,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -103,8 +110,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collections (v2)")
+@Tag(name = "Collections")
 public class CollectionV2Rest {
+
+  private static final String PT_NOT_FOUND    = "/problems/collections.not-found";
+  private static final String PT_UNAUTHORIZED = "/problems/collections.unauthorized";
+  private static final String PT_FORBIDDEN    = "/problems/collections.forbidden";
 
   @Inject
   CollectionService collectionService;
@@ -123,18 +134,18 @@ public class CollectionV2Rest {
 
   @GET
   @Operation(
+    operationId = "listCollections",
     summary = "List Collections the caller may read.",
     description =
       "Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the " +
       "authenticated caller has Read permission on. The page is unordered by default; " +
       "supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, " +
       "`status`, …) with `orderDesc=true` for a sorted result.\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both to paginate. " +
-      "The server caps `size` at 200 to avoid unbounded result sets.\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. " +
+      "The server caps `pageSize` at 200 to avoid unbounded result sets.\n\n" +
       "Filtering: `name` does a case-insensitive substring match.\n\n" +
-      "Each returned `CollectionIO` carries both `id` (legacy long) and `appId` " +
-      "(canonical UUID v7); v2 clients should branch on `appId` and use the matching " +
-      "`/v2/...` endpoints for follow-up calls.\n\n" +
+      "Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the " +
+      "stable identifier; use the matching `/v2/...` endpoints for follow-up calls.\n\n" +
       "Auth: no role gate — the result is filtered server-side to entities the caller " +
       "may Read, so an unauthorised caller simply gets a smaller list (not 403).\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific " +
@@ -142,31 +153,38 @@ public class CollectionV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Page of Collections the caller may Read (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400",
-    description = "Bean Validation rejected the query — `page` or `size` is negative.")
+    description = "Bean Validation rejected the query — `page` is negative, or `pageSize` is outside [1, 200].")
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
+    @Parameter(description = "Optional case-insensitive substring filter on Collection name. Omit to return all collections the caller can read.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "0-based page index. Default 0. Negative values are rejected (400).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size
+    @Parameter(description = "Page size. Default 50. Must be between 1 and 200 inclusive (400 otherwise).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
 
+    // Load all user-visible collections without DB-side pagination so we can
+    // compute the true filtered total, then paginate in memory (same pattern
+    // as ContainersV2Rest, APISIMP-PAGINATION-ENVELOPE-1).
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
-    params = params.withPageAndSize(safePage, safeSize);
 
-    var collections = collectionService.getAllCollections(params);
-    var result = new ArrayList<CollectionIO>(collections.size());
-    for (var c : collections) {
-      result.add(new CollectionIO(c));
-    }
-    return Response.ok(result)
+    var all = collectionService.getAllCollections(params).stream()
+        .map(CollectionV2IO::new)
+        .toList();
+
+    int total = all.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+      .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -174,6 +192,7 @@ public class CollectionV2Rest {
   @GET
   @Path("/{collectionAppId}")
   @Operation(
+    operationId = "getCollectionV2",
     summary = "Get a Collection by appId, with DataObjects and incoming references.",
     description =
       "Returns the `:Collection` identified by `collectionAppId` (UUID v7) " +
@@ -193,7 +212,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Collection found.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -203,19 +222,21 @@ public class CollectionV2Rest {
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "No Collection with appId " + collectionAppId);
 
     Response gate = enforceAccess(ogmId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Collection c = collectionService.getCollectionWithDataObjectsAndIncomingReferences(ogmId);
-    return Response.ok(new CollectionIO(c))
+    return Response.ok(new CollectionV2IO(c))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
 
   @POST
   @Operation(
+    operationId = "createCollectionV2",
     summary = "Create a new Collection.",
     description =
       "Creates a `:Collection` and returns the full entity in the 201 body. " +
@@ -228,8 +249,8 @@ public class CollectionV2Rest {
       "the delimiter characters `Space, Comma, Point, Slash`).\n" +
       "  - `status` (optional, one of `DRAFT`, `IN_REVIEW`, `READY`, " +
       "`PUBLISHED`, `ARCHIVED`).\n" +
-      "  - `defaultFileContainerId` (optional, legacy long id of a FileContainer " +
-      "to serve as the Collection's default).\n\n" +
+      "  - `defaultFileContainerAppId` (optional, UUID v7 appId of a " +
+      "FileContainer to serve as the Collection's default; resolved server-side).\n\n" +
       "Example minimal body: `{\"name\": \"My experiment\"}`.\n" +
       "Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", " +
       "\"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, " +
@@ -249,24 +270,37 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "201",
     description = "Collection created.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body validation failed.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response create(
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = CollectionIO.class))
-    ) @Valid CollectionIO body
+      content = @Content(schema = @Schema(implementation = CreateCollectionV2IO.class))
+    ) @Valid CreateCollectionV2IO body
   ) {
-    Collection created = collectionService.createCollection(body);
-    return Response.status(Response.Status.CREATED).entity(new CollectionIO(created)).build();
+    CollectionIO io = new CollectionIO();
+    io.setName(body.getName());
+    io.setDescription(body.getDescription());
+    io.setAttributes(body.getAttributes() != null ? body.getAttributes() : new java.util.HashMap<>());
+    io.setStatus(body.getStatus());
+    io.setLicense(body.getLicense());
+    io.setAccessRights(body.getAccessRights());
+    io.setEmbargoEndDate(body.getEmbargoEndDate());
+    io.setHeroImageUrl(body.getHeroImageUrl());
+    io.setImportedFrom(body.getImportedFrom());
+    io.setPromptLogMode(body.getPromptLogMode());
+    io.setDefaultFileContainerAppId(body.getDefaultFileContainerAppId());
+    Collection created = collectionService.createCollection(io);
+    return Response.status(Response.Status.CREATED).entity(new CollectionV2IO(created)).build();
   }
 
   @PATCH
   @Path("/{collectionAppId}")
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchCollectionV2",
     summary = "Partially update a Collection (RFC 7396 JSON Merge Patch).",
     description =
       "Applies an RFC 7396 JSON Merge Patch to the `:Collection`:\n" +
@@ -289,7 +323,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Collection updated.",
-    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+    content = @Content(schema = @Schema(implementation = CollectionV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad request — body is not a JSON object or validation failed.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -302,7 +336,7 @@ public class CollectionV2Rest {
       description = "Partial Collection (RFC 7396). Every field is optional; absent fields are preserved.",
       content = @Content(
         mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
-        schema = @Schema(implementation = CollectionIO.class)
+        schema = @Schema(implementation = UpdateCollectionV2IO.class)
       )
     ) JsonNode patch,
     @Context SecurityContext sc
@@ -312,7 +346,8 @@ public class CollectionV2Rest {
     }
 
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "No Collection with appId " + collectionAppId);
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -333,12 +368,13 @@ public class CollectionV2Rest {
     }
 
     Collection updated = collectionService.updateCollectionByShepardId(ogmId, merged);
-    return Response.ok(new CollectionIO(updated)).build();
+    return Response.ok(new CollectionV2IO(updated)).build();
   }
 
   @DELETE
   @Path("/{collectionAppId}")
   @Operation(
+    operationId = "deleteCollectionV2",
     summary = "Soft-delete a Collection and cascade.",
     description =
       "Marks the `:Collection` deleted (`deleted=true`) plus every reachable " +
@@ -362,7 +398,8 @@ public class CollectionV2Rest {
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "No Collection with appId " + collectionAppId);
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -383,10 +420,16 @@ public class CollectionV2Rest {
 
   private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Insufficient permission", Response.Status.FORBIDDEN,
+          "Caller lacks the required permission on this Collection");
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+        .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

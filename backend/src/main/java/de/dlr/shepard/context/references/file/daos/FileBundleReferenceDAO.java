@@ -78,6 +78,18 @@ public class FileBundleReferenceDAO extends VersionableEntityDAO<FileBundleRefer
     return it.hasNext() ? it.next() : null;
   }
 
+  public List<FileBundleReference> findByDataObjectAppId(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d.appId=$dataObjectAppId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "FileReference", false)
+        ) +
+      CypherQueryHelper.getReturnPart("r");
+    var queryResult = findByQuery(query, Map.of("dataObjectAppId", dataObjectAppId));
+    return StreamSupport.stream(queryResult.spliterator(), false)
+      .filter(r -> r.getDataObject() != null)
+      .toList();
+  }
+
   @Override
   public Class<FileBundleReference> getEntityType() {
     return FileBundleReference.class;

@@ -76,4 +76,13 @@ public class SubscriptionExistenceCache {
   public void invalidate() {
     lastCheckAt = 0L;
   }
+
+  /**
+   * Test-only hook to drive the cache into a chosen timestamp state. Direct
+   * field writes do not survive the {@code @ApplicationScoped} client proxy, so
+   * TTL-staleness tests must go through a method on the bean itself.
+   */
+  void setLastCheckAtForTest(long millis) {
+    lastCheckAt = millis;
+  }
 }

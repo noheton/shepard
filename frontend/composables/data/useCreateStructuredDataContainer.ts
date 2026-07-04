@@ -1,50 +1,50 @@
+import type { PermissionType } from "@dlr-shepard/backend-client";
 import {
-  StructuredDataContainerApi,
-  type PermissionType,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+  createV2Container,
+  v2BaseUrl,
+} from "../container/createV2Container";
 
+/**
+ * CONTAINER-PERMS-V2: container creation and permission setup now both go
+ * through the `/v2/` surface exclusively:
+ *
+ *  - Container creation: `POST /v2/containers?kind=structured-data` via {@link createV2Container}.
+ *  - Permission setup: `PATCH /v2/containers/{appId}/permissions` via a
+ *    hand-written fetch, keyed by the `appId` of the created v2 container.
+ *
+ * The v1 `StructuredDataContainerApi` is no longer called from this composable.
+ */
 export async function useCreateStructuredDataContainer(
   structuredDataContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = useShepardApi(StructuredDataContainerApi);
-
-  const newStructuredDataContainer = await api.value
-    .createStructuredDataContainer({
-      structuredDataContainer: { name: structuredDataContainerName },
-    })
-    .then(response => {
-      return response;
-    })
-    .catch(error => {
-      handleError(error, "createStructuredDataContainer");
-      return undefined;
-    });
+  const newStructuredDataContainer = await createV2Container(
+    "structured-data",
+    structuredDataContainerName,
+  );
   if (!newStructuredDataContainer) return;
 
-  const currentPermissions = await api.value
-    .getStructuredDataPermissions({
-      structuredDataContainerId: newStructuredDataContainer.id,
-    })
-    .then(response => {
-      return response;
-    })
-    .catch(error => {
-      handleError(error, "getPermissions");
-      return undefined;
-    });
-  if (!currentPermissions) return;
+  const appId = newStructuredDataContainer.appId;
+  if (!appId) return;
 
-  const permissionsUpdateSuccess = await api.value
-    .editStructuredDataPermissions({
-      structuredDataContainerId: newStructuredDataContainer.id,
-      permissions: {
-        ...currentPermissions,
-        permissionType: permissionType,
-      },
-    })
-    .then(_ => {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/merge-patch+json",
+    Accept: "application/json",
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  const permissionsUpdateSuccess = await fetch(
+    `${v2BaseUrl()}/v2/containers/${encodeURIComponent(appId)}/permissions`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ permissionType }),
+    },
+  )
+    .then(resp => {
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       return true;
     })
     .catch(error => {

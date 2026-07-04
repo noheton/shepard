@@ -1,0 +1,52 @@
+[
+  {
+    "route": "/collections/2107",
+    "slug": "collection-lumen-byid",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/collection-lumen-byid.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while listReferencedContainers: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}"
+    ]
+  },
+  {
+    "route": "/collections/1787",
+    "slug": "collection-mffd-byid",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/collection-mffd-byid.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while listReferencedContainers: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while listReferencedContainers: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}"
+    ]
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112",
+    "slug": "dataobject-lumen",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/dataobject-lumen.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  }
+]

@@ -3,11 +3,17 @@ import {
   instanceOfStructuredDataReference,
   instanceOfTimeseriesReference,
 } from "@dlr-shepard/backend-client";
+import type {
+  FileReference,
+  StructuredDataReference,
+  TimeseriesReference,
+} from "@dlr-shepard/backend-client";
 import type { DataReference, ReferencedContainerMeta } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
-import type { GitReferenceIO } from "@dlr-shepard/backend-client";
+import type { GitReferenceIO } from "~/composables/context/gitReferenceTypes";
 import type { VideoStreamReferenceIO } from "~/composables/context/useFetchVideoStreamReferences";
 import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
+import type { SpatialReferenceV2IO } from "~/composables/context/useFetchSpatialReferencesV2";
 
 export const mapDataReferenceToDataTableElement = (
   ref: DataReference,
@@ -106,13 +112,50 @@ export const mapVideoReferenceToDataTableElement = (
     },
     actions: {
       elementAppId: ref.appId,
-      showDetails: { enabled: false, pathFragment: "" },
+      // REF-VIDEO-DETAIL-PAGE — Video rows navigate to the appId-keyed
+      // /videostreamreferences/{appId} detail page (same shape as
+      // timeseries/file refs).
+      showDetails: { enabled: true, pathFragment: videoStreamReferencesPathFragment },
     },
   };
 };
 
 
+/**
+ * SPATIAL-UNIFY-003 — map a unified spatial reference (kind=spatial) into a
+ * table row. Addressed by appId; the SpatialDataContainer behind it is carried
+ * as `spatialContainerAppId` (the viewer target), never surfaced as a picker.
+ */
+export const mapSpatialReferenceToDataTableElement = (
+  ref: SpatialReferenceV2IO,
+): DataTableElement => ({
+  type: "Spatial",
+  name: ref.name ?? ref.appId,
+  meta: {
+    appId: ref.appId,
+    spatialContainerAppId: ref.spatialDataContainerAppId ?? null,
+    promotionState: ref.promotionState ?? null,
+  },
+  created: {
+    createdAt: ref.createdAt ? new Date(ref.createdAt) : FALLBACK_DATE,
+    createdBy: ref.createdBy ?? "—",
+  },
+  actions: {
+    elementAppId: ref.appId,
+    showDetails: { enabled: false, pathFragment: "" },
+  },
+});
+
+/**
+ * REFS-V2-PANELS — classify a DataReference. v2-sourced refs carry the stable
+ * `__refKind` discriminator (the generated `instanceOf*` guards require a
+ * numeric `id` that v2 refs never carry, so they can't classify these rows).
+ * Falls back to the guards for any legacy v1-shaped DataReference.
+ */
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
+  if (ref.__refKind === "timeseries") return "TimeSeries";
+  if (ref.__refKind === "bundle") return "File Bundle";
+  if (ref.__refKind === "structured-data") return "Structured Data";
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";
   if (instanceOfFileReference(ref)) return "File Bundle";
   if (instanceOfStructuredDataReference(ref)) return "Structured Data";
@@ -121,30 +164,43 @@ const mapRefType = (ref: DataReference): DataTableElement["type"] => {
 };
 
 const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
-  if (instanceOfTimeseriesReference(ref)) {
+  const refType = mapRefType(ref);
+  // The reference's appId drives the v2 /v2/annotations surface (the numeric
+  // `id` is undefined for v2-sourced refs; legacy v1 cells fall back to it).
+  const appId = (ref as unknown as { appId?: string }).appId;
+  const id = (ref as unknown as { id?: number }).id;
+  if (refType === "TimeSeries") {
+    const ts = ref as unknown as TimeseriesReference;
     return {
-      id: ref.id,
-      containerId: ref.timeseriesContainerId,
+      id,
+      appId,
+      containerId: ts.timeseriesContainerId,
       ...mapNameAndAvailability(ref),
-      interval: `${toShortDateTimeString(parseDateFromNanos(ref.start))} - ${toShortDateTimeString(parseDateFromNanos(ref.end))}`,
+      interval: `${toShortDateTimeString(parseDateFromNanos(ts.start))} - ${toShortDateTimeString(parseDateFromNanos(ts.end))}`,
       // AI1c — carry the quality score so the table can show a chip
-      qualityScore: ref.qualityScore ?? null,
+      qualityScore: ts.qualityScore ?? null,
     };
   }
-  if (instanceOfFileReference(ref))
+  if (refType === "File Bundle") {
+    const fr = ref as unknown as FileReference;
     return {
-      id: ref.id,
-      containerId: ref.fileContainerId,
+      id,
+      appId,
+      containerId: fr.fileContainerId,
       ...mapNameAndAvailability(ref),
-      fileCount: ref.fileOids.length,
+      fileCount: fr.fileOids.length,
     };
-  if (instanceOfStructuredDataReference(ref))
+  }
+  if (refType === "Structured Data") {
+    const sdr = ref as unknown as StructuredDataReference;
     return {
-      id: ref.id,
-      containerId: ref.structuredDataContainerId,
+      id,
+      appId,
+      containerId: sdr.structuredDataContainerId,
       ...mapNameAndAvailability(ref),
-      payloadCount: ref.structuredDataOids.length,
+      payloadCount: sdr.structuredDataOids.length,
     };
+  }
 
   throw Error("Cannot map container meta data: Unknown reference type.");
 };

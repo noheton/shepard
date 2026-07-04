@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.aas.v2.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -11,8 +12,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * {@code keys} holds a single {@code Submodel} key whose {@code value} is
  * {@code urn:shepard:dataobject:{appId}}.
  *
- * @param type AAS Reference type — {@code "ModelReference"} or {@code "ExternalReference"}.
- * @param keys ordered key list. Always one key for Submodel references.
+ * @param type        AAS Reference type — {@code "ModelReference"} or {@code "ExternalReference"}.
+ * @param keys        ordered key list. Always one key for Submodel references.
+ * @param displayName optional human-readable name of the referenced DataObject; null when unknown.
  */
 @Schema(name = "AasReference",
     description = "IDTA AAS v3 Reference — a typed key path pointing to a Submodel.")
@@ -24,9 +26,19 @@ public record AasReferenceIO(
 
     @Schema(required = true,
         description = "Ordered key sequence identifying the referenced element.")
-    List<AasKeyIO> keys
+    List<AasKeyIO> keys,
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(nullable = true,
+        description = "Human-readable DataObject name for display. Null when not populated.")
+    String displayName
 
 ) {
+
+  /** Backward-compatible 2-arg constructor — sets {@code displayName} to null. */
+  public AasReferenceIO(String type, List<AasKeyIO> keys) {
+    this(type, keys, null);
+  }
 
   /**
    * One element of an IDTA AAS v3 key sequence.

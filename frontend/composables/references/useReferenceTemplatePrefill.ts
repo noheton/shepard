@@ -21,23 +21,27 @@ import { AnnotatedDataObject } from "~/composables/annotated";
 export {
   REFERENCE_PREDICATE,
   extractFileNamingPattern,
+  extractChannelSelectionHint,
   findAnnotationByPredicate,
+  parseBundleLayoutHint,
   parseUriRelationshipHint,
   resolveFileNamingPlaceholders,
+  type BundleLayoutHint,
+  type ChannelSelectionHint,
   type UriRelationshipHint,
 } from "~/composables/references/referenceTemplatePrefill";
 
 /**
  * Fetch the annotation set for the parent DataObject. Returns [] on error so
  * the caller can fail soft (the create dialog still opens, just without
- * prefill).
+ * prefill). Keyed by the parent DataObject's appId (v2 polymorphic surface).
  */
 export async function fetchReferencePrefillAnnotations(
-  collectionId: number,
-  dataObjectId: number,
+  dataObjectAppId: string,
 ): Promise<SemanticAnnotation[]> {
+  if (!dataObjectAppId) return [];
   try {
-    const annotated = new AnnotatedDataObject(collectionId, dataObjectId);
+    const annotated = new AnnotatedDataObject(dataObjectAppId);
     return await annotated.fetchAnnotations();
   } catch {
     return [];

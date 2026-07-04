@@ -10,6 +10,7 @@ import type { ChannelV2, Trace3DChannelSelection, Channel5Tuple } from "./Trace3
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string;
   channels: ChannelV2[];
   initial: Partial<Trace3DChannelSelection>;
 }>();
@@ -46,7 +47,7 @@ async function saveAnnotations() {
     );
     if (!ch?.shepardId) continue;
     await $fetch(
-      `/v2/timeseries-containers/${props.containerId}/channels/${ch.shepardId}/annotations`,
+      `/v2/containers/${props.containerAppId}/channels/${ch.shepardId}/annotations`,
       { method: "POST", body: { value: role } },
     ).catch(() => {});
   }
@@ -74,6 +75,7 @@ function onApply() {
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
+          :container-app-id="containerAppId"
           :channels="channels"
           :initial="initial"
           @update:can-confirm="canConfirm = $event"

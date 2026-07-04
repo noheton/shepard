@@ -389,7 +389,7 @@ const headers = [
               accept=".ttl,text/turtle"
               style="display: none"
               @change="onFileChange"
-            />
+            >
             <div class="d-flex align-center ga-2">
               <v-btn
                 variant="tonal"

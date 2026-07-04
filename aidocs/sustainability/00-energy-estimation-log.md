@@ -43,6 +43,35 @@ From the JSONL transcripts at `/root/.claude/projects/-opt-shepard/*.jsonl` — 
 
 **The 63% cache-read finding matters:** a naive per-token estimate without cache-discount would overcount by ~2–3×. Anthropic's prompt caching changes the energy story materially — this is the kind of provider-specific finding that makes the case study publishable.
 
+### §0.1b API token-spend $$ cost estimate (2026-06-26) — MEASURED (local CC) + estimated (cloud)
+
+Measured by summing `usage.{output,cache_creation_input,cache_read_input}_tokens`
+across the **10 local Claude Code transcripts** in `/root/.claude/projects/-opt-shepard/*.jsonl`
+(56,820 usage records). **This is the interactive Claude Code instance ONLY** — it
+excludes the hourly cloud dispatcher (RemoteTrigger) and the cloud research/persona
+agent fleet, which together produced most of the ~2,100 merged PRs.
+
+| Component        | Tokens   | Opus 4.x rate | Cost (Opus) |
+|------------------|----------|---------------|-------------|
+| cache-read       | 15.85 B  | $1.50 /MTok   | $23,778     |
+| cache-creation   | 0.355 B  | $18.75 /MTok  | $6,656      |
+| output           | 0.056 B  | $75 /MTok     | $4,200      |
+| input (uncached) | ~0 B     | $15 /MTok     | ~$0         |
+| **RAW total**    | **16.26 B** | —          | **≈ $34,600** |
+
+- **Cache-read share: 97%.** The cost is almost entirely *re-reading the per-turn
+  context* — CLAUDE.md (~15k tok) + the ~300-item TaskList re-injected on every turn
+  — not generation. Output is only ~$4.2k of the $34.6k.
+- Same 16.26 B tokens at **Sonnet** rates ($3/$15, cache-read $0.30) ≈ **$6.9k** — a
+  5× difference. The Opus cache-read premium is the dominant lever.
+- **Cloud dispatcher + research agents** (not in these transcripts): est. ~$5–13k
+  (Sonnet, heavily cached) → **whole-project order ≈ $40–50k.**
+- **Correction:** an earlier conversational guess of "0.6–1.5 B tokens / ~$0.8–1B"
+  was ~25× too low on tokens; the measured raw for the local instance alone is 16.26 B.
+- **Biggest reduction lever:** stop re-injecting the full TaskList + heavy CLAUDE.md
+  every turn (a recurring per-turn cache-read tax × thousands of turns), and/or route
+  routine/idle work (e.g. the watchdog loop) to Sonnet/Haiku instead of Opus.
+
 ### §0.2 Heuristic backfill (2026-05-20 → 2026-05-23) — MEDIUM/LOW confidence
 
 Cumulative across **214 commits** estimated from commit shape (token volumes inferred from diff size, not measured):
@@ -397,6 +426,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `1e609f7ef` | 2026-05-26 | code | 22k | 7k | 2.39 | 0 | 2 | 4.39 | 1.59 | LOW | fix(frontend): UX-ERR-STATE-COLLECTION-MISSING + UX-PAGE-SHELL-RESPONSIVE-WIDTH — NotFoundPanel, PageShell, isError on useFetchCollection, 6 pages updated |
 | `791a10209` | 2026-05-26 | code | 30k | 8k | 7.98 | 10 | 2 | 19.98 | 7.25 | LOW | feat(ux): UX-DOPANEL-TOTAL-COUNT — Content-Range + X-Total-Count headers, countByCollectionByShepardIds DAO, listDataObjectsWithCount client, "Showing X–Y of Z" + jump-to-page in CollectionDataObjectsPanel |
 | `41ec17f99` | 2026-05-26 | code | 18k | 5k | 2.20 | 0 | 2 | 4.20 | 1.52 | LOW | fix(ux): UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK — lazy DataObject map with 5-min TTL, three honest lineage empty states, NuxtLink row wrappers, 2 new Vitest test files |
+| V2CONV-B6 | 2026-06-04 | code | 40k | 14k | 4.6 | 25 | 4 | 33.6 | 12.2 | MEDIUM | feat(V2CONV-B6): visual template editor — `POST /v2/shapes/build` wrapping B1 `ShaclShapeBuilder`; `TemplateShapeEditor.vue` (palette→compose→live-preview→validate) + `useShapePalette`/`useShapeBuilder` + `utils/templateShapeDsl.ts`; 9 backend + Vitest helper tests; one full `mvn verify` run |
 
 ---
 
@@ -509,4 +539,6 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | COMP-SE-ROLES + COMP-SE-DOCS + API3 — DLR SE compliance docs (SEA naming, AK classification) + container safe-delete design doc. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | PERF9 — channel-edit checkbox virtualization: search filter + v-virtual-scroll in ShowTimeseriesReferenceDialog; TimeseriesReferencePicker already handled. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | UX-PROV1 — Ancestor Chain panel: `AncestorChainPanel.vue` + `useFetchPredecessorChain.ts` + 9 Vitest tests; reuses ANC-1 `predecessor-chain` endpoint; advanced-mode gate on DataObject detail page. ~0.15 kWh / ~60 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-06-12 | BTKVS-C1-EXCEL-EXPORT — shape-driven Excel export: `TemplateExcelExportRest` + `CellMappingExcelExporter` (POI 5.4.1) + 17 JUnit + `export_demo.py` + "Download Excel" on `/tools/form-preview` + backlog reconciliation (BTKVS-C1 → generic seams per 191). ~0.05 kWh / ~20 gCO₂e (one full backend verify + frontend gates in a fresh worktree). | Claude Opus 4.7 |
 
+| 2026-07-02 | MFFD-VERIFY-SWEEP — full showcase verification (2 Playwright sweeps against live deploy, ~30 surfaces), CHANNELS-PAGESIZE-500-FIX (4 frontend call sites + test), `docs/help/mffd-tour.md` guided tour + help-catalogue entry, verification report + 5 backlog rows. Includes one `make redeploy-frontend`. ~0.06 kWh / ~24 gCO₂e. | Claude Fable 5 |

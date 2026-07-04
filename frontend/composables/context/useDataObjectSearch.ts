@@ -1,37 +1,50 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { readDataObjectAppId } from "~/utils/appId";
 
 export interface DataObjectSearchResult {
   dataObjectName: string;
-  dataObjectId: number;
   /**
-   * Owning collection — populated from the parallel `resultSet` (ResultTriple)
-   * array on the server response. Required for building a navigation route
-   * from the global header-search dropdown. Optional because legacy callers
-   * may not need it; it is set whenever the backend returns it.
+   * @deprecated Numeric Neo4j id — not exposed by v2 search; set to 0 when
+   * the result comes from `GET /v2/search`. Use `dataObjectAppId` for
+   * navigation and any appId-keyed v2 operation.
+   */
+  dataObjectId: number;
+  /** UUID v7 — the stable cross-substrate identifier; use this for navigation. */
+  dataObjectAppId: string | null;
+  /**
+   * @deprecated Owning collection numeric id — set only when falling back to
+   * the v1 search path. Use `parentCollectionAppId` for navigation.
    */
   collectionId?: number;
+  /**
+   * AppId of the owning Collection — set by GET /v2/search.
+   * Enables navigation without a secondary collection-resolver call.
+   */
+  parentCollectionAppId?: string | null;
 }
 
 /**
  * DataObject search composable.
  *
- * @param collectionId  When provided, narrows the search to that one
- *                      collection (the original behaviour, used by the
- *                      in-collection DataObject autocompletes). When
- *                      `undefined`, the search runs across every collection
- *                      the current user can read — this is the
- *                      "global header-search" mode (UI-002 fix). The
- *                      backend dispatches on null collectionId per
- *                      `DataObjectSearchService.java:38`.
+ * When `collectionAppId` (UUID v7) is provided the search is scoped to that
+ * collection via `GET /v2/search?collectionAppId=…` (SEARCH-V2-3).
+ * When only a numeric `collectionId` is available the composable falls back to
+ * `POST /shepard/api/search` (V1-EXCEPTION — resolved once all callers carry
+ * the collection appId).
+ * When neither is provided the search runs globally via `GET /v2/search`.
  */
 export function useDataObjectSearch(
   collectionId: number | undefined,
   searchString: Ref<string | undefined>,
   onSearchDone?: () => void,
+  collectionAppId?: string | undefined,
 ) {
   const isLoading = ref<boolean>(false);
   const dataObjectSearchResults = ref<DataObjectSearchResult[]>([]);
+
+  const v2Api = useV2ShepardApi(SearchApi);
 
   const searchDone = (callbackFn?: () => void) => {
     isLoading.value = false;
@@ -40,78 +53,94 @@ export function useDataObjectSearch(
     }
   };
 
-  async function searchDataObjectsByQuery(
-    collectionIdParam: number | undefined,
-    query: string,
-  ) {
-    if (isLoading.value === true) return;
+  async function searchViaV2(query: string, scopeCollectionAppId?: string) {
+    const result = await v2Api.value.searchV2({
+      q: query,
+      ...(scopeCollectionAppId ? { collectionAppId: scopeCollectionAppId } : {}),
+    });
+    result.items
+      .filter(item => item.kind === "dataobject")
+      .forEach(item => {
+        if (
+          !dataObjectSearchResults.value.some(
+            existing => existing.dataObjectAppId === item.appId,
+          )
+        ) {
+          dataObjectSearchResults.value.push({
+            dataObjectId: 0,
+            dataObjectName: item.name,
+            dataObjectAppId: item.appId,
+            parentCollectionAppId: item.parentCollectionAppId,
+          });
+        }
+      });
+  }
 
-    isLoading.value = true;
-
+  async function searchViaV1(collectionIdParam: number, query: string) {
+    // V1-EXCEPTION: caller only has a numeric collection id; no v2 collection-
+    // scoped DO search is possible until the caller is updated to carry appId.
+    // Tracked: SEARCH-V2-3 (remaining callers — PredecessorInput, ParentInput).
     let searchStringParam = "";
     if (isIntegerString(query)) {
-      const searchId = parseInt(query);
-      searchStringParam = createSearchQueryFromId(searchId);
+      searchStringParam = createSearchQueryFromId(parseInt(query));
     } else {
       searchStringParam = createSearchQueryFromString(query);
     }
-
-    // collectionId omitted ⇒ global search across all visible collections.
-    const scope =
-      collectionIdParam !== undefined
-        ? { collectionId: collectionIdParam, traversalRules: [] }
-        : { traversalRules: [] };
-
     const searchResponse = await useShepardApi(SearchApi).value.search({
       searchBody: {
         searchParams: { query: searchStringParam, queryType: "DataObject" },
-        scopes: [scope],
+        scopes: [{ collectionId: collectionIdParam, traversalRules: [] }],
       },
     });
-
     if (searchResponse.results) {
-      // The server returns parallel `results` (BasicEntity[]) +
-      // `resultSet` (ResultTriple[]) arrays — same length, index-aligned.
-      // We zip them so each row carries its owning collectionId.
       const triples = searchResponse.resultSet ?? [];
       searchResponse.results.forEach((result, idx) => {
         if (
           !dataObjectSearchResults.value.some(
-            existingResult => existingResult.dataObjectId === result.id,
+            existing => existing.dataObjectId === result.id,
           )
         ) {
           dataObjectSearchResults.value.push({
             dataObjectId: result.id,
             dataObjectName: result.name,
+            dataObjectAppId: readDataObjectAppId(result),
             collectionId: triples[idx]?.collectionId,
           });
         }
       });
     }
-    searchDone(onSearchDone);
+  }
+
+  async function searchDataObjectsByQuery(
+    collectionIdParam: number | undefined,
+    query: string,
+    collectionAppIdParam?: string,
+  ) {
+    if (isLoading.value === true) return;
+    isLoading.value = true;
+    try {
+      if (collectionAppIdParam) {
+        await searchViaV2(query, collectionAppIdParam);
+      } else if (collectionIdParam !== undefined) {
+        await searchViaV1(collectionIdParam, query);
+      } else {
+        await searchViaV2(query);
+      }
+    } finally {
+      searchDone(onSearchDone);
+    }
   }
 
   function createSearchQueryFromString(query: string): string {
-    const searchStringParam = {
-      property: "name",
-      operator: "contains",
-      value: query,
-    };
-    return JSON.stringify(searchStringParam);
+    return JSON.stringify({ property: "name", operator: "contains", value: query });
   }
 
   function createSearchQueryFromId(searchId: number): string {
-    const searchStringParam = {
-      property: "id",
-      operator: "eq",
-      value: searchId,
-    };
-    return JSON.stringify(searchStringParam);
+    return JSON.stringify({ property: "id", operator: "eq", value: searchId });
   }
 
   function isIntegerString(value: string): boolean {
-    const integerRegex = /^[+-]?\d+$/;
-    return integerRegex.test(value);
+    return /^[+-]?\d+$/.test(value);
   }
 
   function resetResultList() {
@@ -120,20 +149,23 @@ export function useDataObjectSearch(
 
   /**
    * Trigger a search. Returns the underlying Promise so callers that
-   * compose multiple searches (e.g. `useGlobalSearch`) can observe
-   * completion / rejection. Legacy callers that don't await still work.
+   * compose multiple searches can observe completion / rejection.
+   *
+   * @param collectionIdParam  Override the closure-captured numeric id
+   *                           (legacy callers only).
+   * @param collectionAppIdParam  Override the closure-captured appId.
    */
-  const startSearch = (collectionIdParam?: number): Promise<void> => {
+  const startSearch = (
+    collectionIdParam?: number,
+    collectionAppIdParam?: string,
+  ): Promise<void> => {
     if (!searchString.value) {
       resetResultList();
       return Promise.resolve();
     }
-
-    // Use the explicit override if given, otherwise the closure value.
-    // Either side may be undefined ⇒ global search.
     const currCollectionId = collectionIdParam ?? collectionId;
-
-    return searchDataObjectsByQuery(currCollectionId, searchString.value);
+    const currCollectionAppId = collectionAppIdParam ?? collectionAppId;
+    return searchDataObjectsByQuery(currCollectionId, searchString.value, currCollectionAppId);
   };
 
   return {

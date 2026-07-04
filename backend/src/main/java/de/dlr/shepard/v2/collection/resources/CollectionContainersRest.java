@@ -1,10 +1,12 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.v2.collection.daos.CollectionContainersDAO;
 import de.dlr.shepard.v2.collection.io.ContainerSummaryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -19,7 +21,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -40,8 +41,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/referenced-containers")
 @RequestScoped
-@Tag(name = "Collections — referenced containers (CC2)")
+@Tag(name = "Collections")
 public class CollectionContainersRest {
+
+  private static final String PT_UNAUTHORIZED = "/problems/collection-containers.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/collection-containers.not-found";
+  private static final String PT_FORBIDDEN = "/problems/collection-containers.forbidden";
 
   @Inject
   CollectionContainersDAO containersDAO;
@@ -54,6 +59,7 @@ public class CollectionContainersRest {
 
   @GET
   @Operation(
+    operationId = "listReferencedContainers",
     summary = "List containers referenced by data objects in this collection (CC2).",
     description =
       "Walks Collection → DataObject → Reference → Container and returns " +
@@ -64,7 +70,7 @@ public class CollectionContainersRest {
   @APIResponse(
     responseCode = "200",
     description = "Distinct containers referenced within the collection (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ContainerSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -74,20 +80,28 @@ public class CollectionContainersRest {
     @Context SecurityContext sc
   ) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Collection not found",
+        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     List<ContainerSummaryIO> containers = containersDAO.findByCollectionAppId(collectionAppId);
-    return Response.ok(containers).build();
+    return Response.ok(new PagedResponseIO<>(containers, containers.size(), 0, containers.size())).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

@@ -1,0 +1,5 @@
+{
+  "status": 401,
+  "contentType": "image/png",
+  "body": "ApiError(status=401, exception=AuthenticationException, message=Invalid/missing authorization header)"
+}
