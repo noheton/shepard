@@ -111,23 +111,12 @@ function setGroupView(v: "flat" | "collection") {
   });
 }
 
-// ── Owner filter (h) — client-side ─────────────────────────────────────────
-// `owner=…` is intentionally client-side: there's no backend filter for
-// `createdBy` on the v2 SearchApi today, and the task spec forbids
-// backend extension during the Jandex hang. Filed in aidocs/16 as
-// UI21-BACKEND-Q for the server-side enrichment.
+// ── Owner filter (h) — server-side via createdBy param ────────────────────
+// `owner=…` is forwarded to the backend as `ContainerSearchParams.createdBy`
+// (UI21-BACKEND-Q). The server performs a case-insensitive substring match
+// before pagination, so the full result set is correctly filtered and counted.
 
-const ownerFilter = computed(() => {
-  const raw = route.query.owner;
-  return typeof raw === "string" && raw.trim() ? raw.trim().toLowerCase() : "";
-});
-
-const visibleServerItems = computed<BasicContainer[]>(() => {
-  if (!ownerFilter.value) return serverItems.value;
-  return serverItems.value.filter(c =>
-    c.createdBy.toLowerCase().includes(ownerFilter.value),
-  );
-});
+const visibleServerItems = computed<BasicContainer[]>(() => serverItems.value);
 
 // ── Advanced-mode grouping (g) ──────────────────────────────────────────────
 // The orphan/reference map is populated by ContainerList's `refs-resolved`

@@ -146,4 +146,83 @@ public class ContainerSearchServiceTest {
     var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null));
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(sdRes1), new BasicContainerIO(sdRes2));
   }
+
+  // ── UI21-BACKEND-Q: createdBy filter tests ─────────────────────────────────
+
+  @Test
+  public void searchContainerWithCreatedByFilter_happyPath() {
+    // When createdBy is set, the service must build a query that includes the
+    // createdBy predicate so only matching containers are returned.
+    String JSONquery = "{\"property\": \"name\", \"value\": \"\", \"operator\": \"contains\"}";
+    String ownerFilter = "alice";
+    ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.FILE, ownerFilter);
+    ContainerSearchBody searchBody = new ContainerSearchBody(params);
+
+    Neo4jQuery queryWithCreatedBy = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.FILE,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      ownerFilter
+    );
+    // Verify the generated Cypher contains the createdBy predicate
+    assertThat(queryWithCreatedBy.cypher()).contains("createdBy");
+
+    FileContainer fileRes = new FileContainer(7L);
+    List<BasicContainer> resList = List.of(fileRes);
+    when(searchDAO.findContainers(queryWithCreatedBy, null, Constants.FILECONTAINER_IN_QUERY)).thenReturn(resList);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null));
+    assertThat(actual.getResults()).containsExactly(new BasicContainerIO(fileRes));
+    assertThat(actual.getSearchParams().getCreatedBy()).isEqualTo(ownerFilter);
+  }
+
+  @Test
+  public void searchContainerWithCreatedByFilter_nullFilter_predicateAbsent() {
+    // When createdBy is null, the generated Cypher must NOT include the createdBy predicate.
+    String JSONquery = "{\"property\": \"name\", \"value\": \"\", \"operator\": \"contains\"}";
+    Neo4jQuery queryWithoutCreatedBy = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.BASIC,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      null
+    );
+    // The null createdBy must not inject the predicate
+    assertThat(queryWithoutCreatedBy.cypher()).doesNotContain("toLower(c.createdBy)");
+  }
+
+  @Test
+  public void searchContainerWithCreatedByFilter_blankFilter_predicateAbsent() {
+    // When createdBy is blank (whitespace only), the predicate must also be absent.
+    String JSONquery = "{\"property\": \"name\", \"value\": \"\", \"operator\": \"contains\"}";
+    Neo4jQuery queryWithBlank = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.TIMESERIES,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      "   "
+    );
+    assertThat(queryWithBlank.cypher()).doesNotContain("toLower(tc.createdBy)");
+  }
+
+  @Test
+  public void searchContainerWithCreatedByFilter_queryParamIsBound() {
+    // The createdBy value must be placed in the parameter map (not inlined in Cypher)
+    // so the query is safe from injection.
+    String JSONquery = "{\"property\": \"name\", \"value\": \"\", \"operator\": \"contains\"}";
+    String ownerFilter = "bob";
+    Neo4jQuery query = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+      JSONquery,
+      ContainerType.FILE,
+      new SortingHelper(null, null),
+      user.getUsername(),
+      ownerFilter
+    );
+    // The Cypher should not contain the literal owner string — it must be a parameter ref ($pN)
+    assertThat(query.cypher()).doesNotContain(ownerFilter);
+    // The parameter map must contain the lowercased value
+    assertThat(query.params()).containsValue(ownerFilter.toLowerCase());
+  }
 }
