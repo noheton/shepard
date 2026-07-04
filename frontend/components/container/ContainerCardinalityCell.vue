@@ -15,6 +15,7 @@ import {
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string | null | undefined;
   containerType: string;
 }>();
 
@@ -23,7 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const { cardinality, isLoading } = useContainerCardinality(
-  props.containerId,
+  props.containerAppId,
   props.containerType,
 );
 

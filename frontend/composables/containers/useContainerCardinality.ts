@@ -30,14 +30,14 @@ function getV2BaseUrl(): string {
         .replace(/\/$/, "");
 }
 
-function statsUrlFor(containerId: number, type: string): string | null {
+function statsUrlFor(containerAppId: string, type: string): string | null {
   switch (type) {
     case "TIMESERIES":
-      return `${getV2BaseUrl()}/v2/timeseries-containers/${containerId}/stats`;
+      return `${getV2BaseUrl()}/v2/timeseries-containers/${containerAppId}/stats`;
     case "FILE":
-      return `${getV2BaseUrl()}/v2/file-containers/${containerId}/stats`;
+      return `${getV2BaseUrl()}/v2/file-containers/${containerAppId}/stats`;
     case "STRUCTUREDDATA":
-      return `${getV2BaseUrl()}/v2/structured-data-containers/${containerId}/stats`;
+      return `${getV2BaseUrl()}/v2/structured-data-containers/${containerAppId}/stats`;
     default:
       return null;
   }
@@ -73,21 +73,23 @@ export function cardinalityLabel(type: string, count: number): string {
 /**
  * Returns the domain cardinality for a container row.
  *
- * - `cardinality` is `null` while loading or for unsupported types.
+ * - `cardinality` is `null` while loading, for unsupported types, or when appId is absent.
  * - `isLoading` is true while the fetch is in flight.
  */
 export function useContainerCardinality(
-  containerId: number,
+  containerAppId: string | null | undefined,
   containerType: string,
 ) {
   const cardinality = ref<number | null>(null);
-  const isLoading = ref(SUPPORTED_KINDS.has(containerType));
+  const isLoading = ref(
+    SUPPORTED_KINDS.has(containerType) && containerAppId != null,
+  );
 
-  if (!SUPPORTED_KINDS.has(containerType)) {
+  if (!SUPPORTED_KINDS.has(containerType) || containerAppId == null) {
     return { cardinality, isLoading };
   }
 
-  const url = statsUrlFor(containerId, containerType);
+  const url = statsUrlFor(containerAppId, containerType);
   if (!url) {
     isLoading.value = false;
     return { cardinality, isLoading };

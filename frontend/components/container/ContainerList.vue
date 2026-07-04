@@ -418,6 +418,7 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
               </div>
               <ContainerCardinalityCell
                 :container-id="rowProps.item.id"
+                :container-app-id="rowProps.item.appId"
                 :container-type="rowProps.item.type"
                 @cardinality-resolved="onCardinalityResolved"
               />
