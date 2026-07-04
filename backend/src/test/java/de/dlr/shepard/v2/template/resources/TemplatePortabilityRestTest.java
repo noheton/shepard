@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
@@ -173,9 +174,8 @@ class TemplatePortabilityRestTest {
     String badYaml = "- name: ok\n\t  templateKind: not_valid_yaml_indent";
     Response r = resource.importTemplates(badYaml, securityContext);
     assertEquals(400, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.Map<String, Object> body = (java.util.Map<String, Object>) r.getEntity();
-    assertNotNull(body.get("error"));
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertNotNull(body.detail());
     verify(dao, never()).createOrUpdate(any());
   }
 
@@ -185,9 +185,8 @@ class TemplatePortabilityRestTest {
     String yaml = "- name: Recipe\n  templateKind: EXPERIMENT_RECIPE\n";
     Response r = resource.importTemplates(yaml, securityContext);
     assertEquals(400, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.Map<String, Object> body = (java.util.Map<String, Object>) r.getEntity();
-    assertTrue(body.get("error").toString().contains("body are required"));
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertTrue(body.detail().contains("body are required"));
     verify(dao, never()).createOrUpdate(any());
   }
 
@@ -200,9 +199,8 @@ class TemplatePortabilityRestTest {
       "  body: '{\"collection\":{}}'\n";
     Response r = resource.importTemplates(yaml, securityContext);
     assertEquals(400, r.getStatus());
-    @SuppressWarnings("unchecked")
-    java.util.Map<String, Object> body = (java.util.Map<String, Object>) r.getEntity();
-    assertTrue(body.get("error").toString().contains("body invalid"));
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertTrue(body.detail().contains("body invalid"));
     verify(dao, never()).createOrUpdate(any());
   }
 

@@ -15,6 +15,17 @@
 import { describe, it, expect } from "vitest";
 import type { Collection } from "@dlr-shepard/backend-client";
 
+// ── collectionHandle (mirrors PersonalDigest.vue) ─────────────────────────────
+// Mirrors the `collectionHandle()` helper added in MISSING-V2-APPID-IN-REFLISTS
+// slice 4. Prefers the UUID v7 appId (present on post-reset Collections), falls
+// back to the numeric id for legacy Collections, then 0 as a last resort.
+
+function collectionHandle(collection: Collection): string | number {
+  const raw = (collection as unknown as { appId?: string | null })?.appId;
+  const appId = (raw ?? null) as string | null;
+  return appId ?? collection.id ?? 0;
+}
+
 // ── Fixture builder ───────────────────────────────────────────────────────────
 
 function buildCollection(overrides: Partial<Collection> = {}): Collection {
@@ -181,10 +192,11 @@ describe("section visibility rule (sharedCollections.length > 0)", () => {
   });
 
   it("section is hidden while loading even if splits would produce shared entries", () => {
+    const loading = true;
     const theirs = buildCollection({ id: 2, createdBy: "bob" });
-    const shared = splitSharedCollections([theirs], "alice", true);
+    const shared = splitSharedCollections([theirs], "alice", loading);
     // loading=true → splitSharedCollections returns [] → section hidden
-    const sectionVisible = !true && shared.length > 0;
+    const sectionVisible = !loading && shared.length > 0;
     expect(sectionVisible).toBe(false);
   });
 });
@@ -243,5 +255,67 @@ describe("watched section empty-state (WATCHED-COLLECTIONS-EMPTY-STATE)", () => 
     ];
     // All three states are distinct — proves every branch is covered
     expect(new Set(states).size).toBe(3);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MISSING-V2-APPID-IN-REFLISTS slice 4: collectionHandle — appId-first key
+//
+// Post-reset Collections have a UUID v7 appId but no numeric `id`. Using
+// `collection.id` for v-for keys and `isWatched(collection.id!)` causes
+// silent bugs:
+//   • All post-reset collections share :key="null" → Vue rendering issues
+//   • isWatched(null) never matches a stored entry keyed by the UUID
+// The collectionHandle helper resolves this: prefer appId, fall back to id,
+// then 0 as a sentinel that's at least unique within the page lifecycle.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("collectionHandle (MISSING-V2-APPID-IN-REFLISTS slice 4)", () => {
+  it("returns the UUID v7 appId for post-reset Collections that have one", () => {
+    const c = buildCollection({ id: undefined as unknown as number });
+    (c as unknown as { appId: string }).appId = "019e6ffc-89a4-76b5-8dbb-15888646a904";
+    expect(collectionHandle(c)).toBe("019e6ffc-89a4-76b5-8dbb-15888646a904");
+  });
+
+  it("prefers appId over numeric id when both are present (mixed-state Collection)", () => {
+    const c = buildCollection({ id: 42 });
+    (c as unknown as { appId: string }).appId = "019e6ffc-89a4-76b5-8dbb-15888646a904";
+    expect(collectionHandle(c)).toBe("019e6ffc-89a4-76b5-8dbb-15888646a904");
+  });
+
+  it("falls back to numeric id when no appId is present (legacy Collection)", () => {
+    const c = buildCollection({ id: 7 });
+    expect(collectionHandle(c)).toBe(7);
+  });
+
+  it("returns 0 when both appId and id are absent (degenerate case)", () => {
+    const c = buildCollection({ id: undefined as unknown as number });
+    expect(collectionHandle(c)).toBe(0);
+  });
+
+  it("produces distinct keys for two post-reset Collections with different appIds", () => {
+    const c1 = buildCollection({ id: undefined as unknown as number });
+    (c1 as unknown as { appId: string }).appId = "019e6ffc-0000-0000-0000-000000000001";
+    const c2 = buildCollection({ id: undefined as unknown as number });
+    (c2 as unknown as { appId: string }).appId = "019e6ffc-0000-0000-0000-000000000002";
+    expect(collectionHandle(c1)).not.toBe(collectionHandle(c2));
+  });
+
+  it("isWatched-style: appId key matches an entry stored under that appId", () => {
+    const storedEntries = [
+      { collectionId: "019e6ffc-89a4-76b5-8dbb-15888646a904" as string | number, name: "watched" },
+    ];
+    function isWatched(handle: string | number): boolean {
+      return storedEntries.some(
+        e => e.collectionId === handle || String(e.collectionId) === String(handle),
+      );
+    }
+
+    const c = buildCollection({ id: undefined as unknown as number });
+    (c as unknown as { appId: string }).appId = "019e6ffc-89a4-76b5-8dbb-15888646a904";
+
+    // The bug: calling isWatched(null) never matches even though the entry exists
+    expect(isWatched(null as unknown as string)).toBe(false);
+    // The fix: calling isWatched(appId) matches correctly
+    expect(isWatched(collectionHandle(c))).toBe(true);
   });
 });

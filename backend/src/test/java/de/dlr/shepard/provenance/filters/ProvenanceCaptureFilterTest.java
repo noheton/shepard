@@ -16,6 +16,7 @@ import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -61,6 +62,9 @@ class ProvenanceCaptureFilterTest {
   @Mock
   MirroredUserEnrichmentCache enrichmentCache;
 
+  @Mock
+  ProvenanceConfigService provenanceConfigService;
+
   ProvenanceCaptureFilter filter;
 
   @BeforeEach
@@ -68,7 +72,7 @@ class ProvenanceCaptureFilterTest {
     MockitoAnnotations.openMocks(this);
     filter = new ProvenanceCaptureFilter();
     filter.provenance = provenance;
-    filter.captureReads = false;
+    filter.provenanceConfigService = provenanceConfigService;
     filter.mirroredUserDAO = mirroredUserDAO;
     filter.userDAO = userDAO;
     filter.enrichmentCache = enrichmentCache;
@@ -78,7 +82,8 @@ class ProvenanceCaptureFilterTest {
     resolver.lookup = entityAppIdLookup;
     filter.targetEntityResolver = resolver;
 
-    when(provenance.isEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(false);
     when(request.getSecurityContext()).thenReturn(securityContext);
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn("alice");
@@ -136,7 +141,7 @@ class ProvenanceCaptureFilterTest {
 
   @Test
   void getCaptures_whenCaptureReadsOn() throws IOException {
-    filter.captureReads = true;
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(true);
     when(request.getMethod()).thenReturn("GET");
     when(response.getStatus()).thenReturn(200);
 
@@ -157,6 +162,19 @@ class ProvenanceCaptureFilterTest {
       eq("human"),
       isNull()
     );
+  }
+
+  @Test
+  void getDoesNotCapture_v1Path_evenWhenCaptureReadsOn() throws IOException {
+    // PROV-CAPTURE-READS: v1 /shepard/api/... reads are never captured — upstream-compat rule.
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(true);
+    when(uriInfo.getPath()).thenReturn("shepard/api/collections");
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+
+    filter.filter(request, response);
+
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test
@@ -182,7 +200,7 @@ class ProvenanceCaptureFilterTest {
 
   @Test
   void disabledFilterIsNoOp() throws IOException {
-    when(provenance.isEnabled()).thenReturn(false);
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(false);
     when(request.getMethod()).thenReturn("POST");
     when(response.getStatus()).thenReturn(201);
 

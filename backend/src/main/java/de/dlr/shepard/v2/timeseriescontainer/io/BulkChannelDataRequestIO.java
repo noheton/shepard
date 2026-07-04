@@ -11,7 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * TS-OPT2 — request body for the multi-channel bulk data endpoint.
  *
- * <p>Route: {@code POST /v2/timeseries-containers/{containerId}/channels/data/bulk}
+ * <p>Route: {@code POST /v2/containers/{appId}/channels/data/bulk}
  *
  * <p>Returns raw data points (no downsampling). Callers that need LTTB
  * should use the single-channel endpoint with {@code ?downsample=lttb}.

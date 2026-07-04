@@ -37,7 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/admin/storage-overview")
 @RequestScoped
 @RolesAllowed("instance-admin")
-@Tag(name = "Admin storage overview (AD_STORE1)")
+@Tag(name = "Admin")
 public class AdminStorageOverviewRest {
 
   @PersistenceContext
@@ -48,6 +48,7 @@ public class AdminStorageOverviewRest {
 
   @GET
   @Operation(
+    operationId = "getStorageOverview",
     summary = "Aggregated storage overview across all database backends.",
     description = "Returns disk usage per backend (TimescaleDB, MongoDB) so admins can " +
       "identify which database is growing and whether capacity action is needed. " +

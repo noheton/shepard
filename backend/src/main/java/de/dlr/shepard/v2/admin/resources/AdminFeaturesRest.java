@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.admin.resources;
 
 import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.FeatureToggleIO;
 import de.dlr.shepard.v2.admin.io.PatchFeatureToggleIO;
@@ -29,17 +29,28 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/admin/features")
+// Path is /v2/admin/runtime-toggles (not /features) because these toggles are
+// transient (JVM-lifetime only, not persisted). The /features namespace is
+// reserved for ConfigRegistry-backed, persisted feature config (see ConfigRest).
+@Path("/v2/admin/runtime-toggles")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")
 public class AdminFeaturesRest {
+
+  private static final String PT_NOT_FOUND = "/problems/features.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
 
   @Inject
   FeatureToggleRegistry registry;
 
   @GET
   @Operation(
+    operationId = "listFeatureToggles",
     summary = "List runtime feature toggles.",
     description = "Returns all registered feature toggles with their current enabled state. " +
     "Changes made via PATCH take effect immediately in the running JVM but are not persisted " +
@@ -50,6 +61,7 @@ public class AdminFeaturesRest {
     description = "Current state of all feature toggles.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FeatureToggleIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
     List<FeatureToggleIO> result = registry.list()
@@ -62,6 +74,7 @@ public class AdminFeaturesRest {
   @PATCH
   @Path("/{name}")
   @Operation(
+    operationId = "patchFeatureToggle",
     summary = "Toggle a runtime feature flag.",
     description = "Sets the enabled state of the named feature toggle for the lifetime of the " +
     "current JVM process. The change does not survive a restart."
@@ -71,6 +84,7 @@ public class AdminFeaturesRest {
     description = "Updated state of the toggle.",
     content = @Content(schema = @Schema(implementation = FeatureToggleIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "404", description = "No toggle registered under that name.")
   public Response patch(
@@ -81,9 +95,8 @@ public class AdminFeaturesRest {
       entry.setEnabled(body.getEnabled());
       return Response.ok(new FeatureToggleIO(entry.getName(), entry.isEnabled(), entry.getDescription(), entry.getSource())).build();
     }).orElseGet(() ->
-      Response.status(Status.NOT_FOUND)
-        .entity(new ApiError(Status.NOT_FOUND.getStatusCode(), "NotFound", "No feature toggle registered with name '" + name + "'"))
-        .build()
+      problem(PT_NOT_FOUND, "Not Found", Status.NOT_FOUND,
+        "No feature toggle registered with name '" + name + "'")
     );
   }
 }

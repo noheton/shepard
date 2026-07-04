@@ -31,6 +31,18 @@ target a known graph topology.
 DataObjects + 11 StructuredDataReferences landed. Re-running the seed
 produces 13 `SKIP` lines, zero writes (idempotent).
 
+**Form-template slice (BTKVS-B2, 2026-06-12):**
+[`seed_form_template.py`](seed_form_template.py) registers the docket
+`:general` section as a `STRUCTURED_RECIPE` template whose SHACL
+`shapeGraph` is authored through the `ShaclShapeBuilder` JSON DSL
+(`POST /v2/shapes/build`) — DASH editor hints, `sh:pattern
+"^[A-Z][0-9]{3}$"` on the Docket-ID, and two Excel cell-mappings
+(Docket-ID → `K1`, Project → `C4`). `GET /v2/templates/{appId}/form`
+compiles it into the doc-125 §5.1 descriptor;
+[`form_demo.py`](form_demo.py) (Streamlit) renders + submits it, and a
+pattern-violating Docket-ID round-trips as an inline field error via
+the structured 422 `violations[]`.
+
 ---
 
 ## 1. Source data

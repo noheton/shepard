@@ -10,12 +10,16 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
+import de.dlr.shepard.spi.fileparser.FileParserRegistry;
+import de.dlr.shepard.spi.payload.FileKindDetectorRegistry;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +77,7 @@ public class SingletonFileReferenceService {
   DataObjectDAO dataObjectDAO;
 
   @Inject
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Inject
   UserService userService;
@@ -83,6 +87,12 @@ public class SingletonFileReferenceService {
 
   @Inject
   EntityIdResolver entityIdResolver;
+
+  @Inject
+  FileKindDetectorRegistry detectorRegistry;
+
+  @Inject
+  FileParserRegistry parserRegistry;
 
   /**
    * Get a singleton by appId.
@@ -103,6 +113,133 @@ public class SingletonFileReferenceService {
    */
   public List<FileReference> listByDataObject(String dataObjectAppId) {
     return singletonFileReferenceDAO.findByDataObjectAppId(dataObjectAppId);
+  }
+
+  /**
+   * APISIMP-KIND-DISCRIMINATOR Option C — phase 1 of the two-step file create.
+   *
+   * <p>Creates a metadata-only {@link FileReference} node (no bytes, no GridFS
+   * doc) attached to the given DataObject. The caller follows up with
+   * {@link #attachContent} ({@code PUT /v2/references/{appId}/content}) to
+   * store the binary payload and complete the reference.
+   *
+   * @param dataObjectAppId parent DataObject's appId. Required.
+   * @param name human-readable name for the reference. Required, non-blank.
+   * @return the persisted, content-less singleton (file field is null).
+   * @throws NotFoundException when no DataObject with that appId exists.
+   * @throws BadRequestException when {@code name} is missing/blank.
+   */
+  public FileReference createSingletonMetadata(String dataObjectAppId, String name) {
+    if (name == null || name.isBlank()) {
+      throw new BadRequestException("name must not be null or blank");
+    }
+    DataObject parent = resolveDataObjectByAppId(dataObjectAppId);
+    if (parent == null) {
+      throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
+    }
+    User user = userService.getCurrentUser();
+
+    FileReference singleton = new FileReference();
+    singleton.setName(name);
+    singleton.setDataObject(parent);
+    singleton.setCreatedAt(dateHelper.getDate());
+    singleton.setCreatedBy(user);
+
+    FileReference created = singletonFileReferenceDAO.createOrUpdate(singleton);
+    created.setShepardId(created.getId());
+    created = singletonFileReferenceDAO.createOrUpdate(created);
+
+    Log.debugf(
+      "FR1b/phase-1: created metadata-only singleton FileReference appId=%s under DataObject appId=%s",
+      created.getAppId(),
+      dataObjectAppId
+    );
+    return created;
+  }
+
+  /**
+   * APISIMP-KIND-DISCRIMINATOR Option C — phase 2 of the two-step file create.
+   *
+   * <p>Attaches binary content to the content-less {@link FileReference} node
+   * identified by {@code appId}. If the reference already has an attached file
+   * (re-upload scenario), the old GridFS blob is deleted and replaced.
+   *
+   * @param appId the singleton's appId (must exist).
+   * @param filename original filename; used for MIME / fileKind detection. Required.
+   * @param payload byte stream of the file body. Required, non-null.
+   * @param declaredSize caller-declared size in bytes; {@code <= 0} skips size cap.
+   * @return the updated singleton with its attached file.
+   * @throws NotFoundException when no singleton with that appId exists.
+   * @throws BadRequestException when {@code filename} or {@code payload} are missing.
+   */
+  public FileReference attachContent(String appId, String filename, InputStream payload, long declaredSize) {
+    if (filename == null || filename.isBlank()) {
+      throw new BadRequestException("filename must not be null or blank");
+    }
+    if (payload == null) {
+      throw new BadRequestException("file payload must not be null");
+    }
+    FileReference ref = singletonFileReferenceDAO.findByAppId(appId);
+    if (ref == null) {
+      throw new NotFoundException("No singleton FileReference with appId " + appId);
+    }
+
+    ensureSharedNamespace();
+
+    // Replace an existing file blob if this is a re-upload.
+    ShepardFile oldFile = ref.getFile();
+
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+      }
+      if (parseBuf != null) {
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+      } else {
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      }
+    } else {
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    }
+
+    // Delete old blob after writing the new one (write-then-delete avoids data loss on failure).
+    if (oldFile != null) {
+      try {
+        fileStorageService.deleteFile(SHARED_FILES_NAMESPACE, oldFile);
+      } catch (NotFoundException nfe) {
+        Log.warnf("FR1b/attachContent: old stored blob oid=%s already missing for appId=%s", oldFile.getOid(), appId);
+      }
+    }
+
+    ref.setFile(saved);
+    ref.setFileKind(detectFileKind(filename, saved));
+    ref.setUpdatedAt(dateHelper.getDate());
+    ref.setUpdatedBy(userService.getCurrentUser());
+    FileReference updated = singletonFileReferenceDAO.createOrUpdate(ref);
+
+    Log.debugf(
+      "FR1b/phase-2: attached content to singleton FileReference appId=%s (oid=%s)",
+      appId,
+      saved.getOid()
+    );
+
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      DataObject parent = ref.getDataObject();
+      String dataObjectAppId = parent != null ? parent.getAppId() : null;
+      try {
+        parserRegistry.runAll(buf, filename, appId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, appId);
+      }
+    }
+
+    return updated;
   }
 
   /**
@@ -139,8 +276,30 @@ public class SingletonFileReferenceService {
 
     ensureSharedNamespace();
 
-    // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to GridFS.
-    ShepardFile saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
+    // this file before buffering bytes. Only if a parser wants it do we read all bytes
+    // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        // Could not buffer — fall back to streaming (no parse annotations).
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+        parseBuf = null;
+      }
+      if (parseBuf != null) {
+        // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to the active store.
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), declaredSize);
+      } else {
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+      }
+    } else {
+      // MONGO-AUDIT-2026-05-24-012: enforce the upload size cap before writing to the active store.
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
+    }
 
     User user = userService.getCurrentUser();
 
@@ -148,6 +307,7 @@ public class SingletonFileReferenceService {
     singleton.setName(name);
     singleton.setDataObject(parent);
     singleton.setFile(saved);
+    singleton.setFileKind(detectFileKind(filename, saved));
     singleton.setCreatedAt(dateHelper.getDate());
     singleton.setCreatedBy(user);
 
@@ -161,6 +321,19 @@ public class SingletonFileReferenceService {
       dataObjectAppId,
       saved.getOid()
     );
+
+    // PARSER-SPI: secondary write — fire all matching file-format parsers.
+    // Fire-and-forget: exceptions are caught inside runAll and logged as WARN.
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      final String refAppId = created.getAppId();
+      try {
+        parserRegistry.runAll(buf, filename, refAppId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, refAppId);
+      }
+    }
+
     return created;
   }
 
@@ -206,9 +379,31 @@ public class SingletonFileReferenceService {
 
     ensureSharedNamespace();
 
-    // Persist the file bytes first; the resulting ShepardFile carries
-    // its own oid, md5, fileSize from the GridFS upload.
-    ShepardFile saved = fileService.createFile(SHARED_FILES_NAMESPACE, filename, payload);
+    // PARSER-SPI: check cheaply (filename only) whether any file-format parser accepts
+    // this file before buffering bytes. Only if a parser wants it do we read all bytes
+    // into a heap buffer — for unrecognised extensions we stream directly to GridFS.
+    boolean anyAccepts = parserRegistry != null && parserRegistry.anyAccepts(null, filename);
+    byte[] parseBuf = null;
+    ShepardFile saved;
+    if (anyAccepts) {
+      try {
+        parseBuf = payload.readAllBytes();
+      } catch (IOException e) {
+        Log.warnf(e, "FileParserRegistry: could not buffer payload for '%s'; skipping parse", filename);
+        parseBuf = null;
+      }
+      if (parseBuf != null) {
+        // Persist the file bytes first; the resulting ShepardFile carries
+        // its own oid, md5, fileSize from the active store.
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, new ByteArrayInputStream(parseBuf), 0L);
+      } else {
+        saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, 0L);
+      }
+    } else {
+      // Persist the file bytes first; the resulting ShepardFile carries
+      // its own oid, md5, fileSize from the active store.
+      saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, 0L);
+    }
 
     User user = userService.getCurrentUser();
 
@@ -216,6 +411,7 @@ public class SingletonFileReferenceService {
     singleton.setName(name);
     singleton.setDataObject(parent);
     singleton.setFile(saved);
+    singleton.setFileKind(detectFileKind(filename, saved));
     singleton.setCreatedAt(dateHelper.getDate());
     singleton.setCreatedBy(user);
 
@@ -229,7 +425,58 @@ public class SingletonFileReferenceService {
       dataObjectAppId,
       saved.getOid()
     );
+
+    // PARSER-SPI: secondary write — fire all matching file-format parsers.
+    // Fire-and-forget: exceptions are caught inside runAll and logged as WARN.
+    if (parseBuf != null) {
+      final byte[] buf = parseBuf;
+      final String refAppId = created.getAppId();
+      try {
+        parserRegistry.runAll(buf, filename, refAppId, dataObjectAppId);
+      } catch (Exception e) {
+        Log.warnf(e, "FileParserRegistry: secondary write failed for filename='%s' appId=%s", filename, refAppId);
+      }
+    }
+
     return created;
+  }
+
+  /**
+   * V2CONV-A2 / FILEKIND-DETECTOR-SPI — derive the {@code fileKind}
+   * discriminator from the original filename extension by delegating to
+   * the pluggable {@link FileKindDetectorRegistry}.
+   *
+   * <p>The registry iterates all {@link de.dlr.shepard.spi.payload.FileKindDetector}
+   * beans (core + plugins) and returns the first match. The built-in mappings
+   * are provided by {@link de.dlr.shepard.spi.payload.BuiltinFileKindDetector}:
+   * {@code .krl|.src → "krl"}, {@code .svdx → "svdx"},
+   * {@code .otvis → "otvis"}, {@code .urdf → "urdf"},
+   * {@code .xit → "xit"}, {@code .pdf → "pdf"},
+   * {@code .urscript|.script → "urscript"}. Anything else (or a
+   * blank/extension-less name) yields {@code null} — the schema-additive
+   * "absent means unknown" contract.
+   *
+   * @param filename the original upload filename (may be blank/null).
+   * @param file the persisted {@link ShepardFile} (reserved for a future
+   *   mime-based tie-breaker; unused today since {@link ShepardFile}
+   *   carries no mime type).
+   * @return the detected kind token, or {@code null} when unrecognised.
+   */
+  String detectFileKind(String filename, ShepardFile file) {
+    String ext = extensionOf(filename);
+    if (ext == null) return null;
+    return detectorRegistry.resolveFileKind(ext);
+  }
+
+  /**
+   * Lower-cased extension of a filename, or {@code null} when the name
+   * is blank or carries no {@code .ext} suffix.
+   */
+  private String extensionOf(String filename) {
+    if (filename == null || filename.isBlank()) return null;
+    int dot = filename.lastIndexOf('.');
+    if (dot < 0 || dot == filename.length() - 1) return null;
+    return filename.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
   }
 
   /**
@@ -280,7 +527,8 @@ public class SingletonFileReferenceService {
     if (ref == null) {
       throw new NotFoundException("No singleton FileReference with appId " + appId);
     }
-    String fileOid = ref.getFile() != null ? ref.getFile().getOid() : null;
+    ShepardFile file = ref.getFile();
+    String fileOid = file != null ? file.getOid() : null;
 
     // Soft-delete the Neo4j node (matches the rest of the codebase's
     // soft-delete posture for Reference primitives).
@@ -291,14 +539,15 @@ public class SingletonFileReferenceService {
 
     // Hard-delete the byte payload — there's no other Reference
     // pointing at it (singletons own their file by construction).
+    // Routes through the active/per-row storage adapter (idempotent).
     if (fileOid != null) {
       try {
-        fileService.deleteFile(SHARED_FILES_NAMESPACE, fileOid);
+        fileStorageService.deleteFile(SHARED_FILES_NAMESPACE, file);
       } catch (NotFoundException nfe) {
         // Already gone — log and continue. The Neo4j-side soft-delete
         // already took effect; no need to fail the whole operation
-        // over an idempotent Mongo no-op.
-        Log.warnf("FR1b: GridFS blob for singleton appId=%s oid=%s already missing", appId, fileOid);
+        // over an idempotent storage no-op.
+        Log.warnf("FR1b: stored blob for singleton appId=%s oid=%s already missing", appId, fileOid);
       }
     }
     Log.debugf("FR1b: deleted singleton FileReference appId=%s (oid=%s)", appId, fileOid);
@@ -321,7 +570,7 @@ public class SingletonFileReferenceService {
     if (file == null || file.getOid() == null) {
       throw new NotFoundException("Singleton FileReference appId=" + appId + " has no attached file");
     }
-    return fileService.getPayload(SHARED_FILES_NAMESPACE, file.getOid());
+    return fileStorageService.getPayload(SHARED_FILES_NAMESPACE, file);
   }
 
   /**

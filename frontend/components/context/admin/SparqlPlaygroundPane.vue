@@ -161,14 +161,6 @@ const tableItems = computed<Record<string, string>[]>(() => {
       </v-card>
     </template>
 
-    <!-- Placeholder note -->
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="N1f"
-      design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
-      endpoint="/v2/semantic/{repoAppId}/sparql"
-      notes="Backend live (N1f). Admin pane shipped in #64. Full editor / autocomplete queued."
-    />
   </div>
 </template>
 

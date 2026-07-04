@@ -3,6 +3,8 @@ package de.dlr.shepard.context.references.spatialdatareference;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
@@ -206,10 +208,10 @@ public class SpatialDataReferenceServiceTest {
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Write, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Write), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     SpatialDataReference actual = referenceService.createReference(collectionId, dataObject.getShepardId(), input);

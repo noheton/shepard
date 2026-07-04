@@ -47,6 +47,9 @@ public class SqlTimeseriesConfigService {
   @Inject
   RequestContextController requestContextController;
 
+  @ConfigProperty(name = "shepard.timeseries.sql.enabled", defaultValue = "true")
+  boolean defaultEnabled;
+
   @ConfigProperty(name = "shepard.timeseries.sql.max-rows", defaultValue = "1000000")
   long defaultMaxRows;
 
@@ -98,11 +101,12 @@ public class SqlTimeseriesConfigService {
     SqlTimeseriesConfig seed = new SqlTimeseriesConfig();
     // Seed with deploy-time defaults so the singleton's values match the
     // operator's existing application.properties on first migration.
+    seed.setEnabled(defaultEnabled);
     seed.setMaxRows(defaultMaxRows);
     seed.setMaxDurationIso(defaultMaxDuration);
     SqlTimeseriesConfig saved = dao.createOrUpdate(seed);
-    Log.infof("P10c: seeded :SqlTimeseriesConfig singleton (appId=%s, maxRows=%d, maxDuration=%s)",
-        saved.getAppId(), saved.getMaxRows(), saved.getMaxDurationIso());
+    Log.infof("P10c: seeded :SqlTimeseriesConfig singleton (appId=%s, enabled=%b, maxRows=%d, maxDuration=%s)",
+        saved.getAppId(), saved.getEnabled(), saved.getMaxRows(), saved.getMaxDurationIso());
     return saved;
   }
 
@@ -115,6 +119,21 @@ public class SqlTimeseriesConfigService {
       return existing;
     }
     return seedIfNeeded();
+  }
+
+  /**
+   * FTOGGLE-SQL-ENABLE-1 — return the effective enabled flag — the
+   * singleton's {@code enabled} when non-null, otherwise the deploy-time
+   * default ({@code shepard.timeseries.sql.enabled}).
+   *
+   * @return {@code true} if {@code POST /v2/sql/timeseries} should be active.
+   */
+  public boolean effectiveEnabled() {
+    SqlTimeseriesConfig cfg = dao.findSingleton();
+    if (cfg != null && cfg.getEnabled() != null) {
+      return cfg.getEnabled();
+    }
+    return defaultEnabled;
   }
 
   /**
@@ -146,6 +165,13 @@ public class SqlTimeseriesConfigService {
   }
 
   /**
+   * Return the deploy-time default for enabled (for IO layer use).
+   */
+  public boolean getDefaultEnabled() {
+    return defaultEnabled;
+  }
+
+  /**
    * Return the deploy-time default for max rows (for IO layer use).
    */
   public long getDefaultMaxRows() {
@@ -165,17 +191,19 @@ public class SqlTimeseriesConfigService {
    * deploy-time default); the REST layer is responsible for distinguishing
    * "absent" from "null" before calling here.
    *
+   * @param enabled        new enabled flag, or {@code null} to revert to deploy-time default
    * @param maxRows        new row cap, or {@code null} to revert to default
    * @param maxDurationIso new duration cap ISO-8601, or {@code null} to revert to default
    * @return the post-patch {@link SqlTimeseriesConfig}.
    */
-  public synchronized SqlTimeseriesConfig patch(Long maxRows, String maxDurationIso) {
+  public synchronized SqlTimeseriesConfig patch(Boolean enabled, Long maxRows, String maxDurationIso) {
     SqlTimeseriesConfig cfg = current();
+    cfg.setEnabled(enabled);
     cfg.setMaxRows(maxRows);
     cfg.setMaxDurationIso(maxDurationIso);
     SqlTimeseriesConfig saved = dao.createOrUpdate(cfg);
-    Log.infof("P10c: :SqlTimeseriesConfig patched (maxRows=%s, maxDuration=%s)",
-        saved.getMaxRows(), saved.getMaxDurationIso());
+    Log.infof("P10c: :SqlTimeseriesConfig patched (enabled=%s, maxRows=%s, maxDuration=%s)",
+        saved.getEnabled(), saved.getMaxRows(), saved.getMaxDurationIso());
     return saved;
   }
 }

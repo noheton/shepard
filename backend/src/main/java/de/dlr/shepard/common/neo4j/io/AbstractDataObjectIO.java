@@ -22,7 +22,15 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
   private Map<String, String> attributes = new HashMap<>();
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Schema(nullable = true, enumeration = {"DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"}, example = "IN_REVIEW")
+  @Schema(
+    nullable = true,
+    enumeration = {
+      "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED",
+      // MFG1 / QM1a — EN 9100 quality-engineering statuses (role-gated on write).
+      "NCR_OPEN", "ON_HOLD", "REJECTED", "CERTIFIED", "CONCESSION_PENDING"
+    },
+    example = "IN_REVIEW"
+  )
   private String status;
 
   /**

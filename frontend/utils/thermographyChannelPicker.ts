@@ -147,6 +147,19 @@ export function projectMetadataRows(annotations: AnnotationMap): MetadataRow[] {
   return out;
 }
 
+/**
+ * Parse a "WxH" resolution annotation (e.g. "1024x768") to an aspect ratio
+ * (W/H). Returns the Edevis OTvis default 1024/768 when the string is absent
+ * or cannot be parsed. Accepts × (U+00D7) as well as ASCII x/X.
+ */
+export function parseAspectRatio(resolution: string | null | undefined): number {
+  if (!resolution) return 1024 / 768;
+  const m = /^(\d+)[xX×](\d+)$/.exec(resolution.trim());
+  if (!m) return 1024 / 768;
+  const w = Number(m[1]), h = Number(m[2]);
+  return h > 0 ? w / h : 1024 / 768;
+}
+
 /** Group rows by section for the rendered panel. */
 export function groupMetadataRows(rows: MetadataRow[]): Record<MetadataRow["group"], MetadataRow[]> {
   const out: Record<MetadataRow["group"], MetadataRow[]> = {

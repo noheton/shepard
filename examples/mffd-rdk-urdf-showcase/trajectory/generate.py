@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""generate.py — synthetic AFP ply layup joint trajectory for the KR210 R3100.
+"""generate.py — synthetic AFP ply layup joint trajectory for the KR210 R2700/2.
 
 Produces a 30-second, 100 Hz joint-angle trajectory (3000 samples per joint)
-for the six revolute joints of the KUKA KR210 L150 (kuka_kr210_support URDF):
+for the six revolute joints of the KUKA KR210 R2700/2 (kuka_quantec_support
+URDF from kroshu/kuka_robot_descriptions):
 
-    joint_a1, joint_a2, joint_a3, joint_a4, joint_a5, joint_a6
+    joint_1, joint_2, joint_3, joint_4, joint_5, joint_6
 
 The motion is a believable AFP layup pass: a planar raster sweep at constant
 TCP height, with the TCP traversing back-and-forth across a ~600 mm strip.
@@ -47,7 +48,7 @@ SAMPLE_HZ = 100
 DURATION_S = 30
 N_SAMPLES = SAMPLE_HZ * DURATION_S  # 3000
 
-JOINT_NAMES = ["joint_a1", "joint_a2", "joint_a3", "joint_a4", "joint_a5", "joint_a6"]
+JOINT_NAMES = ["joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6"]
 
 
 def _joint_angle(joint: str, t: float) -> float:
@@ -56,27 +57,27 @@ def _joint_angle(joint: str, t: float) -> float:
     The layup motion: TCP traces a back-and-forth raster across the
     600 mm strip every ~6 s, with a slow downstream advance over 30 s.
 
-    a1 — base yaw — slow linear advance (+30° → +60°) over 30 s.
-    a2 — shoulder pitch — small oscillation about -45° (TCP height ≈ const).
-    a3 — elbow pitch — counter-oscillation about +90° (keeps wrist level).
-    a4 — wrist roll — small saw-tooth (orienting the AFP head).
-    a5 — wrist pitch — small oscillation (normal-to-surface keep-alive).
-    a6 — tool roll — fast 0.5 Hz pass-frequency oscillation (raster sweep).
+    joint_1 — base yaw — slow linear advance (+30° → +60°) over 30 s.
+    joint_2 — shoulder pitch — small oscillation about -45° (TCP height ≈ const).
+    joint_3 — elbow pitch — counter-oscillation about +90° (keeps wrist level).
+    joint_4 — wrist roll — small saw-tooth (orienting the AFP head).
+    joint_5 — wrist pitch — small oscillation (normal-to-surface keep-alive).
+    joint_6 — tool roll — fast 0.5 Hz pass-frequency oscillation (raster sweep).
     """
-    if joint == "joint_a1":
+    if joint == "joint_1":
         # Linear advance + tiny jitter (settling)
         return math.radians(30 + (t / DURATION_S) * 30 + 0.5 * math.sin(2 * math.pi * 0.3 * t))
-    if joint == "joint_a2":
+    if joint == "joint_2":
         return math.radians(-45 + 3 * math.sin(2 * math.pi * 0.5 * t))
-    if joint == "joint_a3":
+    if joint == "joint_3":
         return math.radians(90 - 3 * math.sin(2 * math.pi * 0.5 * t))
-    if joint == "joint_a4":
+    if joint == "joint_4":
         # Saw-tooth — every 6 s reset
         phase = (t % 6.0) / 6.0
         return math.radians(-10 + 20 * phase)
-    if joint == "joint_a5":
+    if joint == "joint_5":
         return math.radians(15 + 5 * math.sin(2 * math.pi * 0.5 * t))
-    if joint == "joint_a6":
+    if joint == "joint_6":
         # Pass-frequency oscillation — the AFP raster sweep
         return math.radians(45 * math.sin(2 * math.pi * 0.5 * t))
     return 0.0

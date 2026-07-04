@@ -7,9 +7,19 @@ const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;
 
+// V2-SWEEP-003-2: route param is now an appId (UUID v7) when navigated from
+// CollectionContainersPanel / ContainerList. HeaderBar search still routes numeric
+// id (V1-EXCEPTION, SEARCH-V2 will retire it) — fetchData() handles both paths.
 const containerAccessor = new FileContainerAccessor(containerId);
+const containerAppId = computed<string | null>(
+  () => containerAccessor.fileContainer.value?.appId ?? (/^\d+$/.test(containerId) ? null : containerId),
+);
+// Numeric Neo4j id for child components still using v1 API (V1-EXCEPTION).
+const containerNumericId = computed<number>(
+  () => /^\d+$/.test(containerId) ? Number(containerId) : (containerAccessor.fileContainer.value?.id ?? 0),
+);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useFileContainerLinkedDataObjects(containerId);
+  useFileContainerLinkedDataObjects(containerAppId);
 
 const totalFileSizeBytes = computed(() =>
   (containerAccessor.files.value ?? []).reduce((sum, f) => sum + (f.fileSize ?? 0), 0)
@@ -31,8 +41,11 @@ const deleteWarning = computed<string | undefined>(() => {
   );
 });
 
-const fetchData = () => {
-  containerAccessor.fetchData();
+// P21-V2-METADATA-EDIT-2: rename dialog state.
+const showRenameDialog = ref(false);
+
+const fetchData = async () => {
+  await containerAccessor.fetchData();
   containerAccessor.fetchFiles();
   containerAccessor.fetchRoles();
 };
@@ -79,12 +92,27 @@ useHead({
         <v-container class="pa-0" fluid>
           <v-row no-gutters>
             <ContainerTitleAndMetadataDisplay
-              :id="containerAccessor.fileContainer.value.id"
+              :app-id="containerAppId ?? containerId"
               :n-items="containerAccessor.files.value?.length"
               :name="containerAccessor.fileContainer.value.name"
               :type-label="'File Container'"
             >
               <template #buttons>
+                <v-btn
+                  v-if="containerAccessor.isAllowedToEditData.value && containerAppId"
+                  icon="mdi-pencil-outline"
+                  size="small"
+                  variant="text"
+                  title="Rename container"
+                  @click="showRenameDialog = true"
+                />
+                <EditContainerNameDialog
+                  v-if="containerAppId"
+                  v-model:show-dialog="showRenameDialog"
+                  :container-app-id="containerAppId"
+                  :current-name="containerAccessor.fileContainer.value?.name ?? ''"
+                  @saved="fetchData"
+                />
                 <UploadFilesButton
                   v-if="containerAccessor.isAllowedToEditData.value"
                   :upload-file="
@@ -127,7 +155,7 @@ useHead({
       :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
       :loading="containerAccessor.loading.value"
       :container-app-id="containerAccessor.fileContainer.value?.appId ?? undefined"
-      :container-id="containerId"
+      :container-id="containerNumericId"
       @delete-file="(file: ShepardFile) => containerAccessor.deleteFile(file)"
       @download-file="
         (file: ShepardFile) => containerAccessor.downloadFile(file)
@@ -141,16 +169,16 @@ useHead({
           #append
         >
           <AddAnnotationButton
-            :annotated="new AnnotatedFileContainer(containerId)"
+            :annotated="new AnnotatedFileContainer(containerAppId ?? '')"
           />
         </template>
         <SemanticAnnotationList
-          :annotated="new AnnotatedFileContainer(containerId)"
+          :annotated="new AnnotatedFileContainer(containerAppId ?? '')"
           :can-delete="!!containerAccessor.isAllowedToEditData.value"
         />
       </ExpansionPanelItem>
     </ExpansionPanels>
-    <!-- CC1b: Referenced by — wired to GET /v2/file-containers/{id}/linked-data-objects -->
+    <!-- CC1b: Referenced by — wired to GET /v2/containers/{appId}/linked-data-objects (APISIMP-CONT-LDO-UNIFY) -->
     <ExpansionPanels class="mt-4" :default-open="[0]">
       <ExpansionPanelItem
         title="Referenced by"

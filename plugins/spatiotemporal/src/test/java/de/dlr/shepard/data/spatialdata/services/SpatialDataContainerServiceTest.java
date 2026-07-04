@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,12 +67,54 @@ public class SpatialDataContainerServiceTest {
   }
 
   @Test
+  public void createContainer_frameAppId_passedThroughToEntity() {
+    // MFFD-SPATIAL-FRAME-HANDSHAKE: the optional CoordinateFrame appId on the
+    // IO must be persisted on the Neo4j entity so a future graph traversal
+    // can land on the right :CoordinateFrame node without a PostGIS lookup.
+    when(userService.getCurrentUser()).thenReturn(user);
+    var captor = org.mockito.ArgumentCaptor.forClass(SpatialDataContainer.class);
+    when(spatialDataContainerDAO.createOrUpdate(captor.capture())).thenReturn(new SpatialDataContainer());
+
+    SpatialDataContainerIO containerIO = new SpatialDataContainerIO();
+    containerIO.setName("AFP-laser-profile");
+    containerIO.setFrameAppId("01931f0a-1234-7890-abcd-ef0123456789");
+
+    spatialDataContainerService.createContainer(containerIO);
+
+    assertEquals(
+      "01931f0a-1234-7890-abcd-ef0123456789",
+      captor.getValue().getFrameAppId(),
+      "createContainer must propagate the frame appId from the IO to the entity"
+    );
+  }
+
+  @Test
+  public void createContainer_nullFrameAppId_persistedAsNull() {
+    // Pre-feature flow: the legacy /shepard/api/ caller never sends
+    // frameAppId. The entity must hold null so existing data continues to
+    // round-trip with no wire change.
+    when(userService.getCurrentUser()).thenReturn(user);
+    var captor = org.mockito.ArgumentCaptor.forClass(SpatialDataContainer.class);
+    when(spatialDataContainerDAO.createOrUpdate(captor.capture())).thenReturn(new SpatialDataContainer());
+
+    SpatialDataContainerIO containerIO = new SpatialDataContainerIO();
+    containerIO.setName("legacyContainer");
+
+    spatialDataContainerService.createContainer(containerIO);
+
+    org.junit.jupiter.api.Assertions.assertNull(
+      captor.getValue().getFrameAppId(),
+      "legacy callers without a frame must produce a null entity field"
+    );
+  }
+
+  @Test
   public void getContainer_containerDoesExist_returnContainer() {
     SpatialDataContainer container = new SpatialDataContainer(1);
 
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
 
     SpatialDataContainer result = spatialDataContainerService.getContainer(1);
@@ -106,7 +149,7 @@ public class SpatialDataContainerServiceTest {
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(permissionsService.isCurrentUserOwner(1)).thenReturn(true);
 
     spatialDataContainerService.deleteContainer(1);
@@ -120,7 +163,7 @@ public class SpatialDataContainerServiceTest {
     SpatialDataContainer container = new SpatialDataContainer(1);
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(false);
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
 
     var ex = assertThrows(InvalidAuthException.class, () -> spatialDataContainerService.getContainer(1));
@@ -136,8 +179,8 @@ public class SpatialDataContainerServiceTest {
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Write, user.getUsername())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     var ex = assertThrows(InvalidAuthException.class, () -> spatialDataContainerService.deleteContainer(1));
     assertEquals("The requested action is forbidden by the permission policies. User is not owner.", ex.getMessage());
@@ -151,9 +194,9 @@ public class SpatialDataContainerServiceTest {
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Write, user.getUsername())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Manage, user.getUsername())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Manage), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     // act
     var newUserList = new String[] { secondUser.getUsername(), user.getUsername() };
@@ -165,7 +208,7 @@ public class SpatialDataContainerServiceTest {
     spatialDataContainerService.updateContainerPermissions(updatedPermissions, container.getId());
 
     //assert
-    verify(permissionsService, times(1)).isAccessTypeAllowedForUser(1L, AccessType.Manage, user.getUsername());
+    verify(permissionsService, times(1)).isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Manage), eq(user.getUsername()), anyLong());
     verify(permissionsService, times(1)).updatePermissionsByNeo4jId(updatedPermissions, 1L);
   }
 
@@ -177,8 +220,8 @@ public class SpatialDataContainerServiceTest {
     when(spatialDataContainerDAO.findByNeo4jId(anyLong())).thenReturn(container);
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Read, user.getUsername())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1, AccessType.Manage, user.getUsername())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Manage), eq(user.getUsername()), anyLong())).thenReturn(false);
 
     var newUserList = new String[] { secondUser.getUsername(), user.getUsername() };
     PermissionsIO updatedPermissions = new PermissionsIO();

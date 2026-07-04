@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shepard-plugin-krl-interpreter"
+version = "0.1.0"
+description = "Offline KUKA KRL program interpreter sidecar for Shepard. Parses .src/.dat, back-solves IK against a URDF, emits a joint trajectory."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "DLR Shepard (this fork)", email = "shepard@dlr.de" },
+]
+keywords = ["shepard", "kuka", "krl", "robotics", "antlr4", "parser", "ik", "ikpy", "digital-twin"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "antlr4-python3-runtime==4.13.2",
+  "ikpy>=3.4",
+  "numpy>=1.24",
+  "scipy>=1.10",
+  # Sidecar (KRL-INTERPRETER-04). The sidecar is the default deployment
+  # surface for the plugin; the library API is still importable
+  # without uvicorn but the container ships these too.
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pydantic>=2.5,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "httpx>=0.26",  # FastAPI TestClient transport
+]
+test = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "httpx>=0.26",
+]
+
+[project.urls]
+Source = "https://github.com/nuclide/shepard/tree/main/plugins/krl-interpreter"
+Design = "https://github.com/nuclide/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["krl_interpreter*"]
+
+[tool.setuptools.package-data]
+"krl_interpreter.parser.grammar" = ["*.g4"]
+"krl_interpreter.parser.grammar.generated" = ["*.tokens", "*.interp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "slow: benchmarks; skip with -m 'not slow' in tight CI loops",
+]
+filterwarnings = [
+  "ignore:Link.*is of type 'fixed':UserWarning",
+  # Pydantic v2 warns that `InterpretUnsupported.construct` shadows a
+  # BaseModel attribute; the field name is part of the §6 wire contract.
+  "ignore:Field name .construct.*:UserWarning",
+  # FastAPI's TestClient surfaces a starlette httpx -> httpx2 deprecation
+  # notice; not our code to fix. Match by message text so we don't depend
+  # on starlette's internal warning class path.
+  "ignore:Using .httpx. with .starlette.testclient. is deprecated.*",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["krl_interpreter"]
+omit = [
+  "krl_interpreter/parser/grammar/generated/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+]

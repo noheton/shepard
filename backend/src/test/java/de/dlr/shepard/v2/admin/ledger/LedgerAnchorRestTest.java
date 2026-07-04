@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.ledger.io.LedgerAnchorJobIO;
 import de.dlr.shepard.v2.admin.ledger.io.LedgerAnchorRequestIO;
@@ -107,9 +107,9 @@ class LedgerAnchorRestTest {
 
     Response response = resource.anchor(body);
 
-    ApiError error = (ApiError) response.getEntity();
+    ProblemJson error = (ProblemJson) response.getEntity();
     assertTrue(
-      error.getMessage().contains("TPL17") || error.getMessage().contains("111"),
+      error.detail().contains("TPL17") || error.detail().contains("111"),
       "501 message should reference TPL17 or doc 111 so callers know where to look"
     );
   }
@@ -173,12 +173,12 @@ class LedgerAnchorRestTest {
 
   private void assertApiError(Response response, Status expectedStatus) {
     assertTrue(
-      response.getEntity() instanceof ApiError,
-      "Response entity must be ApiError for " + expectedStatus
+      response.getEntity() instanceof ProblemJson,
+      "Response entity must be ProblemJson for " + expectedStatus
     );
-    ApiError err = (ApiError) response.getEntity();
-    assertEquals(expectedStatus.getStatusCode(), err.getStatus());
-    assertNotNull(err.getException());
-    assertNotNull(err.getMessage());
+    ProblemJson err = (ProblemJson) response.getEntity();
+    assertEquals(expectedStatus.getStatusCode(), err.status());
+    assertNotNull(err.type());
+    assertNotNull(err.detail());
   }
 }

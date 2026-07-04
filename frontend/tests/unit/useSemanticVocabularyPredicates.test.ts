@@ -29,8 +29,7 @@ describe("useSemanticVocabularyPredicates", () => {
       status: 200,
       statusText: "OK",
       json: async () => ({
-        vocabularyAppId: "v-dcterms",
-        predicates: [
+        items: [
           {
             appId: "p-creator",
             uri: "http://purl.org/dc/terms/creator",
@@ -41,6 +40,9 @@ describe("useSemanticVocabularyPredicates", () => {
             required: true,
           },
         ],
+        total: 1,
+        page: 0,
+        pageSize: 50,
       }),
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -127,7 +129,7 @@ describe("useSemanticVocabularyPredicates", () => {
       ok: true,
       status: 200,
       statusText: "OK",
-      json: async () => ({ vocabularyAppId: "v-empty" }),
+      json: async () => ({ items: [], total: 0, page: 0, pageSize: 50 }),
     }) as unknown as typeof fetch;
 
     const { predicates, fetchPredicates } = useSemanticVocabularyPredicates();
@@ -147,7 +149,7 @@ describe("useSemanticVocabularyPredicates", () => {
       ok: true,
       status: 200,
       statusText: "OK",
-      json: async () => ({ vocabularyAppId: "v-x", predicates: [] }),
+      json: async () => ({ items: [], total: 0, page: 0, pageSize: 50 }),
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 

@@ -21,7 +21,8 @@
  *     license, accessRights, dataObjectIds
  *   - SemanticAnnotation count — `AnnotatedCollection.fetchAnnotations`
  *   - Lab journal entry count — `useFetchCollectionLabJournalEntries`
- *   - Creator ORCID — `UserApi.getUser({username: createdBy})`
+ *   - Creator ORCID — `collection.createdByOrcid` (from the Collection prop;
+ *     stamped at creation by `AbstractDataObjectIO` — no secondary HTTP call)
  *   - Keyword count — conservatively 0 until a keyword-annotation
  *     endpoint ships (FAIR8 follow-up in aidocs/16-dispatcher-backlog.md)
  *
@@ -29,10 +30,9 @@
  * `null` and the score is conservatively biased toward "incomplete"
  * during loading. The widget never blocks the page render.
  */
-import { UserApi, type Collection } from "@dlr-shepard/backend-client";
+import type { Collection } from "@dlr-shepard/backend-client";
 import { AnnotatedCollection } from "~/composables/annotated";
 import { useFetchCollectionLabJournalEntries } from "~/composables/context/useFetchCollectionLabJournalEntries";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   computeMetadataCompleteness,
   type MetadataCheck,
@@ -67,14 +67,15 @@ const collectionAppId = computed<string | null>(() => {
 // instance from `useAuth().data?.accessToken`, which is initially
 // `undefined` on a fresh navigation. The first call therefore hits
 // the backend with no Authorization header → 401 → we'd settle on
-// `count=0` even though there ARE annotations. The same race exists
-// for the ORCID lookup. We work around it by watching `data` (the
-// auth session) and re-firing the fetches once the token is
-// present. The other path (existing `SemanticAnnotationList.vue`)
-// hides this because it's fired in render scope where the auth
-// data is typically already settled — our card lives slightly
-// earlier in the page composition.
-const annotatedCollection = new AnnotatedCollection(props.collection.id);
+// `count=0` even though there ARE annotations. We work around it by
+// watching `data` (the auth session) and re-firing the annotation
+// fetch once the token is present. The other path (existing
+// `SemanticAnnotationList.vue`) hides this because it's fired in
+// render scope where the auth data is typically already settled —
+// our card lives slightly earlier in the page composition.
+const annotatedCollection = new AnnotatedCollection(
+  (props.collection as unknown as { appId?: string }).appId ?? "",
+);
 const semanticAnnotationCount = ref<number | null>(null);
 async function fetchAnnotationCount() {
   try {
@@ -99,24 +100,16 @@ const labJournalCount = computed<number | null>(() =>
     : labJournalEntries.value.length,
 );
 
-// ── Fetch: creator ORCID ─────────────────────────────────────────────────
+// ── Creator ORCID ─────────────────────────────────────────────────────────
 //
-// Same Nuxt-context constraint as the annotation fetch — capture the
-// API binding in setup scope, invoke from `onMounted`.
-const userApi = useShepardApi(UserApi);
-const creatorOrcid = ref<string | null>(null);
-async function fetchCreatorOrcid() {
-  const username = props.collection.createdBy?.trim();
-  if (!username) return;
-  try {
-    const user = await userApi.value.getUser({ username });
-    const orcid = (user as unknown as { orcid?: string | null }).orcid ?? null;
-    creatorOrcid.value = orcid ?? "";
-  } catch {
-    // 404 on user is recoverable — treat as "no ORCID set".
-    creatorOrcid.value = "";
-  }
-}
+// `collection.createdByOrcid` is stamped at collection-creation time by
+// `AbstractDataObjectIO` from `User.orcid` and is present on both the v1
+// and v2 Collection wire shapes.  No secondary HTTP call is needed;
+// reading from the prop eliminates the 404 that `getUser(displayName)`
+// previously produced (createdBy is a display name, not a username).
+const creatorOrcid = computed<string | null>(
+  () => props.collection.createdByOrcid ?? null,
+);
 
 // Initial best-effort fetch on mount + re-fire on auth-settle. The
 // `useAuth().data` ref starts `null` and populates once the
@@ -125,14 +118,12 @@ async function fetchCreatorOrcid() {
 const { data: authData } = useAuth();
 onMounted(() => {
   void fetchAnnotationCount();
-  void fetchCreatorOrcid();
 });
 watch(
   () => authData.value?.accessToken,
   newToken => {
     if (newToken) {
       void fetchAnnotationCount();
-      void fetchCreatorOrcid();
     }
   },
 );
@@ -180,6 +171,15 @@ const bandTitle = computed(() => {
 
 // ── Per-check expansion (default collapsed below the score chip) ─────────
 const showChecks = ref(false);
+
+// ── "Show only failing" filter — RDM-005a(e) ─────────────────────────────
+const showOnlyFailing = ref(false);
+
+const visibleChecks = computed(() =>
+  showOnlyFailing.value
+    ? result.value.checks.filter((c) => !c.passed)
+    : result.value.checks,
+);
 
 // ── Deep-link handler — scroll the page to the relevant anchor ───────────
 function jumpToCheck(check: MetadataCheck) {
@@ -231,6 +231,18 @@ function jumpToCheck(check: MetadataCheck) {
       >
         {{ showChecks ? "Hide checks" : "Show checks" }}
       </v-btn>
+      <v-btn
+        v-if="showChecks"
+        variant="text"
+        size="small"
+        density="comfortable"
+        :color="showOnlyFailing ? 'error' : undefined"
+        :prepend-icon="showOnlyFailing ? 'mdi-filter' : 'mdi-filter-outline'"
+        data-testid="metadata-completeness-only-failing"
+        @click="showOnlyFailing = !showOnlyFailing"
+      >
+        {{ showOnlyFailing ? "Failing only" : "All checks" }}
+      </v-btn>
     </v-card-title>
     <v-card-text v-if="!showChecks" class="pt-0 text-caption text-medium-emphasis">
       <span data-testid="metadata-completeness-summary">
@@ -248,7 +260,7 @@ function jumpToCheck(check: MetadataCheck) {
         data-testid="metadata-completeness-list"
       >
         <v-list-item
-          v-for="check in result.checks"
+          v-for="check in visibleChecks"
           :key="check.id"
           :data-testid="`metadata-check-${check.id}`"
         >

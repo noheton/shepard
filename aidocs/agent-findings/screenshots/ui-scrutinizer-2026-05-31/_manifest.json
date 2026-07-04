@@ -1,0 +1,521 @@
+[
+  {
+    "route": "/",
+    "slug": "home",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/home.png",
+    "status": 200,
+    "title": "shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/tools",
+    "slug": "tools",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/tools.png",
+    "status": 200,
+    "title": "Tools | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/me",
+    "slug": "me",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/me.png",
+    "status": 200,
+    "title": "Profile | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/collections",
+    "slug": "collections-list",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/collections-list.png",
+    "status": 200,
+    "title": "Collections | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/containers",
+    "slug": "containers-list",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/containers-list.png",
+    "status": 200,
+    "title": "Containers | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/scene-graphs",
+    "slug": "scene-graphs-list",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/scene-graphs-list.png",
+    "status": 200,
+    "title": "Scene graphs | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/search",
+    "slug": "search",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/search.png",
+    "status": 200,
+    "title": "Search | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/search?q=test",
+    "slug": "search-with-q",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/search-with-q.png",
+    "status": 200,
+    "title": "Search | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/semantic",
+    "slug": "semantic-landing",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/semantic-landing.png",
+    "status": 200,
+    "title": "Semantic | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/semantic/vocabularies",
+    "slug": "semantic-vocabularies",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/semantic-vocabularies.png",
+    "status": 200,
+    "title": "Vocabularies | semantic | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/semantic/sparql",
+    "slug": "semantic-sparql",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/semantic-sparql.png",
+    "status": 200,
+    "title": "SPARQL playground | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [
+      "queued"
+    ],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/shapes/validate",
+    "slug": "shapes-validate",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/shapes-validate.png",
+    "status": 200,
+    "title": "SHACL playground | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [
+      "queued"
+    ],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/shapes/render",
+    "slug": "shapes-render",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/shapes-render.png",
+    "status": 200,
+    "title": "Shape render playground | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/snapshots/diff",
+    "slug": "snapshots-diff",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/snapshots-diff.png",
+    "status": 200,
+    "title": "Snapshot diff | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [
+      "queued"
+    ],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/admin",
+    "slug": "admin",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/admin.png",
+    "status": 200,
+    "title": "Admin | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/admin/instance-registry",
+    "slug": "admin-instance-registry",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/admin-instance-registry.png",
+    "status": 200,
+    "title": "Instance Registry | Admin | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/admin/provenance",
+    "slug": "admin-provenance",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/admin-provenance.png",
+    "status": 200,
+    "title": "Provenance Dashboard | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/collections/2107",
+    "slug": "collection-lumen-long",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/collection-lumen-long.png",
+    "status": 200,
+    "title": "LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while listReferencedContainers: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}"
+    ],
+    "redToastTexts": [],
+    "notes": [
+      "BUG-COLL-APPID-ROUTE-001 baseline path"
+    ]
+  },
+  {
+    "route": "/collections/019e6ffc-89a4-76b5-8dbb-15888646a904",
+    "slug": "collection-lumen-appid",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/collection-lumen-appid.png",
+    "status": 200,
+    "title": "Collection — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection roles: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": [
+      "BUG-COLL-APPID-ROUTE-001 fix verification"
+    ]
+  },
+  {
+    "route": "/collections/1787",
+    "slug": "collection-mffd-long",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/collection-mffd-long.png",
+    "status": 200,
+    "title": "MFFD Upper Shell — AFP Process Chain (synthetic) — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while listReferencedContainers: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112",
+    "slug": "dataobject-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/dataobject-tr001.png",
+    "status": 200,
+    "title": "TR-001 · LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112/filereferences/2256",
+    "slug": "fileref-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/fileref-tr001.png",
+    "status": 200,
+    "title": "tr-001-files | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112/structureddatareferences/2261",
+    "slug": "sdref-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/sdref-tr001.png",
+    "status": 200,
+    "title": "tr-001-runlog | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/containers/files/4277",
+    "slug": "container-files",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/container-files.png",
+    "status": 200,
+    "title": "mffd-rdk-urdf-files (Files) — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/containers/structureddata/2156",
+    "slug": "container-structureddata",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/container-structureddata.png",
+    "status": 200,
+    "title": "lumen-inspired-runlogs (Structured Data) — shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/me#mcp",
+    "slug": "me-mcp",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/me-mcp.png",
+    "status": 200,
+    "title": "Profile | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/me#ai-settings",
+    "slug": "me-ai-settings",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/me-ai-settings.png",
+    "status": "n/a",
+    "title": "Profile | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [
+      "queued"
+    ],
+    "consoleErrors": [],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/me#git",
+    "slug": "me-git",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/me-git.png",
+    "status": "n/a",
+    "title": "Profile | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [],
+    "consoleErrors": [],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/me#api-keys",
+    "slug": "me-apikeys",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/me-apikeys.png",
+    "status": "n/a",
+    "title": "Profile | shepard",
+    "placeholderHits": [
+      "PlaceholderFragmentPane"
+    ],
+    "textPlaceholderHits": [],
+    "consoleErrors": [],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/about",
+    "slug": "about",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/about.png",
+    "status": 200,
+    "title": "About | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/help",
+    "slug": "help",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/help.png",
+    "status": 200,
+    "title": "Help | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  },
+  {
+    "route": "/semantic/predicates/urn:shepard:lumen:test-engineer",
+    "slug": "semantic-predicate-shepard",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-31/semantic-predicate-shepard.png",
+    "status": 200,
+    "title": "urn:shepard:lumen:test-engineer | predicates | shepard",
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "redToastTexts": [],
+    "notes": []
+  }
+]

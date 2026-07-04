@@ -11,14 +11,20 @@ const journalContent = defineModel<string>("journalContent", {
   default: "",
 });
 
-const props = defineProps<{
+defineProps<{
   collectionId: number;
   dataObjectId: number;
   isEditing: boolean;
   isExpanded?: boolean;
 }>();
 
-const collectionAccessor = new CollectionAccessor(props.collectionId);
+// CollectionAccessor is v2/appId-keyed; the numeric collectionId prop stays
+// for the v1 upload paths. This component only renders under
+// /collections/[collectionId]/..., where the route param IS the appId.
+const route = useRoute();
+const collectionAccessor = new CollectionAccessor(
+  String(route.params.collectionId),
+);
 collectionAccessor.fetchData();
 
 function handleUploadedImages(files: ShepardFile[], filecontainerId: number) {
@@ -29,7 +35,7 @@ function handleUploadedImages(files: ShepardFile[], filecontainerId: number) {
 
 async function handleUploadedImage(file: ShepardFile, filecontainerId: number) {
   // todo: only allow images
-  if (!collectionAccessor.collection.value?.defaultFileContainerId) {
+  if (!collectionAccessor.collection.value?.defaultFileContainerAppId) {
     try {
       await collectionAccessor.fetchData();
     } catch (error) {

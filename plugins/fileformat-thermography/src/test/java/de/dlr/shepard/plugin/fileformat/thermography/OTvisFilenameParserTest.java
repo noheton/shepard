@@ -77,4 +77,23 @@ class OTvisFilenameParserTest {
         assertThat(g.get().layer()).isEqualTo("L1234");
         assertThat(g.get().frame()).isEqualTo("F5678");
     }
+
+    @Test
+    void acceptsPlusSuffixOnLayerComponent() {
+        // MFFD.diproj carries 143 files with the L19+ variant (planned extra layer).
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("S4_M13_L19+_F2.OTvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().layer()).isEqualTo("L19+");
+    }
+
+    @Test
+    void plusSuffixRoundTripIsPreserved() {
+        // The layer annotation value must carry the '+' so it round-trips to the filename.
+        Optional<OTvisFilenameParser.GridPosition> g =
+                OTvisFilenameParser.parse("S1_M2_L3+_F4.otvis");
+        assertThat(g).isPresent();
+        assertThat(g.get().layer()).isEqualTo("L3+");
+        assertThat(g.get().frame()).isEqualTo("F4");
+    }
 }

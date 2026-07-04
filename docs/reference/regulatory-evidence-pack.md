@@ -1,3 +1,8 @@
+---
+title: Regulatory Evidence Pack export — reference
+audience: user
+---
+
 # Regulatory Evidence Pack (REP) Export
 
 > **Feature ID:** TPL14 &mdash; shipped 2026-05-26  

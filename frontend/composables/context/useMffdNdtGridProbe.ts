@@ -12,6 +12,10 @@
  * flips `hasData` to true and the parent renders the widget; the
  * widget itself then performs the full per-DO fetch.
  *
+ * V2UI-MFFD-NDT-ANNO-V2: migrated from v1 DataObjectApi +
+ * SemanticAnnotationApi (numeric-id-keyed, /shepard/api/) to v2
+ * DataObjectsApi + SemanticAnnotationsApi (appId-keyed, /v2/).
+ *
  * Justification for the heuristic: in practice, OTvis campaigns
  * upload many DOs into a collection -- if thermography is present
  * at all, it's overwhelmingly likely to be in the first batch (the
@@ -27,10 +31,12 @@
  * `tests/unit/mffdNdtGrid.test.ts`.
  */
 import {
-  DataObjectApi,
-  SemanticAnnotationApi,
+  DataObjectsApi,
+  SemanticAnnotationsApi,
+  type AnnotationV2,
+  type SemanticAnnotation,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 import { annotationsContainSection } from "~/utils/mffdNdtGrid";
 
 const PROBE_SAMPLE_SIZE = 5;
@@ -40,17 +46,30 @@ interface ProbeCacheEntry {
   inFlight: Promise<void> | null;
 }
 
-const cache = new Map<number, ProbeCacheEntry>();
+const cache = new Map<string, ProbeCacheEntry>();
 
-export function useMffdNdtGridProbe(collectionId: Ref<number | null>) {
+function annotationV2ToLegacy(item: AnnotationV2): SemanticAnnotation {
+  return {
+    id: 0,
+    name: item.propertyName ?? item.predicateLabel ?? "",
+    propertyName: item.propertyName ?? item.predicateLabel ?? "",
+    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
+    valueName: item.valueName ?? item.objectLiteral ?? "",
+    valueIRI: item.valueIri ?? item.objectIri ?? "",
+    propertyRepositoryId: 0,
+    valueRepositoryId: 0,
+  };
+}
+
+export function useMffdNdtGridProbe(collectionAppId: Ref<string | null>) {
   const hasData = computed<boolean | null>(() => {
-    const id = collectionId.value;
+    const id = collectionAppId.value;
     if (id === null) return null;
     return cache.get(id)?.hasData.value ?? null;
   });
 
   async function probe(): Promise<void> {
-    const id = collectionId.value;
+    const id = collectionAppId.value;
     if (id === null) return;
     let entry = cache.get(id);
     if (!entry) {
@@ -63,32 +82,39 @@ export function useMffdNdtGridProbe(collectionId: Ref<number | null>) {
     if (entry.inFlight) return entry.inFlight;
     if (entry.hasData.value !== null) return;
 
-    const dataObjectApi = useShepardApi(DataObjectApi);
-    const annotationApi = useShepardApi(SemanticAnnotationApi);
+    const dataObjectsApi = useV2ShepardApi(DataObjectsApi);
+    const annotationsApi = useV2ShepardApi(SemanticAnnotationsApi);
 
     entry.inFlight = (async () => {
       try {
-        const dos = await dataObjectApi.value.getAllDataObjects({
-          collectionId: id,
+        const dos = await dataObjectsApi.value.listDataObjects({
+          collectionAppId: id,
+          pageSize: PROBE_SAMPLE_SIZE,
         });
         if (dos.length === 0) {
           entry!.hasData.value = false;
           return;
         }
-        const sample = dos.slice(0, PROBE_SAMPLE_SIZE);
+        const sample = dos.slice(0, PROBE_SAMPLE_SIZE).filter(d => !!d.appId);
         const results = await Promise.allSettled(
           sample.map(d =>
-            annotationApi.value.getAllDataObjectAnnotations({
-              collectionId: id,
-              dataObjectId: d.id,
+            annotationsApi.value.listAnnotations({
+              subjectAppId: d.appId!,
+              subjectKind: "DataObject",
+              pageSize: 50,
             }),
           ),
         );
         let found = false;
         for (const r of results) {
-          if (r.status === "fulfilled" && annotationsContainSection(r.value)) {
-            found = true;
-            break;
+          if (r.status === "fulfilled") {
+            const annotations = (r.value.items as AnnotationV2[] ?? []).map(
+              annotationV2ToLegacy,
+            );
+            if (annotationsContainSection(annotations)) {
+              found = true;
+              break;
+            }
           }
         }
         entry!.hasData.value = found;
@@ -105,7 +131,7 @@ export function useMffdNdtGridProbe(collectionId: Ref<number | null>) {
   }
 
   watch(
-    collectionId,
+    collectionAppId,
     () => {
       void probe();
     },

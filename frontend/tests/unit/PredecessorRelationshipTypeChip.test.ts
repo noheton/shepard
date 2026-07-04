@@ -35,6 +35,12 @@ const RELATIONSHIP_CONFIG: Record<
     tooltip:
       "fair2r:repairs — rework / NCR-repair relationship (e.g. after a non-conformance)",
   },
+  "fair2r:concession": {
+    color: "amber",
+    label: "concession",
+    tooltip:
+      "fair2r:concession — the successor was accepted under a concession ('use-as-is') after the predecessor failed its acceptance criterion",
+  },
 };
 
 function computeConfig(
@@ -68,6 +74,14 @@ describe("PredecessorRelationshipTypeChip — config logic", () => {
     expect(cfg!.label).toBe("repairs");
   });
 
+  it("returns amber config for 'fair2r:concession' (QM1b)", () => {
+    const cfg = computeConfig("fair2r:concession");
+    expect(cfg).not.toBeNull();
+    expect(cfg!.color).toBe("amber");
+    expect(cfg!.label).toBe("concession");
+    expect(cfg!.tooltip).toContain("use-as-is");
+  });
+
   it("returns blue config for 'prov:wasRevisionOf'", () => {
     const cfg = computeConfig("prov:wasRevisionOf");
     expect(cfg).not.toBeNull();
@@ -92,7 +106,12 @@ describe("PredecessorRelationshipTypeChip — config logic", () => {
 
 describe("PredecessorRelationshipTypeChip — data-testid presence", () => {
   it("chip renders (config is non-null) for typed predecessor types", () => {
-    const typesToRender = ["prov:wasRevisionOf", "fair2r:repairs", "prov:wasInformedBy"];
+    const typesToRender = [
+      "prov:wasRevisionOf",
+      "fair2r:repairs",
+      "prov:wasInformedBy",
+      "fair2r:concession",
+    ];
     for (const t of typesToRender) {
       expect(computeConfig(t)).not.toBeNull();
     }

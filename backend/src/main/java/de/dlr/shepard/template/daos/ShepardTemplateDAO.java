@@ -47,6 +47,44 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return out;
   }
 
+  /** Count templates matching the same filters as {@link #list(String, boolean, int, int)}. */
+  public long count(String templateKind, boolean includeRetired) {
+    StringBuilder cypher = new StringBuilder("MATCH (t:ShepardTemplate) WHERE 1=1");
+    Map<String, Object> params = new HashMap<>();
+    if (templateKind != null) {
+      cypher.append(" AND t.templateKind = $kind");
+      params.put("kind", templateKind);
+    }
+    if (!includeRetired) {
+      cypher.append(" AND (t.retired IS NULL OR t.retired = false)");
+    }
+    cypher.append(" RETURN count(t) AS total");
+    var result = session.query(cypher.toString(), params);
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /** Paginated list — same filters as {@link #list(String, boolean)} with SKIP/LIMIT. */
+  public List<ShepardTemplate> list(String templateKind, boolean includeRetired, int page, int pageSize) {
+    StringBuilder cypher = new StringBuilder("MATCH (t:ShepardTemplate) WHERE 1=1");
+    Map<String, Object> params = new HashMap<>();
+    if (templateKind != null) {
+      cypher.append(" AND t.templateKind = $kind");
+      params.put("kind", templateKind);
+    }
+    if (!includeRetired) {
+      cypher.append(" AND (t.retired IS NULL OR t.retired = false)");
+    }
+    cypher.append(" RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit");
+    params.put("skip", (long) page * pageSize);
+    params.put("limit", (long) pageSize);
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher.toString(), params).forEach(out::add);
+    return out;
+  }
+
   /**
    * Find the highest-version, non-retired template with the given
    * name within the given kind. Returns {@link Optional#empty()}
@@ -75,6 +113,9 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     next.setBody(prior.getBody());
     next.setDescription(prior.getDescription());
     next.setTags(prior.getTags() == null ? new ArrayList<>() : new ArrayList<>(prior.getTags()));
+    next.setIconKey(prior.getIconKey());
+    // Carry the inheritance edge through copy-on-write (aidocs/integrations/123).
+    next.setParentTemplateAppId(prior.getParentTemplateAppId());
     next.setRetired(false);
     return next;
   }
@@ -97,6 +138,30 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return out;
   }
 
+  /** Paginated variant of {@link #listAllowedForCollection(String)}. */
+  public List<ShepardTemplate> listAllowedForCollection(String collectionAppId, int page, int pageSize) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:ALLOWS_TEMPLATE]->(t:ShepardTemplate) " +
+      "WHERE t.retired IS NULL OR t.retired = false " +
+      "RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId, "skip", (long) page * pageSize, "limit", (long) pageSize)).forEach(out::add);
+    return out;
+  }
+
+  /** Count of non-retired templates in the allowed set for one Collection. */
+  public long countAllowedForCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:ALLOWS_TEMPLATE]->(t:ShepardTemplate) " +
+      "WHERE t.retired IS NULL OR t.retired = false " +
+      "RETURN count(t) AS total";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
+  }
+
   /**
    * Templates the Collection has cited via {@code :USES_TEMPLATE}
    * (the provenance edge — "this Collection was created from
@@ -110,6 +175,28 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     List<ShepardTemplate> out = new ArrayList<>();
     findByQuery(cypher, Map.of("cAppId", collectionAppId)).forEach(out::add);
     return out;
+  }
+
+  /** Paginated variant of {@link #listUsedByCollection(String)}. */
+  public List<ShepardTemplate> listUsedByCollection(String collectionAppId, int page, int pageSize) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:USES_TEMPLATE]->(t:ShepardTemplate) " +
+      "RETURN t ORDER BY t.name, t.version DESC SKIP $skip LIMIT $limit";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId, "skip", (long) page * pageSize, "limit", (long) pageSize)).forEach(out::add);
+    return out;
+  }
+
+  /** Count of templates in the used set for one Collection (includes retired). */
+  public long countUsedByCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:USES_TEMPLATE]->(t:ShepardTemplate) " +
+      "RETURN count(t) AS total";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object v = it.next().get("total");
+    return v instanceof Number n ? n.longValue() : 0L;
   }
 
   /**
@@ -134,10 +221,14 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     }
   }
 
+  /** Hard cap on distinct tags returned by {@link #listDistinctTags}. */
+  static final int TAGS_MAX = 500;
+
   /**
    * Distinct list of tags across all non-retired templates, sorted
    * ascending. Used by the picker UI's tag-autocomplete dropdown.
    * Optionally narrows to one {@code templateKind}.
+   * Capped at {@value #TAGS_MAX} entries.
    */
   public List<String> listDistinctTags(String templateKind) {
     StringBuilder cypher = new StringBuilder(
@@ -148,7 +239,7 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
       cypher.append(" AND t.templateKind = $kind");
       params.put("kind", templateKind);
     }
-    cypher.append(" UNWIND coalesce(t.tags, []) AS tag RETURN DISTINCT tag ORDER BY tag");
+    cypher.append(" UNWIND coalesce(t.tags, []) AS tag RETURN DISTINCT tag ORDER BY tag LIMIT " + TAGS_MAX);
     var result = session.query(cypher.toString(), params);
     List<String> out = new ArrayList<>();
     for (Map<String, Object> row : result.queryResults()) {

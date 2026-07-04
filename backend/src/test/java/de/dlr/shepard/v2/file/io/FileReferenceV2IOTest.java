@@ -19,6 +19,10 @@ import org.junit.jupiter.api.Test;
  */
 class FileReferenceV2IOTest {
 
+  // Fixed epoch avoids millisecond-level Date.equals() flakes when newSingleton()
+  // is called twice in the same test — two new Date() calls can land on different ms.
+  private static final Date FIXED_DATE = new Date(1_718_000_000_000L);
+
   private FileReference newSingleton() {
     var ref = new FileReference(1L);
     ref.setAppId("singleton-app-1");
@@ -27,7 +31,7 @@ class FileReferenceV2IOTest {
     parent.setAppId("do-app");
     parent.setShepardId(101L);
     ref.setDataObject(parent);
-    var file = new ShepardFile(new Date(), "doc.pdf", "deadbeef");
+    var file = new ShepardFile(FIXED_DATE, "doc.pdf", "deadbeef");
     file.setOid("file-oid-1");
     file.setFileSize(1024L);
     ref.setFile(file);

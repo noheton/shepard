@@ -1,8 +1,8 @@
 package de.dlr.shepard.v2.admin.resources;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
-import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.GrantInstanceAdminIO;
 import de.dlr.shepard.v2.admin.io.InstanceAdminGrantIO;
@@ -11,6 +11,7 @@ import de.dlr.shepard.v2.admin.io.NukeResultIO;
 import de.dlr.shepard.v2.admin.io.PermissionAuditEntryIO;
 import de.dlr.shepard.v2.admin.io.PermissionAuditLogEntryIO;
 import de.dlr.shepard.v2.admin.services.InstanceAdminService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.admin.services.NukeService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
@@ -18,7 +19,10 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -40,6 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -60,6 +65,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/admin")
 @RequestScoped
 public class InstanceAdminRest {
+
+  private static final String PT_NOT_FOUND = "/problems/instance-admin.not-found";
+  private static final String PT_BAD_REQUEST = "/problems/instance-admin.bad-request";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  }
 
   @Inject
   InstanceAdminService instanceAdminService;
@@ -94,16 +107,16 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "listInstanceAdmins",
     summary = "List Neo4j-side instance-admin grants.",
     description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
   )
   @APIResponse(
     description = "List of all active Neo4j-side instance-admin grants with audit metadata.",
     responseCode = "200",
-    content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = InstanceAdminGrantIO.class)
-    )
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = InstanceAdminGrantIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
@@ -116,6 +129,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "grantInstanceAdmin",
     summary = "Grant the instance-admin role to a user.",
     description = "Creates a `:InstanceAdminGrant` node in Neo4j recording who granted the role and when. The OIDC role is unaffected by this call."
   )
@@ -125,6 +139,7 @@ public class InstanceAdminRest {
     content = @Content(schema = @Schema(implementation = InstanceAdminGrantIO.class))
   )
   @APIResponse(description = "No user with that username found in the system.", responseCode = "404")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response grantInstanceAdmin(
     @Context SecurityContext securityContext,
@@ -141,11 +156,13 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "revokeInstanceAdmin",
     summary = "Revoke the Neo4j-side instance-admin grant from a user.",
     description = "Removes the `:InstanceAdminGrant` node for the named user. The OIDC role (if any) is not affected by this call."
   )
   @APIResponse(description = "Neo4j-side instance-admin grant revoked successfully.", responseCode = "204")
   @APIResponse(description = "No Neo4j-side instance-admin grant found for that username.", responseCode = "404")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response revokeInstanceAdmin(
     @Context SecurityContext securityContext,
@@ -154,9 +171,8 @@ public class InstanceAdminRest {
     requireInstanceAdmin(securityContext);
     boolean revoked = instanceAdminService.revokeInstanceAdmin(username);
     if (!revoked) {
-      return Response.status(Status.NOT_FOUND)
-        .entity(new ApiError(Status.NOT_FOUND.getStatusCode(), "NotFound", "No Neo4j-side instance-admin grant for user '" + username + "'"))
-        .build();
+      return problem(PT_NOT_FOUND, "Not Found", Status.NOT_FOUND,
+        "No Neo4j-side instance-admin grant for user '" + username + "'");
     }
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -166,16 +182,16 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "permissionAudit",
     summary = "List entities with orphaned permissions.",
     description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges."
   )
   @APIResponse(
-    description = "List of BasicEntity nodes that have no `:has_permissions` edge; an empty array means no orphans.",
+    description = "List of BasicEntity nodes that have no `:has_permissions` edge; empty array means no orphans.",
     responseCode = "200",
-    content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditEntryIO.class)
-    )
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditEntryIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response permissionAudit(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
@@ -201,27 +217,35 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "permissionAuditLog",
     description = "F3: Query the Postgres permission audit log. Returns GRANT/REVOKE/UPDATE events " +
                   "sorted by occurred_at DESC. Supports optional filters: entityAppId, actor, " +
                   "from/to (ISO-8601), and pagination via page/size."
   )
   @APIResponse(
-    description = "Page of permission audit log entries (GRANT/REVOKE/UPDATE events) sorted by occurred_at DESC.",
+    description = "Page of permission audit log entries (GRANT/REVOKE/UPDATE events) sorted by occurred_at DESC, wrapped in a PagedResponse envelope.",
     responseCode = "200",
     content = @Content(
-      schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditLogEntryIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   @APIResponse(description = "The `from` or `to` query parameter is not a valid ISO-8601 instant string.", responseCode = "400")
   public Response permissionAuditLog(
     @Context SecurityContext securityContext,
+    @Parameter(description = "Optional filter; returns only entries for this entity appId (Collection, DataObject, etc.). Omit to query across all entities.")
     @QueryParam("entityAppId") String entityAppId,
+    @Parameter(description = "Optional filter; returns only entries where the actor username matches exactly. Omit to query across all actors.")
     @QueryParam("actor") String actor,
+    @Parameter(description = "Optional ISO-8601 instant lower bound (inclusive) on occurred_at. Malformed value returns 400. Example: 2026-01-01T00:00:00Z.")
     @QueryParam("from") String from,
+    @Parameter(description = "Optional ISO-8601 instant upper bound (exclusive) on occurred_at. Malformed value returns 400. Example: 2026-02-01T00:00:00Z.")
     @QueryParam("to") String to,
-    @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("size") @DefaultValue("50") int size
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–500 (default 50). Server-side cap: 500 — values above 500 are rejected by bean validation.")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize
   ) {
     requireInstanceAdmin(securityContext);
 
@@ -231,18 +255,17 @@ public class InstanceAdminRest {
       if (from != null && !from.isBlank()) fromInstant = Instant.parse(from);
       if (to != null && !to.isBlank()) toInstant = Instant.parse(to);
     } catch (DateTimeParseException e) {
-      return Response.status(Status.BAD_REQUEST)
-        .entity(new de.dlr.shepard.common.exceptions.ApiError(
-          Status.BAD_REQUEST.getStatusCode(), "BadRequest",
-          "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage()
-        ))
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad Request", Status.BAD_REQUEST,
+        "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage());
     }
 
+    long total = permissionAuditLogQueryService.count(entityAppId, actor, fromInstant, toInstant);
     List<PermissionAuditLogEntryIO> rows = permissionAuditLogQueryService.query(
-      entityAppId, actor, fromInstant, toInstant, page, size
+      entityAppId, actor, fromInstant, toInstant, page, pageSize
     );
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   /**
@@ -277,6 +300,7 @@ public class InstanceAdminRest {
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
   @Operation(
+    operationId = "nuke",
     summary = "Nuclear instance reset — wipes all research data (confirmation phrase required).",
     description =
       "Deletes every Collection, DataObject, Reference, Container, LabJournalEntry, " +
@@ -291,6 +315,7 @@ public class InstanceAdminRest {
     content = @Content(schema = @Schema(implementation = NukeResultIO.class))
   )
   @APIResponse(responseCode = "400", description = "Wrong confirmation phrase.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Not an instance-admin.")
   public Response nuke(
     @Context SecurityContext securityContext,
@@ -301,10 +326,8 @@ public class InstanceAdminRest {
   ) {
     requireInstanceAdmin(securityContext);
     if (!nukeService.confirmPhraseValid(body.getConfirmPhrase())) {
-      return Response.status(Status.BAD_REQUEST)
-        .entity(new ApiError(Status.BAD_REQUEST.getStatusCode(), "BadRequest",
-          "confirmPhrase must be exactly \"" + NukeService.CONFIRM_PHRASE + "\""))
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad Request", Status.BAD_REQUEST,
+        "confirmPhrase must be exactly \"" + NukeService.CONFIRM_PHRASE + "\"");
     }
     NukeResultIO result = nukeService.nuke();
     return Response.ok(result).build();

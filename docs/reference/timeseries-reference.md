@@ -12,6 +12,15 @@ the existing upstream `/shepard/api/` endpoints (preserved byte-for-
 byte from upstream 5.2.0). This page focuses on the **bulk-read
 query endpoint** added by this fork (P10a + P10b).
 
+> **Create / get / patch / delete / list** a TimeseriesReference via
+> the unified [`/v2/references`](/reference/references/) surface
+> (V2CONV-A2) with `kind=timeseries`. The time-alignment merge-patch
+> (`timeReference` / `wallClockOffset` / `wallClockOffsetSource`) that
+> previously lived at `PATCH /v2/timeseries-references/{appId}` is now
+> `PATCH /v2/references/{appId}` with the same body. The
+> `/v2/timeseries-references/{appId}/annotations` and `/detect-anomalies`
+> endpoints are unchanged.
+
 ---
 
 ## Bulk-read DSL — `POST /v2/sql/timeseries`
@@ -163,9 +172,11 @@ cursor.
 
 ---
 
-## Admin config — `GET/PATCH /v2/admin/sql-timeseries/config`
+## Admin config — `GET/PATCH /v2/admin/config/sql-timeseries`
 
-Added in **P10c**. Instance-admin gated (`instance-admin` role). Lets operators
+Added in **P10c**; the path moved to the generic admin-config surface in
+**V2CONV-A4** (2026-06-03, was `/v2/admin/sql-timeseries/config`). Instance-admin
+gated (`instance-admin` role). Lets operators
 tune the `max-rows` and `max-duration` caps at runtime without a restart.
 The runtime value wins over the `application.properties` deploy-time default;
 setting a field to `null` via PATCH reverts it to the deploy-time default.
@@ -173,7 +184,7 @@ setting a field to `null` via PATCH reverts it to the deploy-time default.
 ### GET current config
 
 ```
-GET /v2/admin/sql-timeseries/config
+GET /v2/admin/config/sql-timeseries
 Authorization: Bearer <instance-admin token>
 ```
 
@@ -195,7 +206,7 @@ RFC 7396 merge-patch semantics: absent = leave alone, `null` = revert to
 deploy-time default, value = replace.
 
 ```
-PATCH /v2/admin/sql-timeseries/config
+PATCH /v2/admin/config/sql-timeseries
 Authorization: Bearer <instance-admin token>
 Content-Type: application/json
 

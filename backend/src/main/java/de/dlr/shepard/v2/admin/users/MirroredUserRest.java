@@ -2,7 +2,7 @@ package de.dlr.shepard.v2.admin.users;
 
 import de.dlr.shepard.auth.users.daos.MirroredUserDAO;
 import de.dlr.shepard.auth.users.entities.MirroredUser;
-import de.dlr.shepard.common.exceptions.ApiError;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.users.io.MirroredUserCreateIO;
 import de.dlr.shepard.v2.admin.users.io.MirroredUserIO;
@@ -62,6 +62,7 @@ public class MirroredUserRest {
 
   @POST
   @Operation(
+    operationId = "mirrorUsers",
     summary = "Create or update a :MirroredUser node (idempotent).",
     description = "Mints a :MirroredUser shadow node for a user from a remote Shepard " +
       "instance. Idempotent: if a node with the same (sourceInstance, sourceUsername) pair " +
@@ -131,10 +132,10 @@ public class MirroredUserRest {
 
   // ─── helpers ─────────────────────────────────────────────────────────────
 
-  private Response badRequest(String message) {
-    return Response
-      .status(Status.BAD_REQUEST)
-      .entity(new ApiError(Status.BAD_REQUEST.getStatusCode(), "BadRequest", message))
+  private static Response badRequest(String message) {
+    return Response.status(Status.BAD_REQUEST).type("application/problem+json")
+      .entity(new ProblemJson("/problems/mirror-user.bad-request", "Bad Request",
+        Status.BAD_REQUEST.getStatusCode(), message, null))
       .build();
   }
 }

@@ -16,6 +16,7 @@ import de.dlr.shepard.auth.users.entities.MirroredUser;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,12 +59,16 @@ class MirroredUserLookupTest {
     MockitoAnnotations.openMocks(this);
     cache = new MirroredUserEnrichmentCache();
 
+    ProvenanceConfigService provenanceConfigService = mock(ProvenanceConfigService.class);
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(false);
+
     filter = new ProvenanceCaptureFilter();
     filter.provenance = mock(ProvenanceService.class);
+    filter.provenanceConfigService = provenanceConfigService;
     filter.mirroredUserDAO = mirroredUserDAO;
     filter.userDAO = userDAO;
     filter.enrichmentCache = cache;
-    filter.captureReads = false;
     filter.targetEntityResolver = mock(TargetEntityResolver.class);
 
     // Default: no X-Source-User-* headers → all return null.

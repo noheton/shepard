@@ -14,7 +14,7 @@ export function usePatchMe() {
     isSaving.value = true;
     saveError.value = null;
     try {
-      const result = await useV2ShepardApi(MeApi).value.patchMe({ body: payload });
+      const result = await useV2ShepardApi(MeApi).value.patchMe({ patchMe: payload });
       return result;
     } catch (error) {
       handleError(error, "updating profile");

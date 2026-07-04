@@ -57,13 +57,19 @@ public class GitCredentialDAO extends GenericDAO<GitCredential> {
    */
   public GitCredential createForUser(String username, GitCredential credential) {
     credential.setAppId(AppIdGenerator.next());
-    credential.setCreatedAt(new Date());
+    Date now = new Date();
+    credential.setCreatedAt(now);
+    // ADM-USR-GIT-BACKEND-1 — stamp lastRotatedAt at creation so a fresh
+    // credential is never reported as "never rotated" while still being
+    // brand new. Subsequent explicit rotates refresh the field.
+    credential.setLastRotatedAt(now);
 
     String query =
       "MATCH (u:User {username: $username}) " +
       "CREATE (u)-[:OWNS_CREDENTIAL]->(c:GitCredential {" +
       "  appId: $appId, host: $host, displayName: $displayName, " +
-      "  username: $credUsername, encryptedPat: $encryptedPat, createdAt: $createdAt" +
+      "  username: $credUsername, encryptedPat: $encryptedPat, " +
+      "  createdAt: $createdAt, lastRotatedAt: $lastRotatedAt" +
       "}) RETURN c";
 
     Map<String, Object> params = Map.of(
@@ -73,11 +79,39 @@ public class GitCredentialDAO extends GenericDAO<GitCredential> {
       "displayName", credential.getDisplayName() != null ? credential.getDisplayName() : "",
       "credUsername", credential.getUsername() != null ? credential.getUsername() : "",
       "encryptedPat", credential.getEncryptedPat() != null ? credential.getEncryptedPat() : "",
-      "createdAt", credential.getCreatedAt().getTime()
+      "createdAt", credential.getCreatedAt().getTime(),
+      "lastRotatedAt", credential.getLastRotatedAt().getTime()
     );
 
     runQuery(query, params);
     return credential;
+  }
+
+  /**
+   * ADM-USR-GIT-BACKEND-1 — rotate an existing credential's PAT in place
+   * and stamp {@code lastRotatedAt = now}. The {@code encryptedPat} is
+   * the caller-supplied freshly-encrypted ciphertext; this DAO never
+   * touches cleartext PATs.
+   *
+   * @param username     the owning user's username (ownership guard).
+   * @param credAppId    the credential to rotate.
+   * @param encryptedPat the new AES-GCM ciphertext (base64 IV ‖ ct).
+   * @return the reloaded credential, or {@code null} if not found.
+   */
+  public GitCredential rotateByUserAndAppId(String username, String credAppId, String encryptedPat) {
+    long now = System.currentTimeMillis();
+    String query =
+      "MATCH (u:User {username: $username})-[:OWNS_CREDENTIAL]->(c:GitCredential {appId: $appId}) " +
+      "SET c.encryptedPat = $encryptedPat, c.lastRotatedAt = $lastRotatedAt " +
+      "RETURN c";
+    Map<String, Object> params = Map.of(
+      "username", username,
+      "appId", credAppId,
+      "encryptedPat", encryptedPat == null ? "" : encryptedPat,
+      "lastRotatedAt", now
+    );
+    runQuery(query, params);
+    return findByUserAndAppId(username, credAppId);
   }
 
   /**

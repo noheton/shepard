@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,8 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
@@ -20,13 +23,19 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.references.services.ReferencesV2Service;
+import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -61,6 +70,12 @@ class SemanticAnnotationV2RestTest {
   ProvenanceService provenanceService;
 
   @Mock
+  de.dlr.shepard.v2.project.services.ProjectAnnotationConstraints projectAnnotationConstraints;
+
+  @Mock
+  ReferencesV2Service referencesService;
+
+  @Mock
   ContainerRequestContext requestContext;
 
   @Mock
@@ -80,10 +95,16 @@ class SemanticAnnotationV2RestTest {
     resource.entityIdResolver = entityIdResolver;
     resource.ontologyConfigService = ontologyConfigService;
     resource.provenanceService = provenanceService;
+    resource.projectAnnotationConstraints = projectAnnotationConstraints;
+    resource.referencesService = referencesService;
     resource.requestContext = requestContext;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
+
+    // Default: resolveWithLabels returns DataObject labels for the standard subject.
+    when(entityIdResolver.resolveWithLabels(SUBJ_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("DataObject")));
 
     // Default: caller has Read+Write+Manage on the DataObject subject
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Read), eq(CALLER)))
@@ -110,15 +131,17 @@ class SemanticAnnotationV2RestTest {
     var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "CF/LMPAEK");
     when(annotationDAO.findFiltered(eq(SUBJ_APP_ID), any(), any(), any(), eq(0), eq(50)))
       .thenReturn(List.of(ann));
+    when(annotationDAO.countFiltered(eq(SUBJ_APP_ID), any(), any(), any())).thenReturn(1L);
 
     Response r = resource.list(SUBJ_APP_ID, null, null, null, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    List<AnnotationIO> rows = (List<AnnotationIO>) r.getEntity();
-    assertThat(rows).hasSize(1);
-    assertThat(rows.get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
-    assertThat(rows.get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
+    PagedResponseIO<AnnotationIO> page = (PagedResponseIO<AnnotationIO>) r.getEntity();
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.total()).isEqualTo(1L);
+    assertThat(page.items().get(0).getSubjectAppId()).isEqualTo(SUBJ_APP_ID);
+    assertThat(page.items().get(0).getObjectLiteral()).isEqualTo("CF/LMPAEK");
   }
 
   @Test
@@ -328,6 +351,29 @@ class SemanticAnnotationV2RestTest {
     assertThat(resource.update(ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
   }
 
+  @Test
+  void update_methodAnnotationIsPatch_notPut() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    assertThat(m.getAnnotation(jakarta.ws.rs.PATCH.class))
+        .as("update() must carry @PATCH (RFC 5789 / RFC 7396 merge-patch)")
+        .isNotNull();
+    assertThat(m.getAnnotation(jakarta.ws.rs.PUT.class))
+        .as("update() must NOT carry @PUT — PUT implies full-replacement semantics")
+        .isNull();
+  }
+
+  @Test
+  void update_consumesIncludesMergePatchJson() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    var consumes = m.getAnnotation(jakarta.ws.rs.Consumes.class);
+    assertThat(consumes).as("update() must carry method-level @Consumes").isNotNull();
+    assertThat(java.util.Arrays.asList(consumes.value()))
+        .as("@Consumes must include 'application/merge-patch+json'")
+        .contains("application/merge-patch+json");
+  }
+
   // ─── delete ──────────────────────────────────────────────────────────────
 
   @Test
@@ -521,19 +567,62 @@ class SemanticAnnotationV2RestTest {
     assertThat(resource.exportTurtle(ANN_APP_ID, sc).getStatus()).isEqualTo(404);
   }
 
-  // ─── collection subject kind ──────────────────────────────────────────────
+  // ─── collection subject kind (RESEED-FIND-MISC item a) ──────────────────
 
+  static final String COLL_APP_ID = "coll-001";
+
+  /** GET annotation on a Collection subject — owner must receive 200, not 403. */
   @Test
-  void get_collectionSubject_usesOgmIdPermissionCheck() {
-    var ann = annotation(ANN_APP_ID, "coll-001", "Collection", PREDICATE_IRI, "v");
+  void get_collectionSubject_returns200_whenOwnerHasReadPermission() {
+    var ann = annotation(ANN_APP_ID, COLL_APP_ID, "Collection", PREDICATE_IRI, "v");
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(entityIdResolver.resolveLong("coll-001")).thenReturn(OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L)))
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    // 3-arg — the fix: same overload used by every other Collection permission check in v2
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
 
     Response r = resource.get(ANN_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER), eq(0L));
+    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER));
+  }
+
+  @Test
+  void get_collectionSubject_returns403_whenReadDenied() {
+    var ann = annotation(ANN_APP_ID, COLL_APP_ID, "Collection", PREDICATE_IRI, "v");
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+
+    assertThat(resource.get(ANN_APP_ID, sc).getStatus()).isEqualTo(403);
+  }
+
+  /** LIST annotations on a Collection subject — owner must receive 200. */
+  @Test
+  void list_collectionSubject_returns200_whenOwnerHasReadPermission() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(annotationDAO.findFiltered(eq(COLL_APP_ID), any(), any(), any(), eq(0), eq(50)))
+      .thenReturn(List.of());
+    when(annotationDAO.countFiltered(eq(COLL_APP_ID), any(), any(), any())).thenReturn(0L);
+
+    Response r = resource.list(COLL_APP_ID, "Collection", null, null, 0, 50, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    verify(permissionsService).isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER));
+  }
+
+  @Test
+  void list_collectionSubject_returns403_whenReadDenied() {
+    when(entityIdResolver.resolveWithLabels(COLL_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(OGM_ID, List.of("Collection")));
+    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+
+    assertThat(resource.list(COLL_APP_ID, "Collection", null, null, 0, 50, sc).getStatus()).isEqualTo(403);
   }
 
   // ─── legacy annotation (null subjectAppId) ────────────────────────────────
@@ -630,6 +719,284 @@ class SemanticAnnotationV2RestTest {
     assertThat(io.getSourceMode())
       .as("X-AI-Agent header present without explicit sourceMode → must default to 'ai'")
       .isEqualTo("ai");
+  }
+
+  // ─── F9: Reference subject — walks to parent DataObject ──────────────────
+
+  static final String REF_APP_ID = "ref-001";
+  static final String PARENT_DO_APP_ID = "do-parent-001";
+
+  /**
+   * F9 — POST annotation on a FileReference subject: the gate resolves the
+   * parent DataObject appId and calls isAccessAllowedForDataObjectAppId with it
+   * (not with the Reference appId), then returns 201.
+   */
+  @Test
+  void create_referenceSubject_walksToParentDataObject_returns201() {
+    // Set up resolver: REF_APP_ID resolves to a FileReference node
+    when(entityIdResolver.resolveWithLabels(REF_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(99L, List.of("FileReference")));
+
+    // Set up reference service: resolves to a reference whose parent DO has PARENT_DO_APP_ID
+    BasicReference stubRef = new BasicReference();
+    DataObject parentDo = new DataObject();
+    parentDo.setAppId(PARENT_DO_APP_ID);
+    stubRef.setDataObject(parentDo);
+    ReferenceKindHandler stubHandler = org.mockito.Mockito.mock(ReferenceKindHandler.class);
+    when(referencesService.resolveByAppId(REF_APP_ID))
+      .thenReturn(Optional.of(new ReferencesV2Service.ResolvedReference(stubHandler, stubRef)));
+
+    // Grant write on the parent DO
+    when(permissionsService.isAccessAllowedForDataObjectAppId(
+        eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(true);
+
+    CreateAnnotationIO body = createBody("FileReference", REF_APP_ID, PREDICATE_IRI, "annotated-ref", null);
+    Response r = resource.create(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    // Verify gating used the PARENT DO appId, not the Reference appId
+    verify(permissionsService)
+      .isAccessAllowedForDataObjectAppId(eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER));
+  }
+
+  /**
+   * F9 — POST annotation on a FileReference subject where the caller lacks Write
+   * on the parent DataObject: must return 403, not 201.
+   */
+  @Test
+  void create_referenceSubject_denied_when_parentDoForbidden() {
+    when(entityIdResolver.resolveWithLabels(REF_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(99L, List.of("FileReference")));
+
+    BasicReference stubRef = new BasicReference();
+    DataObject parentDo = new DataObject();
+    parentDo.setAppId(PARENT_DO_APP_ID);
+    stubRef.setDataObject(parentDo);
+    ReferenceKindHandler stubHandler = org.mockito.Mockito.mock(ReferenceKindHandler.class);
+    when(referencesService.resolveByAppId(REF_APP_ID))
+      .thenReturn(Optional.of(new ReferencesV2Service.ResolvedReference(stubHandler, stubRef)));
+
+    when(permissionsService.isAccessAllowedForDataObjectAppId(
+        eq(PARENT_DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+
+    CreateAnnotationIO body = createBody("FileReference", REF_APP_ID, PREDICATE_IRI, "v", null);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(403);
+  }
+
+  // ─── APISIMP-ANNOT-LIST-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─
+
+  /**
+   * APISIMP-ANNOT-LIST-PARAMS-UNDOCUMENTED — verifies that every {@code @QueryParam}
+   * on {@link SemanticAnnotationV2Rest#list} carries a non-blank {@code @Parameter}
+   * description so the generated OpenAPI schema documents all six filters.
+   */
+  @Test
+  void listAnnotations_subjectAppId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("subjectAppId");
+    assertThat(param).as("subjectAppId must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("subjectAppId must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for subjectAppId must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_subjectKind_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("subjectKind");
+    assertThat(param).as("subjectKind must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("subjectKind must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for subjectKind must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_predicateIri_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("predicateIri");
+    assertThat(param).as("predicateIri must carry @QueryParam").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("predicateIri must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for predicateIri must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_vocabId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("vocabId");
+    assertThat(param).as("vocabId must carry @QueryParam").isNotNull();
+  }
+
+  // ─── APISIMP-ANNOT-FIND-PARAMS-UNDOCUMENTED — @Parameter reflection gates ─
+
+  /**
+   * APISIMP-ANNOT-FIND-PARAMS-UNDOCUMENTED — verifies that every {@code @QueryParam}
+   * on {@link SemanticAnnotationV2Rest#find} carries a non-blank {@code @Parameter}
+   * annotation so the generated OpenAPI schema documents all four params.
+   */
+  @Test
+  void findAnnotations_q_paramIsRequired() throws NoSuchMethodException {
+    var param = findFindParam("q");
+    assertThat(param).as("q must carry @QueryParam on find()").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("q must carry @Parameter").isNotNull();
+    assertThat(ann.required()).as("q must be marked required=true").isTrue();
+    assertThat(ann.description()).as("@Parameter.description for q must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void findAnnotations_vocabId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("vocabId");
+    assertThat(param).as("vocabId must carry @QueryParam on find()").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("vocabId must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for vocabId must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("page");
+    assertThat(param).as("page must carry @QueryParam").isNotNull();
+  }
+
+  void findAnnotations_page_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("page");
+    assertThat(param).as("page must carry @QueryParam on find()").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("page must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for page must be non-blank").isNotBlank();
+  }
+
+  @Test
+  void listAnnotations_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findListParam("pageSize");
+    assertThat(param).as("pageSize must carry @QueryParam").isNotNull();
+  }
+
+  void findAnnotations_pageSize_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    var param = findFindParam("pageSize");
+    assertThat(param).as("pageSize must carry @QueryParam on find()").isNotNull();
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertThat(ann).as("pageSize must carry @Parameter").isNotNull();
+    assertThat(ann.description()).as("@Parameter.description for pageSize must be non-blank").isNotBlank();
+  }
+
+  private static java.lang.reflect.Parameter findListParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, String.class,
+        int.class, int.class, SecurityContext.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  private static java.lang.reflect.Parameter findFindParam(String queryParamName)
+      throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticAnnotationV2Rest.class.getMethod(
+        "find", String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    return java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && queryParamName.equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  // ─── bulkCreate (SEMANTIC-ANNOTATE-BULK-REST-1) ───────────────────────────
+
+  @Test
+  void bulkCreate_returns200WithSuccessResults() {
+    List<CreateAnnotationIO> items = List.of(
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "value-1", null),
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "value-2", null)
+    );
+
+    Response r = resource.bulkCreate(items, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getRequested()).isEqualTo(2);
+    assertThat(result.getSucceeded()).isEqualTo(2);
+    assertThat(result.getFailed()).isEqualTo(0);
+    assertThat(result.getResults()).hasSize(2);
+    assertThat(result.getResults().get(0).isOk()).isTrue();
+    assertThat(result.getResults().get(0).getAppId()).isNotNull();
+    assertThat(result.getResults().get(0).getError()).isNull();
+  }
+
+  @Test
+  void bulkCreate_returns401WhenUnauthenticated() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    assertThat(resource.bulkCreate(List.of(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null)), sc, null).getStatus())
+      .isEqualTo(401);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenListEmpty() {
+    assertThat(resource.bulkCreate(List.of(), sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenListNull() {
+    assertThat(resource.bulkCreate(null, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenExceedsMax() {
+    List<CreateAnnotationIO> items = new ArrayList<>();
+    for (int i = 0; i < SemanticAnnotationV2Rest.BULK_CREATE_MAX + 1; i++) {
+      items.add(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v" + i, null));
+    }
+    assertThat(resource.bulkCreate(items, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_partialFailure_recordsEachRowOutcome() {
+    // Row 1: valid
+    // Row 2: missing predicateIri → should fail gracefully, not abort row 1
+    CreateAnnotationIO good = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "valid", null);
+    CreateAnnotationIO bad = createBody("DataObject", SUBJ_APP_ID, "", "v", null);
+
+    Response r = resource.bulkCreate(List.of(good, bad), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getRequested()).isEqualTo(2);
+    assertThat(result.getSucceeded()).isEqualTo(1);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).isOk()).isTrue();
+    assertThat(result.getResults().get(1).isOk()).isFalse();
+    assertThat(result.getResults().get(1).getError()).isNotBlank();
+  }
+
+  @Test
+  void bulkCreate_permissionDenied_failsRowGracefully() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    CreateAnnotationIO item = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+
+    Response r = resource.bulkCreate(List.of(item), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getSucceeded()).isEqualTo(0);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).isOk()).isFalse();
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void bulkCreate_withAiAgentHeader_setsSourceModeAi() {
+    CreateAnnotationIO item = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+
+    resource.bulkCreate(List.of(item), sc, "TestAgent/1.0");
+
+    verify(annotationDAO).createOrUpdate(argThat(a -> "ai".equals(a.getSourceMode())));
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────

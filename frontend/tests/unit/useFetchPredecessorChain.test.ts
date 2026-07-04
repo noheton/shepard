@@ -4,7 +4,7 @@
  * Tests verify the data-shaping logic: that the response items are
  * correctly typed, that an empty array is handled gracefully, and that
  * the DataObjectChainItem interface shape matches the backend
- * DataObjectSummaryIO wire format (appId, id, name, status).
+ * DataObjectSummaryIO wire format (appId, name, status).
  *
  * We test the pure logic without mounting a full Vue/Nuxt app, following
  * the same pattern as PredecessorRelationshipTypeChip.test.ts.
@@ -26,13 +26,11 @@ function shapeChainResponse(raw: unknown): DataObjectChainItem[] {
 const SAMPLE_CHAIN: DataObjectChainItem[] = [
   {
     appId: "01924b7f-0000-7000-8000-000000000001",
-    id: 42,
     name: "TR-003 hot-fire",
     status: "READY",
   },
   {
     appId: "01924b7f-0000-7000-8000-000000000002",
-    id: 41,
     name: "TR-002 wet dress rehearsal",
     status: "ARCHIVED",
   },
@@ -69,7 +67,6 @@ describe("useFetchPredecessorChain — DataObjectChainItem shape", () => {
   it("chain item has all required fields from DataObjectSummaryIO wire format", () => {
     const item = SAMPLE_CHAIN[0]!;
     expect(typeof item.appId).toBe("string");
-    expect(typeof item.id).toBe("number");
     expect(typeof item.name).toBe("string");
     // status is string | null
     expect(item.status === null || typeof item.status === "string").toBe(true);
@@ -78,7 +75,6 @@ describe("useFetchPredecessorChain — DataObjectChainItem shape", () => {
   it("chain item supports null status (DataObject without a status set)", () => {
     const nullStatusItem: DataObjectChainItem = {
       appId: "01924b7f-0000-7000-8000-000000000099",
-      id: 99,
       name: "Legacy DataObject",
       status: null,
     };

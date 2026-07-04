@@ -128,6 +128,25 @@ public class NeoConnector implements IConnector {
           SqlTimeseriesConfig.class.getPackageName(),
           // J1e — JupyterHub link-out admin config singleton (parallel to ROR1 / P10c).
           de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig.class.getPackageName(),
+          // NTF1-BACKEND-TRANSPORT-MODEL — :NotificationTransport list-shaped entity
+          // backing the admin transport-CRUD endpoints. Without this OGM package
+          // registration, session.loadAll(NotificationTransport.class) returns empty
+          // and createOrUpdate throws "not a valid entity class".
+          de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport.class.getPackageName(),
+          // FE-PROV-INSTANCE-REGISTRY — :InstanceRegistry singleton backing
+          // GET/PATCH /v2/admin/instances. Without this OGM package registration
+          // session.loadAll(InstanceRegistry.class) returns empty and the seed-on-
+          // first-access createOrUpdate throws "not a valid entity class",
+          // surfacing as HTTP 500 on the instance-registry admin endpoint.
+          de.dlr.shepard.v2.admin.instance.entities.InstanceRegistry.class.getPackageName(),
+          // V2CONV-B4 — the :DigitalTwinScene / :CoordinateFrame / :Joint OGM
+          // package registration was removed when the bespoke scene-graph
+          // subsystem dissolved into the generic MAPPING_RECIPE mechanism
+          // (aidocs/platform/191 decision #2). A scene-graph is now a
+          // MAPPING_RECIPE ShepardTemplate binding a URDF FileReference; the
+          // kinematic tree is parsed on demand by the SceneGraphPlay executor
+          // (vis-trace3d plugin), never stored as a graph. Migration V111
+          // DETACH DELETEs the legacy nodes + drops their appId constraints.
           // /v2/timeseries-references annotation entity.
           TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),

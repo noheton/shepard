@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.semantic.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -22,6 +23,7 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.neo4j.ogm.session.Session;
@@ -29,7 +31,7 @@ import org.neo4j.ogm.session.Session;
 /**
  * N1e — semantic term autocomplete endpoint.
  *
- * <p>{@code GET /v2/semantic/terms/search?q=…&limit=20} searches the
+ * <p>{@code GET /v2/semantic/terms/search?q=…&pageSize=20} searches the
  * {@code :Resource} nodes imported by n10s (neosemantics) and returns
  * matching term suggestions for the annotation-picker autocomplete.
  *
@@ -56,7 +58,7 @@ import org.neo4j.ogm.session.Session;
  */
 @Path("/v2/semantic/terms/search")
 @RequestScoped
-@Tag(name = "Semantic term search (v2, N1e)")
+@Tag(name = "Semantics")
 public class SemanticTermSearchRest {
 
   /** Maximum number of results the endpoint ever returns, regardless of caller-supplied limit. */
@@ -96,7 +98,7 @@ public class SemanticTermSearchRest {
     "RETURN r.uri AS uri, " +
     "       coalesce(r.label[0], r.prefLabel[0], r.altLabel[0], r.name[0], r.title[0], r.uri) AS label, " +
     "       coalesce(r.comment[0], r.definition[0]) AS description " +
-    "LIMIT $limit";
+    "SKIP $skip LIMIT $pageSize";
 
   /**
    * CONTAINS-based fallback used when the fulltext index is absent.
@@ -146,14 +148,14 @@ public class SemanticTermSearchRest {
     "RETURN r.uri AS uri, " +
     "       coalesce(r.label[0], r.prefLabel[0], r.altLabel[0], r.name[0], r.title[0], r.uri) AS label, " +
     "       coalesce(r.comment[0], r.definition[0]) AS description " +
-    "LIMIT $limit";
+    "SKIP $skip LIMIT $pageSize";
 
   // ─── endpoint ─────────────────────────────────────────────────────────────
 
   /**
-   * {@code GET /v2/semantic/terms/search?q=…&limit=20}
+   * {@code GET /v2/semantic/terms/search?q=…&pageSize=20}
    *
-   * <p>Returns up to {@code limit} (capped at 50) {@link TermSuggestionIO}
+   * <p>Returns up to {@code pageSize} (capped at 50) {@link TermSuggestionIO}
    * objects whose {@code rdfs:label}, {@code skos:prefLabel},
    * {@code skos:altLabel}, or URI contains the query string.
    *
@@ -167,6 +169,7 @@ public class SemanticTermSearchRest {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "searchSemanticTerms",
     summary = "Search ontology terms in the INTERNAL semantic repository.",
     description =
       "Searches `:Resource` nodes imported by n10s (neosemantics) and returns matching " +
@@ -182,21 +185,34 @@ public class SemanticTermSearchRest {
       "Parameters:\n" +
       "  - `q` (required) — the search string. Must be at least 2 characters. " +
       "    Short strings return 400 rather than scanning the full ontology.\n" +
-      "  - `limit` (optional, default 20) — maximum number of results to return. " +
-      "    Capped at 50 server-side regardless of the supplied value.\n\n" +
+      "  - `pageSize` (optional, default 20) — maximum number of results to return. " +
+      "    Capped at 50 server-side regardless of the supplied value.\n" +
+      "  - `page` (optional, default 0) — zero-based page index. Combined with `pageSize` " +
+      "    to compute the SKIP offset: `page * pageSize` rows are skipped.\n\n" +
       "Auth: any authenticated shepard user. There is no per-entity permission check " +
       "beyond authentication — the ontology catalogue is visible to all logged-in users."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Each item has `uri`, `label`, and optionally `description`.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TermSuggestionIO.class))
+    description = "Paged list of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Items carry `uri`, `label`, and optionally `description`.",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   public Response search(
+    @Parameter(
+      description = "Search string to match against ontology term labels. Must be at least 2 characters.",
+      required = true
+    )
     @QueryParam("q") String q,
-    @QueryParam("limit") @DefaultValue("20") int limit,
+    @Parameter(
+      description = "Maximum number of results to return (default 20). Server-side cap: 50 — values above 50 are silently clamped to 50."
+    )
+    @QueryParam("pageSize") @DefaultValue("20") int pageSize,
+    @Parameter(
+      description = "Zero-based page index (default 0). Combined with pageSize to compute the SKIP offset: page * pageSize rows are skipped."
+    )
+    @QueryParam("page") @DefaultValue("0") int page,
     @Context SecurityContext sc
   ) {
     // 1 — auth gate (same pattern as SemanticSparqlRest)
@@ -215,12 +231,14 @@ public class SemanticTermSearchRest {
       );
     }
 
-    // 3 — cap limit
-    int effectiveLimit = Math.min(Math.max(limit, 1), MAX_LIMIT);
+    // 3 — cap pageSize; coerce negative page to 0
+    int effectiveLimit = Math.min(Math.max(pageSize, 1), MAX_LIMIT);
+    int effectivePage = Math.max(page, 0);
+    long skip = (long) effectivePage * effectiveLimit;
 
     // 4 — query
-    List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit);
-    return Response.ok(results).build();
+    List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit, skip);
+    return Response.ok(new PagedResponseIO<>(results, results.size(), effectivePage, effectiveLimit)).build();
   }
 
   // ─── query logic ──────────────────────────────────────────────────────────
@@ -234,7 +252,7 @@ public class SemanticTermSearchRest {
    * <p>Package-private for test injection via subclass (same seam as
    * {@link SemanticSparqlRest#executeInternal}).
    */
-  List<TermSuggestionIO> runSearch(String q, int limit) {
+  List<TermSuggestionIO> runSearch(String q, int pageSize, long skip) {
     Session session = getSession();
     if (session == null) {
       Log.warn("SemanticTermSearchRest: no OGM session available, returning empty list.");
@@ -243,14 +261,14 @@ public class SemanticTermSearchRest {
 
     // Try fulltext index first; fall back to CONTAINS scan if the index is absent.
     try {
-      return executeQuery(session, FULLTEXT_CYPHER, q, limit);
+      return executeQuery(session, FULLTEXT_CYPHER, q, pageSize, skip);
     } catch (RuntimeException fulltextEx) {
       Log.debugf(
         "SemanticTermSearchRest: fulltext index unavailable (%s), falling back to CONTAINS scan.",
         fulltextEx.getClass().getSimpleName()
       );
       try {
-        return executeQuery(session, CONTAINS_CYPHER, q, limit);
+        return executeQuery(session, CONTAINS_CYPHER, q, pageSize, skip);
       } catch (RuntimeException containsEx) {
         Log.warnf(
           "SemanticTermSearchRest: CONTAINS fallback also failed (%s); returning empty list.",
@@ -281,8 +299,8 @@ public class SemanticTermSearchRest {
    * Rows with a null or blank {@code uri} are silently skipped.
    * Language suffixes embedded in n10s IGNORE-mode values are stripped before returning.
    */
-  private static List<TermSuggestionIO> executeQuery(Session session, String cypher, String q, int limit) {
-    var result = session.query(cypher, Map.of("q", q, "limit", (long) limit));
+  private static List<TermSuggestionIO> executeQuery(Session session, String cypher, String q, int pageSize, long skip) {
+    var result = session.query(cypher, Map.of("q", q, "pageSize", (long) pageSize, "skip", skip));
     List<TermSuggestionIO> out = new ArrayList<>();
     for (Map<String, Object> row : result.queryResults()) {
       Object uriRaw = row.get("uri");

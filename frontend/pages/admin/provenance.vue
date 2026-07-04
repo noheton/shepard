@@ -12,6 +12,8 @@
  * Design: `aidocs/workflows/55-provenance-and-activity-overhaul.md §PROV1e`
  */
 
+import { useStaleRoleSession } from "~/composables/context/useStaleRoleSession";
+
 useHead({
   title: "Provenance Dashboard | shepard",
 });
@@ -28,6 +30,9 @@ const showUnauthorized = computed(
     data.value !== undefined &&
     !isInstanceAdmin.value,
 );
+
+// ROLE-GRANT-STALE-SESSION-02 — upgrade hint copy when middleware saw `role_changed`.
+const { reason: staleRoleReason } = useStaleRoleSession();
 </script>
 
 <template>
@@ -36,6 +41,7 @@ const showUnauthorized = computed(
     title="Provenance dashboard is restricted"
     message="This section is only available to instance administrators."
     required-role="instance-admin"
+    :stale-session-reason="staleRoleReason ?? undefined"
   />
   <v-container v-else class="py-6">
     <AdminProvenanceDashboardPane />

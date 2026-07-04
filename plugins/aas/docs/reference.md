@@ -139,6 +139,42 @@ All keys are deploy-time-only (see install guide for runtime toggle plans).
 
 ---
 
+## Disabling the plugin removes its namespace (V2CONV-A5)
+
+AAS is on the allowlist of plugins that own a top-level REST namespace
+(`/v2/aas/*`, mirroring the external IDTA AAS REST shape). Its
+`AasPluginManifest` implements `RestNamespaceContributor` declaring the owned
+prefix `/v2/aas`.
+
+When the plugin is **disabled** — either deploy-time
+(`shepard.plugins.aas.enabled=false`) or at runtime via
+`PATCH /v2/admin/plugins/aas` with `{"enabled": false}` — two things happen
+immediately (no restart needed for the runtime flip):
+
+1. **Every `/v2/aas/*` request returns `404`.** This includes the otherwise
+   public `/v2/aas/.well-known/aas-server` self-description endpoint. A disabled
+   AAS namespace is indistinguishable from a route that does not exist.
+2. **The paths disappear from the served OpenAPI v2 shelf**
+   (`GET /shepard/doc/openapi/v2.json`). Client generators and Swagger UI see
+   only the surfaces that are actually enabled.
+
+Re-enabling the plugin restores both on the next request / spec fetch.
+
+```bash
+# disabled (default install): probes show the gate is active
+curl -so /dev/null -w '%{http_code}\n' https://<host>/v2/aas/.well-known/aas-server   # 404
+curl -fsS https://<host>/shepard/doc/openapi/v2.json | grep -c '/v2/aas'              # 0
+
+# enable at runtime (instance-admin)
+curl -fsS -X PATCH https://<host>/v2/admin/plugins/aas \
+  -H 'Authorization: Bearer <instance-admin-token>' \
+  -H 'Content-Type: application/json' -d '{"enabled":true}'
+
+# now the same probes return 200 and a non-zero grep
+```
+
+---
+
 ## Neo4j entity
 
 `:AasRegistration` — outbox node. Unique constraint on `appId`

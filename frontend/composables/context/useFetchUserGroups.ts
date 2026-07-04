@@ -1,23 +1,29 @@
-import { type UserGroup, UserGroupApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import {
+  useUserGroupsV2,
+  type UserGroupV2,
+} from "~/composables/context/useUserGroupsV2";
 
+/**
+ * V2-SWEEP-002-2 — lists user groups via the appId-keyed `/v2/user-groups`
+ * surface (`UserGroupV2Rest`). Replaces the former
+ * `useShepardApi(UserGroupApi).getAllUserGroups` v1 call.
+ */
 export function useFetchUserGroups() {
-  const userGroups = ref<UserGroup[]>([]);
+  const userGroups = ref<UserGroupV2[]>([]);
   const isLoading = ref<boolean>(false);
+
+  const { listUserGroups } = useUserGroupsV2();
 
   async function fetchUserGroups() {
     isLoading.value = true;
-    useShepardApi(UserGroupApi)
-      .value.getAllUserGroups({ orderDesc: false })
-      .then(response => {
-        userGroups.value = response;
-        isLoading.value = false;
-      })
-      .catch(error => {
-        userGroups.value = [];
-        isLoading.value = false;
-        handleError(error, "getAllUserGroups");
-      });
+    try {
+      userGroups.value = await listUserGroups();
+    } catch (error) {
+      userGroups.value = [];
+      handleError(error, "getAllUserGroups");
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   fetchUserGroups();

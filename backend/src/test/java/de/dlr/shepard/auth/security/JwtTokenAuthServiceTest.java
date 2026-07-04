@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.role.daos.RoleDAO;
 import de.dlr.shepard.auth.security.RolesList;
+import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
 import io.jsonwebtoken.Jwts;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -287,5 +290,143 @@ class JwtTokenAuthServiceTest {
     RoleDAO r = mock(RoleDAO.class);
     when(r.rolesForUser(org.mockito.ArgumentMatchers.anyString())).thenReturn(Collections.emptyList());
     return r;
+  }
+
+  // ---- ROLE-GRANT-STALE-SESSION-02: stale-token gate tests ----
+
+  private static JwtTokenAuthService serviceWithUserDAO(RoleDAO roleDAO, UserDAO userDAO) {
+    return new JwtTokenAuthService(
+      publicKey,
+      "",
+      JwtTokenAuthService.parseClaimPath("realm_access.roles"),
+      "",
+      "",
+      roleDAO,
+      userDAO
+    );
+  }
+
+  private static String jwsIssuedAt(String subject, Date issuedAt) {
+    // Expiration always lands 60 minutes in the future relative to NOW so
+    // that an issued-in-the-past JWT (for the stale-role tests) is still
+    // un-expired when the parser checks `exp`. The stale-role gate
+    // compares `iat` to `roleChangedAt`, not to `exp`.
+    Date futureExp = DateUtils.addMinutes(new Date(), 60);
+    return Jwts.builder()
+      .setSubject(subject)
+      .setAudience("account")
+      .setExpiration(futureExp)
+      .setNotBefore(issuedAt)
+      .setIssuedAt(issuedAt)
+      .setId(UUID.randomUUID().toString())
+      .claim("realm_access", new RolesList(new String[] { "users" }))
+      .signWith(privateKey)
+      .compact();
+  }
+
+  @Test
+  void parseBearerToken_tokenIssuedAfterRoleChange_passesGate() {
+    var roleDAO = mockRoleDAO();
+    var userDAO = mock(UserDAO.class);
+    User u = new User("alice");
+    // Role changed 1 hour ago.
+    u.setRoleChangedAt(new Date(System.currentTimeMillis() - 3_600_000L));
+    when(userDAO.find("alice")).thenReturn(u);
+
+    var svc = serviceWithUserDAO(roleDAO, userDAO);
+    // Token issued NOW — after the role change.
+    String jws = jwsIssuedAt("alice", new Date());
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+
+    assertNotNull(p);
+    assertEquals("alice", p.getUsername());
+  }
+
+  @Test
+  void parseBearerToken_tokenIssuedBeforeRoleChange_throws() {
+    var roleDAO = mockRoleDAO();
+    var userDAO = mock(UserDAO.class);
+    User u = new User("bob");
+    // Role changed NOW.
+    long roleChangedAtMillis = System.currentTimeMillis();
+    u.setRoleChangedAt(new Date(roleChangedAtMillis));
+    when(userDAO.find("bob")).thenReturn(u);
+
+    var svc = serviceWithUserDAO(roleDAO, userDAO);
+    // Token issued 1 hour ago — predates the role change.
+    String jws = jwsIssuedAt("bob", DateUtils.addMinutes(new Date(), -60));
+
+    RoleChangedSinceTokenIssuedException ex = assertThrows(
+      RoleChangedSinceTokenIssuedException.class,
+      () -> svc.parseBearerToken("Bearer " + jws)
+    );
+    assertTrue(ex.getTokenIssuedAtMillis() < ex.getRoleChangedAtMillis());
+  }
+
+  @Test
+  void parseBearerToken_userHasNoRoleChangedAt_passesGate() {
+    // Pre-feature :User rows lack the property entirely. The gate must
+    // pass through so existing tokens keep working post-deploy.
+    var roleDAO = mockRoleDAO();
+    var userDAO = mock(UserDAO.class);
+    User u = new User("carol");
+    // roleChangedAt left null.
+    when(userDAO.find("carol")).thenReturn(u);
+
+    var svc = serviceWithUserDAO(roleDAO, userDAO);
+    String jws = jwsIssuedAt("carol", DateUtils.addMinutes(new Date(), -60));
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+
+    assertNotNull(p);
+    assertEquals("carol", p.getUsername());
+  }
+
+  @Test
+  void parseBearerToken_userUnknownInNeo4j_passesGate() {
+    // First-login flow: the user has just been created upstream of the
+    // JwtTokenAuthService call by the OIDC sync. The DAO lookup misses
+    // briefly during the race; the gate must not deny in that window.
+    var roleDAO = mockRoleDAO();
+    var userDAO = mock(UserDAO.class);
+    when(userDAO.find("newcomer")).thenReturn(null);
+
+    var svc = serviceWithUserDAO(roleDAO, userDAO);
+    String jws = jwsIssuedAt("newcomer", new Date());
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+
+    assertNotNull(p);
+    assertEquals("newcomer", p.getUsername());
+  }
+
+  @Test
+  void parseBearerToken_userDAOAbsent_passesGate() {
+    // Test-only constructor without a UserDAO must not break authn.
+    // Production code always injects UserDAO; this is the seatbelt for
+    // partial test setups + the fail-open path documented on
+    // lookupRoleChangedAtMillis().
+    var roleDAO = mockRoleDAO();
+    var svc = service("", "realm_access.roles", "", roleDAO);
+    String jws = jwsIssuedAt("dave", new Date());
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+
+    assertNotNull(p);
+    assertEquals("dave", p.getUsername());
+  }
+
+  @Test
+  void parseBearerToken_userDAOThrows_failsOpenForAuthn() {
+    // Transient Neo4j hiccup on the gate-side read must NOT propagate
+    // a 500 to the caller — the primary signature gate has passed; the
+    // secondary stale-role check fails open with a WARN.
+    var roleDAO = mockRoleDAO();
+    var userDAO = mock(UserDAO.class);
+    when(userDAO.find("eve")).thenThrow(new RuntimeException("neo4j temporarily unavailable"));
+
+    var svc = serviceWithUserDAO(roleDAO, userDAO);
+    String jws = jwsIssuedAt("eve", new Date());
+    JWTPrincipal p = svc.parseBearerToken("Bearer " + jws);
+
+    assertNotNull(p);
+    assertEquals("eve", p.getUsername());
   }
 }

@@ -51,65 +51,81 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     title: "SQL-over-HTTP for timeseries",
     subtitle:
       "Runtime caps for the bulk-read SQL endpoint (POST /v2/sql/timeseries). Flip max-rows and max-duration without a restart.",
-    endpoint: "/v2/admin/sql-timeseries/config",
+    endpoint: "/v2/admin/config/sql-timeseries",
     backlogRow: "P10c",
     designDoc: "aidocs/platform/29-p10-implementation-design.md",
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-NTF1 (2026-05-31): real pane shipped as
+    // AdminNotificationsPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds and so partial-backend
+    // tracking stays surfaced (SMTP + Matrix transport CRUD pending).
     slug: "notifications-admin",
     surface: "admin",
     title: "Notification transports",
     subtitle:
-      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. Full pane coming with NTF1-UI.",
-    endpoint: null,
+      "Configure SMTP, Matrix, and in-app notification delivery, and send a smoke-test from each transport. In-app pane shipped 2026-05-31; SMTP/Matrix transport CRUD pending (NTF1-BACKEND-*).",
+    endpoint: "/v2/admin/notifications/test",
     backlogRow: "NTF1",
     designDoc: "aidocs/integrations/40-notification-system.md",
     backend: "partial",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-MANAGE (2026-05-31): real pane shipped as
+    // AdminInstanceAdminsPane.vue. Registry entry retained for
+    // EXPECTED_PLACEHOLDER_COUNT stability and surface tracking.
     slug: "instance-admins",
     surface: "admin",
     title: "Instance administrators",
     subtitle:
-      "Grant or revoke the instance-admin role for other users. Today the API is callable; the UI lands with ADM-MANAGE.",
+      "Grant or revoke the instance-admin role for other users. Real pane shipped 2026-05-31 — calls GET/POST/DELETE /v2/admin/instance-admins.",
     endpoint: "/v2/admin/instance-admins",
     backlogRow: "ADM-MANAGE",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-USR-ORCID (2026-05-31): real pane shipped
+    // as AdminUserOrcidPane.vue.
     slug: "users-orcid",
     surface: "admin",
     title: "User ORCID overrides",
     subtitle:
-      "Set or clear a user's ORCID iD when they cannot themselves (deactivated account, audit hand-off). Admin override of /v2/users/me/orcid.",
-    endpoint: null,
+      "Set or clear a user's ORCID iD when they cannot themselves (deactivated account, audit hand-off). Real pane shipped 2026-05-31 — PATCH /v2/admin/users/{username}/orcid.",
+    endpoint: "/v2/admin/users/{username}/orcid",
     backlogRow: "ADM-USR-ORCID",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
   {
+    // PLACEHOLDER-REPLACE-ADM-USR-GIT (2026-05-31): partial pane shipped
+    // as AdminUserGitPane.vue (set/replace credential per host). Backend
+    // gap (GET-for-other-users, /rotate, lastRotatedAt) tracked in
+    // ADM-USR-GIT-BACKEND-1.
     slug: "users-git",
     surface: "admin",
     title: "User git credentials",
     subtitle:
-      "Issue or rotate git-host credentials for other users on their behalf (importer / wiki-writer plugin support).",
-    endpoint: null,
+      "Issue or rotate git-host credentials for other users on their behalf (importer / wiki-writer plugin support). Partial pane shipped 2026-05-31; list/rotate endpoints pending (ADM-USR-GIT-BACKEND-1).",
+    endpoint: "/v2/admin/users/{username}/git-credentials",
     backlogRow: "ADM-USR-GIT",
     designDoc: "aidocs/integrations/47-dev-experience-and-plugin-system.md",
-    backend: "shipped",
+    backend: "partial",
   },
   {
+    // PLACEHOLDER-REPLACE-AI-CONFIG (2026-06-26): real pane shipped as
+    // AdminAiConfigPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds.
     slug: "ai-config",
     surface: "admin",
     title: "AI configuration",
     subtitle:
-      "Per-instance LLM provider fallback (base URL, model, API key). Resolution rule: user-key → admin-fallback → hidden. Designed; not yet shipped.",
-    endpoint: null,
-    backlogRow: "AI1a",
+      "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, IMAGE_GEN, VISION, EMBEDDING, STRUCTURED, TRANSCRIPTION, MODERATION). PATCH body keyed by capability name. Real pane shipped 2026-06-26 — calls GET/PATCH /v2/admin/config/ai.",
+    endpoint: "/v2/admin/config/ai",
+    backlogRow: "APISIMP-AI-ADMIN-REST",
     designDoc: "aidocs/integrations/97-shepard-plugin-ai-design.md",
-    backend: "designed",
+    backend: "shipped",
   },
   {
     slug: "backup",
@@ -162,7 +178,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "route",
     title: "HDF container browser",
     subtitle:
-      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/hdf-containers/{id}/file works today.",
+      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/containers/{appId}/file works today.",
     endpoint: null,
     backlogRow: "A5",
     designDoc: "aidocs/data/35-hdf5-hsds-implementation-design.md",
@@ -201,37 +217,29 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
     backend: "shipped",
   },
+  // MFFD-BATCH-01: batch DataObject create — backend shipped; full UI TBD
   {
-    slug: "ontology-alignment",
+    slug: "batch-create",
     surface: "admin",
-    title: "Ontology Alignment Registry",
+    title: "Bulk DataObject creation",
     subtitle:
-      "Read-only registry of how core Shepard concepts map onto upper-ontology classes (BFO 2020, IAO, PROV-O, IOF Core). Seeded by V67 migration; operator runbook: aidocs/semantics/97.",
-    endpoint: "/v2/semantic/ontology/alignment",
-    backlogRow: "TPL3",
-    designDoc: "aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md",
-    backend: "shipped",
-  },
-  // FE-PROV-INSTANCE-REGISTRY
-  {
-    slug: "instance-registry",
-    surface: "admin",
-    title: "Instance Registry",
-    subtitle:
-      "Register peer Shepard instances (instanceId → displayName → baseUrl → dlrInstitute). Drives badge hover-text in the provenance UI — 'DLR BT, Augsburg' instead of 'dlr-augsburg'. Default: empty (operator opt-in).",
-    endpoint: "/v2/admin/instances",
-    backlogRow: "FE-PROV-INSTANCE-REGISTRY",
+      "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item result. " +
+      "Designed for MFFD-scale imports (17 600+ DataObjects). Full UI pending; use the REST surface directly today.",
+    endpoint: null,
+    backlogRow: "MFFD-BATCH-01",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",
   },
+  // PLACEHOLDER-REPLACE-TPL3a-lite shipped 2026-05-31 → AdminOntologyAlignmentPane
+  // PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY shipped 2026-05-31 → AdminInstanceRegistryPane
   // TS-SEMANTIC-REST
   {
     slug: "ts-channel-annotations",
     surface: "route",
     title: "Channel Annotations",
     subtitle:
-      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations.",
-    endpoint: "/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations",
+      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/containers/{containerAppId}/channels/{channelShepardId}/annotations.",
+    endpoint: "/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations",
     backlogRow: "TS-SEMANTIC-REST",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",

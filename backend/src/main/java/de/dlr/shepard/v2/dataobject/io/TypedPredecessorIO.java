@@ -14,11 +14,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>The {@code relationshipType} distinguishes:
  * <ul>
  *   <li>{@code "prov:wasInformedBy"} — generic informational dependency
- *       (default; backward-compatible with the untyped predecessor model)</li>
+ *       (default; backward-compatible with the untyped predecessor model;
+ *       equivalent to "normal" in the QM1b transition-kind vocabulary)</li>
  *   <li>{@code "prov:wasRevisionOf"} — a direct revision or correction of the
- *       predecessor (e.g. TR-006 corrects TR-004 after repair)</li>
+ *       predecessor (e.g. TR-006 corrects TR-004 after repair;
+ *       equivalent to "re-test" in the QM1b transition-kind vocabulary)</li>
  *   <li>{@code "fair2r:repairs"} — rework / NCR-repair relationship (e.g.
- *       TR-005 is the repair action for TR-004's anomaly)</li>
+ *       TR-005 is the repair action for TR-004's anomaly;
+ *       equivalent to "rework" in the QM1b transition-kind vocabulary)</li>
+ *   <li>{@code "fair2r:concession"} — concession / "use-as-is" disposition
+ *       (QM1b; the successor was accepted under a concession after the
+ *       predecessor failed its acceptance criterion)</li>
  * </ul>
  *
  * <p>On create the {@code predecessorAppId} is resolved to a DataObject within
@@ -32,7 +38,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
     "PROV1k — typed predecessor relationship. " +
     "predecessorAppId: UUID v7 appId of the predecessor DataObject (same collection). " +
     "relationshipType: PROV-O / FAIR²R predicate — " +
-    "'prov:wasInformedBy' (default), 'prov:wasRevisionOf', or 'fair2r:repairs'."
+    "'prov:wasInformedBy' (default), 'prov:wasRevisionOf', 'fair2r:repairs', " +
+    "or 'fair2r:concession' (QM1b concession / use-as-is disposition)."
 )
 public record TypedPredecessorIO(
 
@@ -49,8 +56,14 @@ public record TypedPredecessorIO(
     description =
       "PROV-O or FAIR²R relationship type. " +
       "Null or absent defaults to 'prov:wasInformedBy'. " +
-      "Allowed values: 'prov:wasInformedBy', 'prov:wasRevisionOf', 'fair2r:repairs'.",
-    enumeration = {"prov:wasInformedBy", "prov:wasRevisionOf", "fair2r:repairs"},
+      "Allowed values: 'prov:wasInformedBy', 'prov:wasRevisionOf', " +
+      "'fair2r:repairs', 'fair2r:concession'.",
+    enumeration = {
+      "prov:wasInformedBy",
+      "prov:wasRevisionOf",
+      "fair2r:repairs",
+      "fair2r:concession"
+    },
     defaultValue = "prov:wasInformedBy"
   )
   String relationshipType
@@ -61,7 +74,9 @@ public record TypedPredecessorIO(
   public static final Set<String> ALLOWED_TYPES = Set.of(
     "prov:wasInformedBy",
     "prov:wasRevisionOf",
-    "fair2r:repairs"
+    "fair2r:repairs",
+    // QM1b — concession / "use-as-is" disposition. EN 9100 §8.7.
+    "fair2r:concession"
   );
 
   /** Default relationship type — generic PROV-O dependency (backward-compat). */

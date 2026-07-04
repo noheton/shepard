@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {
-  CollectionTemplateApi,
-  DataObjectApi,
-  type ShepardTemplateIO,
+  CollectionTemplatesApi,
+  DataObjectsApi,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
@@ -29,15 +28,16 @@ const { advancedMode } = useAdvancedMode();
 
 type Mode = "picker" | "form";
 const mode = ref<Mode>("form");
-const allowedTemplates = ref<ShepardTemplateIO[]>([]);
+const allowedTemplates = ref<ShepardTemplate[]>([]);
 const isLoadingTemplates = ref(false);
 const isInstantiating = ref(false);
 
 if (props.collectionAppId) {
   isLoadingTemplates.value = true;
-  useV2ShepardApi(CollectionTemplateApi)
-    .value.listAllowedTemplates({ collectionAppId: props.collectionAppId })
-    .then(templates => {
+  useV2ShepardApi(CollectionTemplatesApi)
+    .value.listAllowed({ appId: props.collectionAppId })
+    .then(page => {
+      const templates = page.items ?? [];
       allowedTemplates.value = templates;
       // Basic-mode users see the template picker first (templates are the
       // predigested path for users who don't know which containers/annotations
@@ -55,19 +55,23 @@ if (props.collectionAppId) {
     });
 }
 
-async function onTemplateSelected(template: ShepardTemplateIO) {
+async function onTemplateSelected(template: ShepardTemplate) {
   if (!props.collectionAppId) return;
   isInstantiating.value = true;
   try {
-    const created = await useV2ShepardApi(CollectionTemplateApi)
+    const created = await useV2ShepardApi(CollectionTemplatesApi)
       .value.instantiateDataObject({
         collectionAppId: props.collectionAppId,
         templateAppId: template.appId,
       });
     emitSuccess(`Created "${created.name}" from template "${template.name}"`);
     emit("data-object-created");
+    // V2-SWEEP Wave 1: routes carry appIds, never numeric Neo4j ids.
     router.push(
-      collectionsPath + props.collectionId + dataObjectsPathFragment + created.id,
+      collectionsPath +
+        (props.collectionAppId ?? props.collectionId) +
+        dataObjectsPathFragment +
+        ((created as unknown as { appId?: string | null }).appId ?? created.id),
     );
     showDialog.value = false;
   } catch (error) {
@@ -98,14 +102,16 @@ async function createDataObject() {
   const dataObjectToSave = dataObjectToCreate.value;
   if (dataObjectToSave === undefined) return;
   if (isValid.value === false) return;
+  // SIDEBAR-V2-CREATE: guard; both sidebar call sites always provide collectionAppId.
+  if (!props.collectionAppId) return;
 
-  useShepardApi(DataObjectApi)
-    .value.createDataObject({
-      collectionId: props.collectionId,
-      dataObject: {
+  useV2ShepardApi(DataObjectsApi)
+    .value.createDataObjectV2({
+      collectionAppId: props.collectionAppId,
+      createDataObjectV2: {
         ...dataObjectToSave,
         predecessorIds: uniqueNumbersOf(
-          dataObjectToSave.predecessorIds?.filter(entry => entry != -1) ?? [],
+          dataObjectToSave.predecessorIds?.filter(entry => entry !== -1) ?? [],
         ),
       },
     })
@@ -114,14 +120,14 @@ async function createDataObject() {
       emit("data-object-created");
       router.push(
         collectionsPath +
-          props.collectionId +
+          props.collectionAppId +
           dataObjectsPathFragment +
-          response.id,
+          (response.appId ?? response.id),
       );
       showDialog.value = false;
     })
     .catch(error => {
-      handleError(error, "createDataObject");
+      handleError(error, "createDataObjectV2");
     });
 }
 </script>
@@ -211,6 +217,7 @@ async function createDataObject() {
             <ParentInput
               v-model:parent-id="dataObjectToCreate.parentId"
               :collection-id="collectionId"
+              :collection-app-id="collectionAppId"
             />
           </v-col>
         </v-row>
@@ -219,6 +226,7 @@ async function createDataObject() {
             <PredecessorInput
               v-model:predecessor-ids="dataObjectToCreate.predecessorIds"
               :collection-id="collectionId"
+              :collection-app-id="collectionAppId"
             />
           </v-col>
         </v-row>

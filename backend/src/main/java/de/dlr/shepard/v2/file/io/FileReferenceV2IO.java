@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.file.io;
 
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.v2.references.io.BasicReferenceV2IO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Objects;
@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @Schema(name = "FileReferenceV2", description = "Singleton FileReference (FR1b) — exactly one ShepardFile.")
-public class FileReferenceV2IO extends BasicReferenceIO {
+public class FileReferenceV2IO extends BasicReferenceV2IO {
 
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;
@@ -49,6 +49,16 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     description = "The single attached file. May be null in degenerate-row cases (missing GridFS blob)."
   )
   private ShepardFile file;
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "V2CONV-A2 file-kind discriminator derived from the original filename extension + mime " +
+      "(e.g. \"krl\", \"svdx\", \"otvis\", \"urdf\", \"xit\", \"pdf\"). Null when the kind is " +
+      "unrecognised or the singleton predates this field."
+  )
+  private String fileKind;
 
   /**
    * Construct from the persisted entity. The {@link
@@ -64,6 +74,7 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     super(src);
     this.appId = src.getAppId();
     this.file = src.getFile();
+    this.fileKind = src.getFileKind();
   }
 
   @Override
@@ -73,7 +84,9 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     if (!super.equals(o)) return false;
     if (this.getClass() != o.getClass()) return false;
     FileReferenceV2IO other = (FileReferenceV2IO) o;
-    return Objects.equals(appId, other.appId) && Objects.equals(file, other.file);
+    return Objects.equals(appId, other.appId)
+      && Objects.equals(file, other.file)
+      && Objects.equals(fileKind, other.fileKind);
   }
 
   @Override
@@ -82,6 +95,7 @@ public class FileReferenceV2IO extends BasicReferenceIO {
     int result = super.hashCode();
     result = prime * result + Objects.hashCode(appId);
     result = prime * result + Objects.hashCode(file);
+    result = prime * result + Objects.hashCode(fileKind);
     return result;
   }
 }

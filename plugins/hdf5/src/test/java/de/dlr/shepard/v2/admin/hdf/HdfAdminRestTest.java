@@ -23,6 +23,7 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
 import de.dlr.shepard.data.hdf.hsds.HsdsClient;
+import de.dlr.shepard.data.hdf.services.HdfConfigService;
 import de.dlr.shepard.v2.admin.hdf.io.HdfRebuildAclsResultIO;
 import jakarta.enterprise.inject.Instance;
 import jakarta.ws.rs.core.Response;
@@ -39,6 +40,7 @@ class HdfAdminRestTest {
   private HsdsClient hsdsClient;
   @SuppressWarnings("unchecked")
   private Instance<HsdsClient> hsdsInstance = (Instance<HsdsClient>) mock(Instance.class);
+  private HdfConfigService hdfConfigService;
   private AuthenticationContext authCtx;
   private SecurityContext securityContext;
 
@@ -53,6 +55,8 @@ class HdfAdminRestTest {
     hsdsInstance = (Instance<HsdsClient>) mock(Instance.class);
     when(hsdsInstance.isUnsatisfied()).thenReturn(false);
     when(hsdsInstance.get()).thenReturn(hsdsClient);
+    hdfConfigService = mock(HdfConfigService.class);
+    when(hdfConfigService.effectiveEnabled()).thenReturn(true);
     authCtx = mock(AuthenticationContext.class);
     securityContext = mock(SecurityContext.class);
     when(securityContext.getUserPrincipal()).thenReturn(() -> "admin");
@@ -62,6 +66,7 @@ class HdfAdminRestTest {
     rest.hdfContainerDAO = dao;
     rest.permissionsService = permissionsService;
     rest.hsdsClientInstance = hsdsInstance;
+    rest.hdfConfigService = hdfConfigService;
     rest.authenticationContext = authCtx;
   }
 
@@ -119,6 +124,17 @@ class HdfAdminRestTest {
     ProblemJson body = (ProblemJson) resp.getEntity();
     assertEquals(HdfAdminRest.PROBLEM_TYPE_DISABLED, body.type());
     assertTrue(body.detail().contains("shepard.hdf.enabled"));
+  }
+
+  @Test
+  void runtimeToggleOffReturns503BeforeHsdsCheck() {
+    when(hdfConfigService.effectiveEnabled()).thenReturn(false);
+
+    Response resp = rest.rebuildAcls(securityContext);
+    assertEquals(503, resp.getStatus());
+    ProblemJson body = (ProblemJson) resp.getEntity();
+    assertEquals(HdfAdminRest.PROBLEM_TYPE_DISABLED, body.type());
+    assertTrue(body.detail().contains("PATCH /v2/admin/config/hdf"));
   }
 
   // ─── happy path ─────────────────────────────────────────────────────────

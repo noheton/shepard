@@ -28,7 +28,13 @@ public class DataObjectTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
-      .withIgnoredFields("appId")
+      // provenanceMode is creation-time provenance metadata (human/ai/
+      // collaborative); a descriptive tag that doesn't define entity identity.
+      // attachedTemplateAppId is a template linkage field (T1e); it is
+      // configuration metadata that doesn't define entity identity.
+      // typedPredecessorsJson caches typed predecessor relationships for
+      // performance; it is derived data that doesn't define entity identity.
+      .withIgnoredFields("appId", "provenanceMode", "attachedTemplateAppId", "typedPredecessorsJson")
       .verify();
   }
 

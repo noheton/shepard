@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.bundle.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
@@ -13,13 +14,18 @@ import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
 import de.dlr.shepard.context.references.file.services.FileGroupService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorageService;
 import de.dlr.shepard.v2.bundle.io.FileBundleReferenceIO;
+import de.dlr.shepard.v2.bundle.io.PagedFilesIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -36,6 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -77,7 +85,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/bundles")
 @RequestScoped
-@Tag(name = "File bundles (v2)")
+@Tag(name = "References")
 public class FileBundleReferenceRest {
 
   @Inject
@@ -90,7 +98,7 @@ public class FileBundleReferenceRest {
   FileGroupService fileGroupService;
 
   @Inject
-  FileService fileService;
+  FileStorageService fileStorageService;
 
   @Inject
   PermissionsService permissionsService;
@@ -101,11 +109,19 @@ public class FileBundleReferenceRest {
   @Inject
   ObjectMapper objectMapper;
 
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/file-bundle-references.bad-request";
+  private static final String PROBLEM_TYPE_UNPROCESSABLE = "/problems/file-bundle-references.unprocessable-entity";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/file-bundle-references.internal-error";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/file-bundle-references.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/file-bundle-references.forbidden";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/file-bundle-references.not-found";
+
   // ─── bundle ───────────────────────────────────────────────────────────────
 
   @GET
   @Path("/{bundleAppId}")
   @Operation(
+    operationId = "getBundle",
     summary = "Get a FileBundleReference with its FileGroups by appId.",
     description =
       "Returns the full `FileBundleReferenceIO` for the `:FileBundleReference` identified " +
@@ -135,7 +151,7 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
@@ -152,43 +168,50 @@ public class FileBundleReferenceRest {
   @GET
   @Path("/{bundleAppId}/groups")
   @Operation(
+    operationId = "listGroups",
     summary = "List FileGroups under a bundle, ordered by ascending index.",
     description =
-      "Returns the ordered list of `:FileGroup` nodes belonging to the " +
+      "Returns a paged list of `:FileGroup` nodes belonging to the " +
       "`:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted " +
       "by their `index` field ascending (lowest index first), which matches the display " +
       "order in the UI.\n\n" +
       "Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, " +
       "`startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached " +
       "to that group via the FileContainer).\n\n" +
+      "Pagination: `?page=0&pageSize=50` (page zero-based; pageSize capped at 200 server-side).\n\n" +
       "Auth: Read permission on the parent DataObject (inherited from its Collection).\n\n" +
       "Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, " +
       "or `POST /v2/bundles/{bundleAppId}/groups` to add a new group."
   )
   @APIResponse(
     responseCode = "200",
-    description = "JSON array of FileGroupIO records ordered by index ascending; may be empty.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileGroupIO.class))
+    description = "Paged envelope of FileGroupIO records ordered by index ascending.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response listGroups(
     @PathParam("bundleAppId") String bundleAppId,
+    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
-    List<FileGroupIO> rows = fileGroupService.listGroups(bundleAppId).stream().map(FileGroupIO::new).toList();
-    return Response.ok(rows).build();
+    long total = fileGroupService.countGroups(bundleAppId);
+    List<FileGroupIO> items = fileGroupService.listGroups(bundleAppId, page, pageSize)
+        .stream().map(FileGroupIO::new).toList();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @POST
   @Path("/{bundleAppId}/groups")
   @Operation(
+    operationId = "createGroup",
     summary = "Create a new FileGroup under a bundle.",
     description =
       "Creates a `:FileGroup` node and links it to the `:FileBundleReference` identified " +
@@ -223,10 +246,10 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || body.getName() == null || body.getName().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("name is required and must be non-blank").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing field", Response.Status.BAD_REQUEST, "name is required and must be non-blank");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
@@ -234,15 +257,16 @@ public class FileBundleReferenceRest {
       FileGroup created = fileGroupService.createGroup(bundleAppId, body);
       return Response.status(Response.Status.CREATED).entity(new FileGroupIO(created)).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     }
   }
 
   @GET
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Operation(
+    operationId = "getGroup",
     summary = "Get a single FileGroup with its files.",
     description =
       "Returns the `FileGroupIO` for the `:FileGroup` identified by `groupAppId` (UUID v7) " +
@@ -271,14 +295,14 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
     FileGroup group = fileGroupService.getByAppId(groupAppId);
-    if (group == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
     return Response.ok(new FileGroupIO(group)).build();
   }
 
@@ -286,6 +310,7 @@ public class FileBundleReferenceRest {
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchGroup",
     summary = "RFC 7396 merge-patch on a FileGroup.",
     description =
       "Applies a partial update to the `:FileGroup` identified by `groupAppId` within " +
@@ -318,30 +343,31 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || !body.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     try {
       Map<String, Object> patch = jsonNodeToMap(body);
       FileGroup updated = fileGroupService.patchGroup(groupAppId, patch);
       return Response.ok(new FileGroupIO(updated)).build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     }
   }
 
   @DELETE
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Operation(
+    operationId = "deleteGroup",
     summary = "Delete a FileGroup from a bundle.",
     description =
       "Removes the `:FileGroup` identified by `groupAppId` from the `:FileBundleReference` " +
@@ -367,26 +393,100 @@ public class FileBundleReferenceRest {
   public Response deleteGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "When true, also permanently deletes all files in the group. When false (default), the request fails with 400 if the group still contains files.")
     @QueryParam("force") boolean force,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     try {
       fileGroupService.deleteGroup(groupAppId, force);
       return Response.noContent().build();
     } catch (BadRequestException bre) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(bre.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     }
   }
+
+  // ─── paginated file listing inside a group ────────────────────────────────
+
+  @GET
+  @Path("/{bundleAppId}/groups/{groupAppId}/files")
+  @Operation(
+    operationId = "listGroupFiles",
+    summary = "List files in a FileGroup, paginated (MFFD-IMAGEBUNDLE-PAGINATE-1).",
+    description =
+      "Returns the files attached to the `:FileGroup` identified by `groupAppId` " +
+      "within the `:FileBundleReference` identified by `bundleAppId`, paginated.\n\n" +
+      "Designed for high-cardinality ImageBundles (e.g. MFFD TPS raw-data PNG frames). " +
+      "The `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` route still returns the " +
+      "group's full embedded `files[]` for backward compatibility, but UI surfaces that " +
+      "scrub through thousands of frames should consume this paginated route instead.\n\n" +
+      "Query parameters:\n" +
+      "* `page` — 0-based page index. Default `0`. Values past the last page return an " +
+      "empty `items[]` with the correct `totalElements`/`totalPages`.\n" +
+      "* `pageSize` — page size. Default `200`; min `1`; max `1000`. Values outside the range " +
+      "are clamped, never reject — the API gives a useful result even when a client " +
+      "supplies an out-of-policy hint.\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "PagedFilesIO envelope. `items[]` may be empty when the page is past the end.",
+    content = @Content(schema = @Schema(implementation = PagedFilesIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
+  public Response listGroupFiles(
+    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("groupAppId") String groupAppId,
+    @Parameter(description = "0-based page index. Default 0. Values past the last page return an empty items[] with the correct totalElements/totalPages.")
+    @QueryParam("page") Integer page,
+    @Parameter(description = "Page size. Default 200; clamped server-side to [1, 1000]. Out-of-range hints are clamped, never rejected.")
+    @QueryParam("pageSize") Integer pageSize,
+    @Context SecurityContext securityContext
+  ) {
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    Response gate = checkAccess(bundle, AccessType.Read, securityContext);
+    if (gate != null) return gate;
+
+    FileGroup group = fileGroupService.getByAppId(groupAppId);
+    if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
+    String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+
+    // Clamp page + pageSize to sensible defaults. Out-of-range hints are
+    // clamped, never rejected — surfacing a 400 here would be hostile to
+    // a UI that may just have a stale slider value while the bundle's
+    // file count is fluctuating.
+    int pageIdx = (page == null || page < 0) ? 0 : page;
+    int effectiveSize = (pageSize == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, pageSize));
+
+    List<ShepardFile> all = group.getFiles() != null ? group.getFiles() : List.of();
+    long total = all.size();
+    int totalPages = effectiveSize == 0 ? 0 : (int) ((total + effectiveSize - 1) / effectiveSize);
+    int from = Math.min((int) total, pageIdx * effectiveSize);
+    int to = Math.min((int) total, from + effectiveSize);
+    List<ShepardFile> slice = from >= to ? List.of() : new ArrayList<>(all.subList(from, to));
+
+    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, effectiveSize, total, totalPages);
+    return Response.ok(envelope).build();
+  }
+
+  /** MFFD-IMAGEBUNDLE-PAGINATE-1 — default page size for the paged files listing. */
+  static final int DEFAULT_FILES_PAGE_SIZE = 200;
+
+  /** MFFD-IMAGEBUNDLE-PAGINATE-1 — server-side cap so a hostile client can't request a whole-bundle dump. */
+  static final int MAX_FILES_PAGE_SIZE = 1000;
 
   // ─── file upload into a group ─────────────────────────────────────────────
 
@@ -394,6 +494,7 @@ public class FileBundleReferenceRest {
   @Path("/{bundleAppId}/groups/{groupAppId}/files")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
+    operationId = "uploadFileIntoGroup",
     summary = "Upload one file into a specific FileGroup.",
     description =
       "Accepts a `multipart/form-data` body with a single `file` part and stores the " +
@@ -431,32 +532,32 @@ public class FileBundleReferenceRest {
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return Response.status(Response.Status.NOT_FOUND).build();
+    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     if (upload == null || upload.uploadedFile() == null) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("file part is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
     }
     if (bundle.getFileContainer() == null || bundle.getFileContainer().getMongoId() == null) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("Bundle has no underlying FileContainer; cannot accept uploads.")
-        .build();
+      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Bundle not writable", Response.Status.BAD_REQUEST, "Bundle has no underlying FileContainer; cannot accept uploads.");
     }
 
     File file = upload.uploadedFile().toFile();
     // MONGO-AUDIT-2026-05-24-012: pass the temp-file length as the declared size so
-    // FileService can enforce the upload cap before writing to GridFS.
+    // the GridFS adapter can enforce the upload cap before writing.
+    // STORAGE-SPI-UNIFY-1: route through the active storage adapter via
+    // FileStorageService instead of hardcoding the GridFS FileService write.
     long declaredSize = file.length();
     try (InputStream is = new FileInputStream(file)) {
-      ShepardFile saved = fileService.createFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is, declaredSize);
+      ShepardFile saved = fileStorageService.storeFile(bundle.getFileContainer().getMongoId(), upload.fileName(), is, declaredSize);
       fileGroupService.attachFile(groupAppId, saved);
       return Response.status(Response.Status.CREATED).entity(saved).build();
     } catch (IOException ioe) {
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ioe.getMessage()).build();
+      return problem(PROBLEM_TYPE_INTERNAL, "Upload failed", Response.Status.INTERNAL_SERVER_ERROR, ioe.getMessage());
     }
   }
 
@@ -469,11 +570,11 @@ public class FileBundleReferenceRest {
    */
   private Response checkAccess(FileBundleReference bundle, AccessType accessType, SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided.");
     if (bundle.getDataObject() == null) {
       // Inconsistent graph — treat as 404 (caller can't tell whether
       // the bundle exists for this DataObject anyway).
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle has no parent DataObject", Response.Status.NOT_FOUND, "No DataObject is associated with this bundle (graph inconsistency).");
     }
     // DataObjects have no own :Permissions node — walk up to the parent
     // Collection via the perm-walk helper. Falls back to the long-id
@@ -482,14 +583,21 @@ public class FileBundleReferenceRest {
     if (doAppId == null) {
       long dataObjectOgmId = bundle.getDataObject().getId();
       if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller)) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+            "Caller does not have " + accessType + " access to the parent DataObject.");
       }
       return null;
     }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+          "Caller does not have " + accessType + " access to the parent DataObject.");
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**

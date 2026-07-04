@@ -121,6 +121,71 @@ public class SemanticAnnotationV2DAO extends GenericDAO<SemanticAnnotation> {
       .toList();
   }
 
+  // ─── count (for PagedResponseIO total) ────────────────────────────────────
+
+  /**
+   * Counts annotations matching the same filter set as {@link #findFiltered}.
+   * Used to populate the {@code total} field of {@link de.dlr.shepard.v2.common.io.PagedResponseIO}.
+   */
+  public long countFiltered(
+    String subjectAppId,
+    String subjectKind,
+    String predicateIri,
+    String vocabularyId
+  ) {
+    Map<String, Object> params = new HashMap<>();
+    StringBuilder where = new StringBuilder("WHERE 1=1");
+
+    if (subjectAppId != null && !subjectAppId.isBlank()) {
+      where.append(" AND a.subjectAppId = $subjectAppId");
+      params.put("subjectAppId", subjectAppId);
+    }
+    if (subjectKind != null && !subjectKind.isBlank()) {
+      where.append(" AND a.subjectKind = $subjectKind");
+      params.put("subjectKind", subjectKind);
+    }
+    if (predicateIri != null && !predicateIri.isBlank()) {
+      where.append(" AND a.propertyIRI = $predicateIri");
+      params.put("predicateIri", predicateIri);
+    }
+    if (vocabularyId != null && !vocabularyId.isBlank()) {
+      where.append(" AND a.vocabularyId = $vocabularyId");
+      params.put("vocabularyId", vocabularyId);
+    }
+
+    String query = "MATCH (a:SemanticAnnotation) " + where + " RETURN count(a) AS c";
+    var it = session.query(query, params).queryResults().iterator();
+    if (it.hasNext()) {
+      Object c = it.next().get("c");
+      return c instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
+  /**
+   * Counts annotations matching the same filter set as {@link #textSearch}.
+   */
+  public long countTextSearch(String q, String vocabularyId) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("q", "(?i).*" + escapeRegex(q) + ".*");
+
+    StringBuilder where = new StringBuilder(
+      "WHERE (a.valueName =~ $q OR a.propertyName =~ $q OR a.valueIRI =~ $q OR a.propertyIRI =~ $q)"
+    );
+    if (vocabularyId != null && !vocabularyId.isBlank()) {
+      where.append(" AND a.vocabularyId = $vocabularyId");
+      params.put("vocabularyId", vocabularyId);
+    }
+
+    String query = "MATCH (a:SemanticAnnotation) " + where + " RETURN count(a) AS c";
+    var it = session.query(query, params).queryResults().iterator();
+    if (it.hasNext()) {
+      Object c = it.next().get("c");
+      return c instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
   // ─── back-pointer stamp ────────────────────────────────────────────────────
 
   /**

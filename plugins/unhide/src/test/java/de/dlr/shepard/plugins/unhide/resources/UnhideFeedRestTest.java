@@ -231,6 +231,53 @@ class UnhideFeedRestTest {
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 2, 50);
   }
 
+  // ─── APISIMP-REMAINING-PARAMS reflection guards ────────────────────────────
+
+  @Test
+  void feed_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = UnhideFeedRest.class.getMethod(
+      "feed", Integer.class, Integer.class, boolean.class,
+      jakarta.ws.rs.core.HttpHeaders.class, jakarta.ws.rs.core.UriInfo.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "page".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "feed.page must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "feed.page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for feed.page");
+  }
+
+  @Test
+  void feed_pageSizeParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = UnhideFeedRest.class.getMethod(
+      "feed", Integer.class, Integer.class, boolean.class,
+      jakarta.ws.rs.core.HttpHeaders.class, jakarta.ws.rs.core.UriInfo.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "feed.pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "feed.pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for feed.pageSize");
+  }
+
+  @Test
+  void feed_validateParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = UnhideFeedRest.class.getMethod(
+      "feed", Integer.class, Integer.class, boolean.class,
+      jakarta.ws.rs.core.HttpHeaders.class, jakarta.ws.rs.core.UriInfo.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "validate".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "feed.validate must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "feed.validate must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for feed.validate");
+  }
+
   @Test
   void feed_defaultsToPageZero_defaultPageSize_whenAbsent() {
     UnhideConfig cfg = new UnhideConfig();

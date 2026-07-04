@@ -33,7 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/admin/metrics-summary")
 @RequestScoped
-@Tag(name = "Admin metrics (v2)")
+@Tag(name = "Admin")
 public class AdminMetricsRest {
 
   @Inject
@@ -41,6 +41,7 @@ public class AdminMetricsRest {
 
   @GET
   @Operation(
+    operationId = "getMetricsSummary",
     summary = "Instance-health summary for the admin pane.",
     description = "Rolls up JVM heap / uptime / HTTP-request total + mean / permissions-cache " +
     "hit ratio into one payload, read from the in-process Micrometer registry. " +

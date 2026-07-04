@@ -28,6 +28,19 @@ COPY --chown=185 target/classes/neo4j/ /deployments/neo4j/
 # COPY below is a no-op and the directory just stays empty —
 # operators can drop in vendor plugins post-deploy.
 USER 0
+# SECURITY (Trivy image scan, HIGH): the UBI9 base ships openssl-libs
+# 3.5.5-2.el9_8 which carries CVE-2026-28390. Pull the latest published
+# el9 patch for it (and any other security-relevant base-layer updates) so
+# the gate stays green. `microdnf update` is idempotent and only fetches
+# what has a newer build; `clean all` keeps the layer small.
+RUN microdnf -y update openssl openssl-libs && microdnf clean all
+# RESEED-FIND-TRACE3D-FONTCONFIG — shepard-plugin-vis-trace3d's Trace3DPngRenderer
+# rasterises a PNG view-recipe card with headless AWT (Graphics2D.drawString). The
+# UBI9 runtime base ships no fontconfig + no fonts, so AWT text init throws
+# "Fontconfig head is null" and the renderer fail-softs to JSON. Install fontconfig +
+# a base font so the image/png content-negotiation path of POST /v2/shapes/render
+# produces real raster bytes.
+RUN microdnf install -y fontconfig dejavu-sans-fonts --nodocs && microdnf clean all
 RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # ffmpeg — required by shepard-plugin-video (ffprobe) and shepard-plugin-imagebundle
 # (movie generation). RPM Fusion ffmpeg on UBI9 requires SDL2 which is not in
@@ -35,9 +48,16 @@ RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # from BtbN (https://github.com/BtbN/ffmpeg-builds) — self-contained, no shared-lib
 # dependencies. Only ffmpeg and ffprobe binaries are kept; the rest is cleaned up.
 # xz is installed temporarily to decompress the .tar.xz archive.
+# Use BtbN's floating `latest` asset: dated autobuild tags are rotated/deleted
+# over time (the previously-pinned 2026-06-10 tag now 404s and broke every
+# backend image build, 2026-06-25). The `latest/ffmpeg-master-latest-linux64-gpl.tar.xz`
+# pointer is maintained by BtbN and verified reachable (HTTP 200) — it tracks
+# master, so the exact ffmpeg build can drift, but it never rots. Pin a dated
+# asset again only if a specific ffmpeg revision is required.
+ARG FFMPEG_URL='https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz'
 RUN microdnf install -y xz --nodocs \
     && mkdir -p /tmp/ffmpeg-dl \
-    && curl -fsSL -L 'https://github.com/BtbN/ffmpeg-builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz' \
+    && curl -fsSL -L "${FFMPEG_URL}" \
        | tar -xJf - -C /tmp/ffmpeg-dl --strip-components=1 \
     && install -m 0755 /tmp/ffmpeg-dl/bin/ffmpeg /tmp/ffmpeg-dl/bin/ffprobe /usr/local/bin/ \
     && rm -rf /tmp/ffmpeg-dl \

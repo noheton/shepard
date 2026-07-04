@@ -19,6 +19,7 @@ const PALETTE = [
 ];
 
 const props = defineProps<{
+  /** V1-EXCEPTION: kept for v1 timeseries data fetch (getTimeseries); see APISIMP-TSCONT-APPID-KEY. */
   containerId: number;
   measurements: TimeseriesEntity[];
   /**
@@ -30,6 +31,8 @@ const props = defineProps<{
    * (legacy behaviour).
    */
   selectedChannelKeys?: string[];
+  /** APISIMP-TSCONT-APPID-KEY: appId for the stats endpoint (UUID v7). */
+  containerAppId?: string | null;
 }>();
 
 function channelKey(ch: TimeseriesEntity): string {
@@ -83,8 +86,9 @@ const looksBoolean = computed(() => {
   );
 });
 
-// TS_STATS1 — ingest rate displayed in live toolbar
-const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(props.containerId);
+// TS_STATS1 — ingest rate displayed in live toolbar; use containerAppId prop when available
+const chartStatsAppId = computed<string | null>(() => props.containerAppId ?? null);
+const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(chartStatsAppId);
 const ingestMBps = computed(() => {
   if (!containerStats.value || containerStats.value.ingestRateBytesPerSec === 0) return null;
   return (containerStats.value.ingestRateBytesPerSec / 1_048_576).toFixed(3);
@@ -247,7 +251,9 @@ onBeforeUnmount(() => {
 });
 
 // ── Container-level temporal annotations ──────────────────────────────────
-const containerIdRef = computed(() => props.containerId);
+// APISIMP-TSCONT-APPID-KEY: Use containerAppId for the temporal-annotations v2 endpoint.
+// containerId (number) is kept below as a V1-EXCEPTION for the v1 getTimeseries data fetch.
+const containerIdRef = computed<string | null>(() => props.containerAppId ?? null);
 const {
   annotations: containerAnnotations,
   deleteAnnotation: deleteContainerAnnotation,
@@ -459,10 +465,10 @@ function onAnnotationSaved() {
           <div>
             <strong>LTTB</strong> (Largest-Triangle-Three-Buckets) preserves visual
             peaks and troughs at heavy compression — anomaly spikes stay visible.
-            <br /><br />
+            <br ><br >
             <strong>Raw</strong> fetches every recorded sample. Use Raw to verify
             fidelity or for export / analysis after visual inspection.
-            <br /><br />
+            <br ><br >
             <em>Note: export and bulk-fetch paths always use Raw data regardless
             of this toggle.</em>
           </div>
@@ -629,7 +635,7 @@ function onAnnotationSaved() {
   <!-- Temporal annotation create / edit dialog -->
   <TemporalAnnotationDialog
     v-model:show-dialog="showAnnotationDialog"
-    :container-id="containerId"
+    :container-app-id="containerAppId ?? null"
     :initial-start-ns="editingAnnotation?.startNs ?? brushSelection?.startNs"
     :initial-end-ns="editingAnnotation?.endNs ?? brushSelection?.endNs"
     :annotation-app-id="editingAnnotation?.appId"

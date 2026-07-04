@@ -41,9 +41,9 @@ singleton attached to the DataObject — not just the notebooks.
 ### Open in JupyterHub gate
 
 ```http
-GET /v2/jupyter/config            → 200 { enabled, hubUrl }    (any authenticated user)
-GET /v2/admin/jupyter/config      → 200 same shape             (instance-admin)
-PATCH /v2/admin/jupyter/config    → RFC 7396 merge-patch       (instance-admin)
+GET /v2/jupyter/config             → 200 { enabled, hubUrl }    (any authenticated user)
+GET /v2/admin/config/jupyter       → 200 same shape             (instance-admin)
+PATCH /v2/admin/config/jupyter     → RFC 7396 merge-patch       (instance-admin)
 ```
 
 The PATCH body is the runtime-mutable subset:
@@ -92,7 +92,7 @@ deploy-time default.
 The `shepard-admin jupyter` subcommand group provides parity:
 
 ```bash
-shepard-admin jupyter status                                 # GET /v2/admin/jupyter/config
+shepard-admin jupyter status                                 # GET /v2/admin/config/jupyter
 shepard-admin jupyter enable                                 # PATCH enabled=true
 shepard-admin jupyter disable                                # PATCH enabled=false
 shepard-admin jupyter set-hub-url https://hub.example.org    # PATCH hubUrl=...

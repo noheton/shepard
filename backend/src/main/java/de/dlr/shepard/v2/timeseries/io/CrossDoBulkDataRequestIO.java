@@ -1,0 +1,80 @@
+package de.dlr.shepard.v2.timeseries.io;
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+/**
+ * TS-CROSS-DO-VIEW-1 — request body for the cross-DataObject bulk-data endpoint.
+ *
+ * <p>Route: {@code POST /v2/data-objects/cross-timeseries-bulk}
+ *
+ * <p>Resolves each {@code dataObjectAppId} to its {@link
+ * de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}s,
+ * finds the channel whose {@code AnnotatableTimeseries} carries a
+ * {@code SemanticAnnotation} with {@code propertyIRI = channelPredicate}, and
+ * fetches that channel's series in the {@code [start, end]} window with LTTB
+ * downsampling. The response carries one entry per resolved DataObject;
+ * DataObjects with no matching channel return an empty {@code points} array
+ * (the whole request never 404s).
+ *
+ * <p>Permission gate is per-DataObject: callers without Read on a given DO are
+ * silently dropped from the response (no 403 for the whole request — see also
+ * {@link de.dlr.shepard.auth.permission.services.PermissionsService#isAccessAllowedForDataObjectAppId}).
+ *
+ * <p>Up to 100 DataObjects per request; downsample target between 1 and 5000
+ * inclusive.
+ *
+ * <p>Single channel predicate per request; multi-channel small-multiples is
+ * deferred to a future revision. Where a single DataObject has multiple
+ * channels matching the predicate, the first by lexicographic
+ * {@code symbolicName} ascending is picked (deterministic).
+ */
+@Schema(
+  name = "CrossDoBulkDataRequest",
+  description = "Cross-DataObject bulk-data request: many DOs, one channel predicate, one time window."
+)
+public record CrossDoBulkDataRequestIO(
+
+  @NotEmpty
+  @Size(max = 100)
+  @Schema(
+    description = "DataObject appIds (UUID v7 strings) to resolve channels under. Max 100.",
+    required = true,
+    example = "[\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f\",\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e60\"]"
+  )
+  List<@NotNull String> dataObjectAppIds,
+
+  @NotNull
+  @Schema(
+    description = "Canonical channel-key annotation predicate IRI to match (exact match on " +
+      "SemanticAnnotation.propertyIRI). Channels under each DataObject's TimeseriesReferences " +
+      "are scanned for this predicate. Example: 'urn:shepard:afp:tcp-temperature-c'.",
+    required = true,
+    example = "urn:shepard:afp:tcp-temperature-c"
+  )
+  String channelPredicate,
+
+  @NotNull
+  @PositiveOrZero
+  @Schema(description = "Window start, nanoseconds since epoch.", required = true, example = "1700000000000000000")
+  Long start,
+
+  @NotNull
+  @PositiveOrZero
+  @Schema(description = "Window end, nanoseconds since epoch.", required = true, example = "1700003600000000000")
+  Long end,
+
+  @Positive
+  @Schema(
+    description = "LTTB target rows per series. Minimum 1, default 500 (when null or omitted), hard cap 5000.",
+    minimum = "1",
+    maximum = "5000",
+    example = "500"
+  )
+  Integer downsampleTo
+) {}

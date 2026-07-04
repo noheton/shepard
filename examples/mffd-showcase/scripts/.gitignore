@@ -1,0 +1,2 @@
+# importer live-state DBs (resumable; never commit)
+.mffd-*-state.sqlite

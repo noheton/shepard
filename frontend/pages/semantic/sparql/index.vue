@@ -8,7 +8,6 @@
 
 import type { SparqlBinding } from "~/composables/context/admin/useSparqlPlayground";
 import { useSparqlPlayground } from "~/composables/context/admin/useSparqlPlayground";
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
 useHead({ title: "SPARQL playground | shepard" });
 
@@ -29,6 +28,18 @@ const {
 if (route.query.query) {
   query.value = route.query.query as string;
 }
+
+// TOOLS-CONTEXT-* — when navigated from an in-context Tools menu the URL
+// carries `?focusAppId=<entityAppId>&scope=collection|data-object`.
+// We render a banner showing the source so the user knows the query was
+// pre-filled from a specific entity (and the destination URL is
+// bookmarkable: a refresh re-prefills with the same query).
+const focusAppId = computed<string | null>(() =>
+  typeof route.query.focusAppId === "string" ? route.query.focusAppId : null,
+);
+const focusScope = computed<string | null>(() =>
+  typeof route.query.scope === "string" ? route.query.scope : null,
+);
 
 // ─── Table rendering ───────────────────────────────────────────────────────
 
@@ -58,7 +69,12 @@ const showRaw = ref(false);
 </script>
 
 <template>
-  <v-container>
+  <!-- UI-1920-SPARQL-WIDTH: single-column text + query editor. The default
+       v-container max-width is ~1800px at xl/xxl, which stretches query
+       text, prose and the result table to unreadable line-lengths at 1920
+       (and 4K). Cap to a comfortable reading width, centred. No-op at
+       <=1280 where the breakpoint cap is already narrower. -->
+  <v-container style="max-width: 1200px">
     <div class="d-flex flex-column ga-2 mb-4">
       <NuxtLink to="/semantic" class="text-caption">
         <v-icon size="small">mdi-arrow-left</v-icon> Semantic substrate
@@ -71,6 +87,19 @@ const showRaw = ref(false);
         <NuxtLink to="/admin#sparql-playground">/admin#sparql-playground</NuxtLink>.
       </p>
     </div>
+
+    <v-alert
+      v-if="focusAppId"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+      prepend-icon="mdi-tools"
+      data-testid="sparql-focus-banner"
+    >
+      Pre-filled from {{ focusScope === "collection" ? "Collection" : "DataObject" }}
+      <code>{{ focusAppId }}</code>. Edit the query freely and re-run.
+    </v-alert>
 
     <v-text-field
       v-model="repoId"
@@ -159,13 +188,6 @@ const showRaw = ref(false);
       </v-card>
     </template>
 
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="N1f"
-      design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
-      endpoint="/v2/semantic/{repoAppId}/sparql"
-      notes="Backend live since N1f shipped. Table rendering shipped in #64. Full editor / autocomplete queued."
-    />
   </v-container>
 </template>
 

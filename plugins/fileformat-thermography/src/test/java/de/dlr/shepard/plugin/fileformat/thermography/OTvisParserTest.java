@@ -2,6 +2,7 @@ package de.dlr.shepard.plugin.fileformat.thermography;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

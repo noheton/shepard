@@ -127,28 +127,28 @@ function predicateRoute(p: SemanticPredicate) {
           :items-per-page-options="[10, 25, 50, 100]"
           density="comfortable"
         >
-          <template #item.uri="{ item }">
+          <template #[`item.uri`]="{ item }">
             <NuxtLink :to="predicateRoute(item)" class="text-body-2">
               <code>{{ item.uri }}</code>
             </NuxtLink>
           </template>
-          <template #item.label="{ item }">
+          <template #[`item.label`]="{ item }">
             <span v-if="item.label">{{ item.label }}</span>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
-          <template #item.expectedObjectType="{ item }">
+          <template #[`item.expectedObjectType`]="{ item }">
             <v-chip v-if="item.expectedObjectType" size="x-small" variant="tonal">
               {{ item.expectedObjectType }}
             </v-chip>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
-          <template #item.cardinality="{ item }">
+          <template #[`item.cardinality`]="{ item }">
             <v-chip v-if="item.cardinality" size="x-small" variant="outlined">
               {{ item.cardinality }}
             </v-chip>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
-          <template #item.required="{ item }">
+          <template #[`item.required`]="{ item }">
             <v-icon v-if="item.required" color="warning" size="small">
               mdi-asterisk
             </v-icon>

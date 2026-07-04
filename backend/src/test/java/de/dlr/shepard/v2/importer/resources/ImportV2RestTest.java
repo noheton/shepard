@@ -406,6 +406,47 @@ class ImportV2RestTest {
     assertEquals(403, r.getStatus());
   }
 
+  // ─── APISIMP-IMPORT-CONTEXT-PARAMS-UNDOCUMENTED regression ──────────────
+
+  @Test
+  void getContext_collectionAppId_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ImportV2Rest.class.getMethod(
+        "getContext", String.class, boolean.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "collectionAppId".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "collectionAppId must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "collectionAppId must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for collectionAppId");
+    assertTrue(ann.required(), "@Parameter.required must be true for collectionAppId");
+  }
+
+  @Test
+  void getContext_includeSemanticGraph_paramCarriesParameterAnnotation() throws NoSuchMethodException {
+    java.lang.reflect.Method method = ImportV2Rest.class.getMethod(
+        "getContext", String.class, boolean.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "includeSemanticGraph".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "includeSemanticGraph must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "includeSemanticGraph must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for includeSemanticGraph");
+  }
+
   // ─── Factories ────────────────────────────────────────────────────────────
 
   private ImportManifestIO makeMinimalManifest() {

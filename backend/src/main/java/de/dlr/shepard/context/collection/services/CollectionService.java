@@ -55,6 +55,9 @@ public class CollectionService {
   @Inject
   CollectionEventProducer collectionEventProducer;
 
+  @Inject
+  ArchiveStateGuard archiveStateGuard;
+
   /**
    * Creates a Collection and stores it in Neo4J
    *
@@ -83,7 +86,10 @@ public class CollectionService {
     // semantically, but stored as null until V91 migration runs).
     toCreate.setPromptLogMode(collection.getPromptLogMode());
 
-    if (collection.getDefaultFileContainerId() != null) {
+    if (collection.getDefaultFileContainerAppId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainerByAppId(collection.getDefaultFileContainerAppId());
+      toCreate.setFileContainer(fileContainer);
+    } else if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
       toCreate.setFileContainer(fileContainer);
     } else {
@@ -230,7 +236,10 @@ public class CollectionService {
     // unchanged (RFC 7396 produces the existing value in the merged IO).
     old.setPromptLogMode(collection.getPromptLogMode());
 
-    if (collection.getDefaultFileContainerId() != null) {
+    if (collection.getDefaultFileContainerAppId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainerByAppId(collection.getDefaultFileContainerAppId());
+      old.setFileContainer(fileContainer);
+    } else if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
       old.setFileContainer(fileContainer);
     } else {
@@ -353,6 +362,18 @@ public class CollectionService {
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
     }
+  }
+
+  /**
+   * #27-ARCHIVED-02 — Write permission AND non-archived status. Used by
+   * DataObject writes (create/update/delete) to honour the archive freeze
+   * on the parent Collection. The standalone publication-state PATCH
+   * endpoint deliberately does NOT call this — that is the one mutation
+   * that bypasses the freeze (Owner/instance-admin only, enforced there).
+   */
+  public void assertIsAllowedToEditCollectionAndNotArchived(long collectionId) {
+    assertIsAllowedToEditCollection(collectionId);
+    archiveStateGuard.assertCollectionNotArchived(collectionId);
   }
 
   /**

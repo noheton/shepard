@@ -20,8 +20,10 @@ export interface SemanticPredicate {
 }
 
 export interface VocabularyPredicatesResponse {
-  vocabularyAppId: string;
-  predicates: SemanticPredicate[];
+  items: SemanticPredicate[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 function v2BaseUrl(): string {
@@ -69,7 +71,7 @@ export function useSemanticVocabularyPredicates() {
       }
 
       const body = (await response.json()) as VocabularyPredicatesResponse;
-      predicates.value = Array.isArray(body?.predicates) ? body.predicates : [];
+      predicates.value = Array.isArray(body?.items) ? body.items : [];
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {

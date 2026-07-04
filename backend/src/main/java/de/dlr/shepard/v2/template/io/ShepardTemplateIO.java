@@ -30,7 +30,18 @@ public class ShepardTemplateIO {
   @Schema(required = true, description = "Copy-on-write version number; latest non-retired row has the highest value for the name.")
   private Integer version;
 
-  @Schema(required = true, description = "Recipe body. JSON DSL per aidocs/54 §7 (opaque to the entity; validation is service-layer).")
+  /**
+   * SHAPES-V-PREFILL-3-EXTRACT-SHACL — Template authors may embed a
+   * SHACL shape graph (Turtle) under the optional JSON field
+   * {@code shapeGraph} inside this opaque body. The SHACL validation
+   * playground ({@code /shapes/validate?templateAppId=<...>}) reads
+   * that field via {@code frontend/utils/shaclTemplateBody.ts} and
+   * pre-fills the shape-graph textarea when present. The Java IO does
+   * not parse the body — the convention is forward-compat and
+   * frontend-extracted — but the convention is recorded here so
+   * template authors can discover it.
+   */
+  @Schema(required = true, description = "Recipe body. JSON DSL per aidocs/54 §7 (opaque to the entity; validation is service-layer). Optional field `shapeGraph` (Turtle string) is read by /shapes/validate per SHAPES-V-PREFILL-3-EXTRACT-SHACL.")
   private String body;
 
   @Schema(required = false, nullable = true, description = "Markdown-flavoured human description.")
@@ -51,6 +62,22 @@ public class ShepardTemplateIO {
   @Schema(required = true, description = "true when retired and filtered from picker listings (still kept on disk).")
   private boolean retired;
 
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "MDI (Material Design Icons) name with the 'mdi-' prefix, e.g. 'mdi-layers'. " +
+    "Null means the UI uses the per-kind default. Design: aidocs/integrations/122."
+  )
+  private String iconKey;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "appId of the parent template this template extends (single-parent inheritance). " +
+    "Null means a root template. Child fields override parent on collision. Design: aidocs/integrations/123."
+  )
+  private String parentTemplateAppId;
+
   public static ShepardTemplateIO from(ShepardTemplate t) {
     return new ShepardTemplateIO(
       t.getAppId(),
@@ -63,7 +90,9 @@ public class ShepardTemplateIO {
       DisplayNameResolver.redactUsername(t.getCreatedBy()),
       t.getCreatedAt(),
       t.getUpdatedAt(),
-      t.isRetired()
+      t.isRetired(),
+      t.getIconKey(),
+      t.getParentTemplateAppId()
     );
   }
 }

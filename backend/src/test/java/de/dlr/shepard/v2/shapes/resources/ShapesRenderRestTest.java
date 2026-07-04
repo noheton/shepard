@@ -4,15 +4,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.spi.view.RenderException;
 import de.dlr.shepard.spi.view.RenderRequest;
 import de.dlr.shepard.spi.view.RenderResponse;
+import de.dlr.shepard.spi.view.RenderedMedia;
 import de.dlr.shepard.spi.view.ViewRecipeRenderer;
 import de.dlr.shepard.spi.view.ViewRecipeRendererRegistry;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderRequestIO;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderResponseIO;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
@@ -136,19 +140,19 @@ class ShapesRenderRestTest {
 
   @Test
   void returns400OnNullBody() {
-    assertThat(rest.render(null).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,null).getStatus()).isEqualTo(400);
   }
 
   @Test
   void returns400OnMissingTemplateAppId() {
     var body = new ShapesRenderRequestIO(null, "some-focus-id", null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(400);
   }
 
   @Test
   void returns400OnMissingFocusShepardId() {
     var body = new ShapesRenderRequestIO("some-tmpl-id", null, null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(400);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(400);
   }
 
   // ─── 404 path ────────────────────────────────────────────────────────────
@@ -157,7 +161,7 @@ class ShapesRenderRestTest {
   void returns404WhenTemplateNotFound() {
     when(templateDAO.findByAppId("unknown-id")).thenReturn(Optional.empty());
     var body = new ShapesRenderRequestIO("unknown-id", "focus-id", null);
-    assertThat(rest.render(body).getStatus()).isEqualTo(404);
+    assertThat(rest.render(null,body).getStatus()).isEqualTo(404);
   }
 
   // ─── 422 path ────────────────────────────────────────────────────────────
@@ -168,7 +172,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("tmpl-1", "focus-id", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(422);
   }
@@ -192,7 +196,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-1")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-1", "do-focus-1", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -220,7 +224,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-2")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-2", "do-focus-2", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -235,7 +239,7 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("view-tmpl-3")).thenReturn(Optional.of(tmpl));
 
     var body = new ShapesRenderRequestIO("view-tmpl-3", "do-focus-3", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -274,7 +278,7 @@ class ShapesRenderRestTest {
     wireRegistry(captor);
 
     var body = new ShapesRenderRequestIO("view-tmpl-spi-1", "do-focus-spi-1", null);
-    Response r = rest.render(body);
+    Response r = rest.render(null,body);
 
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
@@ -318,7 +322,7 @@ class ShapesRenderRestTest {
     );
     wireRegistry(stubRenderer(iri, out));
 
-    Response r = rest.render(new ShapesRenderRequestIO("vt-um-1", "fo-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("vt-um-1", "fo-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -341,7 +345,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("Orphan recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("orphan-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("orphan-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("orphan-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -358,7 +362,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("No-iri recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("noiri-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("noiri-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("noiri-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings().get(0).status()).isEqualTo("DECLARED");
@@ -370,7 +374,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("Blank-iri recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("blank-iri-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("blank-iri-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("blank-iri-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.renderer()).isEqualTo("tresjs");
@@ -389,7 +393,7 @@ class ShapesRenderRestTest {
     ShepardTemplate tmpl = new ShepardTemplate("No-reg recipe", "VIEW_RECIPE", bodyJson);
     when(templateDAO.findByAppId("noreg-1")).thenReturn(Optional.of(tmpl));
 
-    Response r = rest.render(new ShapesRenderRequestIO("noreg-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("noreg-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(200);
     var io = (ShapesRenderResponseIO) r.getEntity();
     assertThat(io.channelBindings()).hasSize(1);
@@ -412,12 +416,11 @@ class ShapesRenderRestTest {
       )
     );
 
-    Response r = rest.render(new ShapesRenderRequestIO("throwy-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("throwy-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("code")).isEqualTo("render.body.invalid");
-    assertThat(body.get("error")).asString().contains("missing required");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.extensions().get("code")).isEqualTo("render.body.invalid");
+    assertThat(body.detail()).contains("missing required");
   }
 
   @Test
@@ -429,12 +432,11 @@ class ShapesRenderRestTest {
 
     wireRegistry(brokenRenderer(iri));
 
-    Response r = rest.render(new ShapesRenderRequestIO("broken-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("broken-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("type")).isEqualTo("render.internal-error");
-    assertThat(body.get("error")).asString().contains("synthetic unexpected failure");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.type()).contains("internal-error");
+    assertThat(body.detail()).contains("synthetic unexpected failure");
   }
 
   @Test
@@ -446,11 +448,10 @@ class ShapesRenderRestTest {
 
     wireRegistry(stubRenderer(iri, null));
 
-    Response r = rest.render(new ShapesRenderRequestIO("null-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("null-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(500);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("type")).isEqualTo("render.internal-error");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.type()).contains("internal-error");
   }
 
   @Test
@@ -461,10 +462,139 @@ class ShapesRenderRestTest {
     when(templateDAO.findByAppId("nc-1")).thenReturn(Optional.of(tmpl));
     wireRegistry(throwingRenderer(iri, new RenderException(null, "boom")));
 
-    Response r = rest.render(new ShapesRenderRequestIO("nc-1", "f-1", null));
+    Response r = rest.render(null,new ShapesRenderRequestIO("nc-1", "f-1", null));
     assertThat(r.getStatus()).isEqualTo(422);
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    assertThat(body.get("code")).isEqualTo("render.unknown-error");
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertThat(body.extensions().get("code")).isEqualTo("render.unknown-error");
+  }
+
+  // ─── V2CONV-A1b — file-rooted dispatch (E1/E2/E3/E4) ─────────────────────
+
+  /** Headers stub whose acceptable media types are exactly {@code accepts}. */
+  private static HttpHeaders acceptHeaders(MediaType... accepts) {
+    HttpHeaders h = mock(HttpHeaders.class);
+    when(h.getAcceptableMediaTypes()).thenReturn(List.of(accepts));
+    return h;
+  }
+
+  /**
+   * Renderer that captures the request + emits a PNG for image/png and a JSON
+   * view-model (echoing params via the binding role) otherwise — proves E1/E3.
+   */
+  private static final class FileRootedCapturingRenderer implements ViewRecipeRenderer {
+
+    final String iri;
+    RenderRequest captured;
+
+    FileRootedCapturingRenderer(String iri) {
+      this.iri = iri;
+    }
+
+    @Override
+    public Set<String> supportedShapeIris() {
+      return Set.of(iri);
+    }
+
+    @Override
+    public Set<String> producibleMedia() {
+      return Set.of("image/png");
+    }
+
+    @Override
+    public Optional<RenderedMedia> renderMedia(RenderRequest req, String acceptMediaType) {
+      this.captured = req;
+      if ("image/png".equals(acceptMediaType)) {
+        return Optional.of(new RenderedMedia("image/png", new byte[] { (byte) 0x89, 'P', 'N', 'G' }));
+      }
+      return Optional.empty();
+    }
+
+    @Override
+    public RenderResponse render(RenderRequest req) {
+      this.captured = req;
+      // Echo the per-call params + focusFileRefAppId back through the binding
+      // so the test can assert E1/E2 reached the renderer.
+      return new RenderResponse(
+        null,
+        req.focusShepardId(),
+        "describe",
+        List.of(
+          new RenderResponse.ChannelBindingProjection(
+            req.param("mode"),
+            req.focusFileRefAppId(),
+            null,
+            false,
+            "OK",
+            null
+          )
+        )
+      );
+    }
+
+    @Override
+    public String name() {
+      return "FileRootedCapturingRenderer";
+    }
+  }
+
+  @Test
+  void fileRootedRenderReturnsPngWithParamsAndFocusFileRef() {
+    String iri = "http://semantics.dlr.de/shepard-ui/thermography/transform#OtvisFrameShape";
+    FileRootedCapturingRenderer captor = new FileRootedCapturingRenderer(iri);
+    wireRegistry(captor);
+
+    var body = new ShapesRenderRequestIO(
+      null, "do-otvis-1", null, iri, "otvis-ref-appid", Map.of("frame", "3", "channel", "phase")
+    );
+    Response r = rest.render(acceptHeaders(MediaType.valueOf("image/png")), body);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getMediaType().toString()).isEqualTo("image/png");
+    assertThat((byte[]) r.getEntity()).hasSize(4);
+    // E1 + E2 reached the renderer.
+    assertThat(captor.captured).isNotNull();
+    assertThat(captor.captured.shapeIri()).isEqualTo(iri);
+    assertThat(captor.captured.focusFileRefAppId()).isEqualTo("otvis-ref-appid");
+    assertThat(captor.captured.param("frame")).isEqualTo("3");
+    assertThat(captor.captured.param("channel")).isEqualTo("phase");
+    // No stored template was loaded (E2) — templateDAO is never consulted.
+    assertThat(captor.captured.templateAppId()).isNull();
+  }
+
+  @Test
+  void fileRootedRenderReturnsJsonViewModelForDescribeMode() {
+    // E4 — params.mode=index → JSON describe view-model (the frames catalogue).
+    String iri = "http://semantics.dlr.de/shepard-ui/thermography/transform#OtvisFrameShape";
+    FileRootedCapturingRenderer captor = new FileRootedCapturingRenderer(iri);
+    wireRegistry(captor);
+
+    var body = new ShapesRenderRequestIO(
+      null, "do-otvis-1", null, iri, "otvis-ref-appid", Map.of("mode", "index")
+    );
+    Response r = rest.render(acceptHeaders(MediaType.APPLICATION_JSON_TYPE), body);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    var io = (ShapesRenderResponseIO) r.getEntity();
+    assertThat(io.renderer()).isEqualTo("describe");
+    assertThat(io.channelBindings()).hasSize(1);
+    // Echoed: the role carries params.mode, the selector carries focusFileRefAppId.
+    assertThat(io.channelBindings().get(0).role()).isEqualTo("index");
+    assertThat(io.channelBindings().get(0).channelSelector()).isEqualTo("otvis-ref-appid");
+  }
+
+  @Test
+  void fileRootedRenderReturns422WhenNoRendererClaimsShape() {
+    var body = new ShapesRenderRequestIO(
+      null, "do-1", null, "http://example.com/UnknownShape", "ref-1", Map.of()
+    );
+    Response r = rest.render(null, body);
+    assertThat(r.getStatus()).isEqualTo(422);
+  }
+
+  @Test
+  void returns400WhenNeitherTemplateNorShapeIriSupplied() {
+    var body = new ShapesRenderRequestIO(null, "do-1", null, null, "ref-1", Map.of());
+    Response r = rest.render(null, body);
+    assertThat(r.getStatus()).isEqualTo(400);
   }
 }

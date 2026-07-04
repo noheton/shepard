@@ -6,6 +6,7 @@ import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import lombok.Data;
@@ -16,6 +17,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.Relationship.Direction;
+import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
 @NodeEntity
 @Data
@@ -84,6 +86,29 @@ public class User implements HasId, HasAppId {
   @Property("anonymizeInProvenance")
   private boolean anonymizeInProvenance = false;
 
+  /**
+   * ROLE-GRANT-STALE-SESSION-02 — millis-since-epoch of the most recent
+   * mutation to this user's role set (grant or revoke). Stamped by
+   * {@link de.dlr.shepard.v2.admin.services.InstanceAdminService} on every
+   * role mutation; consulted by
+   * {@link de.dlr.shepard.auth.security.JwtTokenAuthService} per request.
+   *
+   * <p>If a presented JWT's {@code iat} (issued-at) is earlier than this
+   * timestamp, the token is rejected with HTTP 401 + body
+   * {@code {"error":"role_changed", ...}} so the user is forced through a
+   * sign-out + re-auth that picks up the new role set.
+   *
+   * <p>Nullable per the additive-schema rule — pre-feature {@code :User}
+   * rows simply lack the property and OGM returns {@code null}. A null
+   * value means "no recorded role change for this user" and the gate
+   * passes through (matching the existing behaviour).
+   *
+   * <p>See V98 migration + {@code aidocs/16} {@code ROLE-GRANT-STALE-SESSION-02}.
+   */
+  @DateLong
+  @Property("roleChangedAt")
+  private Date roleChangedAt;
+
   @ToString.Exclude
   @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
@@ -127,7 +152,20 @@ public class User implements HasId, HasAppId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(anonymizeInProvenance, displayName, email, firstName, lastName, orcid, preferencesJson, username);
+    result =
+      prime *
+      result +
+      Objects.hash(
+        anonymizeInProvenance,
+        displayName,
+        email,
+        firstName,
+        lastName,
+        orcid,
+        preferencesJson,
+        roleChangedAt,
+        username
+      );
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
     result = prime * result + HasId.hashcodeHelper(gitCredentials);
@@ -150,6 +188,7 @@ public class User implements HasId, HasAppId {
       Objects.equals(lastName, other.lastName) &&
       Objects.equals(orcid, other.orcid) &&
       Objects.equals(preferencesJson, other.preferencesJson) &&
+      Objects.equals(roleChangedAt, other.roleChangedAt) &&
       Objects.equals(username, other.username)
     );
   }
