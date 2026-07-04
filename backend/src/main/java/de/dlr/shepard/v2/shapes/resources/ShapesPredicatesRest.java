@@ -95,8 +95,10 @@ public class ShapesPredicatesRest {
       required = false
     )
     @QueryParam("substrate") String substrate,
-    @Parameter(description = "Maximum entries to return (1–500). Default 200.", required = false)
-    @QueryParam("limit") @DefaultValue("200") @Min(1) @Max(500) int limit
+    @Parameter(description = "Maximum entries per page (1–500). Default 200.", required = false)
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+    @Parameter(description = "Zero-based page index. Default 0.", required = false)
+    @QueryParam("page") @DefaultValue("0") @Min(0) int page
   ) {
     List<PredicateVocabularyEntryIO> all;
     if (substrate != null && !substrate.isBlank()) {
@@ -105,7 +107,10 @@ public class ShapesPredicatesRest {
       all = repository.findAll();
     }
     int total = all.size();
-    List<PredicateVocabularyEntryIO> page = all.subList(0, Math.min(limit, total));
-    return Response.ok(new PagedResponseIO<>(page, total, 0, limit)).build();
+    int from = page * pageSize;
+    List<PredicateVocabularyEntryIO> items = from >= total
+      ? List.of()
+      : all.subList(from, Math.min(from + pageSize, total));
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 }
