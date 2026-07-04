@@ -7,6 +7,7 @@ import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
+import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -67,6 +68,9 @@ public class UserGroupV2Rest {
   @Inject
   UserGroupService service;
 
+  @Inject
+  UserGroupSearchService searchService;
+
   private static final String PT_BAD_REQUEST = "/problems/user-groups.bad-request";
   private static final int MAX_MEMBERS = 500;
 
@@ -78,8 +82,11 @@ public class UserGroupV2Rest {
   @GET
   @Operation(
     operationId = "listUserGroups",
-    summary = "List all user groups the caller can read.",
-    description = "Returns user groups the caller has at least Read permission on. Supports pagination and ordering."
+    summary = "List or search user groups.",
+    description =
+      "Returns user groups the caller has at least Read permission on. " +
+      "When `q` is supplied, filters by name (OR-contains). " +
+      "Without `q`, returns all accessible groups with pagination and ordering."
   )
   @APIResponse(
     responseCode = "200",
@@ -87,16 +94,25 @@ public class UserGroupV2Rest {
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
+  @Parameter(name = "q", description = "Optional name search (case-insensitive contains). When set, ordering params are ignored.")
   @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
   @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "When true, sort descending. Default false (ascending).")
   public Response listUserGroups(
+    @QueryParam("q") String q,
     @QueryParam(Constants.QP_PAGE) @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
+    if (q != null && !q.isBlank()) {
+      List<UserGroupV2IO> items = searchService.searchByText(q).stream()
+        .map(UserGroupV2IO::new)
+        .toList();
+      long count = items.size();
+      return Response.ok(new PagedResponseIO<>(items, count, 0, count == 0 ? 1 : (int) count)).build();
+    }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
     long total = service.countAllUserGroups();
