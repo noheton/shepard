@@ -48,7 +48,7 @@ function v2BaseUrl(): string {
 function jupyterLaunchUrl(appId: string): string | null {
   const cfg = jupyterConfig.value;
   if (!cfg || !cfg.enabled || !cfg.hubUrl) return null;
-  const downloadUrl = `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  const downloadUrl = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
   const hubBase = cfg.hubUrl.replace(/\/$/, "");
   return `${hubBase}/hub/spawn?file=${encodeURIComponent(downloadUrl)}`;
 }
@@ -60,7 +60,7 @@ function openInJupyter(appId: string) {
 }
 
 function downloadUrl(appId: string): string {
-  return `${v2BaseUrl()}/v2/files/${encodeURIComponent(appId)}/content`;
+  return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
 }
 
 function formatBytes(bytes: number | null | undefined): string {

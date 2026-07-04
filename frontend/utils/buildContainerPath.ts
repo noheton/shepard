@@ -22,3 +22,26 @@ export function buildContainerPath(
     }
   }
 }
+
+export function buildContainerPathByAppId(
+  containerType: ContainerType,
+  containerAppId: string,
+) {
+  switch (containerType) {
+    case "FILE": {
+      return fileContainerPath + containerAppId;
+    }
+    case "SPATIALDATA": {
+      return spatialdataContainerPath + containerAppId;
+    }
+    case "STRUCTUREDDATA": {
+      return structureddataContainerPath + containerAppId;
+    }
+    case "TIMESERIES": {
+      return timeseriesContainerPath + containerAppId;
+    }
+    default: {
+      throw new Error("Unknown container type: " + containerType);
+    }
+  }
+}

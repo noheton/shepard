@@ -131,7 +131,7 @@ function categoryColor(category: string): string {
 
 function formatBody(body: string): string {
   // Strip markdown for the subtitle snippet — full body could be rendered in future
-  return body.replace(/[*_`#>\[\]]/g, "").slice(0, 120);
+  return body.replace(/[*_`#>[\]]/g, "").slice(0, 120);
 }
 
 function formatTime(millis: number): string {

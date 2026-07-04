@@ -110,6 +110,21 @@ public class TypedPredecessorTest {
       "validate() must throw InvalidBodyException for blank predecessorAppId");
   }
 
+  // ── QM1b — fair2r:concession is now part of the allowed vocabulary ──────
+
+  @Test
+  public void qm1b_fair2rConcession_isAllowed() {
+    TypedPredecessorIO tp = new TypedPredecessorIO(
+      "01930a2b-0000-7000-0000-000000000099",
+      "fair2r:concession"
+    );
+    // Must not throw — fair2r:concession is part of ALLOWED_TYPES post-QM1b.
+    tp.validate();
+    assertEquals("fair2r:concession", tp.effectiveRelationshipType());
+    assertEquals(true, TypedPredecessorIO.ALLOWED_TYPES.contains("fair2r:concession"),
+      "QM1b: ALLOWED_TYPES must include 'fair2r:concession'");
+  }
+
   // ── Test 5: serialise/deserialise roundtrip ───────────────────────────────
 
   @Test

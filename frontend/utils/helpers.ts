@@ -67,8 +67,15 @@ export function toDateTimeStringWithMilliSeconds(date: Date) {
   return `${dd}.${mm}.${yyyy}, ${hh}:${MM}:${ss}:${SSS}`;
 }
 
-export function toShortDateString(date: Date | null) {
-  return date?.toLocaleDateString("en-UK", {
+export function toShortDateString(date: Date | string | number | null | undefined) {
+  if (date == null) return undefined;
+  // JSON carries dates as ISO strings, so callers often pass a string/number
+  // despite the historical `Date` typing. Coerce before formatting — a bare
+  // `string?.toLocaleDateString` is `undefined` and throws "is not a function",
+  // which crashed the component setup and blanked the page (BUG-DATE-COERCE).
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toLocaleDateString("en-UK", {
     year: "numeric",
     month: "short",
     day: "numeric",

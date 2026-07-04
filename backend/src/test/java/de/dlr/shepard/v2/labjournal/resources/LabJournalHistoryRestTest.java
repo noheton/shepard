@@ -11,12 +11,14 @@ import de.dlr.shepard.context.labJournal.daos.LabJournalEntryDAO;
 import de.dlr.shepard.context.labJournal.daos.LabJournalEntryRevisionDAO;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntryRevision;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.io.LabJournalRevisionIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -76,7 +78,7 @@ class LabJournalHistoryRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(ENTRY_APP_ID)).thenReturn(entry);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
     when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of());
   }
 
@@ -95,37 +97,40 @@ class LabJournalHistoryRestTest {
     return rev;
   }
 
+  @SuppressWarnings("unchecked")
+  private static PagedResponseIO<LabJournalRevisionIO> body(Response r) {
+    return (PagedResponseIO<LabJournalRevisionIO>) r.getEntity();
+  }
+
   // ── happy-path tests ─────────────────────────────────────────────────────
 
   @Test
   void history_returns200WithRevisions_whenSeveralEditsExist() {
-    // Revisions already ordered newest first by the DAO
     var rev2 = makeRevision("rev-app-id-2", "version 2 content", 2);
     var rev1 = makeRevision("rev-app-id-1", "original content", 1);
     when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev2, rev1));
 
-    Response r = resource.history(ENTRY_APP_ID, sc);
+    Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
-    List<LabJournalRevisionIO> body = (List<LabJournalRevisionIO>) r.getEntity();
-    assertThat(body).hasSize(2);
-    // Newest first: revision 2 at index 0
-    assertThat(body.get(0).getRevisionNumber()).isEqualTo(2);
-    assertThat(body.get(0).getContent()).isEqualTo("version 2 content");
-    assertThat(body.get(0).getAppId()).isEqualTo("rev-app-id-2");
-    // Older revision at index 1
-    assertThat(body.get(1).getRevisionNumber()).isEqualTo(1);
-    assertThat(body.get(1).getContent()).isEqualTo("original content");
+    var b = body(r);
+    assertThat(b.total()).isEqualTo(2);
+    assertThat(b.items()).hasSize(2);
+    assertThat(b.items().get(0).getRevisionNumber()).isEqualTo(2);
+    assertThat(b.items().get(0).getContent()).isEqualTo("version 2 content");
+    assertThat(b.items().get(0).getAppId()).isEqualTo("rev-app-id-2");
+    assertThat(b.items().get(1).getRevisionNumber()).isEqualTo(1);
+    assertThat(b.items().get(1).getContent()).isEqualTo("original content");
   }
 
   @Test
-  void history_returns200WithEmptyList_whenEntryNeverEdited() {
-    // DAO already returns empty list from setUp
-    Response r = resource.history(ENTRY_APP_ID, sc);
+  void history_returns200WithEmptyItems_whenEntryNeverEdited() {
+    Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
-    List<LabJournalRevisionIO> body = (List<LabJournalRevisionIO>) r.getEntity();
-    assertThat(body).isEmpty();
+    var b = body(r);
+    assertThat(b.items()).isEmpty();
+    assertThat(b.total()).isEqualTo(0);
   }
 
   // ── auth / not-found tests ────────────────────────────────────────────────
@@ -134,35 +139,35 @@ class LabJournalHistoryRestTest {
   void history_returns401_whenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
 
-    assertThat(resource.history(ENTRY_APP_ID, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.history(ENTRY_APP_ID, 0, 50, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void history_returns403_whenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
 
-    assertThat(resource.history(ENTRY_APP_ID, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.history(ENTRY_APP_ID, 0, 50, sc).getStatus()).isEqualTo(403);
   }
 
   @Test
   void history_returns404_whenEntryNotFound() {
     when(labJournalEntryDAO.findByAppId("unknown-app-id")).thenReturn(null);
 
-    assertThat(resource.history("unknown-app-id", sc).getStatus()).isEqualTo(404);
+    assertThat(resource.history("unknown-app-id", 0, 50, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void history_returns404_whenEntryIsDeleted() {
     entry.setDeleted(true);
 
-    assertThat(resource.history(ENTRY_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.history(ENTRY_APP_ID, 0, 50, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void history_returns404_whenDataObjectIsNull() {
     entry.setDataObject(null);
 
-    assertThat(resource.history(ENTRY_APP_ID, sc).getStatus()).isEqualTo(404);
+    assertThat(resource.history(ENTRY_APP_ID, 0, 50, sc).getStatus()).isEqualTo(404);
   }
 
   // ── IO mapping ────────────────────────────────────────────────────────────
@@ -172,16 +177,71 @@ class LabJournalHistoryRestTest {
     var rev = makeRevision("rev-app-42", "old text", 1);
     when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev));
 
-    Response r = resource.history(ENTRY_APP_ID, sc);
-    List<LabJournalRevisionIO> body = (List<LabJournalRevisionIO>) r.getEntity();
+    Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
+    var b = body(r);
 
-    assertThat(body).hasSize(1);
-    LabJournalRevisionIO io = body.get(0);
+    assertThat(b.items()).hasSize(1);
+    LabJournalRevisionIO io = b.items().get(0);
     assertThat(io.getAppId()).isEqualTo("rev-app-42");
     assertThat(io.getContent()).isEqualTo("old text");
     assertThat(io.getRevisionNumber()).isEqualTo(1);
     assertThat(io.getRevisedAt()).isNotNull();
-    // revisedBy should come from the user's username (DisplayNameResolver redacts partial)
     assertThat(io.getRevisedBy()).isNotNull();
+  }
+
+  // ── pagination tests ──────────────────────────────────────────────────────
+
+  @Test
+  void history_pagination_secondPageReturnsSlice() {
+    // 5 revisions total, page=1, pageSize=2 → items [2,3] (0-indexed)
+    var revs = IntStream.rangeClosed(1, 5)
+        .mapToObj(i -> makeRevision("rev-" + i, "content-" + i, i))
+        .toList();
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(revs);
+
+    Response r = resource.history(ENTRY_APP_ID, 1, 2, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    var b = body(r);
+    assertThat(b.total()).isEqualTo(5);
+    assertThat(b.page()).isEqualTo(1);
+    assertThat(b.pageSize()).isEqualTo(2);
+    assertThat(b.items()).hasSize(2);
+    assertThat(b.items().get(0).getRevisionNumber()).isEqualTo(3); // index 2
+    assertThat(b.items().get(1).getRevisionNumber()).isEqualTo(4); // index 3
+  }
+
+  @Test
+  void history_pagination_beyondEndReturnsEmptyItems() {
+    var rev1 = makeRevision("rev-1", "content-1", 1);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev1));
+
+    Response r = resource.history(ENTRY_APP_ID, 5, 50, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    var b = body(r);
+    assertThat(b.total()).isEqualTo(1);
+    assertThat(b.items()).isEmpty();
+  }
+
+  @Test
+  void history_pagination_xTotalCountHeaderPresent() {
+    var rev1 = makeRevision("rev-1", "content-1", 1);
+    var rev2 = makeRevision("rev-2", "content-2", 2);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev1, rev2));
+
+    Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("2");
+  }
+
+  @Test
+  void history_pagination_emptyHistoryXTotalCountIsZero() {
+    // DAO returns empty list from setUp
+    Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("0");
   }
 }

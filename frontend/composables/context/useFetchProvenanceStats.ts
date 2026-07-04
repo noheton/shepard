@@ -1,6 +1,6 @@
 import {
   ProvenanceApi,
-  type ProvenanceStatsIO,
+  type ProvenanceStats,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
@@ -24,10 +24,10 @@ export interface UseFetchProvenanceStatsOptions {
    */
   scope: string;
   /**
-   * appId (for `scope=collection`) or username (for `scope=user`).
+   * Collection appId (for `scope=collection`) or username (for `scope=user`).
    * Ignored for `scope=instance`.
    */
-  id?: string;
+  entityId?: string;
   /**
    * Inclusive lower bound on `startedAt` (millis since epoch). Defaults
    * to "30 days ago" when omitted.
@@ -43,7 +43,7 @@ export interface UseFetchProvenanceStatsOptions {
 const THIRTY_DAYS_MILLIS = 30 * 24 * 60 * 60 * 1000;
 
 export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
-  const stats = ref<ProvenanceStatsIO | null>(null);
+  const stats = ref<ProvenanceStats | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -66,7 +66,7 @@ export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
     // hydrating the Collection.
     if (
       (opts.scope === "collection" || opts.scope === "user") &&
-      !opts.id
+      !opts.entityId
     ) {
       stats.value = null;
       return;
@@ -75,9 +75,9 @@ export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
     isLoading.value = true;
     error.value = null;
     useV2ShepardApi(ProvenanceApi)
-      .value.getStats({
+      .value.stats({
         scope: opts.scope,
-        id: opts.id,
+        entityId: opts.entityId,
         since: effectiveSince(),
         until: untilMillis.value,
       })

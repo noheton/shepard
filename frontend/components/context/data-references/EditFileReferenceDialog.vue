@@ -2,7 +2,8 @@
 /**
  * REF-EDIT-3 — rename dialog for a singleton FileReference.
  *
- * Calls PATCH /v2/files/{appId} with { name: newName } on save.
+ * Calls PATCH /v2/references/{appId} (V2CONV-A2 unified surface) with
+ * { name: newName } on save.
  * The mutable field is only `name` in FR1b; the embedded file bytes
  * (filename, md5, fileSize) are immutable after upload.
  *
@@ -73,7 +74,10 @@ async function save() {
   saving.value = true;
   try {
     const headers = await authHeaders();
-    const url = `${v2BaseUrl()}/v2/files/${props.fileReferenceAppId}`;
+    // V2CONV-A2: rename via the unified PATCH /v2/references/{appId} surface
+    // (was the per-kind PATCH /v2/files/{appId}). The kind is resolved from
+    // the entity server-side; the body shape ({ name }) is unchanged.
+    const url = `${v2BaseUrl()}/v2/references/${props.fileReferenceAppId}`;
     const response = await fetch(url, {
       method: "PATCH",
       headers,

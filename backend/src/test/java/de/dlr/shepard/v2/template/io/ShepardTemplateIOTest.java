@@ -43,4 +43,22 @@ class ShepardTemplateIOTest {
     ShepardTemplateIO io = ShepardTemplateIO.from(buildTemplate(null));
     assertEquals("(anonymous)", io.getCreatedBy());
   }
+
+  // ────────────────────────────────────────────────────────────────────
+  // TEMPLATE-ICONS-1 — iconKey passes through ShepardTemplateIO.from()
+  // ────────────────────────────────────────────────────────────────────
+
+  @Test
+  void iconKeyIsPassedThroughWhenSet() {
+    ShepardTemplate t = buildTemplate("alice");
+    t.setIconKey("mdi-layers");
+    ShepardTemplateIO io = ShepardTemplateIO.from(t);
+    assertEquals("mdi-layers", io.getIconKey());
+  }
+
+  @Test
+  void iconKeyDefaultsToNullWhenUnset() {
+    ShepardTemplateIO io = ShepardTemplateIO.from(buildTemplate("alice"));
+    assertNull(io.getIconKey());
+  }
 }

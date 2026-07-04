@@ -275,6 +275,29 @@
   category     = {papers}
 }
 
+@article{salvadoresBioportalUsage2013,
+  author       = {Salvadores, Manuel and Alexander, Paul R. and Musen, Mark A. and Noy, Natalya F.},
+  title        = {{BioPortal}: Enhanced Functionality via New Web Services from the National Center for Biomedical Ontology to Access and Use Ontologies in Software Applications},
+  journal      = {Semantic Web},
+  year         = {2013},
+  volume       = {4},
+  number       = {3},
+  pages        = {277--284},
+  url          = {https://arxiv.org/abs/1610.09160},
+  note         = {Ontology-browser usage study. Cited in docs/reference/ontology-term-search and frontend/utils/ontologyTermTree as evidence for the namespace-derived two-level hierarchy fallback used by the L4 term-search surface when no explicit broader/narrower edges are available.},
+  category     = {papers}
+}
+
+@misc{poveda2020fairUriDesign,
+  author       = {Poveda-Villalón, María and Espinoza-Arias, Paola and Garijo, Daniel and Corcho, Oscar},
+  title        = {Coming to Terms with {FAIR} Ontologies},
+  year         = {2020},
+  howpublished = {arXiv preprint},
+  url          = {https://arxiv.org/abs/2003.13084},
+  note         = {FAIR vocabulary / ontology URI-design guidance (hash vs. slash namespaces). Cited in docs/reference/ontology-term-search and frontend/utils/ontologyTermTree for the IRI-split convention behind the L4 namespace tree.},
+  category     = {papers}
+}
+
 % ============================================================
 % POLICY (reports, position statements, white papers)
 % ============================================================
@@ -2215,5 +2238,53 @@
   year         = {2019},
   note         = {Casbin authors' framing of the RBAC/ABAC/ReBAC unification model that the Casbin policy engine implements. Cited from aidocs/platform/110 \S 3 as background for the Option C row's flexibility column; Casbin is the lighter-weight alternative to a Zanzibar-style engine when org-scale consistency is not a requirement.},
   url          = {https://casbin.org/docs/overview},
+  category     = {papers}
+}
+
+@misc{dashFormsKnublauch,
+  author       = {Knublauch, Holger},
+  title        = {{Form Generation using SHACL and DASH}},
+  howpublished = {Specification / working document, datashapes.org},
+  url          = {https://www.datashapes.org/forms.html},
+  note         = {The de-facto-standard SHACL form-generation vocabulary: dash:editor / dash:viewer annotations, the dash:Editor widget catalogue, dash:singleLine, and the constraint-derived default-editor scoring algorithm. Adopted (not re-minted) by aidocs/integrations/125 \S 4 as the core widget-hint layer; Shepard extends it only via custom dash:Editor individuals (shepard-ui namespace) per the spec's sanctioned extension pattern.},
+  category     = {standards}
+}
+
+@misc{shaperoneHypermedia,
+  author       = {Pluskiewicz, Tomasz},
+  title        = {{shaperone: Form UI elements driven by SHACL Shapes}},
+  howpublished = {Software (MIT), hypermedia-app},
+  url          = {https://github.com/hypermedia-app/shaperone},
+  note         = {Most active OSS SHACL form renderer (web components, RDF/JS); consumes DASH editor annotations and demonstrates SPARQL-backed dash:AutoCompleteEditor. Cited from aidocs/integrations/125 \S 1.3 as the reference implementation FORM-DESCRIPTOR-1's DASH scoring should track.},
+  category     = {software}
+}
+
+@article{oconnorSpreadsheetMetadata2024,
+  author       = {O'Connor, Martin J. and Gon\c{c}alves, Rafael S. and Willrett, Debra and Graybeal, John and Musen, Mark A. and others},
+  title        = {{Ensuring Adherence to Standards in Experiment-Related Metadata Entered Via Spreadsheets}},
+  journal      = {Scientific Data},
+  year         = {2024},
+  url          = {https://consensus.app/papers/details/f7dc92f7ff23555db07dd12fe79707f4/},
+  note         = {CEDAR template-driven spreadsheet metadata entry with controlled-terminology cell validation and interactive error-fixing (HuBMAP deployment). Peer-reviewed precedent for the shape-spine Excel round-trip in aidocs/integrations/125 \S 6 (BTKVS-C2).},
+  category     = {papers}
+}
+
+@article{sundaramTotalRecall2025,
+  author       = {Sundaram, Sowmya S. and others},
+  title        = {{Toward total recall: Enhancing data FAIRness through AI-driven metadata standardization}},
+  journal      = {GigaScience},
+  year         = {2025},
+  url          = {https://consensus.app/papers/details/eec3996036a45e31acfed3b2b1488c4c/},
+  note         = {CEDAR-template-guided metadata standardisation lifted dataset retrieval recall from 17.65\% to 62.87\% — the quantified payoff of structured, template-enforced capture cited in the Role 5 (RDM) verdict, aidocs/integrations/125 \S 7.},
+  category     = {papers}
+}
+
+@article{karimovaFlexibleMetadata2019,
+  author       = {Karimova, Yulia},
+  title        = {{Flexible metadata models and controlled vocabularies for research data description in multiple domains}},
+  journal      = {Bulletin of the IEEE Technical Committee on Digital Libraries},
+  year         = {2019},
+  url          = {https://consensus.app/papers/details/b679417efd4f5f6b972662b2301e8d58/},
+  note         = {Controlled-vocabulary-backed description measurably improves metadata quality and ease of value entry in multi-domain research data repositories. Cited in the Role 5 verdict, aidocs/integrations/125 \S 7.},
   category     = {papers}
 }

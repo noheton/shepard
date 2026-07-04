@@ -1,5 +1,9 @@
 <script setup lang="ts">
-defineProps<{ collectionId: number }>();
+defineProps<{
+  collectionId: number;
+  /** UUID v7 — when supplied, search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
+}>();
 
 const predecessorIds = defineModel<number[]>("predecessorIds", {
   required: true,
@@ -19,6 +23,7 @@ const predecessorIds = defineModel<number[]>("predecessorIds", {
         input-label="Predecessor"
         :initial-data-object-id="predecessorDO ?? undefined"
         :collection-id="collectionId"
+        :collection-app-id="collectionAppId"
         @search-ended="
           value => {
             const newValue = value?.id ?? -1;

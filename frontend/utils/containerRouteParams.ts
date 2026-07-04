@@ -1,7 +1,10 @@
 import type { RouteParamsGeneric } from "vue-router";
 
 export interface ContainerRouteParams {
-  containerId: number;
+  // V2-SWEEP-003-2: changed from number — routes now carry either a UUID-v7 appId
+  // or a numeric string (V1-EXCEPTION for HeaderBar search). Accessors detect which
+  // via /^\d+$/ and branch to v1 or v2 fetch accordingly.
+  containerId: string;
 }
 
 export const isContainerRouteParams = (
@@ -25,14 +28,10 @@ export function parseContainerRouteParams(
   };
 }
 
-function parseContainerId(routeParams: RouteParamsGeneric): number {
-  if (
-    routeParams.containerId &&
-    typeof routeParams.containerId === "string" &&
-    !Number.isNaN(routeParams.containerId)
-  ) {
-    return parseInt(routeParams.containerId);
-  } else {
-    throw new Error("Path does not contain container id!");
+function parseContainerId(routeParams: RouteParamsGeneric): string {
+  const raw = routeParams.containerId;
+  if (typeof raw === "string" && raw.length > 0) {
+    return raw; // Return as-is — accessor's /^\d+$/ guard handles numeric vs UUID.
   }
+  throw new Error("Path does not contain container id!");
 }

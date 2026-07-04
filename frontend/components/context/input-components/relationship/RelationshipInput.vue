@@ -11,6 +11,8 @@ import {
 
 const props = defineProps<{
   collectionId: number;
+  /** UUID v7 — when supplied, DataObject search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
   /**
    * REF-EDIT-TPL-6 — Optional template-driven defaults for the URI sub-form.
    * `defaultUriRelationship` pre-fills the relationship label when the URI
@@ -122,6 +124,7 @@ watch(relationshipType, newType => {
     <v-row class="pt-10">
       <DataObjectAutocomplete
         :collection-id="collectionId"
+        :collection-app-id="collectionAppId"
         :input-label="inputLabel"
         @search-ended="
           value => {

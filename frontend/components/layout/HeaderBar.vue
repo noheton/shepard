@@ -25,6 +25,10 @@
       <!-- Desktop: inline nav links -->
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
+      <!-- PROJ-NAV-1 — Projects entry between Collections and Containers
+           (aidocs/integrations/121-project-and-subcollections.md §4.2).
+           Projects bundle non-exclusive child Collections via urn:shepard:partOf. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/projects">Projects</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
       <!-- TOOLS-NAV-01 (2026-05-30) — top-level Tools menu lifts six
            research-tooling routes from 4-click depth (avatar → /me →
@@ -114,7 +118,8 @@
                 density="compact"
                 :title="c.collectionName"
                 data-testid="header-search-result-collection"
-                @click="onPick('collection', c.collectionId)"
+                :disabled="!c.collectionAppId"
+                @click="onPickCollection(c)"
               >
                 <template #append>
                   <v-chip size="x-small" variant="tonal" color="primary">collection</v-chip>
@@ -218,6 +223,10 @@
     </div>
 
     <template #append>
+      <!-- Persistent contextual help: a visible "?" that opens the doc for the
+           current page (UX finding 2026-06-13 — Help was reachable only behind
+           the overflow menu, so a first-time researcher couldn't find it). -->
+      <ContextualHelpButton />
       <!-- Desktop: secondary nav behind overflow menu -->
       <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">
@@ -360,6 +369,8 @@
     <v-list nav>
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
+      <!-- PROJ-NAV-1: mirror the desktop Projects entry on the mobile drawer. -->
+      <v-list-item title="Projects" to="/projects" prepend-icon="mdi-folder-multiple" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
       <!-- TOOLS-NAV-01 (2026-05-30) — mirror of the desktop Tools entry. -->
       <v-list-item title="Tools" to="/tools" prepend-icon="mdi-tools" @click="mobileDrawerOpen = false" />
@@ -404,6 +415,7 @@ import { useTheme } from "vuetify";
 import type { ContainerType } from "@dlr-shepard/backend-client";
 import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
 import type { DataObjectSearchResult } from "~/composables/context/useDataObjectSearch";
+import type { MyCollectionSearchResult } from "~/composables/context/useCollectionSearch";
 import type { MyContainerSearchResult } from "~/composables/context/useContainerSearch";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
@@ -606,17 +618,21 @@ function closeDropdown() {
   dropdownOpen.value = false;
 }
 
-function onPick(kind: "collection", id: number) {
-  if (kind === "collection") {
-    closeDropdown();
-    void router.push(`/collections/${id}`);
-  }
+// V2-LINKS: navigate on the UUID-v7 appId only. The search results carry the
+// collection/dataobject appId on the wire; the numeric id 404s on the v2
+// detail route (operator-surfaced /collections/367014 dead link).
+function onPickCollection(c: MyCollectionSearchResult) {
+  if (!c.collectionAppId) return;
+  closeDropdown();
+  void router.push(`/collections/${c.collectionAppId}`);
 }
 
 function onPickDataObject(d: DataObjectSearchResult) {
-  if (d.collectionId === undefined) return;
+  if (!d.dataObjectAppId || !d.parentCollectionAppId) return;
   closeDropdown();
-  void router.push(`/collections/${d.collectionId}/dataobjects/${d.dataObjectId}`);
+  void router.push(
+    `/collections/${d.parentCollectionAppId}/dataobjects/${d.dataObjectAppId}`,
+  );
 }
 
 function onPickContainer(c: MyContainerSearchResult) {
@@ -625,6 +641,11 @@ function onPickContainer(c: MyContainerSearchResult) {
   if (route) void router.push(route);
 }
 
+// V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16): container detail
+// pages fetch via the v1-generated `getXContainer({ containerId })`, whose path
+// resolves only the numeric Neo4j id (the frozen v1 container GET 404s on an
+// appId). Keep numeric here until the container accessors move to a v2
+// appId-keyed GET.
 function containerRoute(t: ContainerType, id: number): string | null {
   switch (t) {
     case "FILE":

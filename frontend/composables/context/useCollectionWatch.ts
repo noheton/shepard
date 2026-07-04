@@ -75,14 +75,15 @@ export function useCollectionWatch(collectionAppId: Ref<string | null | undefine
     }
     loading.value = true;
     try {
-      const [watchers, username] = await Promise.all([
-        api.value.listWatchers({ collectionAppId: appId }),
+      const [watchersPage, username] = await Promise.all([
+        api.value.listCollectionWatches({ collectionAppId: appId }),
         resolveUsername(meApi),
       ]);
       if (!username) {
         isWatching.value = false;
         return;
       }
+      const watchers = (watchersPage.items ?? []) as Array<{ username?: string }>;
       isWatching.value = watchers.some((w) => w.username === username);
     } catch {
       // List endpoint returned non-2xx (403 = lost Read on collection,

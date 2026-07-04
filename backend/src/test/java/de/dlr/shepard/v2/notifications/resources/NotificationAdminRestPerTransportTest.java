@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.notifications.io.TestNotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
@@ -108,7 +109,7 @@ class NotificationAdminRestPerTransportTest {
   // ─── transportId branch ────────────────────────────────────────────────
 
   @Test
-  void sendTest_unknownTransportId_returns404() {
+  void sendTest_unknownTransportId_returns404WithProblemBody() {
     TestNotificationIO body = new TestNotificationIO();
     body.setTransportId("missing");
     body.setTitle("hi");
@@ -117,6 +118,9 @@ class NotificationAdminRestPerTransportTest {
 
     Response r = rest.sendTest(body, sc);
     assertEquals(404, r.getStatus());
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    assertEquals("/problems/notifications.not-found", entity.type());
+    assertTrue(entity.detail().contains("missing"), "detail should include the unknown appId");
     verify(registry, never()).resolve(any());
   }
 
@@ -204,8 +208,8 @@ class NotificationAdminRestPerTransportTest {
     Response r = rest.sendTest(body, sc);
 
     assertEquals(502, r.getStatus());
-    String entity = (String) r.getEntity();
-    assertTrue(entity.contains("boom"), "error message included in response body");
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    assertTrue(entity.detail().contains("boom"), "error message included in response body");
     ArgumentCaptor<NotificationTransport> savedCap = ArgumentCaptor.forClass(NotificationTransport.class);
     verify(transportService).save(savedCap.capture());
     assertEquals("FAIL", savedCap.getValue().getLastTestResult());

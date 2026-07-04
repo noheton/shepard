@@ -16,8 +16,10 @@ const STORAGE_KEY = "shepard:pinnedChannels";
 export interface PinnedChannel {
   /** Stable single-field channel identity (UUID v4+, via TS-IDc). */
   shepardId: string;
-  /** Postgres serial id of the owning TimeseriesContainer (needed for data fetch). */
+  /** Postgres serial id of the owning TimeseriesContainer (V1-EXCEPTION: nav-only). */
   containerId: number;
+  /** appId of the owning TimeseriesContainer (for /v2/ data fetch after APISIMP-TSCONT-APPID-KEY). */
+  containerAppId?: string;
   /** Human-readable label (e.g. "LPT-001 · rms_g"). */
   channelName: string;
   /**

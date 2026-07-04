@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import type { UserGroup } from "@dlr-shepard/backend-client";
+import type { UserGroupV2 } from "~/composables/context/useUserGroupsV2";
 
 defineProps<{
-  userGroups: UserGroup[];
+  userGroups: UserGroupV2[];
   loading: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "select-user-group", userGroup: UserGroup): void;
+  (e: "select-user-group", userGroup: UserGroupV2): void;
 }>();
 
 const headers = [
-  { title: "ID", key: "id", sortable: true, width: "20%" },
-  { title: "Name", key: "name", sortable: true, width: "40%" },
+  { title: "Name", key: "name", sortable: true, width: "60%" },
   { title: "Created at", key: "createdAt", sortable: true },
   {
     title: "",
@@ -42,9 +41,6 @@ const headers = [
         v-bind="rowProps"
         @click="emit('select-user-group', rowProps.item)"
       >
-        <template #[`item.id`]>
-          <span class="text-textbody1">#{{ rowProps.item.id }}</span>
-        </template>
         <template #[`item.name`]>
           <span class="text-textbody1">{{ rowProps.item.name }}</span>
         </template>

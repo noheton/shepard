@@ -7,12 +7,16 @@
  * and assert against monotonic mock call counts. The "unauthenticated"
  * case is the load-skipped invariant; the authenticated transition is the
  * eventual-consistency invariant.
+ *
+ * BUG-COLL-APPID-ROUTE-003 (2026-06-02) — the v1 `getCollection` import was
+ * dropped in favour of a raw `fetch` against `/v2/collections/{id}`. The
+ * stub for `useShepardApi` is gone; `fetch` is stubbed instead for the v2
+ * round-trip.
  */
 import { describe, it, expect, vi } from "vitest";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 
 const mockGetPreferences = vi.fn().mockResolvedValue({});
-const mockGetCollection = vi.fn();
 const mockStatusRef = ref<"authenticated" | "unauthenticated" | "loading">(
   "unauthenticated",
 );
@@ -26,11 +30,6 @@ vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
     },
   }),
 }));
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: () => ({
-    value: { getCollection: mockGetCollection },
-  }),
-}));
 
 (globalThis as unknown as Record<string, unknown>).useAuth = () => ({
   status: mockStatusRef,
@@ -38,6 +37,17 @@ vi.mock("~/composables/common/api/useShepardApi", () => ({
   refresh: vi.fn(),
   signIn: vi.fn(),
 });
+(globalThis as unknown as Record<string, unknown>).useRuntimeConfig = () => ({
+  public: { backendApiUrl: "http://localhost:8080/shepard/api" },
+});
+vi.stubGlobal(
+  "fetch",
+  vi.fn().mockResolvedValue({
+    ok: false,
+    status: 404,
+    text: () => Promise.resolve(""),
+  }),
+);
 
 describe("useWatchedCollections — AUTH-API-CALLS-UNGATED", () => {
   it("does NOT call getPreferences when status is unauthenticated", async () => {

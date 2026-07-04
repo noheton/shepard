@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  V2CONV-A6 — shepard-plugin-krl-interpreter Java module.
+
+  Extracts the in-tree KRL trajectory transform subsystem from
+  `backend/src/main/java/de/dlr/shepard/v2/transform/krl/` into this
+  drop-in Tier-1 plugin JAR, dissolving the bespoke core KRL path.
+
+  The plugin carries:
+    * `KrlInterpreterPluginManifest` — PluginManifest SPI entry; surfaces
+      `krl-interpreter` in `GET /v2/admin/plugins`.
+    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest` pointing
+      at the manifest class.
+    * `KrlTrajectoryTransformExecutor` — TransformExecutor SPI entry;
+      routes MAPPING_RECIPE materializations for KrlTrajectoryShape IRI.
+    * `META-INF/services/de.dlr.shepard.spi.transform.TransformExecutor`
+      pointing at the executor class.
+    * `KrlInterpreterConfig`, `KrlSidecarClient`, `KrlTrajectoryService`,
+      `KrlTrajectoryParams` — CDI beans and records that back the executor.
+
+  Build order (same two-pass dance as every Tier-1 plugin):
+
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/krl-interpreter && mvn -DskipTests install
+    $ cd backend && mvn package
+
+  See `plugins/krl-interpreter/docs/reference.md` for the operator runbook
+  and `aidocs/platform/191-v2-surface-convergence.md §3` for the extraction
+  rationale.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-krl-interpreter</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — KRL interpreter (MAPPING_RECIPE transform executor)</name>
+  <description>
+    KRL trajectory interpret as a MAPPING_RECIPE TransformExecutor. Resolves
+    `.src` + URDF FileReferences, invokes the KRL interpreter sidecar, and
+    mints a derived joint-trajectory TimeseriesReference (REFERENCE result).
+    Extracted from backend/src/main/java/de/dlr/shepard/v2/transform/krl/
+    per V2CONV-A6 (aidocs/platform/191 §3 — core→plugin extractions).
+    The `KrlInterpreterPluginManifest` SPI entry surfaces this plugin in
+    GET /v2/admin/plugins. The `KrlTrajectoryTransformExecutor` ServiceLoader
+    SPI entry routes materializations for the KrlTrajectoryShape IRI.
+    See aidocs/16 V2CONV-A6 + aidocs/44 KRL row.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>6.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      backend as provided — the plugin needs the backend's core types
+      (PluginManifest SPI, TransformExecutor SPI, TransformRequest/Result,
+      TransformException, SingletonFileReferenceService, DataObjectService,
+      EntityIdResolver, TimeseriesContainerService, TimeseriesService,
+      TimeseriesReferenceService, ProvenanceService, NeoConnector, etc.)
+      at compile time. `provided` means the plugin JAR does NOT bundle
+      backend.jar — at runtime the backend image carries its own classes.
+
+      Exclusions: prevent circular deps through the backend's `with-plugins`
+      profile. All plugins in that profile must be excluded here so Maven
+      does not pull them in transitively (via the test-jar dep, scope=test).
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-trace3d</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <!--
+          Self-exclusion: prevents the circular reference where backend's
+          with-plugins profile pulls shepard-plugin-krl-interpreter back in,
+          causing a "Could not find artifact" during plugin build.
+        -->
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+</exclusions>
+    </dependency>
+
+    <!-- Quarkus runtime types used in plugin source. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Jackson — sidecar client serialises/deserialises JSON. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- MicroProfile Config — @ConfigProperty injection in KrlInterpreterConfig. -->
+    <dependency>
+      <groupId>org.eclipse.microprofile.config</groupId>
+      <artifactId>microprofile-config-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatiotemporal</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-trace3d</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-krl-interpreter-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

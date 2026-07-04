@@ -8,48 +8,149 @@ import DataObjectFileUpload from "~/components/context/data-object/upload-data/D
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
-import { DataObjectApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useFetchTypedPredecessors } from "~/composables/context/useFetchTypedPredecessors";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import AncestorChainPanel from "~/components/context/data-object/AncestorChainPanel.vue";
 import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
+// FORM-UX-ACTIONBUTTON — unified "View as … / Record a …" entry point fed by
+// GET /v2/shapes/applicable; absorbs the former Tools-menu "Render view" item.
+import ActionMenuButton from "~/components/context/tools/ActionMenuButton.vue";
+// UX612-M1 — resolve the attached template's kind so the Tools menu can gate
+// "Render view" on VIEW_RECIPE (the only kind /v2/shapes/render accepts).
+// TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND — also store the full template so
+// the header can show the template's iconKey.
+import { TemplatesApi, type ShepardTemplate } from "@dlr-shepard/backend-client";
+import { useTemplateIcon } from "~/composables/useTemplateIcon";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useFetchVideoStreamReferences } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchSingletonFileReferences } from "~/composables/context/useFetchSingletonFileReferences";
+// MFFD-NDT-QUALITY-1 — thermography NDT pane mounts conditionally when the
+// DO carries at least one FileBundleReference whose name suggests thermal
+// imagery. Pane is self-contained (fetches its own cached plate-heatmap +
+// quality summary); we only need to discover the bundle's appId here.
+import DataObjectThermographyPane from "~/components/context/thermography/DataObjectThermographyPane.vue";
+// MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — generic image-bundle frame scrubber. Mounts
+// when the DO carries at least one FileBundleReference whose first group
+// contains image-extension files (.png, .jpg, .jpeg, .tif, .tiff, …).
+// Self-detecting: passes candidateBundleAppIds from the v1 dataReferences list;
+// the pane calls GET /v2/bundles/{appId} internally for detection.
+import DataObjectImageBundlePane from "~/components/context/data-object/DataObjectImageBundlePane.vue";
+// OTVIS-VIEWER — decoded Edevis OTvis amplitude/phase frame viewer. Mounts
+// when the DO carries a singleton FileReference whose filename ends `.OTvis`.
+// In-context-first entry per the tools rule: the appId is already in hand on
+// this page, so the viewer pulls bytes from the reference (never a path/URL).
+import DataObjectOtvisViewer from "~/components/context/thermography/DataObjectOtvisViewer.vue";
+import type { SingletonFileReferenceIO } from "~/composables/context/useFetchSingletonFileReferences";
+// MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3) — in-context lineage pane for
+// mffd:material-batch DataObjects. Mounts only when isMaterialBatchDo is true.
+import MaterialBatchTracePane from "~/components/context/mffd/MaterialBatchTracePane.vue";
+// MFFD-MULTIPLAYER-1 — synchronised multi-payload player. Mounts when the
+// DO carries ≥ 2 distinct payload kinds; renders a shared scrubber + a
+// per-kind tile grid all bound to one `useSyncedTimeCursor` instance.
+import MultiPlayerPane from "~/components/context/multiplayer/MultiPlayerPane.vue";
+import { selectMultiPlayerTiles } from "~/utils/multiPlayerTiles";
+// MISSING-aas-ui Slice 4: in-context AAS submodel identity pane. Shows the
+// DataObject's role as an IDTA AAS Submodel when the AAS plugin is enabled.
+import DataObjectAasPane from "~/components/context/aas/DataObjectAasPane.vue";
+import { useSpatialDataReferencesForDataObject } from "~/composables/context/useSpatialDataReferencesForDataObject";
+import { useFetchSpatialReferencesV2 } from "~/composables/context/useFetchSpatialReferencesV2";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
   mapVideoReferenceToDataTableElement,
+  mapSpatialReferenceToDataTableElement,
 } from "~/components/context/display-components/data-references/dataTableElementMappingUtil";
 import type { DataTableElement } from "~/components/context/display-components/data-references/dataTableElement";
+import type { DataReference } from "~/components/context/display-components/data-references/dataReference";
+import type { RelatedEntity } from "~/components/context/display-components/relationships/relatedEntity";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
 
-// BUG-COLL-APPID-ROUTE-002 (2026-05-31): useFetchCollection +
-// useFetchDataObject now hit the v2 appId-keyed endpoints with the route
-// param strings directly. Legacy numeric-id consumers below
-// (useDataReferencesByDataObject, useRelatedEntities, the dataObjectApi
-// PATCH, …) still take a `number` until BUG-COLL-APPID-ROUTE-003 migrates
-// each composable family — they keep the existing as-number cast.
+// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE + V2-SWEEP Wave 3:
+// useFetchCollection + useFetchDataObject hit the v2 appId-keyed endpoints
+// with the route param strings, and the inline edits PATCH the v2 endpoint
+// directly (see patchDataObjectV2 below). The remaining numeric-id
+// consumers (useDataReferencesByDataObject, useRelatedEntities,
+// useSpatialDataReferencesForDataObject, the AnnotatedDataObject CRUD, and
+// the v1 child panels) are documented exceptions — they need the NUMERIC
+// ids which only the loaded v2 entities carry (resolved reactively below;
+// loaded id wins, numeric-route-param fallback for legacy /collections/123
+// deep links — never a UUID coerced into a v1 call). Backlog rows:
+// REFS-V2-PANELS / ANNOT-V2 in aidocs/16. The page body only renders once
+// both entities load, so within the template `collection.id` /
+// `dataObject.id` are the canonical numeric source.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId } = routeParams.value as unknown as {
-  collectionId: number;
-  dataObjectId: number;
-};
 
-const { collection, isAllowedToEditCollection } =
-  useFetchCollection(collectionIdStr);
-const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
-const { dataReferences } = useDataReferencesByDataObject(
-  collectionId,
-  dataObjectId,
+const {
+  collection,
+  isAllowedToEditCollection,
+  notFound: isCollectionNotFound,
+} = useFetchCollection(collectionIdStr);
+const {
+  dataObject,
+  isLoading: isDataObjectLoading,
+  notFound: isDataObjectNotFound,
+} = useFetchDataObject(collectionIdStr, dataObjectIdStr);
+
+const collectionNumericId = computed<number | undefined>(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
 );
-const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
+const dataObjectNumericId = computed<number | undefined>(() =>
+  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
+);
+
+// REFS-V2-PANELS: the reference fetch is now appId-keyed (the v2 unified
+// /v2/references endpoint). Prefer the loaded DataObject's appId; fall back to
+// the route param (which IS the appId in the v2 routing) so the fetch can fire
+// before the entity resolves. Never a numeric id — that was the empty-panel bug.
+const dataObjectAppIdForRefs = computed<string | undefined>(
+  () => dataObject.value?.appId ?? routeParams.value.dataObjectId ?? undefined,
+);
+const { dataReferences } = useDataReferencesByDataObject(
+  dataObjectAppIdForRefs,
+);
+const { relatedEntities } = useRelatedEntities(
+  collectionNumericId,
+  dataObjectNumericId,
+  dataObjectIdStr, // V2-SWEEP-004-2: route param UUID → v2 endpoint returns referencedCollectionAppId
+);
+
+// BUG-DO-DETAIL-HANG (2026-06-13): the page render gate previously required
+// `dataReferences` AND `relatedEntities` to be non-undefined, but those v1
+// reference composables only flip from `undefined` once the NUMERIC ids
+// resolve from the loaded v2 entities. When a reference sub-fetch 403/404s, or
+// the numeric id never resolves, those refs stayed `undefined` forever → the
+// CenteredLoadingSpinner never cleared (the lone CRITICAL in the 2026-06-12 /
+// -13 UX audits). Reference panels are NOT required entities — a DataObject
+// with zero git/spatial/file references is a normal empty state, not a fatal.
+// The render gate below now requires only `collection && dataObject`; these
+// safe-default views let the per-kind tables render an empty state while their
+// own fetches resolve (or fail soft) independently.
+const dataReferencesSafe = computed<DataReference[]>(
+  () => dataReferences.value ?? [],
+);
+const relatedEntitiesSafe = computed<RelatedEntity[]>(
+  () => relatedEntities.value ?? [],
+);
+
+// BUG-DO-DETAIL-HANG: the only fatal is the required DataObject failing to
+// load with a non-404 status (403 / 500 / network). Previously such a failure
+// left `dataObject` undefined + `notFound` false, so the page hung on the
+// spinner. We surface a settled-but-failed flag so the template can render the
+// EntityNotFound fallback instead of spinning forever. A 404 is already handled
+// by `isDataObjectNotFound`.
+const dataObjectLoadFailed = computed<boolean>(
+  () =>
+    !isDataObjectLoading.value &&
+    !dataObject.value &&
+    !isDataObjectNotFound.value,
+);
 
 // REF-UNIFIED-TABLE: extra items for Git/Video/HDF5 reference kinds.
 // These composables are set up once dataObject.appId is available, since
@@ -62,6 +163,17 @@ const refreshVideoRefs = ref<(() => void | Promise<void>) | null>(null);
 // REF-UNIFIED-TABLE-FR1B / J1c retirement: FR1b singletons (incl. notebooks)
 // fetched via the additive /v2/files/by-data-object endpoint.
 const refreshFr1bRefs = ref<(() => void | Promise<void>) | null>(null);
+// SPATIAL-UNIFY-003: spatial references fetched via /v2/references?kind=spatial.
+const refreshSpatialRefs = ref<(() => void | Promise<void>) | null>(null);
+
+// MFFD-MULTIPLAYER-1 — surface the video-reference count outside the
+// watcher's closure so the multi-player tile gate (selectMultiPlayerTiles)
+// can react to it.
+const videoReferenceCount = ref<number>(0);
+
+// OTVIS-VIEWER — raw singleton FileReferences, surfaced outside the watcher's
+// closure so the OTvis-viewer gate (otvisReferences) can filter on filename.
+const singletonFileRefs = ref<SingletonFileReferenceIO[]>([]);
 
 watch(
   () => dataObject.value?.appId,
@@ -77,27 +189,119 @@ watch(
     const fr1bComposable = useFetchSingletonFileReferences(appId);
     refreshFr1bRefs.value = fr1bComposable.refresh;
 
-    // Reactively derive extraReferenceItems from the three composable states.
+    const spatialComposable = useFetchSpatialReferencesV2(appId);
+    refreshSpatialRefs.value = spatialComposable.refresh;
+
+    // Reactively derive extraReferenceItems from the composable states.
     watchEffect(() => {
       extraReferenceItems.value = [
         ...gitComposable.gitReferences.value.map(mapGitReferenceToDataTableElement),
         ...videoComposable.references.value.map(mapVideoReferenceToDataTableElement),
         ...fr1bComposable.references.value.map(mapSingletonFileReferenceToDataTableElement),
+        ...spatialComposable.references.value.map(mapSpatialReferenceToDataTableElement),
       ];
+      // MFFD-MULTIPLAYER-1: keep the video count in step with the composable.
+      videoReferenceCount.value = videoComposable.references.value.length;
+      // OTVIS-VIEWER: surface the raw singletons for the .OTvis filter below.
+      singletonFileRefs.value = fr1bComposable.references.value;
     });
   },
   { immediate: true },
+);
+
+/**
+ * OTVIS-VIEWER — singleton FileReferences whose attached file is an `.OTvis`
+ * archive. Each gets its own viewer panel (multiple NDT scans per process
+ * step are common). Cheap string-suffix check on already-fetched refs.
+ */
+const otvisReferences = computed<SingletonFileReferenceIO[]>(() =>
+  singletonFileRefs.value.filter(r =>
+    (r.file?.filename ?? "").toLowerCase().endsWith(".otvis"),
+  ),
 );
 
 function refreshExtraReferences() {
   refreshGitRefs.value?.();
   refreshVideoRefs.value?.();
   refreshFr1bRefs.value?.();
+  refreshSpatialRefs.value?.();
 }
 
 /** Total count for the "Data References" panel badge: legacy + new kinds. */
 const totalReferenceCount = computed(
   () => (dataReferences.value?.length ?? 0) + extraReferenceItems.value.length,
+);
+
+/**
+ * MFFD-NDT-QUALITY-1 — discover a thermography FileBundleReference on this
+ * DataObject. Heuristic: name contains "thermo" / "ndt" / "tif" (case-
+ * insensitive). The first matching bundle wins (DataObjects usually carry
+ * one thermography region per process step). Returns the bundle's appId
+ * when found, null otherwise.
+ *
+ * <p>The detection is local + cheap (string match on already-fetched refs);
+ * the pane itself stays unmounted until a match exists, so DOs without
+ * thermography pay no cost.
+ */
+/**
+ * MFFD-MULTIPLAYER-1 — detect spatial-data references (separate from
+ * dataReferences which only covers TS / file / structured / video / git).
+ * The composable is fail-soft: returns an empty array on error so the
+ * multi-player gate falls back to "no spatial tile".
+ */
+const { references: spatialDataReferences } =
+  useSpatialDataReferencesForDataObject(collectionNumericId, dataObjectNumericId);
+
+const thermographyBundleAppId = computed<string | null>(() => {
+  const refs = dataReferences.value ?? [];
+  for (const r of refs) {
+    if (!("fileReferenceId" in r || "fileContainerId" in r)) continue;
+    const name = ((r as { name?: string }).name ?? "").toLowerCase();
+    if (
+      name.includes("thermo") ||
+      name.includes("ndt") ||
+      name.includes(".tif")
+    ) {
+      // FileBundleReference exposes its appId on the underlying entity.
+      const appId = (r as { appId?: string | null }).appId;
+      if (appId) return appId;
+    }
+  }
+  return null;
+});
+
+/**
+ * MFFD-IMAGEBUNDLE-PANE-MOUNT-1 — collect appIds of FileBundleReferences from
+ * the v1 dataReferences list. FileBundleReferences carry a `fileContainerId`
+ * field (distinguishing them from TimeseriesReferences / StructuredDataRefs).
+ * The pane itself calls GET /v2/bundles/{appId} to detect whether the bundle
+ * actually contains image-extension files.
+ */
+const imageBundleCandidateAppIds = computed<string[]>(() => {
+  const refs = dataReferences.value ?? [];
+  return refs
+    .filter(r => "fileContainerId" in r)
+    .map(r => (r as { appId?: string | null }).appId)
+    .filter((id): id is string => !!id);
+});
+
+/**
+ * MFFD-MULTIPLAYER-1 — pick the tiles to render in the synchronised
+ * multi-payload player. Returns an empty array when fewer than 2 distinct
+ * payload kinds are present; the panel hides itself in that case.
+ */
+const hasTimeseriesReference = computed<boolean>(() => {
+  const refs = dataReferences.value ?? [];
+  return refs.some(r => "timeseriesContainerId" in r);
+});
+
+const multiPlayerTiles = computed(() =>
+  selectMultiPlayerTiles({
+    hasTimeseries: hasTimeseriesReference.value,
+    hasVideo: videoReferenceCount.value > 0,
+    thermographyBundleAppId: thermographyBundleAppId.value,
+    hasSpatial: (spatialDataReferences.value?.length ?? 0) > 0,
+  }),
 );
 
 // PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
@@ -110,7 +314,8 @@ const typedPredecessorsRef = computed(() => {
 const typedPredecessors = ref<
   Array<{
     predecessorAppId: string;
-    predecessorId: number;
+    /** @deprecated Join on predecessorAppId instead. */
+    predecessorId?: number;
     predecessorName: string;
     predecessorStatus: string | null;
     relationshipType: string;
@@ -129,20 +334,13 @@ watch(
   { immediate: true },
 );
 
-/** Look up the stored relationship type for a predecessor by its numeric id. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function predecessorRelationshipType(predecessorId: number): string | null {
-  const match = typedPredecessors.value.find(tp => tp.predecessorId === predecessorId);
-  return match?.relationshipType ?? null;
-}
-
-/** PROV1k: Map of predecessor id → relationship type, passed to DataObjectRelationshipsTable. */
-const predecessorRelationshipTypesMap = computed<Map<number, string>>(() => {
-  const map = new Map<number, string>();
+/** PROV1k: Map of predecessor appId (UUID v7) → relationship type, passed to DataObjectRelationshipsTable. */
+const predecessorRelationshipTypesMap = computed<Map<string, string>>(() => {
+  const map = new Map<string, string>();
   for (const tp of typedPredecessors.value) {
     // Only add non-default types to keep the map sparse; the chip component handles null gracefully.
-    if (tp.relationshipType && tp.relationshipType !== "prov:wasInformedBy") {
-      map.set(tp.predecessorId, tp.relationshipType);
+    if (tp.predecessorAppId && tp.relationshipType && tp.relationshipType !== "prov:wasInformedBy") {
+      map.set(tp.predecessorAppId, tp.relationshipType);
     }
   }
   return map;
@@ -154,10 +352,50 @@ const {
 // J1c retirement (2026-05-29): the dedicated notebooks panel + its counter
 // are gone. Notebooks now live as rows in the unified data-references table.
 const numberOfSemanticAnnotations = ref<number | undefined>(undefined);
-function onAnnotationsLoaded(annotations: { length: number }) {
+// MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3): detect mffd:material-batch DOs
+// from the semantic annotation list. We track the full array (not just the
+// count) so the batch-trace pane can mount conditionally without a second fetch.
+const loadedAnnotations = ref<Array<{ propertyIRI?: string }>>([]);
+function onAnnotationsLoaded(annotations: Array<{ propertyIRI?: string }>) {
   numberOfSemanticAnnotations.value = annotations.length;
+  loadedAnnotations.value = annotations;
 }
-const dataObjectApi = useShepardApi(DataObjectApi);
+/** True when this DataObject carries the urn:shepard:mffd:batch-id predicate. */
+const isMaterialBatchDo = computed<boolean>(() =>
+  loadedAnnotations.value.some(
+    a => a.propertyIRI === "urn:shepard:mffd:batch-id",
+  ),
+);
+// V2-SWEEP Wave 3: inline edits PATCH the v2 appId-keyed endpoint
+// (RFC 7396 merge-patch — only the changed fields go on the wire).
+// Mirrors useEditDataObject.ts; the route params are the appIds.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function patchDataObjectV2(body: Record<string, unknown>): Promise<void> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  const url =
+    `${v2BaseUrl()}/v2/collections/` +
+    `${encodeURIComponent(collectionIdStr)}/data-objects/` +
+    `${encodeURIComponent(dataObjectIdStr)}`;
+  const resp = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/merge-patch+json",
+      Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+}
 
 const showAttributeEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
@@ -192,17 +430,11 @@ async function saveDescEdit() {
   if (!dataObject.value) return;
   descSaving.value = true;
   try {
-    await dataObjectApi.value.updateDataObject({
-      collectionId,
-      dataObjectId,
-      dataObject: {
-        name: dataObject.value.name,
-        description: descDraft.value,
-        status: descStatusDraft.value ?? undefined,
-        attributes: dataObject.value.attributes ?? {},
-        parentId: dataObject.value.parentId,
-        predecessorIds: dataObject.value.predecessorIds ?? [],
-      },
+    // V2-SWEEP Wave 3: appId-keyed merge-patch — replaces the v1 full-body
+    // updateDataObject keyed on numeric ids.
+    await patchDataObjectV2({
+      description: descDraft.value,
+      status: descStatusDraft.value ?? null,
     });
     emitSuccess(`Description updated`);
     handleDataObjectUpdate();
@@ -260,6 +492,34 @@ const dataObjectAttachedTemplateAppId = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// UX612-M1 — kind of the attached template (VIEW_RECIPE / DATAOBJECT_RECIPE /
+// …), resolved via the typed v2 client. `POST /v2/shapes/render` accepts only
+// VIEW_RECIPE (422 otherwise), so the Tools menu's "Render view" item gates on
+// this kind instead of mere template presence. Best-effort: a failed lookup
+// leaves the kind null and the render item hidden (it would 422 anyway when
+// the kind can't be confirmed as VIEW_RECIPE).
+const templatesApi = useV2ShepardApi(TemplatesApi);
+const dataObjectAttachedTemplate = ref<ShepardTemplate | null>(null);
+const dataObjectAttachedTemplateKind = computed<string | null>(
+  () => dataObjectAttachedTemplate.value?.templateKind ?? null,
+);
+const dataObjectHeaderIcon = computed<string>(() =>
+  useTemplateIcon(dataObjectAttachedTemplate.value, "DataObject"),
+);
+watch(
+  dataObjectAttachedTemplateAppId,
+  async appId => {
+    dataObjectAttachedTemplate.value = null;
+    if (!appId) return;
+    try {
+      dataObjectAttachedTemplate.value = await templatesApi.value.getTemplate({ appId });
+    } catch {
+      // fire-and-forget — menu falls back to hiding the render item; header uses default icon
+    }
+  },
+  { immediate: true },
+);
+
 // FAIR3: embargoEndDate — user-provided ISO-8601 end date for embargoed datasets.
 // Editable when the user has Write permission on the collection.
 const dataObjectEmbargoEndDate = computed<string | null>(() => {
@@ -287,21 +547,10 @@ async function saveEmbargoEdit() {
   if (!dataObject.value) return;
   embargoSaving.value = true;
   try {
-    await dataObjectApi.value.updateDataObject({
-      collectionId,
-      dataObjectId,
-      dataObject: {
-        name: dataObject.value.name,
-        description: dataObject.value.description,
-        status: (dataObject.value as unknown as { status?: string }).status,
-        attributes: dataObject.value.attributes ?? {},
-        parentId: dataObject.value.parentId,
-        predecessorIds: dataObject.value.predecessorIds ?? [],
-        // FAIR3: pass embargoEndDate through the update. Null/empty clears it.
-        ...(embargoDraft.value
-          ? { embargoEndDate: embargoDraft.value }
-          : { embargoEndDate: null }),
-      } as Parameters<typeof dataObjectApi.value.updateDataObject>[0]["dataObject"],
+    // V2-SWEEP Wave 3: appId-keyed merge-patch — only the embargo field
+    // travels. Null/empty clears it (FAIR3).
+    await patchDataObjectV2({
+      embargoEndDate: embargoDraft.value ? embargoDraft.value : null,
     });
     emitSuccess("Embargo end date updated");
     handleDataObjectUpdate();
@@ -317,10 +566,11 @@ async function saveEmbargoEdit() {
 <template>
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
+      <!-- BUG-DO-DETAIL-HANG: render once the REQUIRED entities (collection +
+           dataObject) load. Reference panels (dataReferences / relatedEntities)
+           resolve independently and fail soft — they must NOT gate the page. -->
       <v-row
-        v-if="
-          !!collection && !!dataObject && !!dataReferences && !!relatedEntities
-        "
+        v-if="!!collection && !!dataObject"
         no-gutters
       >
         <v-col cols="12">
@@ -338,9 +588,9 @@ async function saveEmbargoEdit() {
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  collectionIdStr +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  dataObjectIdStr,
               },
             ]"
           />
@@ -351,6 +601,7 @@ async function saveEmbargoEdit() {
               <TitleAndMetadataDisplay
                 :entity="dataObject"
                 id-label="Data Object ID"
+                :icon-key="dataObjectHeaderIcon"
               />
             </v-row>
             <!-- LIC1/FAIR2/FAIR3/KIP1k: FAIR metadata strip — license + accessRights
@@ -470,10 +721,16 @@ async function saveEmbargoEdit() {
                    view-recipe render entry points. Visible to readers
                    too; only the actions themselves require permissions
                    (handled by destination pages). -->
+              <!-- FORM-UX-ACTIONBUTTON — "View as …" / "Record a …" from
+                   GET /v2/shapes/applicable. Replaces the Tools menu's
+                   former "Render view" entry (absorbed; the VIEW gate is
+                   server-owned now). Hidden when nothing is applicable. -->
+              <ActionMenuButton :focus-app-id="dataObject.appId" />
               <EntityToolsMenu
                 :app-id="dataObject.appId"
                 scope="data-object"
                 :attached-template-app-id="dataObjectAttachedTemplateAppId"
+                :attached-template-kind="dataObjectAttachedTemplateKind"
               />
               <PublishButton
                 v-if="isAllowedToEditCollection"
@@ -605,14 +862,13 @@ async function saveEmbargoEdit() {
                 v-model:show-dialog="showAnnotationDialog"
                 :subject-app-id="dataObject?.appId ?? undefined"
                 subject-kind="DataObject"
-                :annotated="new AnnotatedDataObject(collectionId, dataObjectId)"
+                :annotated="new AnnotatedDataObject(dataObject.appId ?? '')"
                 @annotation-created="handleAnnotationListUpdate"
               />
 
               <SemanticAnnotationList
-                :annotated="
-                  new AnnotatedDataObject(collection.id, dataObject.id)
-                "
+                v-if="dataObject.appId"
+                :annotated="new AnnotatedDataObject(dataObject.appId)"
                 :can-delete="!!isAllowedToEditCollection"
                 @annotations="onAnnotationsLoaded"
               />
@@ -634,8 +890,8 @@ async function saveEmbargoEdit() {
                     <EditDataObjectAttributesDialog
                       v-if="showAttributeEditDialog"
                       v-model:show-dialog="showAttributeEditDialog"
-                      :collection-id="collectionId"
-                      :data-object-id="dataObjectId"
+                      :collection-id="collection.id"
+                      :data-object-id="dataObject.id"
                     />
                   </template>
                 </ExpansionPanelItem>
@@ -644,9 +900,14 @@ async function saveEmbargoEdit() {
                   title="Lab Journal"
                 >
                   <div class="pt-4">
+                    <!-- UI-DO-LABJOURNAL-V2: appId-keyed props so the panel works
+                         for appId-only DataObjects (post-reset). Numeric ids passed
+                         as optional compat for the v1 create/delete child path. -->
                     <DataObjectLabJournalEntryList
-                      :collection-id="collectionId"
-                      :data-object-id="dataObject.id"
+                      :collection-app-id="collectionIdStr"
+                      :data-object-app-id="dataObject?.appId ?? dataObjectIdStr"
+                      :collection-numeric-id="collection?.id ?? undefined"
+                      :data-object-numeric-id="dataObject?.id ?? undefined"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>
@@ -673,17 +934,18 @@ async function saveEmbargoEdit() {
                       v-model:show-dialog="showCreateDataReferenceDialog"
                       :collection-id="collection.id"
                       :data-object-id="dataObject.id"
+                      :data-object-app-id="dataObject.appId ?? undefined"
                     />
                   </template>
                   <DataObjectFileUpload
                     v-if="isAllowedToEditCollection"
-                    :collection-id="collectionId"
-                    :dataobject-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :dataobject-id="dataObject.id"
                   />
                   <DataObjectDataReferencesTable
-                    :collection-id="collectionId"
-                    :data-object-id="dataObjectId"
-                    :data-references="dataReferences"
+                    :collection-id="collection.id"
+                    :data-object-id="dataObject.id"
+                    :data-references="dataReferencesSafe"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
@@ -693,16 +955,17 @@ async function saveEmbargoEdit() {
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  :count="relatedEntities.length"
+                  :count="relatedEntitiesSafe.length"
                   title="Relationships"
                 >
                   <DataObjectRelationshipsTable
-                    :collection-id="collectionId"
-                    :data-object-id="dataObjectId"
+                    :collection-id="collection.id"
+                    :collection-app-id="collectionIdStr"
+                    :data-object-id="dataObject.id"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
-                    :related-entities="relatedEntities"
+                    :related-entities="relatedEntitiesSafe"
                     :predecessor-relationship-types="predecessorRelationshipTypesMap"
                   />
                   <template v-if="isAllowedToEditCollection" #append>
@@ -714,16 +977,57 @@ async function saveEmbargoEdit() {
                     <AddRelationshipDialog
                       v-if="showAddRelationshipDialog"
                       v-model:show-dialog="showAddRelationshipDialog"
-                      :collection-id="collectionId"
-                      :data-object-id="dataObjectId"
+                      :collection-id="collection.id"
+                      :collection-app-id="collection.appId ?? undefined"
+                      :data-object-id="dataObject.id"
+                      :data-object-app-id="dataObject.appId ?? undefined"
                     />
                   </template>
+                </ExpansionPanelItem>
+                <!-- MISSING-aas-ui Slice 4: AAS submodel context pane. Mounted
+                     when the DataObject has a resolved appId and the parent
+                     Collection appId is known (always true on this page). The
+                     pane handles 501/disabled + 404 internally; mounting cost
+                     is negligible when AAS is off. -->
+                <ExpansionPanelItem
+                  v-if="dataObject?.appId && collectionIdStr"
+                  title="AAS Submodel"
+                >
+                  <DataObjectAasPane
+                    :collection-app-id="collectionIdStr"
+                    :data-object-app-id="dataObject.appId"
+                  />
                 </ExpansionPanelItem>
                 <!-- J1c retirement (2026-05-29): the dedicated Jupyter Notebooks
                      panel has been merged into the unified Data References
                      table. Notebooks render as rows with a notebook icon and,
                      when the admin-configurable JupyterConfig (J1e) is open,
                      an "Open in JupyterHub" action button. -->
+                <!-- SPATIAL-UNIFY-003: the bolt-on "Spatial data" pane
+                     (DataObjectSpatialContainersPane + the "run the spatial-
+                     importer pass" empty-state) is RETIRED. Spatial is now a
+                     "Spatial (N)" tab in the unified Data References table
+                     above, created in-context via the per-File "Promote to
+                     spatial" action (POST /v2/spatial/promote). See
+                     aidocs/integrations/124. -->
+                <!-- MFFD-MULTIPLAYER-1: synchronised multi-payload player.
+                     Mounts only when the DO carries ≥ 2 distinct payload
+                     kinds (TS + video / TS + thermo / etc.). One shared
+                     time cursor drives every tile; scrubbing the toolbar
+                     moves the TS marker AND the video playhead AND any
+                     other tile's representation of t. Lazy-mounted under
+                     v-if so the heavy ECharts / VideoPlayer setup runs
+                     only when a user opens this panel. -->
+                <ExpansionPanelItem
+                  v-if="multiPlayerTiles.length >= 2 && dataObject.appId"
+                  title="Synchronised player"
+                >
+                  <MultiPlayerPane
+                    :data-object-app-id="dataObject.appId"
+                    :tiles="multiPlayerTiles"
+                    :thermography-bundle-app-id="thermographyBundleAppId"
+                  />
+                </ExpansionPanelItem>
                 <!-- Provenance: two views — a structured time-based log
                      (default, easier to read) and the force-directed
                      graph (eye-candy, second tab). Both render the same
@@ -748,9 +1052,70 @@ async function saveEmbargoEdit() {
                     <DataObjectProvGraph
                       v-else-if="provView === 'graph'"
                       :data-object="dataObject"
-                      :collection-id="collectionId"
+                      :collection-app-id="collectionIdStr"
                     />
                   </div>
+                </ExpansionPanelItem>
+                <!-- MFFD-NDT-QUALITY-1: Thermography NDT pane — mounts only
+                     when a thermography-shaped FileBundleReference is
+                     attached to the DataObject. Self-contained: fetches
+                     its own cached plate-heatmap + quality summary via
+                     /v2/thermography/*. Caller passes canEdit so the
+                     Re-analyze button gates Write properly. -->
+                <ExpansionPanelItem
+                  v-if="thermographyBundleAppId && dataObject.appId"
+                  title="Thermography NDT"
+                >
+                  <DataObjectThermographyPane
+                    :data-object-app-id="dataObject.appId"
+                    :image-bundle-app-id="thermographyBundleAppId"
+                  />
+                </ExpansionPanelItem>
+                <!-- OTVIS-VIEWER: decoded Edevis OTvis amplitude/phase frame
+                     viewer. One panel per .OTvis singleton FileReference on
+                     this DO. In-context-first entry — the appId is already in
+                     hand; the viewer pulls bytes from the reference and shows
+                     server-rendered heatmap PNGs with a frame scrubber. -->
+                <ExpansionPanelItem
+                  v-for="otvisRef in otvisReferences"
+                  :key="`otvis-${otvisRef.appId}`"
+                  title="Thermography Frames (OTvis)"
+                >
+                  <DataObjectOtvisViewer
+                    :file-reference-app-id="otvisRef.appId"
+                    :reference-name="otvisRef.name"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-RENDER-MATERIAL-BATCH-TRACE (slice 3): in-context
+                     pane showing every process step that consumed this
+                     material batch. Mounts only when the DO carries the
+                     urn:shepard:mffd:batch-id predicate (detected from
+                     the loaded SemanticAnnotation list). -->
+                <ExpansionPanelItem
+                  v-if="isMaterialBatchDo && dataObject.appId && collection.appId"
+                  title="Material Batch Consumers"
+                >
+                  <MaterialBatchTracePane
+                    :data-object-app-id="dataObject.appId"
+                    :collection-app-id="collection.appId"
+                  />
+                </ExpansionPanelItem>
+                <!-- MFFD-IMAGEBUNDLE-PANE-MOUNT-1: generic image frame scrubber.
+                     Shown when at least one FileBundleReference is attached and
+                     its first group carries at least one image-extension file.
+                     Distinct from the Thermography NDT pane — that pane uses a
+                     name heuristic and renders a plate-heatmap; this one uses
+                     content-type detection and renders the ImageBundleViewer
+                     scrubber. Non-overlapping: thermography bundles are excluded
+                     by the name heuristic so they don't appear here too. -->
+                <ExpansionPanelItem
+                  v-if="imageBundleCandidateAppIds.length > 0 && dataObject.appId"
+                  title="Image Frames"
+                >
+                  <DataObjectImageBundlePane
+                    :data-object-app-id="dataObject.appId"
+                    :candidate-bundle-app-ids="imageBundleCandidateAppIds"
+                  />
                 </ExpansionPanelItem>
                 <!-- UX-PROV1: Ancestor chain — advanced mode only.
                      Shows the upstream predecessor chain as a vertical
@@ -762,7 +1127,7 @@ async function saveEmbargoEdit() {
                   title="Ancestor Chain"
                 >
                   <AncestorChainPanel
-                    :collection-id="collectionId"
+                    :collection-id="collection.id"
                     :collection-app-id="collection.appId"
                     :data-object-app-id="dataObject.appId"
                   />
@@ -772,6 +1137,28 @@ async function saveEmbargoEdit() {
           </v-container>
         </v-col>
       </v-row>
+      <EntityNotFound
+        v-else-if="isDataObjectNotFound"
+        entity-kind="DataObject"
+        :requested-id="dataObjectIdStr"
+        :parent-route="`/collections/${collectionIdStr}`"
+      />
+      <EntityNotFound
+        v-else-if="isCollectionNotFound"
+        entity-kind="Collection"
+        :requested-id="collectionIdStr"
+        parent-route="/collections"
+      />
+      <!-- BUG-DO-DETAIL-HANG: a non-404 DataObject load failure (403 / 500 /
+           network) used to leave the page spinning forever. Surface the
+           not-found fallback once the fetch settles unsuccessfully so the user
+           sees an actionable empty state instead of an indeterminate spinner. -->
+      <EntityNotFound
+        v-else-if="dataObjectLoadFailed"
+        entity-kind="DataObject"
+        :requested-id="dataObjectIdStr"
+        :parent-route="`/collections/${collectionIdStr}`"
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
   </div>

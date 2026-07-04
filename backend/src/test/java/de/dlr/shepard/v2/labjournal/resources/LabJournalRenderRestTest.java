@@ -69,7 +69,7 @@ class LabJournalRenderRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(APP_ID)).thenReturn(entry);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
     when(renderService.renderToHtml(MARKDOWN)).thenReturn("<p><strong>hello</strong></p>\n");
   }
 
@@ -96,7 +96,7 @@ class LabJournalRenderRestTest {
 
   @Test
   void render_returns403_whenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
     assertThat(resource.render(APP_ID, sc).getStatus()).isEqualTo(403);
   }
 

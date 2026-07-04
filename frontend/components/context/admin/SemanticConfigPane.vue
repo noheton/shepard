@@ -3,10 +3,11 @@
  * SEMA-V6-014 — Admin pane for SemanticConfig settings.
  *
  * Surfaces the personalVocabulariesEnabled toggle and the other
- * SEMA-V6-003/013 knobs via PATCH /v2/admin/semantic/config.
+ * SEMA-V6-003/013 knobs via PATCH /v2/admin/config/semantic
+ * (V2CONV-A4 generic admin-config surface; was /v2/admin/semantic/config).
  */
 
-const BASE = "/v2/admin/semantic/config";
+const BASE = "/v2/admin/config/semantic";
 
 interface SemanticConfigIO {
   appId: string;

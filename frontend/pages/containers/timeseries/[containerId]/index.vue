@@ -11,10 +11,22 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
-const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useTimeseriesContainerLinkedDataObjects(containerId);
 
-const { stats: containerStats } = useFetchTimeseriesContainerStats(containerId);
+// V2-SWEEP-003-2: route param is now an appId (UUID v7); HeaderBar search still
+// routes numeric id (V1-EXCEPTION, SEARCH-V2 will retire it). Resolve appId from
+// the loaded container (v1 fallback path) or from the route param directly (v2 path).
+const containerAppId = computed<string | null>(
+  () => containerAccessor.container.value?.appId ?? (/^\d+$/.test(containerId) ? null : containerId),
+);
+// Numeric Neo4j id for child components still using v1 API (V1-EXCEPTION).
+const containerNumericId = computed<number>(
+  () => /^\d+$/.test(containerId) ? Number(containerId) : (containerAccessor.container.value?.id ?? 0),
+);
+
+const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
+  useTimeseriesContainerLinkedDataObjects(containerAppId);
+
+const { stats: containerStats } = useFetchTimeseriesContainerStats(containerAppId);
 
 function fmtBytes(b: number): string {
   if (b === 0) return "0 B";
@@ -28,11 +40,10 @@ function fmtBytes(b: number): string {
 // with the "Show all channels" toggle below the chart.
 const {
   selectedChannelKeys: persistedChannelKeys,
-  updatedAt: chartViewUpdatedAt,
   updatedBy: chartViewUpdatedBy,
   saving: chartViewSaving,
   save: saveChartView,
-} = useTimeseriesContainerChartView(containerId);
+} = useTimeseriesContainerChartView(containerAppId);
 
 // Per-session "Show all channels" override — ignores the persisted curated
 // view but doesn't change it. Pure browser state.
@@ -81,8 +92,11 @@ const deleteWarning = computed<string | undefined>(() => {
   );
 });
 
-const fetchData = () => {
-  containerAccessor.fetchData();
+// P21-V2-METADATA-EDIT-2: rename dialog state.
+const showRenameDialog = ref(false);
+
+const fetchData = async () => {
+  await containerAccessor.fetchData();
   containerAccessor.fetchMeasurements();
   containerAccessor.fetchRoles();
 };
@@ -135,12 +149,27 @@ useHead({
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <ContainerTitleAndMetadataDisplay
-                :id="containerAccessor.container.value.id"
+                :app-id="containerAppId ?? containerId"
                 :n-items="containerAccessor.measurements.value.length"
                 :name="containerAccessor.container.value.name"
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
+                  <v-btn
+                    v-if="containerAccessor.isAllowedToEditData.value && containerAppId"
+                    icon="mdi-pencil-outline"
+                    size="small"
+                    variant="text"
+                    title="Rename container"
+                    @click="showRenameDialog = true"
+                  />
+                  <EditContainerNameDialog
+                    v-if="containerAppId"
+                    v-model:show-dialog="showRenameDialog"
+                    :container-app-id="containerAppId"
+                    :current-name="containerAccessor.container.value?.name ?? ''"
+                    @saved="fetchData"
+                  />
                   <UploadFilesButton
                     v-if="containerAccessor.isAllowedToEditData.value"
                     accept=".csv"
@@ -199,7 +228,8 @@ useHead({
             />
           </template>
           <TimeseriesAllChannelsChart
-            :container-id="containerId"
+            :container-id="containerNumericId"
+            :container-app-id="containerAppId"
             :measurements="containerAccessor.measurements.value"
             :selected-channel-keys="effectiveChannelKeys"
           />
@@ -270,11 +300,11 @@ useHead({
             #append
           >
             <AddAnnotationButton
-              :annotated="new AnnotatedTimeseriesContainer(containerId)"
+              :annotated="new AnnotatedTimeseriesContainer(containerAppId ?? '')"
             />
           </template>
           <SemanticAnnotationList
-            :annotated="new AnnotatedTimeseriesContainer(containerId)"
+            :annotated="new AnnotatedTimeseriesContainer(containerAppId ?? '')"
             :can-delete="!!containerAccessor.isAllowedToEditData.value"
           />
         </ExpansionPanelItem>
@@ -282,7 +312,8 @@ useHead({
       <!-- UX-PIN1: containerPath is stored with each pin so the PersonalDigest
            tile can navigate back to this container. -->
       <TimeseriesMeasurementsTable
-        :container-id="containerId"
+        :container-id="containerNumericId"
+        :container-app-id="containerAppId ?? ''"
         :is-allowed-to-edit-data="containerAccessor.isAllowedToEditData.value"
         :measurements="containerAccessor.measurements.value"
         :container-path="`${containersPath}${urlSegment}${containerId}`"
@@ -294,13 +325,13 @@ useHead({
           :count="containerAccessor.measurements.value.length"
         >
           <ChannelAnnotationsPane
-            :container-id="containerId"
+            :container-app-id="containerAppId ?? ''"
             :measurements="containerAccessor.measurements.value"
             :is-allowed-to-edit-data="!!containerAccessor.isAllowedToEditData.value"
           />
         </ExpansionPanelItem>
       </ExpansionPanels>
-      <!-- CC1b: Referenced by — wired to GET /v2/timeseries-containers/{id}/linked-data-objects -->
+      <!-- CC1b: Referenced by — wired to GET /v2/containers/{appId}/linked-data-objects (APISIMP-CONT-LDO-UNIFY) -->
       <ExpansionPanels class="mt-4" :default-open="[0]">
         <ExpansionPanelItem
           title="Referenced by"
@@ -321,7 +352,7 @@ useHead({
                 v-for="obj in linkedDataObjects"
                 :key="obj.id"
                 :data-object="obj"
-                :container-id="containerId"
+                :container-id="containerNumericId"
               />
             </v-list>
           </div>

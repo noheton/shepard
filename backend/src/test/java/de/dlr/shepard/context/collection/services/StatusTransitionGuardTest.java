@@ -15,6 +15,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
@@ -136,6 +137,58 @@ public class StatusTransitionGuardTest {
   public void validateOnUpdate_invalidStatus_throws400() {
     assertThrows(InvalidBodyException.class,
       () -> StatusTransitionGuard.validateOnUpdate("DRAFT", "BOGUS_STATE"));
+  }
+
+  // ─── QM1a — CONCESSION_PENDING ───────────────────────────────────────────
+
+  @Test
+  public void validateOnCreate_concessionPending_allowed() {
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnCreate("CONCESSION_PENDING"));
+  }
+
+  @Test
+  public void validateOnUpdate_ncrOpenToConcessionPending_allowed() {
+    // The typical EN 9100 §8.7 disposition path: NCR_OPEN → CONCESSION_PENDING.
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("NCR_OPEN", "CONCESSION_PENDING"));
+  }
+
+  @Test
+  public void validateOnUpdate_concessionPendingToCertified_allowed() {
+    // Approver closes the concession: → CERTIFIED.
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("CONCESSION_PENDING", "CERTIFIED"));
+  }
+
+  @Test
+  public void validateOnUpdate_concessionPendingToRejected_allowed() {
+    // Approver denies the concession: → REJECTED.
+    assertDoesNotThrow(() -> StatusTransitionGuard.validateOnUpdate("CONCESSION_PENDING", "REJECTED"));
+  }
+
+  @Test
+  public void validateQualityRole_concessionPendingWithoutRole_throws403() {
+    // CONCESSION_PENDING is a disposition decision — joins the role-gated set.
+    assertThrows(InvalidAuthException.class,
+      () -> StatusTransitionGuard.validateQualityRole("CONCESSION_PENDING", false));
+  }
+
+  @Test
+  public void validateQualityRole_concessionPendingWithRole_allowed() {
+    assertDoesNotThrow(
+      () -> StatusTransitionGuard.validateQualityRole("CONCESSION_PENDING", true));
+  }
+
+  @Test
+  public void qualityRestrictedSet_includesConcessionPending() {
+    assertEquals(true,
+      StatusTransitionGuard.QUALITY_RESTRICTED_STATUSES.contains("CONCESSION_PENDING"),
+      "CONCESSION_PENDING must be in QUALITY_RESTRICTED_STATUSES — it is a disposition decision");
+  }
+
+  @Test
+  public void validStatusesSet_includesConcessionPending() {
+    assertEquals(true,
+      StatusTransitionGuard.VALID_STATUSES.contains("CONCESSION_PENDING"),
+      "CONCESSION_PENDING must be in VALID_STATUSES (QM1a)");
   }
 
   // ─── Service-level integration tests ─────────────────────────────────────

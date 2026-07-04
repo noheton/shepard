@@ -282,7 +282,7 @@ const showFewCollectionsCta = computed(
     <CreateCollectionDialog
       v-if="showCreateDialog"
       v-model:show-dialog="showCreateDialog"
-      @collection-created="(id: number) => router.push(collectionsPath + id)"
+      @collection-created="(appIdOrId: string) => router.push(collectionsPath + appIdOrId)"
     />
   </PageShell>
 </template>

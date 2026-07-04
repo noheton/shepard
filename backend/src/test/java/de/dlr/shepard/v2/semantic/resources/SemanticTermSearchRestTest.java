@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -67,14 +68,14 @@ class SemanticTermSearchRestTest {
   @Test
   void unauthenticated_returns401() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    Response r = rest.search("label", 20, sc);
+    Response r = rest.search("label", 20, 0, sc);
     assertEquals(401, r.getStatus());
     assertProblemJson(r, SemanticTermSearchRest.PROBLEM_TYPE_AUTH, 401);
   }
 
   @Test
   void nullSecurityContext_returns401() {
-    Response r = rest.search("label", 20, null);
+    Response r = rest.search("label", 20, 0, null);
     assertEquals(401, r.getStatus());
     assertProblemJson(r, SemanticTermSearchRest.PROBLEM_TYPE_AUTH, 401);
   }
@@ -83,21 +84,21 @@ class SemanticTermSearchRestTest {
 
   @Test
   void nullQuery_returns400() {
-    Response r = rest.search(null, 20, sc);
+    Response r = rest.search(null, 20, 0, sc);
     assertEquals(400, r.getStatus());
     assertProblemJson(r, SemanticTermSearchRest.PROBLEM_TYPE_BAD_REQUEST, 400);
   }
 
   @Test
   void blankQuery_returns400() {
-    Response r = rest.search("  ", 20, sc);
+    Response r = rest.search("  ", 20, 0, sc);
     assertEquals(400, r.getStatus());
     assertProblemJson(r, SemanticTermSearchRest.PROBLEM_TYPE_BAD_REQUEST, 400);
   }
 
   @Test
   void singleCharQuery_returns400() {
-    Response r = rest.search("a", 20, sc);
+    Response r = rest.search("a", 20, 0, sc);
     assertEquals(400, r.getStatus());
     assertProblemJson(r, SemanticTermSearchRest.PROBLEM_TYPE_BAD_REQUEST, 400);
   }
@@ -108,7 +109,7 @@ class SemanticTermSearchRestTest {
   void limitAbove50_isCappedAt50() {
     stubEmptyResult();
     // A limit > 50 must still succeed (cap silently) — not a 400.
-    Response r = rest.search("label", 200, sc);
+    Response r = rest.search("label", 200, 0, sc);
     assertEquals(200, r.getStatus());
     // Verify the cap is enforced by inspecting the constant.
     assertTrue(SemanticTermSearchRest.MAX_LIMIT == 50, "MAX_LIMIT must be 50");
@@ -119,12 +120,13 @@ class SemanticTermSearchRestTest {
   @Test
   void noResourceNodes_returns200WithEmptyList() {
     stubEmptyResult();
-    Response r = rest.search("label", 20, sc);
+    Response r = rest.search("label", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty(), "Expected empty list when no :Resource nodes exist");
+    assertTrue(body.items().isEmpty(), "Expected empty list when no :Resource nodes exist");
+    assertEquals(0, body.total());
   }
 
   // ─── Matching terms ───────────────────────────────────────────────────────
@@ -143,18 +145,19 @@ class SemanticTermSearchRestTest {
 
     stubResultRows(List.of(row1, row2));
 
-    Response r = rest.search("Acti", 20, sc);
+    Response r = rest.search("Acti", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertEquals(2, body.size());
-    assertEquals("http://www.w3.org/ns/prov#Activity", body.get(0).uri());
-    assertEquals("Activity", body.get(0).label());
-    assertEquals("An activity is something that occurs over a period of time.", body.get(0).description());
-    assertEquals("http://www.w3.org/ns/prov#Agent", body.get(1).uri());
-    assertEquals("Agent", body.get(1).label());
-    assertNotNull(body.get(1)); // description null — record field is null
+    assertEquals(2, body.items().size());
+    assertEquals(2, body.total());
+    assertEquals("http://www.w3.org/ns/prov#Activity", body.items().get(0).uri());
+    assertEquals("Activity", body.items().get(0).label());
+    assertEquals("An activity is something that occurs over a period of time.", body.items().get(0).description());
+    assertEquals("http://www.w3.org/ns/prov#Agent", body.items().get(1).uri());
+    assertEquals("Agent", body.items().get(1).label());
+    assertNotNull(body.items().get(1)); // description null — record field is null
   }
 
   @Test
@@ -171,12 +174,13 @@ class SemanticTermSearchRestTest {
 
     stubResultRows(List.of(rowGood, rowBad));
 
-    Response r = rest.search("term", 20, sc);
+    Response r = rest.search("term", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
-    assertEquals(1, body.size(), "Row with null URI must be skipped");
-    assertEquals("http://example.org/term", body.get(0).uri());
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertEquals(1, body.items().size(), "Row with null URI must be skipped");
+    assertEquals(1, body.total());
+    assertEquals("http://example.org/term", body.items().get(0).uri());
   }
 
   @Test
@@ -189,12 +193,12 @@ class SemanticTermSearchRestTest {
       }
     };
 
-    Response r = nullSessionRest.search("label", 20, sc);
+    Response r = nullSessionRest.search("label", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty(), "Should return empty list when session is null");
+    assertTrue(body.items().isEmpty(), "Should return empty list when session is null");
   }
 
   @Test
@@ -208,12 +212,12 @@ class SemanticTermSearchRestTest {
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap()))
       .thenReturn(emptyResult);
 
-    Response r = rest.search("label", 20, sc);
+    Response r = rest.search("label", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
   }
 
   @Test
@@ -223,12 +227,12 @@ class SemanticTermSearchRestTest {
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap()))
       .thenThrow(new RuntimeException("contains failed"));
 
-    Response r = rest.search("label", 20, sc);
+    Response r = rest.search("label", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
   }
 
   // ─── stripLangSuffix ──────────────────────────────────────────────────────
@@ -264,17 +268,81 @@ class SemanticTermSearchRestTest {
 
     stubResultRows(List.of(row));
 
-    Response r = rest.search("Anomaly", 20, sc);
+    Response r = rest.search("Anomaly", 20, 0, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("Anomaly Detected", body.get(0).label(), "Lang suffix must be stripped from label");
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("Anomaly Detected", body.items().get(0).label(), "Lang suffix must be stripped from label");
     assertEquals(
       "A significant off-nominal event was detected.",
-      body.get(0).description(),
+      body.items().get(0).description(),
       "Lang suffix must be stripped from description"
     );
+  }
+
+  // ─── APISIMP-TERM-SEARCH-PAGESIZE-CAP-UNDOCUMENTED regression ─────────────
+
+  @Test
+  void q_paramIsMarkedRequiredWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticTermSearchRest.class.getMethod(
+        "search", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "q".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "q must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "q must carry @Parameter annotation");
+    assertTrue(ann.required(), "@Parameter.required must be true for q");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for q");
+  }
+
+  @Test
+  void pageSize_paramDescribesServerSideCap() throws NoSuchMethodException {
+    java.lang.reflect.Method method = SemanticTermSearchRest.class.getMethod(
+        "search", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(method.getParameters())
+        .filter(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "pageSize".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+    assertNotNull(param, "pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && ann.description().contains("50"),
+        "@Parameter.description for pageSize must mention the server-side cap of 50");
+  }
+
+  @Test
+  void page_param_reflectedInResponse() {
+    stubEmptyResult();
+    Response r = rest.search("label", 10, 3, sc);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertNotNull(body);
+    assertEquals(3, body.page(), "page() in response must reflect the requested page index");
+    assertEquals(10, body.pageSize(), "pageSize() in response must reflect capped effectiveLimit");
+  }
+
+  @Test
+  void negativePage_coercedToZero() {
+    stubEmptyResult();
+    Response r = rest.search("label", 10, -5, sc);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertNotNull(body);
+    assertEquals(0, body.page(), "Negative page must be coerced to 0");
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────

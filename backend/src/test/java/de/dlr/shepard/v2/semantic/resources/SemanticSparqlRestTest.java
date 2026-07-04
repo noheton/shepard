@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.semantic.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,9 +13,12 @@ import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +58,36 @@ class SemanticSparqlRestTest {
     rest = new StubRest(dao);
   }
 
+  // ─── OpenAPI schema — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED ───────────
+
+  @Test
+  void queryGet_queryParamIsDocumented() throws NoSuchMethodException {
+    Method method = SemanticSparqlRest.class.getMethod(
+      "queryGet", String.class, String.class, jakarta.ws.rs.core.SecurityContext.class
+    );
+    java.lang.reflect.Parameter[] params = method.getParameters();
+    // find the @QueryParam("query") parameter
+    java.lang.reflect.Parameter queryParam = null;
+    for (java.lang.reflect.Parameter p : params) {
+      QueryParam qp = p.getAnnotation(QueryParam.class);
+      if (qp != null && "query".equals(qp.value())) {
+        queryParam = p;
+        break;
+      }
+    }
+    assertNotNull(queryParam, "@QueryParam(\"query\") not found on queryGet()");
+    Parameter openApiParam = queryParam.getAnnotation(Parameter.class);
+    assertNotNull(
+      openApiParam,
+      "@Parameter annotation missing on @QueryParam(\"query\") — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED"
+    );
+    assertTrue(openApiParam.required(), "@Parameter must be required=true for the SPARQL query param");
+    assertTrue(
+      openApiParam.description() != null && openApiParam.description().length() > 10,
+      "@Parameter description must not be blank"
+    );
+  }
+
   // ─── Class-level annotations ──────────────────────────────────────────────
 
   @Test
@@ -64,6 +98,28 @@ class SemanticSparqlRestTest {
       p.value().startsWith("/v2/"),
       "@Path must start with /v2/ per CLAUDE.md policy — got: " + p.value()
     );
+  }
+
+  // ─── @Parameter documentation regression (APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED) ──
+
+  @Test
+  void queryGet_queryParam_hasParameterDescription() throws Exception {
+    Method m = SemanticSparqlRest.class.getMethod(
+      "queryGet", String.class, String.class, SecurityContext.class
+    );
+    java.lang.reflect.Parameter queryParam = null;
+    for (java.lang.reflect.Parameter p : m.getParameters()) {
+      QueryParam qp = p.getAnnotation(QueryParam.class);
+      if (qp != null && "query".equals(qp.value())) {
+        queryParam = p;
+        break;
+      }
+    }
+    assertNotNull(queryParam, "queryGet must have a @QueryParam(\"query\") parameter");
+    Parameter ann = queryParam.getAnnotation(Parameter.class);
+    assertNotNull(ann, "@Parameter must be present on the query @QueryParam in queryGet");
+    assertFalse(ann.description().isBlank(), "@Parameter description must not be blank");
+    assertTrue(ann.required(), "@Parameter must be marked required=true (null/blank → 400)");
   }
 
   // ─── Auth gate ────────────────────────────────────────────────────────────

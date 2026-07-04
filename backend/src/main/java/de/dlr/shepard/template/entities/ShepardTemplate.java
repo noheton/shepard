@@ -73,6 +73,12 @@ public class ShepardTemplate implements HasId, HasAppId {
    *       + {@code POST /v2/shapes/render}. See {@code aidocs/semantics/98 §1.1}
    *       and the meta-shape at
    *       {@code backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl}.</li>
+   *   <li>{@code MAPPING_RECIPE} — binds existing input reference appIds to a
+   *       derived output (a new reference, or a played/rendered view). Consumed
+   *       by {@code POST /v2/mappings/{appId}/materialize} via the
+   *       {@link de.dlr.shepard.spi.transform.TransformExecutor} SPI (V2CONV-B3).
+   *       The generic enabler that later dissolves the scene-graph + KRL
+   *       namespaces. See {@code aidocs/platform/191 §4}.</li>
    * </ul>
    * Free-form to allow plugins to register their own kinds. Validation
    * happens in {@link de.dlr.shepard.template.services.TemplateBodyValidator}.
@@ -135,6 +141,32 @@ public class ShepardTemplate implements HasId, HasAppId {
    */
   @Property("retired")
   private boolean retired = false;
+
+  /**
+   * Optional Material Design Icons (MDI) name string (with the
+   * {@code mdi-} prefix, e.g. {@code "mdi-layers"}) — the icon the
+   * UI renders wherever DataObjects of this template are shown
+   * (tree rows, breadcrumbs, sidebar, list cards, prov-graph chips,
+   * picker dialogs). Nullable: when absent the frontend falls back
+   * to the per-kind default (see
+   * {@code frontend/composables/useTemplateIcon.ts}).
+   *
+   * <p>Admin-configurable at runtime via {@code PATCH
+   * /v2/templates/{appId}} — subsumes the long-pending
+   * {@code project_feature_ideas} task #22 (admin-configurable
+   * type icons). Design: {@code aidocs/integrations/122}.
+   */
+  @Property("iconKey")
+  private String iconKey;
+
+  /**
+   * Optional appId of the parent template this template extends (single-parent
+   * inheritance per {@code aidocs/integrations/123 §2}). Nullable: a null parent
+   * means the template is a root. Migration:
+   * {@code V110__Template_parent_inheritance.cypher}.
+   */
+  @Property("parentTemplateAppId")
+  private String parentTemplateAppId;
 
   public ShepardTemplate(String name, String templateKind, String body) {
     this.name = name;

@@ -56,6 +56,24 @@ public class CollectionReferenceDAO extends VersionableEntityDAO<CollectionRefer
     return result;
   }
 
+  /**
+   * Looks up a CollectionReference by its application-level UUID v7 ({@code appId}).
+   * V2-SWEEP-004-1: required by {@code CollectionReferenceKindHandler}.
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching {@link CollectionReference}, or {@code null} when not found
+   */
+  public CollectionReference findByAppId(String appId) {
+    String query =
+      "MATCH %s WHERE r.appId = $appId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "CollectionReference", false)
+        ) +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? it.next() : null;
+  }
+
   @Override
   public Class<CollectionReference> getEntityType() {
     return CollectionReference.class;

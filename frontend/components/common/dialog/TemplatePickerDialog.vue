@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useDisplay } from "vuetify";
-import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
+import type { ShepardTemplate } from "@dlr-shepard/backend-client";
 
 defineProps<{
   title: string;
-  templates: ShepardTemplateIO[];
+  templates: ShepardTemplate[];
   loading: boolean;
   isInstantiating?: boolean;
   deEmphasiseBlank?: boolean;
@@ -16,7 +16,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const emit = defineEmits<{
-  (e: "select", template: ShepardTemplateIO): void;
+  (e: "select", template: ShepardTemplate): void;
   (e: "start-blank"): void;
 }>();
 
@@ -68,11 +68,13 @@ const { mobile } = useDisplay();
                 @click="emit('select', template)"
               >
                 <div class="d-flex align-start ga-2">
+                  <!-- TEMPLATE-ICONS-2-FE — render the template's own icon (or per-kind default) -->
                   <v-icon
-                    icon="mdi-file-document-outline"
+                    :icon="useTemplateIcon(template, 'DataObject')"
                     color="primary"
                     size="20"
                     class="mt-1 flex-shrink-0"
+                    data-test="template-card-icon"
                   />
                   <div>
                     <div class="text-subtitle-2 font-weight-bold">

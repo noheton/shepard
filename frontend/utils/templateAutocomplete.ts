@@ -9,12 +9,16 @@ export interface TemplateListItem {
   name?: string;
   templateKind?: string;
   description?: string;
+  /** TEMPLATE-ICONS-2-FE — optional MDI name, e.g. "mdi-layers". */
+  iconKey?: string | null;
 }
 
 export interface TemplateOption {
   title: string;
   value: string;
   subtitle?: string;
+  /** TEMPLATE-ICONS-2-FE — MDI name passed through for the autocomplete item slot. */
+  iconKey?: string | null;
 }
 
 /** Build the v-autocomplete option object for one template. */
@@ -29,6 +33,7 @@ export function formatOption(
     title: `${t.name ?? "(unnamed)"} — ${shortId}…${kindBadge}`,
     value: t.appId,
     subtitle: t.description ?? undefined,
+    iconKey: t.iconKey ?? null,
   };
 }
 

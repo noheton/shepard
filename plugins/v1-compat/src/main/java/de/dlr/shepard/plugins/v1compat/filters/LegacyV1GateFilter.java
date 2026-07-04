@@ -42,7 +42,7 @@ import jakarta.inject.Inject;
 public class LegacyV1GateFilter {
 
   /** RFC 7807 problem type URI for the disabled-v1-surface body. */
-  public static final String PROBLEM_TYPE_V1_DISABLED = "https://shepard.dlr.de/problems/v1-disabled";
+  public static final String PROBLEM_TYPE_V1_DISABLED = "/problems/v1-disabled";
 
   /** Stable human-readable title for the problem body. */
   static final String PROBLEM_TITLE = "Legacy v1 surface disabled";

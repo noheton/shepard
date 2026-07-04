@@ -8,7 +8,7 @@ import io.quarkus.logging.Log;
  * VID1b phase 1 — Video payload kind plugin manifest.
  *
  * <p>Phase 1: manifest-only. The VideoStreamReference entity,
- * VideoStreamReferenceV2Rest, VideoAnnotationRest, and VideoProbeService
+ * VideoStreamReferenceV2Rest, and VideoProbeService
  * remain in-tree for the migration window. This manifest exists so that:
  * <ul>
  *   <li>{@code PluginRegistry} tracks {@code "video"} in

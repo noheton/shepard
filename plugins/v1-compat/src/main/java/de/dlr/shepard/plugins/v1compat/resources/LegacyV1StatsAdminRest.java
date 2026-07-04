@@ -15,6 +15,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -48,6 +49,7 @@ public class LegacyV1StatsAdminRest {
 
   @GET
   @Operation(
+    operationId = "getLegacyV1Stats",
     summary = "Read the in-memory v1 hit-stats snapshot.",
     description = "Returns total hits, per-endpoint breakdown, per-principal breakdown, " +
     "and first/most-recent hit timestamps. Process restart resets the counters. The " +
@@ -59,7 +61,13 @@ public class LegacyV1StatsAdminRest {
     content = @Content(schema = @Schema(implementation = LegacyV1StatsIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response getStats(@QueryParam("topN") Integer topN) {
+  public Response getStats(
+    @Parameter(
+      description = "Maximum number of entity-type and principal buckets to return, ranked by hit count. " +
+      "Default 50. Values below 1 are clamped to 1; values above " + MAX_TOP_N + " are clamped to " + MAX_TOP_N + ". " +
+      "Pass a small value (e.g. 10) for a concise admin overview; pass " + MAX_TOP_N + " to see the full tail."
+    )
+    @QueryParam("topN") Integer topN) {
     int effective = topN == null ? LegacyV1StatsService.DEFAULT_TOP_N : Math.min(Math.max(1, topN), MAX_TOP_N);
     return Response.ok(stats.snapshot(effective)).build();
   }

@@ -375,7 +375,7 @@ public class JWTFilterTest extends BaseTestCase {
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
     var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
-    assertEquals("Bob", captured.getUsername());
+    assertEquals("MyUserName", captured.getUsername()); // preferred_username wins per application.properties
     assertEquals(keyId.toString(), captured.getKeyId());
   }
 
@@ -918,5 +918,95 @@ public class JWTFilterTest extends BaseTestCase {
     filter.filter(context);
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
+  }
+
+  // ── MFFD-VIDEOREF-SCALE-1 — query-param access_token fallback ───────────
+
+  @Test
+  public void testFilterAccessTokenQueryParam_authenticates()
+    throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // Browser surfaces (HTML5 <video>, <img>, <a download>) cannot inject
+    // a custom Authorization header. The query-param fallback lets the
+    // JWT travel as ?access_token=… so they can still consume protected
+    // routes.
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("Bob")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("azp", "testcase")
+      .claim("preferred_username", "Bob")
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    // No Authorization header, no X-API-KEY.
+    when(context.getHeaderString("Authorization")).thenReturn(null);
+    when(context.getHeaderString("X-API-KEY")).thenReturn(null);
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", jws);
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    assertEquals("Bob", captured.getUsername());
+  }
+
+  @Test
+  public void testFilterHeaderTakesPrecedenceOverQueryParam()
+    throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // When BOTH the Authorization header and ?access_token are present,
+    // the header wins — the query param is a fallback for surfaces that
+    // can't send headers. This avoids ambiguity for normal API callers
+    // who already use the header.
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+
+    String headerJws = Jwts.builder()
+      .setSubject("HeaderUser")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(UUID.randomUUID().toString())
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + headerJws);
+    // Add a malformed query-param token: if precedence is wrong, parsing
+    // will reject and we get 401 instead of the header-user.
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", "this-is-not-a-jwt");
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    assertEquals("HeaderUser", captured.getUsername());
+  }
+
+  @Test
+  public void testFilterEmptyQueryParam_falls_back_to_401()
+    throws URISyntaxException {
+    // ?access_token= (empty value) is treated as if absent.
+    when(context.getHeaderString("Authorization")).thenReturn(null);
+    when(context.getHeaderString("X-API-KEY")).thenReturn(null);
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", "");
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context).abortWith(responseCaptor.capture());
+    assertEquals(401, responseCaptor.getValue().getStatus());
   }
 }

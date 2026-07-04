@@ -137,6 +137,37 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     return result;
   }
 
+  /** Paginated variant of {@link #findTopLevelByCollectionAppId(String)}. */
+  public List<DataObject> findTopLevelByCollectionAppId(String collectionAppId, int page, int pageSize) {
+    List<DataObject> result = new ArrayList<>();
+    Map<String, Object> params = new HashMap<>(Map.of(
+        "collectionAppId", collectionAppId,
+        "offset", (long) page * pageSize,
+        "size", (long) pageSize
+    ));
+    findByQuery(
+      "MATCH (c:Collection {appId: $collectionAppId, deleted: FALSE})" +
+      "-[:has_dataobject]->(d:DataObject {deleted: FALSE})" +
+      " WHERE NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))" +
+      " WITH d SKIP $offset LIMIT $size " +
+      CypherQueryHelper.getReturnPart("d"),
+      params
+    ).forEach(result::add);
+    return result;
+  }
+
+  /** Returns the count of top-level DataObjects in a Collection (for AAS submodel pagination). */
+  public long countTopLevelByCollectionAppId(String collectionAppId) {
+    var it = session.query(Long.class,
+        "MATCH (c:Collection {appId: $collectionAppId, deleted: FALSE})" +
+        "-[:has_dataobject]->(d:DataObject {deleted: FALSE})" +
+        " WHERE NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))" +
+        " RETURN COUNT(d)",
+        Map.of("collectionAppId", collectionAppId)
+    ).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
   /**
    * Deletes the has_successor relation between the predecessor and the successor dataobjects in neo4j
    */
@@ -246,6 +277,12 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       where += " AND d.status = $status";
     }
 
+    if (paramsWithShepardIds.hasAnnotationFilter()) {
+      paramsMap.put("annoIri", paramsWithShepardIds.getAnnotationFilterPredicateIri());
+      paramsMap.put("annoVal", paramsWithShepardIds.getAnnotationFilterValue());
+      match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
+    }
+
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
       query +=
@@ -342,6 +379,12 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     if (params.hasStatus()) {
       paramsMap.put("status", params.getStatus());
       where += " AND d.status = $status";
+    }
+
+    if (params.hasAnnotationFilter()) {
+      paramsMap.put("annoIri", params.getAnnotationFilterPredicateIri());
+      paramsMap.put("annoVal", params.getAnnotationFilterValue());
+      match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
     }
 
     String query = match + where + " RETURN count(d) AS total";

@@ -1,0 +1,155 @@
+# MFFD process-chain mapping — schema version 1
+#
+# Worked example: 15 mappings across all four transitionKind values,
+# illustrating the tapelaying → bridgewelding → ndt-thermography → cleats
+# chain plus a rework loop.
+#
+# See aidocs/integrations/118-mffd-process-chain-mapping.md for the
+# selector → predicate mapping convention. The selector keys here use
+# underscores (track_number, ply_number, …) and the loader/validator
+# normalise them to the canonical urn:shepard:mffd:track-number etc.
+#
+# This is a hand-authored example — the values (track 244 → AF_3,
+# AF_3 → P_K, etc.) are illustrative and not derived from real data.
+# Real-world MFFD mappings are authored by the MFFD domain expert
+# (flo) on a different YAML file kept outside the repo.
+
+schemaVersion: 1
+
+mappings:
+  # ─ tapelaying → bridgewelding (normal — three tracks land in AF_3) ─────
+  - source:
+      process: afp-layup
+      ply_number: 5
+      track_number: 244
+    target:
+      process: bridge-welding
+      part_name: AF_3
+    transitionKind: normal
+
+  - source:
+      process: afp-layup
+      ply_number: 5
+      track_number: 245
+    target:
+      process: bridge-welding
+      part_name: AF_3
+    transitionKind: normal
+
+  - source:
+      process: afp-layup
+      ply_number: 6
+      track_number: 246
+    target:
+      process: bridge-welding
+      part_name: AF_3
+    transitionKind: normal
+
+  # ─ tapelaying → bridgewelding (normal — AF_4 receives a parallel ply) ───
+  - source:
+      process: afp-layup
+      ply_number: 5
+      track_number: 250
+    target:
+      process: bridge-welding
+      part_name: AF_4
+    transitionKind: normal
+
+  - source:
+      process: afp-layup
+      ply_number: 6
+      track_number: 251
+    target:
+      process: bridge-welding
+      part_name: AF_4
+    transitionKind: normal
+
+  # ─ bridgewelding → ndt-thermography ─────────────────────────────────────
+  - source:
+      process: bridge-welding
+      part_name: AF_3
+    target:
+      process: ndt-thermography
+      campaign_id: P_K
+    transitionKind: normal
+
+  - source:
+      process: bridge-welding
+      part_name: AF_4
+    target:
+      process: ndt-thermography
+      campaign_id: P_K
+    transitionKind: normal
+
+  # ─ ndt-thermography → cleats (normal — pass-through) ───────────────────
+  - source:
+      process: ndt-thermography
+      campaign_id: P_K
+    target:
+      process: cleats
+      cleat_id: L_12
+    transitionKind: normal
+
+  - source:
+      process: ndt-thermography
+      campaign_id: P_K
+    target:
+      process: cleats
+      cleat_id: L_13
+    transitionKind: normal
+
+  # ─ rework loop: NDT FAIL → return to bridge-welding ─────────────────────
+  - source:
+      process: ndt-thermography
+      campaign_id: P_K_FAIL
+    target:
+      process: bridge-welding
+      part_name: AF_5
+    transitionKind: rework
+
+  # ─ re-test: re-NDT after rework ─────────────────────────────────────────
+  - source:
+      process: bridge-welding
+      part_name: AF_5
+    target:
+      process: ndt-thermography
+      campaign_id: P_K_RETEST
+    transitionKind: re-test
+
+  # ─ re-test cleared → cleats ─────────────────────────────────────────────
+  - source:
+      process: ndt-thermography
+      campaign_id: P_K_RETEST
+    target:
+      process: cleats
+      cleat_id: L_14
+    transitionKind: normal
+
+  # ─ concession: NDT marginal but accepted with documented disposition ───
+  - source:
+      process: ndt-thermography
+      campaign_id: P_K_MARGINAL
+    target:
+      process: cleats
+      cleat_id: L_15
+    transitionKind: concession
+
+  # ─ rework: second-pass NDT FAIL on AF_6 ─────────────────────────────────
+  - source:
+      process: ndt-thermography
+      campaign_id: P_M_FAIL
+    target:
+      process: bridge-welding
+      part_name: AF_6
+    transitionKind: rework
+
+  # ─ unresolved-on-purpose: targets a not-yet-imported DO; the validator
+  #   reports this entry as unresolved (line ~140) without erroring.
+  - source:
+      process: afp-layup
+      ply_number: 12
+      track_number: 999
+    target:
+      process: bridge-welding
+      part_name: AF_NONEXISTENT
+    transitionKind: normal

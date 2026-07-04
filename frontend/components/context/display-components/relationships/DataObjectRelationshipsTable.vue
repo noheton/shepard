@@ -8,21 +8,28 @@ import { handleDataObjectUpdate } from "~/utils/resourceUpdateBus";
 interface DataObjectRelationshipsTable {
   collectionId: number;
   dataObjectId: number;
+  /**
+   * V2-LINKS: the UUID-v7 appId of the collection this table is rendered for
+   * (= the current route param). Used to build appId-keyed navigation routes
+   * to sibling / predecessor / successor DataObjects — the numeric route 404s.
+   */
+  collectionAppId?: string;
   relatedEntities: RelatedEntity[];
   isAllowedToEditCollection: boolean;
   /**
-   * PROV1k — optional map of predecessor numeric id → PROV-O / FAIR²R
+   * PROV1k — optional map of predecessor appId (UUID v7) → PROV-O / FAIR²R
    * relationship type. When provided, the typed relationship chip is shown
    * next to the "Predecessor" label in the Relationship column.
    * Omit (undefined) for backward-compat with callers that don't yet have
    * typed predecessor info.
    */
-  predecessorRelationshipTypes?: Map<number, string>;
+  predecessorRelationshipTypes?: Map<string, string>;
 }
 
 const props = defineProps<DataObjectRelationshipsTable>();
 
-const selectedReferenceId = ref<number | undefined>(0);
+const selectedReferenceAppId = ref<string>("");
+const selectedReferenceKind = ref<string>("DataObjectReference");
 const selectedTableElement = ref<RelationshipTableElement | undefined>();
 const showAddAnnotationDialog = ref(false);
 const showDeleteRelationshipDialog = ref<boolean>(false);
@@ -42,7 +49,10 @@ function openAddAnnotationDialog(relationshipElementId: number) {
     case "Link":
     case "Collection Reference":
     case "Data Object Reference":
-      selectedReferenceId.value = relationShipElement.id;
+      selectedReferenceAppId.value =
+        relationShipElement.information.referenceAppId ?? "";
+      selectedReferenceKind.value =
+        relationShipElement.information.referenceKind ?? "DataObjectReference";
       break;
     default:
       throw new Error("Unsupported relationship type");
@@ -97,10 +107,17 @@ function getRelationshipElementById(
 
 const tableItems = computed(() =>
   props.relatedEntities.map(entity => {
-    const item = mapRelatedEntityToRelationshipTableElement(entity);
+    const item = mapRelatedEntityToRelationshipTableElement(
+      entity,
+      props.collectionAppId,
+    );
     // PROV1k: attach typed predecessor relationship type when available.
+    // Join on appId (UUID v7) — predecessorId (numeric) is deprecated.
     if (item.relationship === "Predecessor" && props.predecessorRelationshipTypes) {
-      item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(entity.id);
+      const appId = (entity as { appId?: string | null }).appId;
+      if (appId) {
+        item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(appId);
+      }
     }
     return item;
   }),
@@ -179,10 +196,13 @@ const headers = [
     >
       <TypeCell :value="value.type" />
       <SemanticAnnotationList
-        v-if="value.annotatable"
+        v-if="value.annotatable && value.referenceAppId"
         :can-delete="isAllowedToEditCollection"
         :annotated="
-          new AnnotatedReference(collectionId, dataObjectId, value.referenceId)
+          new AnnotatedReference(
+            value.referenceAppId,
+            value.referenceKind ?? 'DataObjectReference',
+          )
         "
       />
     </template>
@@ -234,14 +254,10 @@ const headers = [
   </div>
 
   <AddAnnotationDialog
-    v-if="showAddAnnotationDialog"
+    v-if="showAddAnnotationDialog && selectedReferenceAppId"
     v-model:show-dialog="showAddAnnotationDialog"
     :annotated="
-      new AnnotatedReference(
-        props.collectionId,
-        props.dataObjectId,
-        selectedReferenceId!,
-      )
+      new AnnotatedReference(selectedReferenceAppId, selectedReferenceKind)
     "
   />
 

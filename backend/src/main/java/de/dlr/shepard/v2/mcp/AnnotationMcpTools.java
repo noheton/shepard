@@ -86,7 +86,7 @@ public class AnnotationMcpTools {
       "  prefix      — short prefix (e.g. 'dcterms').\n" +
       "  description — free-text description (may be null).\n\n" +
       "Only enabled vocabularies are returned. Operators can disable a vocabulary via " +
-      "PATCH /v2/admin/semantic/config without deleting its data."
+      "PATCH /v2/admin/config/semantic without deleting its data."
   )
   public String listVocabularies() {
     return support.run("list_vocabularies", () -> {

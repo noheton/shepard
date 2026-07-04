@@ -3,7 +3,7 @@ import type {
   CreateGitReferenceIO,
   GitReferenceIO,
   PatchGitReferenceIO,
-} from "@dlr-shepard/backend-client";
+} from "~/composables/context/gitReferenceTypes";
 import { useFetchGitCredentials } from "~/composables/context/useFetchGitCredentials";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";

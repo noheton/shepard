@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 interface ContainerTitleAndMetadataDisplayProps {
-  id: number;
+  appId: string;
   name: string;
   typeLabel: string;
   nItems?: number;
@@ -24,7 +24,7 @@ defineProps<ContainerTitleAndMetadataDisplayProps>();
       </v-col>
       <v-col>
         <strong>Container ID:</strong>
-        {{ id }}
+        {{ appId }}
       </v-col>
       <v-col v-if="nItems !== undefined">
         <strong>Number of items:</strong>

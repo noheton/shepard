@@ -47,13 +47,17 @@ public class ApiKeyService {
 
   /**
    * A0 §4.2 — operator-configurable allowlist of roles that API keys
-   * may carry. Default is the singleton {@code ["instance-admin"]};
-   * shrink to empty (set the property to nothing) to forbid
-   * role-bearing keys entirely. Modelled as {@code Optional<String[]>}
-   * so SmallRye config doesn't reject empty values.
+   * may carry. Default includes every realm role shepard ships
+   * (`instance-admin`, `quality-engineer`); shrink to empty (set the
+   * property to nothing) to forbid role-bearing keys entirely. Modelled
+   * as {@code Optional<String[]>} so SmallRye config doesn't reject
+   * empty values.
    */
   @Inject
-  @ConfigProperty(name = "shepard.apikey.role-allowlist", defaultValue = "instance-admin")
+  @ConfigProperty(
+    name = "shepard.apikey.role-allowlist",
+    defaultValue = Constants.INSTANCE_ADMIN_ROLE + "," + Constants.QUALITY_ENGINEER_ROLE
+  )
   java.util.Optional<String[]> apiKeyRoleAllowlistOpt;
 
   /**
@@ -134,12 +138,26 @@ public class ApiKeyService {
     Set<String> requestedRoles = apiKey.getRoles() == null ? Set.of() : new HashSet<>(apiKey.getRoles());
     validateRequestedRoles(requestedRoles, username);
 
+    // RESEED-FIND-APIKEY-ROLES — a minted API key must carry the same
+    // role set the interactive OIDC token would, so `@RolesAllowed`
+    // checks (NCR `status` needs `quality-engineer`, admin surfaces need
+    // `instance-admin`) pass for API-key auth exactly as they do for an
+    // interactive token. When the caller doesn't explicitly narrow the
+    // role set, default to the user's *effective* roles (the same source
+    // JwtTokenAuthService.resolveDualSourceRoles reads — the Neo4j
+    // `:HAS_ROLE` grants) intersected with the operator allowlist. When
+    // the caller asks for an explicit subset, honour that (already
+    // validated above for allowlist membership + caller-must-hold).
+    Set<String> effectiveRoles = requestedRoles.isEmpty()
+      ? resolveEffectiveRoles(username)
+      : requestedRoles;
+
     var toCreate = new ApiKey();
     toCreate.setBelongsTo(user);
     toCreate.setCreatedAt(now);
     toCreate.setName(apiKey.getName());
     toCreate.setValidUntil(validUntil);
-    toCreate.setRoles(requestedRoles);
+    toCreate.setRoles(effectiveRoles);
 
     var createdApiKey = apiKeyDAO.createOrUpdate(toCreate);
     createdApiKey.setJws(generateJws(createdApiKey, baseUri));
@@ -164,13 +182,7 @@ public class ApiKeyService {
   void validateRequestedRoles(Set<String> requestedRoles, String username) {
     if (requestedRoles == null || requestedRoles.isEmpty()) return;
 
-    Set<String> allowlist = new HashSet<>();
-    String[] configured = apiKeyRoleAllowlistOpt == null ? null : apiKeyRoleAllowlistOpt.orElse(new String[0]);
-    if (configured != null) {
-      for (String r : configured) {
-        if (r != null && !r.isBlank()) allowlist.add(r.trim());
-      }
-    }
+    Set<String> allowlist = parseAllowlist();
 
     Set<String> callerRoles = new HashSet<>();
     var principal = authenticationContext == null ? null : authenticationContext.getPrincipal();
@@ -201,6 +213,49 @@ public class ApiKeyService {
         );
       }
     }
+  }
+
+  /**
+   * RESEED-FIND-APIKEY-ROLES — resolve the user's effective realm roles
+   * for the default (no explicit-roles-requested) mint path, bounded by
+   * the operator allowlist. Reads the same Neo4j {@code :HAS_ROLE}
+   * grants that {@code JwtTokenAuthService.resolveDualSourceRoles} reads
+   * for the interactive token, so the minted key and the interactive
+   * token resolve from ONE source of truth. The allowlist intersection
+   * preserves the operator's ability to forbid role-bearing keys
+   * entirely (empty allowlist → empty role set, today's behaviour).
+   */
+  Set<String> resolveEffectiveRoles(String username) {
+    Set<String> allowlist = parseAllowlist();
+    if (allowlist.isEmpty()) return Set.of();
+
+    Set<String> effective = new HashSet<>();
+    if (roleDAO != null) {
+      try {
+        effective.addAll(roleDAO.rolesForUser(username));
+      } catch (RuntimeException ignored) {
+        // best-effort, see JWTFilter notes — degrade to no roles rather
+        // than failing the mint on a transient Neo4j read.
+      }
+    }
+    effective.retainAll(allowlist);
+    return effective;
+  }
+
+  /**
+   * Parse {@code shepard.apikey.role-allowlist} into a trimmed,
+   * blank-free set. Shared by the explicit-request validation and the
+   * default effective-role resolution.
+   */
+  private Set<String> parseAllowlist() {
+    Set<String> allowlist = new HashSet<>();
+    String[] configured = apiKeyRoleAllowlistOpt == null ? null : apiKeyRoleAllowlistOpt.orElse(new String[0]);
+    if (configured != null) {
+      for (String r : configured) {
+        if (r != null && !r.isBlank()) allowlist.add(r.trim());
+      }
+    }
+    return allowlist;
   }
 
   /**

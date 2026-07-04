@@ -5,25 +5,17 @@ import type { StructuredDataDataTableItem } from "~/components/context/display-c
 import { mapStructuredDataListToDataTableItems } from "~/components/context/display-components/structured-data-references/structuredDataMappingUtil";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchStructuredDataReference } from "~/composables/context/useFetchStructuredDataReference";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
-// string ids and hit v2 directly. The remaining numeric-typed composables
-// (useFetchStructuredDataReference, etc.) keep the existing as-number cast
-// pending BUG-COLL-APPID-ROUTE-003.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId, structuredDataReferenceId } =
-  routeParams.value as unknown as {
-    collectionId: number;
-    dataObjectId: number;
-    structuredDataReferenceId: number;
-  };
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
+const showEditDialog = ref<boolean>(false);
 const showStructuredDataContentViewerDialog = ref<boolean>(false);
 const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
 const selectedPayload = ref<string>("");
@@ -33,12 +25,30 @@ const isEditMode = ref<boolean>(false);
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
-const { structuredDataReference, structuredData, refreshStructuredData } =
-  useFetchStructuredDataReference(
-    collectionId,
-    dataObjectId,
-    structuredDataReferenceId,
-  );
+
+// BUG-COLL-APPID-ROUTE-007-REFPAGE: resolve numeric ids from the loaded v2
+// entities; defer all v1 calls until both are available. UUID route params
+// must never be cast directly to numbers for v1 endpoints.
+const collectionNumericId = computed(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
+);
+const dataObjectNumericId = computed(() =>
+  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
+);
+const structuredDataReferenceNumericId = computed(() =>
+  resolveNumericId(undefined, routeParams.value.structuredDataReferenceId),
+);
+
+const {
+  structuredDataReference,
+  structuredData,
+  refreshStructuredData,
+  notFound: structuredDataReferenceNotFound,
+} = useFetchStructuredDataReference(
+  collectionNumericId,
+  dataObjectNumericId,
+  structuredDataReferenceNumericId,
+);
 
 const headers = ref([
   { title: "Name", key: "name", sortable: true },
@@ -57,24 +67,30 @@ function onAnnotate() {
   showAddAnnotationDialog.value = true;
 }
 
+function onEdit() {
+  showEditDialog.value = true;
+}
+
 function onDelete() {
   showDeleteDialog.value = true;
 }
 
 function deleteStructuredDataReference() {
-  if (structuredDataReference.value) {
+  const c = collectionNumericId.value;
+  const d = dataObjectNumericId.value;
+  if (structuredDataReference.value && c && d) {
     useShepardApi(StructuredDataReferenceApi)
       .value.deleteStructuredDataReference({
-        collectionId,
-        dataObjectId,
+        collectionId: c,
+        dataObjectId: d,
         structuredDataReferenceId: structuredDataReference.value.id,
       })
       .then(() => {
         navigateTo(
           collectionsPath +
-            collectionId +
+            routeParams.value.collectionId +
             dataObjectsPathFragment +
-            dataObjectId,
+            routeParams.value.dataObjectId,
         );
       })
       .catch(error => {
@@ -155,19 +171,19 @@ watch(structuredDataReference, () => {
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  routeParams.dataObjectId,
               },
               {
                 title: `${structuredDataReference?.name}`,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId +
+                  routeParams.dataObjectId +
                   structuredDataReferencesPathFragment +
-                  structuredDataReferenceId,
+                  routeParams.structuredDataReferenceId,
               },
             ]"
           />
@@ -178,7 +194,7 @@ watch(structuredDataReference, () => {
               <TitleAndMetadataDisplay
                 :entity="{
                   ...structuredDataReference,
-                  name: `Structured Data Reference “${structuredDataReference.name}”`,
+                  name: `Structured Data Reference '${structuredDataReference.name}'`,
                   type: 'Structured Data',
                   container: {
                     title:
@@ -191,6 +207,7 @@ watch(structuredDataReference, () => {
                   },
                 }"
                 :on-annotate="onAnnotate"
+                :on-edit="structuredDataReference.appId && isAllowedToEditCollection ? onEdit : undefined"
                 :on-delete="onDelete"
                 id-label="ID"
               />
@@ -198,12 +215,12 @@ watch(structuredDataReference, () => {
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
+                  v-if="structuredDataReference?.appId"
                   :can-delete="!!isAllowedToEditCollection"
                   :annotated="
                     new AnnotatedReference(
-                      collection.id,
-                      dataObjectId,
-                      structuredDataReferenceId,
+                      structuredDataReference.appId,
+                      'StructuredDataReference',
                     )
                   "
                 />
@@ -301,21 +318,40 @@ watch(structuredDataReference, () => {
           </v-container>
         </v-col>
       </v-row>
+      <!-- UI-404-NICE-EMPTY-STATE-REF-PAGES: 404 on the structured-data reference
+           fetch → honest empty state instead of an eternal spinner. -->
+      <EntityNotFound
+        v-else-if="structuredDataReferenceNotFound"
+        entity-kind="StructuredDataReference"
+        :requested-id="routeParams.structuredDataReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <EditStructuredDataReferenceDialog
+      v-if="showEditDialog && structuredDataReference?.appId"
+      v-model:show-dialog="showEditDialog"
+      :structured-data-reference-app-id="structuredDataReference.appId"
+      :current-name="structuredDataReference.name"
+      @saved="(newName) => { if (structuredDataReference) structuredDataReference.name = newName; }"
+    />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
       @confirmed="deleteStructuredDataReference"
     />
     <AddAnnotationDialog
-      v-if="showAddAnnotationDialog"
+      v-if="showAddAnnotationDialog && structuredDataReference?.appId"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
         new AnnotatedReference(
-          collectionId,
-          dataObjectId,
-          structuredDataReferenceId,
+          structuredDataReference.appId,
+          'StructuredDataReference',
         )
       "
     />

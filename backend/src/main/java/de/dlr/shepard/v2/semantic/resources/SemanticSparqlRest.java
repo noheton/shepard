@@ -38,6 +38,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -94,7 +95,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/semantic")
 @RequestScoped
-@Tag(name = "Semantic SPARQL proxy (v2, N1f)")
+@Tag(name = "Semantics")
 public class SemanticSparqlRest {
 
   // ─── Media types ──────────────────────────────────────────────────────────
@@ -168,6 +169,7 @@ public class SemanticSparqlRest {
   @Path("/{repoAppId}/sparql")
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryGet",
     summary = "Execute a read-only SPARQL SELECT or ASK query (GET form).",
     description =
       "Accepts a SPARQL query via the `query` URL parameter and proxies it to the backend " +
@@ -203,6 +205,15 @@ public class SemanticSparqlRest {
   @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
+    @Parameter(
+      required = true,
+      description =
+        "URL-encoded SPARQL 1.1 SELECT or ASK query string. Must be non-empty — null or blank " +
+        "returns 400. Only `SELECT` and `ASK` query forms are accepted; any mutation form " +
+        "(`CONSTRUCT`, `INSERT`, `DELETE`, `UPDATE`, …) is rejected with 400 before reaching " +
+        "the backend. For queries longer than ~2 KB prefer the POST form variant " +
+        "(`application/x-www-form-urlencoded`, field name `query`) to avoid proxy URL-length limits."
+    )
     @QueryParam("query") String query,
     @Context SecurityContext sc
   ) {
@@ -220,6 +231,7 @@ public class SemanticSparqlRest {
   @Consumes(FORM_URL_ENCODED)
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "queryPost",
     summary = "Execute a read-only SPARQL SELECT or ASK query (POST form variant).",
     description =
       "Identical semantics to the GET variant, but accepts the query as a URL-encoded " +

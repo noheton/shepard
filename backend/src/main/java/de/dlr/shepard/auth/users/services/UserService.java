@@ -14,6 +14,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @RequestScoped
@@ -37,28 +38,50 @@ public class UserService {
   public User createOrUpdateUser(User user) {
     Optional<User> oldUserOptional = getUserOptional(user.getUsername());
     if (oldUserOptional.isEmpty()) {
+      // BUG-USER-PROVISION-EMAIL-COLLISION: when the Neo4j username constraint
+      // would collide on email (stored node has a different username), fall back
+      // to a lookup by email so the blind create doesn't throw
+      // ConstraintValidationFailed and 500-storm every subsequent request.
+      if (user.getEmail() != null && !user.getEmail().isBlank()) {
+        Optional<User> byEmail = userDAO.findByEmail(user.getEmail());
+        if (byEmail.isPresent()) {
+          User existingNode = byEmail.get();
+          Log.warnf(
+            "BUG-USER-PROVISION-EMAIL-COLLISION: token username '%s' does not match stored " +
+            "username '%s' for email '%s'. Adopting existing node without rename — ensure the " +
+            "OIDC preferred_username claim is stable or set shepard.oidc.username-claim.",
+            user.getUsername(),
+            existingNode.getUsername(),
+            user.getEmail()
+          );
+          return mergeProfileFields(existingNode, user);
+        }
+      }
       Log.infof("The user %s does not exist, creating...", user.getUsername());
       return userDAO.createOrUpdate(user);
     }
     User oldUser = oldUserOptional.get();
+    return mergeProfileFields(oldUser, user);
+  }
 
-    String firstName = user.getFirstName() != null ? user.getFirstName() : oldUser.getFirstName();
-    String lastName = user.getLastName() != null ? user.getLastName() : oldUser.getLastName();
-    String email = user.getEmail() != null ? user.getEmail() : oldUser.getEmail();
+  private User mergeProfileFields(User target, User source) {
+    String firstName = source.getFirstName() != null ? source.getFirstName() : target.getFirstName();
+    String lastName = source.getLastName() != null ? source.getLastName() : target.getLastName();
+    String email = source.getEmail() != null ? source.getEmail() : target.getEmail();
 
     if (
-      !firstName.equals(oldUser.getFirstName()) ||
-      !lastName.equals(oldUser.getLastName()) ||
-      !email.equals(oldUser.getEmail())
+      !Objects.equals(firstName, target.getFirstName()) ||
+      !Objects.equals(lastName, target.getLastName()) ||
+      !Objects.equals(email, target.getEmail())
     ) {
-      oldUser.setFirstName(firstName);
-      oldUser.setLastName(lastName);
-      oldUser.setEmail(email);
-      Log.infof("Update user %s", oldUser);
-      return userDAO.createOrUpdate(oldUser);
+      target.setFirstName(firstName);
+      target.setLastName(lastName);
+      target.setEmail(email);
+      Log.infof("Update user %s", target);
+      return userDAO.createOrUpdate(target);
     }
 
-    return oldUser;
+    return target;
   }
 
   /**
@@ -91,6 +114,24 @@ public class UserService {
     User currentUser = userDAO.find(authenticationContext.getCurrentUserName());
 
     if (currentUser == null) {
+      // BUG-USER-PROVISION-EMAIL-COLLISION: when the stored Neo4j username diverges
+      // from the token's preferred_username (e.g. importer service-account UUID vs.
+      // interactive "admin"), the username lookup misses. Fall back to email if the
+      // JWT carried the email claim, so the request can proceed with the correct node.
+      String email = authenticationContext.getCurrentUserEmail();
+      if (email != null && !email.isBlank()) {
+        Optional<User> byEmail = userDAO.findByEmail(email);
+        if (byEmail.isPresent()) {
+          Log.warnf(
+            "BUG-USER-PROVISION-EMAIL-COLLISION: getCurrentUser by username '%s' failed; " +
+            "resolved via email '%s' to stored username '%s'.",
+            authenticationContext.getCurrentUserName(),
+            email,
+            byEmail.get().getUsername()
+          );
+          return byEmail.get();
+        }
+      }
       String errorMsg = "Could not determine current user";
       Log.error(errorMsg);
       throw new InvalidRequestException(errorMsg);

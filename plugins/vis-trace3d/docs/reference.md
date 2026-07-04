@@ -1,7 +1,7 @@
 ---
 title: vis-trace3d — Reference
 stage: feature-defined
-last-stage-change: 2026-05-28
+last-stage-change: 2026-06-04
 audience: plugin-author
 ---
 
@@ -129,6 +129,42 @@ queries. Live channel resolution (`status = "OK"` /
 `"MISSING"` / `"UNIT_MISMATCH"`) ships in TPL2c, gated on the
 TS-ID migration (`aidocs/platform/87`).
 
+### `POST /v2/shapes/render` with `Accept: image/png` (RESEED-FIND-RENDER-PNG)
+
+This plugin ships `Trace3DPngRenderer`
+(`de.dlr.shepard.plugins.vistrace3d.render.Trace3DPngRenderer`), a
+`ViewRecipeRenderer` that **claims the `Trace3DViewShape` IRI** and
+declares `image/png` in `producibleMedia()`. With the plugin installed,
+`POST /v2/shapes/render` for a Trace3D VIEW_RECIPE honours
+`Accept: image/png` and returns real PNG bytes instead of falling back
+to the JSON view-model (the V2CONV-A1 content-negotiation contract).
+
+The PNG is rasterised **server-side, pure-JVM** via
+`java.awt.BufferedImage` + `Graphics2D` + `javax.imageio.ImageIO` — no
+headless browser, no native dependency. The image is a labelled
+view-recipe card: the recipe title, the declared colour map, a 2-D
+axis frame with a colour-ramped illustrative path, and a legend of the
+declared channel bindings. Because the render endpoint is stateless and
+does not yet resolve live channel samples (TPL2b/DECLARED beta), the
+drawn path is deterministic and illustrative; it is replaced by the
+resolved frame polyline once live channel resolution lands (TPL2c)
+with no change to the negotiation contract.
+
+```bash
+curl -X POST https://<host>/v2/shapes/render \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: image/png" \
+  -d '{"templateAppId":"<view-recipe-appId>","focusShepardId":"<focus-appId>"}' \
+  -o trace3d.png
+```
+
+Registered through
+`META-INF/services/de.dlr.shepard.spi.view.ViewRecipeRenderer`
+(ServiceLoader, the same mechanism `ViewRecipeRendererRegistry` walks
+at startup). Any other `Accept` (`application/json`, `*/*`) returns the
+JSON view-model unchanged.
+
 ### Frame envelope (the in-tree v1 contract)
 
 The current renderer reads three flat number arrays (`xData`, `yData`,
@@ -199,3 +235,41 @@ plugin gains:
    the VIS-T1 backlog row).
 4. The Phase-1 → Phase-2 cutover is recorded as a new tracker row
    in `aidocs/34` referencing this Phase-1 row.
+
+---
+
+## SceneGraphPlay — the MAPPING_RECIPE transform (V2CONV-B4)
+
+As of **V2CONV-B4** this plugin also ships the **scene-graph play
+transform** — the consumer that dissolved the bespoke `/v2/scene-graphs/*`
+namespace into the generic MAPPING_RECIPE mechanism
+(`aidocs/platform/191` §decision-2).
+
+- **Shape:** `scenegraph:SceneGraphPlayShape`, IRI
+  `http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape`
+  (`src/main/resources/shapes/scene-graph-play.shacl.ttl`).
+- **Executor:** `SceneGraphPlayTransformExecutor` (a `TransformExecutor`
+  ServiceLoader SPI POJO registered via
+  `META-INF/services/de.dlr.shepard.spi.transform.TransformExecutor`).
+
+A `MAPPING_RECIPE` template targeting this shape binds:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `urdfFileReferenceAppId` | yes | singleton FileReference (FR1b) carrying URDF XML — the kinematic tree, parsed on demand |
+| `jointTimeseriesReferenceAppId` | no | TimeseriesReference of joint values over time |
+| `jointChannelBindings` | no | JSON array `[{joint, channelSelector}]` |
+
+Materializing it via `POST /v2/mappings/{templateAppId}/materialize`
+resolves + parses the URDF (a self-contained `UrdfKinematics` parser,
+OWASP-secure XML defaults — no new dependency), reads the binding plan,
+and returns a `TransformResult.view` **play envelope**
+(`{ kind, robotName, rootLink, frames[], joints[], jointChannelBindings,
+urdfFileReferenceAppId, playbackStatus }`). `playbackStatus` is
+`STATIC_POSE` (no joint TS bound) or `DECLARED` (joint TS bound; live
+channel resolution lands with VIS-S1).
+
+The frontend reaches this in-context from a URDF FileReference detail
+page ("Create / Open 3D view") and renders the URDF with the existing
+`UrdfCanvas` (Three.js urdf-loader). See `docs/reference/scene-graph.md`
+in the main docs tree for the full worked example.

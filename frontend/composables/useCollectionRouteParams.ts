@@ -22,6 +22,7 @@ export function useCollectionRouteParams() {
     timeseriesReferenceId: initialParams.timeseriesReferenceId,
     fileReferenceId: initialParams.fileReferenceId,
     structuredDataReferenceId: initialParams.structuredDataReferenceId,
+    videoStreamReferenceId: initialParams.videoStreamReferenceId,
   });
 
   watch(

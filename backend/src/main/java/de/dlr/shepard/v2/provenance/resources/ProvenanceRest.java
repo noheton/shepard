@@ -10,6 +10,8 @@ import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.provenance.services.ProvenanceStatsService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -25,9 +27,10 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -44,11 +47,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * activities for **other** users is gated to
  * {@code instance-admin} per {@code aidocs/51}: the casual user sees
  * their personal trail; the operator sees the instance.
+ *
+ * <p><b>Timestamp params</b> ({@code since}/{@code until}): both formats
+ * are accepted — ISO 8601 instant ({@code 2026-01-01T00:00:00Z}) or
+ * epoch-milliseconds ({@code 1751299200000}). Heuristic: values starting
+ * with a digit are parsed as epoch-ms; all others are parsed via
+ * {@link Instant#parse}. 400 is returned on unparseable input.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/provenance")
 @RequestScoped
-@Tag(name = "Provenance (v2)")
+@Tag(name = "Provenance")
 public class ProvenanceRest {
 
   @Inject
@@ -75,19 +84,38 @@ public class ProvenanceRest {
   @Inject
   ProvenanceStatsService statsService;
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/provenance.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/provenance.forbidden";
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/provenance.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/provenance.not-found";
+
+  private static final String SINCE_DESC =
+    "Inclusive lower bound on startedAt. Accepts ISO 8601 instant " +
+    "(e.g. 2026-01-01T00:00:00Z) or epoch-milliseconds (e.g. 1751299200000).";
+  private static final String UNTIL_DESC =
+    "Inclusive upper bound on startedAt. Accepts ISO 8601 instant " +
+    "(e.g. 2026-01-01T00:00:00Z) or epoch-milliseconds (e.g. 1751299200000).";
+
   @GET
   @Path("/activities")
   @Operation(
+    operationId = "listActivities",
     summary = "List provenance activities (most recent first).",
     description = "Filterable by agent / target / time window. Casual users see only their own " +
-    "rows; instance-admins see all. Caps at 1000 rows per response — paginate via " +
-    "narrowing the time window."
+    "rows; instance-admins see all. Caps at 1000 rows per response.\n\n" +
+    "**Pagination:** This endpoint uses time-cursor pagination (`since`/`until` epoch ms), " +
+    "not page-offset. Offset pagination produces inconsistent results as new Activities land " +
+    "concurrently (append-only event stream — a new row shifts all subsequent offsets). To " +
+    "walk a large window: record the oldest `startedAt` value in the current page and pass it " +
+    "as `until` on the next request. The `?page=` query parameter is not supported and is " +
+    "silently ignored if supplied."
   )
   @APIResponse(
     responseCode = "200",
     description = "Matching activities, sorted by startedAt DESC.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ActivityIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   public Response listActivities(
@@ -96,13 +124,13 @@ public class ProvenanceRest {
     @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
     @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
-    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
-    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
-    @Parameter(description = "Max rows. Defaults to 100; capped at 1000.") @QueryParam("limit") Integer limit,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     // Casual users can only see their own activity rows. Asking for someone
@@ -112,8 +140,12 @@ public class ProvenanceRest {
       // narrow with ?agent=.
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     int eff = limit == null ? 100 : limit;
     OutputProfile prof = outputProfile.getProfile();
@@ -123,7 +155,7 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   private static ActivityIO applyProfile(ActivityIO io, OutputProfile profile) {
@@ -138,6 +170,7 @@ public class ProvenanceRest {
   @Path("/activities")
   @Produces(ProvJsonRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listActivitiesProvJson",
     summary = "List provenance activities as W3C PROV-JSON (most recent first).",
     description = "Same query semantics as the JSON variant; output shape conforms to a small subset " +
     "of the W3C PROV-JSON Submission (activity / agent / entity / wasAssociatedWith / used / " +
@@ -145,26 +178,33 @@ public class ProvenanceRest {
     "for filtering, though the PROV-JSON serialisation always emits the full PROV-O fields."
   )
   @APIResponse(responseCode = "200", description = "Activities serialised as PROV-JSON.")
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   public Response listActivitiesProvJson(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     int eff = limit == null ? 100 : limit;
     List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, eff);
@@ -175,6 +215,7 @@ public class ProvenanceRest {
   @Path("/activities")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listActivitiesJsonLd",
     summary = "List provenance activities as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
     description = "Same query semantics as the plain-JSON variant. Triggered by " +
     "Accept: application/ld+json. Pass profile=\"https://w3id.org/nfdi4ing/metadata4ing/\" " +
@@ -183,28 +224,35 @@ public class ProvenanceRest {
     "PROV-O parent types. Unknown profile → 406 RFC 7807 provenance.unsupported-profile."
   )
   @APIResponse(responseCode = "200", description = "Activities serialised as JSON-LD.")
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response listActivitiesJsonLd(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
     }
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
@@ -220,30 +268,39 @@ public class ProvenanceRest {
   @GET
   @Path("/entity/{appId}")
   @Operation(
+    operationId = "listEntityActivities",
     summary = "Provenance trail for a single entity (most recent first).",
     description = "Returns every captured Activity whose targetAppId matches the supplied entity. " +
     "Casual users see only rows whose acting Agent is themselves; instance-admins see all rows " +
-    "targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows."
+    "targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.\n\n" +
+    "**Pagination:** Uses time-cursor pagination (`since`/`until` epoch ms) — see " +
+    "`GET /v2/provenance/activities` for the full rationale. The `?page=` parameter is not " +
+    "supported and is silently ignored."
   )
   @APIResponse(
     responseCode = "200",
     description = "Activities targeting the entity, sorted by startedAt DESC.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ActivityIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listEntityActivities(
     @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
-    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
-    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
-    @Parameter(description = "Max rows. Defaults to 100; capped at 1000.") @QueryParam("limit") Integer limit,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     // Casual users only see their own rows against this entity; admins see all.
     String agentFilter = isAdmin ? null : caller;
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     int eff = limit == null ? 100 : limit;
     OutputProfile prof = outputProfile.getProfile();
@@ -253,31 +310,37 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(rows).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   @GET
   @Path("/entity/{appId}")
   @Produces(ProvJsonRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listEntityActivitiesProvJson",
     summary = "Per-entity provenance trail as W3C PROV-JSON.",
     description = "Same query semantics as the JSON variant of the per-entity endpoint; output shape " +
     "conforms to a small subset of W3C PROV-JSON. Triggered by Accept: application/prov+json."
   )
   @APIResponse(responseCode = "200", description = "Activities serialised as PROV-JSON.")
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listEntityActivitiesProvJson(
-    @PathParam("appId") String entityAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     String agentFilter = isAdmin ? null : caller;
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     int eff = limit == null ? 100 : limit;
     List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
@@ -288,27 +351,33 @@ public class ProvenanceRest {
   @Path("/entity/{appId}")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "listEntityActivitiesJsonLd",
     summary = "Per-entity provenance trail as JSON-LD (PROV-O / metadata4ing).",
     description = "Same query semantics as the plain-JSON variant. Triggered by " +
     "Accept: application/ld+json; the m4i profile parameter switches to the metadata4ing flavour " +
     "(see /v2/provenance/activities for full content-negotiation rules)."
   )
   @APIResponse(responseCode = "200", description = "Activities serialised as JSON-LD.")
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response listEntityActivitiesJsonLd(
-    @PathParam("appId") String entityAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
-    @QueryParam("limit") Integer limit,
+    @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
+    @Parameter(description = "Cursor window size — max rows returned. Defaults to 100; capped at 1000. Use `?since=` / `?until=` for navigation, not `?page=`.") @QueryParam("limit") Integer limit,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     String agentFilter = isAdmin ? null : caller;
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
@@ -324,63 +393,83 @@ public class ProvenanceRest {
   @GET
   @Path("/count")
   @Operation(
+    operationId = "countActivities",
     summary = "Count provenance activities matching the same filter set.",
     description = "Cheap variant of /activities that returns only the row count, for dashboard tiles."
   )
-  @APIResponse(responseCode = "200", description = "Row count.")
+  @APIResponse(
+    responseCode = "200",
+    description = "Row count.",
+    content = @Content(schema = @Schema(implementation = ActivityCountIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   public Response countActivities(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
     }
 
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
+
     long c = provenance.count(agent, targetKind, targetAppId, since, until);
-    return Response.ok(java.util.Map.of("count", c)).build();
+    return Response.ok(new ActivityCountIO(c)).build();
   }
 
   @GET
   @Path("/count")
   @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
   @Operation(
+    operationId = "countActivitiesJsonLd",
     summary = "Row count as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
     description = "JSON-LD variant of /count — wraps the integer as " +
     "shepard:numberOfActivities under a typed @context. Same query semantics + " +
     "Accept-header profile precedence as the /activities endpoint."
   )
   @APIResponse(responseCode = "200", description = "Row count, JSON-LD wrapped.")
+  @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
   @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
   public Response countActivitiesJsonLd(
+    @Parameter(description = "Filter to a specific Agent's activities. Casual users may only pass their own username.")
     @QueryParam("agent") String agent,
+    @Parameter(description = "Filter to a specific target-entity kind, e.g. 'Collection' or 'DataObject'.")
     @QueryParam("targetKind") String targetKind,
-    @QueryParam("targetAppId") String targetAppId,
-    @QueryParam("since") Long since,
-    @QueryParam("until") Long until,
+    @Parameter(description = "Filter to a specific target-entity appId.") @QueryParam("targetAppId") String targetAppId,
+    @Parameter(description = SINCE_DESC) @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
     if (agent == null) {
       if (!isAdmin) agent = caller;
     } else if (!agent.equals(caller) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
     }
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
@@ -394,6 +483,7 @@ public class ProvenanceRest {
   @GET
   @Path("/stats")
   @Operation(
+    operationId = "stats",
     summary = "Aggregated provenance stats — totals + sparkline buckets + action-kind histogram.",
     description = "Rolls a single window into one payload for the dashboard. " +
     "scope = instance (admin-only) | collection (any auth user) | user (self or admin). " +
@@ -405,54 +495,58 @@ public class ProvenanceRest {
     description = "Stats payload.",
     content = @Content(schema = @Schema(implementation = ProvenanceStatsIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, or missing id for scope=collection|user.")
+  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, missing entityId for scope=collection|user, or unparseable since/until.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Non-admin requested scope=instance or another user's stats.")
   public Response stats(
     @Parameter(description = "scope: instance | collection | user.", required = true) @QueryParam("scope") String scope,
-    @Parameter(description = "Entity appId for scope=collection, username for scope=user. Ignored for scope=instance.")
-    @QueryParam("id") String id,
-    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch). Defaults to 90 days ago.")
-    @QueryParam("since") Long since,
-    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch). Defaults to now.")
-    @QueryParam("until") Long until,
+    @Parameter(description = "Collection appId for scope=collection, username for scope=user. Ignored for scope=instance.")
+    @QueryParam("entityId") String entityId,
+    @Parameter(description = SINCE_DESC + " Defaults to 90 days ago.")
+    @QueryParam("since") String sinceRaw,
+    @Parameter(description = UNTIL_DESC + " Defaults to now.")
+    @QueryParam("until") String untilRaw,
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
     if (scope == null || scope.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("scope is required").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "scope is required");
     }
     boolean isAdmin = securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
 
     if (ProvenanceStatsService.SCOPE_INSTANCE.equals(scope) && !isAdmin) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "scope=instance requires instance-admin role.");
     }
     if (ProvenanceStatsService.SCOPE_USER.equals(scope)) {
-      if (id == null || id.isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=user").build();
+      if (entityId == null || entityId.isBlank()) {
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "entityId is required for scope=user");
       }
-      if (!id.equals(caller) && !isAdmin) {
-        return Response.status(Response.Status.FORBIDDEN).build();
+      if (!entityId.equals(caller) && !isAdmin) {
+        return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request stats for their own user without instance-admin role.");
       }
     }
     if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope)) {
-      if (id == null || id.isBlank()) {
-        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=collection").build();
+      if (entityId == null || entityId.isBlank()) {
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "entityId is required for scope=collection");
       }
       // PROV1c-acl: gate on Read permission against the target Collection.
       // Admins bypass the per-Collection check (instance-admin already sees
       // everything elsewhere). Missing Collection → 404; lacking Read → 403.
       if (!isAdmin) {
-        var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(id);
+        var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(entityId);
         if (ogmId.isEmpty()) {
-          return Response.status(Response.Status.NOT_FOUND).entity("No Collection with appId " + id).build();
+          return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "No Collection with appId " + entityId);
         }
         if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller, 0L)) {
-          return Response.status(Response.Status.FORBIDDEN).build();
+          return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Read permission required on Collection '" + entityId + "' to view its stats.");
         }
       }
     }
+
+    Long since, until;
+    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
+    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
 
     long now = System.currentTimeMillis();
     // Clamp user-supplied bounds to [0, now] before any arithmetic so
@@ -464,16 +558,54 @@ public class ProvenanceRest {
     long defaultWindowMillis = 90L * 86_400_000L;
     long effSince = sinceClamped == null ? Math.max(0L, effUntil - defaultWindowMillis) : Math.min(sinceClamped, effUntil);
     try {
-      ProvenanceStatsIO out = statsService.compute(scope, id, effSince, effUntil);
+      ProvenanceStatsIO out = statsService.compute(scope, entityId, effSince, effUntil);
       return Response.ok(out).build();
     } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, e.getMessage());
+    }
+  }
+
+  /**
+   * Parse a time-range query parameter that accepts either an ISO 8601 instant
+   * (e.g. {@code 2026-01-01T00:00:00Z}) or an epoch-millisecond long
+   * (e.g. {@code 1751299200000}).
+   *
+   * <p>Heuristic: values starting with a decimal digit are parsed as epoch-ms;
+   * all other non-blank values are parsed via {@link Instant#parse}.
+   *
+   * @return {@code null} when {@code raw} is null or blank.
+   * @throws IllegalArgumentException if the value is present but cannot be parsed.
+   */
+  static Long parseTimestamp(String raw) {
+    if (raw == null || raw.isBlank()) return null;
+    try {
+      // ISO 8601 instants always contain 'T'; epoch-ms values never do.
+      if (raw.contains("T")) {
+        return Instant.parse(raw).toEpochMilli();
+      }
+      return Long.parseLong(raw);
+    } catch (NumberFormatException | DateTimeParseException e) {
+      throw new IllegalArgumentException(raw);
     }
   }
 
   /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
   private static long clampToNonNegative(long v) {
     return Math.max(0L, v);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
+  private static Response badTimestamp(String raw) {
+    return problem(
+      PROBLEM_TYPE_BAD_REQUEST,
+      "Bad request",
+      Response.Status.BAD_REQUEST,
+      "Invalid timestamp '" + raw + "': expected ISO 8601 instant (e.g. 2026-01-01T00:00:00Z) or epoch-milliseconds (e.g. 1751299200000)."
+    );
   }
 
   /**

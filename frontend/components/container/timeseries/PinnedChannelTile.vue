@@ -104,8 +104,12 @@ async function fetchLatest() {
   try {
     const endNs = Date.now() * 1_000_000; // ms → ns
     const startNs = endNs - 60_000 * 1_000_000; // 60 s window
+    // APISIMP-CONT-NS-COLLAPSE-2: migrated from /v2/timeseries-containers/{id}/channels/...
+    // to /v2/containers/{appId}/channels/... (containerAppId is the appId; fall back
+    // to containerId for pins stored before the appId migration).
+    const containerKey = props.channel.containerAppId ?? props.channel.containerId;
     const url =
-      `${v2Base()}/v2/timeseries-containers/${props.channel.containerId}` +
+      `${v2Base()}/v2/containers/${containerKey}` +
       `/channels/${props.channel.shepardId}/data` +
       `?start=${startNs}&end=${endNs}&downsample=lttb&maxPoints=60`;
     const res = await fetch(url, { headers: authHeaders() });

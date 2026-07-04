@@ -64,9 +64,13 @@ async function fetchDataObjectV2(
 export function useFetchDataObject(collectionId: string, dataObjectId: string) {
   const isLoading = ref<boolean>(false);
   const dataObject = ref<DataObjectSanitized | undefined>(undefined);
+  // UU1 — UI-404-NICE-EMPTY-STATE: distinguish 404 from other errors so the
+  // detail page can render `EntityNotFound` instead of surfacing a red toast.
+  const notFound = ref<boolean>(false);
 
   function fetchDataObject() {
     isLoading.value = true;
+    notFound.value = false;
 
     const { data: session } = useAuth();
     const accessToken = session.value?.accessToken;
@@ -85,6 +89,11 @@ export function useFetchDataObject(collectionId: string, dataObjectId: string) {
       })
       .catch(error => {
         dataObject.value = undefined;
+        const status = (error as ResponseError)?.response?.status;
+        if (status === 404) {
+          notFound.value = true;
+          return; // suppress the red toast — page renders EntityNotFound
+        }
         handleError(error, "getDataObject");
       })
       .finally(() => (isLoading.value = false));
@@ -94,5 +103,5 @@ export function useFetchDataObject(collectionId: string, dataObjectId: string) {
 
   onDataObjectUpdated(fetchDataObject);
 
-  return { dataObject, isLoading };
+  return { dataObject, isLoading, notFound };
 }

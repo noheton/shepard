@@ -66,6 +66,9 @@ async function fetchCollectionV2(
 export function useFetchCollection(collectionId: string) {
   const isLoading = ref<boolean>(false);
   const isError = ref<boolean>(false);
+  // UU1 — UI-404-NICE-EMPTY-STATE: distinguish 404 from other errors so the
+  // detail page can render `EntityNotFound` instead of surfacing a red toast.
+  const notFound = ref<boolean>(false);
   const lastUsedId = ref<string>(collectionId);
   const collection = ref<Collection | undefined>(undefined);
   const collectionRoles = ref<Roles | undefined>(undefined);
@@ -84,6 +87,7 @@ export function useFetchCollection(collectionId: string) {
     lastUsedId.value = nextId;
     isLoading.value = true;
     isError.value = false;
+    notFound.value = false;
 
     const { data: session } = useAuth();
     const accessToken = session.value?.accessToken;
@@ -117,8 +121,13 @@ export function useFetchCollection(collectionId: string) {
       })
       .catch(e => {
         collection.value = undefined;
-        isError.value = true;
         isLoading.value = false;
+        const status = (e as ResponseError)?.response?.status;
+        if (status === 404) {
+          notFound.value = true;
+          return; // suppress the red toast — page renders EntityNotFound
+        }
+        isError.value = true;
         handleError(e as ResponseError, "fetching collection");
       });
   }
@@ -136,6 +145,7 @@ export function useFetchCollection(collectionId: string) {
     isOwner,
     isLoading,
     isError,
+    notFound,
     fetchCollection,
   };
 }
@@ -152,6 +162,7 @@ export const useFetchCollectionOfRouteParams = (
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
     isOwner,
+    notFound,
     fetchCollection,
   } = useFetchCollection(cid());
 
@@ -177,6 +188,7 @@ export const useFetchCollectionOfRouteParams = (
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
     isOwner,
+    notFound,
     refreshCollection,
   };
 };

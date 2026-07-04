@@ -31,11 +31,11 @@ class SqlQueryCompilerTest extends BaseTestCase {
   }
 
   private SqlQuerySpec.WhereClause where(SqlQuerySpec.TimeBetween tb) {
-    return new SqlQuerySpec.WhereClause(tb, null, null);
+    return new SqlQuerySpec.WhereClause(tb, null, null, null);
   }
 
   private SqlQuerySpec.WhereClause where(SqlQuerySpec.TimeBetween tb, List<Long> containerIds) {
-    return new SqlQuerySpec.WhereClause(tb, containerIds, null);
+    return new SqlQuerySpec.WhereClause(tb, containerIds, null, null);
   }
 
   private SqlQuerySpec simpleSpec() {
@@ -53,7 +53,7 @@ class SqlQueryCompilerTest extends BaseTestCase {
     SqlQuerySpec spec = new SqlQuerySpec(
         List.of(new SqlQuerySpec.SelectItem("time", null, null)),
         "timeseries_data_points",
-        new SqlQuerySpec.WhereClause(null, null, null),
+        new SqlQuerySpec.WhereClause(null, null, null, null),
         null, null, null);
 
     assertThrows(IllegalArgumentException.class, () -> compiler.compile(spec, Set.of()));

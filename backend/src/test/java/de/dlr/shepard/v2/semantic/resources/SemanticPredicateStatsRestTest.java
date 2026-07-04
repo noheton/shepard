@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.semantic.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,12 +14,16 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService.PredicateStats;
 import de.dlr.shepard.v2.semantic.io.PredicateStatsIO;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -200,5 +205,51 @@ class SemanticPredicateStatsRestTest {
     Response r = rest.getPredicateStats(urlSafeB64(iri), 20, 10);
     PredicateStatsIO body = (PredicateStatsIO) r.getEntity();
     assertEquals(42L, body.topValues().get(0).count());
+  }
+
+  // ─── APISIMP-PREDICATE-STATS-LIMIT-PARAMS-UNDOCUMENTED regression ─────────
+
+  @Test
+  void getPredicateStats_topValuesLimitParamIsDocumented() throws Exception {
+    Method method = SemanticPredicateStatsRest.class.getMethod(
+        "getPredicateStats", String.class, int.class, int.class);
+    java.lang.reflect.Parameter topParam = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          QueryParam qp = p.getAnnotation(QueryParam.class);
+          return qp != null && "topValuesLimit".equals(qp.value());
+        })
+        .findFirst()
+        .orElseThrow(() -> new AssertionError(
+            "No @QueryParam(\"topValuesLimit\") found on getPredicateStats"));
+
+    Parameter annotation = topParam.getAnnotation(Parameter.class);
+    assertNotNull(annotation,
+        "@Parameter annotation missing on 'topValuesLimit' @QueryParam in getPredicateStats");
+    assertNotNull(annotation.description(),
+        "@Parameter description must be set on 'topValuesLimit'");
+    assertFalse(annotation.description().isBlank(),
+        "@Parameter description must not be blank on 'topValuesLimit'");
+  }
+
+  @Test
+  void getPredicateStats_sampleLimitParamIsDocumented() throws Exception {
+    Method method = SemanticPredicateStatsRest.class.getMethod(
+        "getPredicateStats", String.class, int.class, int.class);
+    java.lang.reflect.Parameter sampleParam = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          QueryParam qp = p.getAnnotation(QueryParam.class);
+          return qp != null && "sampleLimit".equals(qp.value());
+        })
+        .findFirst()
+        .orElseThrow(() -> new AssertionError(
+            "No @QueryParam(\"sampleLimit\") found on getPredicateStats"));
+
+    Parameter annotation = sampleParam.getAnnotation(Parameter.class);
+    assertNotNull(annotation,
+        "@Parameter annotation missing on 'sampleLimit' @QueryParam in getPredicateStats");
+    assertNotNull(annotation.description(),
+        "@Parameter description must be set on 'sampleLimit'");
+    assertFalse(annotation.description().isBlank(),
+        "@Parameter description must not be blank on 'sampleLimit'");
   }
 }

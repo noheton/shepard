@@ -16,10 +16,10 @@ The seed mirrors the LUMEN / MFFD / microsections precedent (stdlib-only
     ``post_analysis`` JSON as a ``:StructuredDataReference``.
 3.  Editor stamps → ``:Activity`` PROV-O rows — **deferred**. See the
     TODO at ``_decode_editor`` below; the v3 ``editor.{name,date}``
-    tuples land as DataObject attributes for now, full
-    ``:Activity`` decomposition happens in ``BTKVS-A3`` (the
-    server-side decompose endpoint that will own this graph creation
-    natively).
+    tuples land as ``SemanticAnnotations`` (``urn:shepard:btkvs:editor-*``
+    predicates) for now, full ``:Activity`` decomposition happens in
+    ``BTKVS-A3`` (the server-side decompose endpoint that will own this
+    graph creation natively).
 
 Hits the live Shepard at ``https://shepard-api.nuclide.systems``
 (override via ``--host``).
@@ -86,6 +86,43 @@ COLLECTION_DESCRIPTION = (
 
 # Per-step relationship type for the linear chain (PROV1k allowed values).
 PROV_WAS_INFORMED_BY = "prov:wasInformedBy"
+
+# Semantic annotation predicates — urn:shepard:btkvs namespace.
+# All metadata travels as SemanticAnnotations, not the legacy attributes bag.
+_A = "urn:shepard:btkvs:"
+ANNOTATION_PREDICATES: dict[str, str] = {
+    "btkvs_kind":                _A + "kind",
+    "docket_id":                 _A + "docket-id",
+    "docket_version":            _A + "docket-version",
+    "project":                   _A + "project",
+    "project_lead":              _A + "project-lead",
+    "ktr":                       _A + "ktr",
+    "delivery_date":             _A + "delivery-date",
+    "comments":                  _A + "comments",
+    "geometry":                  _A + "geometry",
+    "fvc":                       _A + "fvc",
+    "precursor":                 _A + "precursor",
+    "additive":                  _A + "additive",
+    "additive_description":      _A + "additive-description",
+    "reinforcement_layer_count": _A + "reinforcement-layer-count",
+    "reinforcement_orientation": _A + "reinforcement-orientation",
+    "weave_type":                _A + "weave-type",
+    "weave_pattern":             _A + "weave-pattern",
+    "weave_area_density":        _A + "weave-area-density",
+    "fiber_material":            _A + "fiber-material",
+    "fiber_density":             _A + "fiber-density",
+    "step_kind":                 _A + "step-kind",
+    "step_index":                _A + "step-index",
+    "method":                    _A + "method",
+    "executed":                  _A + "executed",
+    "cycle":                     _A + "cycle",
+    "burn_id":                   _A + "burn-id",
+    "temperature":               _A + "temperature",
+    "editor_name":               _A + "editor-name",
+    "editor_date":               _A + "editor-date",
+    "parent_step_kind":          _A + "parent-step-kind",
+    "parent_step_index":         _A + "parent-step-index",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -333,33 +370,113 @@ def find_data_object_by_name(rows: list[dict], name: str) -> dict | None:
     return None
 
 
+def apply_annotations(api: Api, subject_app_id: str, attrs: dict) -> None:
+    """Write key/value pairs as SemanticAnnotations on a DataObject.
+
+    Idempotent: fetches existing predicateIris for the subject and skips
+    any that are already present.  Unknown keys (not in ANNOTATION_PREDICATES)
+    are silently skipped rather than written to the legacy attributes bag.
+    """
+    try:
+        resp = api.get("/v2/annotations", params={
+            "subjectAppId": subject_app_id,
+            "pageSize": 200,
+        })
+        items = resp.get("items", resp) if isinstance(resp, dict) else (resp or [])
+        existing_iris = {
+            a.get("predicateIri") or a.get("propertyIri")
+            for a in (items or [])
+            if a
+        }
+    except Exception:
+        existing_iris = set()
+
+    for key, value in attrs.items():
+        pred_iri = ANNOTATION_PREDICATES.get(key)
+        if not pred_iri:
+            continue
+        if pred_iri in existing_iris:
+            _log("SKIP", f"{key}={value!r}", "Annotation (exists)")
+            continue
+        api.post("/v2/annotations", json_body={
+            "subjectAppId": subject_app_id,
+            "subjectKind": "DataObject",
+            "predicateIri": pred_iri,
+            "objectLiteral": str(value),
+        })
+        _log("OK", f"{key}={value!r}", "Annotation", pred_iri)
+
+
 def create_data_object(
     api: Api,
     collection_app_id: str,
     name: str,
     *,
     attributes: dict[str, str],
-    parent_id: int | None = None,
+    parent_app_id: str | None = None,
     predecessor_app_id: str | None = None,
+    v1ids: "V1IdResolver | None" = None,
 ) -> dict:
-    """Create a v2 DataObject. ``parent_id`` is the parent's *Long* shepardId
-    (inherited from ``DataObjectIO.parentId``). ``predecessor_app_id`` is the
-    predecessor's *UUID v7* appId — gets wrapped in a single-entry
-    ``typedPredecessors`` list with the default ``prov:wasInformedBy``."""
-    body: dict[str, Any] = {"name": name, "attributes": attributes}
-    if parent_id is not None:
-        body["parentId"] = parent_id
+    """Create a v2 DataObject, appId-native wherever the surface allows.
+
+    APISIMP DROP-LEGACY-ID (2026-06-12) removed the numeric ``id`` field
+    from v2 Collection and DataObject responses, so the seed never reads
+    ``["id"]`` from a v2 response.  Three create shapes:
+
+    - **predecessor present** → ``POST /v2/collections/{cid}/data-objects``
+      with ``typedPredecessors[]`` (appId-native, PROV1k).  A hierarchical
+      parent on the *same* create still needs the numeric ``parentId`` —
+      no v2 create accepts ``parentAppId`` + ``typedPredecessors`` together
+      (single create: numeric ``parentId`` only; batch create:
+      ``parentAppId`` but no predecessors) — resolved via the documented
+      v1 seam (``V1IdResolver``; gap row BTKVS-A1-SEED-V2REFS in aidocs/16).
+    - **parent only** → ``POST /v2/data-objects/batch`` (single item) —
+      the only v2 create that accepts ``parentAppId`` (MFFD-BATCH-01).
+    - **neither** → plain ``POST /v2/collections/{cid}/data-objects``.
+    """
     if predecessor_app_id is not None:
-        body["typedPredecessors"] = [
-            {
-                "predecessorAppId": predecessor_app_id,
-                "relationshipType": PROV_WAS_INFORMED_BY,
-            }
-        ]
-    created = api.post(
-        f"/v2/collections/{collection_app_id}/data-objects", json_body=body
+        body: dict[str, Any] = {
+            "name": name,
+            "typedPredecessors": [
+                {
+                    "predecessorAppId": predecessor_app_id,
+                    "relationshipType": PROV_WAS_INFORMED_BY,
+                }
+            ],
+        }
+        if parent_app_id is not None:
+            assert v1ids is not None
+            coll_v1_id = v1ids.collection_id(api, collection_app_id)
+            body["parentId"] = v1ids.data_object_id(
+                api, coll_v1_id, parent_app_id, context=f"parent of {name}"
+            )
+        return api.post(
+            f"/v2/collections/{collection_app_id}/data-objects", json_body=body
+        )
+    if parent_app_id is not None:
+        resp = api.post(
+            "/v2/data-objects/batch",
+            json_body=[
+                {
+                    "collectionAppId": collection_app_id,
+                    "name": name,
+                    "parentAppId": parent_app_id,
+                }
+            ],
+        )
+        item = ((resp or {}).get("results") or [{}])[0]
+        if item.get("status") != "created":
+            raise RuntimeError(
+                f"batch create failed for {name!r}: "
+                f"{item.get('errorCode')}: {item.get('errorMessage')}"
+            )
+        # Batch results carry only the appId — synthesize the row shape the
+        # by-name SKIP cache needs.
+        return {"name": name, "appId": item["appId"]}
+    return api.post(
+        f"/v2/collections/{collection_app_id}/data-objects",
+        json_body={"name": name},
     )
-    return created
 
 
 def find_or_create_data_object(
@@ -369,9 +486,10 @@ def find_or_create_data_object(
     name: str,
     *,
     attributes: dict[str, str],
-    parent_id: int | None = None,
+    parent_app_id: str | None = None,
     predecessor_app_id: str | None = None,
     kind_label: str = "DataObject",
+    v1ids: "V1IdResolver | None" = None,
 ) -> dict:
     existing = find_data_object_by_name(rows_cache, name)
     if existing is not None:
@@ -382,48 +500,125 @@ def find_or_create_data_object(
         collection_app_id,
         name,
         attributes=attributes,
-        parent_id=parent_id,
+        parent_app_id=parent_app_id,
         predecessor_app_id=predecessor_app_id,
+        v1ids=v1ids,
     )
+    apply_annotations(api, created["appId"], attributes)
     rows_cache.append(created)
     _log("OK", name, kind_label, created["appId"])
     return created
 
 
 # ---------------------------------------------------------------------------
-# StructuredDataReference attachment helpers (v1 surface — no v2 yet)
+# Numeric-id resolution — the single documented v1 seam (CLAUDE.md
+# named-v1-fallback pattern)
 #
-# Path: POST /shepard/api/structuredDataContainers              → create SDC
-#       POST /shepard/api/structuredDataContainers/{id}/payload → upload doc, get oid
-#       POST /shepard/api/collections/{cid}/dataObjects/{doid}/structuredDataReferences
-#                                                              → link the SDR
+# APISIMP DROP-LEGACY-ID (2026-06-12) removed the numeric ``id`` field from
+# v2 Collection and DataObject responses; appId (UUID v7) is the only
+# identifier on the v2 wire.  Two operations in this seed remain v1-only
+# and still address entities by numeric id (checked 2026-06-12 against the
+# live OpenAPI: the unified ``POST /v2/references`` registers NO
+# ``structureddata`` kind handler — core kinds are collection / dataobject /
+# file / timeseries / uri — and ``/v2/containers/{appId}`` has no payload
+# POST):
 #
-# This is the only place the seed talks v1.  v2 has no SDR endpoint yet
-# (note for the api-annoyances log: SDR-V2 is a real gap).
+#   POST /shepard/api/structuredDataContainers/{id}/payload
+#   POST /shepard/api/collections/{cid}/dataObjects/{doid}/structuredDataReferences
+#
+# This resolver is therefore the only place numeric ids enter the seed.
+# Gap tracked as BTKVS-A1-SEED-V2REFS in aidocs/16-dispatcher-backlog.md.
+
+
+class V1IdResolver:
+    """Lazily map appId → numeric (legacy long) id via the frozen v1 lists."""
+
+    def __init__(self) -> None:
+        self._collections: dict[str, int] = {}
+        self._data_objects: dict[int, dict[str, int]] = {}
+
+    def collection_id(self, api: Api, collection_app_id: str) -> int:
+        if collection_app_id not in self._collections:
+            listing = api.get("/shepard/api/collections") or []
+            for c in listing:
+                if c.get("appId") and c.get("id") is not None:
+                    self._collections[c["appId"]] = c["id"]
+        if collection_app_id not in self._collections:
+            raise RuntimeError(
+                f"v1 fallback could not resolve a numeric id for Collection {collection_app_id}"
+            )
+        return self._collections[collection_app_id]
+
+    def data_object_id(
+        self, api: Api, collection_v1_id: int, data_object_app_id: str, *, context: str = ""
+    ) -> int:
+        cache = self._data_objects.setdefault(collection_v1_id, {})
+        if data_object_app_id not in cache:
+            listing = (
+                api.get(f"/shepard/api/collections/{collection_v1_id}/dataObjects") or []
+            )
+            for do in listing:
+                if do.get("appId") and do.get("id") is not None:
+                    cache[do["appId"]] = do["id"]
+        if data_object_app_id not in cache:
+            raise RuntimeError(
+                "v1 fallback could not resolve a numeric id for DataObject "
+                f"{data_object_app_id}" + (f" ({context})" if context else "")
+            )
+        return cache[data_object_app_id]
+
+
+# ---------------------------------------------------------------------------
+# StructuredData helpers
+#
+# SDC create:   POST /v2/containers?kind=structured-data        (V2CONV-A3, appId-native)
+# SDC payload:  POST /shepard/api/structuredDataContainers/{id}/payload
+#               — v1-only; no payload POST exists on /v2/containers (checked
+#               live OpenAPI 2026-06-12); needs the numeric SDC id.
+# SDR create:   POST /shepard/api/collections/{cid}/dataObjects/{doid}/structuredDataReferences
+#               — v1-only; the unified POST /v2/references has no
+#               kind=structureddata handler yet (BTKVS-A1-SEED-V2REFS).
 
 
 def find_or_create_sdc(api: Api, name: str, sdc_cache: dict[str, dict]) -> dict:
     """Find or create a (freestanding) StructuredDataContainer with this name.
 
     SDCs are not tied to a Collection on create; the link is via the
-    SDR.  We list all containers and look up by name.  Cached
-    per-process so the seed only does the list-call once per name.
+    SDR.  The by-name lookup runs on the v1 list because the (v1-only)
+    payload upload below still needs the numeric SDC id, which the v2
+    ``ContainerV2IO`` deliberately never carries.  Creation goes through
+    the unified v2 surface (``POST /v2/containers?kind=structured-data``).
+    Cached per-process so the seed only does the list-call once per name.
     """
     if name in sdc_cache:
         return sdc_cache[name]
-    listing = api.get("/shepard/api/structuredDataContainers")
-    if isinstance(listing, list):
-        for sdc in listing:
-            if sdc.get("name") == name:
-                sdc_cache[name] = sdc
-                _log("SKIP", name, "SDC (exists)", str(sdc.get("id", "")))
-                return sdc
+
+    def _v1_lookup() -> dict | None:
+        listing = api.get("/shepard/api/structuredDataContainers")
+        if isinstance(listing, list):
+            for sdc in listing:
+                if sdc.get("name") == name:
+                    return sdc
+        return None
+
+    found = _v1_lookup()
+    if found is not None:
+        sdc_cache[name] = found
+        _log("SKIP", name, "SDC (exists)", str(found.get("id", "")))
+        return found
     created = api.post(
-        "/shepard/api/structuredDataContainers", json_body={"name": name}
+        "/v2/containers", params={"kind": "structured-data"}, json_body={"name": name}
     )
-    sdc_cache[name] = created
-    _log("OK", name, "SDC", str(created.get("id", "")))
-    return created
+    # The v2 create response is appId-only; re-read the v1 list for the
+    # numeric id the v1-only payload upload requires.
+    found = _v1_lookup()
+    if found is None:
+        raise RuntimeError(
+            f"SDC {name!r} created via /v2/containers but not visible on the v1 list"
+        )
+    sdc_cache[name] = found
+    _log("OK", name, "SDC", str(created.get("appId", "")))
+    return found
 
 
 def upload_payload_to_sdc(
@@ -452,7 +647,12 @@ def find_or_create_sdr(
     sdc_name: str,
     payload_obj: Any,
 ) -> dict | None:
-    """Idempotent SDR creation on a DataObject.
+    """Idempotent SDR creation on a DataObject (v1-only operation).
+
+    The unified ``POST /v2/references`` registers no ``structureddata``
+    kind handler (checked 2026-06-12; BTKVS-A1-SEED-V2REFS), so both the
+    by-name probe and the create stay on the frozen v1 surface and take
+    the numeric ids resolved via ``V1IdResolver``.
 
     Probes existing SDRs on the DO; if one matches by ``name`` it is
     skipped (we do NOT verify payload equality — the by-name match is
@@ -514,17 +714,21 @@ def step_info(idx: int, step_entry: dict) -> tuple[str, str, dict]:
 
 
 def _decode_editor(editor: dict | None) -> dict[str, str]:
-    """Surface ``editor.{name,date}`` into the DO's ``attributes`` map.
+    """Surface ``editor.{name,date}`` as SemanticAnnotation keys.
+
+    Returns a dict with ``editor_name`` / ``editor_date`` keys that
+    ``apply_annotations()`` will map to ``urn:shepard:btkvs:editor-name``
+    and ``urn:shepard:btkvs:editor-date`` predicates.
 
     TODO (BTKVS-A4 §2.3, deferred): every ``editor`` tuple in the v3
     docket should produce one ``:Activity`` PROV-O node
     (``sourceMode='human'``, ``WAS_ASSOCIATED_WITH`` → ``:User``,
     ``GENERATED`` → the step or post-analysis DO).  The
-    server-side decompose endpoint (BTKVS-A3) will own this — the seed
-    script keeps editor info on attributes for now so the BT-KVS team
-    can see the data is captured, without the seed having to mint
-    ``:Activity`` rows directly (which would require API surface that
-    doesn't yet exist for arbitrary editor-name strings).
+    server-side decompose endpoint (BTKVS-A3) will own this; until then
+    the editor fields travel as SemanticAnnotations so the BT-KVS team
+    can see the data is captured without the seed minting ``:Activity``
+    rows directly (which would require API surface that doesn't yet exist
+    for arbitrary editor-name strings).
     """
     if not editor:
         return {}
@@ -543,15 +747,24 @@ def _decode_editor(editor: dict | None) -> dict[str, str]:
 def seed(api: Api, *, reset: bool) -> None:
     coll = find_or_create_collection(api, reset=reset)
     coll_app_id = coll["appId"]
-    coll_long_id = coll["id"]
+    # Numeric ids are gone from v2 responses (APISIMP DROP-LEGACY-ID); the
+    # resolver below is the documented v1 seam for the two v1-only calls
+    # (SDC payload upload + SDR create).
+    v1ids = V1IdResolver()
 
     # Single per-Collection cache to avoid listing N times in the loop.
     rows = list_data_objects(api, coll_app_id)
     # Single SDC per Collection.  All payloads in this docket ride here.
     sdc_cache: dict[str, dict] = {}
     sdc = find_or_create_sdc(api, f"BTKVS dockets — {COLLECTION_NAME}", sdc_cache)
-    sdc_id = sdc["id"]
+    sdc_id = sdc["id"]  # numeric — from the v1 list; payload upload is v1-only
     sdc_name = sdc["name"]
+    coll_v1_id = v1ids.collection_id(api, coll_app_id)
+
+    def do_v1_id(do: dict) -> int:
+        return v1ids.data_object_id(
+            api, coll_v1_id, do["appId"], context=do.get("name", "")
+        )
 
     # ------------------------------------------------------------------
     # Root docket DO  (kind=btkvs:docket-root)
@@ -576,7 +789,6 @@ def seed(api: Api, *, reset: bool) -> None:
         kind_label="DataObject (docket-root)",
     )
     docket_app_id = docket["appId"]
-    docket_long_id = docket["id"]
 
     # ------------------------------------------------------------------
     # Structure DO  (child of docket; kind=btkvs:structure)
@@ -605,14 +817,14 @@ def seed(api: Api, *, reset: bool) -> None:
         rows,
         f"Structure {g['id']}",
         attributes={k: v for k, v in structure_attrs.items() if v != ""},
-        parent_id=docket_long_id,
+        parent_app_id=docket_app_id,
         kind_label="DataObject (structure)",
     )
     # Attach the structure JSON section as an SDR.
     find_or_create_sdr(
         api,
-        collection_id=coll_long_id,
-        data_object_id=structure_do["id"],
+        collection_id=coll_v1_id,
+        data_object_id=do_v1_id(structure_do),
         name="structure.json",
         sdc_id=sdc_id,
         sdc_name=sdc_name,
@@ -650,9 +862,10 @@ def seed(api: Api, *, reset: bool) -> None:
             rows,
             step_name,
             attributes=step_attrs,
-            parent_id=docket_long_id,
+            parent_app_id=docket_app_id,
             predecessor_app_id=prev_step_app_id,
             kind_label=f"DataObject (process-step, {kind})",
+            v1ids=v1ids,
         )
 
         # Attach the step JSON (minus the nested post_analysis — that
@@ -660,8 +873,8 @@ def seed(api: Api, *, reset: bool) -> None:
         step_payload = {k: v for k, v in body.items() if k != "post_analysis"}
         find_or_create_sdr(
             api,
-            collection_id=coll_long_id,
-            data_object_id=step_do["id"],
+            collection_id=coll_v1_id,
+            data_object_id=do_v1_id(step_do),
             name=f"step-{idx}-{kind}.json",
             sdc_id=sdc_id,
             sdc_name=sdc_name,
@@ -683,13 +896,13 @@ def seed(api: Api, *, reset: bool) -> None:
                 rows,
                 pa_name,
                 attributes=pa_attrs,
-                parent_id=step_do["id"],
+                parent_app_id=step_do["appId"],
                 kind_label=f"DataObject (post-analysis, {kind})",
             )
             find_or_create_sdr(
                 api,
-                collection_id=coll_long_id,
-                data_object_id=pa_do["id"],
+                collection_id=coll_v1_id,
+                data_object_id=do_v1_id(pa_do),
                 name=f"post-analysis-{idx}-{kind}.json",
                 sdc_id=sdc_id,
                 sdc_name=sdc_name,
@@ -701,7 +914,7 @@ def seed(api: Api, *, reset: bool) -> None:
     print()
     print("seed complete.")
     print(f"  Collection appId:  {coll_app_id}")
-    print(f"  Collection id:     {coll_long_id}")
+    print(f"  Collection id:     {coll_v1_id}")
     print(f"  Docket DO appId:   {docket_app_id}")
 
 

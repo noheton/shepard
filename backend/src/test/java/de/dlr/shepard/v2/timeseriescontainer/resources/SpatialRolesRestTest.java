@@ -10,11 +10,12 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.v2.containers.handlers.TimeseriesContainerKindHandler;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
-import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,19 +25,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit coverage for TS-AXIS-AUTO:
- * {@code GET /v2/timeseries-containers/{containerId}/channels/spatial-roles}.
+ * Unit coverage for TS-AXIS-AUTO (APISIMP-CONT-NS-COLLAPSE-2):
+ * {@code GET /v2/containers/{containerAppId}/channels/spatial-roles}.
  *
- * <p>Tests the role-map assembly logic: empty container, partial roles,
- * full 6DoF roles, and duplicate role handling (first-wins).
+ * <p>Migrated from TimeseriesContainerChannelsRest (deleted in APISIMP-CONT-NS-COLLAPSE-2)
+ * to {@link TimeseriesContainerKindHandler}. Tests the role-map assembly logic:
+ * empty container, partial roles, full 6DoF roles, and duplicate role handling (first-wins).
  */
 public class SpatialRolesRestTest {
 
-  private TimeseriesContainerChannelsRest resource;
+  private TimeseriesContainerKindHandler handler;
   private TsChannelResolver resolverMock;
   private AnnotatableTimeseriesDAO annotatableTimeseriesDAOMock;
   private TimeseriesContainerService containerServiceMock;
 
+  private static final String CONTAINER_APP_ID = "00000000-0000-7000-8000-000000000099";
   private static final long CONTAINER_ID = 99L;
   private static final UUID CHAN_X  = UUID.fromString("00000000-0000-4000-8000-000000000001");
   private static final UUID CHAN_Y  = UUID.fromString("00000000-0000-4000-8000-000000000002");
@@ -47,15 +50,19 @@ public class SpatialRolesRestTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    resource = new TimeseriesContainerChannelsRest();
+    handler = new TimeseriesContainerKindHandler();
     resolverMock                = mock(TsChannelResolver.class);
     annotatableTimeseriesDAOMock = mock(AnnotatableTimeseriesDAO.class);
     containerServiceMock        = mock(TimeseriesContainerService.class);
 
-    inject(resource, "tsChannelResolver",        resolverMock);
-    inject(resource, "annotatableTimeseriesDAO", annotatableTimeseriesDAOMock);
-    inject(resource, "timeseriesContainerService", containerServiceMock);
+    inject(handler, "tsChannelResolver",        resolverMock);
+    inject(handler, "annotatableTimeseriesDAO", annotatableTimeseriesDAOMock);
+    inject(handler, "service",                  containerServiceMock);
     // timeseriesService not used by spatial-roles — leave null
+
+    var mockContainer = mock(TimeseriesContainer.class);
+    when(mockContainer.getId()).thenReturn(CONTAINER_ID);
+    when(containerServiceMock.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(mockContainer);
   }
 
   private static void inject(Object target, String fieldName, Object value) throws Exception {
@@ -90,10 +97,10 @@ public class SpatialRolesRestTest {
   void emptyContainer_returnsAllNull() {
     when(resolverMock.listPaged(CONTAINER_ID, 0, 500)).thenReturn(List.of());
 
-    Response resp = resource.getSpatialRoles(CONTAINER_ID);
+    Optional<SpatialRolesIO> result = handler.getChannelSpatialRoles(CONTAINER_APP_ID);
 
-    assertEquals(200, resp.getStatus());
-    SpatialRolesIO body = (SpatialRolesIO) resp.getEntity();
+    assert result.isPresent();
+    SpatialRolesIO body = result.get();
     assertNotNull(body);
     assertNull(body.x());
     assertNull(body.y());
@@ -109,10 +116,10 @@ public class SpatialRolesRestTest {
     when(resolverMock.listPaged(CONTAINER_ID, 0, 500)).thenReturn(List.of(entity));
     when(annotatableTimeseriesDAOMock.findByAppId(CHAN_X.toString())).thenReturn(Optional.empty());
 
-    Response resp = resource.getSpatialRoles(CONTAINER_ID);
+    Optional<SpatialRolesIO> result = handler.getChannelSpatialRoles(CONTAINER_APP_ID);
 
-    SpatialRolesIO body = (SpatialRolesIO) resp.getEntity();
-    assertNull(body.x());
+    assert result.isPresent();
+    assertNull(result.get().x());
   }
 
   @Test
@@ -122,9 +129,10 @@ public class SpatialRolesRestTest {
     when(annotatableTimeseriesDAOMock.findByAppId(CHAN_X.toString()))
         .thenReturn(Optional.of(nodeWithRole(CONTAINER_ID, CHAN_X, "x")));
 
-    Response resp = resource.getSpatialRoles(CONTAINER_ID);
+    Optional<SpatialRolesIO> result = handler.getChannelSpatialRoles(CONTAINER_APP_ID);
 
-    SpatialRolesIO body = (SpatialRolesIO) resp.getEntity();
+    assert result.isPresent();
+    SpatialRolesIO body = result.get();
     assertEquals(CHAN_X, body.x());
     assertNull(body.y());
     assertNull(body.z());
@@ -154,10 +162,10 @@ public class SpatialRolesRestTest {
     when(annotatableTimeseriesDAOMock.findByAppId(CHAN_RC.toString()))
         .thenReturn(Optional.of(nodeWithRole(CONTAINER_ID, CHAN_RC, "rot_c")));
 
-    Response resp = resource.getSpatialRoles(CONTAINER_ID);
+    Optional<SpatialRolesIO> result = handler.getChannelSpatialRoles(CONTAINER_APP_ID);
 
-    assertEquals(200, resp.getStatus());
-    SpatialRolesIO body = (SpatialRolesIO) resp.getEntity();
+    assert result.isPresent();
+    SpatialRolesIO body = result.get();
     assertEquals(CHAN_X, body.x());
     assertEquals(CHAN_Y, body.y());
     assertEquals(CHAN_Z, body.z());
@@ -178,10 +186,10 @@ public class SpatialRolesRestTest {
     when(annotatableTimeseriesDAOMock.findByAppId(CHAN_Y.toString()))
         .thenReturn(Optional.of(nodeWithRole(CONTAINER_ID, CHAN_Y, "x"))); // also claims "x"
 
-    Response resp = resource.getSpatialRoles(CONTAINER_ID);
+    Optional<SpatialRolesIO> result = handler.getChannelSpatialRoles(CONTAINER_APP_ID);
 
-    SpatialRolesIO body = (SpatialRolesIO) resp.getEntity();
+    assert result.isPresent();
     // First channel in list wins
-    assertEquals(CHAN_X, body.x());
+    assertEquals(CHAN_X, result.get().x());
   }
 }

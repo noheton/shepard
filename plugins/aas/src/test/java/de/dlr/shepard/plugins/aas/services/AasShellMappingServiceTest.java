@@ -111,6 +111,28 @@ class AasShellMappingServiceTest {
     assertTrue(service.toSubmodelRefs(List.of()).isEmpty());
   }
 
+  @Test
+  void toSubmodelRefsPopulatesDisplayNameFromDataObjectName() {
+    DataObject d = mock(DataObject.class);
+    when(d.getAppId()).thenReturn("do-abc");
+    when(d.getName()).thenReturn("My DataObject");
+
+    List<AasReferenceIO> refs = service.toSubmodelRefs(List.of(d));
+
+    assertEquals("My DataObject", refs.get(0).displayName());
+  }
+
+  @Test
+  void toSubmodelRefsDisplayNameNullWhenNameIsNull() {
+    DataObject d = mock(DataObject.class);
+    when(d.getAppId()).thenReturn("do-xyz");
+    when(d.getName()).thenReturn(null);
+
+    List<AasReferenceIO> refs = service.toSubmodelRefs(List.of(d));
+
+    assertNull(refs.get(0).displayName());
+  }
+
   @ParameterizedTest
   @CsvSource({
     "My Collection,   My_Collection",

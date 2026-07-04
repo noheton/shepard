@@ -7,6 +7,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The authenticated principal exposed to the request scope by
@@ -44,6 +45,17 @@ public class JWTPrincipal implements Principal {
    * API-key principals that have no {@code iat} claim.
    */
   private long iat;
+
+  /**
+   * BUG-USER-PROVISION-EMAIL-COLLISION — the JWT {@code email} claim, if
+   * present. Used by {@link de.dlr.shepard.auth.security.AuthenticationContext}
+   * as an email-based fallback when the {@code username} (derived from {@code sub}
+   * or {@code preferred_username}) does not match the stored Neo4j username.
+   * Null when the IdP access token does not include an {@code email} claim.
+   * Not part of {@code @AllArgsConstructor} — populated via {@link #setEmail}.
+   */
+  @Setter
+  private String email;
 
   public JWTPrincipal(String username, String keyId) {
     this.audience = null;

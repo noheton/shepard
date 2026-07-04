@@ -1,0 +1,124 @@
+# urscript-trajectory.shacl.ttl — UrScriptTrajectoryShape, a MAPPING_RECIPE shape.
+#
+# URSCRIPT-TRAJECTORY-1 — the UR-robot sibling of the KRL trajectory dissolve
+# (V2CONV-B5). A URScript interpret is a MAPPING_RECIPE template that BINDS:
+#   • a URScript .urscript/.script FileReference (the UR robot program);
+#   • a URDF FileReference (the kinematic tree the interpreter resolves against);
+#   • the TimeseriesContainer the derived joint trajectory is written into;
+#   • the DataObject the derived TimeseriesReference is attached under.
+#
+# No companion .dat files — URScript programs carry all state in the single source
+# file, unlike KUKA .src programs which may reference companion .dat declarations.
+#
+# Materializing this recipe via `POST /v2/mappings/{templateAppId}/materialize`
+# dispatches to the UrScriptTrajectoryTransformExecutor (in-tree), which resolves the
+# bound .urscript + URDF FileReferences, invokes the URScript interpreter sidecar,
+# persists the resulting joint-angle trajectory as a NEW TimeseriesReference, and
+# returns a REFERENCE result carrying that derived reference's appId.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` field
+# names): http://semantics.dlr.de/shepard/transform#UrScriptTrajectoryShape
+#
+# Consumed by:
+#   • POST /v2/mappings/{templateAppId}/materialize — resolves this shape IRI
+#     to UrScriptTrajectoryTransformExecutor via the fail-soft
+#     TransformExecutorRegistry; runs it; returns
+#     TransformResult.reference(derivedTimeseriesReferenceAppId).
+#   • frontend InterpretAsTrajectoryButton.vue → useUrScriptTrajectory.ts — creates/
+#     opens a MAPPING_RECIPE targeting this shape on a .urscript/.script FileReference
+#     detail page, then materializes it and links the derived TimeseriesReference.
+#
+# Cross-refs:
+#   aidocs/16-dispatcher-backlog.md — URSCRIPT-TRAJECTORY-1 row
+#   backend/src/main/java/de/dlr/shepard/spi/transform/TransformExecutor.java
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix urscript:  <http://semantics.dlr.de/shepard/transform/urscript#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: UrScriptTrajectoryRecipe ───────────────────────────────────────
+
+urscript:UrScriptTrajectoryRecipe a owl:Class ;
+    rdfs:label "URScript trajectory recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that binds a URScript .urscript/.script FileReference + a URDF FileReference (plus the target DataObject + TimeseriesContainer), materialized by the URScript interpreter sidecar into a NEW joint-trajectory TimeseriesReference."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: UrScriptTrajectoryShape ────────────────────────────────────────
+
+urscript:UrScriptTrajectoryShape a sh:NodeShape ;
+    sh:targetClass urscript:UrScriptTrajectoryRecipe ;
+
+    # The dispatch-key IRI MUST appear in the template body's
+    # `mappingRecipeShape` field for the materialize endpoint to route here.
+    rdfs:comment "Bound via mappingRecipeShape = http://semantics.dlr.de/shepard/transform#UrScriptTrajectoryShape" ;
+
+    # The URScript .urscript/.script FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     urscript:urscriptFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "URScript .urscript/.script FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the URScript robot program. Resolved to bytes on demand by the executor. Bind via materialize role 'urscriptFileAppId'." ;
+        sh:order    10 ;
+    ] ;
+
+    # The URDF FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     urscript:urdfFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "URDF FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the robot's URDF XML, the kinematic tree the interpreter resolves against. Bind via materialize role 'urdfFileAppId'." ;
+        sh:order    20 ;
+    ] ;
+
+    # The target DataObject appId — REQUIRED (where the derived ref attaches).
+    sh:property [
+        sh:path     urscript:targetDataObjectAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "Target DataObject appId" ;
+        sh:description "appId of the DataObject the derived joint-trajectory TimeseriesReference is attached under. The owning Collection's write permission gates the materialize call." ;
+        sh:order    30 ;
+    ] ;
+
+    # The TimeseriesContainer appId — REQUIRED (the trajectory storage substrate).
+    sh:property [
+        sh:path     urscript:timeseriesContainerAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "TimeseriesContainer appId" ;
+        sh:description "appId of the TimeseriesContainer the derived joint-trajectory data points are written into (channels joint_0 … joint_N)." ;
+        sh:order    40 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting UrScriptTrajectoryShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#UrScriptTrajectoryShape",
+#   "urscriptFileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#   "urdfFileReferenceAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33",
+#   "targetDataObjectAppId": "019e7245-1b2c-7d3e-af40-bb22cc33dd44",
+#   "timeseriesContainerAppId": "019e7246-2c3d-7e4f-b051-cc33dd44ee55"
+# }
+#
+# Materialize:
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {
+#       "urscriptFileAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#       "urdfFileAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33" } }
+#
+#   → 200 { "outputKind": "REFERENCE",
+#           "derivedReferenceAppId": "019e7247-...",  // the joint trajectory
+#           "executor": "UrScriptTrajectoryTransformExecutor" }

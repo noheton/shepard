@@ -14,7 +14,7 @@ import java.util.Optional;
  * file shipped alongside this class.
  *
  * <p>The plugin's CDI beans — {@code LegacyV1ConfigService},
- * {@code LegacyV1StatsService}, {@code LegacyV1ConfigAdminRest},
+ * {@code LegacyV1ConfigDescriptor}, {@code LegacyV1StatsService},
  * {@code LegacyV1StatsAdminRest}, {@code LegacyV1GateFilter},
  * {@code LegacyV1DeprecationFilter} — are discovered by Quarkus's
  * build-time CDI scanner via the backend's classpath (an
@@ -23,7 +23,7 @@ import java.util.Optional;
  * shape).
  *
  * <p>Default state: enabled. Operators flip the runtime knob via
- * {@code PATCH /v2/admin/legacy/v1/config} per CLAUDE.md
+ * {@code PATCH /v2/admin/config/legacy-v1} per CLAUDE.md
  * "Always: surface operator knobs in the admin config".
  *
  * @see de.dlr.shepard.plugins.v1compat.entities.LegacyV1Config
@@ -91,7 +91,7 @@ public final class V1CompatPluginManifest implements PluginManifest {
     Log.infof(
       "V1COMPAT.0: v1-compat plugin v%s active via PluginManifest SPI (id=%s, compat=%s). " +
       "Phase 1 marker — :LegacyV1Config singleton seeded by V63 Cypher migration; " +
-      "runtime knob at /v2/admin/legacy/v1/config; stats at /v2/admin/legacy/v1/stats.",
+      "runtime knob at /v2/admin/config/legacy-v1; stats at /v2/admin/legacy/v1/stats.",
       VERSION,
       ID,
       SHEPARD_COMPATIBILITY

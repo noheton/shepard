@@ -231,7 +231,7 @@ function getContainerSize(): { w: number; h: number } {
 }
 
 async function createPlot() {
-  if (!containerRef.value || !process.client) return;
+  if (!containerRef.value || !import.meta.client) return;
 
   // Dynamic import — never runs on the server.
   if (!UPlot) {

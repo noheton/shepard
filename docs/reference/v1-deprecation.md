@@ -1,4 +1,5 @@
 ---
+title: Legacy v1 API deprecation — reference
 audience: user
 ---
 

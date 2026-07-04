@@ -86,7 +86,10 @@ public class CollectionService {
     // semantically, but stored as null until V91 migration runs).
     toCreate.setPromptLogMode(collection.getPromptLogMode());
 
-    if (collection.getDefaultFileContainerId() != null) {
+    if (collection.getDefaultFileContainerAppId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainerByAppId(collection.getDefaultFileContainerAppId());
+      toCreate.setFileContainer(fileContainer);
+    } else if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
       toCreate.setFileContainer(fileContainer);
     } else {
@@ -233,7 +236,10 @@ public class CollectionService {
     // unchanged (RFC 7396 produces the existing value in the merged IO).
     old.setPromptLogMode(collection.getPromptLogMode());
 
-    if (collection.getDefaultFileContainerId() != null) {
+    if (collection.getDefaultFileContainerAppId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainerByAppId(collection.getDefaultFileContainerAppId());
+      old.setFileContainer(fileContainer);
+    } else if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
       old.setFileContainer(fileContainer);
     } else {

@@ -1,98 +1,122 @@
 ---
 title: KRL interpreter
-description: Reference for POST /v2/krl/interpret and the Run / preview UI
+description: Reference for the KRL trajectory MAPPING_RECIPE transform (KrlTrajectoryShape)
 permalink: /reference/krl-interpreter/
 layout: default
 audience: contributor
 ---
 # KRL interpreter — reference
 
-Shepard ships a KUKA Robot Language interpreter as an operator-opt-in
-sidecar (`shepard-plugin-krl-interpreter`). The interpreter takes a
-`.src` program + a URDF, applies offline IK, and persists a 6-channel
-joint trajectory as a `TimeseriesReference` you can replay in the URDF
-viewer.
+Shepard interprets a KUKA Robot Language (`.src`/`.krl`) program against a
+URDF, applies offline IK, and persists the resulting joint trajectory as a
+new `TimeseriesReference` you can replay in the 3D viewer. The interpreter
+itself runs as an operator-opt-in sidecar (`shepard-plugin-krl-interpreter`).
 
-Design rationale: [aidocs/integrations/117-krl-interpreter.md](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md).
+**V2CONV-B5 — converged into the generic MAPPING_RECIPE mechanism.** KRL
+interpret is no longer a bespoke `POST /v2/krl/interpret` endpoint. It is now a
+**MAPPING_RECIPE** template targeting the `KrlTrajectoryShape`, materialized
+through the generic `POST /v2/mappings/{templateAppId}/materialize` dispatch.
+This is the transform-direction sibling of the scene-graph dissolution
+(V2CONV-B4): scene-graph materializes a **view** envelope; KRL materializes a
+derived **reference** (the joint trajectory).
 
-## REST surface
+Design rationale:
+[aidocs/platform/191 §decision-2](https://github.com/dlr-shepard/shepard/blob/main/aidocs/platform/191-v2-surface-convergence.md)
+and the sidecar protocol in
+[aidocs/integrations/117](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md).
 
-### `POST /v2/krl/interpret`
+## The shape
 
-Resolves a KRL `.src` against a URDF and persists the joint trajectory.
+`KrlTrajectoryShape` —
+`http://semantics.dlr.de/shepard/transform#KrlTrajectoryShape`
+(SHACL: `backend/src/main/resources/shapes/krl-trajectory.shacl.ttl`).
 
-**Request body** (`KrlInterpretRequestIO`):
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `srcFileAppId` | string (UUID v7) | yes | FileReference appId for the KRL `.src` |
-| `urdfFileAppId` | string (UUID v7) | yes | FileReference appId for the URDF |
-| `targetDataObjectAppId` | string | yes | Where the trajectory attaches |
-| `timeseriesContainerAppId` | string | yes | The container the trajectory bytes are written to (tier-2 auto-mints) |
-| `datFileAppIds` | string[] | no | `.dat` companion FileReferences |
-| `sceneAppId` | string | no | `:DigitalTwinScene` for default base/tool frames |
-| `baseFrame` | `{x,y,z,rx,ry,rz}` | no | Override `$BASE` |
-| `toolFrame` | `{x,y,z,rx,ry,rz}` | no | Override `$TOOL` |
-| `seedPose` | number[] | no | IK seed joint vector |
-| `timeStep` | number | no | Sample step in s; defaults to `0.01` |
-| `options` | object | no | Pass-through `{ikTolerance, maxIterations, …}` |
-
-**Headers honoured:**
-
-- `Authorization: Bearer <token>` (required).
-- `X-AI-Agent: <agent-id>` (optional). When set, the recorded
-  `:KrlInterpretActivity` carries `sourceMode=ai` + `agentId=<value>`
-  per the EU AI Act Art. 50 disclosure shape.
-
-**Response (`201 Created`)** — `KrlInterpretResponseIO`:
+A MAPPING_RECIPE template body targeting it:
 
 ```json
 {
-  "trajectoryAppId": "0192...",
-  "activityAppId": "0192...",
-  "warnings": [{"line": 12, "severity": "WARN", "message": "WAIT FOR skipped"}],
-  "unsupportedConstructs": [
-    {"construct": "SPS", "line": 1, "reason": "HARD-STOP — no offline equivalent"}
-  ],
-  "ikSolverStats": {
-    "meanCycleMs": 12.4,
-    "p99CycleMs": 38.1,
-    "maxResidualMeters": 0.00041,
-    "maxResidualRadians": 0.0008,
-    "failedPoses": 0,
-    "totalPoses": 1872,
-    "solverName": "ikpy",
-    "solverVersion": "3.4.2"
-  },
-  "interpreterVersion": "0.1.0"
+  "templateKind": "MAPPING_RECIPE",
+  "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#KrlTrajectoryShape",
+  "srcFileReferenceAppId": "0192...",
+  "urdfFileReferenceAppId": "0192...",
+  "targetDataObjectAppId": "0192...",
+  "timeseriesContainerAppId": "0192...",
+  "datFileReferenceAppIds": "[\"0192...\"]"
 }
 ```
 
-**Status codes:**
+| Body field | Required | Notes |
+|---|---|---|
+| `srcFileReferenceAppId` | yes | FileReference appId for the KRL `.src`/`.krl` program |
+| `urdfFileReferenceAppId` | yes | FileReference appId for the URDF kinematic tree |
+| `targetDataObjectAppId` | yes | Where the derived trajectory `TimeseriesReference` attaches |
+| `timeseriesContainerAppId` | yes | The container the trajectory channels (`joint_0 … joint_N`) are written to |
+| `datFileReferenceAppIds` | no | JSON array string of `.dat` companion FileReference appIds |
+
+## REST surface
+
+### `POST /v2/mappings/{templateAppId}/materialize`
+
+The generic materialize endpoint. Resolves the recipe's `mappingRecipeShape`
+IRI → the `KrlTrajectoryTransformExecutor`
+(`de.dlr.shepard.v2.transform.krl.KrlTrajectoryTransformExecutor`), which
+resolves the `.src` + URDF bytes, calls the sidecar, persists the trajectory,
+and returns the derived reference appId.
+
+**Request body** (`MaterializeRequestIO`) — bind the input reference appIds by
+role; the executor falls back to the template body fields when a role binding
+is absent:
+
+```json
+{ "inputReferenceAppIds": {
+    "srcFileAppId": "0192...",
+    "urdfFileAppId": "0192..." } }
+```
+
+**Response (`200`)** — `MaterializeResponseIO`:
+
+```json
+{
+  "templateAppId": "0192...",
+  "outputKind": "REFERENCE",
+  "derivedReferenceAppId": "0192...",
+  "executor": "KrlTrajectoryTransformExecutor"
+}
+```
+
+`derivedReferenceAppId` is the newly minted joint-trajectory
+`TimeseriesReference`.
+
+**Status codes** (from the generic materialize dispatcher):
 
 | Status | Meaning |
 |---|---|
-| 201 | Trajectory persisted. |
-| 400 | Malformed input (missing required field, unknown appId). |
+| 200 | Trajectory materialized; `derivedReferenceAppId` set. |
 | 401 | Authentication required. |
-| 403 | Caller lacks write on the target DataObject's collection. |
-| 422 | IK divergence above the configured threshold. |
-| 501 | KRL HARD-STOP construct present (SPS, INTERRUPT, ANIN, ANOUT). |
-| 502 | Sidecar unreachable — operator hasn't enabled the `krl-interpreter` compose profile. |
-| 504 | Sidecar call timed out. |
+| 404 | Template not found, or no executor registered for the shape IRI (the `krl-interpreter` plugin / sidecar may not be installed). |
+| 422 | Body not a MAPPING_RECIPE / no `mappingRecipeShape`, or a typed executor failure — missing input, unresolvable input, **or the sidecar is unreachable** (operator hasn't enabled the `krl-interpreter` compose profile). |
+
+> The bespoke `/v2/krl/interpret` 502/504/501 sidecar-status mapping is gone —
+> a down or erroring sidecar now surfaces as a single `422` transform error with
+> the operator hint in the message body. This is the converged failure shape; a
+> recipe whose sidecar isn't running is a recoverable 4xx, never a 500.
 
 ## Frontend UI
 
-The "Run / preview" button is mounted on the `.src` FileReference
-detail page (`frontend/components/container/file/RunKrlPreviewButton.vue`).
-Components shipped with KRL-INTERPRETER-06:
+The **"Interpret as joint trajectory"** button is mounted on the `.src`/`.krl`
+FileReference detail page
+(`frontend/components/container/file/InterpretAsTrajectoryButton.vue`). It is the
+in-context entry point (CLAUDE.md "tool entry points are in-context first").
 
-| Component | Purpose |
+| Surface | Purpose |
 |---|---|
-| `RunKrlPreviewButton.vue` | Conditional render on `.src` files; opens the dialog. |
-| `RunKrlPreviewDialog.vue` | Modal that gathers the request body. |
-| `KrlInterpretResultPanel.vue` | Post-run summary; renders the operator-hint on 502. |
-| `useKrlInterpret.ts` | Typed wrapper around `POST /v2/krl/interpret`. |
+| `InterpretAsTrajectoryButton.vue` | Conditional render on `.src`/`.krl` files; opens the dialog; creates + materializes the recipe. |
+| `useKrlTrajectory.ts` | Builds the MAPPING_RECIPE body, creates the template (`POST /v2/templates`), materializes it (`useMaterializeMapping`). |
+| `interpretAsTrajectoryHelpers.ts` | Pure picker + validity helpers. |
+
+The dialog gathers the URDF picker + target DataObject (defaulted to the `.src`
+parent) + TimeseriesContainer + optional `.dat` companions, then creates the
+template and materializes it, linking the derived `TimeseriesReference`.
 
 ## KRL coverage (tier-1)
 
@@ -104,42 +128,49 @@ Components shipped with KRL-INTERPRETER-06:
 | `IF / FOR / WHILE / LOOP` flow control | ✓ supported |
 | Variable assignment, FRAME/E6POS literals | ✓ supported |
 | `$BASE` / `$TOOL` reassignment | ✓ supported |
-| `SPS`, `INTERRUPT`, `ANIN`, `ANOUT` | ✗ HARD-STOP (501) |
+| `SPS`, `INTERRUPT`, `ANIN`, `ANOUT` | ✗ HARD-STOP (sidecar refuses) |
 | `BCO` (block coincidence) | ⚙ skipped silently |
 | `#INCLUDE` | ⚙ tier-1 ignores; tier-2 follows |
 | `.kop` WorkVisual bundles | ✗ out of scope |
 
-See [aidocs/integrations/117 §4](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md#4-krl-subset-covered-tier-1) for the full table with KRL manual citations.
+See [aidocs/integrations/117 §4](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md#4-krl-subset-covered-tier-1)
+for the full table with KRL manual citations.
 
 ## Provenance
 
-Every successful interpret records a `:KrlInterpretActivity` with PROV-O
-edges:
+Every successful materialization records a `:KrlTrajectoryActivity` (the
+converged successor of the bespoke `:KrlInterpretActivity` — existing nodes are
+relabelled in place by migration V112, never deleted) with PROV-O edges:
 
-- `USED → :FileReference {kind=src}`
-- `USED → :FileReference {kind=urdf}`
-- `USED → :FileReference {kind=dat}` (optional)
-- `USED → :DigitalTwinScene` (optional)
-- `GENERATED → :TimeseriesReference`
+- `USED → :FileReference` (the `.src`/`.krl` program)
+- `USED → :FileReference` (the URDF)
+- `USED → :FileReference` (each `.dat` companion, optional)
+- `GENERATED → :TimeseriesReference` (the derived joint trajectory)
 - `WAS_ASSOCIATED_WITH → :User`
 
 The activity carries the interpreter version, IK solver name + version,
-mean/p99 IK cycle ms, residuals, and the unsupported-construct count.
+mean/p99 IK cycle ms, residuals, and warning + unsupported-construct counts.
+When the materialize is AI-driven (the recipe body carries an `aiAgent` field),
+`sourceMode=ai` + `agentId` are recorded per the EU AI Act Art. 50 disclosure
+shape.
 
 ## Configuration (deploy-time)
 
 | Key | Default | Notes |
 |---|---|---|
-| `shepard.krl.sidecar.url` | `http://krl-interpreter:8080` | Where the sidecar listens. |
+| `shepard.krl.sidecar.url` | `http://krl-interpreter-sidecar:8000` | Where the sidecar listens. |
 | `shepard.krl.sidecar.timeout-seconds` | `120` | Per-request timeout. |
-| `shepard.krl.sidecar.max-body-size-mb` | `25` | Payload cap. |
+| `shepard.krl.sidecar.max-body-size-mb` | `16` | Payload cap. |
 
 Tier-2 (runtime-mutable `:KrlInterpreterConfig`) is queued under
 [`KRL-CONFIG-1`](https://github.com/dlr-shepard/shepard/blob/main/aidocs/16-dispatcher-backlog.md).
+The full plugin extraction to `plugins/krl-interpreter` is deferred to
+[`V2CONV-A6`](https://github.com/dlr-shepard/shepard/blob/main/aidocs/16-dispatcher-backlog.md);
+the executor lives in-tree for now.
 
 ## Related
 
 - [Task: Run / preview a KRL program](/help/run-krl-preview/).
-- [Plugin reference: `shepard-plugin-krl-interpreter`](/reference/plugins/).
-- [URDF viewer](/reference/scene-graph/) — the consumer of the trajectory.
-- [Design doc — aidocs/integrations/117](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md).
+- [Materialize a MAPPING_RECIPE](/reference/scene-graph/) — the sibling view-direction transform.
+- [Design doc — aidocs/platform/191](https://github.com/dlr-shepard/shepard/blob/main/aidocs/platform/191-v2-surface-convergence.md).
+- [Sidecar protocol — aidocs/integrations/117](https://github.com/dlr-shepard/shepard/blob/main/aidocs/integrations/117-krl-interpreter.md).

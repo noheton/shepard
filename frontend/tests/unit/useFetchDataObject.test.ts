@@ -117,15 +117,45 @@ describe("useFetchDataObject — BUG-COLL-APPID-ROUTE-002", () => {
     expect(isLoading.value).toBe(false);
   });
 
-  it("clears dataObject on HTTP 404", async () => {
+  // UU1 — UI-404-NICE-EMPTY-STATE (2026-05-31): on 404 the composable sets
+  // `notFound=true` and SUPPRESSES `handleError` so the page renders an
+  // `EntityNotFound` instead of the red "Error while getDataObject:" toast.
+  // Non-404 errors still call `handleError` and leave `notFound=false`.
+  it("on HTTP 404 sets notFound and does NOT call handleError", async () => {
     mockFetchStatus(404);
     const { useFetchDataObject } = await import(
       "~/composables/context/useFetchDataObject"
     );
-    const { dataObject, isLoading } = useFetchDataObject(COLL_APP_ID, DO_APP_ID);
+    const { dataObject, notFound, isLoading } = useFetchDataObject(
+      COLL_APP_ID,
+      DO_APP_ID,
+    );
     await flush();
     expect(dataObject.value).toBeUndefined();
+    expect(notFound.value).toBe(true);
     expect(isLoading.value).toBe(false);
+    expect(
+      (globalThis as unknown as { handleError: ReturnType<typeof vi.fn> })
+        .handleError,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("on HTTP 500 calls handleError and leaves notFound=false", async () => {
+    mockFetchStatus(500);
+    const { useFetchDataObject } = await import(
+      "~/composables/context/useFetchDataObject"
+    );
+    const { dataObject, notFound } = useFetchDataObject(
+      COLL_APP_ID,
+      DO_APP_ID,
+    );
+    await flush();
+    expect(dataObject.value).toBeUndefined();
+    expect(notFound.value).toBe(false);
+    expect(
+      (globalThis as unknown as { handleError: ReturnType<typeof vi.fn> })
+        .handleError,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it("does not fetch when unauthenticated", async () => {

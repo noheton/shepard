@@ -18,9 +18,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * </ul>
  *
  * <p>All lists are sorted by {@code entityAppId} ascending for deterministic,
- * diff-friendly output.
+ * diff-friendly output. When the diff exceeds the {@code ?maxItems} cap, each list
+ * is capped at {@code ceil(maxItems/3)} entries and {@code truncated} is set to
+ * {@code true}. The {@code totalAdded}, {@code totalRemoved}, and
+ * {@code totalChanged} counts always reflect the full uncapped diff.
  *
- * <p>Cross-references: {@code aidocs/41} §7; {@code aidocs/16} V2e.
+ * <p>Cross-references: {@code aidocs/41} §7; {@code aidocs/16} V2e,
+ * {@code APISIMP-SNAPSHOT-DIFF-UNCAPPED}.
  */
 @Schema(name = "SnapshotDiff")
 public record SnapshotDiffIO(
@@ -36,17 +40,29 @@ public record SnapshotDiffIO(
   @Schema(description = "Epoch milliseconds at which snapshot B was captured.")
   long snapshotBCapturedAtMs,
 
-  @Schema(description = "entityAppIds present in B but not in A (created between snapshots). Sorted ascending.")
+  @Schema(description = "entityAppIds present in B but not in A (created between snapshots). Sorted ascending. Capped at ceil(?maxItems/3) entries when truncated=true.")
   List<String> added,
 
-  @Schema(description = "entityAppIds present in A but not in B (deleted or out of scope in B). Sorted ascending.")
+  @Schema(description = "entityAppIds present in A but not in B (deleted or out of scope in B). Sorted ascending. Capped at ceil(?maxItems/3) entries when truncated=true.")
   List<String> removed,
 
-  @Schema(description = "Entities present in both snapshots with different revision values. Sorted by entityAppId ascending.")
+  @Schema(description = "Entities present in both snapshots with different revision values. Sorted by entityAppId ascending. Capped at ceil(?maxItems/3) entries when truncated=true.")
   List<DiffEntry> changed,
 
   @Schema(description = "Count of entities present in both snapshots with identical revisions (not listed to avoid large payloads).")
-  int unchangedCount
+  int unchangedCount,
+
+  @Schema(description = "Total count of added entities in the full diff (before capping). Always accurate even when truncated=true.")
+  int totalAdded,
+
+  @Schema(description = "Total count of removed entities in the full diff (before capping). Always accurate even when truncated=true.")
+  int totalRemoved,
+
+  @Schema(description = "Total count of changed entities in the full diff (before capping). Always accurate even when truncated=true.")
+  int totalChanged,
+
+  @Schema(description = "True when the diff exceeded the ?maxItems cap and one or more lists were truncated. Use totalAdded/totalRemoved/totalChanged to know the full scope.")
+  boolean truncated
 ) {
 
   /**

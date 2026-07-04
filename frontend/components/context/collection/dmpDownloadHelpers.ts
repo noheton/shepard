@@ -3,7 +3,7 @@
  *
  * Extracted so unit tests can import without mounting Vue / Vuetify.
  * Mirrors the inline-helper pattern of EditFileReferenceDialog and
- * RunKrlPreviewButton.
+ * the inline-helper pattern used across the file-reference components.
  *
  * The DMP-snippet endpoint (FAIR7) is `GET
  * /v2/collections/{appId}/dmp-snippet` and supports content negotiation

@@ -1,13 +1,28 @@
 <script setup lang="ts">
 import {
-  ShepardTemplateApi,
-  type ShepardTemplateIO,
+  TemplatesApi,
+  type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchTemplates } from "~/composables/context/admin/useFetchTemplates";
 import { AdminFragments } from "./adminMenuItems";
 
 const { templates, isLoading, refresh } = useFetchTemplates();
+
+// V2CONV-B6-SHACLPREFILL — read ?newTemplate + ?targetEntityAppId from the URL
+// so the Tools-context "New template for this DataObject" action can open
+// the dialog pre-populated. toolsContext.ts routes here with these params.
+const route = useRoute();
+const contextFocusAppId = computed<string | null>(() => {
+  const v = route.query.targetEntityAppId;
+  return typeof v === "string" && v.length > 0 ? v : null;
+});
+
+onMounted(() => {
+  if (route.query.newTemplate === "1") {
+    openCreate();
+  }
+});
 
 // Show retired templates toggle
 const showRetired = ref(false);
@@ -18,10 +33,10 @@ const filterTag = ref<string | null>(null);
 
 // Dialog state
 const dialogOpen = ref(false);
-const editingTemplate = ref<ShepardTemplateIO | null>(null);
+const editingTemplate = ref<ShepardTemplate | null>(null);
 
 // Retire confirmation
-const retireTarget = ref<ShepardTemplateIO | null>(null);
+const retireTarget = ref<ShepardTemplate | null>(null);
 const retireConfirmOpen = ref(false);
 const isRetiring = ref(false);
 const retireError = ref<string | null>(null);
@@ -34,6 +49,7 @@ const KIND_OPTIONS = [
 ];
 
 const TABLE_HEADERS = [
+  { title: "", key: "icon", sortable: false, width: "48px" },
   { title: "Name", key: "name", sortable: true },
   { title: "Kind", key: "templateKind", sortable: true },
   { title: "Version", key: "version", sortable: true, width: "80px" },
@@ -92,12 +108,12 @@ function openCreate() {
   dialogOpen.value = true;
 }
 
-function openEdit(template: ShepardTemplateIO) {
+function openEdit(template: ShepardTemplate) {
   editingTemplate.value = template;
   dialogOpen.value = true;
 }
 
-function openRetireConfirm(template: ShepardTemplateIO) {
+function openRetireConfirm(template: ShepardTemplate) {
   retireTarget.value = template;
   retireError.value = null;
   retireConfirmOpen.value = true;
@@ -108,7 +124,7 @@ async function confirmRetire() {
   retireError.value = null;
   isRetiring.value = true;
   try {
-    await useV2ShepardApi(ShepardTemplateApi).value.retireTemplate({
+    await useV2ShepardApi(TemplatesApi).value.deleteTemplate({
       appId: retireTarget.value.appId,
     });
     retireConfirmOpen.value = false;
@@ -202,15 +218,24 @@ watch(showRetired, (val) => {
       density="compact"
       hover
     >
+      <!-- Icon column — TEMPLATE-ICONS-2-FE -->
+      <template #[`item.icon`]="{ item }">
+        <v-icon
+          :icon="useTemplateIcon(item, 'DataObject')"
+          size="small"
+          data-test="template-icon"
+        />
+      </template>
+
       <!-- Kind column -->
-      <template #item.templateKind="{ item }">
+      <template #[`item.templateKind`]="{ item }">
         <v-chip :color="kindColor(item.templateKind)" variant="tonal" size="small">
           {{ kindLabel(item.templateKind) }}
         </v-chip>
       </template>
 
       <!-- Tags column -->
-      <template #item.tags="{ item }">
+      <template #[`item.tags`]="{ item }">
         <div class="d-flex flex-wrap ga-1">
           <v-chip
             v-for="tag in (item.tags ?? [])"
@@ -225,12 +250,12 @@ watch(showRetired, (val) => {
       </template>
 
       <!-- Created date column -->
-      <template #item.createdAt="{ item }">
+      <template #[`item.createdAt`]="{ item }">
         <span class="text-body-2">{{ formatDate(item.createdAt) }}</span>
       </template>
 
       <!-- Status column -->
-      <template #item.retired="{ item }">
+      <template #[`item.retired`]="{ item }">
         <v-chip
           :color="item.retired ? 'error' : 'success'"
           variant="tonal"
@@ -241,7 +266,7 @@ watch(showRetired, (val) => {
       </template>
 
       <!-- Actions column -->
-      <template #item.actions="{ item }">
+      <template #[`item.actions`]="{ item }">
         <div class="d-flex ga-1">
           <v-btn
             :disabled="item.retired"
@@ -268,6 +293,8 @@ watch(showRetired, (val) => {
     <AdminTemplateDialog
       v-model="dialogOpen"
       :template="editingTemplate"
+      :all-templates="templates"
+      :focus-app-id="editingTemplate ? null : contextFocusAppId"
       @saved="onSaved"
     />
 

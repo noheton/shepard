@@ -18,6 +18,7 @@ export type ReferenceData =
 
 export type CollectionReferenceData = {
   referencedCollectionId?: number;
+  referencedCollectionAppId?: string;
   referenceName?: string;
   relationshipName?: string;
   type: CustomRelationshipType.COLLECTION;
@@ -25,6 +26,7 @@ export type CollectionReferenceData = {
 
 export type DataObjectReferenceData = {
   referencedDataObjectId?: number;
+  referencedDataObjectAppId?: string;
   referenceName?: string;
   relationshipName?: string;
   type: CustomRelationshipType.DATA_OBJECT;
@@ -56,8 +58,10 @@ export function isValidPredecessorOrSuccessorReference(
 export function isValidCollectionReference(ref: ReferenceData): boolean {
   return (
     ref.type === CustomRelationshipType.COLLECTION &&
-    ref.referencedCollectionId !== undefined &&
-    ref.referencedCollectionId >= 0 &&
+    (
+      (ref.referencedCollectionAppId !== undefined && ref.referencedCollectionAppId.length > 0) ||
+      (ref.referencedCollectionId !== undefined && ref.referencedCollectionId >= 0)
+    ) &&
     ref.referenceName !== undefined &&
     ref.referenceName.length > 0
   );
@@ -66,8 +70,10 @@ export function isValidCollectionReference(ref: ReferenceData): boolean {
 export function isValidDataObjectReference(ref: ReferenceData): boolean {
   return (
     ref.type === CustomRelationshipType.DATA_OBJECT &&
-    ref.referencedDataObjectId !== undefined &&
-    ref.referencedDataObjectId >= 0 &&
+    (
+      (ref.referencedDataObjectAppId !== undefined && ref.referencedDataObjectAppId.length > 0) ||
+      (ref.referencedDataObjectId !== undefined && ref.referencedDataObjectId >= 0)
+    ) &&
     ref.referenceName !== undefined &&
     ref.referenceName.length > 0
   );

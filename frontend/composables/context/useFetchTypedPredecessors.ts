@@ -12,7 +12,8 @@
 
 export interface TypedPredecessorSummary {
   predecessorAppId: string;
-  predecessorId: number;
+  /** @deprecated Join on predecessorAppId (UUID v7) instead. */
+  predecessorId?: number;
   predecessorName: string;
   predecessorStatus: string | null;
   relationshipType: string;
