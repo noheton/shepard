@@ -5,6 +5,9 @@ import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -208,11 +211,11 @@ public class SemanticTermSearchRest {
     @Parameter(
       description = "Maximum number of results to return (default 20). Server-side cap: 50 — values above 50 are silently clamped to 50."
     )
-    @QueryParam("pageSize") @DefaultValue("20") int pageSize,
+    @QueryParam("pageSize") @DefaultValue("20") @Min(1) @Max(50) int pageSize,
     @Parameter(
       description = "Zero-based page index (default 0). Combined with pageSize to compute the SKIP offset: page * pageSize rows are skipped."
     )
-    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Context SecurityContext sc
   ) {
     // 1 — auth gate (same pattern as SemanticSparqlRest)

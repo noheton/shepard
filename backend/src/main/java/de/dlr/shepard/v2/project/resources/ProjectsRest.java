@@ -227,7 +227,7 @@ public class ProjectsRest {
         description =
           "0-based page number. Default 0. Negative values are treated as 0."
       )
-      @QueryParam("page") @DefaultValue("0") int page,
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(
         description =
           "Number of results per page. Default 100. Maximum 500. " +

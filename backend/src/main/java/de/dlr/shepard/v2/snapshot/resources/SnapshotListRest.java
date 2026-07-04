@@ -13,6 +13,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -129,7 +130,7 @@ public class SnapshotListRest {
       + "read are returned regardless of Collection.")
     @QueryParam("collectionAppId") String collectionAppId,
     @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
-    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description =
       "Page size (default 50). Server-side clamp: [1, 200] — values outside this "
       + "range are silently clamped to the nearest boundary.")
