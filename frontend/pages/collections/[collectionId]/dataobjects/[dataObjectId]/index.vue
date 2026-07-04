@@ -55,8 +55,10 @@ import { selectMultiPlayerTiles } from "~/utils/multiPlayerTiles";
 // MISSING-aas-ui Slice 4: in-context AAS submodel identity pane. Shows the
 // DataObject's role as an IDTA AAS Submodel when the AAS plugin is enabled.
 import DataObjectAasPane from "~/components/context/aas/DataObjectAasPane.vue";
-import { useSpatialDataReferencesForDataObject } from "~/composables/context/useSpatialDataReferencesForDataObject";
-import { useFetchSpatialReferencesV2 } from "~/composables/context/useFetchSpatialReferencesV2";
+import {
+  useFetchSpatialReferencesV2,
+  type SpatialReferenceV2IO,
+} from "~/composables/context/useFetchSpatialReferencesV2";
 import {
   mapGitReferenceToDataTableElement,
   mapSingletonFileReferenceToDataTableElement,
@@ -76,7 +78,7 @@ const { routeParams } = useCollectionRouteParams();
 // with the route param strings, and the inline edits PATCH the v2 endpoint
 // directly (see patchDataObjectV2 below). The remaining numeric-id
 // consumers (useDataReferencesByDataObject, useRelatedEntities,
-// useSpatialDataReferencesForDataObject, the AnnotatedDataObject CRUD, and
+// the AnnotatedDataObject CRUD, and
 // the v1 child panels) are documented exceptions — they need the NUMERIC
 // ids which only the loaded v2 entities carry (resolved reactively below;
 // loaded id wins, numeric-route-param fallback for legacy /collections/123
@@ -171,6 +173,11 @@ const refreshSpatialRefs = ref<(() => void | Promise<void>) | null>(null);
 // can react to it.
 const videoReferenceCount = ref<number>(0);
 
+// REFS-V2-PANELS-1 — hoist the v2 spatial references outside the watcher so
+// the multi-player tile gate (hasSpatial) can read them. Populated by the
+// watchEffect below once dataObject.appId resolves; no v1 numeric-id needed.
+const spatialRefsV2 = ref<SpatialReferenceV2IO[]>([]);
+
 // OTVIS-VIEWER — raw singleton FileReferences, surfaced outside the watcher's
 // closure so the OTvis-viewer gate (otvisReferences) can filter on filename.
 const singletonFileRefs = ref<SingletonFileReferenceIO[]>([]);
@@ -204,6 +211,8 @@ watch(
       videoReferenceCount.value = videoComposable.references.value.length;
       // OTVIS-VIEWER: surface the raw singletons for the .OTvis filter below.
       singletonFileRefs.value = fr1bComposable.references.value;
+      // REFS-V2-PANELS-1: hoist spatial refs so the multiPlayer gate can read them.
+      spatialRefsV2.value = spatialComposable.references.value;
     });
   },
   { immediate: true },
@@ -243,15 +252,6 @@ const totalReferenceCount = computed(
  * the pane itself stays unmounted until a match exists, so DOs without
  * thermography pay no cost.
  */
-/**
- * MFFD-MULTIPLAYER-1 — detect spatial-data references (separate from
- * dataReferences which only covers TS / file / structured / video / git).
- * The composable is fail-soft: returns an empty array on error so the
- * multi-player gate falls back to "no spatial tile".
- */
-const { references: spatialDataReferences } =
-  useSpatialDataReferencesForDataObject(collectionNumericId, dataObjectNumericId);
-
 const thermographyBundleAppId = computed<string | null>(() => {
   const refs = dataReferences.value ?? [];
   for (const r of refs) {
@@ -300,7 +300,7 @@ const multiPlayerTiles = computed(() =>
     hasTimeseries: hasTimeseriesReference.value,
     hasVideo: videoReferenceCount.value > 0,
     thermographyBundleAppId: thermographyBundleAppId.value,
-    hasSpatial: (spatialDataReferences.value?.length ?? 0) > 0,
+    hasSpatial: spatialRefsV2.value.length > 0,
   }),
 );
 
