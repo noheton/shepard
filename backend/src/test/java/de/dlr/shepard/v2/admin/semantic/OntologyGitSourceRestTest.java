@@ -54,7 +54,8 @@ class OntologyGitSourceRestTest {
 
   @Test
   void listReturns200WithXTotalCount() {
-    when(gitSourceDAO.listAll()).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
+    when(gitSourceDAO.count()).thenReturn(2L);
+    when(gitSourceDAO.listPaged(0L, 50)).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
     Response r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals(2L, Long.parseLong(r.getHeaderString("X-Total-Count")));
@@ -65,9 +66,8 @@ class OntologyGitSourceRestTest {
 
   @Test
   void listPaginatesFirstPage() {
-    when(gitSourceDAO.listAll()).thenReturn(
-      List.of(makeSource("a1"), makeSource("a2"), makeSource("a3"))
-    );
+    when(gitSourceDAO.count()).thenReturn(3L);
+    when(gitSourceDAO.listPaged(0L, 2)).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
     Response r = resource.list(0, 2, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
@@ -80,8 +80,9 @@ class OntologyGitSourceRestTest {
   @Test
   void listMaxPageSizeReturnsFirstTwoHundred() {
     List<OntologyGitSource> big = new ArrayList<>();
-    for (int i = 0; i < 250; i++) big.add(makeSource("src-" + i));
-    when(gitSourceDAO.listAll()).thenReturn(big);
+    for (int i = 0; i < 200; i++) big.add(makeSource("src-" + i));
+    when(gitSourceDAO.count()).thenReturn(250L);
+    when(gitSourceDAO.listPaged(0L, 200)).thenReturn(big);
     Response r = resource.list(0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -103,9 +104,8 @@ class OntologyGitSourceRestTest {
 
   @Test
   void listReturnsSecondPage() {
-    when(gitSourceDAO.listAll()).thenReturn(
-      List.of(makeSource("a1"), makeSource("a2"), makeSource("a3"))
-    );
+    when(gitSourceDAO.count()).thenReturn(3L);
+    when(gitSourceDAO.listPaged(2L, 2)).thenReturn(List.of(makeSource("a3")));
     Response r = resource.list(1, 2, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")

@@ -6,6 +6,7 @@ import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
@@ -16,6 +17,10 @@ import org.neo4j.ogm.cypher.Filter;
  * by {@code appId} is used by the REST layer for single-item GET /
  * DELETE; {@link #listAll()} is the scheduler's input to
  * {@code OntologyGitIngestService.ingestAll()}.
+ *
+ * <p>APISIMP-GIT-SOURCE-IN-MEMORY-PAGING: {@link #listPaged} and
+ * {@link #count} push SKIP/LIMIT to the database, replacing the
+ * in-memory slice previously done in the REST layer.
  */
 @RequestScoped
 public class OntologyGitSourceDAO extends GenericDAO<OntologyGitSource> {
@@ -44,6 +49,40 @@ public class OntologyGitSourceDAO extends GenericDAO<OntologyGitSource> {
       String bn = b == null ? "" : (b.getName() == null ? "" : b.getName());
       return an.compareToIgnoreCase(bn);
     });
+    return out;
+  }
+
+  /**
+   * APISIMP-GIT-SOURCE-IN-MEMORY-PAGING — total count of all git sources.
+   * Used by the REST layer to populate the {@code total} field of the
+   * paged envelope without loading entity objects.
+   */
+  public long count() {
+    String query = "MATCH (s:OntologyGitSource) RETURN count(s) AS c";
+    var result = session.query(query, Map.of());
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * APISIMP-GIT-SOURCE-IN-MEMORY-PAGING — page of git sources, ordered by
+   * {@code name} ASC, with SKIP/LIMIT pushed to the database.
+   *
+   * @param skip  number of rows to skip (= page * pageSize)
+   * @param limit maximum rows to return (= pageSize)
+   * @return ordered page; empty list when {@code skip} exceeds total
+   */
+  public List<OntologyGitSource> listPaged(long skip, int limit) {
+    String query =
+      "MATCH (s:OntologyGitSource) " +
+      "RETURN s ORDER BY toLower(s.name) ASC " +
+      "SKIP $skip LIMIT $limit";
+    List<OntologyGitSource> out = new ArrayList<>();
+    for (OntologyGitSource s : findByQuery(query, Map.of("skip", skip, "limit", limit))) {
+      out.add(s);
+    }
     return out;
   }
 
