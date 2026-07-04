@@ -13,6 +13,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -50,6 +51,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Semantics")
 public class OntologyAlignmentRest {
+
+  static final int MAX_ALIGNMENT_ROWS = 500;
 
   @Inject
   OntologyAlignmentDAO ontologyAlignmentDAO;
@@ -93,9 +96,15 @@ public class OntologyAlignmentRest {
   @APIResponse(responseCode = "403", description = "instance-admin role required.")
   public Response list() {
     List<OntologyAlignment> entities = ontologyAlignmentDAO.findAll();
+    boolean truncated = entities.size() > MAX_ALIGNMENT_ROWS;
     List<OntologyAlignmentIO> body = entities.stream()
+      .limit(MAX_ALIGNMENT_ROWS)
       .map(OntologyAlignmentIO::from)
       .toList();
-    return Response.ok(body).build();
+    Response.ResponseBuilder rb = Response.ok(body);
+    if (truncated) {
+      rb.header("X-Truncated", "true");
+    }
+    return rb.build();
   }
 }

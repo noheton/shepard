@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.semantic.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -146,6 +148,42 @@ class OntologyAlignmentRestTest {
     );
     OntologyAlignmentIO io = OntologyAlignmentIO.from(e);
     assertTrue(io.createdAt() == null, "createdAt may be null for rows without timestamp");
+  }
+
+  @Test
+  void exceedingCap_returns500RowsAndTruncatedHeader() {
+    List<OntologyAlignment> big = new ArrayList<>();
+    for (int i = 0; i < OntologyAlignmentRest.MAX_ALIGNMENT_ROWS + 1; i++) {
+      big.add(makeEntity("id-" + i, "Concept", "http://example.org/" + i,
+        "rdfs:subClassOf", "HIGH", "src", null));
+    }
+    when(dao.findAll()).thenReturn(big);
+
+    Response r = rest.list();
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<OntologyAlignmentIO> body = (List<OntologyAlignmentIO>) r.getEntity();
+    assertEquals(OntologyAlignmentRest.MAX_ALIGNMENT_ROWS, body.size(),
+      "Response must be capped at MAX_ALIGNMENT_ROWS");
+    assertEquals("true", r.getHeaderString("X-Truncated"),
+      "X-Truncated header must be set when cap fires");
+  }
+
+  @Test
+  void withinCap_returnsAllRowsAndNoTruncatedHeader() {
+    List<OntologyAlignment> small = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      small.add(makeEntity("id-" + i, "Concept", "http://example.org/" + i,
+        "rdfs:subClassOf", "HIGH", "src", null));
+    }
+    when(dao.findAll()).thenReturn(small);
+
+    Response r = rest.list();
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<OntologyAlignmentIO> body = (List<OntologyAlignmentIO>) r.getEntity();
+    assertEquals(10, body.size(), "All rows must be returned when under cap");
+    assertNull(r.getHeaderString("X-Truncated"), "X-Truncated must not be set when under cap");
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
