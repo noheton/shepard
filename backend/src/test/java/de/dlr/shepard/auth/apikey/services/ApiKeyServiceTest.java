@@ -27,8 +27,11 @@ import jakarta.inject.Inject;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -61,6 +64,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
   ApiKeyService service;
 
   private PrivateKey key;
+  private PublicKey publicKey;
 
   @BeforeEach
   public void setUpRoleDAO() {
@@ -75,6 +79,9 @@ public class ApiKeyServiceTest extends BaseTestCase {
     var decoded = Base64.getDecoder().decode(privateKey);
     var spec = new PKCS8EncodedKeySpec(decoded);
     key = kFactory.generatePrivate(spec);
+    if (key instanceof RSAPrivateCrtKey crt) {
+      publicKey = kFactory.generatePublic(new RSAPublicKeySpec(crt.getModulus(), crt.getPublicExponent()));
+    }
     authenticationContext.setPrincipal(new JWTPrincipal("bob", "key"));
   }
 
@@ -351,6 +358,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
         return arg;
       });
     when(pkiHelper.getPrivateKey()).thenReturn(key);
+    when(pkiHelper.getPublicKey()).thenReturn(publicKey);
 
     var actual = service.createApiKey(input, "qe", "uri");
 
