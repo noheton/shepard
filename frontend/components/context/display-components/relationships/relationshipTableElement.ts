@@ -40,11 +40,18 @@ export type RelationshipTableElement = {
       uri: string;
       relationship?: string;
     };
+    /**
+     * APISIMP-SUMMARY-IO-NUMERIC-ID: UUID v7 appId of the Predecessor or Successor
+     * DataObject. Set only for PredecessorV2 / SuccessorV2 rows; drives the
+     * appId-keyed delete path in DeleteRelationshipDialog.
+     */
+    predecessorAppId?: string;
   };
 };
 
 type LinkType = { type: "Link" };
-type DataObjectType = { type: "Data Object"; id: number };
+/** APISIMP-SUMMARY-IO-NUMERIC-ID: `id` only for v1 DataObjects; v2 uses `appId`. */
+type DataObjectType = { type: "Data Object"; id?: number; appId?: string };
 export type DataObjectReferenceType =
   | {
       type: "Data Object Reference";
