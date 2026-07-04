@@ -82,28 +82,42 @@ public class VocabularyBrowseRest {
    * including disabled ones so the operator can see what's hidden from
    * autocomplete. Returns an empty list (200) when no vocabularies are
    * seeded.
+   *
+   * <p>APISIMP-VOCAB-LIST-UNBOUNDED: {@code page} / {@code pageSize}
+   * push SKIP/LIMIT to the database; {@code X-Total-Count} carries the
+   * total row count before paging.
    */
   @GET
   @Operation(
     operationId = "listVocabularies",
     summary = "List all vocabularies.",
     description =
-      "Returns every :Vocabulary node seeded into the internal semantic store, " +
+      "Returns :Vocabulary nodes seeded into the internal semantic store, " +
       "ordered by label ASC. Includes both enabled and disabled vocabularies — the " +
       "`enabled` flag tells callers which appear in autocomplete. " +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total count before paging. " +
       "Auth: any authenticated user. " +
       "Empty list (200) when no vocabularies are seeded."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of vocabularies (may be empty).",
+    description = "Paged list of vocabularies (may be empty). Header X-Total-Count = total before paging.",
     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  public Response listVocabularies() {
-    List<Vocabulary> all = vocabularyDAO.listAll();
-    List<VocabularyIO> out = all.stream().map(VocabularyIO::from).toList();
-    return Response.ok(out).build();
+  public Response listVocabularies(
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
+    long total = vocabularyDAO.count();
+    List<Vocabulary> page_ = vocabularyDAO.listPaged((long) page * pageSize, pageSize);
+    List<VocabularyIO> out = page_.stream().map(VocabularyIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── GET /v2/semantic/vocabularies/{vocabId}/predicates ───────────────────
