@@ -87,6 +87,9 @@ export interface SearchV2Request {
     q: string;
     page?: any;
     pageSize?: any;
+    collectionAppId?: string;
+    doPage?: number;
+    doPageSize?: number;
 }
 
 /**
@@ -400,6 +403,18 @@ export class SearchApi extends runtime.BaseAPI {
 
         if (requestParameters['q'] != null) {
             queryParameters['q'] = requestParameters['q'];
+        }
+
+        if (requestParameters['collectionAppId'] != null) {
+            queryParameters['collectionAppId'] = requestParameters['collectionAppId'];
+        }
+
+        if (requestParameters['doPage'] != null) {
+            queryParameters['doPage'] = requestParameters['doPage'];
+        }
+
+        if (requestParameters['doPageSize'] != null) {
+            queryParameters['doPageSize'] = requestParameters['doPageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
