@@ -39,6 +39,23 @@ export function useDeleteReferences(
     loading.value = false;
   }
 
+  // APISIMP-DELETE-REFS-V2: v2 delete path for Collection/DataObject references; uses the reference's own appId.
+  async function deleteReferenceV2(appId: string) {
+    loading.value = true;
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    await fetch(`${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}`, {
+      method: "DELETE",
+      headers: { ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    }).catch(error => {
+      handleError(error, "deleteReferenceV2");
+    });
+    emitSuccess("Successfully deleted reference");
+    handleDataObjectUpdate();
+    onSuccess();
+    loading.value = false;
+  }
+
   async function deleteUriReference(uriReferenceId: number) {
     loading.value = true;
 
@@ -102,6 +119,7 @@ export function useDeleteReferences(
   return {
     deleteCollectionReference,
     deleteDataObjectReference,
+    deleteReferenceV2,
     deleteUriReference,
     deleteUriReferenceV2,
     loading,

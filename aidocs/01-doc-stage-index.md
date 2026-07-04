@@ -140,7 +140,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-12.md`](agent-findings/apisimp-sweep-2026-06-12.md) | APISIMP Sweep — 2026-06-12 | 2026-06-12 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire325.md`](agent-findings/apisimp-sweep-2026-06-30-fire325.md) | APISIMP Sweep — 2026-06-30 (fire-325) | 2026-06-30 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire330.md`](agent-findings/apisimp-sweep-2026-06-30-fire330.md) | APISIMP Sweep — fire-330 (2026-06-30) | 2026-06-30 | 2026-07-03 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-07-04.md`](agent-findings/apisimp-sweep-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-399) | 2026-07-04 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-04.md`](agent-findings/apisimp-sweep-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-399) | 2026-07-04 | 2026-07-04 |
 | [`aidocs/agent-findings/apisimp-sweep-fire346-2026-07-01.md`](agent-findings/apisimp-sweep-fire346-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-346) | 2026-07-01 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-fire351-2026-07-01.md`](agent-findings/apisimp-sweep-fire351-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-351) | 2026-07-01 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-fire387-2026-07-03.md`](agent-findings/apisimp-sweep-fire387-2026-07-03.md) | APISIMP Sweep — 2026-07-03 (fire-387) | 2026-07-03 | 2026-07-03 |
