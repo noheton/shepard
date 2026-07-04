@@ -5,7 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AI1b — response body for
- * {@code POST /v2/timeseries-references/{refAppId}/detect-anomalies}.
+ * {@code POST /v2/references/{appId}/detect-anomalies}.
  */
 @Schema(description = "Result of a rolling-median MAD anomaly detection run.")
 public record AnomalyDetectResultIO(

@@ -34,7 +34,7 @@ import java.util.Map;
  * existing per-kind create shape). Patch honours the TM1 time-alignment
  * fields only ({@code timeReference}, {@code wallClockOffset},
  * {@code wallClockOffsetSource}) — the same contract as the
- * {@code PATCH /v2/timeseries-references/{appId}} endpoint it converges.
+ * {@code PATCH /v2/references/{appId}} endpoint it converges.
  * Payload key set: {@code {start, end, timeseriesContainerId, timeseries,
  * timeReference, wallClockOffset, wallClockOffsetSource, qualityScore,
  * lastScoredAt}}.
@@ -159,7 +159,7 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
       }
     }
 
-    // Same validation the converged PATCH /v2/timeseries-references/{appId} applied.
+    // Same validation the converged PATCH /v2/references/{appId} applied.
     String effectiveTimeRef = body.getTimeReference() != null ? body.getTimeReference() : ref.getTimeReference();
     Long effectiveOffset = body.getWallClockOffset() != null ? body.getWallClockOffset() : ref.getWallClockOffset();
     if ("EXPERIMENT_RELATIVE".equals(effectiveTimeRef) && effectiveOffset == null) {

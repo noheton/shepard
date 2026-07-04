@@ -6,7 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AI1b — request body for
- * {@code POST /v2/timeseries-references/{refAppId}/detect-anomalies}.
+ * {@code POST /v2/references/{appId}/detect-anomalies}.
  *
  * <p>Series selection: if the referenced TimeseriesReference holds exactly
  * one series the filter fields may be omitted and that series is used
