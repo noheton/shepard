@@ -71,10 +71,9 @@ const initialError = ref<string | null>(null);
 
 const { series, loading, error, fetchCrossDo } = useCrossDoBulkData();
 
-const collectionAppIdRef = computed(() => props.collectionAppId);
 const { dataObjects: allDataObjects, loading: doLoading } = useFetchAllDataObjects(
+  props.collectionAppId,
   props.collectionId,
-  collectionAppIdRef,
 );
 // doLoading tracks the DO list fetch; the template combines it with `loading`
 // (cross-track fetch) via `fetching || loading`.
