@@ -378,7 +378,8 @@ useHead({
     <ViewRecipeBuilderDialog
       v-if="containerAccessor.measurements.value.length > 0"
       v-model="showVisualize3D"
-      :container-id="containerId"
+      :container-id="containerNumericId"
+      :container-app-id="containerAppId ?? ''"
       :channels="containerAccessor.measurements.value"
       :start-ns="0"
       :end-ns="Date.now() * 1_000_000"

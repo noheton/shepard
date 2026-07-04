@@ -144,7 +144,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire346-2026-07-01.md`](agent-findings/apisimp-sweep-fire346-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-346) | 2026-07-01 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-fire351-2026-07-01.md`](agent-findings/apisimp-sweep-fire351-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-351) | 2026-07-01 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-fire387-2026-07-03.md`](agent-findings/apisimp-sweep-fire387-2026-07-03.md) | APISIMP Sweep — 2026-07-03 (fire-387) | 2026-07-03 | 2026-07-03 |
-| [`aidocs/agent-findings/apisimp-sweep-fire404-2026-07-04.md`](agent-findings/apisimp-sweep-fire404-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-404) | 2026-07-04 | — |
+| [`aidocs/agent-findings/apisimp-sweep-fire404-2026-07-04.md`](agent-findings/apisimp-sweep-fire404-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-404) | 2026-07-04 | 2026-07-04 |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-07-03 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-07-03 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-07-03 |

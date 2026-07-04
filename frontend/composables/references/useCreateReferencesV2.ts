@@ -1,8 +1,9 @@
 /**
- * APISIMP-REF-CREATE-NUMERIC-IDS — create collection and dataobject references
- * via the unified POST /v2/references?kind=... surface, using appId strings
- * throughout. Supersedes the v1 CollectionReferenceApi / DataObjectReferenceApi
- * calls in useCreateReferences.ts for callers that have a dataObjectAppId.
+ * APISIMP-REF-CREATE-NUMERIC-IDS / APISIMP-CREATE-REFS-V2 — create collection,
+ * dataobject, and uri references via the unified POST /v2/references?kind=...
+ * surface, using appId strings throughout. Supersedes the v1
+ * CollectionReferenceApi / DataObjectReferenceApi / UriReferenceApi calls in
+ * useCreateReferences.ts for callers that have a dataObjectAppId.
  *
  * Pattern mirrors useManageGitReferences.ts (raw fetch against v2BaseUrl).
  */
@@ -89,5 +90,35 @@ export function useCreateReferencesV2(
     }
   }
 
-  return { addCollectionReference, addDataObjectReference, loading };
+  async function addUriReferenceV2(
+    uri: string,
+    name: string,
+    relationship?: string,
+  ) {
+    loading.value = true;
+    try {
+      const url =
+        `${v2BaseUrl()}/v2/references` +
+        `?kind=uri&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          uri,
+          relationship: relationship ?? "URI",
+        }),
+      });
+      if (!res.ok) throw new Error(`createUriReference failed: ${res.status}`);
+      emitSuccess("Successfully created URI reference");
+      handleDataObjectUpdate();
+      onSuccess();
+    } catch (error) {
+      handleError(error, "createUriReference");
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { addCollectionReference, addDataObjectReference, addUriReferenceV2, loading };
 }
