@@ -5,7 +5,7 @@ import {
   instanceOfURIReference,
   type URIReference,
 } from "@dlr-shepard/backend-client";
-import { isCollectionReferenceV2, isDataObjectReferenceV2, isURIReferenceV2, type RelatedEntity } from "./relatedEntity";
+import { isCollectionReferenceV2, isDataObjectReferenceV2, isPredecessorOrSuccessorV2, isURIReferenceV2, type RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
@@ -69,6 +69,11 @@ export function mapRelatedEntityToRelationshipTableElement(
 function mapRelationshipType(
   entity: RelatedEntity,
 ): RelationshipTableElement["relationship"] {
+  // REFS-V2-PANELS-3: v2 summary shape — check before instanceOfDataObject
+  // since it lacks the full DataObject field set.
+  if (isPredecessorOrSuccessorV2(entity)) {
+    return entity.type;
+  }
   if (instanceOfDataObject(entity)) {
     return entity.type;
   }
@@ -87,6 +92,14 @@ function mapName(
   }
   if (isURIReferenceV2(entity)) {
     return { value: entity.name, path: entity.payload.uri };
+  }
+  // REFS-V2-PANELS-3: v2 summary shape — route on appId directly.
+  if (isPredecessorOrSuccessorV2(entity)) {
+    if (!parentCollectionAppId) return { value: entity.name };
+    return {
+      value: entity.name,
+      path: `/collections/${parentCollectionAppId}/dataobjects/${entity.appId}`,
+    };
   }
   if (instanceOfDataObject(entity)) {
     // Predecessor / Successor / sibling DataObjects share the parent's
@@ -154,6 +167,10 @@ function mapType(
   }
   if (isURIReferenceV2(entity)) {
     return { type: "Link" };
+  }
+  // REFS-V2-PANELS-3: v2 summary shape — numeric id present for delete flow.
+  if (isPredecessorOrSuccessorV2(entity)) {
+    return { type: "Data Object", id: entity.id };
   }
   if (instanceOfDataObject(entity)) {
     return {

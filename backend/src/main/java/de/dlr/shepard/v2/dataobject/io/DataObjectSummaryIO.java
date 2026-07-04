@@ -11,8 +11,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
-@Schema(name = "DataObjectSummary", description = "Compact DataObject reference — appId, name, status, createdAt, createdBy.")
+@Schema(name = "DataObjectSummary", description = "Compact DataObject reference — id, appId, name, status, createdAt, createdBy.")
 public class DataObjectSummaryIO {
+
+  /** Neo4j OGM node id — kept for backward-compat delete flows until appId-keyed delete ships. */
+  @Schema(readOnly = true)
+  private Long id;
 
   @Schema(readOnly = true)
   private String appId;
@@ -52,6 +56,7 @@ public class DataObjectSummaryIO {
   private String createdBy;
 
   public DataObjectSummaryIO(DataObject d) {
+    this.id = d.getId();
     this.appId = d.getAppId();
     this.name = d.getName();
     this.status = d.getStatus();

@@ -23,6 +23,20 @@ class DataObjectSummaryIOCreatedFieldsTest {
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Test
+  void wireShape_includes_id_whenSet() throws Exception {
+    DataObject d = new DataObject();
+    d.setId(42L);
+    d.setAppId("018f-pred-00");
+    d.setName("TR-004-id-test");
+
+    var io = new DataObjectSummaryIO(d);
+    JsonNode json = MAPPER.valueToTree(io);
+
+    assertThat(json.has("id")).isTrue();
+    assertThat(json.get("id").asLong()).isEqualTo(42L);
+  }
+
+  @Test
   void wireShape_includes_createdAt_whenSet() throws Exception {
     DataObject d = new DataObject();
     d.setAppId("018f-pred-01");

@@ -82,6 +82,43 @@ export function isDataObjectReferenceV2(entity: unknown): entity is DataObjectRe
   );
 }
 
+/**
+ * REFS-V2-PANELS-3: v2 summary shape for predecessor/successor DataObjects.
+ * Mirrors the backend DataObjectSummaryIO (appId, id, name, status, createdAt, createdBy).
+ * The numeric `id` is kept for the delete flow (PATCH predecessorIds) until
+ * appId-keyed delete ships.
+ */
+export type PredecessorV2 = {
+  id: number;
+  appId: string;
+  name: string;
+  status: string;
+  createdAt: Date;
+  createdBy: string;
+  type: "Predecessor";
+};
+
+export type SuccessorV2 = {
+  id: number;
+  appId: string;
+  name: string;
+  status: string;
+  createdAt: Date;
+  createdBy: string;
+  type: "Successor";
+};
+
+export function isPredecessorOrSuccessorV2(entity: unknown): entity is PredecessorV2 | SuccessorV2 {
+  return (
+    !!entity &&
+    typeof entity === "object" &&
+    ((entity as PredecessorV2 | SuccessorV2).type === "Predecessor" ||
+      (entity as PredecessorV2 | SuccessorV2).type === "Successor") &&
+    "appId" in (entity as object) &&
+    !("predecessorIds" in (entity as object))
+  );
+}
+
 export type RelatedEntity =
   | URIReference
   | DataObjectReferenceWithPayload
@@ -90,4 +127,6 @@ export type RelatedEntity =
   | CollectionReferenceV2
   | URIReferenceV2
   | Successor
-  | Predecessor;
+  | Predecessor
+  | PredecessorV2
+  | SuccessorV2;

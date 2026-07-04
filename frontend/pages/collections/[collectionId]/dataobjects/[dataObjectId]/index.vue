@@ -117,10 +117,16 @@ const dataObjectAppIdForRefs = computed<string | undefined>(
 const { dataReferences } = useDataReferencesByDataObject(
   dataObjectAppIdForRefs,
 );
+// REFS-V2-PANELS-3: collection appId for v2 predecessor/successor fetch.
+// Same fallback pattern as dataObjectAppIdForRefs above.
+const collectionAppIdForRefs = computed<string | undefined>(
+  () => collection.value?.appId ?? (collectionIdStr.includes("-") ? collectionIdStr : undefined),
+);
 const { relatedEntities } = useRelatedEntities(
   collectionNumericId,
   dataObjectNumericId,
   dataObjectIdStr, // V2-SWEEP-004-2: route param UUID → v2 endpoint returns referencedCollectionAppId
+  collectionAppIdForRefs, // REFS-V2-PANELS-3: v2 predecessor/successor endpoint
 );
 
 // BUG-DO-DETAIL-HANG (2026-06-13): the page render gate previously required

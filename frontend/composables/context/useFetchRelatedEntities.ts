@@ -19,8 +19,10 @@ import type {
   DataObjectReferenceV2,
   DataObjectReferenceWithPayload,
   Predecessor,
+  PredecessorV2,
   RelatedEntity,
   Successor,
+  SuccessorV2,
   URIReferenceV2,
 } from "~/components/context/display-components/relationships/relatedEntity";
 import { useShepardApi } from "../common/api/useShepardApi";
@@ -67,10 +69,12 @@ async function fetchCollectionByAnyIdV2(
 // hand a getter that only resolves once the v2 entity loads. The v1
 // `/shepard/api/...` reference + predecessor endpoints below require the
 // NUMERIC ids the route param (a UUID) no longer carries.
+// REFS-V2-PANELS-3: collectionAppIdInput added for v2 predecessor/successor fetch.
 export function useRelatedEntities(
   collectionIdInput: MaybeRefOrGetter<number | undefined>,
   dataObjectIdInput: MaybeRefOrGetter<number | undefined>,
   dataObjectAppIdInput?: MaybeRefOrGetter<string | undefined>,
+  collectionAppIdInput?: MaybeRefOrGetter<string | undefined>,
 ) {
   const relatedEntities = ref<RelatedEntity[] | undefined>(undefined);
 
@@ -285,16 +289,18 @@ export function useRelatedEntities(
     return { ...dataObject, collection };
   }
 
-  // V1 EXCEPTION (V2-SWEEP Wave 4): the v2 counterpart
-  // `GET /v2/.../data-objects/{appId}/predecessors` returns DataObjectSummary
-  // (appId,id,name,status) only — this panel renders createdAt + full
-  // DataObject fields, so migrating today would lose data. Numeric ids are
-  // resolved from the loaded v2 entities (never route params). Backlog:
-  // PRED-V2-SHAPE in aidocs/16 (enrich the v2 shelves, then migrate).
+  // REFS-V2-PANELS-3: v2 predecessor fetch — uses the v2 endpoint which now
+  // returns DataObjectSummaryIO (appId, id, name, status, createdAt, createdBy)
+  // after PRED-V2-SHAPE (PR #1987). Falls back to v1 when appIds are unavailable.
   async function fetchPredecessors(
     collectionId: number,
     dataObjectId: number,
-  ): Promise<Predecessor[]> {
+  ): Promise<(Predecessor | PredecessorV2)[]> {
+    const doAppId = toValue(dataObjectAppIdInput);
+    const colAppId = toValue(collectionAppIdInput);
+    if (doAppId?.includes("-") && colAppId?.includes("-")) {
+      return fetchPredecessorsV2(colAppId, doAppId);
+    }
     const predecessors: DataObject[] = await useShepardApi(DataObjectApi)
       .value.getAllDataObjects({
         collectionId,
@@ -304,16 +310,53 @@ export function useRelatedEntities(
         handleError(error, "fetchPredecessors");
         return [];
       });
-
-    return predecessors.map(pred => ({ ...pred, type: "Predecessor" }));
+    return predecessors.map(pred => ({ ...pred, type: "Predecessor" as const }));
   }
 
-  // V1 EXCEPTION (V2-SWEEP Wave 4): see fetchPredecessors — same
-  // summary-only v2 shape gap (PRED-V2-SHAPE in aidocs/16).
+  async function fetchPredecessorsV2(
+    collectionAppId: string,
+    dataObjectAppId: string,
+  ): Promise<PredecessorV2[]> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url =
+      `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}` +
+      `/data-objects/${encodeURIComponent(dataObjectAppId)}/predecessors?pageSize=200`;
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: "application/json",
+        },
+      });
+      if (!resp.ok) return [];
+      const data: unknown = await resp.json();
+      const items = (data as { items?: unknown[] })?.items;
+      if (!Array.isArray(items)) return [];
+      return (items as Record<string, unknown>[]).map(item => ({
+        id: (item.id as number) ?? 0,
+        appId: item.appId as string,
+        name: item.name as string,
+        status: (item.status as string) ?? "",
+        createdAt: item.createdAt ? new Date(item.createdAt as string) : new Date(0),
+        createdBy: (item.createdBy as string) ?? "",
+        type: "Predecessor" as const,
+      }));
+    } catch (e) {
+      handleError(e, "fetchPredecessorsV2");
+      return [];
+    }
+  }
+
   async function fetchSuccessors(
     collectionId: number,
     dataObjectId: number,
-  ): Promise<Successor[]> {
+  ): Promise<(Successor | SuccessorV2)[]> {
+    const doAppId = toValue(dataObjectAppIdInput);
+    const colAppId = toValue(collectionAppIdInput);
+    if (doAppId?.includes("-") && colAppId?.includes("-")) {
+      return fetchSuccessorsV2(colAppId, doAppId);
+    }
     const successors: DataObject[] = await useShepardApi(DataObjectApi)
       .value.getAllDataObjects({
         collectionId,
@@ -323,8 +366,42 @@ export function useRelatedEntities(
         handleError(error, "fetchSuccessors");
         return [];
       });
+    return successors.map(succ => ({ ...succ, type: "Successor" as const }));
+  }
 
-    return successors.map(succ => ({ ...succ, type: "Successor" }));
+  async function fetchSuccessorsV2(
+    collectionAppId: string,
+    dataObjectAppId: string,
+  ): Promise<SuccessorV2[]> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url =
+      `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}` +
+      `/data-objects/${encodeURIComponent(dataObjectAppId)}/successors?pageSize=200`;
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: "application/json",
+        },
+      });
+      if (!resp.ok) return [];
+      const data: unknown = await resp.json();
+      const items = (data as { items?: unknown[] })?.items;
+      if (!Array.isArray(items)) return [];
+      return (items as Record<string, unknown>[]).map(item => ({
+        id: (item.id as number) ?? 0,
+        appId: item.appId as string,
+        name: item.name as string,
+        status: (item.status as string) ?? "",
+        createdAt: item.createdAt ? new Date(item.createdAt as string) : new Date(0),
+        createdBy: (item.createdBy as string) ?? "",
+        type: "Successor" as const,
+      }));
+    } catch (e) {
+      handleError(e, "fetchSuccessorsV2");
+      return [];
+    }
   }
 
   async function fetchAndMergeRelatedEntities() {
