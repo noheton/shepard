@@ -1,15 +1,8 @@
 <script lang="ts" setup>
 /**
- * REFS-V2-PANELS-2 — migrate SDR detail page to the unified v2 envelope
- * (same shape as FileReference + TimeseriesReference pages). Fixes the
- * eternal-spinner regression for v2-navigated users caused by resolveNumericId
- * returning undefined for UUID route params.
- *
- * Structured data CONTENT items (the JSON payloads) still require v1-only
- * endpoints (GET /shepard/api/…/structuredDataPayload + getAllStructuredDatas).
- * Those calls need the numeric structuredDataContainerId that the v2 wire
- * shape intentionally suppresses. Content rendering is tracked as SDR-CONTENT-V2
- * in aidocs/16-dispatcher-backlog.md.
+ * REFS-V2-PANELS-2 — migrate SDR detail page to the unified v2 envelope.
+ * SDR-CONTENT-V2 — wire the content table to GET /v2/references/{appId}/content
+ * which now returns [{oid, name?, createdAt?, payload}] for kind=structured-data.
  */
 import {
   ContainersApi,
@@ -19,6 +12,7 @@ import ActionButton from "~/components/common/data-table/ActionButton.vue";
 import type { StructuredDataDataTableItem } from "~/components/context/display-components/structured-data-references/structuredDataDataTableItem";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
+import { v2BaseUrl } from "~/composables/container/createV2Container";
 
 definePageMeta({ layout: "collection" });
 
@@ -47,6 +41,73 @@ const {
   notFound: structuredDataReferenceNotFound,
   refresh: refreshReferenceV2,
 } = useFetchReferenceV2(() => routeParams.value.structuredDataReferenceId);
+
+// SDR-CONTENT-V2: fetch payload items from GET /v2/references/{appId}/content.
+// The endpoint now returns [{oid, name?, createdAt?, payload}] for kind=structured-data.
+const { data: session } = useAuth();
+
+async function fetchContentItems(refAppId: string): Promise<void> {
+  const token = session.value?.accessToken ?? null;
+  try {
+    const url =
+      `${v2BaseUrl()}/v2/references/${encodeURIComponent(refAppId)}/content`;
+    const resp = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!resp.ok) {
+      if (resp.status !== 404) {
+        handleError(new Error(`HTTP ${resp.status}`), "fetchContentItems");
+      }
+      structuredDataDataTableItems.value = [];
+      return;
+    }
+    const data: unknown = await resp.json();
+    if (!Array.isArray(data)) {
+      structuredDataDataTableItems.value = [];
+      return;
+    }
+    structuredDataDataTableItems.value = (
+      data as Array<{
+        oid: string;
+        name?: string | null;
+        createdAt?: string | null;
+        payload: unknown;
+      }>
+    ).map(item => {
+      const payloadStr = JSON.stringify(item.payload ?? {});
+      const displayName = item.name ?? item.oid;
+      return {
+        name: { structuredDataName: displayName, availability: "available" },
+        oid: item.oid,
+        createdAt: item.createdAt ? new Date(item.createdAt) : new Date(0),
+        actions: {
+          showPayload: { enabled: true, payload: payloadStr },
+          download: {
+            enabled: true,
+            filename: sanitizeFilename(displayName + ".json"),
+            payload: payloadStr,
+          },
+        },
+      } satisfies StructuredDataDataTableItem;
+    });
+  } catch (e) {
+    handleError(e, "fetchContentItems");
+    structuredDataDataTableItems.value = [];
+  }
+}
+
+watch(
+  referenceV2,
+  r => {
+    const appId = r?.appId;
+    if (appId) fetchContentItems(appId);
+    else structuredDataDataTableItems.value = [];
+  },
+  { immediate: true },
+);
 
 // Container metadata: numeric containerId is suppressed in BasicContainerV2IO
 // (@JsonIgnoreProperties({"id"})). Fetch the human-readable container name via
@@ -168,6 +229,8 @@ function onEditStructuredDataContent(payload: string, name: string) {
 
 async function onStructuredDataSaved() {
   refreshReferenceV2();
+  const appId = referenceV2.value?.appId;
+  if (appId) await fetchContentItems(appId);
 }
 
 /**
@@ -296,9 +359,6 @@ watch(structuredDataReference, () => {
                 />
               </v-col>
             </v-row>
-            <!-- SDR-CONTENT-V2: structured data payload items require a v2
-                 GET /v2/references/{appId}/content endpoint not yet implemented
-                 for kind=structured-data. Table renders empty until that ships. -->
             <v-row>
               <DataTable
                 :items-per-page="itemsPerPage"
