@@ -91,6 +91,7 @@ const { addCollectionReference, addDataObjectReference, addUriReference } =
 const {
   addCollectionReference: addCollectionReferenceV2,
   addDataObjectReference: addDataObjectReferenceV2,
+  addUriReferenceV2,
 } = useCreateReferencesV2(
   props.dataObjectAppId ?? "",
   () => (showDialog.value = false),
@@ -177,11 +178,19 @@ const onSubmit = () => {
     relationshipModel.value.referenceURI &&
     relationshipModel.value.referenceName
   ) {
-    addUriReference(
-      relationshipModel.value.referenceURI,
-      relationshipModel.value.referenceName,
-      relationshipModel.value.relationshipName,
-    );
+    if (props.dataObjectAppId) {
+      addUriReferenceV2(
+        relationshipModel.value.referenceURI,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    } else {
+      addUriReference(
+        relationshipModel.value.referenceURI,
+        relationshipModel.value.referenceName,
+        relationshipModel.value.relationshipName,
+      );
+    }
   }
 };
 </script>
