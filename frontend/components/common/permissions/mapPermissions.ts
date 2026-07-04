@@ -2,16 +2,14 @@ import {
   instanceOfUser,
   instanceOfUserGroup,
   UserApi,
+  UserGroupsApi,
   type Permissions,
   type User,
   type UserGroup,
+  type UserGroupV2,
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import {
-  useUserGroupsV2,
-  type UserGroupV2,
-} from "~/composables/context/useUserGroupsV2";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
@@ -104,21 +102,23 @@ function v2ToUserGroup(v2: UserGroupV2): UserGroup {
     id: 0,
     name: v2.name,
     appId: v2.appId,
-    createdAt: v2.createdAt ? new Date(v2.createdAt) : new Date(0),
+    createdAt: v2.createdAt ?? new Date(0),
     createdBy: v2.createdBy ?? "",
-    updatedAt: v2.updatedAt != null ? new Date(v2.updatedAt) : null,
+    updatedAt: v2.updatedAt ?? null,
     updatedBy: v2.updatedBy ?? null,
     usernames: v2.usernames ?? [],
   };
 }
 
 async function fetchUserGroupByAppId(appId: string): Promise<UserGroup> {
-  const v2Group = await useUserGroupsV2().getUserGroup(appId);
+  // V2-ONLY: GET /v2/user-groups/{appId} — no v1 endpoint used
+  const v2Group = await useV2ShepardApi(UserGroupsApi).value.getUserGroupV2({ appId });
   return v2ToUserGroup(v2Group);
 }
 
 async function fetchUser(username: string) {
-  const user = await useShepardApi(UserApi).value.getUser({
+  // V2-ONLY: GET /v2/users/{username} via UserApi (same path, v2 base URL)
+  const user = await useV2ShepardApi(UserApi).value.getUser({
     username,
   });
   return user;
