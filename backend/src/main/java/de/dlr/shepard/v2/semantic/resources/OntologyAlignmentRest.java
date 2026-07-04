@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -47,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/semantic/ontology/alignment")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Ontology alignment registry (v2, TPL3)")
+@Tag(name = "Semantics")
 public class OntologyAlignmentRest {
 
   @Inject
@@ -67,6 +68,7 @@ public class OntologyAlignmentRest {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
+    operationId = "listOntologyAlignments",
     summary = "List all upper-ontology alignment rows.",
     description =
       "Returns the complete set of `(:OntologyAlignment)` nodes seeded by " +
@@ -84,7 +86,7 @@ public class OntologyAlignmentRest {
       "Array of alignment rows (may be empty if V67 migration has not run yet).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(implementation = OntologyAlignmentIO.class)
+      schema = @Schema(type = SchemaType.ARRAY, implementation = OntologyAlignmentIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

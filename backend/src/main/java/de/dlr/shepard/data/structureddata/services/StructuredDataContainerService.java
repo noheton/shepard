@@ -135,6 +135,7 @@ public class StructuredDataContainerService
    */
   public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
     StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(structuredDataContainerID);
 
     StructuredData result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
@@ -260,6 +261,7 @@ public class StructuredDataContainerService
    */
   public void deleteStructuredData(long structuredDataContainerID, String oid) {
     StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    // #27-ARCHIVED-02: assertIsAllowedToEditContainer also raises 409 when status=ARCHIVED.
     assertIsAllowedToEditContainer(structuredDataContainerID);
 
     structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);
@@ -304,5 +306,17 @@ public class StructuredDataContainerService
       return java.util.Collections.emptyList();
     }
     return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(appId);
+  }
+
+  /**
+   * CC1b (appId variant) — return the list of non-deleted DataObjects that
+   * reference this StructuredDataContainer, keyed by appId. Does not perform
+   * a permission check — callers must call {@link #getContainerByAppId(String)} first.
+   *
+   * @param containerAppId UUID v7 appId of the StructuredDataContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
+    return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
   }
 }

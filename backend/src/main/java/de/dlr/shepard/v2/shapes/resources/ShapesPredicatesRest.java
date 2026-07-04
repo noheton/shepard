@@ -1,10 +1,14 @@
 package de.dlr.shepard.v2.shapes.resources;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.shapes.io.PredicateVocabularyEntryIO;
 import de.dlr.shepard.v2.shapes.repositories.PredicateVocabularyRepository;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -60,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/shapes")
 @RequestScoped
-@Tag(name = "Shapes (v2)")
+@Tag(name = "Shapes")
 public class ShapesPredicatesRest {
 
   @Inject
@@ -70,6 +74,7 @@ public class ShapesPredicatesRest {
   @Path("/predicates")
   @RolesAllowed("authenticated")
   @Operation(
+    operationId = "predicates",
     summary = "List the shepard: predicate vocabulary with substrate routing.",
     description = "Returns the predicate_vocabulary table entries mapping each known " +
     "shepard: predicate URI to its authoritative storage substrate " +
@@ -79,8 +84,8 @@ public class ShapesPredicatesRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Vocabulary entries, ordered by predicate_uri. Empty list when no entries are registered.",
-    content = @Content(schema = @Schema(implementation = PredicateVocabularyEntryIO[].class))
+    description = "Paged vocabulary entries, ordered by predicate_uri. Empty items list when no entries are registered.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response predicates(
@@ -89,14 +94,18 @@ public class ShapesPredicatesRest {
       "Omit to return the full vocabulary.",
       required = false
     )
-    @QueryParam("substrate") String substrate
+    @QueryParam("substrate") String substrate,
+    @Parameter(description = "Maximum entries to return (1–500). Default 200.", required = false)
+    @QueryParam("limit") @DefaultValue("200") @Min(1) @Max(500) int limit
   ) {
-    List<PredicateVocabularyEntryIO> entries;
+    List<PredicateVocabularyEntryIO> all;
     if (substrate != null && !substrate.isBlank()) {
-      entries = repository.findBySubstrate(substrate.trim());
+      all = repository.findBySubstrate(substrate.trim());
     } else {
-      entries = repository.findAll();
+      all = repository.findAll();
     }
-    return Response.ok(entries).build();
+    int total = all.size();
+    List<PredicateVocabularyEntryIO> page = all.subList(0, Math.min(limit, total));
+    return Response.ok(new PagedResponseIO<>(page, total, 0, limit)).build();
   }
 }

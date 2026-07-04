@@ -428,6 +428,7 @@ class SqlTimeseriesFormatTest {
         new SqlQuerySpec.WhereClause(
             new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
             List.of(1L),
+            null,
             null),
         null, null, null);
   }

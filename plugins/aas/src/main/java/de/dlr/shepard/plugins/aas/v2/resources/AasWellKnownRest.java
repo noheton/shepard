@@ -35,6 +35,7 @@ public class AasWellKnownRest {
   @GET
   @Tag(name = "AAS")
   @Operation(
+    operationId = "describeAasServer",
     summary = "AAS server self-description",
     description = "Discoverable JSON document describing this shepard's AAS integration: " +
     "API profile, supported submodel templates, shell count, and outbound registry " +

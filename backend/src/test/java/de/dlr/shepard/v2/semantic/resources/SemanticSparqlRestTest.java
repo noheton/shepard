@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.semantic.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,9 +13,12 @@ import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +58,36 @@ class SemanticSparqlRestTest {
     rest = new StubRest(dao);
   }
 
+  // ─── OpenAPI schema — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED ───────────
+
+  @Test
+  void queryGet_queryParamIsDocumented() throws NoSuchMethodException {
+    Method method = SemanticSparqlRest.class.getMethod(
+      "queryGet", String.class, String.class, jakarta.ws.rs.core.SecurityContext.class
+    );
+    java.lang.reflect.Parameter[] params = method.getParameters();
+    // find the @QueryParam("query") parameter
+    java.lang.reflect.Parameter queryParam = null;
+    for (java.lang.reflect.Parameter p : params) {
+      QueryParam qp = p.getAnnotation(QueryParam.class);
+      if (qp != null && "query".equals(qp.value())) {
+        queryParam = p;
+        break;
+      }
+    }
+    assertNotNull(queryParam, "@QueryParam(\"query\") not found on queryGet()");
+    Parameter openApiParam = queryParam.getAnnotation(Parameter.class);
+    assertNotNull(
+      openApiParam,
+      "@Parameter annotation missing on @QueryParam(\"query\") — APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED"
+    );
+    assertTrue(openApiParam.required(), "@Parameter must be required=true for the SPARQL query param");
+    assertTrue(
+      openApiParam.description() != null && openApiParam.description().length() > 10,
+      "@Parameter description must not be blank"
+    );
+  }
+
   // ─── Class-level annotations ──────────────────────────────────────────────
 
   @Test
@@ -64,6 +98,28 @@ class SemanticSparqlRestTest {
       p.value().startsWith("/v2/"),
       "@Path must start with /v2/ per CLAUDE.md policy — got: " + p.value()
     );
+  }
+
+  // ─── @Parameter documentation regression (APISIMP-SPARQL-QUERY-PARAM-UNDOCUMENTED) ──
+
+  @Test
+  void queryGet_queryParam_hasParameterDescription() throws Exception {
+    Method m = SemanticSparqlRest.class.getMethod(
+      "queryGet", String.class, String.class, SecurityContext.class
+    );
+    java.lang.reflect.Parameter queryParam = null;
+    for (java.lang.reflect.Parameter p : m.getParameters()) {
+      QueryParam qp = p.getAnnotation(QueryParam.class);
+      if (qp != null && "query".equals(qp.value())) {
+        queryParam = p;
+        break;
+      }
+    }
+    assertNotNull(queryParam, "queryGet must have a @QueryParam(\"query\") parameter");
+    Parameter ann = queryParam.getAnnotation(Parameter.class);
+    assertNotNull(ann, "@Parameter must be present on the query @QueryParam in queryGet");
+    assertFalse(ann.description().isBlank(), "@Parameter description must not be blank");
+    assertTrue(ann.required(), "@Parameter must be marked required=true (null/blank → 400)");
   }
 
   // ─── Auth gate ────────────────────────────────────────────────────────────
@@ -234,6 +290,66 @@ class SemanticSparqlRestTest {
     String q = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?s WHERE { ?s rdfs:label ?l }";
     Response r = rest.queryGet(REPO_APP_ID, q, sc);
     assertEquals(200, r.getStatus());
+  }
+
+  // ─── C3 / task #244 — reserved "internal" alias ───────────────────────────
+
+  @Test
+  void get_internalAlias_resolvesToBootstrappedRepo_returns200() {
+    // The frontend playground defaults the repoAppId path-param to the
+    // literal "internal" string. The endpoint must resolve that to the
+    // bootstrapped INTERNAL repository via findInternal() — NOT call
+    // findByAppId("internal") (which would 404).
+    SemanticRepository bootstrapped = new SemanticRepository(99L);
+    bootstrapped.setType(SemanticRepositoryType.INTERNAL);
+    bootstrapped.setName("Built-in Semantic Store (n10s)");
+    when(dao.findInternal()).thenReturn(bootstrapped);
+
+    Response r = rest.queryGet(SemanticSparqlRest.INTERNAL_ALIAS, VALID_SELECT, sc);
+
+    assertEquals(200, r.getStatus());
+    assertEquals(FAKE_RESULTS_JSON, r.getEntity());
+  }
+
+  @Test
+  void get_internalAlias_uppercase_alsoResolves() {
+    // Case-insensitive — the alias is a UX nicety, not a wire-protocol token.
+    SemanticRepository bootstrapped = new SemanticRepository(99L);
+    bootstrapped.setType(SemanticRepositoryType.INTERNAL);
+    when(dao.findInternal()).thenReturn(bootstrapped);
+
+    Response r = rest.queryGet("INTERNAL", VALID_SELECT, sc);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void get_internalAlias_whenBootstrapMissing_returns404() {
+    // Before V49 has run (fresh install at first boot), there is no
+    // INTERNAL row yet. The alias resolves to null and 404 is the right
+    // shape — exactly like an unknown explicit appId.
+    when(dao.findInternal()).thenReturn(null);
+
+    Response r = rest.queryGet(SemanticSparqlRest.INTERNAL_ALIAS, VALID_SELECT, sc);
+    assertEquals(404, r.getStatus());
+    assertProblemJson(r, SemanticSparqlRest.PROBLEM_TYPE_NOT_FOUND, 404);
+  }
+
+  @Test
+  void get_explicitAppId_stillResolvesViaFindByAppId() {
+    // Non-alias path-params still use the canonical findByAppId() lookup.
+    stubRepo(SemanticRepositoryType.SPARQL, "http://fuseki.example.org/sparql");
+    Response r = rest.queryGet(REPO_APP_ID, VALID_SELECT, sc);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void get_nonExistentExplicitAppId_returns404() {
+    // Regression-pinning the original behaviour: an unknown explicit appId
+    // still 404s — the alias resolver does NOT swallow that case.
+    when(dao.findByAppId(eq("nonexistent-uuid"))).thenReturn(null);
+    Response r = rest.queryGet("nonexistent-uuid", VALID_SELECT, sc);
+    assertEquals(404, r.getStatus());
+    assertProblemJson(r, SemanticSparqlRest.PROBLEM_TYPE_NOT_FOUND, 404);
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
 import de.dlr.shepard.auth.security.JwtTokenAuthService;
 import de.dlr.shepard.auth.security.RolesList;
+import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
@@ -76,6 +77,9 @@ public class JWTFilterTest extends BaseTestCase {
   RoleDAO roleDAO;
 
   @InjectMock
+  UserDAO userDAO;
+
+  @InjectMock
   AuthenticationContext authenticationContext;
 
   @Inject
@@ -112,6 +116,14 @@ public class JWTFilterTest extends BaseTestCase {
   @BeforeEach
   public void setUpRoleDAO() {
     when(roleDAO.rolesForUser(org.mockito.ArgumentMatchers.anyString())).thenReturn(java.util.Collections.emptyList());
+  }
+
+  @BeforeEach
+  public void setUpUserDAO() {
+    // Default: every existing test runs with the ROLE-GRANT-STALE-SESSION-02
+    // gate as a pass-through (no recorded role change). Tests that exercise
+    // the gate override this stub locally.
+    when(userDAO.find(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
   }
 
   @BeforeEach
@@ -363,7 +375,7 @@ public class JWTFilterTest extends BaseTestCase {
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
     var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
-    assertEquals("Bob", captured.getUsername());
+    assertEquals("MyUserName", captured.getUsername()); // preferred_username wins per application.properties
     assertEquals(keyId.toString(), captured.getKeyId());
   }
 
@@ -827,5 +839,174 @@ public class JWTFilterTest extends BaseTestCase {
       new String[] { "groups" },
       de.dlr.shepard.auth.security.JwtTokenAuthService.parseClaimPath(" groups ")
     );
+  }
+
+  // ---- ROLE-GRANT-STALE-SESSION-02: filter-level gate tests ----
+
+  @Test
+  public void testFilterRejectsStaleRoleJwtWithStructuredBody() {
+    // JWT issued 10 minutes ago; user's role set changed 1 minute ago.
+    Date issuedAt = DateUtils.addMinutes(new Date(), -10);
+    long roleChangedAtMillis = System.currentTimeMillis() - 60_000L;
+
+    User u = new User("Bob");
+    u.setRoleChangedAt(new Date(roleChangedAtMillis));
+    when(userDAO.find("Bob")).thenReturn(u);
+
+    String jws = Jwts.builder()
+      .setSubject("Bob")
+      .setAudience("account")
+      .setExpiration(DateUtils.addMinutes(new Date(), 5))
+      .setNotBefore(issuedAt)
+      .setIssuedAt(issuedAt)
+      .setId(UUID.randomUUID().toString())
+      .claim("azp", "testcase")
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+
+    verify(context).abortWith(responseCaptor.capture());
+    Response response = responseCaptor.getValue();
+    assertEquals(401, response.getStatus());
+    String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
+    org.junit.jupiter.api.Assertions.assertNotNull(wwwAuthenticate);
+    org.junit.jupiter.api.Assertions.assertTrue(
+      wwwAuthenticate.contains("role_changed"),
+      "WWW-Authenticate should carry role_changed error: " + wwwAuthenticate
+    );
+    var entity = (de.dlr.shepard.common.exceptions.ApiError) response.getEntity();
+    assertEquals("role_changed", entity.getException());
+    org.junit.jupiter.api.Assertions.assertTrue(
+      entity.getMessage().toLowerCase().contains("sign out"),
+      "ApiError message should guide the user to sign out + back in: " + entity.getMessage()
+    );
+  }
+
+  @Test
+  public void testFilterApiKeyBypassesRoleChangedGate() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // Even when the affected user's :User node carries a `roleChangedAt`
+    // in the future of the API key's `iat`, the X-API-Key path must NOT
+    // be blocked — API keys are long-lived service tokens with their own
+    // revocation surface (DELETE /v2/apikeys/{appId}).
+    Date now = new Date();
+    UUID uid = UUID.randomUUID();
+    String jws = Jwts.builder()
+      .setSubject("MyUserName")
+      .setNotBefore(now)
+      .setIssuedAt(now)
+      .setId(uid.toString())
+      .signWith(privateKey)
+      .compact();
+
+    User user = new User("MyUserName");
+    // roleChangedAt would reject an OIDC Bearer with same iat — but API-key
+    // path doesn't even invoke the gate.
+    user.setRoleChangedAt(new Date(now.getTime() + 60_000L));
+    when(userDAO.find("MyUserName")).thenReturn(user);
+
+    ApiKey apiKey = new ApiKey(uid);
+    apiKey.setName("MyApiKey");
+    apiKey.setJws(jws);
+    apiKey.setBelongsTo(user);
+
+    when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+  }
+
+  // ── MFFD-VIDEOREF-SCALE-1 — query-param access_token fallback ───────────
+
+  @Test
+  public void testFilterAccessTokenQueryParam_authenticates()
+    throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // Browser surfaces (HTML5 <video>, <img>, <a download>) cannot inject
+    // a custom Authorization header. The query-param fallback lets the
+    // JWT travel as ?access_token=… so they can still consume protected
+    // routes.
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("Bob")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("azp", "testcase")
+      .claim("preferred_username", "Bob")
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    // No Authorization header, no X-API-KEY.
+    when(context.getHeaderString("Authorization")).thenReturn(null);
+    when(context.getHeaderString("X-API-KEY")).thenReturn(null);
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", jws);
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    assertEquals("Bob", captured.getUsername());
+  }
+
+  @Test
+  public void testFilterHeaderTakesPrecedenceOverQueryParam()
+    throws InvalidKeySpecException, NoSuchAlgorithmException {
+    // When BOTH the Authorization header and ?access_token are present,
+    // the header wins — the query param is a fallback for surfaces that
+    // can't send headers. This avoids ambiguity for normal API callers
+    // who already use the header.
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+
+    String headerJws = Jwts.builder()
+      .setSubject("HeaderUser")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(UUID.randomUUID().toString())
+      .claim("realm_access", new RolesList(new String[] { "test_role" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + headerJws);
+    // Add a malformed query-param token: if precedence is wrong, parsing
+    // will reject and we get 401 instead of the header-user.
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", "this-is-not-a-jwt");
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    assertEquals("HeaderUser", captured.getUsername());
+  }
+
+  @Test
+  public void testFilterEmptyQueryParam_falls_back_to_401()
+    throws URISyntaxException {
+    // ?access_token= (empty value) is treated as if absent.
+    when(context.getHeaderString("Authorization")).thenReturn(null);
+    when(context.getHeaderString("X-API-KEY")).thenReturn(null);
+    var qp = new jakarta.ws.rs.core.MultivaluedHashMap<String, String>();
+    qp.add("access_token", "");
+    when(uriInfo.getQueryParameters()).thenReturn(qp);
+
+    filter.filter(context);
+    verify(context).abortWith(responseCaptor.capture());
+    assertEquals(401, responseCaptor.getValue().getStatus());
   }
 }

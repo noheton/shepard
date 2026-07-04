@@ -26,7 +26,7 @@ class SqlTimeseriesInjectionTest extends BaseTestCase {
       new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z");
 
   private SqlQuerySpec.WhereClause whereNoFilters() {
-    return new SqlQuerySpec.WhereClause(VALID_TB, null, null);
+    return new SqlQuerySpec.WhereClause(VALID_TB, null, null, null);
   }
 
   @Test
@@ -85,6 +85,7 @@ class SqlTimeseriesInjectionTest extends BaseTestCase {
         "timeseries_data_points",
         new SqlQuerySpec.WhereClause(
             VALID_TB,
+            null,
             null,
             List.of(new SqlQuerySpec.FilterItem("value_double", "gte", "0 OR 1=1"))),
         null, null, null);

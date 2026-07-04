@@ -1,5 +1,9 @@
 package de.dlr.shepard.plugin.fileformat.robotics;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.ParseContext;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.SiblingFile;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -78,6 +82,7 @@ import java.util.regex.Pattern;
  * tier-1 is a best-effort enrichment hook, never the cause of an
  * upload failure.
  */
+@ApplicationScoped
 public final class RdkTextScrapeParser implements FileParserPlugin {
 
     /** Accepted extension (case-insensitive). */

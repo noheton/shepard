@@ -2,13 +2,16 @@ import {
   instanceOfUser,
   instanceOfUserGroup,
   UserApi,
-  UserGroupApi,
   type Permissions,
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import {
+  useUserGroupsV2,
+  type UserGroupV2,
+} from "~/composables/context/useUserGroupsV2";
 import type { MemberPermissions } from "./permissionTypes";
 import { UserRole } from "./UserRole";
 
@@ -34,12 +37,12 @@ export async function mapPermissions(
     memberPermissions,
   );
   await mapPermissionRoleUserGroups(
-    permissions?.readerGroupIds,
+    permissions?.readerGroupAppIds ?? undefined,
     UserRole.reader,
     memberPermissions,
   );
   await mapPermissionRoleUserGroups(
-    permissions?.writerGroupIds,
+    permissions?.writerGroupAppIds ?? undefined,
     UserRole.writer,
     memberPermissions,
   );
@@ -73,28 +76,45 @@ async function mapPermissionRoleUsers(
 }
 
 async function mapPermissionRoleUserGroups(
-  roleUserGroupIds: number[] | undefined,
+  roleGroupAppIds: (string | null)[] | undefined,
   groupRole: UserRole,
   userPermissions: MemberPermissions[],
 ) {
-  if (!roleUserGroupIds) return;
+  if (!roleGroupAppIds) return;
   await Promise.all(
-    roleUserGroupIds.map(async roleUserGroupId => {
+    roleGroupAppIds.map(async appId => {
+      if (!appId) return;
       const existing = userPermissions.find(
         userPermission =>
           instanceOfUserGroup(userPermission.member) &&
-          userPermission.member.id === roleUserGroupId,
+          userPermission.member.appId === appId,
       );
-      if (existing) existing.roleList.push(groupRole);
-      else {
-        const userGroup: UserGroup = await fetchUserGroup(roleUserGroupId);
-        userPermissions.push({
-          member: userGroup,
-          roleList: [groupRole],
-        });
+      if (existing) {
+        existing.roleList.push(groupRole);
+        return;
       }
+      const userGroup: UserGroup = await fetchUserGroupByAppId(appId);
+      userPermissions.push({ member: userGroup, roleList: [groupRole] });
     }),
   );
+}
+
+function v2ToUserGroup(v2: UserGroupV2): UserGroup {
+  return {
+    id: 0,
+    name: v2.name,
+    appId: v2.appId,
+    createdAt: v2.createdAt ? new Date(v2.createdAt) : new Date(0),
+    createdBy: v2.createdBy ?? "",
+    updatedAt: v2.updatedAt != null ? new Date(v2.updatedAt) : null,
+    updatedBy: v2.updatedBy ?? null,
+    usernames: v2.usernames ?? [],
+  };
+}
+
+async function fetchUserGroupByAppId(appId: string): Promise<UserGroup> {
+  const v2Group = await useUserGroupsV2().getUserGroup(appId);
+  return v2ToUserGroup(v2Group);
 }
 
 async function fetchUser(username: string) {
@@ -102,12 +122,6 @@ async function fetchUser(username: string) {
     username,
   });
   return user;
-}
-async function fetchUserGroup(groupId: number) {
-  const userGroup = await useShepardApi(UserGroupApi).value.getUserGroup({
-    userGroupId: groupId,
-  });
-  return userGroup;
 }
 
 export const mapMemberPermissions = (
@@ -127,17 +141,18 @@ export const mapMemberPermissions = (
       .map(memberPermissions => (memberPermissions.member as User).username);
   };
 
-  const mapGroupIds = (role: UserRole): number[] => {
+  const mapGroupAppIds = (role: UserRole): string[] => {
     return userGroups
       .filter(memberPermissions => memberPermissions.roleList.includes(role))
-      .map(memberPermissions => (memberPermissions.member as UserGroup).id);
+      .map(memberPermissions => (memberPermissions.member as UserGroup).appId)
+      .filter((appId): appId is string => !!appId);
   };
 
   return {
     manager: mapUsernames(UserRole.manager),
     writer: mapUsernames(UserRole.writer),
     reader: mapUsernames(UserRole.reader),
-    readerGroupIds: mapGroupIds(UserRole.reader),
-    writerGroupIds: mapGroupIds(UserRole.writer),
+    readerGroupAppIds: mapGroupAppIds(UserRole.reader),
+    writerGroupAppIds: mapGroupAppIds(UserRole.writer),
   };
 };

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -21,6 +22,8 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.dataobject.io.PredecessorEdgePatchIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -30,6 +33,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
@@ -60,6 +65,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -100,8 +106,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "DataObjects (v2)")
+@Tag(name = "DataObjects")
 public class DataObjectV2Rest {
+
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/data-objects.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/data-objects.not-found";
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/data-objects.unauthorized";
+  private static final String PROBLEM_TYPE_FORBIDDEN = "/problems/data-objects.forbidden";
+  private static final String PROBLEM_TYPE_INTERNAL = "/problems/data-objects.internal";
 
   @Inject
   DataObjectService dataObjectService;
@@ -129,6 +141,7 @@ public class DataObjectV2Rest {
 
   @GET
   @Operation(
+    operationId = "listDataObjects",
     summary = "List DataObjects under a Collection.",
     description =
       "Returns a page of `:DataObject` entities belonging to the Collection " +
@@ -137,11 +150,23 @@ public class DataObjectV2Rest {
       "`timeseriesCount`, `fileCount`, `structuredDataCount`. Counts reflect " +
       "non-deleted references only and are computed in a single Cypher round-trip " +
       "(no N+1 queries).\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both to " +
-      "paginate. `size` capped at 200 server-side.\n\n" +
-      "Filtering: `name` does a case-insensitive substring match. Each row " +
-      "also carries `referenceIds[]` (legacy long ids of all refs) and " +
-      "`childrenIds[]` (direct child DOs).\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both to " +
+      "paginate. `pageSize` must be between 1 and 200 inclusive (400 on violation).\n\n" +
+      "**Pagination envelope (diverges from other v2 list endpoints):** This endpoint " +
+      "returns a plain JSON array in the response body. Pagination metadata is carried " +
+      "in two response headers instead of a `PagedResponseIO` body envelope:\n\n" +
+      "- `Content-Range: dataobjects START-END/TOTAL` — zero-based index of the first " +
+      "and last returned item followed by the total match count " +
+      "(e.g. `dataobjects 0-49/8514`). Follows RFC 7233 §4.2 extension syntax.\n" +
+      "- `X-Total-Count: TOTAL` — bare integer total for callers that only need the count.\n\n" +
+      "All other paginated `/v2/` list endpoints return a `PagedResponseIO` body " +
+      "envelope (`{items, total, page, pageSize}`). This endpoint predates that " +
+      "convention and retains header-based metadata for backwards compatibility. " +
+      "Callers (including `useListDataObjects.ts`) must read these headers; the body " +
+      "envelope is absent. Migration to `PagedResponseIO` is tracked as " +
+      "`APISIMP-DO-LIST-CONTENT-RANGE` in the backlog (a coordinated backend + " +
+      "frontend two-commit change).\n\n" +
+      "Filtering: `name` does a case-insensitive substring match.\n\n" +
       "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
       "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
       "latest data-point timestamps across all timeseries channels. Null on items " +
@@ -178,12 +203,24 @@ public class DataObjectV2Rest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @Parameter(description = "Optional display-name filter (case-insensitive substring match). Omit to return all DataObjects.")
     @QueryParam(Constants.QP_NAME) String name,
+    @Parameter(description = "Lifecycle status filter. Accepted values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED. Unrecognised values silently return an empty page (no 400).")
     @QueryParam("status") String status,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @Parameter(description = "Page size (default 50). Must be between 1 and 200 inclusive (400 otherwise).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
+    @Parameter(description = "Comma-separated response modifiers. `time-bounds` — populates `timeBoundsStart`/`timeBoundsEnd` per DataObject (costs one extra TimescaleDB round-trip). `full` — opts back into the full (pre-DB-OPT5) wire shape including deprecated fields.")
     @QueryParam("include") String include,
+    @Parameter(description = "Comma-separated field projection (flat CSV). Fields must exist on DataObjectListItemV2; an unrecognised field returns 400 with the offending name in the body. `id` and `appId` are always included. Omit to return all default fields.")
     @QueryParam("fields") String fields,
+    @Parameter(description = "Annotation filter: `<predicateIri>=<value>`. Restricts results to DataObjects carrying a semantic annotation with exactly that predicate IRI and value. Example: `urn:shepard:quality:rating=PASS`. Malformed values (missing `=` or empty parts) are silently ignored.")
+    @QueryParam("annotationFilter") String annotationFilter,
+    @Parameter(description = "SIDEBAR-LAZY-TREE — restrict to the direct, non-deleted children of the DataObject with this `appId` (within the same Collection). Drives the lazy collection-sidebar tree: fetch one hierarchy level per expand. Composes with `page`/`pageSize`/`fields`/`name`/`status`/`annotationFilter`. Mutually exclusive with `topLevel=true` (when both are given, `topLevel` wins). An unknown `parentAppId` yields an empty page.")
+    @QueryParam("parentAppId") String parentAppId,
+    @Parameter(description = "SIDEBAR-LAZY-TREE — when `true`, return ONLY root DataObjects (those with no parent DataObject inside the Collection). Drives the lazy collection-sidebar tree's initial load. Composes with the other filters. Overrides `parentAppId` when both are set.")
+    @QueryParam("topLevel") Boolean topLevel,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -191,27 +228,47 @@ public class DataObjectV2Rest {
       String unknown = DataObjectListFieldFilter.firstUnknownField(fields);
       if (unknown != null) {
         return Response.status(Response.Status.BAD_REQUEST)
-          .entity(Map.of(
-            "title", "Unknown field in ?fields= query parameter",
-            "detail", "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
-            "status", 400
+          .entity(new ProblemJson(
+            "/problems/data-objects.unknown-field",
+            "Unknown field in ?fields= query parameter",
+            400,
+            "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
+            null
           ))
+          .type("application/problem+json")
           .build();
       }
     }
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     Response gate = enforceAccess(collectionOgmId, AccessType.Read, sc);
     if (gate != null) return gate;
 
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
-
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
-    params = params.withPageAndSize(safePage, safeSize);
+    if (annotationFilter != null) params = params.withAnnotationFilter(annotationFilter);
+
+    // SIDEBAR-LAZY-TREE — root / parent hierarchy filter. `topLevel=true` wins
+    // over `parentAppId` when both are supplied. The parentAppId is resolved to
+    // the parent's shepardId here at the boundary; the DAO's existing parentId
+    // Cypher path (`<-[:has_child]-(parent {shepardId})`) does the restriction.
+    if (Boolean.TRUE.equals(topLevel)) {
+      params = params.withTopLevelOnly();
+    } else if (parentAppId != null && !parentAppId.isBlank()) {
+      DataObject parent = dataObjectDAO.findByAppId(parentAppId);
+      if (parent == null || parent.isDeleted() || parent.getShepardId() == null) {
+        // Unknown / deleted parent → empty page (mirrors an unmatched filter).
+        return Response.ok("[]", MediaType.APPLICATION_JSON)
+          .header("Content-Range", "dataobjects */0")
+          .header("X-Total-Count", 0)
+          .build();
+      }
+      params = params.withParentShepardId(parent.getShepardId());
+    }
+
+    params = params.withPageAndSize(page, pageSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
 
@@ -264,7 +321,7 @@ public class DataObjectV2Rest {
     // Count total matching DataObjects for Content-Range / X-Total-Count headers.
     // Use the same params (minus pagination) so filters are consistent with the page.
     long total = dataObjectDAO.countByCollectionByShepardIds(collectionOgmId, params);
-    int firstIndex = safePage * safeSize;
+    int firstIndex = page * pageSize;
     int lastIndex = result.isEmpty() ? -1 : firstIndex + result.size() - 1;
     String contentRange = "dataobjects " + firstIndex + "-" + lastIndex + "/" + total;
 
@@ -275,7 +332,8 @@ public class DataObjectV2Rest {
     try {
       body = writer.writeValueAsString(result);
     } catch (JsonProcessingException e) {
-      throw new RuntimeException("Failed to serialise DataObject list response", e);
+      return problem(PROBLEM_TYPE_INTERNAL, "Internal server error",
+        Response.Status.INTERNAL_SERVER_ERROR, "Failed to serialise DataObject list response");
     }
 
     return Response.ok(body, MediaType.APPLICATION_JSON)
@@ -290,6 +348,7 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}")
   @Produces({ MediaType.APPLICATION_JSON, "application/ld+json" })
   @Operation(
+    operationId = "getDataObjectV2",
     summary = "Get a DataObject by appId.",
     description =
       "Returns the full `DataObjectIO` shape for the DataObject identified by " +
@@ -304,15 +363,12 @@ public class DataObjectV2Rest {
       "Unknown profile → 406 RFC 7807 `dataobject.unsupported-profile`. Shape contract: " +
       "`backend/src/main/resources/shapes/m4i-dataobject-shape.ttl`. Design: aidocs/semantics/94 §4.3.\n\n" +
       "The response includes `id` (legacy long), `appId` (UUID v7, canonical), `name`, " +
-      "`description`, `status`, `attributes` (string-to-string map), `referenceIds[]` " +
-      "(legacy long ids of all references — timeseries, file, structured-data — attached " +
-      "to this DataObject), `childrenIds[]` (direct child DataObjects), and timestamps.\n\n" +
+      "`description`, `status`, `attributes` (string-to-string map), and timestamps.\n\n" +
       "Auth: Read permission on the parent Collection (DataObjects inherit Collection " +
       "permissions; there is no per-DataObject permission node). Returns 404 when either " +
       "`collectionAppId` or `dataObjectAppId` is unknown, or when the DataObject does not " +
       "belong to the stated Collection.\n\n" +
-      "Next step: use the `referenceIds` values with the upstream " +
-      "`GET /shepard/api/...` reference endpoints to fetch payload, or " +
+      "Next step: `GET /v2/references?dataObjectAppId={dataObjectAppId}` to list all references, or " +
       "`PATCH /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` to update."
   )
   @APIResponse(
@@ -332,7 +388,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     // DataObjects don't have their own :Permissions node — access is
@@ -394,6 +450,7 @@ public class DataObjectV2Rest {
 
   @POST
   @Operation(
+    operationId = "createDataObjectV2",
     summary = "Create a DataObject inside a Collection.",
     description =
       "Creates a `:DataObject` in the Collection identified by `collectionAppId` " +
@@ -438,7 +495,7 @@ public class DataObjectV2Rest {
     @Context SecurityContext sc
   ) {
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     Response gate = enforceAccess(collectionOgmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -458,6 +515,7 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}")
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchDataObjectV2",
     summary = "Partially update a DataObject (RFC 7396 JSON Merge Patch).",
     description =
       "Applies an RFC 7396 JSON Merge Patch to the `:DataObject` identified by " +
@@ -506,7 +564,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
@@ -534,6 +592,7 @@ public class DataObjectV2Rest {
   @DELETE
   @Path("/{dataObjectAppId}")
   @Operation(
+    operationId = "deleteDataObjectV2",
     summary = "Delete a DataObject and its references.",
     description =
       "Soft-deletes the `:DataObject` identified by `dataObjectAppId` within the Collection " +
@@ -559,7 +618,7 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
     if (collectionOgmId == null || dataObjectOgmId == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
     }
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
@@ -574,16 +633,18 @@ public class DataObjectV2Rest {
   @GET
   @Path("/{dataObjectAppId}/predecessors")
   @Operation(
+    operationId = "predecessors",
     summary = "List direct predecessors of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct predecessor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct predecessors (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -591,40 +652,113 @@ public class DataObjectV2Rest {
   public Response predecessors(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject p : d.getPredecessors()) {
-      if (!p.isDeleted()) result.add(new DataObjectSummaryIO(p));
+      if (!p.isDeleted()) all.add(new DataObjectSummaryIO(p));
     }
-    return Response.ok(result)
+    int total = all.size();
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
+  }
+
+  // ── QM1b: set the relationship type of an existing predecessor edge ──────
+
+  @PATCH
+  @Path("/{dataObjectAppId}/predecessors/{predecessorAppId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(
+    operationId = "patchPredecessorEdge",
+    summary = "QM1b — set the PROV-O / FAIR²R relationship type on an existing predecessor edge.",
+    description =
+      "Sets / replaces the relationship type for the predecessor edge from the DataObject " +
+      "identified by `dataObjectAppId` to the predecessor identified by `predecessorAppId`. " +
+      "The edge must already exist (use create / merge-patch to add new predecessor links).\n\n" +
+      "Allowed `relationshipType` values:\n" +
+      "  - `prov:wasInformedBy` — default / generic informational dependency (the QM1b 'normal' kind)\n" +
+      "  - `prov:wasRevisionOf` — direct revision / correction (the QM1b 're-test' kind)\n" +
+      "  - `fair2r:repairs` — rework / NCR-repair (the QM1b 'rework' kind)\n" +
+      "  - `fair2r:concession` — concession / use-as-is disposition (QM1b)\n\n" +
+      "Idempotent: re-running with the same `relationshipType` is a no-op.\n\n" +
+      "Auth: Write permission on the parent Collection.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity addressable at " +
+      "`GET /v2/provenance/entity/{appId}`."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Updated DataObject detail; `typedPredecessorSummaries` reflects the new relationship type.",
+    content = @Content(schema = @Schema(implementation = DataObjectDetailV2IO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Missing or invalid `relationshipType` (not in the allowed set).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent Collection.")
+  @APIResponse(responseCode = "404",
+    description = "DataObject or predecessor not found, or no edge from this DataObject to that predecessor.")
+  public Response patchPredecessorEdge(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @PathParam("predecessorAppId") @NotBlank String predecessorAppId,
+    @RequestBody(
+      required = true,
+      description = "Single-field body: relationshipType. See operation description for allowed values.",
+      content = @Content(schema = @Schema(implementation = PredecessorEdgePatchIO.class))
+    ) PredecessorEdgePatchIO body,
+    @Context SecurityContext sc
+  ) {
+    if (body == null) {
+      throw new InvalidBodyException("PATCH body must include 'relationshipType'.");
+    }
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (collectionOgmId == null || dataObjectOgmId == null) {
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection or DataObject found for the given appIds");
+    }
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
+    if (gate != null) return gate;
+
+    // Service throws InvalidBodyException (→ 400) on bad type,
+    // InvalidPathException (→ 404) on missing DO or missing edge.
+    DataObject updated = dataObjectService.setPredecessorRelationshipType(
+      dataObjectOgmId, predecessorAppId, body.relationshipType()
+    );
+    return Response.ok(new DataObjectDetailV2IO(updated)).build();
   }
 
   @GET
   @Path("/{dataObjectAppId}/successors")
   @Operation(
+    operationId = "successors",
     summary = "List direct successors of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct successor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct successors (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -632,38 +766,48 @@ public class DataObjectV2Rest {
   public Response successors(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject s : d.getSuccessors()) {
-      if (!s.isDeleted()) result.add(new DataObjectSummaryIO(s));
+      if (!s.isDeleted()) all.add(new DataObjectSummaryIO(s));
     }
-    return Response.ok(result).build();
+    int total = all.size();
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
   @GET
   @Path("/{dataObjectAppId}/children")
   @Operation(
+    operationId = "children",
     summary = "List direct children of a DataObject.",
     description =
       "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
       "that is a direct child of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page`, and `pageSize`.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Direct children (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -671,40 +815,51 @@ public class DataObjectV2Rest {
   public Response children(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Maximum items per page, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     Long collectionOgmId = resolveOrNull(collectionAppId);
-    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> result = new ArrayList<>();
+    List<DataObjectSummaryIO> all = new ArrayList<>();
     for (DataObject c : d.getChildren()) {
-      if (!c.isDeleted()) result.add(new DataObjectSummaryIO(c));
+      if (!c.isDeleted()) all.add(new DataObjectSummaryIO(c));
     }
-    return Response.ok(result).build();
+    int total = all.size();
+    long fromLong = (long) page * pageSize;
+    int from = (int) Math.min(fromLong, (long) total);
+    int to = (int) Math.min(fromLong + pageSize, (long) total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
   }
 
   @GET
   @Path("/{dataObjectAppId}/predecessor-chain")
   @Operation(
+    operationId = "predecessorChain",
     summary = "Traverse the predecessor chain up to a given depth.",
     description =
       "Traverses the `has_successor` edges backwards from the DataObject identified by " +
       "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted predecessors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
+      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -712,11 +867,12 @@ public class DataObjectV2Rest {
   public Response predecessorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
-    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
+    @QueryParam("depth") @DefaultValue("10") @Max(50) @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -724,24 +880,27 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findPredecessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(result).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
   }
 
   @GET
   @Path("/{dataObjectAppId}/successor-chain")
   @Operation(
+    operationId = "successorChain",
     summary = "Traverse the successor chain up to a given depth.",
     description =
       "Traverses the `has_successor` edges forwards from the DataObject identified by " +
       "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted successors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
+      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -749,11 +908,12 @@ public class DataObjectV2Rest {
   public Response successorChain(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
-    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @Parameter(description = "Maximum chain depth (default 10). Clamped server-side to [1, 50] — values below 1 become 1; values above 50 are silently clamped to 50.")
+    @QueryParam("depth") @DefaultValue("10") @Max(50) @PositiveOrZero int depth,
     @Context SecurityContext sc
   ) {
     Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
-    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (dataObjectOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject found for dataObjectAppId");
 
     Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -761,7 +921,7 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findSuccessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(result).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
@@ -776,9 +936,9 @@ public class DataObjectV2Rest {
 
   private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this resource");
     }
     return null;
   }
@@ -787,11 +947,16 @@ public class DataObjectV2Rest {
    *  via the permissions service helper because DOs have no own perms node. */
   private Response enforceDataObjectAccess(String dataObjectAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this DataObject");
     }
     return null;
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**
@@ -820,13 +985,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number tsId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             timeseries.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              tsId.longValue(),
               (String) ref.get("refAppId")
             ));
           }
@@ -840,13 +1002,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number fileId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             files.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              fileId.longValue(),
               (String) ref.get("refAppId")
             ));
           }
@@ -860,13 +1019,10 @@ public class DataObjectV2Rest {
         if (entry instanceof Map<?, ?> m) {
           var ref = (Map<String, Object>) m;
           Object refShepardId = ref.get("refShepardId");
-          if (refShepardId instanceof Number sdId) {
-            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+          if (refShepardId instanceof Number) {
             structuredData.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
               (String) ref.get("containerAppId"),
               (String) ref.get("containerName"),
-              containerId,
-              sdId.longValue(),
               (String) ref.get("refAppId")
             ));
           }

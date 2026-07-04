@@ -4,7 +4,7 @@ import type { ShepardObjectAccessor } from "~/composables/shepardObjectAccessor"
 const showDialog = ref(false);
 const emit = defineEmits(["update-success"]);
 
-defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
+defineProps<{ shepardObjectAccessor: ShepardObjectAccessor<number | string> }>();
 </script>
 
 <template>

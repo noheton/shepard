@@ -13,7 +13,13 @@ import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * A5a Phase 1 — wire shape for {@code /v2/hdf-containers/...}.
+ * A5a Phase 1 — internal create payload for the hdf container handler.
+ *
+ * <p>Originally the wire shape of the bespoke {@code /v2/hdf-containers/...}
+ * surface (removed in V2CONV-A7-HDF). Now used only inside
+ * {@code HdfContainerKindHandler} to carry the create fields ({@code name},
+ * {@code description}) into {@code HdfContainerService}; the unified
+ * {@code /v2/containers} surface projects through {@code ContainerV2IO}.
  *
  * <p>Carries the public-facing {@code appId} (L2d-style identifier),
  * the operator-visible {@link #hsdsDomain}, the optional

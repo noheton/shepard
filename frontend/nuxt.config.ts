@@ -243,6 +243,9 @@ export default defineNuxtConfig({
       // Example: "http://localhost:8080". If unset, derived from backendApiUrl
       // by stripping the /shepard/api suffix.
       backendV2ApiUrl: "",
+      // D1d — version stamp surfaced in the in-app help footer.
+      // Set NUXT_PUBLIC_SHEPARD_VERSION at build time to match backend/pom.xml <revision>.
+      shepardVersion: process.env.NUXT_PUBLIC_SHEPARD_VERSION ?? "6.0.0-SNAPSHOT",
     },
   },
 });

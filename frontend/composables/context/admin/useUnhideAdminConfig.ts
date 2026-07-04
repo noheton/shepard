@@ -1,5 +1,5 @@
 /**
- * UH1d composable wrapping GET/PATCH /v2/admin/unhide/config.
+ * UH1d composable wrapping GET/PATCH /v2/admin/config/unhide.
  *
  * Raw fetch (no generated client for this endpoint yet) — same pattern
  * as useInstanceRorConfig and useFetchPlugins.
@@ -40,7 +40,7 @@ export function useUnhideAdminConfig() {
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const response = await fetch(`${v2BaseUrl()}/v2/admin/unhide/config`, {
+      const response = await fetch(`${v2BaseUrl()}/v2/admin/config/unhide`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: "application/json",
@@ -62,7 +62,7 @@ export function useUnhideAdminConfig() {
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const response = await fetch(`${v2BaseUrl()}/v2/admin/unhide/config`, {
+      const response = await fetch(`${v2BaseUrl()}/v2/admin/config/unhide`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${accessToken}`,

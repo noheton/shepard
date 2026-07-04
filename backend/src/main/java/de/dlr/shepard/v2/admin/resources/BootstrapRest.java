@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.resources;
 
 import de.dlr.shepard.v2.admin.io.BootstrapRequestIO;
+import de.dlr.shepard.v2.admin.io.BootstrapResponseIO;
 import de.dlr.shepard.v2.admin.services.BootstrapService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -12,7 +13,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -41,10 +41,15 @@ public class BootstrapRest {
   @POST
   @Tag(name = "Admin")
   @Operation(
+    operationId = "bootstrap",
     description = "Consume the one-shot bootstrap token + grant instance-admin to a user. " +
     "Unauthenticated — the token is the auth proof. Token-replay returns 403."
   )
-  @APIResponse(description = "Bootstrap token accepted; instance-admin role granted to the specified user.", responseCode = "201")
+  @APIResponse(
+    description = "Bootstrap token accepted; instance-admin role granted to the specified user.",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = BootstrapResponseIO.class))
+  )
   @APIResponse(description = "Token does not match or has already been consumed; replay is not permitted.", responseCode = "403")
   @APIResponse(description = "No user with the given username exists in the system.", responseCode = "404")
   public Response bootstrap(
@@ -54,6 +59,6 @@ public class BootstrapRest {
     ) @Valid BootstrapRequestIO body
   ) {
     String username = bootstrapService.consumeBootstrap(body.getToken(), body.getUsername());
-    return Response.status(Status.CREATED).entity(Map.of("username", username, "role", "instance-admin")).build();
+    return Response.status(Status.CREATED).entity(new BootstrapResponseIO(username, "instance-admin")).build();
   }
 }

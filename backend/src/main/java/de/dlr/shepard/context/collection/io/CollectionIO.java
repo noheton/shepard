@@ -24,9 +24,27 @@ public class CollectionIO extends AbstractDataObjectIO {
    * Id of a default file container.
    * This value can be nullable.
    * The default value is null.
+   *
+   * @deprecated Use {@link #defaultFileContainerAppId} (UUID v7). Kept for
+   *     backward-compatibility until the L2e deprecation window closes.
+   *     Will not be removed before that window.
    */
   @Schema(nullable = true)
+  @Deprecated
   private Long defaultFileContainerId = null;
+
+  /**
+   * AppId (UUID v7) of the default file container. Nullable when none is set.
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * {@link CollectionIO} is shared with the v1 {@code /shepard/api/} surface.
+   * Without this annotation a null value leaks onto v1 as
+   * {@code "defaultFileContainerAppId": null}, violating the upstream-5.2.0
+   * byte-fidelity guarantee.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, readOnly = true)
+  private String defaultFileContainerAppId;
 
   /**
    * Optional hero/banner image URL displayed at the top of the Collection
@@ -92,6 +110,29 @@ public class CollectionIO extends AbstractDataObjectIO {
   @Schema(nullable = true, enumeration = {"HASH_ONLY", "BODY_REDACTED", "BODY_RAW"})
   private String promptLogMode;
 
+  /**
+   * COLL-SCENE-1 — appId of the {@code :DigitalTwinScene} linked as the
+   * Collection's hero scene-graph (renders on the Collection landing page
+   * via {@code CollectionSceneGraphHeader.vue}). Nullable: when null, the
+   * frontend renders a "Link scene-graph" affordance (writer-only) instead
+   * of the viewer.
+   *
+   * <p>Read-only on the wire — the dedicated
+   * {@code /v2/collections/{appId}/scene-graph} resource (GET/PUT/DELETE)
+   * is the mutation surface. Setting this field via the legacy
+   * {@code PATCH /shepard/api/collections} or v2 collection PATCH is not
+   * supported; that path stays untouched.
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * omitted from the v1 {@code /shepard/api/} wire when null so upstream
+   * 5.2.0 byte-fidelity is preserved.
+   *
+   * <p>See {@code aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md} GAP-6.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true, readOnly = true)
+  private String sceneGraphAppId;
+
   public CollectionIO(Collection collection) {
     super(collection);
     this.dataObjectIds = extractShepardIds(collection.getDataObjects());
@@ -99,13 +140,16 @@ public class CollectionIO extends AbstractDataObjectIO {
 
     if (collection.getFileContainer() == null) {
       this.defaultFileContainerId = null;
+      this.defaultFileContainerAppId = null;
     } else {
       this.defaultFileContainerId = collection.getFileContainer().getId();
+      this.defaultFileContainerAppId = collection.getFileContainer().getAppId();
     }
 
     this.heroImageUrl = collection.getHeroImageUrl();
     this.importedFrom = collection.getImportedFrom();
     this.promptLogMode = collection.getPromptLogMode();
+    this.sceneGraphAppId = collection.getSceneGraphAppId();
   }
 
   @Override
@@ -118,9 +162,11 @@ public class CollectionIO extends AbstractDataObjectIO {
       HasId.areEqualSets(dataObjectIds, other.dataObjectIds) &&
       HasId.areEqualSets(incomingIds, other.incomingIds) &&
       Objects.equals(defaultFileContainerId, other.defaultFileContainerId) &&
+      Objects.equals(defaultFileContainerAppId, other.defaultFileContainerAppId) &&
       Objects.equals(heroImageUrl, other.heroImageUrl) &&
       Objects.equals(importedFrom, other.importedFrom) &&
-      Objects.equals(promptLogMode, other.promptLogMode)
+      Objects.equals(promptLogMode, other.promptLogMode) &&
+      Objects.equals(sceneGraphAppId, other.sceneGraphAppId)
     );
   }
 
@@ -131,9 +177,11 @@ public class CollectionIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(dataObjectIds);
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + Objects.hashCode(defaultFileContainerId);
+    result = prime * result + Objects.hashCode(defaultFileContainerAppId);
     result = prime * result + Objects.hashCode(heroImageUrl);
     result = prime * result + Objects.hashCode(importedFrom);
     result = prime * result + Objects.hashCode(promptLogMode);
+    result = prime * result + Objects.hashCode(sceneGraphAppId);
     return result;
   }
 }

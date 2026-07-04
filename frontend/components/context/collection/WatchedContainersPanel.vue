@@ -99,8 +99,8 @@ function availabilityChipLabel(a?: string): string {
           {{ availabilityChipLabel(w.containerAvailability) }}
         </v-chip>
         <v-btn
-          v-if="w.containerAvailability === 'available' && w.containerOgmId != null"
-          :to="containerKindRoutes[w.containerKind] + w.containerOgmId"
+          v-if="w.containerAvailability === 'available'"
+          :to="containerKindRoutes[w.containerKind] + w.containerAppId"
           variant="text"
           size="x-small"
           icon="mdi-arrow-right"

@@ -76,11 +76,11 @@ function gridAnnotations(
 }
 
 function buildDo(
-  id: number,
+  appId: string,
   name: string,
   annotations: SemanticAnnotation[],
 ): DataObjectWithAnnotations {
-  return { id, name, annotations };
+  return { appId, name, annotations };
 }
 
 // ── extractGridPosition ───────────────────────────────────────────────────
@@ -164,7 +164,7 @@ describe("extractQsClassification", () => {
 
 describe("bucketByGrid", () => {
   it("buckets one DataObject into one cell", () => {
-    const dos = [buildDo(1, "tr-001", gridAnnotations("S4", "M13", "L18", "F1"))];
+    const dos = [buildDo("do-1", "tr-001", gridAnnotations("S4", "M13", "L18", "F1"))];
     const buckets = bucketByGrid(dos);
     expect(buckets.size).toBe(1);
     const cell = buckets.get(cellKey("S4", "M13"));
@@ -175,9 +175,9 @@ describe("bucketByGrid", () => {
 
   it("merges multiple DataObjects with the same (S, M) and distinct layers", () => {
     const dos = [
-      buildDo(1, "a", gridAnnotations("S4", "M13", "L8", "F1")),
-      buildDo(2, "b", gridAnnotations("S4", "M13", "L18", "F2")),
-      buildDo(3, "c", gridAnnotations("S4", "M13", "L19", "F3")),
+      buildDo("do-1", "a", gridAnnotations("S4", "M13", "L8", "F1")),
+      buildDo("do-2", "b", gridAnnotations("S4", "M13", "L18", "F2")),
+      buildDo("do-3", "c", gridAnnotations("S4", "M13", "L19", "F3")),
     ];
     const buckets = bucketByGrid(dos);
     const cell = buckets.get(cellKey("S4", "M13"));
@@ -187,8 +187,8 @@ describe("bucketByGrid", () => {
 
   it("flags anyFailed when at least one NOK is present", () => {
     const dos = [
-      buildDo(1, "a", gridAnnotations("S2", "M2", "L8", "F1", "OK")),
-      buildDo(2, "b", gridAnnotations("S2", "M2", "L9", "F2", "NOK")),
+      buildDo("do-1", "a", gridAnnotations("S2", "M2", "L8", "F1", "OK")),
+      buildDo("do-2", "b", gridAnnotations("S2", "M2", "L9", "F2", "NOK")),
     ];
     const buckets = bucketByGrid(dos);
     const cell = buckets.get(cellKey("S2", "M2"));
@@ -197,11 +197,11 @@ describe("bucketByGrid", () => {
 
   it("skips DataObjects without a complete grid position", () => {
     const dos = [
-      buildDo(1, "incomplete", [
+      buildDo("do-1", "incomplete", [
         ann(MFFD_SECTION_IRI, "S1"),
         ann(MFFD_MODULE_IRI, "M1"),
       ]),
-      buildDo(2, "complete", gridAnnotations("S1", "M1", "L8", "F1")),
+      buildDo("do-2", "complete", gridAnnotations("S1", "M1", "L8", "F1")),
     ];
     const buckets = bucketByGrid(dos);
     expect(buckets.size).toBe(1);
@@ -209,7 +209,7 @@ describe("bucketByGrid", () => {
   });
 
   it("returns an empty map when no DOs carry grid annotations", () => {
-    const dos = [buildDo(1, "unrelated", [ann("urn:other:thing", "x")])];
+    const dos = [buildDo("do-1", "unrelated", [ann("urn:other:thing", "x")])];
     expect(bucketByGrid(dos).size).toBe(0);
   });
 });
@@ -264,7 +264,7 @@ describe("hasFailedMeasurement", () => {
       module: "M1",
       measurements: [
         {
-          dataObject: buildDo(1, "a", []),
+          dataObject: buildDo("do-1", "a", []),
           layer: "L1",
           frame: "F1",
           qsClassification: "OK",
@@ -282,13 +282,13 @@ describe("hasFailedMeasurement", () => {
       module: "M1",
       measurements: [
         {
-          dataObject: buildDo(1, "a", []),
+          dataObject: buildDo("do-1", "a", []),
           layer: "L1",
           frame: "F1",
           qsClassification: "OK",
         },
         {
-          dataObject: buildDo(2, "b", []),
+          dataObject: buildDo("do-2", "b", []),
           layer: "L2",
           frame: "F1",
           qsClassification: "NOK",
@@ -310,7 +310,7 @@ describe("formatTooltip", () => {
       module: "M13",
       measurements: [
         {
-          dataObject: buildDo(1, "a", []),
+          dataObject: buildDo("do-1", "a", []),
           layer: "L18",
           frame: "F1",
           qsClassification: null,
@@ -330,13 +330,13 @@ describe("formatTooltip", () => {
       module: "M2",
       measurements: [
         {
-          dataObject: buildDo(1, "a", []),
+          dataObject: buildDo("do-1", "a", []),
           layer: "L8",
           frame: "F1",
           qsClassification: "OK",
         },
         {
-          dataObject: buildDo(2, "b", []),
+          dataObject: buildDo("do-2", "b", []),
           layer: "L9",
           frame: "F1",
           qsClassification: "NOK",
@@ -396,9 +396,9 @@ describe("maxMeasurementCount", () => {
 
   it("returns the largest cell measurement count", () => {
     const dos = [
-      buildDo(1, "a", gridAnnotations("S1", "M1", "L1", "F1")),
-      buildDo(2, "b", gridAnnotations("S1", "M1", "L2", "F1")),
-      buildDo(3, "c", gridAnnotations("S2", "M2", "L1", "F1")),
+      buildDo("do-1", "a", gridAnnotations("S1", "M1", "L1", "F1")),
+      buildDo("do-2", "b", gridAnnotations("S1", "M1", "L2", "F1")),
+      buildDo("do-3", "c", gridAnnotations("S2", "M2", "L1", "F1")),
     ];
     expect(maxMeasurementCount(bucketByGrid(dos))).toBe(2);
   });

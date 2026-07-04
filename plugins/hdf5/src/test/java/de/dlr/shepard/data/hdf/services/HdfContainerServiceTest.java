@@ -78,7 +78,7 @@ class HdfContainerServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(USER.getUsername());
     when(dateHelper.getDate()).thenReturn(new Date(1_700_000_000_000L));
     // Permission grant by default — tests can override.
-    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(AccessType.class), any())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(AccessType.class), any(), anyLong())).thenReturn(true);
     when(permissionsService.isCurrentUserOwner(anyLong())).thenReturn(true);
     // DAO save returns the same object back so we can observe state.
     when(dao.createOrUpdate(any(HdfContainer.class))).thenAnswer(inv -> inv.getArgument(0));

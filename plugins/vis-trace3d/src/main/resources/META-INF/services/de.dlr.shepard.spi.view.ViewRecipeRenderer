@@ -1,0 +1,7 @@
+# RESEED-FIND-RENDER-PNG — Trace3D PNG ViewRecipeRenderer.
+# Claims the Trace3DViewShape IRI and declares image/png in producibleMedia(),
+# so POST /v2/shapes/render with `Accept: image/png` returns real PNG bytes
+# instead of falling back to the JSON view-model. Rasterised pure-JVM via
+# BufferedImage + ImageIO (no headless browser). ServiceLoader-discovered by
+# ViewRecipeRendererRegistry at startup.
+de.dlr.shepard.plugins.vistrace3d.render.Trace3DPngRenderer

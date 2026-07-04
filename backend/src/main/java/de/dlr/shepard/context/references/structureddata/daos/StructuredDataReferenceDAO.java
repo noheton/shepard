@@ -106,6 +106,24 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
     return ret;
   }
 
+  /**
+   * APISIMP-STRUCTURED-DATA-KIND — look up a {@link StructuredDataReference} by
+   * its application-level UUID v7 ({@code appId}).
+   *
+   * @param appId UUID v7 of the reference
+   * @return the matching entity, or {@code null} when not found
+   */
+  public StructuredDataReference findByAppId(String appId) {
+    String query =
+      "MATCH %s WHERE r.appId = $appId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false)
+        ) +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? it.next() : null;
+  }
+
   public List<StructuredDataReference> findByDataObjectShepardId(long dataObjectShepardId) {
     String query =
       String.format(

@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import type { ContainerType } from "@dlr-shepard/backend-client";
+import { buildContainerPathByAppId } from "~/utils/buildContainerPath";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 export interface MetadataContainerFieldProps {
   containerName: string;
   containerId: number;
   containerType: ContainerType;
   availability: "available" | "deleted" | "forbidden" | "error";
+  /** When provided, routes the link via appId and suppresses the raw numeric ID display. */
+  containerAppId?: string;
 }
 
 const props = defineProps<MetadataContainerFieldProps>();
+const { advancedMode } = useAdvancedMode();
 
-const containerPath = buildContainerPath(
-  props.containerType,
-  props.containerId,
-);
+const containerPath = props.containerAppId
+  ? buildContainerPathByAppId(props.containerType, props.containerAppId)
+  : buildContainerPath(props.containerType, props.containerId);
 </script>
 
 <template>
@@ -29,7 +33,8 @@ const containerPath = buildContainerPath(
       <a v-else class="text-no-wrap" :href="containerPath" target="_blank">
         {{ containerName }}
       </a>
-      <span class="text-no-wrap">(ID: {{ containerId }})</span>
+      <!-- Show numeric ID only in advanced mode when no appId is available -->
+      <span v-if="advancedMode && !containerAppId" class="text-no-wrap">(ID: {{ containerId }})</span>
     </div>
   </div>
 </template>

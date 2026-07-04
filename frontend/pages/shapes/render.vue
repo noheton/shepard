@@ -8,22 +8,38 @@
  *
  *   "trace-3d" | "tresjs"  → <Trace3DView> (flat-array adapter + legend)
  *   "table"                → inline <v-table> of channel values
- *   (unknown)              → <PlaceholderImplStatus> noting the unsupported hint
+ *   (unknown)              → <v-alert type="warning"> unsupported renderer hint
  *
  * Beta: bindings come back status=DECLARED (no live resolution).
  * User supplies the TS container ID to complete the pipeline until TPL2c ships.
  *
  * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
+import { ContainersApi } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
+import {
+  fetchChannelListByAppId,
+  fetchBulkTraceByAppId,
+} from "~/utils/shapesRenderChannels";
+import { mapRenderFetchError } from "~/utils/shapesRenderErrors";
+import {
+  isUrdfRenderQuery,
+  parseUrdfRenderQuery,
+} from "~/utils/urdfRenderQuery";
 import type { Trace3DColorScheme } from "~/components/container/timeseries/Trace3DView.vue";
 import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
 import UrdfView from "~/components/container/timeseries/UrdfView.vue";
 import ThermographyView from "~/components/container/timeseries/ThermographyView.vue";
 import type { AnnotationMap } from "~/utils/thermographyChannelPicker";
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import Trace3DEditChannelsDialog from "~/components/container/timeseries/Trace3DEditChannelsDialog.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "~/components/container/timeseries/Trace3DChannelPicker.vue";
+// UI-SHAPES-RENDER-PICKERS-001 — replace bare appId text inputs with pickers.
+import TemplateAutocomplete from "~/components/context/templates/TemplateAutocomplete.vue";
+import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
+import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
+import type { DataObject } from "@dlr-shepard/backend-client";
+import SvdxChannelChartView from "~/components/shapes/SvdxChannelChartView.vue";
 
 useHead({ title: "Shape render playground | shepard" });
 
@@ -31,12 +47,59 @@ useHead({ title: "Shape render playground | shepard" });
 const templateAppId   = ref("");
 const focusShepardId  = ref("");
 
+// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput
+// now uses appId (SEARCH-V2-2). DataObjectPrefillableInput still resolves to
+// a numeric DO id; we look up the appId via v2 endpoint to populate
+// `focusShepardId`. Power users who already have an appId (from MCP /
+// scripts) flip showRawAppIds = true and type it in directly.
+//
+// SEARCH-V2-3: DataObjectPrefillableInput will also migrate to appId; until
+// then, its v-if guards on `pickerCollectionAppId` but passes collectionId=0
+// (graceful degradation — DO picker won't find results without numeric id).
+const pickerCollectionAppId = ref<string | undefined>(undefined);
+const pickerDataObjectId = ref<number | undefined>(undefined);
+const showRawAppIds      = ref(false);
+
+watch(pickerDataObjectId, async newId => {
+  if (!newId || !pickerCollectionAppId.value) {
+    focusShepardId.value = "";
+    return;
+  }
+  try {
+    // BUG-COLL-APPID-ROUTE-005 (2026-06-02): resolve the DataObject's appId
+    // via the v2 endpoint. The generated v1 `getDataObject` expects numeric
+    // Neo4j longs in the path — post-Neo4j-reset DataObjects carry UUID v7
+    // only, so the picker → focusShepardId chain silently broke. v2's
+    // EntityIdResolver accepts either UUID v7 or numeric stringified id,
+    // and the response carries `appId` directly so the downstream renderer
+    // never sees the legacy long.
+    const url =
+      `${getV2Base()}/v2/collections/` +
+      `${encodeURIComponent(pickerCollectionAppId.value)}/data-objects/` +
+      `${encodeURIComponent(String(newId))}`;
+    const resp = await fetch(url, { headers: getAuthHeaders() });
+    if (!resp.ok) {
+      handleError(
+        new Error(`HTTP ${resp.status}`),
+        "resolving DataObject appId for shapes render",
+      );
+      return;
+    }
+    const doFetched = (await resp.json()) as DataObject;
+    focusShepardId.value = (doFetched as { appId?: string }).appId ?? "";
+  } catch (e) {
+    handleError(e as Error, "resolving DataObject appId for shapes render");
+  }
+});
+
 // When navigated from a TimeseriesReference via ViewRecipeBuilderDialog, these
 // are set from query params and the template form is hidden.
 const fromReference   = ref(false);
 const refStartNs      = ref<number | null>(null);
 const refEndNs        = ref<number | null>(null);
-const containerId     = ref(""); // numeric TS container ID (legacy v1 path)
+// UX612-C2: the channel endpoints are appId-keyed (APISIMP-TSCONT-APPID-KEY)
+// — this carries the container's appId (UUID v7), never the numeric Neo4j id.
+const containerAppId  = ref("");
 const colormapName    = ref<ColormapName>("inferno");
 const windowHours     = ref(1);
 
@@ -170,25 +233,25 @@ function getAuthHeaders(): Record<string, string> {
   return h;
 }
 
-// ── channel list cache (for edit dialog + fetchBulkTrace) ─────────────────────
+// ── channel list cache (for edit dialog + bulk trace fetch) ──────────────────
+// UX612-C2: fetched through the typed v2 client, keyed by container appId.
+// The previous numeric-keyed fetch 404ed against the appId-keyed endpoint,
+// so no Trace3D render could succeed from any entry point.
+
+const channelListingApi = useV2ShepardApi(ContainersApi);
 
 const channelList = ref<ChannelV2[]>([]);
 
 async function fetchChannelList() {
-  if (!containerId.value.trim()) return;
-  const id = Number(containerId.value.trim());
-  if (!isFinite(id)) return;
-  try {
-    const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
-      { headers: getAuthHeaders() },
-    );
-    if (!res.ok) return;
-    channelList.value = await res.json();
-  } catch { /* silent */ }
+  if (!containerAppId.value.trim()) return;
+  const list = await fetchChannelListByAppId(
+    channelListingApi.value,
+    containerAppId.value,
+  );
+  if (list.length > 0) channelList.value = list;
 }
 
-watch(containerId, (v) => { if (v.trim()) void fetchChannelList(); });
+watch(containerAppId, (v) => { if (v.trim()) void fetchChannelList(); });
 
 // ── edit channels dialog ──────────────────────────────────────────────────────
 
@@ -271,7 +334,9 @@ async function fetchBindings() {
     });
     const body = await res.json();
     if (!res.ok) {
-      fetchError.value = `${res.status} ${res.statusText}: ${JSON.stringify(body)}`;
+      // UX612-M1: map the 422 contract mismatch (templateKind != VIEW_RECIPE)
+      // to a human-readable sentence instead of dumping raw JSON.
+      fetchError.value = mapRenderFetchError(res.status, res.statusText, body);
       return;
     }
     renderer.value = body.renderer ?? null;
@@ -291,90 +356,31 @@ async function fetchBindings() {
 }
 
 // ── bulk channel fetch (TS-OPT2) — one request for all roles ─────────────────
+// UX612-C2: delegated to utils/shapesRenderChannels.ts (typed v2 client,
+// appId-keyed). Caches the channel list back into `channelList`.
 async function fetchBulkTrace(
   channels: { role: string; parsed: NonNullable<Binding["parsed"]> }[],
   startNs: number,
   endNs: number,
 ): Promise<Map<string, [number, number][]>> {
-  const result = new Map<string, [number, number][]>();
-  if (!containerId.value.trim() || channels.length === 0) return result;
-  const id = Number(containerId.value.trim());
-  if (!isFinite(id)) return result;
-
-  try {
-    // Step 1: use cached channel list or fetch + cache
-    let localChannelList = channelList.value;
-    if (localChannelList.length === 0) {
-      const listRes = await fetch(
-        getV2Base() + `/v2/timeseries-containers/${id}/channels?size=1000`,
-        { headers: getAuthHeaders() },
-      );
-      if (!listRes.ok) return result;
-      localChannelList = await listRes.json();
-      channelList.value = localChannelList;
-    }
-
-    const norm = (s: string | null | undefined) => (s ?? "").trim();
-    const tupleKey = (m: string, d: string, l: string, sn: string, f: string) =>
-      `${norm(m)}|${norm(d)}|${norm(l)}|${norm(sn)}|${norm(f)}`;
-
-    const tupleToShepardId = new Map<string, string>();
-    for (const ch of localChannelList) {
-      tupleToShepardId.set(
-        tupleKey(ch.measurement as string, ch.device as string, ch.location as string, ch.symbolicName as string, ch.field as string),
-        ch.shepardId,
-      );
-    }
-
-    // Step 2: resolve each role's 5-tuple; build shepardId → role reverse map
-    const shepardIdToRole = new Map<string, string>();
-    const shepardIds: string[] = [];
-    for (const { role, parsed } of channels) {
-      const key = tupleKey(parsed.measurement, parsed.device, parsed.location, parsed.symbolicName, parsed.field);
-      const shepardId = tupleToShepardId.get(key);
-      if (shepardId) {
-        shepardIds.push(shepardId);
-        shepardIdToRole.set(shepardId, role);
-      }
-    }
-    if (shepardIds.length === 0) return result;
-
-    // Step 3: bulk fetch
-    const res = await fetch(
-      getV2Base() + `/v2/timeseries-containers/${id}/channels/data/bulk`,
-      {
-        method:  "POST",
-        headers: getAuthHeaders(),
-        body:    JSON.stringify({ shepardIds, start: startNs, end: endNs }),
-      },
-    );
-    if (!res.ok) return result;
-
-    // Step 4: map response entries back to roles via 5-tuple
-    const body: {
-      timeseries: { measurement: string; device: string; location: string; symbolicName: string; field: string };
-      points: { timestamp: number; value: number }[];
-    }[] = await res.json();
-
-    for (const entry of body) {
-      const ts = entry.timeseries;
-      const key = tupleKey(ts.measurement, ts.device, ts.location, ts.symbolicName, ts.field);
-      const shepardId = tupleToShepardId.get(key);
-      const role = shepardId ? shepardIdToRole.get(shepardId) : undefined;
-      if (role) {
-        result.set(role, (entry.points ?? []).map(p => [p.timestamp, p.value as number] as [number, number]));
-      }
-    }
-  } catch {
-    /* swallow — caller will see missing keys as empty arrays */
+  const { byRole, channelList: fetchedList } = await fetchBulkTraceByAppId(
+    channelListingApi.value,
+    containerAppId.value,
+    channels,
+    startNs,
+    endNs,
+    channelList.value,
+  );
+  if (channelList.value.length === 0 && fetchedList.length > 0) {
+    channelList.value = fetchedList;
   }
-  return result;
+  return byRole;
 }
 
 // ── render trace ──────────────────────────────────────────────────────────────
 async function renderTrace() {
-  if (!containerId.value.trim()) {
-    renderError.value = "TS container ID is required to fetch channel data.";
+  if (!containerAppId.value.trim()) {
+    renderError.value = "TS container appId is required to fetch channel data.";
     return;
   }
   isRendering.value = true;
@@ -481,12 +487,13 @@ const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
 // ── renderer dispatch helpers ─────────────────────────────────────────────────
 
-const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "unknown">(() => {
+const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "svdx-channel-chart" | "unknown">(() => {
   const r = renderer.value?.toLowerCase() ?? "";
   if (r === "trace-3d" || r === "tresjs") return "trace-3d";
   if (r === "urdf")                        return "urdf";
   if (r === "thermography")                return "thermography";
   if (r === "table")                       return "table";
+  if (r === "svdx-channel-chart")          return "svdx-channel-chart";
   return "unknown";
 });
 
@@ -494,15 +501,37 @@ const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "
 //
 // URDF is a SEPARATELY SELECTABLE renderer alongside Trace3D — same
 // VIEW_RECIPE template kind, same shapes/render delegation, but rendered by
-// UrdfView instead of Trace3DView. Driven by query params:
-//   ?renderer=urdf&urdfUrl=<encoded>&packagePath=<encoded>
+// UrdfView instead of Trace3DView.
+//
+// V2-SWEEP Wave 2: the canonical bootstrap shape is
+//   ?renderer=urdf&urdfFileAppId=<FileReference appId>
+// — the page resolves the bytes via GET /v2/files/{appId}/content
+// (useUrdfReferenceBlob), never a raw URL/path ("UI never asks for
+// paths/URLs — pulls from references"). The legacy
+// `?urdfUrl=…&packagePath=…` params are still read for one deprecation
+// window (old bookmarks + the static /urdf-samples/ demo assets); removal
+// tracked under UI-PATHS-FROM-REFERENCES in aidocs/16.
 const urdfUrl     = ref<string>("");
 const urdfPackage = ref<string>("");
+const {
+  resolve: resolveUrdfBlob,
+  revoke: revokeUrdfBlob,
+  loading: urdfResolving,
+  error: urdfBlobError,
+} = useUrdfReferenceBlob();
 
-// Thermography renderer state (tier-1) — purely annotation-driven, no
-// channel bindings yet. Channel-bound playback ships with tier-2
-// (OTVIS-PARSE-2 + THERMO-CHANNELS-1).
+async function bootstrapUrdfFromReference(fileReferenceAppId: string) {
+  const blobUrl = await resolveUrdfBlob(fileReferenceAppId);
+  if (blobUrl) urdfUrl.value = blobUrl;
+}
+
+onUnmounted(() => revokeUrdfBlob());
+
+// Thermography renderer state — annotation metadata + optional
+// fileReferenceAppId that drives the frame fetch (PLACEHOLDER-thermography-canvas).
 const thermographyAnnotations = ref<AnnotationMap>({});
+/** appId of the .OTvis FileReference — when set, ThermographyView fetches live frames. */
+const thermoFileRefAppId = ref<string>("");
 
 const trace3DColorScheme = computed<Trace3DColorScheme>(() => {
   switch (colormapName.value) {
@@ -527,18 +556,60 @@ const canRender = computed(() =>
 onMounted(() => {
   const q = useRoute().query;
 
-  // URDF renderer — different bootstrap shape: ?renderer=urdf&urdfUrl=…
-  if (q.renderer === "urdf" || (q.urdfUrl && !q.roles)) {
-    renderer.value     = "urdf";
-    urdfUrl.value      = q.urdfUrl     ? decodeURIComponent(String(q.urdfUrl))     : "/urdf-samples/two-link-arm.urdf";
-    urdfPackage.value  = q.packagePath ? decodeURIComponent(String(q.packagePath)) : "";
+  // SCENEGRAPH-PLAY-VIEWKIND-BRANCH: a VIEW_RECIPE template redirected here from
+  // /scene-graphs/play prefills the template field (no focus DataObject yet) so
+  // the user only has to pick a focus DataObject + TS container to render.
+  if (
+    typeof q.templateAppId === "string" && q.templateAppId.length > 0 &&
+    !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography"
+  ) {
+    templateAppId.value = q.templateAppId;
+  }
+
+  // TOOLS-CONTEXT-DO-RENDER — when navigated from the in-context Tools
+  // menu on a DataObject detail page the URL carries
+  // `?focusShepardId=<doAppId>&scope=data-object`. When the DataObject
+  // has an attached template (TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1) the
+  // menu also passes `?templateAppId=<...>`. SHAPES-V-PREFILL-1: when
+  // both are present, prefill BOTH form fields and auto-fetch the
+  // bindings so the user lands on the rendered view in one step.
+  if (q.focusShepardId && !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography") {
+    focusShepardId.value = String(q.focusShepardId);
+    if (typeof q.templateAppId === "string" && q.templateAppId.length > 0) {
+      templateAppId.value = q.templateAppId;
+      // Both fields known → auto-fetch the bindings declaration. The
+      // user still needs to enter the TS container ID to actually
+      // render data (TPL2c will resolve the container automatically
+      // post-TS-ID migration).
+      void fetchBindings();
+    }
+  }
+
+  // URDF renderer — canonical bootstrap shape (V2-SWEEP Wave 2):
+  //   ?renderer=urdf&urdfFileAppId=<FileReference appId>
+  // (parse logic + legacy fallback live in utils/urdfRenderQuery.ts)
+  if (isUrdfRenderQuery(q)) {
+    renderer.value = "urdf";
+    const bootstrap = parseUrdfRenderQuery(q);
+    if (bootstrap.fileReferenceAppId) {
+      // Resolve the bytes from the FileReference via the v2 content
+      // endpoint — the UI never constructs or receives a storage URL.
+      void bootstrapUrdfFromReference(bootstrap.fileReferenceAppId);
+    } else {
+      // DEPRECATED legacy shape (?urdfUrl=…&packagePath=…) — kept one
+      // deprecation window for old bookmarks + the static /urdf-samples/
+      // demo assets. Removal: UI-PATHS-FROM-REFERENCES (aidocs/16).
+      urdfUrl.value     = bootstrap.legacyUrl ?? "";
+      urdfPackage.value = bootstrap.legacyPackagePath ?? "";
+    }
     fromReference.value = true;
     return;
   }
 
-  // Thermography renderer (tier-1) — pure metadata-driven view, no
-  // channel bindings yet. Bootstrap shape: ?renderer=thermography
-  // (optional ?annotations=<base64-JSON-of-AnnotationMap>).
+  // Thermography renderer — metadata-driven + optional live-frame bootstrap.
+  // Shape: ?renderer=thermography
+  //   (optional ?annotations=<base64-JSON-of-AnnotationMap>)
+  //   (optional ?fileReferenceAppId=<UUID-v7> → live OTvis frame fetch)
   if (q.renderer === "thermography") {
     renderer.value = "thermography";
     if (q.annotations) {
@@ -548,11 +619,18 @@ onMounted(() => {
         thermographyAnnotations.value = {};
       }
     }
+    if (q.fileReferenceAppId) {
+      thermoFileRefAppId.value = String(q.fileReferenceAppId);
+    }
     fromReference.value = true;
     return;
   }
 
-  if (!q.roles || !q.containerId) return;
+  // UX612-C2: the handoff carries `containerAppId` (appId-keyed channel
+  // endpoints). `containerId` (numeric) is the pre-fix legacy param — it is
+  // accepted so old bookmarks still populate the field, but a numeric value
+  // cannot resolve channels anymore.
+  if (!q.roles || !(q.containerAppId || q.containerId)) return;
 
   try {
     const roles = JSON.parse(atob(String(q.roles))) as Record<string, {
@@ -571,7 +649,7 @@ onMounted(() => {
     return;
   }
 
-  containerId.value    = String(q.containerId);
+  containerAppId.value = String(q.containerAppId || q.containerId || "");
   refStartNs.value     = q.startNs ? Number(q.startNs) : null;
   refEndNs.value       = q.endNs   ? Number(q.endNs)   : null;
   colormapName.value   = (q.colormap as ColormapName | undefined) ?? "inferno";
@@ -584,7 +662,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container>
+  <!-- LAYOUT-4K-CENTERED-EMPTY-001 / L5: data-heavy tool page; fluid +
+       2400px cap so the binding declarations / 3D viewport / playback
+       controls breathe at 4K without becoming unreadably wide. -->
+  <v-container fluid style="max-width: 2400px; margin: 0 auto">
     <!-- ── header ─────────────────────────────────────────────────────────── -->
     <div class="d-flex flex-column ga-2 mb-4">
       <h4 class="text-h4">Shape render playground</h4>
@@ -604,28 +685,57 @@ onMounted(() => {
       class="mb-4"
       prepend-icon="mdi-cube-outline"
     >
-      Rendering from a Timeseries Reference · container {{ containerId }}
+      Rendering from a Timeseries Reference · container {{ containerAppId }}
       <span v-if="refStartNs && refEndNs" class="text-caption ml-2">
         ({{ new Date(refStartNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }}
         → {{ new Date(refEndNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }} UTC)
       </span>
     </v-alert>
 
-    <!-- ── input form ─────────────────────────────────────────────────────── -->
+    <!-- ── input form ───────────────────────────────────────────────────────
+         UI-SHAPES-RENDER-PICKERS-001: replace the two bare appId text
+         fields with a Template autocomplete + Collection→DataObject
+         pickers. Raw appId text fields stay behind a toggle for power
+         users (MCP scripts, deep links, debugging). -->
     <v-row v-if="!fromReference" class="mb-2">
       <v-col cols="12" md="5">
+        <TemplateAutocomplete
+          v-if="!showRawAppIds"
+          v-model:app-id="templateAppId"
+          kind="VIEW_RECIPE"
+          label="Template (VIEW_RECIPE)"
+        />
         <v-text-field
+          v-else
           v-model="templateAppId"
           label="Template appId (VIEW_RECIPE)"
           variant="outlined"
           density="compact"
           clearable
-          hint="UUID v7 of the ShepardTemplate with templateKind=VIEW_RECIPE"
+          hint="UUID v7 of the ShepardTemplate"
           persistent-hint
         />
       </v-col>
       <v-col cols="12" md="5">
+        <template v-if="!showRawAppIds">
+          <CollectionPrefillableInput v-model:collection-app-id="pickerCollectionAppId" />
+          <!-- SEARCH-V2-3: DataObjectPrefillableInput still needs numeric
+               collectionId; passes 0 as placeholder until it migrates to appId. -->
+          <DataObjectPrefillableInput
+            v-if="pickerCollectionAppId"
+            v-model:data-object-id="pickerDataObjectId"
+            :collection-id="0"
+            class="mt-2"
+          />
+          <p
+            v-if="focusShepardId"
+            class="text-caption text-medium-emphasis mt-1"
+          >
+            Focus appId: <code>{{ focusShepardId.slice(0, 12) }}…</code>
+          </p>
+        </template>
         <v-text-field
+          v-else
           v-model="focusShepardId"
           label="Focus DataObject appId"
           variant="outlined"
@@ -635,7 +745,7 @@ onMounted(() => {
           persistent-hint
         />
       </v-col>
-      <v-col cols="12" md="2" class="d-flex align-center">
+      <v-col cols="12" md="2" class="d-flex flex-column align-stretch ga-1">
         <v-btn
           color="primary"
           :loading="isFetching"
@@ -645,6 +755,14 @@ onMounted(() => {
         >
           <v-icon start>mdi-shape</v-icon> Fetch bindings
         </v-btn>
+        <v-switch
+          v-model="showRawAppIds"
+          density="compact"
+          hide-details
+          color="primary"
+          label="Raw appIds (power-user)"
+          class="ml-1"
+        />
       </v-col>
     </v-row>
 
@@ -657,7 +775,20 @@ onMounted(() => {
          not require channel bindings to render a robot (static view); when
          joint-bound channels are bound, UrdfAnimator wraps UrdfView. -->
     <template v-if="rendererKind === 'urdf'">
-      <ClientOnly>
+      <!-- V2-SWEEP Wave 2: reference-resolution states — the page fetches
+           the URDF bytes from the FileReference appId; surface resolve
+           errors (404 = stale bookmark / deleted reference) explicitly. -->
+      <v-alert
+        v-if="urdfBlobError"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        data-testid="urdf-blob-error"
+      >
+        {{ urdfBlobError.message }}
+      </v-alert>
+      <v-skeleton-loader v-else-if="urdfResolving" type="image" height="500" />
+      <ClientOnly v-else-if="urdfUrl">
         <UrdfView :urdf-url="urdfUrl" :package-path="urdfPackage" label="URDF view" />
         <template #fallback>
           <v-skeleton-loader type="image" height="500" />
@@ -665,14 +796,17 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
-    <!-- ── Thermography renderer (tier-1, metadata-only) ─────────────────────
-         Renders the OTvis annotation summary + a Three.js placeholder
-         canvas. Tier-2 (OTVIS-PARSE-2) replaces the placeholder with
-         the IR sequence texture. See aidocs/integrations/114 §5. -->
+    <!-- ── Thermography renderer ────────────────────────────────────────────
+         Renders the OTvis annotation summary + Three.js canvas.
+         When ?fileReferenceAppId= is supplied the canvas shows a live
+         decoded IR frame (PLACEHOLDER-thermography-canvas).
+         Bootstrap shape: ?renderer=thermography[&fileReferenceAppId=<appId>]
+         See aidocs/integrations/114 §5. -->
     <template v-if="rendererKind === 'thermography'">
       <ClientOnly>
         <ThermographyView
           :annotations="thermographyAnnotations"
+          :file-reference-app-id="thermoFileRefAppId || null"
           label="Thermography view"
         />
         <template #fallback>
@@ -681,8 +815,17 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
+    <!-- ── SVDX channel catalogue ───────────────────────────────────────────
+         Pure manifest catalogue from the SvdxChannelChartShape VIEW_RECIPE.
+         No TS container ID or time-window needed — the backend resolves the
+         channel list from the .svdx annotations on the focus entity.
+         Backlog: SVDX-CHANNEL-CHART-VUE-2026-06-29. -->
+    <template v-if="rendererKind === 'svdx-channel-chart'">
+      <SvdxChannelChartView :bindings="bindings" />
+    </template>
+
     <!-- ── binding declarations ───────────────────────────────────────────── -->
-    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography'">
+    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography' && rendererKind !== 'svdx-channel-chart'">
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
           <v-icon>mdi-link-variant</v-icon>
@@ -692,7 +835,7 @@ onMounted(() => {
           </v-chip>
           <v-spacer />
           <v-btn
-            v-if="containerId.trim()"
+            v-if="containerAppId.trim()"
             size="x-small"
             variant="tonal"
             prepend-icon="mdi-pencil-outline"
@@ -738,12 +881,14 @@ onMounted(() => {
       <!-- ── 3D render controls ──────────────────────────────────────────── -->
       <v-row class="mb-2" align="center">
         <v-col cols="12" md="4">
+          <!-- UX612-C2: the channel endpoints are appId-keyed — this takes
+               the container's appId (UUID v7), not the numeric Neo4j id. -->
           <v-text-field
-            v-model="containerId"
-            label="TS container ID (numeric)"
+            v-model="containerAppId"
+            label="TS container appId"
             variant="outlined"
             density="compact"
-            hint="The timeseries container that holds the x/y/z channels (from /containers/timeseries/{id})"
+            hint="appId of the timeseries container holding the x/y/z channels (prefilled when opened from a reference)"
             persistent-hint
           />
         </v-col>
@@ -859,11 +1004,11 @@ onMounted(() => {
           </v-table>
         </v-card>
 
-        <!-- unknown renderer → placeholder with hint -->
+        <!-- unknown renderer → warning alert -->
         <v-alert v-else type="warning" variant="tonal" class="mt-2" density="compact">
           <strong>Unsupported renderer: <code>{{ renderer ?? "(none)" }}</code></strong>
           — {{ tracePoints.length }} points were fetched but no frontend component handles this renderer hint yet.
-          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>.
+          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>, <code>svdx-channel-chart</code>.
         </v-alert>
 
       </template>
@@ -989,24 +1134,17 @@ onMounted(() => {
       </v-card>
     </template>
 
-    <!-- ── placeholder status ─────────────────────────────────────────────── -->
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="TPL2b"
-      design-doc="aidocs/semantics/98-shapes-views-and-process-model.md"
-      endpoint="/v2/shapes/render"
-      notes="Beta: all bindings return status=DECLARED. Live channel resolution (TPL2c) ships after the TS-ID migration (aidocs/platform/87). Color-mapped 3D trace via Three.js."
+
+    <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
+    <Trace3DEditChannelsDialog
+      v-model="showEditDialog"
+      :container-id="0"
+      :container-app-id="containerAppId"
+      :channels="channelList"
+      :initial="currentSelection"
+      @save="onEditSave"
     />
   </v-container>
-
-  <!-- ── edit channels dialog ──────────────────────────────────────────────── -->
-  <Trace3DEditChannelsDialog
-    v-model="showEditDialog"
-    :container-id="Number(containerId) || 0"
-    :channels="channelList"
-    :initial="currentSelection"
-    @save="onEditSave"
-  />
 </template>
 
 <style scoped>

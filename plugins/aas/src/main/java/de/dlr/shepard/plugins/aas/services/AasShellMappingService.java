@@ -63,7 +63,8 @@ public class AasShellMappingService {
     return topLevelDataObjects.stream()
         .map(d -> new AasReferenceIO(
             "ExternalReference",
-            List.of(new AasKeyIO("Submodel", DATAOBJECT_URN_PREFIX + d.getAppId()))))
+            List.of(new AasKeyIO("Submodel", DATAOBJECT_URN_PREFIX + d.getAppId())),
+            d.getName()))
         .toList();
   }
 

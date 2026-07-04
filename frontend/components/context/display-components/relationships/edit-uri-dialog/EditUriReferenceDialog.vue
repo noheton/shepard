@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 /**
  * REF-EDIT-6 — Dialog to edit a URIReference's mutable fields.
- * Calls PATCH /v2/uri-references/{appId} with RFC 7396 merge-patch semantics.
+ * Calls PATCH /v2/references/{appId} (V2CONV-A2 unified surface) with RFC 7396
+ * merge-patch semantics.
  *
  * Fields: name (required), uri (required), relationship (optional / clearable).
  */
@@ -72,7 +73,10 @@ async function save() {
       // backend validation — send null when field is blanked.
       relationship: relationship.value.trim() || null,
     };
-    const url = `${v2BaseUrl()}/v2/uri-references/${props.appId}`;
+    // V2CONV-A2: PATCH via the unified /v2/references/{appId} surface (was the
+    // per-kind /v2/uri-references/{appId}). Body shape (name/uri/relationship)
+    // is unchanged; the kind is resolved server-side from the entity.
+    const url = `${v2BaseUrl()}/v2/references/${props.appId}`;
     const response = await fetch(url, {
       method: "PATCH",
       headers,

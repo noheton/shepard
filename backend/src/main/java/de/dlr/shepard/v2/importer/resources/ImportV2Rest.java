@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.resources;
 
 import de.dlr.shepard.auth.bootstrap.BootstrapTokenInitializer;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
@@ -40,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -73,8 +75,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import (IMP1)")
+@Tag(name = "Import")
 public class ImportV2Rest {
+
+  private static final String PT_NOT_FOUND    = "/problems/import.not-found";
+  private static final String PT_BAD_REQUEST  = "/problems/import.bad-request";
+  private static final String PT_UNAUTHORIZED = "/problems/import.unauthorized";
+  private static final String PT_FORBIDDEN    = "/problems/import.forbidden";
 
   @Inject
   ImportValidationService validationService;
@@ -96,6 +103,7 @@ public class ImportV2Rest {
   @POST
   @Path("/validate")
   @Operation(
+    operationId = "validateImport",
     summary = "Dry-run validate an import manifest (IMP1)",
     description =
       "Validates the manifest without writing any DataObjects, Containers, or References. " +
@@ -122,13 +130,13 @@ public class ImportV2Rest {
     Optional<Long> collOgmId = collectionPropertiesDAO.findCollectionIdByAppId(
       manifest.collectionAppId());
     if (collOgmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Collection not found: " + manifest.collectionAppId())
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "Collection not found: " + manifest.collectionAppId());
     }
     if (!permissionsService.isAccessTypeAllowedForUser(
         collOgmId.get(), AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Write permission required", Response.Status.FORBIDDEN,
+        "caller lacks Write permission on the target collection");
     }
 
     ImportPlan plan = validationService.validate(manifest, caller);
@@ -136,7 +144,7 @@ public class ImportV2Rest {
     ImportPlanIO io = toIO(plan, errors);
 
     if (!errors.isEmpty()) {
-      return Response.status(422).entity(io).build();
+      return Response.status(422).type("application/problem+json").entity(io).build();
     }
     return Response.ok(io).build();
   }
@@ -146,6 +154,7 @@ public class ImportV2Rest {
   @GET
   @Path("/plans/{commitId}")
   @Operation(
+    operationId = "getPlan",
     summary = "Get an import plan by commitId (IMP1)",
     description =
       "Returns the validation plan associated with a commitId. " +
@@ -162,7 +171,8 @@ public class ImportV2Rest {
     if (caller(sc) == null) return unauthorized();
 
     ImportPlan plan = importPlanDAO.findByCommitId(commitId);
-    if (plan == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (plan == null) return problem(PT_NOT_FOUND, "Plan not found", Response.Status.NOT_FOUND,
+      "no plan found for commitId: " + commitId);
 
     return Response.ok(toIO(plan, List.of())).build();
   }
@@ -172,6 +182,7 @@ public class ImportV2Rest {
   @GET
   @Path("/context")
   @Operation(
+    operationId = "getContext",
     summary = "Get the current collection state for importers/agents (IMP1)",
     description =
       "Returns a snapshot of the target collection — DataObject count and a " +
@@ -196,7 +207,21 @@ public class ImportV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response getContext(
+    @Parameter(
+      description =
+        "appId (UUID v7) of the target Collection. Required. Returns 404 when " +
+        "no Collection with this appId exists. The caller must have Read permission.",
+      required = true
+    )
     @QueryParam("collectionAppId") String collectionAppId,
+    @Parameter(
+      description =
+        "When true, the response body includes the full semantic-annotation graph " +
+        "of the target Collection (predicate IRIs, object values, vocabulary ids). " +
+        "Defaults to false. The false path executes a single Cypher count query " +
+        "and skips all annotation look-ups, making it significantly cheaper for " +
+        "importers that do not need annotation context."
+    )
     @QueryParam("includeSemanticGraph") @DefaultValue("false") boolean includeSemanticGraph,
     @Context SecurityContext sc
   ) {
@@ -204,19 +229,18 @@ public class ImportV2Rest {
     if (caller == null) return unauthorized();
 
     if (collectionAppId == null || collectionAppId.isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("collectionAppId query parameter is required")
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST,
+        "collectionAppId query parameter is required");
     }
 
     Optional<Long> collOgmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (collOgmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Collection not found: " + collectionAppId)
-        .build();
+      return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
+        "Collection not found: " + collectionAppId);
     }
     if (!permissionsService.isAccessTypeAllowedForUser(collOgmId.get(), AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read permission required", Response.Status.FORBIDDEN,
+        "caller lacks Read permission on the target collection");
     }
 
     // Count DataObjects and compute fingerprint (single Cypher round-trip).
@@ -265,12 +289,18 @@ public class ImportV2Rest {
     return new ImportPlanIO(commitId, plan.getStatus(), expiresAt, summary, warnings, errors);
   }
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   private static String caller(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED,
+      "authentication required");
   }
 
   private static String epochMillisToIso8601(long epochMillis) {

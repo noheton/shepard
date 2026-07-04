@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Wire shape for {@code GET / PATCH /v2/timeseries-containers/{id}/chart-view}.
+ * Wire shape for {@code GET / PATCH /v2/containers/{appId}/chart-view}.
  *
  * <p>RFC 7396 merge-patch semantics on PATCH: absent field = leave alone,
  * {@code null} = clear, value = replace. {@link #selectedChannels} is a

@@ -9,9 +9,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -27,15 +24,12 @@ import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StorageNotInstalledException;
 import de.dlr.shepard.storage.StoragePutRequest;
-import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import jakarta.ws.rs.NotFoundException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,10 +55,10 @@ class VideoStreamReferenceServiceTest {
   FileStorageRegistry fileStorageRegistry;
   FileStorage fileStorage;
   VideoProbeService videoProbeService;
+  de.dlr.shepard.plugins.video.transcode.VideoTranscodeOrchestrator transcodeOrchestrator;
   UserService userService;
   DateHelper dateHelper;
   EntityIdResolver entityIdResolver;
-  MongoDatabase mongoDatabase;
 
   DataObject parentDataObject;
   User currentUser;
@@ -76,20 +70,20 @@ class VideoStreamReferenceServiceTest {
     fileStorageRegistry = mock(FileStorageRegistry.class);
     fileStorage = mock(FileStorage.class);
     videoProbeService = mock(VideoProbeService.class);
+    transcodeOrchestrator = mock(de.dlr.shepard.plugins.video.transcode.VideoTranscodeOrchestrator.class);
     userService = mock(UserService.class);
     dateHelper = mock(DateHelper.class);
     entityIdResolver = mock(EntityIdResolver.class);
-    mongoDatabase = mock(MongoDatabase.class);
 
     service = new VideoStreamReferenceService();
     service.videoStreamReferenceDAO = videoStreamReferenceDAO;
     service.dataObjectDAO = dataObjectDAO;
     service.fileStorageRegistry = fileStorageRegistry;
     service.videoProbeService = videoProbeService;
+    service.transcodeOrchestrator = transcodeOrchestrator;
     service.userService = userService;
     service.dateHelper = dateHelper;
     service.entityIdResolver = entityIdResolver;
-    service.mongoDatabase = mongoDatabase;
 
     parentDataObject = new DataObject();
     parentDataObject.setId(DO_OGM_ID);
@@ -102,6 +96,9 @@ class VideoStreamReferenceServiceTest {
     when(entityIdResolver.resolveLong(DO_APPID)).thenReturn(DO_OGM_ID);
     when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parentDataObject);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
+    // Orchestrator is mocked; default behaviour returns the entity unchanged so
+    // existing service-level assertions on the returned entity still hold.
+    when(transcodeOrchestrator.submit(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   // ─── listByDataObject ─────────────────────────────────────────────────────
@@ -197,6 +194,43 @@ class VideoStreamReferenceServiceTest {
   }
 
   @Test
+  void create_recordsAuthoritativeStoredSize_notDeclaredContentLength() throws Exception {
+    // IMPORT-VIDEO-MP4-SHORTUPLOAD regression: when ffprobe yields no size and
+    // the declared Content-Length is unreliable (null/mismatched for large
+    // chunked PUTs), the persisted fileSize must be the storage adapter's
+    // authoritative stored byte count — otherwise the importer's stored!=size
+    // guard retry-loops forever on large MP4s.
+    long storedSize = 1_331_387_223L; // the real on-disk MP4 size
+    StorageLocator locator = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(locator);
+
+    StorageGetResponse getResp = mock(StorageGetResponse.class);
+    when(getResp.stream()).thenReturn(InputStream.nullInputStream());
+    when(getResp.sizeBytes()).thenReturn(storedSize);
+    when(fileStorage.get(locator)).thenReturn(getResp);
+
+    // ffprobe fails → empty probe (no fileSizeBytes).
+    when(videoProbeService.probe(any(InputStream.class), any())).thenReturn(VideoProbeResult.empty());
+
+    VideoStreamReference persisted = new VideoStreamReference(12L);
+    persisted.setAppId("vsr-stored-size");
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(persisted);
+
+    org.mockito.ArgumentCaptor<VideoStreamReference> captor =
+      org.mockito.ArgumentCaptor.forClass(VideoStreamReference.class);
+
+    // Declared content-length is deliberately wrong (null) — the large-upload
+    // failure shape. The stored size must still be recorded.
+    service.create(
+      DO_APPID, "Big", "P02_1.Bahn.MP4", "video/mp4", null, InputStream.nullInputStream()
+    );
+
+    verify(videoStreamReferenceDAO, org.mockito.Mockito.atLeastOnce()).createOrUpdate(captor.capture());
+    assertThat(captor.getAllValues())
+      .anyMatch(r -> Long.valueOf(storedSize).equals(r.getFileSizeBytes()));
+  }
+
+  @Test
   void create_missingDataObject_throws() throws Exception {
     when(entityIdResolver.resolveLong(DO_APPID)).thenThrow(new NotFoundException());
 
@@ -273,6 +307,53 @@ class VideoStreamReferenceServiceTest {
     assertThatThrownBy(() -> service.getPayload(ref)).isInstanceOf(StorageNotInstalledException.class);
   }
 
+  // ─── VIDEO-HEVC-TRANSCODE-BACKFILL — proxy-preference branches ────────────
+
+  @Test
+  void getPayload_proxyReady_servesProxyBytes() throws Exception {
+    VideoStreamReference ref = new VideoStreamReference(34L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    ref.setProxyStorageLocator(PROVIDER_ID + ":proxy-oid-xyz");
+    ref.setProxyStatus("READY");
+
+    StorageGetResponse proxyResp = mock(StorageGetResponse.class);
+    when(fileStorage.get(new StorageLocator(PROVIDER_ID, "proxy-oid-xyz"))).thenReturn(proxyResp);
+
+    StorageGetResponse result = service.getPayload(ref);
+    assertThat(result).isSameAs(proxyResp);
+  }
+
+  @Test
+  void getPayload_proxyNotReady_servesSourceBytes() throws Exception {
+    VideoStreamReference ref = new VideoStreamReference(35L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    ref.setProxyStorageLocator(PROVIDER_ID + ":proxy-oid-xyz");
+    ref.setProxyStatus("PENDING");
+
+    StorageGetResponse sourceResp = mock(StorageGetResponse.class);
+    when(fileStorage.get(new StorageLocator(PROVIDER_ID, LOCATOR_KEY))).thenReturn(sourceResp);
+
+    StorageGetResponse result = service.getPayload(ref);
+    assertThat(result).isSameAs(sourceResp);
+  }
+
+  @Test
+  void getPayload_preferSource_servesSourceBytesEvenWhenProxyReady() throws Exception {
+    VideoStreamReference ref = new VideoStreamReference(36L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    ref.setProxyStorageLocator(PROVIDER_ID + ":proxy-oid-xyz");
+    ref.setProxyStatus("READY");
+
+    StorageGetResponse sourceResp = mock(StorageGetResponse.class);
+    when(fileStorage.get(new StorageLocator(PROVIDER_ID, LOCATOR_KEY))).thenReturn(sourceResp);
+
+    StorageGetResponse result = service.getPayload(ref, /*preferSource=*/ true);
+    assertThat(result).isSameAs(sourceResp);
+  }
+
   // ─── delete ────────────────────────────────────────────────────────────────
 
   @Test
@@ -315,54 +396,15 @@ class VideoStreamReferenceServiceTest {
     verify(videoStreamReferenceDAO).createOrUpdate(ref);
   }
 
-  // ─── storeWithDedup (MONGO-AUDIT-013) ────────────────────────────────────
+  // ─── storeWithDedup → SPI-only store (STORAGE-SPI-UNIFY-1) ────────────────
 
   /**
-   * MONGO-AUDIT-013: when an existing document with the same MD5 is found in
-   * _shepard_videos, the existing blob's OID is reused — storage.put() must
-   * NOT be called.
+   * STORAGE-SPI-UNIFY-1: bytes are stored exclusively through the active
+   * {@link FileStorage} adapter — no direct MongoDB / GridFS access. The
+   * returned locator is whatever the adapter produced.
    */
-  @SuppressWarnings("unchecked")
   @Test
-  void storeWithDedup_duplicateMd5_reusesExistingBlob() throws Exception {
-    ObjectId existingId = new ObjectId("aabbccddeeff001122334455");
-    Document existingDoc = new Document("_id", existingId).append("md5", "SOMEHEX");
-
-    MongoCollection<Document> collection = mock(MongoCollection.class);
-    FindIterable<Document> findIterable = mock(FindIterable.class);
-    when(mongoDatabase.getCollection(VideoStreamReferenceService.VIDEO_CONTAINER)).thenReturn(collection);
-    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(findIterable);
-    when(findIterable.first()).thenReturn(existingDoc);
-
-    // Tiny payload — 4 bytes; MD5 will be computed from these bytes.
-    byte[] payload = new byte[] { 0x01, 0x02, 0x03, 0x04 };
-    StorageLocator locator = service.storeWithDedup(
-      fileStorage, "video.mp4", "video/mp4", (long) payload.length, new ByteArrayInputStream(payload)
-    );
-
-    // storage.put() must NOT be invoked — blob was reused.
-    verify(fileStorage, never()).put(any());
-
-    // Returned locator must point at the existing document OID.
-    assertThat(locator.providerId()).isEqualTo(GridFsFileStorage.ID);
-    assertThat(locator.locator()).isEqualTo(
-      VideoStreamReferenceService.VIDEO_CONTAINER + GridFsFileStorage.LOCATOR_SEPARATOR + existingId.toHexString()
-    );
-  }
-
-  /**
-   * MONGO-AUDIT-013: when no existing document is found, storage.put() must
-   * be invoked to create a new blob.
-   */
-  @SuppressWarnings("unchecked")
-  @Test
-  void storeWithDedup_newMd5_uploadsNewBlob() throws Exception {
-    MongoCollection<Document> collection = mock(MongoCollection.class);
-    FindIterable<Document> findIterable = mock(FindIterable.class);
-    when(mongoDatabase.getCollection(VideoStreamReferenceService.VIDEO_CONTAINER)).thenReturn(collection);
-    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(findIterable);
-    when(findIterable.first()).thenReturn(null); // no existing blob
-
+  void storeWithDedup_routesThroughActiveAdapter() throws Exception {
     StorageLocator expected = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
     when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(expected);
 
@@ -371,8 +413,30 @@ class VideoStreamReferenceServiceTest {
       fileStorage, "new.mp4", "video/mp4", (long) payload.length, new ByteArrayInputStream(payload)
     );
 
-    // storage.put() must be invoked exactly once.
+    // The adapter's put() is the only write path.
     verify(fileStorage).put(any(StoragePutRequest.class));
     assertThat(locator).isEqualTo(expected);
+  }
+
+  /**
+   * STORAGE-SPI-UNIFY-1: when the active provider is S3 (not GridFS), the
+   * upload still routes through the SPI {@code put} and returns the S3
+   * adapter's locator — proving no GridFS "magic route" remains. Before
+   * the fix the dedup short-circuit could synthesise a {@code gridfs:}
+   * locator even under an S3 backend.
+   */
+  @Test
+  void storeWithDedup_underS3Provider_returnsS3Locator() throws Exception {
+    StorageLocator s3Locator = new StorageLocator("s3", VideoStreamReferenceService.VIDEO_CONTAINER + "/uuid-key");
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(s3Locator);
+
+    byte[] payload = new byte[] { 0x01, 0x02 };
+    StorageLocator locator = service.storeWithDedup(
+      fileStorage, "clip.mp4", "video/mp4", (long) payload.length, new ByteArrayInputStream(payload)
+    );
+
+    verify(fileStorage).put(any(StoragePutRequest.class));
+    assertThat(locator.providerId()).isEqualTo("s3");
+    assertThat(locator).isEqualTo(s3Locator);
   }
 }

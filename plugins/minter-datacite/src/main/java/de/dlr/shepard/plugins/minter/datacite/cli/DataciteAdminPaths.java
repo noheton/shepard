@@ -6,8 +6,8 @@ package de.dlr.shepard.plugins.minter.datacite.cli;
  */
 final class DataciteAdminPaths {
 
-  /** {@code GET / PATCH /v2/admin/minters/datacite/config}. */
-  static final String CONFIG = "/v2/admin/minters/datacite/config";
+  /** {@code GET / PATCH /v2/admin/config/minter-datacite} (V2CONV-A7 generic surface). */
+  static final String CONFIG = "/v2/admin/config/minter-datacite";
 
   /** {@code POST / DELETE /v2/admin/minters/datacite/credential}. */
   static final String CREDENTIAL = "/v2/admin/minters/datacite/credential";

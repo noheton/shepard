@@ -1,6 +1,28 @@
-import { DataObjectApi, DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { DataObjectsApi, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
+
+/**
+ * Extracts the total count from the list response headers. The backend exposes
+ * the full count via `X-Total-Count`, falling back to the `Content-Range`
+ * "unit 0-24/8514" form. Returns null when neither header is present.
+ *
+ * V2-SWEEP-001-CLIENT-REGEN: the regenerated client dropped the hand-rolled
+ * `listDataObjectsWithCount` wrapper, so the header read lives here now, on top
+ * of the generated `listDataObjectsRaw`.
+ */
+function parseTotalCount(headers: Headers): number | null {
+  const xTotal = headers.get("X-Total-Count");
+  if (xTotal != null) {
+    const parsed = parseInt(xTotal, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  const contentRange = headers.get("Content-Range");
+  if (contentRange != null) {
+    const m = /\/(\d+)\s*$/.exec(contentRange);
+    if (m?.[1] != null) return parseInt(m[1], 10);
+  }
+  return null;
+}
 
 export interface PagedDataObjectsOptions {
   collectionId: number;
@@ -12,6 +34,8 @@ export interface PagedDataObjectsOptions {
   pageSize?: number;
   /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
   includeTimeBounds?: boolean;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation lane filter ("predicateIri=value"). */
+  annotationFilter?: Ref<string | undefined>;
 }
 
 export interface PagedDataObjectsResult {
@@ -36,6 +60,7 @@ export interface PagedDataObjectsResult {
 export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObjectsResult {
   const { collectionId, collectionAppId, name, page } = opts;
   const status = opts.status;
+  const annotationFilter = opts.annotationFilter;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
 
@@ -51,6 +76,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   //  - incomingIds[]   → row.incomingCount (.length)
   //  - timeseriesCount, fileCount, structuredDataCount (v2 long counts)
   //  - timeBoundsStart, timeBoundsEnd (when ?include=time-bounds)
+  //  - attachedTemplateAppId (TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND)
   const DO_LIST_FIELDS = [
     "id",
     "appId",
@@ -65,6 +91,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     "structuredDataCount",
     "timeBoundsStart",
     "timeBoundsEnd",
+    "attachedTemplateAppId",
   ].join(",");
 
   const items = ref<DataObjectListItemV2[]>([]);
@@ -72,8 +99,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const loading = ref(false);
   const hasMore = ref(false);
 
-  const v2Api = useV2ShepardApi(DataObjectV2Api);
-  const v1Api = useShepardApi(DataObjectApi);
+  const v2Api = useV2ShepardApi(DataObjectsApi);
 
   async function fetch() {
     const appId = collectionAppId.value;
@@ -83,30 +109,24 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
 
     loading.value = true;
     try {
-      let batch: DataObjectListItemV2[];
-      if (appId) {
-        // DB-OPT5: cast bypasses stale generated client that lacks the `fields`
-        // param — see FE-BUILD-03 in aidocs/16. Real fix is client regen.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { items: fetched, total: fetchedTotal } = await v2Api.value.listDataObjectsWithCount({
-          collectionAppId: appId,
-          name: nameFilter,
-          status: statusFilter,
-          page: currentPage,
-          size: pageSize,
-          include: includeTimeBounds ? 'time-bounds' : undefined,
-          fields: DO_LIST_FIELDS,
-        } as unknown as Parameters<typeof v2Api.value.listDataObjectsWithCount>[0]);
-        batch = fetched;
-        totalItems.value = fetchedTotal;
-      } else {
-        batch = (await v1Api.value.getAllDataObjects({
-          collectionId,
-          page: currentPage,
-          size: pageSize,
-        })) as DataObjectListItemV2[];
-        totalItems.value = null;
-      }
+      // V2-SWEEP Wave 4: v2-only — when the appId hasn't materialised yet,
+      // the stringified numeric id goes on the same v2 path (backend
+      // EntityIdResolver accepts both shapes). The v1 getAllDataObjects
+      // fallback is gone.
+      const identifier = appId ?? String(collectionId);
+      const raw = await v2Api.value.listDataObjectsRaw({
+        collectionAppId: identifier,
+        name: nameFilter,
+        status: statusFilter,
+        annotationFilter: annotationFilter?.value || undefined,
+        page: currentPage,
+        pageSize: pageSize,
+        include: includeTimeBounds ? 'time-bounds' : undefined,
+        fields: DO_LIST_FIELDS,
+      });
+      const fetchedTotal = parseTotalCount(raw.raw.headers);
+      const batch: DataObjectListItemV2[] = await raw.value();
+      totalItems.value = fetchedTotal;
       items.value = batch;
       hasMore.value = batch.length >= pageSize;
     } catch (e) {
@@ -119,9 +139,13 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  const watchSources = status
-    ? [collectionAppId, name, status, page] as const
-    : [collectionAppId, name, page] as const;
+  const watchSources = [
+    collectionAppId,
+    name,
+    page,
+    ...(status ? [status] : []),
+    ...(annotationFilter ? [annotationFilter] : []),
+  ] as const;
   watch(watchSources, () => {
     void fetch();
   }, { immediate: true });

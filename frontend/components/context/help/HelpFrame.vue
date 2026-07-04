@@ -119,7 +119,7 @@ function clearSearch() {
 // async markdown loads, so we re-trigger after fetch completes.
 
 function scrollToHashIfPresent() {
-  if (!process.client) return;
+  if (!import.meta.client) return;
   const hash = route.hash;
   if (!hash || hash.length < 2) return;
   const id = hash.slice(1);
@@ -152,6 +152,10 @@ function onContentClick(ev: MouseEvent) {
 
 // Watch hash changes (e.g. user pastes a URL or clicks browser back).
 watch(() => route.hash, () => scrollToHashIfPresent());
+
+// ── Version stamp (D1d) ──────────────────────────────────────────────────────
+const config = useRuntimeConfig();
+const shepardVersion = config.public.shepardVersion;
 </script>
 
 <template>
@@ -255,9 +259,15 @@ watch(() => route.hash, () => scrollToHashIfPresent());
           ref="contentRoot"
           class="doc-content"
           data-testid="help-content"
-          v-html="renderedHtml"
           @click="onContentClick"
+          v-html="renderedHtml"
         />
+
+        <!-- Version stamp (D1d) -->
+        <v-divider class="mt-4" />
+        <div class="text-caption text-medium-emphasis pa-4" data-testid="help-version-stamp">
+          Help for shepard v{{ shepardVersion }}
+        </div>
       </v-col>
     </v-row>
   </v-container>

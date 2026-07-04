@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -64,11 +65,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  */
 @Path("/v2/templates")
 @RequestScoped
-@Tag(name = "Templates (v2)")
+@Tag(name = "Templates")
 public class TemplatePortabilityRest {
 
   static final String MEDIA_TYPE_YAML = "text/yaml";
   static final String MEDIA_TYPE_APPLICATION_YAML = "application/yaml";
+
+  private static final String PT_BAD_REQUEST  = "/problems/template-portability.bad-request";
+  private static final String PT_INTERNAL     = "/problems/template-portability.internal-error";
+  private static final String PT_UNAUTHORIZED = "/problems/template-portability.unauthorized";
 
   /** Shared YAML mapper — stateless after construction, safe to reuse. */
   private static final ObjectMapper YAML_MAPPER = buildYamlMapper();
@@ -88,6 +93,7 @@ public class TemplatePortabilityRest {
   @Produces({ MEDIA_TYPE_YAML, MEDIA_TYPE_APPLICATION_YAML })
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Operation(
+    operationId = "export",
     summary = "Export all templates as a YAML document (admin-only, T1f).",
     description = "Returns every non-retired ShepardTemplate as a YAML list. " +
     "The output is directly importable via POST /v2/templates/import. " +
@@ -110,7 +116,7 @@ public class TemplatePortabilityRest {
     // @RolesAllowed handles 403; the unauthenticated path needs an explicit guard
     // so unit tests can verify 401 without spinning up a full Quarkus context.
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
     List<ShepardTemplate> templates = dao.list(null, includeRetired);
@@ -121,7 +127,9 @@ public class TemplatePortabilityRest {
       yaml = YAML_MAPPER.writeValueAsString(entries);
     } catch (JsonProcessingException e) {
       return Response.serverError()
-        .entity(Map.of("error", "YAML serialisation failed: " + e.getMessage()))
+        .entity(new ProblemJson(PT_INTERNAL, "Export Failed", 500,
+          "YAML serialisation failed: " + e.getMessage(), null))
+        .type("application/problem+json")
         .build();
     }
 
@@ -141,6 +149,7 @@ public class TemplatePortabilityRest {
   @Produces("application/json")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Operation(
+    operationId = "importTemplates",
     summary = "Import templates from a YAML document (admin-only, T1f).",
     description = "Accepts a YAML list of templates in the same shape as GET /v2/templates/export. " +
     "Each entry is body-validated via TemplateBodyValidator. " +
@@ -160,7 +169,7 @@ public class TemplatePortabilityRest {
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response importTemplates(String yamlBody, @Context SecurityContext securityContext) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
     // Treat null or blank body as an empty document → return 200 with empty list.
@@ -178,7 +187,10 @@ public class TemplatePortabilityRest {
     } catch (JsonProcessingException e) {
       int line = e.getLocation() != null ? (int) e.getLocation().getLineNr() : -1;
       return Response.status(Response.Status.BAD_REQUEST)
-        .entity(Map.of("error", "YAML parse error: " + e.getOriginalMessage(), "line", line))
+        .entity(new ProblemJson(PT_BAD_REQUEST, "YAML Parse Error", 400,
+          "YAML parse error: " + e.getOriginalMessage(), null,
+          Map.of("line", line)))
+        .type("application/problem+json")
         .build();
     }
 
@@ -196,7 +208,10 @@ public class TemplatePortabilityRest {
       // Validate required fields.
       if (entry.getName() == null || entry.getTemplateKind() == null || entry.getBody() == null) {
         return Response.status(Response.Status.BAD_REQUEST)
-          .entity(Map.of("error", "entry[" + i + "]: name, templateKind, body are required", "line", i + 1))
+          .entity(new ProblemJson(PT_BAD_REQUEST, "Missing Required Fields", 400,
+            "entry[" + i + "]: name, templateKind, body are required", null,
+            Map.of("line", i + 1)))
+          .type("application/problem+json")
           .build();
       }
 
@@ -205,7 +220,10 @@ public class TemplatePortabilityRest {
         bodyValidator.validate(entry.getBody(), entry.getTemplateKind());
       } catch (InvalidTemplateBodyException e) {
         return Response.status(Response.Status.BAD_REQUEST)
-          .entity(Map.of("error", "entry[" + i + "] body invalid: " + String.join("; ", e.getErrors()), "line", i + 1))
+          .entity(new ProblemJson(PT_BAD_REQUEST, "Template Body Invalid", 400,
+            "entry[" + i + "] body invalid: " + String.join("; ", e.getErrors()), null,
+            Map.of("line", i + 1)))
+          .type("application/problem+json")
           .build();
       }
 
@@ -345,5 +363,10 @@ public class TemplatePortabilityRest {
       .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
       .build();
     return new ObjectMapper(factory);
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+        .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

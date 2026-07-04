@@ -9,11 +9,13 @@ import java.util.regex.Pattern;
  *
  * <p>Files in the MFFD upper-shell thermography campaign follow the
  * canonical pattern {@code S<section>_M<module>_L<layer>_F<frame>.OTvis},
- * for example {@code S4_M13_L18_F4.OTvis}. The four integers locate the
- * measurement on the (Section, Module, Layer, Frame) physical grid of
- * the carbon-fibre shell, which lets a later analysis step join
- * thermography phase-images to the AFP layup timeseries at the same
- * (S, M) tile.
+ * for example {@code S4_M13_L18_F4.OTvis}. The layer component may carry
+ * a trailing {@code +} suffix (e.g. {@code L19+}) indicating a planned
+ * extra layer in the Edevis DIProjekt file — 143 such files exist in the
+ * MFFD archive. The four integers locate the measurement on the
+ * (Section, Module, Layer, Frame) physical grid of the carbon-fibre shell,
+ * which lets a later analysis step join thermography phase-images to the
+ * AFP layup timeseries at the same (S, M) tile.
  *
  * <p>The pattern is greedy: leading path segments are ignored, the
  * extension can be upper or lower case, and the integers are read
@@ -38,7 +40,7 @@ public final class OTvisFilenameParser {
     // accidentally produce false positives. Capture groups intentionally
     // include the S/M/L/F prefix letter for round-trip fidelity.
     private static final Pattern PATTERN = Pattern.compile(
-            "(?i)(S\\d+)_(M\\d+)_(L\\d+)_(F\\d+)\\.OTvis$");
+            "(?i)(S\\d+)_(M\\d+)_(L\\d+\\+?)_(F\\d+)\\.OTvis$");
 
     private OTvisFilenameParser() {
         // utility class

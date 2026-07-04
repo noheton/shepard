@@ -1,9 +1,11 @@
 package de.dlr.shepard.v2.dataobject.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -20,6 +22,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -30,6 +33,7 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -40,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -146,7 +151,7 @@ class DataObjectV2RestTest {
   @Test
   void listReturns404WhenCollectionUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
     assertEquals(404, r.getStatus());
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
@@ -156,7 +161,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -169,7 +174,7 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -190,7 +195,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
       .thenReturn(Map.of(DO_APP_ID, new long[] { 3L, 5L, 2L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -217,7 +222,7 @@ class DataObjectV2RestTest {
     when(timeseriesDataPointRepository.findTimeBoundsByContainerIds(List.of(containerNeo4jId)))
       .thenReturn(Map.of(containerNeo4jId, new long[] { 1_000_000L, 9_000_000L }));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "time-bounds", null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -240,7 +245,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(8514L);
 
     // page=3, size=25 → firstIndex=75, lastIndex=75 (1 item)
-    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 3, 25, null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     // Content-Range must be present with format "dataobjects firstIndex-lastIndex/total"
@@ -263,7 +268,7 @@ class DataObjectV2RestTest {
       .thenReturn(Collections.emptyList());
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(0L);
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 25, null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     String contentRange = (String) r.getHeaders().getFirst("Content-Range");
@@ -283,7 +288,7 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -291,6 +296,133 @@ class DataObjectV2RestTest {
     assertEquals(1, body.size());
     assertNull(body.get(0).getTimeBoundsStart());
     assertNull(body.get(0).getTimeBoundsEnd());
+  }
+
+  // ── COLL-TIMELINE-DRILLDOWN-FILTER-2: annotationFilter param ─────────────
+
+  @Test
+  void listPassesAnnotationFilterToDAO() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "afp-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+      .thenReturn(List.of(d));
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
+      "urn:shepard:mffd:process-type=afp-course", null, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    QueryParamHelper captured = paramsCaptor.getValue();
+    assertTrue(captured.hasAnnotationFilter());
+    assertEquals("urn:shepard:mffd:process-type", captured.getAnnotationFilterPredicateIri());
+    assertEquals("afp-course", captured.getAnnotationFilterValue());
+  }
+
+  @Test
+  void listIgnoresMalformedAnnotationFilter() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(Collections.emptyList());
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
+      "malformed-no-equals", null, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void listNullAnnotationFilterIsIgnored() {
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+      .thenReturn(Collections.emptyList());
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    assertFalse(paramsCaptor.getValue().hasAnnotationFilter());
+  }
+
+  // ── SIDEBAR-LAZY-TREE: topLevel + parentAppId filters ────────────────────
+
+  @Test
+  void listTopLevelSetsParentIdSentinel() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "root-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+      .thenReturn(List.of(d));
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, true, securityContext);
+
+    assertEquals(200, r.getStatus());
+    QueryParamHelper captured = paramsCaptor.getValue();
+    assertTrue(captured.hasParentId());
+    assertEquals(-1L, captured.getParentId());
+  }
+
+  @Test
+  void listParentAppIdResolvesToParentShepardId() {
+    long parentOgm = 4242L;
+    String parentAppId = "018f9c5a-7e26-7000-a000-0000000042ff";
+    DataObject parent = makeDataObject(parentOgm, parentAppId, "PlyGroup 28");
+    DataObject child = makeDataObject(DO_OGM_ID, DO_APP_ID, "child-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectDAO.findByAppId(parentAppId)).thenReturn(parent);
+    ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+      .thenReturn(List.of(child));
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, parentAppId, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    QueryParamHelper captured = paramsCaptor.getValue();
+    assertTrue(captured.hasParentId());
+    assertEquals(parentOgm, captured.getParentId());
+  }
+
+  @Test
+  void listUnknownParentAppIdReturnsEmptyPage() {
+    String parentAppId = "018f9c5a-7e26-7000-a000-00000000dead";
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectDAO.findByAppId(parentAppId)).thenReturn(null);
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, parentAppId, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    assertEquals("[]", r.getEntity());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+  }
+
+  @Test
+  void listTopLevelWinsOverParentAppId() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "root-do");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+      .thenReturn(List.of(d));
+
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
+      "018f9c5a-7e26-7000-a000-0000000042ff", true, securityContext);
+
+    assertEquals(200, r.getStatus());
+    assertEquals(-1L, paramsCaptor.getValue().getParentId());
+    // parentAppId path must not be consulted when topLevel wins.
+    verify(dataObjectDAO, never()).findByAppId(any());
   }
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -577,8 +709,7 @@ class DataObjectV2RestTest {
       "refShepardId", 55L,
       "refAppId", tsRefAppId,
       "containerAppId", tsContainerAppId,
-      "containerName", "vibration-ts",
-      "containerId", 66L
+      "containerName", "vibration-ts"
     );
     when(dataObjectDAO.findContainersByDataObjectAppId(DO_APP_ID))
       .thenReturn(Map.of("tsRefs", List.of(tsRef), "fileRefs", List.of(), "sdRefs", List.of()));
@@ -655,7 +786,7 @@ class DataObjectV2RestTest {
   @Test
   void predecessorsReturns404WhenDataObjectUnknown() {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -664,7 +795,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -680,13 +811,39 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-pred-0011", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-pred-0011", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void predecessorsPaginationSlicesCorrectly() {
+    DataObject p1 = makeDataObject(11L, "018f-pred-0011", "pred-run-1");
+    DataObject p2 = makeDataObject(12L, "018f-pred-0012", "pred-run-2");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getPredecessors().add(p1);
+    d.getPredecessors().add(p2);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 1, 1, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals("018f-pred-0012", body.items().get(0).getAppId());
+    assertEquals(1, body.page());
+    assertEquals(1, body.pageSize());
   }
 
   @Test
@@ -701,13 +858,34 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-succ-0022", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-succ-0022", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void successorsPaginationReturnsEmptyPageBeyondEnd() {
+    DataObject succ = makeDataObject(22L, "018f-succ-0022", "next-run");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getSuccessors().add(succ);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 5, 10, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.items().size());
   }
 
   @Test
@@ -722,13 +900,37 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.children(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-child-0033", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-child-0033", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void childrenPaginationTotalReflectsFullCount() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    for (int i = 0; i < 5; i++) {
+      d.getChildren().add(makeDataObject(100L + i, "018f-child-00" + i, "child-" + i));
+    }
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 2, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(5, body.total());
+    assertEquals(2, body.items().size());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
   }
 
   // ── ANC-1: predecessor-chain / successor-chain ────────────────────────────
@@ -766,10 +968,12 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals("018f-pred-0010", body.get(0).getAppId());
-    assertEquals("018f-pred-0009", body.get(1).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
+    assertEquals("018f-pred-0010", body.items().get(0).getAppId());
+    assertEquals("018f-pred-0009", body.items().get(1).getAppId());
   }
 
   @Test
@@ -786,9 +990,11 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-succ-0100", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.page());
+    assertEquals(1, body.pageSize());
+    assertEquals("018f-succ-0100", body.items().get(0).getAppId());
   }
 
   @Test
@@ -817,7 +1023,7 @@ class DataObjectV2RestTest {
   @Test
   void listDefaultTrimDropsHeavyFields() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     // Heavy fields gone by default
@@ -840,7 +1046,7 @@ class DataObjectV2RestTest {
   @Test
   void listIncludeFullReturnsFullShape() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     // All fields back including the heavy ones
@@ -853,7 +1059,7 @@ class DataObjectV2RestTest {
   @Test
   void listFieldsParamLimitsToRequestedFields() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,name,createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,name,createdAt", null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
@@ -871,7 +1077,7 @@ class DataObjectV2RestTest {
   void listFieldsParamAlwaysIncludesIdentity() {
     stubListSingleDataObject();
     // Ask only for createdAt; id, appId, name should still come back as identity guarantees.
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "createdAt", null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     String body = (String) r.getEntity();
     org.junit.jupiter.api.Assertions.assertTrue(body.contains("\"appId\""));
@@ -886,7 +1092,7 @@ class DataObjectV2RestTest {
   @Test
   void listFieldsParamEmptyStringTreatedAsAbsent() {
     stubListSingleDataObject();
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "", null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     // Empty fields → default-trim mode (not 400, not "fields" mode)
     assertEquals("default-trim", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
@@ -897,12 +1103,11 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId,bogusField,name", null, null, null, securityContext);
     assertEquals(400, r.getStatus());
-    // 400 returns Map entity with the offending field name in 'detail'
-    @SuppressWarnings("unchecked")
-    Map<String, Object> body = (Map<String, Object>) r.getEntity();
-    String detail = (String) body.get("detail");
+    // 400 returns ProblemJson entity with the offending field name in 'detail'
+    de.dlr.shepard.common.exceptions.ProblemJson body = (de.dlr.shepard.common.exceptions.ProblemJson) r.getEntity();
+    String detail = body.detail();
     org.junit.jupiter.api.Assertions.assertNotNull(detail);
     org.junit.jupiter.api.Assertions.assertTrue(detail.contains("bogusField"), "400 body should cite the offending field name; got: " + detail);
     // 400 must short-circuit before any DB hit
@@ -913,7 +1118,7 @@ class DataObjectV2RestTest {
   void listFieldsParamWhitespaceTolerated() {
     stubListSingleDataObject();
     // Whitespace around commas should not produce 400.
-    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", securityContext);
+    Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, "appId, name , createdAt", null, null, null, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("fields", r.getHeaders().getFirst("X-Shepard-Payload-Diet"));
   }
@@ -933,8 +1138,8 @@ class DataObjectV2RestTest {
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d, d, d, d, d));
 
-    String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, securityContext).getEntity();
-    String full = (String) resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, securityContext).getEntity();
+    String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, securityContext).getEntity();
+    String full = (String) resource.list(COLL_APP_ID, null, null, 0, 50, "full", null, null, null, null, securityContext).getEntity();
     System.out.printf(
       "DB-OPT5 end-to-end measurement (5 DOs, 800-char description + 12-attr map per DO): full=%d B, default-trim=%d B (%.1f%% smaller)%n",
       full.length(), trimmed.length(), 100.0 * (full.length() - trimmed.length()) / full.length()
@@ -943,5 +1148,59 @@ class DataObjectV2RestTest {
       trimmed.length() < full.length() / 2,
       "DB-OPT5 default-trim should be < 50% of ?include=full payload (got " + trimmed.length() + " vs " + full.length() + ")"
     );
+  }
+
+  // --- APISIMP-DATAOBJECT-LIST-PARAMS-1: regression tests for list() @Parameter annotations ---
+
+  private static java.lang.reflect.Parameter listParam(String qpName) throws NoSuchMethodException {
+    java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, int.class, int.class,
+        String.class, String.class, String.class, String.class, Boolean.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    return java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && qpName.equals(qp.value()); })
+        .findFirst().orElseThrow(() -> new AssertionError("No @QueryParam(\"" + qpName + "\") on list()"));
+  }
+
+  private static void assertParamDocumented(java.lang.reflect.Parameter param, String label) {
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, label + " must carry @Parameter");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), label + " @Parameter.description must be non-blank");
+  }
+
+  @Test void list_nameParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("name"), "list.name"); }
+  @Test void list_statusParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("status"), "list.status"); }
+  @Test void list_pageParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("page"), "list.page"); }
+  @Test void list_pageSizeParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("pageSize"), "list.pageSize"); }
+  @Test void list_includeParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("include"), "list.include"); }
+  @Test void list_fieldsParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("fields"), "list.fields"); }
+  @Test void list_annotationFilterParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("annotationFilter"), "list.annotationFilter"); }
+  @Test void list_parentAppIdParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("parentAppId"), "list.parentAppId"); }
+  @Test void list_topLevelParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("topLevel"), "list.topLevel"); }
+
+  @Test
+  void predecessorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
+        "predecessorChain", String.class, String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "depth".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "predecessorChain.depth must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "predecessorChain.depth must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for predecessorChain.depth");
+  }
+
+  @Test
+  void successorChain_depthParamIsDocumented() throws NoSuchMethodException {
+    java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
+        "successorChain", String.class, String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "depth".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "successorChain.depth must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "successorChain.depth must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for successorChain.depth");
   }
 }

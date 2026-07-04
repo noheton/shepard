@@ -12,8 +12,8 @@ package de.dlr.shepard.plugins.unhide.cli;
  */
 final class UnhideAdminPaths {
 
-  /** {@code GET / PATCH /v2/admin/unhide/config}. */
-  static final String CONFIG = "/v2/admin/unhide/config";
+  /** {@code GET | PATCH /v2/admin/config/unhide} (V2CONV-A7 generic config registry path). */
+  static final String CONFIG = "/v2/admin/config/unhide";
 
   /** {@code POST /v2/admin/unhide/harvest-key/rotate}. */
   static final String ROTATE_HARVEST_KEY = "/v2/admin/unhide/harvest-key/rotate";

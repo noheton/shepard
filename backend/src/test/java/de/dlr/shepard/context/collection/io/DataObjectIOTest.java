@@ -172,4 +172,59 @@ public class DataObjectIOTest {
     assertEquals("Apache-2.0", converted.getLicense());
     assertEquals("OPEN", converted.getAccessRights());
   }
+
+  // ── TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1: attachedTemplateAppId surfacing ──
+
+  @Test
+  public void attachedTemplateAppId_isOmittedFromJson_whenNull() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).doesNotContain("attachedTemplateAppId");
+  }
+
+  @Test
+  public void attachedTemplateAppId_isSerialised_whenSet() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    io.setAttachedTemplateAppId("0197b6a2-7b4c-7000-8a3b-1234567890ab");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).contains("\"attachedTemplateAppId\":\"0197b6a2-7b4c-7000-8a3b-1234567890ab\"");
+  }
+
+  @Test
+  public void attachedTemplateAppId_roundTripsThroughJson() throws Exception {
+    var mapper = new ObjectMapper();
+    var io = new DataObjectIO();
+    io.setName("do");
+    io.setAttachedTemplateAppId("tpl-001");
+    String json = mapper.writeValueAsString(io);
+    var deserialised = mapper.readValue(json, DataObjectIO.class);
+    assertEquals("tpl-001", deserialised.getAttachedTemplateAppId());
+  }
+
+  @Test
+  public void conversion_carriesAttachedTemplateAppIdFromEntity() {
+    var col = new Collection(2L);
+    col.setShepardId(432L);
+    var obj = new DataObject(1L);
+    obj.setShepardId(99L);
+    obj.setCollection(col);
+    obj.setAttachedTemplateAppId("tpl-from-entity");
+
+    var converted = new DataObjectIO(obj);
+    assertEquals("tpl-from-entity", converted.getAttachedTemplateAppId());
+  }
+
+  @Test
+  public void conversion_attachedTemplateAppIdIsNullWhenNoTemplateAttached() {
+    var col = new Collection(2L);
+    col.setShepardId(432L);
+    var obj = new DataObject(1L);
+    obj.setShepardId(99L);
+    obj.setCollection(col);
+
+    var converted = new DataObjectIO(obj);
+    assertNull(converted.getAttachedTemplateAppId());
+  }
 }

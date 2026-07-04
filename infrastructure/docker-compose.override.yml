@@ -28,6 +28,17 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # MFFD-INGEST-OOM (2026-06-26): the base compose caps the backend JVM at
+      # -Xmx2G (upstream default). Under MFFD-scale ingest the .svdx parse path
+      # buffers into heap; the importer's warmup re-verification burst (~450
+      # concurrent .svdx re-uploads) exhausted the 2G heap → OutOfMemoryError
+      # storm → backend healthy-but-dead (the shallow healthcheck still passed
+      # while every content PUT 503'd on "Read timed out"). The nuclide host has
+      # 32G; raise the heap so the ingest survives the burst, and add
+      # ExitOnOutOfMemoryError so a future OOM fails fast (container exits →
+      # `restart: unless-stopped` brings it back fresh) instead of zombieing.
+      # Overrides the base compose JAVA_OPTS.
+      JAVA_OPTS: "-Xms2G -Xmx10G -XX:+ExitOnOutOfMemoryError"
       # Internal HTTP URL so the backend can reach Keycloak for OIDC discovery
       # without going through the public internet. Keycloak's KC_HOSTNAME forces
       # the issuer in the discovery doc and in tokens to the public HTTPS URL,
@@ -44,6 +55,16 @@ services:
       SHEPARD_MINTERS_DATACITE_HANDLE_PREFIX: "demo"
       SHEPARD_MINTERS_DATACITE_PUBLISHER: "Demo Instance"
       SHEPARD_MINTERS_DATACITE_LANDING_PAGE_BASE: "http://localhost"
+      # KIP1c ePIC minter (disabled on demo). Same no-op-placeholder rule as the
+      # datacite block above: EpicMinterConfigService reads these two String
+      # @ConfigProperty values at boot via Quarkus ConfigInstantiator, which under
+      # Quarkus 3.27 rejects an empty/absent value for a non-Optional String ->
+      # ConfigurationException -> CDI DeploymentException -> silent startup abort.
+      # These were missing when the epic plugin was first bundled, which is why the
+      # backend failed to start. Placeholders only; operators set real values via
+      # the admin REST/CLI before enabling the minter.
+      SHEPARD_MINTERS_EPIC_API_BASE_URL: "http://localhost"
+      SHEPARD_MINTERS_EPIC_HANDLE_PREFIX: "demo"
       SHEPARD_HDF_HSDS_USERNAME: "admin"
       SHEPARD_HDF_HSDS_PASSWORD: "admin"
       SHEPARD_UNHIDE_CONTACT_EMAIL: "admin@localhost"
@@ -64,6 +85,10 @@ services:
       SHEPARD_FILES_S3_PATH_STYLE_ACCESS: "true"
       SHEPARD_FILES_S3_ACCESS_KEY_ID: "GK6f1eb80a3f7237cda3cf5830"
       SHEPARD_FILES_S3_SECRET_ACCESS_KEY: "a01a7b7b0d5a694aa8817b7657835b688ee4bf422fdf3df3a4c8b8137bf1e5f5"
+      # Enable the S3 FileStorage provider so FileStorageRegistry can activate
+      # provider=s3 (Garage). Without this the file-s3 bean stays unregistered and
+      # uploads silently fall back to GridFS.
+      SHEPARD_PLUGINS_FILE_S3_ENABLED: "true"
       SHEPARD_MIGRATION_AUTO_SWEEP_SOURCE: "none"
       SHEPARD_MIGRATION_AUTO_SWEEP_TARGET: "none"
       # SHACL-1 — audit-chain HMAC instance secret. Quarkus 3.27 rejects
@@ -78,11 +103,13 @@ services:
       # applies it and registers it. Safe to keep permanently; subsequent
       # starts just see it as already-applied.
       QUARKUS_FLYWAY_OUT_OF_ORDER: "true"
-      # C3: backfill orphan-permission edges for nodes created before the
-      # has_permissions constraint was enforced. Set to the instance-admin sub.
-      # NOTE: Updated 2026-05-26 after V81 (NEO-AUDIT-010) merged duplicate admin@demo
-      # user nodes — original UUID a1c6b74a was the non-canonical duplicate that got
-      # merged away; 7eead942 is the canonical surviving node.
+      # C3: backfill orphan-permission edges for nodes created without a
+      # :has_permissions edge. Set to the instance-admin :User username.
+      # Was unset during the 2026-06-17 empty-DB reset; RE-SET 2026-06-17 after
+      # the MFFD import populated ~27k entities (many imported via v1 paths that
+      # don't seed Permissions) — the guard aborts startup if orphans exist and
+      # this is unset. Value = the admin :User username (Keycloak sub; admin was
+      # deliberately NOT re-keyed in the username-claim flip, so this stays valid).
       SHEPARD_PERMISSIONS_DEFAULT_OWNER: "7eead942-63a5-4cfc-aea9-b1d0f0a291ea"
       # OAS1 — public base URL surfaced in the OpenAPI `servers` list so
       # OpenAPI-Generator clients downloading the spec get an absolute URL.
@@ -115,6 +142,17 @@ services:
       # dependency resolution succeeds. The VideoStreamReference endpoints are in-tree;
       # this toggle also enables the /v2/admin/plugins "video" row in the admin UI.
       SHEPARD_PLUGINS_VIDEO_ENABLED: "true"
+      # Robotics / transform showcase set (RESEED feat-trace3d / feat-scenegraph /
+      # feat-krl-transform). vis-trace3d ships the ViewRecipeRenderer (Trace3D) +
+      # SceneGraphPlayTransformExecutor; krl-interpreter ships the
+      # KrlTrajectoryTransformExecutor + its CDI service beans (KrlTrajectoryService).
+      # Deploy-time enable is required for the plugins' CDI beans to activate
+      # (runtime PATCH /v2/admin/plugins toggles the admin row but cannot bring up
+      # CDI beans that need build/startup-time activation). The krl-interpreter
+      # sidecar runs as the `shepard-krl-interpreter` container (alias
+      # krl-interpreter-sidecar:8000 per plugins/krl-interpreter/compose-profile.yml).
+      SHEPARD_PLUGINS_VIS_TRACE3D_ENABLED: "true"
+      SHEPARD_PLUGINS_KRL_INTERPRETER_ENABLED: "true"
       # PgBouncer — route main JDBC datasource through the pooler.
       # prepareThreshold=0 disables server-side prepared statements, which
       # are incompatible with PgBouncer transaction-pooling mode (the driver

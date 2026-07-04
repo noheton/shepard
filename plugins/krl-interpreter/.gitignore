@@ -1,0 +1,16 @@
+# Python build / cache artefacts.
+__pycache__/
+*.py[cod]
+*$py.class
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+
+# Editor cruft.
+.idea/
+.vscode/

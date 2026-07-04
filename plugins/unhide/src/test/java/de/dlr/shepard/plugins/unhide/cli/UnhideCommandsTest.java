@@ -49,7 +49,7 @@ class UnhideCommandsTest {
   @Test
   void status_humanOutput_renderTable() {
     backend.route(
-      "/v2/admin/unhide/config",
+      "/v2/admin/config/unhide",
       200,
       rr -> "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":\"ops@example.dlr.de\"," +
         "\"harvestApiKeyMintedAt\":\"2026-05-13T05:11:00Z\",\"harvestApiKeyFingerprint\":\"01234567\"}"
@@ -66,7 +66,7 @@ class UnhideCommandsTest {
   @Test
   void status_jsonOutput_emitsParseableJson() {
     backend.route(
-      "/v2/admin/unhide/config",
+      "/v2/admin/config/unhide",
       200,
       rr -> "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":null}"
     );
@@ -82,7 +82,7 @@ class UnhideCommandsTest {
 
   @Test
   void enable_sendsPatchWithEnabledTrue() {
-    backend.route("/v2/admin/unhide/config", 200, rr ->
+    backend.route("/v2/admin/config/unhide", 200, rr ->
       "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":null}"
     );
 
@@ -98,7 +98,7 @@ class UnhideCommandsTest {
 
   @Test
   void disable_sendsPatchWithEnabledFalse() {
-    backend.route("/v2/admin/unhide/config", 200, rr ->
+    backend.route("/v2/admin/config/unhide", 200, rr ->
       "{\"enabled\":false,\"feedPublic\":false,\"contactEmail\":null}"
     );
 
@@ -116,7 +116,7 @@ class UnhideCommandsTest {
 
   @Test
   void setFeedPublic_true_sendsPatch() {
-    backend.route("/v2/admin/unhide/config", 200, rr ->
+    backend.route("/v2/admin/config/unhide", 200, rr ->
       "{\"enabled\":true,\"feedPublic\":true,\"contactEmail\":null}"
     );
 
@@ -133,7 +133,7 @@ class UnhideCommandsTest {
 
   @Test
   void setContactEmail_setsValue() {
-    backend.route("/v2/admin/unhide/config", 200, rr ->
+    backend.route("/v2/admin/config/unhide", 200, rr ->
       "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":\"alice@example.dlr.de\"}"
     );
 
@@ -153,7 +153,7 @@ class UnhideCommandsTest {
 
   @Test
   void setContactEmail_emptyArg_sendsNullToClear() {
-    backend.route("/v2/admin/unhide/config", 200, rr ->
+    backend.route("/v2/admin/config/unhide", 200, rr ->
       "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":null}"
     );
 
@@ -236,7 +236,7 @@ class UnhideCommandsTest {
   @Test
   void allCommands_sendXApiKeyHeader() {
     backend.route(
-      "/v2/admin/unhide/config",
+      "/v2/admin/config/unhide",
       200,
       rr -> "{\"enabled\":true,\"feedPublic\":false,\"contactEmail\":null}"
     );

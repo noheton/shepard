@@ -1,5 +1,6 @@
 /**
- * P10c composable wrapping GET/PATCH /v2/admin/sql-timeseries/config.
+ * P10c composable wrapping GET/PATCH /v2/admin/config/sql-timeseries
+ * (V2CONV-A4 generic admin-config surface; was /v2/admin/sql-timeseries/config).
  *
  * Raw fetch (no generated client for this endpoint yet) — same pattern as
  * useUnhideAdminConfig and useInstanceRorConfig.
@@ -33,7 +34,7 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-const SQL_TS_CONFIG_URL = "/v2/admin/sql-timeseries/config";
+const SQL_TS_CONFIG_URL = "/v2/admin/config/sql-timeseries";
 
 export function useSqlTimeseriesConfig() {
   const config = ref<SqlTimeseriesConfigIO | null>(null);

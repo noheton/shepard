@@ -21,7 +21,11 @@ import de.dlr.shepard.context.semantic.entities.Predicate;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import io.quarkiverse.mcp.server.McpException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -363,5 +367,127 @@ class AnnotationMcpToolsTest {
     ann.setValidFromMillis(1000L);
     ann.setValidUntilMillis(9999L);
     return ann;
+  }
+
+  // ── semantic_annotate_bulk (MCP-COV-05) ────────────────────────────────────
+
+  private Map<String, Object> entry(String subjectAppId, String propertyIRI, String valueName) {
+    Map<String, Object> r = new LinkedHashMap<>();
+    r.put("subjectAppId", subjectAppId);
+    r.put("subjectKind", "DataObject");
+    r.put("propertyIRI", propertyIRI);
+    if (valueName != null) r.put("valueName", valueName);
+    return r;
+  }
+
+  @Test
+  void semanticAnnotateBulkSucceedsForValidRows() throws Exception {
+    // Echo each created annotation back with an appId stamped on.
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("created-" + in.getSubjectAppId());
+      return in;
+    });
+
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(entry("do-1", "http://purl.org/dc/terms/creator", "Flo"));
+    rows.add(entry("do-2", "http://purl.org/dc/terms/creator", "Sev"));
+    String json = tools.semanticAnnotateBulk(rows);
+
+    JsonNode root = new ObjectMapper().readTree(json);
+    assertEquals(2, root.get("requested").asInt());
+    assertEquals(2, root.get("succeeded").asInt());
+    assertEquals(0, root.get("failed").asInt());
+    var results = root.get("results");
+    assertEquals(2, results.size());
+    assertEquals(true, results.get(0).get("ok").asBoolean());
+    assertEquals("do-1", results.get(0).get("subjectAppId").asText());
+    assertEquals("created-do-1", results.get(0).get("appId").asText());
+    assertEquals("created-do-2", results.get(1).get("appId").asText());
+  }
+
+  @Test
+  void semanticAnnotateBulkContinuesAfterPerRowError() throws Exception {
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("ok-" + in.getSubjectAppId());
+      return in;
+    });
+
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(entry("do-1", "http://example/pred", "v1"));
+    // Missing subjectAppId — should fail this row, NOT abort the batch.
+    Map<String, Object> bad = new HashMap<>();
+    bad.put("subjectKind", "DataObject");
+    bad.put("propertyIRI", "http://example/pred");
+    bad.put("valueName", "v2");
+    rows.add(bad);
+    rows.add(entry("do-3", "http://example/pred", "v3"));
+
+    String json = tools.semanticAnnotateBulk(rows);
+    JsonNode root = new ObjectMapper().readTree(json);
+    assertEquals(3, root.get("requested").asInt());
+    assertEquals(2, root.get("succeeded").asInt());
+    assertEquals(1, root.get("failed").asInt());
+    var results = root.get("results");
+    assertEquals(true, results.get(0).get("ok").asBoolean());
+    assertEquals(false, results.get(1).get("ok").asBoolean());
+    assertNotNull(results.get(1).get("error"));
+    assertEquals(true, results.get(2).get("ok").asBoolean());
+  }
+
+  @Test
+  void semanticAnnotateBulkRejectsEmptyInput() {
+    McpException ex = assertThrows(McpException.class, () -> tools.semanticAnnotateBulk(List.of()));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  @Test
+  void semanticAnnotateBulkRejectsOversizedBatch() {
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (int i = 0; i < AnnotationMcpTools.SEMANTIC_ANNOTATE_BULK_MAX + 1; i++) {
+      rows.add(entry("do-" + i, "http://example/pred", "v" + i));
+    }
+    McpException ex = assertThrows(McpException.class, () -> tools.semanticAnnotateBulk(rows));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+  }
+
+  @Test
+  void semanticAnnotateBulkRejectsRowsWithoutValue() throws Exception {
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenReturn(new SemanticAnnotation());
+    Map<String, Object> noValue = new HashMap<>();
+    noValue.put("subjectAppId", "do-1");
+    noValue.put("subjectKind", "DataObject");
+    noValue.put("propertyIRI", "http://example/pred");
+    // no valueName / valueIRI / numericValue
+
+    String json = tools.semanticAnnotateBulk(List.of(noValue));
+    JsonNode root = new ObjectMapper().readTree(json);
+    assertEquals(1, root.get("failed").asInt());
+    var first = root.get("results").get(0);
+    assertEquals(false, first.get("ok").asBoolean());
+    assertTrue(first.get("error").asText().toLowerCase().contains("valuename")
+            || first.get("error").asText().toLowerCase().contains("required"));
+  }
+
+  @Test
+  void semanticAnnotateBulkAcceptsNumericValue() throws Exception {
+    when(annotationDAO.createOrUpdate(any(SemanticAnnotation.class))).thenAnswer(inv -> {
+      SemanticAnnotation in = inv.getArgument(0);
+      in.setAppId("num-ok");
+      return in;
+    });
+
+    Map<String, Object> row = new LinkedHashMap<>();
+    row.put("subjectAppId", "do-1");
+    row.put("subjectKind", "DataObject");
+    row.put("propertyIRI", "http://example/pred/mass");
+    row.put("numericValue", 12.5);
+    row.put("unitIRI", "http://qudt.org/vocab/unit/KG");
+
+    String json = tools.semanticAnnotateBulk(List.of(row));
+    JsonNode root = new ObjectMapper().readTree(json);
+    assertEquals(1, root.get("succeeded").asInt());
+    assertEquals("num-ok", root.get("results").get(0).get("appId").asText());
   }
 }

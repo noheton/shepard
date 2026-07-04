@@ -1,0 +1,7 @@
+# V2CONV-B4 — scene-graph play executor.
+# Dissolves the bespoke /v2/scene-graphs/* namespace into a MAPPING_RECIPE
+# view-shape (SceneGraphPlayShape): binds a URDF FileReference + optional joint
+# TimeseriesReference, parses the URDF on demand, returns a play envelope for
+# the Trace3D-family renderer. ServiceLoader unions this with the built-in
+# NoOpTransformExecutor on the backend classpath.
+de.dlr.shepard.plugins.vistrace3d.scenegraph.SceneGraphPlayTransformExecutor

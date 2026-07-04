@@ -1,10 +1,10 @@
-import { ProvenanceApi, type ActivityIO } from "@dlr-shepard/backend-client";
+import { ProvenanceApi, type Activity } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const LOAD_BATCH = 100;
 
 export function useFetchAdminActivities() {
-  const activities = ref<ActivityIO[]>([]);
+  const activities = ref<Activity[]>([]);
   const isLoading = ref(false);
   const hasMore = ref(false);
 
@@ -18,14 +18,14 @@ export function useFetchAdminActivities() {
   async function load() {
     isLoading.value = true;
     try {
-      const rows = await useV2ShepardApi(ProvenanceApi).value.listActivities({
+      const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
         agent: filterAgent.value || undefined,
         targetKind: filterTargetKind.value || undefined,
         targetAppId: filterTargetAppId.value || undefined,
         limit: limit.value,
       });
-      activities.value = rows ?? [];
-      hasMore.value = rows.length >= limit.value;
+      activities.value = Array.isArray(paged) ? paged : ((paged as unknown as { items?: Activity[] })?.items ?? []);
+      hasMore.value = (Array.isArray(paged) ? paged.length : ((paged as unknown as { items?: Activity[] })?.items?.length ?? 0)) >= limit.value;
     } catch (error) {
       activities.value = [];
       hasMore.value = false;

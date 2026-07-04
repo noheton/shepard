@@ -1,0 +1,72 @@
+# shepard-plugin-krl-interpreter — sidecar compose fragment (KRL-INTERPRETER-04)
+#
+# This file is the plugin's declaration of its external sidecar service
+# (per the principle in `aidocs/platform/47-dev-experience-and-plugin-system.md §2.6`
+# and the memory rule `feedback_plugins_declare_sidecars.md`).
+#
+# Until the SidecarsAssembler operator-side renderer ships (PM1f), this
+# fragment is overlaid by hand:
+#
+#   docker compose \
+#     -f infrastructure/docker-compose.yml \
+#     -f plugins/krl-interpreter/compose-profile.yml \
+#     --profile krl-interpreter \
+#     up -d
+#
+# The fragment defines:
+#   * `krl-interpreter-sidecar` — the stateless FastAPI sidecar
+#
+# It joins the existing `shepard` compose network so the backend (-05
+# wiring) can reach it via internal compose DNS at
+# `http://krl-interpreter-sidecar:8000`. No host port is exposed —
+# the sidecar is internal-only (it has no browser UI of its own at
+# tier-1; a future admin pane would land at `/krl-interpreter/` per
+# `## Always: mount plugin UI sidecars as paths, not subdomains`).
+#
+# Operators: see `plugins/krl-interpreter/docs/install.md` for the
+# full runbook, env-var checklist, and admin-config notes.
+
+services:
+  krl-interpreter-sidecar:
+    profiles: ["krl-interpreter"]
+    build:
+      context: ../plugins/krl-interpreter
+      dockerfile: Dockerfile
+    image: shepard-krl-interpreter:local
+    container_name: shepard-krl-interpreter
+    restart: unless-stopped
+    environment:
+      # --- Runtime knobs (deploy-time-only at tier-1) ---
+      # Tier-2 introduces a runtime-mutable `:KrlInterpreterConfig`
+      # singleton (filed as KRL-CONFIG-1 in `aidocs/16-dispatcher-backlog.md`).
+      PORT: ${KRL_SIDECAR_PORT:-8000}
+      HOST: ${KRL_SIDECAR_HOST:-0.0.0.0}
+      KRL_IK_TOLERANCE: ${KRL_IK_TOLERANCE:-1e-3}
+      KRL_MAX_ITERATIONS: ${KRL_MAX_ITERATIONS:-100}
+      KRL_TIME_STEP_DEFAULT: ${KRL_TIME_STEP_DEFAULT:-0.01}
+      KRL_MOTION_DURATION: ${KRL_MOTION_DURATION:-1.0}
+      KRL_MAX_IR_ITERATIONS: ${KRL_MAX_IR_ITERATIONS:-100000}
+      MAX_BODY_SIZE: ${KRL_MAX_BODY_SIZE:-5242880}
+      LOG_LEVEL: ${KRL_LOG_LEVEL:-info}
+    networks:
+      - shepard
+    # NO host port exposure — backend reaches via internal compose DNS.
+    # Operators who want to introspect from the host should
+    # `docker compose exec krl-interpreter-sidecar curl localhost:8000/health`.
+    healthcheck:
+      # Same shape as the in-container HEALTHCHECK; redundancy is intentional —
+      # compose-level healthcheck participates in `depends_on: condition`.
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  # Same compose-prefixed network name caveat as the JH plugin: the
+  # logical name `shepard` becomes `<project>_shepard` when compose
+  # joins it. Operator overrides via env if their compose project name
+  # is non-default. See `docs/install.md §4` for details.
+  shepard:
+    name: ${KRL_SIDECAR_DOCKER_NETWORK:-infrastructure_shepard}
+    external: true

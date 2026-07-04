@@ -1,12 +1,15 @@
 package de.dlr.shepard.v2.mcp;
 
+import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.data.timeseries.util.Lttb;
 import io.quarkiverse.mcp.server.Tool;
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * MCP Phase 1 — Timeseries container tools (aidocs/88 §3.1).
@@ -42,7 +46,13 @@ public class TimeseriesMcpTools {
   TimeseriesService timeseriesService;
 
   @Inject
+  TsChannelResolver tsChannelResolver;
+
+  @Inject
   AnnotatableTimeseriesService annotatableTimeseriesService;
+
+  @Inject
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
   @Inject
   McpContextBridge contextBridge;
@@ -94,9 +104,14 @@ public class TimeseriesMcpTools {
   @Tool(
     name = "get_channel_data",
     description =
-      "Fetch raw timestamp/value samples for one channel inside a TimeseriesContainer, " +
-      "with LTTB downsampling so the response stays bounded even when the underlying " +
-      "channel has millions of samples.\n\n" +
+      "[Legacy single-channel] Fetch raw timestamp/value samples for one channel inside a " +
+      "TimeseriesContainer, with LTTB downsampling so the response stays bounded even " +
+      "when the underlying channel has millions of samples.\n\n" +
+      "DEPRECATED for multi-channel scenarios: prefer `ts_describe` + `ts_query_multi` " +
+      "(MCP-COV-03) — those tools take a single `shepardId` per channel and avoid the " +
+      "N+1 round-trip pattern when correlating across channels. `get_channel_data` stays " +
+      "available for the single-channel case and for callers that already have the 5-tuple " +
+      "in hand.\n\n" +
       "Identify the channel by passing the same 5-tuple {measurement, device, location, " +
       "symbolicName, field} returned by `list_channels`. Optionally bound the window " +
       "with `startNanos` / `endNanos`; if omitted, all available samples in the channel " +
@@ -205,6 +220,228 @@ public class TimeseriesMcpTools {
     });
   }
 
+  // ─── ts_describe (MCP-COV-03) ────────────────────────────────────────────────
+
+  @Tool(
+    name = "ts_describe",
+    description =
+      "Describe every channel inside a TimeseriesContainer, addressed by the single-field " +
+      "`shepardId` introduced by the TS-ID migration. Use this in place of `list_channels` " +
+      "when the next step is `ts_query_multi` — the bulk query takes shepardIds, not the " +
+      "legacy 5-tuple.\n\n" +
+      "Eliminates the 5-tuple from the agent contract: caller asks 'what channels does " +
+      "this container hold?' by `containerAppId` only, and gets back a single stable " +
+      "identifier per channel. No measurement/device/location/symbolicName/field threading " +
+      "through subsequent tool calls is needed.\n\n" +
+      "Response shape:\n" +
+      "{\n" +
+      "  \"containerAppId\": \"<uuid>\",\n" +
+      "  \"totalChannels\":  <int>,\n" +
+      "  \"channels\": [{\n" +
+      "    \"shepardId\":    \"<uuid>\",       // pass this to ts_query_multi\n" +
+      "    \"measurement\":  \"...\",          // legacy 5-tuple (display only)\n" +
+      "    \"device\":       \"...\",\n" +
+      "    \"location\":     \"...\",\n" +
+      "    \"symbolicName\": \"...\",\n" +
+      "    \"field\":        \"...\",\n" +
+      "    \"valueType\":    \"Double|Long|Boolean|String\",\n" +
+      "    \"unit\":         null,             // not yet stored; TS-SEMANTIC-01 follow-up\n" +
+      "    \"sampleRate\":   null              // not yet stored; TS-SEMANTIC-01 follow-up\n" +
+      "  }, ...]\n" +
+      "}\n\n" +
+      "`unit` and `sampleRate` are intentionally null today — the `channel_metadata` side " +
+      "table does not yet carry them. They will populate from `:AnnotatableTimeseries` " +
+      "annotations once SEMA-V6 channel-level annotation lookup is wired into this tool."
+  )
+  public String tsDescribe(
+    @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId
+  ) {
+    return support.run("ts_describe", () -> {
+      contextBridge.bind();
+      long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
+
+      // Page through every channel — same shape as TimeseriesContainerChannelsRest.listChannels
+      // but flattened into one response. Containers with > 10_000 channels are rare; we cap
+      // at the bulk endpoint's per-request limit to keep responses bounded.
+      final int PAGE_SIZE = 500;
+      List<TimeseriesEntity> all = new ArrayList<>();
+      int page = 0;
+      while (true) {
+        List<TimeseriesEntity> batch = tsChannelResolver.listPaged(containerOgmId, page, PAGE_SIZE);
+        if (batch.isEmpty()) break;
+        all.addAll(batch);
+        if (batch.size() < PAGE_SIZE) break;
+        page++;
+      }
+
+      List<Map<String, Object>> channels = new ArrayList<>(all.size());
+      for (TimeseriesEntity row : all) {
+        Map<String, Object> ch = new LinkedHashMap<>();
+        ch.put("shepardId", row.getShepardId() == null ? null : row.getShepardId().toString());
+        ch.put("measurement", row.getMeasurement());
+        ch.put("device", row.getDevice());
+        ch.put("location", row.getLocation());
+        ch.put("symbolicName", row.getSymbolicName());
+        ch.put("field", row.getField());
+        ch.put("valueType", row.getValueType() == null ? null : row.getValueType().name());
+        // Reserved fields: unit + sampleRate populate from SEMA-V6 annotations later.
+        ch.put("unit", null);
+        ch.put("sampleRate", null);
+        channels.add(ch);
+      }
+
+      Map<String, Object> body = new LinkedHashMap<>();
+      body.put("containerAppId", containerAppId);
+      body.put("totalChannels", channels.size());
+      body.put("channels", channels);
+      return support.toJson(body);
+    });
+  }
+
+  // ─── ts_query_multi (MCP-COV-03) ─────────────────────────────────────────────
+
+  /** Hard cap on shepardIds per ts_query_multi call (matches REST BulkChannelDataRequestIO). */
+  static final int TS_QUERY_MULTI_MAX_CHANNELS = 200;
+
+  @Tool(
+    name = "ts_query_multi",
+    description =
+      "Fetch raw data for many channels in one call, identified by `shepardId` (from " +
+      "`ts_describe`). Wraps the TS-OPT2 bulk endpoint " +
+      "`POST /v2/timeseries-containers/{id}/channels/data/bulk` so an agent does not have " +
+      "to issue N individual `get_channel_data` calls when comparing or correlating " +
+      "channels over the same time window.\n\n" +
+      "Unknown shepardIds are silently skipped (the response only contains entries for " +
+      "channels the resolver actually found). Up to " + TS_QUERY_MULTI_MAX_CHANNELS +
+      " shepardIds per call.\n\n" +
+      "Optional LTTB downsampling: when `maxPointsPerChannel` is set, each channel's " +
+      "result list is downsampled independently (preserves visual shape — peaks/troughs " +
+      "survive). When omitted, raw points are returned per channel.\n\n" +
+      "Response shape:\n" +
+      "{\n" +
+      "  \"containerAppId\": \"<uuid>\",\n" +
+      "  \"window\":         { \"startNanos\": <long>, \"endNanos\": <long> },\n" +
+      "  \"requested\":      <int>,           // shepardIds passed in\n" +
+      "  \"resolved\":       <int>,           // channels actually returned\n" +
+      "  \"channels\": [{\n" +
+      "    \"measurement\": \"...\",         // 5-tuple is in the response for display\n" +
+      "    \"device\":      \"...\",\n" +
+      "    \"location\":    \"...\",\n" +
+      "    \"symbolicName\": \"...\",\n" +
+      "    \"field\":       \"...\",\n" +
+      "    \"rawCount\":    <int>,\n" +
+      "    \"returnedCount\": <int>,\n" +
+      "    \"downsampled\": true|false,\n" +
+      "    \"algorithm\":   \"LTTB\" | \"none\",\n" +
+      "    \"points\":      [{ \"timestamp\": <ns>, \"value\": <number|string|bool> }, ...]\n" +
+      "  }, ...]\n" +
+      "}\n\n" +
+      "Timestamps are nanoseconds since Unix epoch. Divide by 1_000_000 for ms, by " +
+      "1_000_000_000 for seconds."
+  )
+  public String tsQueryMulti(
+    @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
+    @ToolArg(description = "Channel shepardIds to fetch (from `ts_describe → channels[].shepardId`). Max " + TS_QUERY_MULTI_MAX_CHANNELS + ".") List<String> shepardIds,
+    @ToolArg(description = "Window start, nanoseconds since Unix epoch.") Long startNanos,
+    @ToolArg(description = "Window end, nanoseconds since Unix epoch.") Long endNanos,
+    @ToolArg(required = false, description = "Optional per-channel LTTB cap. Omit for raw points; cap is " + MAX_POINTS_CAP + ".") Integer maxPointsPerChannel
+  ) {
+    return support.run("ts_query_multi", () -> {
+      contextBridge.bind();
+      long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
+
+      if (shepardIds == null || shepardIds.isEmpty()) {
+        throw McpToolSupport.invalidParams(
+          "shepardIds is required and must contain at least one channel id (from `ts_describe`)."
+        );
+      }
+      if (shepardIds.size() > TS_QUERY_MULTI_MAX_CHANNELS) {
+        throw McpToolSupport.invalidParams(
+          "Too many channels (" + shepardIds.size() + "). Max " + TS_QUERY_MULTI_MAX_CHANNELS +
+          " per call — split into multiple ts_query_multi invocations."
+        );
+      }
+      if (startNanos == null || endNanos == null) {
+        throw McpToolSupport.invalidParams("startNanos and endNanos are both required (nanoseconds since Unix epoch).");
+      }
+      if (startNanos < 0 || endNanos < 0) {
+        throw McpToolSupport.invalidParams("startNanos and endNanos must be non-negative.");
+      }
+
+      List<UUID> ids = new ArrayList<>(shepardIds.size());
+      for (String s : shepardIds) {
+        if (s == null || s.isBlank()) {
+          throw McpToolSupport.invalidParams("shepardIds must not contain null or blank entries.");
+        }
+        try {
+          ids.add(UUID.fromString(s.trim()));
+        } catch (IllegalArgumentException iae) {
+          throw McpToolSupport.invalidParams("Invalid shepardId (not a UUID): " + s);
+        }
+      }
+
+      // Mirror the REST resource: bulk-resolve the entities, then issue one
+      // sequential data-points query per entity (no parallelStream — keeps the
+      // connection pool sane). Unknown shepardIds are silently skipped.
+      var entities = tsChannelResolver.bulkFindByShepardIds(ids);
+      var params = new TimeseriesDataPointsQueryParams(startNanos, endNanos, null, null, null);
+      List<TimeseriesWithDataPoints> results =
+        timeseriesService.getManyDataPointsByEntities(containerOgmId, entities, params);
+
+      int cap = maxPointsPerChannel == null
+        ? -1
+        : Math.min(Math.max(maxPointsPerChannel, 1), MAX_POINTS_CAP);
+
+      List<Map<String, Object>> channelsOut = new ArrayList<>(results.size());
+      for (TimeseriesWithDataPoints res : results) {
+        Timeseries ts = res.getTimeseries();
+        List<TimeseriesDataPoint> raw = res.getPoints() == null ? List.of() : res.getPoints();
+        int rawCount = raw.size();
+
+        List<TimeseriesDataPoint> shown;
+        boolean downsampled;
+        if (cap < 0 || rawCount <= cap) {
+          shown = raw;
+          downsampled = false;
+        } else {
+          shown = Lttb.downsample(raw, cap);
+          downsampled = true;
+        }
+
+        Map<String, Object> ch = new LinkedHashMap<>();
+        ch.put("measurement", ts.getMeasurement());
+        ch.put("device", ts.getDevice());
+        ch.put("location", ts.getLocation());
+        ch.put("symbolicName", ts.getSymbolicName());
+        ch.put("field", ts.getField());
+        ch.put("rawCount", rawCount);
+        ch.put("returnedCount", shown.size());
+        ch.put("downsampled", downsampled);
+        ch.put("algorithm", downsampled ? "LTTB" : "none");
+        List<Map<String, Object>> pts = new ArrayList<>(shown.size());
+        for (TimeseriesDataPoint p : shown) {
+          Map<String, Object> row = new LinkedHashMap<>();
+          row.put("timestamp", p.getTimestamp());
+          row.put("value", p.getValue());
+          pts.add(row);
+        }
+        ch.put("points", pts);
+        channelsOut.add(ch);
+      }
+
+      Map<String, Object> body = new LinkedHashMap<>();
+      body.put("containerAppId", containerAppId);
+      Map<String, Object> window = new LinkedHashMap<>();
+      window.put("startNanos", startNanos);
+      window.put("endNanos", endNanos);
+      body.put("window", window);
+      body.put("requested", shepardIds.size());
+      body.put("resolved", results.size());
+      body.put("channels", channelsOut);
+      return support.toJson(body);
+    });
+  }
+
   @Tool(
     name = "list_channel_annotations",
     description =
@@ -229,7 +466,7 @@ public class TimeseriesMcpTools {
       for (SemanticAnnotation a : annotations) {
         var io = new SemanticAnnotationIO(a);
         Map<String, Object> row = new LinkedHashMap<>();
-        row.put("id", io.getId());
+        row.put("appId", io.getAppId());
         row.put("propertyIRI", io.getPropertyIRI());
         row.put("propertyName", io.getPropertyName());
         row.put("valueIRI", io.getValueIRI());
@@ -251,34 +488,39 @@ public class TimeseriesMcpTools {
       "(TS-SEMANTIC-01 dual-write). Channels that pre-date that service (created before " +
       "TS-SEMANTIC-01 shipped) do not have an AnnotatableTimeseries node and will return " +
       "an error.\n\n" +
-      "Use `list_vocabularies` to find a vocabulary id, then `search_predicates` to find " +
+      "Use `list_vocabularies` to find a vocabulary appId, then `search_predicates` to find " +
       "the propertyIRI, and `search_values` to find the valueIRI. Both " +
-      "propertyRepositoryId and valueRepositoryId must be valid vocabulary IDs.\n\n" +
+      "propertyVocabAppId and valueVocabAppId must be UUID v7 appIds from `list_vocabularies`.\n\n" +
       "Response: the newly created annotation object."
   )
   public String createChannelAnnotation(
     @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
     @ToolArg(description = "UUID v7 channelShepardId of the channel to annotate.") String channelShepardId,
     @ToolArg(description = "IRI of the property (predicate). Get from `search_predicates`.") String propertyIRI,
-    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the property IRI. Get from `list_vocabularies`.") Long propertyRepositoryId,
+    @ToolArg(description = "UUID v7 appId of the vocabulary that owns the property IRI. Get `appId` from `list_vocabularies`.") String propertyVocabAppId,
     @ToolArg(description = "IRI of the value (object). Get from `search_values`.") String valueIRI,
-    @ToolArg(description = "Neo4j OGM id of the vocabulary that owns the value IRI. Get from `list_vocabularies`.") Long valueRepositoryId
+    @ToolArg(description = "UUID v7 appId of the vocabulary that owns the value IRI. Get `appId` from `list_vocabularies`.") String valueVocabAppId
   ) {
     return support.run("create_channel_annotation", () -> {
       contextBridge.bind();
       long containerOgmId = support.resolveOfType(containerAppId, "TimeseriesContainer", "containerAppId");
 
+      var propRepo = semanticRepositoryDAO.findByAppId(propertyVocabAppId);
+      if (propRepo == null) throw new IllegalArgumentException("unknown propertyVocabAppId: " + propertyVocabAppId);
+      var valRepo = semanticRepositoryDAO.findByAppId(valueVocabAppId);
+      if (valRepo == null) throw new IllegalArgumentException("unknown valueVocabAppId: " + valueVocabAppId);
+
       var io = new SemanticAnnotationIO();
       io.setPropertyIRI(propertyIRI);
-      io.setPropertyRepositoryId(propertyRepositoryId);
+      io.setPropertyRepositoryId(propRepo.getId());
       io.setValueIRI(valueIRI);
-      io.setValueRepositoryId(valueRepositoryId);
+      io.setValueRepositoryId(valRepo.getId());
 
       SemanticAnnotation created =
         annotatableTimeseriesService.createAnnotationForChannel(containerOgmId, channelShepardId, io);
       var resultIO = new SemanticAnnotationIO(created);
       Map<String, Object> row = new LinkedHashMap<>();
-      row.put("id", resultIO.getId());
+      row.put("appId", resultIO.getAppId());
       row.put("propertyIRI", resultIO.getPropertyIRI());
       row.put("propertyName", resultIO.getPropertyName());
       row.put("valueIRI", resultIO.getValueIRI());

@@ -87,7 +87,7 @@ public class DmpSnippetService {
         if (ref instanceof TimeseriesReference) kinds.add("timeseries");
         else if (ref instanceof FileBundleReference) kinds.add("files");
         else if (ref instanceof StructuredDataReference) kinds.add("structured data");
-        else if (ref instanceof VideoPayload) kinds.add("video streams");
+        else if (ref.getClass().isAnnotationPresent(VideoPayload.class)) kinds.add("video streams");
       }
     }
 

@@ -21,14 +21,15 @@ final class SemanticOntologiesCommandTest {
   private static final String LIST_JSON =
     """
     {
-      "bundles": [
+      "items": [
         {"id":"prov-o","name":"PROV-O","source":"builtin","required":true,"enabled":true,
          "iriPrefix":"http://www.w3.org/ns/prov#","license":"W3C Document License","sha256":"abc","byteSize":1892},
         {"id":"qudt","name":"QUDT","source":"builtin","required":false,"enabled":false,
          "iriPrefix":"http://qudt.org/vocab/unit/","license":"CC BY 4.0","sha256":"def","byteSize":2271},
         {"id":"custom","name":"Lab Vocab","source":"user","required":false,"enabled":true,
          "iriPrefix":"http://example.org/lab/","license":"CC0 1.0","sha256":"ghi","byteSize":123}
-      ]
+      ],
+      "total": 3, "page": 0, "pageSize": 3
     }
     """;
 
@@ -72,7 +73,7 @@ final class SemanticOntologiesCommandTest {
         "json"
       );
       assertThat(result.exit()).isEqualTo(0);
-      assertThat(result.stdout()).contains("\"bundles\"").contains("\"prov-o\"");
+      assertThat(result.stdout()).contains("\"items\"").contains("\"prov-o\"");
     }
   }
 

@@ -24,6 +24,14 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
   @Inject
   AuthenticationContext authenticationContext;
 
+  /**
+   * #27-ARCHIVED-02 — write-gate that returns 409 when this container is
+   * {@code status = "ARCHIVED"}. Injected here so every container kind
+   * inherits the same gate without per-service wiring.
+   */
+  @Inject
+  de.dlr.shepard.context.collection.services.ArchiveStateGuard archiveStateGuard;
+
   public abstract List<T> getAllContainers(QueryParamHelper params);
 
   public abstract T getContainer(long id);
@@ -113,6 +121,10 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
         "The requested action is forbidden by the permission policies. User has no WRITE permissions."
       );
     }
+    // #27-ARCHIVED-02: also block writes when the container is frozen (status=ARCHIVED).
+    // Null/missing status passes silently; only literal "ARCHIVED" raises 409. The PATCH
+    // /v2/.../publication-state endpoint is the single mutation that bypasses this gate.
+    archiveStateGuard.assertContainerNotArchived(containerId);
   }
 
   public void assertIsAllowedToManageContainer(long containerId) {

@@ -5,7 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * TS-AXIS-AUTO — response shape for
- * {@code GET /v2/timeseries-containers/{containerId}/channels/spatial-roles}.
+ * {@code GET /v2/containers/{appId}/channels/spatial-roles}.
  *
  * <p>Each non-null field carries the {@code shepardId} of the channel annotated
  * for that role. Null means "no annotation found for this role."

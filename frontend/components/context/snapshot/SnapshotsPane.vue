@@ -11,7 +11,8 @@
  * Backed by V2b/V2e endpoints via useSnapshots composable.
  */
 
-import type { SnapshotDiffIO, SnapshotIO } from "@dlr-shepard/backend-client";
+import type { SnapshotDiff, Snapshot } from "@dlr-shepard/backend-client";
+import { useRouter } from "vue-router";
 import { useSnapshots } from "~/composables/context/useSnapshots";
 
 const props = defineProps<{
@@ -22,6 +23,26 @@ const collectionAppIdRef = computed(() => props.collectionAppId);
 
 const { snapshots, isLoading, isSaving, createSnapshot, deleteSnapshot, diffSnapshots } =
   useSnapshots(collectionAppIdRef);
+
+const router = useRouter();
+
+/**
+ * TOOLS-CONTEXT-SNAP-COMPARE — bookmarkable shortcut to /snapshots/diff
+ * pre-populated with this snapshot as the A side. The destination page
+ * already reads ?a=…&b=… from the route, so a bookmark of the resulting
+ * URL works without round-tripping back through this pane.
+ *
+ * The existing in-pane diff dialog (openDiffPicker) stays as the primary
+ * affordance for "I want to compare two snapshots from this collection";
+ * this Compare action is the per-row shortcut to the global tool.
+ */
+function compareInSnapshotDiff(snapshot: Snapshot) {
+  if (!snapshot.appId) return;
+  void router.push({
+    path: "/snapshots/diff",
+    query: { a: snapshot.appId },
+  });
+}
 
 // ── Create form ──────────────────────────────────────────────────────────────
 
@@ -46,9 +67,9 @@ async function submitCreate() {
 // ── Delete dialog ────────────────────────────────────────────────────────────
 
 const showDeleteDialog = ref(false);
-const snapshotToDelete = ref<SnapshotIO | null>(null);
+const snapshotToDelete = ref<Snapshot | null>(null);
 
-function promptDelete(snapshot: SnapshotIO) {
+function promptDelete(snapshot: Snapshot) {
   snapshotToDelete.value = snapshot;
   showDeleteDialog.value = true;
 }
@@ -70,13 +91,13 @@ function cancelDelete() {
 // ── Diff dialog ──────────────────────────────────────────────────────────────
 
 const showDiffDialog = ref(false);
-const diffBase = ref<SnapshotIO | null>(null);
-const diffHead = ref<SnapshotIO | null>(null);
-const diffResult = ref<SnapshotDiffIO | null>(null);
+const diffBase = ref<Snapshot | null>(null);
+const diffHead = ref<Snapshot | null>(null);
+const diffResult = ref<SnapshotDiff | null>(null);
 const isDiffLoading = ref(false);
 
 /** Open the diff picker with snapshot A pre-selected as base. */
-function openDiffPicker(snapshot: SnapshotIO) {
+function openDiffPicker(snapshot: Snapshot) {
   diffBase.value = snapshot;
   diffHead.value = null;
   diffResult.value = null;
@@ -105,14 +126,14 @@ function closeDiff() {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(isoOrNull?: string | null): string {
+function formatDate(isoOrNull?: string | Date | null): string {
   if (!isoOrNull) return "—";
   return new Date(isoOrNull).toLocaleString();
 }
 
-function snapshotLabel(s: SnapshotIO | null): string {
+function snapshotLabel(s: Snapshot | null): string {
   if (!s) return "";
-  return s.name + (s.snapshotCapturedAt ? ` (${formatDate(s.snapshotCapturedAt)})` : "");
+  return (s.name ?? "") + (s.snapshotCapturedAt ? ` (${formatDate(s.snapshotCapturedAt)})` : "");
 }
 
 const nameRules = [
@@ -225,6 +246,28 @@ const nameRules = [
           >
             Diff
           </v-btn>
+          <!-- TOOLS-CONTEXT-SNAP-COMPARE — bookmarkable "Compare in
+               Snapshot diff" route. Sibling of the in-pane Diff dialog;
+               this one navigates to /snapshots/diff?a=… so users can
+               share / bookmark the comparison URL. -->
+          <v-btn
+            variant="text"
+            size="x-small"
+            color="secondary"
+            icon="mdi-share-outline"
+            :aria-label="`Open snapshot ${snap.name} in Snapshot diff tool`"
+            :data-testid="`snap-compare-open-${snap.appId}`"
+            :title="'Open in Snapshot diff (bookmarkable URL)'"
+            @click="compareInSnapshotDiff(snap)"
+          />
+          <v-btn
+            variant="text"
+            size="x-small"
+            icon="mdi-vector-difference"
+            :aria-label="`Compare snapshots starting from ${snap.name}`"
+            :disabled="!snap.appId"
+            @click="navigateTo({ path: '/snapshots/diff', query: { a: snap.appId } })"
+          />
           <v-btn
             variant="text"
             size="x-small"
@@ -333,13 +376,13 @@ const nameRules = [
 
             <div class="d-flex flex-wrap ga-3 align-center">
               <v-chip color="success" variant="tonal" size="small" prepend-icon="mdi-plus">
-                {{ diffResult.added.length }} added
+                {{ diffResult.added?.length ?? 0 }} added
               </v-chip>
               <v-chip color="error" variant="tonal" size="small" prepend-icon="mdi-minus">
-                {{ diffResult.removed.length }} removed
+                {{ diffResult.removed?.length ?? 0 }} removed
               </v-chip>
               <v-chip color="warning" variant="tonal" size="small" prepend-icon="mdi-pencil">
-                {{ diffResult.changed.length }} changed
+                {{ diffResult.changed?.length ?? 0 }} changed
               </v-chip>
               <v-chip variant="tonal" size="small" prepend-icon="mdi-check">
                 {{ diffResult.unchangedCount }} unchanged
@@ -347,11 +390,11 @@ const nameRules = [
             </div>
 
             <!-- Added -->
-            <div v-if="diffResult.added.length > 0">
+            <div v-if="(diffResult.added?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-success mb-1">Added</div>
               <v-chip-group column>
                 <v-chip
-                  v-for="appId in diffResult.added"
+                  v-for="appId in diffResult.added ?? []"
                   :key="appId"
                   color="success"
                   variant="outlined"
@@ -364,11 +407,11 @@ const nameRules = [
             </div>
 
             <!-- Removed -->
-            <div v-if="diffResult.removed.length > 0">
+            <div v-if="(diffResult.removed?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-error mb-1">Removed</div>
               <v-chip-group column>
                 <v-chip
-                  v-for="appId in diffResult.removed"
+                  v-for="appId in diffResult.removed ?? []"
                   :key="appId"
                   color="error"
                   variant="outlined"
@@ -381,11 +424,11 @@ const nameRules = [
             </div>
 
             <!-- Changed -->
-            <div v-if="diffResult.changed.length > 0">
+            <div v-if="(diffResult.changed?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-warning mb-1">Changed</div>
               <v-list density="compact" class="pa-0">
                 <v-list-item
-                  v-for="entry in diffResult.changed"
+                  v-for="entry in diffResult.changed ?? []"
                   :key="entry.entityAppId"
                   class="px-0"
                 >

@@ -15,6 +15,10 @@ export type RelationshipTableElement = {
       | DataObjectReferenceType
       | CollectionReferenceType;
     referenceId: number;
+    /** V2-only annotation path: the reference node's appId (drives /v2/annotations). */
+    referenceAppId?: string;
+    /** Concrete reference kind for the v2 polymorphic annotation subject. */
+    referenceKind?: string;
     annotatable: boolean;
   };
   created: {
@@ -24,6 +28,10 @@ export type RelationshipTableElement = {
   actions: {
     elementId: number;
     annotatable: boolean;
+    /** V2-only annotation path: the reference node's appId (drives /v2/annotations). */
+    referenceAppId?: string;
+    /** Concrete reference kind for the v2 polymorphic annotation subject. */
+    referenceKind?: string;
     /** REF-EDIT-6: UUID v7 appId, present only for URIReference rows. */
     uriRefAppId?: string;
     /** REF-EDIT-6: Current name / uri / relationship for pre-filling the edit dialog. */
@@ -46,6 +54,12 @@ export type DataObjectReferenceType =
       collectionId: number;
     }
   | {
+      // MISSING-V2-APPID-IN-REFLISTS slice 3: v2 shape — numeric ids not on the wire.
+      type: "Data Object Reference";
+      availability: "available";
+      collectionName?: string;
+    }
+  | {
       type: "Data Object Reference";
       availability: "private";
       id: number;
@@ -58,7 +72,10 @@ export type CollectionReferenceType =
   | {
       type: "Collection Reference";
       availability: "available";
-      id: number;
+      /** v1 path: numeric Neo4j id of the referenced collection. */
+      id?: number;
+      /** v2 path (V2-SWEEP-004-2): UUID v7 appId of the referenced collection. */
+      collectionAppId?: string;
     }
   | {
       type: "Collection Reference";

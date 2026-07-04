@@ -212,7 +212,7 @@ describe("view-mode localStorage persistence logic", () => {
     localStorageStub = {
       getItem: (key: string) => store[key] ?? null,
       setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
+      removeItem: (key: string) => { const { [key]: _drop, ...rest } = store; store = rest; },
       clear: () => { store = {}; },
       key: (index: number) => Object.keys(store)[index] ?? null,
       get length() { return Object.keys(store).length; },

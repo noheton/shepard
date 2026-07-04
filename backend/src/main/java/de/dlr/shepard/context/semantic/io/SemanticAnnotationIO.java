@@ -17,6 +17,9 @@ public class SemanticAnnotationIO implements HasId, Named {
   @Schema(readOnly = true, required = true)
   private Long id;
 
+  @Schema(readOnly = true)
+  private String appId;
+
   @Deprecated
   @Schema(readOnly = true, required = true)
   private String name;
@@ -57,6 +60,7 @@ public class SemanticAnnotationIO implements HasId, Named {
 
   public SemanticAnnotationIO(SemanticAnnotation ref) {
     this.id = ref.getId();
+    this.appId = ref.getAppId();
     this.name = ref.getName();
     this.propertyIRI = ref.getPropertyIRI();
     this.valueIRI = ref.getValueIRI();

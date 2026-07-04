@@ -1,0 +1,107 @@
+[
+  {
+    "route": "/collections/2107/dataobjects/2112/timeseriesereferences/2244",
+    "slug": "tsref-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/tsref-tr001.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 401 ()"
+    ]
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112/filereferences/2256",
+    "slug": "fileref-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/fileref-tr001.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "route": "/collections/2107/dataobjects/2112/structureddatareferences/2261",
+    "slug": "sdref-tr001",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/sdref-tr001.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "route": "/containers/files/4277",
+    "slug": "container-files",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/container-files.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "route": "/containers/timeseries/4284",
+    "slug": "container-timeseries",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/container-timeseries.png",
+    "status": 200,
+    "placeholderHits": [
+      "PlaceholderRestDump"
+    ],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "route": "/containers/structureddata/2156",
+    "slug": "container-structureddata",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/container-structureddata.png",
+    "status": 200,
+    "placeholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "slug": "container-spatialdata-none",
+    "route": "/containers (no spatialdata)",
+    "status": "n/a",
+    "placeholderHits": [],
+    "consoleErrors": [
+      "no spatialdata container link in list"
+    ]
+  },
+  {
+    "slug": "container-hdf-none",
+    "route": "/containers (no hdf)",
+    "status": "n/a",
+    "placeholderHits": [],
+    "consoleErrors": [
+      "no hdf container link in list"
+    ]
+  },
+  {
+    "slug": "container-video-none",
+    "route": "/containers (no video)",
+    "status": "n/a",
+    "placeholderHits": [],
+    "consoleErrors": [
+      "no video container link in list"
+    ]
+  }
+]

@@ -43,7 +43,7 @@
         <maven.compiler.target>17</maven.compiler.target>
 
         <!-- Kiota Java runtime — track Kiota CLI minor (1.31.x). -->
-        <kiota.abstractions.version>1.8.4</kiota.abstractions.version>
+        <kiota.abstractions.version>1.9.1</kiota.abstractions.version>
         <kiota.http.version>1.8.4</kiota.http.version>
         <kiota.serialization-json.version>1.8.4</kiota.serialization-json.version>
         <kiota.serialization-text.version>1.8.4</kiota.serialization-text.version>

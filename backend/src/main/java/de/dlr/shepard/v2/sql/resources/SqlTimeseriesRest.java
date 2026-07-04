@@ -1,7 +1,8 @@
 package de.dlr.shepard.v2.sql.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.configuration.feature.toggles.SqlTimeseriesFeatureToggle;
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
 import de.dlr.shepard.data.timeseries.sql.SqlQueryCompiler;
@@ -9,6 +10,7 @@ import de.dlr.shepard.data.timeseries.sql.SqlQueryExecutor;
 import de.dlr.shepard.data.timeseries.sql.SqlQuerySpec;
 import de.dlr.shepard.data.timeseries.sql.WriteResult;
 import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
+import io.quarkus.logging.Log;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -29,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -71,6 +74,13 @@ import java.util.Set;
 @RequestScoped
 public class SqlTimeseriesRest {
 
+  private static final String PT_NOT_FOUND = "/problems/sql-timeseries.not-found";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   /** Hard cap on the number of container IDs per request. */
   private static final int MAX_CONTAINERS = 1000;
 
@@ -88,6 +98,9 @@ public class SqlTimeseriesRest {
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  EntityIdResolver entityIdResolver;
 
   /**
    * P10c: runtime-mutable config singleton. Effective max-rows and max-duration
@@ -117,8 +130,9 @@ public class SqlTimeseriesRest {
    * @return 200 on success; 400 on bad DSL; 404 if feature disabled; 504 on query timeout
    */
   @POST
-  @Tag(name = "Timeseries SQL (v2)")
+  @Tag(name = "Timeseries")
   @Operation(
+    operationId = "query",
     summary = "Execute a timeseries SQL DSL query and stream results.",
     description =
       "Accepts a `SqlQuerySpec` body and streams matching rows in the format negotiated by " +
@@ -149,7 +163,7 @@ public class SqlTimeseriesRest {
   )
   @APIResponse(
     responseCode = "504",
-    description = "Query exceeded the configured `statement_timeout`; retry with tighter time-range or container filters, or raise the duration cap via `PATCH /v2/admin/sql-timeseries/config`."
+    description = "Query exceeded the configured `statement_timeout`; retry with tighter time-range or container filters, or raise the duration cap via `PATCH /v2/admin/config/sql-timeseries`."
   )
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({"text/csv", MediaType.APPLICATION_JSON, NDJSON_TYPE})
@@ -158,16 +172,15 @@ public class SqlTimeseriesRest {
       @HeaderParam("Accept") String acceptHeader,
       @Context HttpServerResponse httpResponse,
       @Context SecurityContext securityContext) {
-    if (!SqlTimeseriesFeatureToggle.isActive()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+    if (!configService.effectiveEnabled()) {
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "SQL timeseries feature is disabled; enable via PATCH /v2/admin/config/sql-timeseries");
     }
     return executeQuery(spec, acceptHeader, httpResponse, securityContext);
   }
 
   /**
    * Core query logic — package-private so unit tests can call it directly without
-   * bootstrapping MicroProfile Config (which {@link SqlTimeseriesFeatureToggle#isActive()}
-   * requires). The toggle gate lives only in {@link #query}.
+   * bootstrapping a full CDI context. The enabled-gate lives only in {@link #query}.
    *
    * <p>The {@code httpResponse} parameter may be {@code null} in unit tests that do not set up
    * a full VertX context; trailer emission is skipped gracefully when it is null.
@@ -179,9 +192,14 @@ public class SqlTimeseriesRest {
         ? securityContext.getUserPrincipal().getName()
         : null;
 
-    List<Long> requestedIds = spec.where().containerIdIn() != null
-        ? spec.where().containerIdIn()
-        : List.of();
+    // Prefer container_app_id_in (UUID v7); fall back to deprecated container_id_in (numeric).
+    // Unknown or unresolvable appIds are silently excluded — same policy as forbidden IDs.
+    List<Long> requestedIds;
+    if (spec.where().containerAppIdIn() != null && !spec.where().containerAppIdIn().isEmpty()) {
+      requestedIds = resolveAppIds(spec.where().containerAppIdIn());
+    } else {
+      requestedIds = spec.where().containerIdIn() != null ? spec.where().containerIdIn() : List.of();
+    }
 
     Set<Long> allowed = permissionsService.filterAllowedForUser(requestedIds, AccessType.Read, username);
 
@@ -294,6 +312,25 @@ public class SqlTimeseriesRest {
       return Format.NDJSON;
     }
     return Format.CSV; // default
+  }
+
+  /**
+   * Resolves a list of container {@code appId} strings (UUID v7) to their Neo4j Long ids.
+   * Appids that cannot be resolved (unknown entity) are silently excluded so the caller
+   * gets the same "silently drop unauthorised/unknown" behaviour as the permission filter.
+   * Package-private for unit tests.
+   */
+  List<Long> resolveAppIds(List<String> appIds) {
+    List<Long> result = new ArrayList<>(appIds.size());
+    for (String appId : appIds) {
+      try {
+        result.add(entityIdResolver.resolveLong(appId));
+      } catch (Exception e) {
+        // Unknown appId — silently skip; same policy as permission-filter exclusion.
+        Log.debugf("SqlTimeseriesRest: skipping unknown container appId=%s (%s)", appId, e.getMessage());
+      }
+    }
+    return result;
   }
 
   /** Parses an ISO-8601 duration string to milliseconds. Returns 0 on parse failure (no limit). */

@@ -53,14 +53,15 @@ name and skips work that's already done.
 - Three DataObjects:
   - `MFFD AFP Cell — MFZ.rdk source` — one FileReference holding the
     real `.rdk` (RDK-PARSE-1 scrapes 8 tier-1 annotations on upload).
-  - `R10 (KR210 L150) — kinematic model` — eight FileReferences (URDF
-    + seven Collada visual meshes; provenance copies of the static
-    `frontend/public/urdf-samples/kr210/...` set).
+  - `R10 (KR210 R2700/2) — kinematic model` — eight FileReferences
+    (URDF + seven binary STL visual meshes; provenance copies of the
+    static `frontend/public/urdf-samples/kr210_r2700_2/...` set).
   - `AFP Ply 5 layup — joint trajectory` — one TimeseriesReference
     with 6 joint-angle channels (3000 points each); each channel
     annotated `urn:shepard:urdf:joint = <jointName>`.
-- One `:ShepardTemplate` of kind `VIEW_RECIPE` wiring the KR210 URDF
-  + joint→channel map (best-effort — requires `instance-admin`).
+- One `:ShepardTemplate` of kind `VIEW_RECIPE` wiring the
+  KR210 R2700/2 URDF + joint→channel map (best-effort — requires
+  `instance-admin`).
 
 ## Smoke-test (without writing)
 
@@ -82,7 +83,7 @@ A non-200 means the backend isn't up — fix the backend first.
 | `SKIP … MFZ.rdk not found`                              | Mount `examples/mffd-showcase/raw-data/mffd-data/cell/MFZ.rdk` (12.1 MB). RDK step skips cleanly.            |
 | `SKIP … ShepardTemplate (needs instance-admin)`         | The user isn't an admin. The URDF view is still launchable via the URL the seeder prints in its final block. |
 | `SKIP … channel xxx field=yyy joint annotation 4xx/5xx` | The annotation endpoint shape changed. Check the FE channel-picker still resolves bindings via the heuristic. |
-| URDF doesn't paint in the browser                       | Confirm `/urdf-samples/kr210/kuka_kr210_support/urdf/kr210l150.urdf` returns 200 from the frontend host.     |
+| URDF doesn't paint in the browser                       | Confirm `/urdf-samples/kr210_r2700_2/kuka_quantec_support/urdf/kr210_r2700_2.urdf` returns 200 from the frontend host. |
 
 ## Generated artefacts
 

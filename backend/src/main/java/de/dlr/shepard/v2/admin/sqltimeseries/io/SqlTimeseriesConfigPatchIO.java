@@ -34,11 +34,32 @@ import com.fasterxml.jackson.annotation.Nulls;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SqlTimeseriesConfigPatchIO {
 
+  private Boolean enabled;
+  private boolean enabledTouched;
+
   private Long maxRows;
   private boolean maxRowsTouched;
 
   private String maxDurationIso;
   private boolean maxDurationTouched;
+
+  public Boolean getEnabled() {
+    return enabled;
+  }
+
+  /**
+   * Jackson invokes this when the JSON body mentions {@code enabled} —
+   * including the explicit-null case via {@link Nulls#SET}.
+   */
+  @JsonSetter(nulls = Nulls.SET)
+  public void setEnabled(Boolean enabled) {
+    this.enabled = enabled;
+    this.enabledTouched = true;
+  }
+
+  public boolean isEnabledTouched() {
+    return enabledTouched;
+  }
 
   public Long getMaxRows() {
     return maxRows;

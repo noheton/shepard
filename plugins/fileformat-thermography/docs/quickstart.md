@@ -24,6 +24,29 @@ FileReference are enriched with up to 17 semantic annotations:
 Find them in the DataObject's annotations panel under the
 `urn:shepard:thermography:*` and `urn:shepard:mffd:*` namespaces.
 
+## Spot the hot-spots in a layup region (MFFD-NDT-QUALITY-1)
+
+Once your DataObject carries a thermography FileBundleReference (a bag
+of TIFF frames from the layup pass), open its detail page. The
+**Thermography NDT** panel mounts automatically — three things appear:
+
+1. **Quality chip** — green ≥ 0.8, amber 0.5–0.8, red < 0.5.
+   The score is `1 − max(peak-delta-c) / threshold-c`. A perfectly
+   uniform layup scores 1.0; a layup whose worst frame's peak hit
+   the 80 °C threshold scores 0.0.
+2. **Plate heatmap** — a single composite image showing the maximum
+   temperature observed at each pixel across the entire layup pass.
+   Bright yellow = hot-spot zones; deep purple = cold zones. Hover
+   to see exact temperatures.
+3. **Re-analyze** button — click to re-run the analysis (Write
+   permission required). Useful after uploading new TIFFs or after
+   adjusting the threshold via the admin config.
+
+You never need to click into a 6,000-frame strip to find the bad
+plies — the heatmap surfaces them at a glance. If you need the
+individual frame, the bundle's existing image-strip view remains
+available below the heatmap.
+
 ## Filename convention matters
 
 The parser uses the filename to determine the grid position. The
@@ -59,9 +82,34 @@ acquisition annotations still emit.
   (DO-sprawl containment rule, see
   `aidocs/integrations/114-process-monitoring-parser-plugin.md §0`).
 
+## How do I view a thermography scan? (OTVIS-VIEWER)
+
+Once an `.OTvis` file is uploaded as a **single-file FileReference**
+(the default for one-file uploads), Shepard decodes its amplitude and
+phase frames and shows them on the DataObject detail page:
+
+1. Open the DataObject that carries the `.OTvis` scan.
+2. Scroll to the **"Thermography Frames (OTvis)"** panel (one panel per
+   `.OTvis` reference) and expand it.
+3. The heatmap renders straight away. For a lock-in result frame, use
+   the **amplitude / phase** toggle:
+   - **Phase** (default) — the channel that reveals subsurface defects
+     (delamination, porosity) with the least sensitivity to surface
+     emissivity and uneven heating. This is the channel you read for
+     CFRP NDT.
+   - **Amplitude** — the magnitude of the thermal response.
+4. Drag the **frame scrubber** to step through frames (single-frame
+   archives show no scrubber).
+
+You never type a path or URL — the viewer pulls the bytes from the
+reference by its appId. If the panel shows a warning banner, some
+frames were tolerated with issues (e.g. an unsupported frame format);
+the rest still render.
+
 ## Where to learn more
 
-- `docs/reference.md` — every annotation key and how it is derived.
+- `docs/reference.md` — every annotation key and how it is derived;
+  §6.5 documents the decoded-frame viewer REST endpoints.
 - `aidocs/integrations/114-process-monitoring-parser-plugin.md` —
   the full design doc, including the planned tier-2 frame extraction
   and the cross-modal correlation with AFP layup timeseries.

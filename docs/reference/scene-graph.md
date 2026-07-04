@@ -6,158 +6,145 @@ permalink: /reference/scene-graph/
 
 # Scene graph
 
-A `DigitalTwinScene` is a kinematic-tree composite that groups one
-root `CoordinateFrame` plus its descendants and the `Joint`s that
-connect them. Scenes are produced by RDK / URDF parsers, by hand-build
-via the REST surface, or by an AI agent driving the MCP tools.
+A **scene-graph** in shepard is a 3D, articulated view of a robot or
+machine cell, driven by a URDF file. As of **V2CONV-B4** (2026-06-04)
+a scene-graph is **not** a stored frames/joints graph in the database —
+it is a `MAPPING_RECIPE` template that *binds* the data it needs and is
+played back on demand by the Trace3D-family 3D renderer.
 
-The substrate ships in
-[DT1-PHASE-0]({{ '/' | absolute_url }}#dt1-phase-0); the REST + MCP +
-URDF surface ships in **SCENEGRAPH-REST-1**.
+> **Migrating from the old `/v2/scene-graphs/*` surface?** The bespoke
+> scene-graph subsystem (the stored `:DigitalTwinScene` graph + the
+> `/v2/scene-graphs/*` CRUD/export endpoints + the `scene_graph_*` MCP
+> tools) was removed and converged into the generic MAPPING_RECIPE
+> mechanism. See [§Migration](#migration-from-v2scene-graphs) below.
+
+## What a scene-graph binds
+
+A scene-graph `MAPPING_RECIPE` template body binds, by `appId`:
+
+| Field | Required | What it is |
+|---|---|---|
+| `mappingRecipeShape` | yes | `http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape` — the dispatch key. |
+| `urdfFileReferenceAppId` | yes | A singleton **FileReference** (FR1b) carrying the robot's URDF XML. The single source of truth for the kinematic tree; parsed on demand. |
+| `jointTimeseriesReferenceAppId` | no | A **TimeseriesReference** whose channels carry the joint values over time. Omit for a static pose. |
+| `jointChannelBindings` | no | A JSON array binding each URDF joint to a TimeseriesChannel selector, e.g. `[{"joint":"joint_1","channelSelector":"…"}]`. |
+
+The URDF FileReference **is** the kinematic data — links, joints,
+transforms, axes, and limits all come from parsing the URDF. shepard
+never stores a duplicate frames/joints graph.
+
+## Creating a scene-graph
+
+### From the UI (recommended)
+
+Open a URDF FileReference's detail page. If the file looks like a robot
+file (`.urdf`/`.rdk`, or carries `urn:shepard:rdk:*` / `urn:shepard:urdf:*`
+annotations), a **"Create 3D view from this URDF"** button appears.
+Clicking it mints a `MAPPING_RECIPE` template targeting `SceneGraphPlayShape`
+and routes to the play page. A subsequent visit reads **"Open in 3D view"**.
+
+The UI never asks you for a path or URL — it always works from the
+FileReference `appId`.
+
+### From the API
+
+```bash
+# 1. Create the MAPPING_RECIPE template.
+curl -X POST /v2/templates \
+  -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' \
+  -d '{
+    "name": "KR210 cell — 3D view",
+    "templateKind": "MAPPING_RECIPE",
+    "body": "{\"mappingRecipeShape\":\"http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape\",\"urdfFileReferenceAppId\":\"<urdf-fileref-appId>\"}"
+  }'
+# → 201 { "appId": "<template-appId>", ... }
+
+# 2. Materialize it into the play envelope.
+curl -X POST /v2/mappings/<template-appId>/materialize \
+  -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' \
+  -d '{ "inputReferenceAppIds": { "urdfFileAppId": "<urdf-fileref-appId>" } }'
+```
+
+The materialize response is a `VIEW` result whose `viewModel` is the
+**play envelope**:
+
+```json
+{
+  "outputKind": "VIEW",
+  "executor": "SceneGraphPlayTransformExecutor",
+  "viewModel": {
+    "kind": "scene-graph-play",
+    "renderer": "urdf",
+    "robotName": "kr210",
+    "urdfFileReferenceAppId": "<urdf-fileref-appId>",
+    "rootLink": "base_link",
+    "frames": [ { "name": "base_link", "parent": null }, { "name": "link_1", "parent": "base_link" } ],
+    "joints": [ { "name": "joint_1", "type": "revolute", "parent": "base_link", "child": "link_1", "origin": [0,0,0.675], "rpy": [0,0,0], "axis": [0,0,1], "limitLower": -3.14, "limitUpper": 3.14 } ],
+    "jointChannelBindings": [],
+    "playbackStatus": "STATIC_POSE"
+  }
+}
+```
+
+`playbackStatus` is `STATIC_POSE` when no joint timeseries is bound, or
+`DECLARED` when a joint TimeseriesReference is bound (live channel
+resolution lands with VIS-S1; until then the renderer shows the static
+pose).
 
 ## Endpoints
 
-All endpoints are under `/v2/scene-graphs` (the fork's development
-shelf; `/shepard/api/…` v1 is **not** touched).
-
 | Method + path | Description |
 |---|---|
-| `GET /v2/scene-graphs/{appId}` | Full scene tree (frames + joints). `Accept: application/ld+json` for JSON-LD framing. |
-| `GET /v2/scene-graphs/{appId}/export.urdf` | URDF XML export (`application/xml`). |
-| `GET /v2/scene-graphs/{appId}/export.usd` | **503** placeholder; queued under `ISAAC-USD-EXPORT-1`. |
-| `POST /v2/scene-graphs` | Create empty scene; mints `appId`. |
-| `POST /v2/scene-graphs/{appId}/frames` | Add a frame. First frame becomes root. |
-| `PATCH /v2/scene-graphs/{appId}/frames/{frameAppId}` | Patch single-frame fields. Empty-string `parentFrameAppId` clears parent. |
-| `DELETE /v2/scene-graphs/{appId}/frames/{frameAppId}` | Hard-delete frame + descendants via `:HAS_PARENT_FRAME*`. |
-| `POST /v2/scene-graphs/{appId}/joints` | Register a joint between two existing frames. |
-| `DELETE /v2/scene-graphs/{appId}/joints/{jointAppId}` | Delete a joint. |
+| `POST /v2/templates` | Create a `MAPPING_RECIPE` scene-graph template (body targets `SceneGraphPlayShape`). |
+| `POST /v2/mappings/{templateAppId}/materialize` | Materialize the scene-graph into a play envelope (the 3D view-model). |
+| `GET /v2/collections/{appId}/scene-graph` | Resolve a Collection's hero 3D view (a MAPPING_RECIPE template appId). |
+| `PUT /v2/collections/{appId}/scene-graph` | Link / replace the Collection's hero view with a MAPPING_RECIPE template appId. |
+| `DELETE /v2/collections/{appId}/scene-graph` | Unlink the Collection's hero view (does not delete the template). |
 
-Auth: `@Authenticated` only (any authenticated user). Per-scene
-permission walks are queued as `SCENEGRAPH-PERMS-1`.
+All endpoints are under `/v2/…` (the fork's development shelf;
+`/shepard/api/…` v1 is **not** touched).
 
-### URDF export — what's emitted
+## Collection hero view
 
-- `<robot name="…">` shell, name = scene's `name` (or
-  `scene_<appId>` if unnamed).
-- One `<link name="…"/>` per `CoordinateFrame`.
-- One `<joint name="…" type="…">` per `Joint` with `<parent
-  link="…"/>`, `<child link="…"/>`, `<origin xyz="…" rpy="…"/>`
-  (from the child frame's local transform), `<axis xyz="…"/>`, and
-  `<limit lower="…" upper="…"/>` for `REVOLUTE` / `PRISMATIC`.
-
-### URDF export — what's NOT emitted
-
-- `<visual>` / `<collision>` blocks — meshes live on `FileReference`
-  payloads on the source DataObject; resolution is the client's
-  responsibility. URDF-WEBVIEW-1 phase 2 will hand-stitch when
-  consuming the export.
-- `<inertial>` — mass / inertia tensors are not on the scaffold; CAD1b
-  / SB1d add that surface later.
-- `<transmission>` — ROS-control transmissions out of scope.
-
-## Provenance
-
-Every mutation records a typed `:Activity` via
-`ProvenanceService.record()`:
-
-- `actionKind` ∈ `CREATE` / `UPDATE` / `DELETE`.
-- `targetKind = "DigitalTwinScene"`, `targetAppId` = scene appId.
-- `sourceMode` from the `X-AI-Agent` header — `"ai"` when present
-  with `agentId` set to the header value; `"human"` otherwise.
-  PROV1j-compliant; closes the EU AI Act Art. 50 disclosure at the
-  audit-log layer when an AI drives the call.
-- PROV-O edges: `(:Activity)-[:WAS_ASSOCIATED_WITH]->(:User)`,
-  `(:Activity)-[:GENERATED|USED]->(:BasicEntity)` (via
-  `ActivityDAO.wireEdges()`).
-- **Supplementary** `(:Activity)-[:WAS_DERIVED_FROM]->(:Activity)`
-  edge linking the new activity to the most-recent prior activity
-  for the same scene appId — gives the audit chain a graph-walk
-  rather than just a time-ordered scroll.
-
-The skip-capture handoff is set on the request context so the
-`ProvenanceCaptureFilter` does not emit a duplicate generic Activity.
-
-## MCP tools
-
-Available at the native Quarkus MCP endpoint (`/v2/mcp/sse`). All
-tools route through the same `SceneGraphService`, so `:Activity` +
-`:WAS_DERIVED_FROM` writes happen identically to the REST path.
-
-| Tool name | Purpose |
-|---|---|
-| `scene_graph_get` | Load scene by appId — full frame tree + joints. |
-| `scene_graph_create` | Create an empty scene. |
-| `scene_graph_add_frame` | Add a frame; first frame becomes root. |
-| `scene_graph_patch_frame` | Mutate frame transform / parent / kind / name. |
-| `scene_graph_delete_frame` | Hard-delete frame subtree. |
-| `scene_graph_register_joint` | Register a joint between two frames. |
-| `scene_graph_delete_joint` | Delete a joint. |
-| `scene_graph_export_urdf` | Export scene as URDF XML string. |
-
-## Worked example
-
-Create an empty scene, add a base + tool frame, register a fixed
-joint, and export URDF:
+A Collection's detail page can render a hero 3D view. Link one with:
 
 ```bash
-APIBASE=https://shepard-api.example.org
-TOKEN="<JWT or X-API-KEY>"
-
-# 1. Create the scene.
-SCENE=$(curl -fsS -X POST "$APIBASE/v2/scene-graphs" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"two-frame","description":"smoke-test"}' | jq -r .appId)
-
-# 2. Add the root frame.
-ROOT=$(curl -fsS -X POST "$APIBASE/v2/scene-graphs/$SCENE/frames" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"base_link","kind":"BASE"}' | jq -r .appId)
-
-# 3. Add the tool frame.
-TOOL=$(curl -fsS -X POST "$APIBASE/v2/scene-graphs/$SCENE/frames" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"name\":\"tool0\",\"parentFrameAppId\":\"$ROOT\",\"z\":0.5,\"kind\":\"TCP\"}" | jq -r .appId)
-
-# 4. Register a fixed joint.
-curl -fsS -X POST "$APIBASE/v2/scene-graphs/$SCENE/joints" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"name\":\"tool_mount\",\"parentFrameAppId\":\"$ROOT\",\"childFrameAppId\":\"$TOOL\",\"type\":\"FIXED\"}" >/dev/null
-
-# 5. Export URDF.
-curl -fsS "$APIBASE/v2/scene-graphs/$SCENE/export.urdf" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X PUT /v2/collections/<collection-appId>/scene-graph \
+  -H 'Authorization: Bearer <token>' -H 'Content-Type: application/json' \
+  -d '{ "sceneGraphAppId": "<mapping-recipe-template-appId>" }'
 ```
 
-## Audit-trail walk
+The JSON field is still `sceneGraphAppId` (so existing callers keep
+working), but its value is now a `MAPPING_RECIPE` template appId. The
+`PUT` rejects a non-MAPPING_RECIPE target with `422`.
 
-Find every mutation on a scene plus the user who made it, in order:
+## Permissions
 
-```cypher
-MATCH (a:Activity {targetAppId: $sceneAppId})-[:WAS_ASSOCIATED_WITH]->(u:User)
-RETURN u.username, a.actionKind, a.sourceMode, a.agentId,
-       a.summary, a.startedAtMillis
-ORDER BY a.startedAtMillis ASC;
-```
+- Creating a template and materializing it follow the standard template
+  + reference permission walks (you need read access on the bound URDF
+  FileReference's parent Collection).
+- The Collection hero-link `PUT`/`DELETE` require **Write** on the
+  Collection; `GET` requires **Read**.
 
-Walk only the derivation chain — useful when the activity feed is
-busy and you only want the linked edits to one scene:
+## Migration from `/v2/scene-graphs/*`
 
-```cypher
-MATCH (latest:Activity {targetAppId: $sceneAppId})
-WITH latest ORDER BY latest.startedAtMillis DESC LIMIT 1
-MATCH path = (latest)-[:WAS_DERIVED_FROM*0..]->(prior:Activity)
-RETURN prior.appId, prior.actionKind, prior.summary, prior.startedAtMillis;
-```
+| Old (removed) | New |
+|---|---|
+| `GET /v2/scene-graphs/{appId}` | `POST /v2/mappings/{templateAppId}/materialize` (returns the play envelope). |
+| `POST /v2/scene-graphs` + frame/joint CRUD | Author the URDF; bind it in a `MAPPING_RECIPE` template. Edit the URDF FileReference to change the kinematics. |
+| `GET /v2/scene-graphs/{appId}/export.urdf` | The URDF FileReference content endpoint `GET /v2/files/{appId}/content` — the URDF *is* the source. |
+| `POST /v2/scene-graphs/from-urdf/{fileRefAppId}` | "Create 3D view from this URDF" button, or `POST /v2/templates` with a `SceneGraphPlayShape` body. |
+| `scene_graph_*` MCP tools | Generic MAPPING_RECIPE MCP tools (tracked as `MCP-MAPPING-RECIPE-1`). |
+| `urn:shepard:scenegraph:scene-appId` back-annotation | `urn:shepard:mapping:scenegraph-template-appId`. |
 
-## Cross-references
+**Operators:** migration `V111__B4_dissolve_scenegraph.cypher` deletes
+the old `:DigitalTwinScene` / `:CoordinateFrame` / `:Joint` graph and
+clears stale Collection hero links. The deleted scene **data is not
+recoverable** — snapshot the Neo4j graph before upgrading if you must
+retain hand-built scenes.
 
-- Substrate scaffold: [DT1-PHASE-0]({{ '/' | absolute_url }}aidocs/16-dispatcher-backlog.md)
-- Renderer (URDF browser): URDF-WEBVIEW-1
-- Producer (RDK parser): RDK-PARSE-2
-- Permission anchor (queued): SCENEGRAPH-PERMS-1
-- Graph browser UI (queued): SCENEGRAPH-REST-1-UI
-- Design notes: `aidocs/data/85-coordinate-frame-tree.md`
+## See also
+
+- The `vis-trace3d` plugin reference (`plugins/vis-trace3d/docs/reference.md`)
+  for the `SceneGraphPlayShape` + `SceneGraphPlayTransformExecutor`.
+- `aidocs/platform/191` §decision-2 — the convergence rationale.

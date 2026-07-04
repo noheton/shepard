@@ -1,0 +1,71 @@
+# single-file-bundle-warn.shape.ttl
+#
+# SINGLETON-FILE-05 — SHACL warning shape that flags any
+# :FileBundleReference still holding exactly one file. These rows are the
+# technical debt described in CLAUDE.md "Always: singleton FileReference
+# for one-file uploads; FileBundleReference only when bundling >1".
+#
+# Severity is `sh:Warning` (not Violation) — the bundle is structurally
+# valid in the upstream sense; it just SHOULD have been a singleton. The
+# warning surfaces in the Collection metadata-completeness widget
+# (RDM-005) as a fix-it suggestion with a link to the operator runbook
+# at docs/admin/runbooks/single-file-singletons.md.
+#
+# Loading: the shape catalogue auto-loads every `*.ttl` file under
+# `backend/src/main/resources/shapes/` at startup (per the README in
+# that directory). No code wiring is required to make this shape
+# available to the ShapesValidateRest endpoint.
+#
+# Validation surface:
+#   POST /v2/shapes/validate
+#     { "shapeId": "shepard:SingleFileBundleWarnShape",
+#       "subjectAppId": "<collection-or-data-object-appId>" }
+#
+# Backfill target: `scripts/backfill-single-file-bundles-to-singletons.py`
+# (SINGLETON-FILE-03). After that script runs, this shape should yield
+# zero warnings on any conformant instance.
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+shepard:FileBundleReference a sh:Class ;
+    rdfs:label "FileBundleReference (FR1a — multi-file bundle)"@en .
+
+shepard:SingleFileBundleWarnShape a sh:NodeShape ;
+    sh:targetClass shepard:FileBundleReference ;
+    rdfs:label "Single-file FileBundleReference warning"@en ;
+    rdfs:comment """Flags :FileBundleReference rows that hold exactly one
+        file. These should be FR1b singleton FileReferences instead.
+        Run scripts/backfill-single-file-bundles-to-singletons.py to
+        migrate, then re-validate."""@en ;
+
+    # Constraint 1 — count of fileOids must not equal 1.
+    sh:property [
+        sh:path shepard:fileOidsCount ;
+        sh:datatype xsd:integer ;
+        sh:not [ sh:hasValue 1 ] ;
+        sh:severity sh:Warning ;
+        sh:message """This FileBundleReference holds exactly one file.
+            Per CLAUDE.md the canonical shape for a one-file Reference
+            is FR1b :SingletonFileReference (POST /v2/files). A bundle
+            of one file forces the UI to render a pointless picker and
+            silently breaks every appId-keyed backend resolver
+            (UrdfResolver, KRL interpret, scene-graph). Migrate via
+            docs/admin/runbooks/single-file-singletons.md."""@en ;
+    ] ;
+
+    # Constraint 2 — count of HAS_GROUP -> has_payload -> ShepardFile must
+    # not equal 1 either. Same debt, post-V21 shape.
+    sh:property [
+        sh:path shepard:reachableFileCount ;
+        sh:datatype xsd:integer ;
+        sh:not [ sh:hasValue 1 ] ;
+        sh:severity sh:Warning ;
+        sh:message """This FileBundleReference reaches exactly one
+            ShepardFile through its single default FileGroup. Per
+            CLAUDE.md the canonical shape is FR1b singleton — see
+            docs/admin/runbooks/single-file-singletons.md."""@en ;
+    ] .

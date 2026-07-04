@@ -20,7 +20,7 @@ public class SpatialDataReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(SpatialDataReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(SpatialDataReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

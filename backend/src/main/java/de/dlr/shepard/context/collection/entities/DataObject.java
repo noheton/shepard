@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.Relationship.Direction;
 
@@ -62,6 +63,23 @@ public class DataObject extends AbstractDataObject {
    * the v2 PATCH path does not expose this field (it is not on {@code DataObjectIO}).
    */
   private String provenanceMode;
+
+  /**
+   * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — appId of the {@code :ShepardTemplate}
+   * this DataObject was created from, populated by
+   * {@link de.dlr.shepard.template.daos.ShepardTemplateDAO#recordCreatedFrom}
+   * when a {@code :CREATED_FROM_TEMPLATE} edge is set. The underlying Neo4j
+   * property name is {@code _createdFromTemplateAppId} (leading-underscore,
+   * raw-Cypher-set so OGM can't infer it from the Java field name);
+   * {@code @Property} maps the OGM-friendly Java name to the raw key.
+   *
+   * <p>Nullable on every DataObject created before the template wiring
+   * landed and on any DataObject created without selecting a template.
+   * Surfaced read-only via the IO so the frontend can gate conditional
+   * actions ({@code DO-SHACL} / {@code DO-RENDER} buttons) on its presence.
+   */
+  @Property("_createdFromTemplateAppId")
+  private String attachedTemplateAppId;
 
   /**
    * PROV1k — typed predecessor relationships serialised as JSON.

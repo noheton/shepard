@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!--
+  Two link planar arm fixture for KRL INTERPRETER 03 unit tests.
+  Hand rolled by the Shepard project under the same MIT licence as the
+  rest of the plugin. Two revolute joints about Z, plus a fixed base
+  joint (so urdf_loader movable joint filter has something to filter).
+
+    base_link to link0 via fixed   base_to_link0
+    link0    to link1  via revolute joint1, Z axis (link length 1.0 X)
+    link1    to link2  via revolute joint2, Z axis (link length 1.0 X)
+    link2    to tool0  via fixed   tool_joint
+
+  Reachable workspace lies in the XY plane within a 2.0 unit radius of
+  the base. The kinematic chain ikpy builds from this URDF has four
+  joints when traversed base_link to tool0 (base_to_link0, joint1,
+  joint2, tool_joint); two of them are movable.
+-->
+<robot name="two_link_arm">
+  <link name="base_link"/>
+  <link name="link0"/>
+  <link name="link1"/>
+  <link name="link2"/>
+  <link name="tool0"/>
+
+  <joint name="base_to_link0" type="fixed">
+    <parent link="base_link"/>
+    <child link="link0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="joint1" type="revolute">
+    <parent link="link0"/>
+    <child link="link1"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10" velocity="1"/>
+  </joint>
+
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="1.0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10" velocity="1"/>
+  </joint>
+
+  <joint name="tool_joint" type="fixed">
+    <parent link="link2"/>
+    <child link="tool0"/>
+    <origin xyz="1.0 0 0" rpy="0 0 0"/>
+  </joint>
+</robot>

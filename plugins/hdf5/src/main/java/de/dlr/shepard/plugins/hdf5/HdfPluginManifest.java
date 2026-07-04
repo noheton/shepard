@@ -20,7 +20,7 @@ import java.util.Optional;
  * file shipped alongside this class.
  *
  * <p>The plugin's CDI beans — {@code HdfContainerService},
- * {@code HdfContainerRest}, {@code HdfAdminRest},
+ * {@code HdfContainerKindHandler}, {@code HdfAdminRest},
  * {@code HdfPermissionBridge}, {@code HsdsClient} — are discovered
  * by Quarkus's build-time CDI scanner via the backend's classpath.
  * This manifest exists so the {@code PluginRegistry} tracks PL1c in
@@ -44,7 +44,8 @@ public final class HdfPluginManifest implements PluginManifest {
 
   private static final String DESCRIPTION =
     "HDF5/HSDS-backed payload kind. Provides HdfContainer Neo4j nodes, " +
-    "REST endpoints (/v2/hdf-containers/*, /v2/admin/hdf/*), the HSDS HTTP client, " +
+    "container CRUD + raw-file download on the unified /v2/containers surface " +
+    "(kind=hdf), admin endpoints (/v2/admin/hdf/*), the HSDS HTTP client, " +
     "and the HdfPermissionBridge permission-sync hook. " +
     "Requires a running HSDS sidecar configured via shepard.hdf.hsds.* properties.";
 

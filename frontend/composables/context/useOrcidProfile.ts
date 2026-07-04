@@ -14,6 +14,24 @@ export interface OrcidProfile {
   works: OrcidWork[];
 }
 
+/** Minimal subset of the ORCID public-API v3.0 JSON shapes we read. */
+interface OrcidKeyword {
+  content?: string | null;
+}
+interface OrcidExternalId {
+  "external-id-type"?: string;
+  "external-id-value"?: string;
+}
+interface OrcidWorkSummary {
+  title?: { title?: { value?: string | null } | null } | null;
+  "publication-date"?: { year?: { value?: string | null } | null } | null;
+  "external-ids"?: { "external-id"?: OrcidExternalId[] } | null;
+  url?: { value?: string | null } | null;
+}
+interface OrcidWorkGroup {
+  "work-summary"?: OrcidWorkSummary[];
+}
+
 export function useOrcidProfile(orcid: Ref<string | null | undefined>) {
   const profile = ref<OrcidProfile | null>(null);
   const loading = ref(false);
@@ -36,7 +54,7 @@ export function useOrcidProfile(orcid: Ref<string | null | undefined>) {
       const keywords: string[] = [];
       if (personRes.ok) {
         const person = await personRes.json();
-        const kws: any[] = person?.keywords?.keyword ?? [];
+        const kws: OrcidKeyword[] = person?.keywords?.keyword ?? [];
         for (const kw of kws) {
           const val = kw?.content;
           if (val) keywords.push(val);
@@ -47,16 +65,15 @@ export function useOrcidProfile(orcid: Ref<string | null | undefined>) {
       const works: OrcidWork[] = [];
       if (worksRes.ok) {
         const worksData = await worksRes.json();
-        const groups: any[] = worksData?.group ?? [];
+        const groups: OrcidWorkGroup[] = worksData?.group ?? [];
         const parsed = groups
-          .map((g: any) => {
+          .map((g: OrcidWorkGroup) => {
             const summary = g?.["work-summary"]?.[0];
             const title = summary?.title?.title?.value ?? null;
-            const year = summary?.["publication-date"]?.year?.value
-              ? parseInt(summary["publication-date"].year.value, 10)
-              : null;
+            const yearValue = summary?.["publication-date"]?.year?.value;
+            const year = yearValue ? parseInt(yearValue, 10) : null;
             const doi = summary?.["external-ids"]?.["external-id"]?.find(
-              (e: any) => e["external-id-type"] === "doi",
+              (e: OrcidExternalId) => e["external-id-type"] === "doi",
             )?.["external-id-value"] ?? null;
             const url = doi
               ? `https://doi.org/${doi}`

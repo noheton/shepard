@@ -56,6 +56,13 @@ jobs:
           restore-keys: |
             owasp-nvd-
 
+      - name: Install project JARs into local Maven repo
+        # Required so dependency-check can resolve SNAPSHOT plugin JARs that
+        # aren't yet published to Maven Central (e.g. shepard-plugin-vis-ndt-grid).
+        # Without this step, dependency-check:check fails to download the JAR and
+        # reports a spurious build failure unrelated to any CVE finding.
+        run: mvn -B install -DskipTests -P with-plugins -q
+
       - name: Run dependency-check (fail at CVSS >= 7.0)
         env:
           # NVD recommends an API key for sustainable rate; set NVD_API_KEY in

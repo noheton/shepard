@@ -32,7 +32,14 @@ public class CollectionTest extends BaseTestCase {
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
       // heroImageUrl is a fork addition (task #131); presentational metadata
       // that doesn't define entity equality.
-      .withIgnoredFields("appId", "heroImageUrl")
+      // sceneGraphAppId is a COLL-SCENE-1 fork addition (GAP-6, 2026-06-02);
+      // a presentation-layer link that doesn't define entity equality.
+      // importedFrom is import-provenance metadata (where the Collection was
+      // imported from); it records origin, not identity, so like heroImageUrl
+      // it is excluded from equals.
+      // promptLogMode is a per-Collection AI interaction mode setting; it is
+      // configuration metadata that doesn't define entity identity.
+      .withIgnoredFields("appId", "heroImageUrl", "sceneGraphAppId", "importedFrom", "promptLogMode")
       .verify();
   }
 

@@ -87,6 +87,7 @@ public class InstanceAdminService {
     if (!granted) {
       throw new InvalidRequestException("Failed to grant instance-admin role");
     }
+    stampRoleChangedAt(user, now);
     Log.infof("Granted instance-admin role to '%s' (grantedBy=%s)", username, grantedBy);
     return new InstanceAdminGrantIO(username, "Neo4j", grantedBy, new Date(now));
   }
@@ -101,9 +102,35 @@ public class InstanceAdminService {
     }
     boolean revoked = roleDAO.revokeRole(username, Constants.INSTANCE_ADMIN_ROLE);
     if (revoked) {
+      var user = userDAO.find(username);
+      if (user != null) {
+        stampRoleChangedAt(user, System.currentTimeMillis());
+      }
       Log.infof("Revoked instance-admin role from '%s'", username);
     }
     return revoked;
+  }
+
+  /**
+   * ROLE-GRANT-STALE-SESSION-02 — record the millis-since-epoch of this
+   * mutation on the affected {@code :User} node. {@link
+   * de.dlr.shepard.auth.security.JwtTokenAuthService} consults this on
+   * every OIDC Bearer authentication and rejects tokens whose {@code iat}
+   * predates the stamp. Best-effort; a failure here does not block the
+   * primary role mutation (the audit log + Activity already captured the
+   * intended change).
+   */
+  void stampRoleChangedAt(de.dlr.shepard.auth.users.entities.User user, long whenMillis) {
+    try {
+      user.setRoleChangedAt(new Date(whenMillis));
+      userDAO.createOrUpdate(user);
+    } catch (RuntimeException ex) {
+      Log.warnf(
+        "ROLE-GRANT-STALE-SESSION-02: failed to stamp roleChangedAt for '%s': %s",
+        user.getUsername(),
+        ex.getMessage()
+      );
+    }
   }
 
   /**

@@ -15,12 +15,22 @@ import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue"
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import AdminJupyterPane from "~/components/context/admin/AdminJupyterPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
+import AdminOntologyAlignmentPane from "~/components/context/admin/AdminOntologyAlignmentPane.vue";
+import AdminInstanceRegistryPane from "~/components/context/admin/AdminInstanceRegistryPane.vue";
+import AdminInstanceAdminsPane from "~/components/context/admin/AdminInstanceAdminsPane.vue";
+import AdminUserOrcidPane from "~/components/context/admin/AdminUserOrcidPane.vue";
+import AdminUserGitPane from "~/components/context/admin/AdminUserGitPane.vue";
+import AdminNotificationsPane from "~/components/context/admin/AdminNotificationsPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
+import AdminConfigOverviewPane from "~/components/context/admin/AdminConfigOverviewPane.vue";
+import AdminAiConfigPane from "~/components/context/admin/AdminAiConfigPane.vue";
+import AasAdminConfigPane from "~/components/context/admin/AasAdminConfigPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
+import { useStaleRoleSession } from "~/composables/context/useStaleRoleSession";
 
 useHead({
   title: "Admin | shepard",
@@ -31,6 +41,11 @@ const { data, status } = useAuth();
 const isInstanceAdmin = computed(() =>
   hasInstanceAdminRole(data.value?.accessToken),
 );
+
+// ROLE-GRANT-STALE-SESSION-02 — when the auth-refresh middleware saw a
+// 401 with `error: "role_changed"`, upgrade the `UnauthorizedView` hint
+// from the speculative -03 default to the definitive -02 wording.
+const { reason: staleRoleReason } = useStaleRoleSession();
 
 // UI-2026-05-24-004 — replaces the silent navigateTo("/me") with an
 // explicit Unauthorized view that keeps the URL stable. Only render the
@@ -53,6 +68,14 @@ const landingCards = [
     icon: "mdi-toggle-switch-outline",
     title: "Feature Toggles",
     description: "Flip runtime feature flags without a restart.",
+  },
+  // UI-GAP-3
+  {
+    fragment: AdminFragments.CONFIG_OVERVIEW,
+    icon: "mdi-tune-vertical-variant",
+    title: "Runtime Config Registry",
+    description:
+      "Inspect all registered runtime-configurable features — current JSON shape per feature, with links to bespoke panes.",
   },
   {
     fragment: AdminFragments.PLUGINS,
@@ -190,7 +213,7 @@ const landingCards = [
     fragment: AdminFragments.AI_CONFIG,
     icon: "mdi-robot-outline",
     title: "AI configuration",
-    description: "Per-instance LLM fallback (designed; ships with AI1a).",
+    description: "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, EMBEDDING, …). PATCH body keyed by capability name.",
   },
   {
     fragment: AdminFragments.BACKUP,
@@ -218,15 +241,39 @@ const landingCards = [
     title: "JupyterHub link-out",
     description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
   },
+  // MFFD-AF-TRACK-MAPPING — see aidocs/integrations/118
+  {
+    fragment: "mffd-process-chain",
+    icon: "mdi-graph-outline",
+    title: "MFFD process-chain mapping",
+    description: "Apply a YAML mapping of cross-process Predecessor edges (tapelaying → bridgewelding → NDT → cleats).",
+    path: "/admin/mffd-process-chain",
+  },
+  // MFFD-BATCH-01
+  {
+    fragment: AdminFragments.BATCH_CREATE,
+    icon: "mdi-layers-plus",
+    title: "Bulk DataObject creation",
+    description: "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item results. For MFFD-scale imports.",
+  },
+  // MISSING-aas-ui Slice 3
+  {
+    fragment: AdminFragments.AAS_CONFIG,
+    icon: "mdi-layers-triple-outline",
+    title: "AAS Integration",
+    description: "Configure the IDTA Asset Administration Shell integration: enable/disable, set IDTA Registry URL and API key, set the instance base URL embedded in Shell descriptors.",
+  },
 ];
 </script>
 
 <template>
   <UnauthorizedView
     v-if="showUnauthorized"
-    title="Administration is restricted"
-    message="This section is only available to instance administrators. If you need access, ask an instance admin to grant you the instance-admin role."
+    title="Admin tools"
+    message="These pages are for instance admins. If you need access, ask the operator of this Shepard instance."
     required-role="instance-admin"
+    :stale-session-reason="staleRoleReason ?? undefined"
+    :feature-labels="landingCards.map((c) => c.title)"
   />
   <PaneLayout v-else header="Admin" :menu-entries="AdminMenuEntries">
     <SectionIndexLanding
@@ -237,6 +284,10 @@ const landingCards = [
     />
     <FeatureTogglesPane
       v-if="routeFragment === AdminFragments.FEATURE_TOGGLES"
+    />
+    <!-- UI-GAP-3: config registry overview -->
+    <AdminConfigOverviewPane
+      v-if="routeFragment === AdminFragments.CONFIG_OVERVIEW"
     />
     <PluginsAdminPane v-if="routeFragment === AdminFragments.PLUGINS" />
     <AdminMetricsCard
@@ -282,43 +333,47 @@ const landingCards = [
     <AdminFileMigrationPane
       v-if="routeFragment === AdminFragments.FILE_MIGRATION"
     />
-    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
+    <!-- NTF1: notification transports admin pane (PLACEHOLDER-REPLACE-NTF1) -->
+    <AdminNotificationsPane
       v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
-      slug="notifications-admin"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-MANAGE: instance-admin grant/revoke (PLACEHOLDER-REPLACE-ADM-MANAGE) -->
+    <AdminInstanceAdminsPane
       v-if="routeFragment === AdminFragments.INSTANCE_ADMINS"
-      slug="instance-admins"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-USR-ORCID: admin sets other users' ORCIDs (PLACEHOLDER-REPLACE-ADM-USR-ORCID) -->
+    <AdminUserOrcidPane
       v-if="routeFragment === AdminFragments.USERS_ORCID"
-      slug="users-orcid"
     />
-    <PlaceholderFragmentPane
+    <!-- ADM-USR-GIT: admin issues/rotates other users' git creds (PLACEHOLDER-REPLACE-ADM-USR-GIT) -->
+    <AdminUserGitPane
       v-if="routeFragment === AdminFragments.USERS_GIT"
-      slug="users-git"
     />
-    <PlaceholderFragmentPane
-      v-if="routeFragment === AdminFragments.AI_CONFIG"
-      slug="ai-config"
-    />
+    <!-- PLACEHOLDER-REPLACE-AI-CONFIG: real pane shipped 2026-06-26 -->
+    <AdminAiConfigPane v-if="routeFragment === AdminFragments.AI_CONFIG" />
+    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"
     />
-    <PlaceholderFragmentPane
+    <!-- PLACEHOLDER-REPLACE-TPL3a-lite -->
+    <AdminOntologyAlignmentPane
       v-if="routeFragment === AdminFragments.ONTOLOGY_ALIGNMENT"
-      slug="ontology-alignment"
     />
-    <!-- FE-PROV-INSTANCE-REGISTRY -->
-    <PlaceholderFragmentPane
+    <!-- PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY -->
+    <AdminInstanceRegistryPane
       v-if="routeFragment === AdminFragments.INSTANCE_REGISTRY"
-      slug="instance-registry"
     />
     <!-- J1e: JupyterHub link-out config -->
     <AdminJupyterPane
       v-if="routeFragment === AdminFragments.JUPYTER"
     />
+    <!-- MFFD-BATCH-01: bulk DataObject create (PLACEHOLDER-REPLACE-MFFD-BATCH-01-UI) -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.BATCH_CREATE"
+      slug="batch-create"
+    />
+    <!-- MISSING-aas-ui Slice 3: AAS admin config pane -->
+    <AasAdminConfigPane v-if="routeFragment === AdminFragments.AAS_CONFIG" />
   </PaneLayout>
 </template>

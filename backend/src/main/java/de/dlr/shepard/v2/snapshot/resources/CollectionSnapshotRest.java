@@ -1,13 +1,17 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -23,9 +27,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -51,7 +55,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/snapshots")
 @RequestScoped
-@Tag(name = "Snapshots (v2)")
+@Tag(name = "Snapshots")
 public class CollectionSnapshotRest {
 
   @Inject
@@ -80,6 +84,7 @@ public class CollectionSnapshotRest {
    */
   @POST
   @Operation(
+    operationId = "createCollectionSnapshot",
     summary = "Create a Snapshot of a Collection's current state (V2b).",
     description =
       "Creates a point-in-time `:Snapshot` of the Collection identified by " +
@@ -119,7 +124,8 @@ public class CollectionSnapshotRest {
     @Context SecurityContext sc
   ) {
     if (body == null || body.name() == null || body.name().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("name is required and must be non-blank").build();
+      return problem("/problems/snapshots.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "name is required and must be non-blank");
     }
 
     Response gate = checkAccess(collectionAppId, AccessType.Write, sc);
@@ -130,7 +136,8 @@ public class CollectionSnapshotRest {
     try {
       snapshot = snapshotService.createSnapshot(collectionAppId, body.name(), body.description(), caller);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     return Response.status(Response.Status.CREATED).entity(new SnapshotIO(snapshot)).build();
@@ -146,6 +153,7 @@ public class CollectionSnapshotRest {
    */
   @GET
   @Operation(
+    operationId = "listCollectionSnapshots",
     summary = "List Snapshots of a Collection, newest first (V2b).",
     description =
       "Returns one page of non-deleted `:Snapshot` entities for the " +
@@ -164,10 +172,10 @@ public class CollectionSnapshotRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot page (may be empty).",
+    description = "Snapshot page (may be empty). Envelope: { items[], total, page, pageSize }.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = SnapshotIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -175,15 +183,17 @@ public class CollectionSnapshotRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
     @PathParam("collectionAppId") String collectionAppId,
+    @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("size") @DefaultValue("50") int size,
+    @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
+    @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize,
     @Context SecurityContext sc
   ) {
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(size, 1), 200);
+    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     List<SnapshotIO> rows = snapshotService
       .listByCollection(collectionAppId, safePage, safeSize)
@@ -191,10 +201,17 @@ public class CollectionSnapshotRest {
       .map(SnapshotIO::new)
       .toList();
 
-    return Response.ok(rows).build();
+    long total = snapshotService.countByCollection(collectionAppId);
+
+    return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize)).build();
   }
 
-  // ── private helper ────────────────────────────────────────────────────────
+  // ── private helpers ───────────────────────────────────────────────────────
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   /**
    * Returns {@code null} when access is allowed; otherwise a short-circuit
@@ -202,17 +219,20 @@ public class CollectionSnapshotRest {
    */
   private Response checkAccess(String collectionAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem("/problems/snapshots.unauthorized", "Unauthorized",
+        Response.Status.UNAUTHORIZED, "Authentication required.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem("/problems/snapshots.forbidden", "Forbidden", Response.Status.FORBIDDEN,
+          "Caller lacks permission on the Collection.");
     }
     return null;
   }

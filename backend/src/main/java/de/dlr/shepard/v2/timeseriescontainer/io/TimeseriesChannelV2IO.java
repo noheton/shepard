@@ -30,14 +30,22 @@ public record TimeseriesChannelV2IO(
 
   /**
    * The legacy numeric id of the row. Kept for clients that still
-   * deduplicate or join against {@code TimeseriesIO.id}; will be deprecated
-   * once {@code shepardId} adoption is complete.
+   * deduplicate or join against {@code TimeseriesIO.id}.
+   *
+   * <p>DEPRECATED (APISIMP-TSCHANNEL-INT-ID-DEPRECATE): use {@code shepardId} instead.
    */
-  @Schema(description = "Legacy numeric channel id (Postgres serial).", required = true)
+  @Schema(deprecated = true, description = "DEPRECATED: legacy numeric channel id (Postgres serial). Use shepardId instead.", required = true)
   int id,
 
-  /** Owning container id (Postgres FK). */
-  @Schema(required = true)
+  /**
+   * Owning container id (Postgres serial FK).
+   *
+   * <p>DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK on the
+   * v2 wire violates the "no numeric internal IDs" contract. Use {@code containerAppId}
+   * once available — requires a TS-IDb/c Postgres migration adding
+   * {@code container_app_id UUID} to the {@code timeseries} table.
+   */
+  @Schema(description = "DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK exposed on wire. Use containerAppId once available — requires TS-IDb/c migration.", required = true, deprecated = true)
   long containerId,
 
   @Schema(required = true, example = "turbopump_vibration")

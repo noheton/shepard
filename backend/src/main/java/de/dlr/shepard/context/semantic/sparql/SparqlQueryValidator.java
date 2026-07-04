@@ -93,6 +93,8 @@ public final class SparqlQueryValidator {
    * return the first uppercase keyword token.
    */
   static String extractFirstKeyword(String query) {
+    // Null/blank queries have no keyword.
+    if (query == null) return null;
     // Split on newlines, skip blank lines, comment lines (#...) and
     // PREFIX / BASE declarations.
     String[] lines = query.split("\\r?\\n");

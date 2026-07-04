@@ -11,7 +11,9 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
   it("ships the documented count of placeholders", () => {
     // findings doc commits to a specific count; if this changes the doc
     // must change too (forces same-PR coupling).
-    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(18); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
+    // 2026-05-31 PLACEHOLDER-REPLACE-TPL3a-lite + PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY: -2
+    // 2026-06-27 MFFD-BATCH-01 batch-create admin placeholder: +1
+    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(17);
     expect(PLACEHOLDER_ENTRIES).toHaveLength(EXPECTED_PLACEHOLDER_COUNT);
   });
 
@@ -45,8 +47,8 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
 
   it("designed-not-shipped entries carry the correct backend status", () => {
     const designed = PLACEHOLDER_ENTRIES.filter((e) => e.backend === "designed");
-    // AI1a admin + profile + PG-COLLAPSE-002 backup
-    expect(designed.length).toBeGreaterThanOrEqual(3);
+    // ai-settings (profile) + PG-COLLAPSE-002 backup (ai-config admin moved to partial)
+    expect(designed.length).toBeGreaterThanOrEqual(2);
     for (const e of designed) {
       expect(e.endpoint, `designed entry ${e.slug} should not have endpoint`).toBeNull();
     }
@@ -56,7 +58,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const ai = findPlaceholder("ai-config");
     expect(ai).toBeDefined();
     expect(ai?.surface).toBe("admin");
-    expect(ai?.backend).toBe("designed");
+    expect(ai?.backend).toBe("shipped"); // real pane shipped 2026-06-26
   });
 
   it("findPlaceholder returns undefined for unknown slugs", () => {
@@ -67,7 +69,9 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const admin = placeholdersBySurface("admin");
     const profile = placeholdersBySurface("profile");
     const route = placeholdersBySurface("route");
-    expect(admin.length).toBe(10);
+    // 2026-05-31: ontology-alignment + instance-registry promoted to real panes
+    // 2026-06-27 MFFD-BATCH-01: batch-create admin placeholder: +1
+    expect(admin.length).toBe(9);
     expect(profile.length).toBe(1);
     expect(route.length).toBe(7); // TS-SEMANTIC-REST: +1 ts-channel-annotations (2026-05-27)
     expect(admin.length + profile.length + route.length).toBe(

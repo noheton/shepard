@@ -1,83 +1,136 @@
 <script lang="ts" setup>
 /**
- * UI3a — VideoPlayer component.
+ * UI3a + MFFD-VIDEOREF-SCALE-1 — VideoPlayer component.
  *
- * Renders a native <video> element against the provided `src` URL.
- * Because the download endpoint requires a Bearer token and <video src>
- * cannot send custom headers, this component fetches the video as a blob
- * with the supplied accessToken and uses a blob: URL for the video element.
- * The blob URL is revoked on unmount to avoid memory leaks.
+ * Plays a video by handing the URL directly to a native HTML5 `<video>`
+ * element so the browser can do its own Range requests and scrub
+ * natively. This is the structural fix for the previous blob-fetch
+ * approach that downloaded the entire video before playing (fatal on
+ * multi-GB MFFD MP4s — froze the tab on a 6 GB welding video).
  *
- * VID1a note: HLS segmented delivery is deferred to VID1b. When VID1b ships
- * the m3u8 endpoint, upgrade to hls.js and drop the blob-URL approach.
+ * Auth: the browser cannot inject a custom `Authorization` header on
+ * `<video src>`, so the JWT travels as `?access_token=…` per
+ * MFFD-VIDEOREF-SCALE-1 — `JWTFilter` reads the query param as a
+ * fallback when no Authorization header is present (RFC 6750 §2.3).
+ *
+ * MFFD-MULTIPLAYER-1: optional two-way `currentTime` (seconds) binding +
+ * `durationLoaded` emit, used by the synchronised multi-payload player to
+ * drive playback from a shared cursor. Both are inert when callers don't
+ * use them — the native controls keep working exactly as before.
  *
  * Props:
- *   src         — authenticated download URL (required)
- *   accessToken — Bearer token used to fetch the video blob (required for auth)
- *   poster      — optional poster image URL
+ *   src           — authenticated download URL (required)
+ *   accessToken   — Bearer token; appended as `?access_token=` when given (AAE1)
+ *   poster        — optional poster image URL
+ *   currentTime   — optional seconds; when changed externally, the player seeks (AAE2)
+ *   showControls  — show native controls (default true)
+ *   autoplay      — autoplay (default false)
+ *   muted         — mute audio (default false)
  */
+import { withAccessTokenQueryParam } from "~/utils/videoUrl";
 
-const props = defineProps<{
-  src: string;
-  accessToken?: string | null;
-  poster?: string | null;
+const props = withDefaults(
+  defineProps<{
+    src: string;
+    accessToken?: string | null;
+    poster?: string | null;
+    currentTime?: number;
+    showControls?: boolean;
+    autoplay?: boolean;
+    muted?: boolean;
+  }>(),
+  {
+    accessToken: null,
+    poster: null,
+    currentTime: undefined,
+    showControls: true,
+    autoplay: false,
+    muted: false,
+  },
+);
+
+const emit = defineEmits<{
+  (e: "update:currentTime" | "durationLoaded", value: number): void;
 }>();
 
-const blobSrc = ref<string | null>(null);
-const loadError = ref<string | null>(null);
-const isLoading = ref(true);
+const playerError = ref<string | null>(null);
+const videoElement = ref<HTMLVideoElement | null>(null);
 
-onMounted(async () => {
-  if (!props.accessToken) {
-    blobSrc.value = props.src;
-    isLoading.value = false;
-    return;
-  }
-  try {
-    const response = await fetch(props.src, {
-      headers: { Authorization: `Bearer ${props.accessToken}` },
-    });
-    if (!response.ok) {
-      loadError.value = `HTTP ${response.status}`;
-      return;
+/**
+ * MFFD-MULTIPLAYER-1: when a caller writes a new `currentTime` prop value,
+ * seek the underlying element. We compare against the element's own time so
+ * the two-way-binding update emit we send back doesn't trigger a re-seek.
+ */
+watch(
+  () => props.currentTime,
+  t => {
+    const el = videoElement.value;
+    if (el == null || t == null) return;
+    if (Math.abs(el.currentTime - t) > 0.05) {
+      try {
+        el.currentTime = t;
+      } catch {
+        // Some browsers throw if the video isn't fully loaded; ignore — the
+        // next watch tick will retry once the user buffer fills.
+      }
     }
-    const blob = await response.blob();
-    blobSrc.value = URL.createObjectURL(blob);
-  } catch (err) {
-    loadError.value = err instanceof Error ? err.message : "Network error";
-  } finally {
-    isLoading.value = false;
-  }
-});
+  },
+);
 
-onUnmounted(() => {
-  if (blobSrc.value?.startsWith("blob:")) {
-    URL.revokeObjectURL(blobSrc.value);
-  }
-});
+function onTimeUpdate(): void {
+  const el = videoElement.value;
+  if (!el) return;
+  emit("update:currentTime", el.currentTime);
+}
+
+function onLoadedMetadata(): void {
+  const el = videoElement.value;
+  if (!el || !Number.isFinite(el.duration)) return;
+  emit("durationLoaded", el.duration);
+}
+
+const playableSrc = computed(() =>
+  withAccessTokenQueryParam(props.src, props.accessToken),
+);
+
+function onError(e: Event) {
+  const t = e.target as HTMLVideoElement | null;
+  const code = t?.error?.code;
+  const map: Record<number, string> = {
+    1: "Playback aborted by the user.",
+    2: "Network error while loading the video.",
+    3: "Video decoding error (codec not supported by the browser).",
+    4: "Video format not supported.",
+  };
+  playerError.value =
+    (code != null ? map[code] : undefined) ?? "Video could not be played.";
+}
 </script>
 
 <template>
   <div class="video-player-wrapper">
-    <div v-if="isLoading" class="video-loading">
-      <v-progress-circular indeterminate color="white" size="32" aria-label="Loading video" />
-    </div>
     <v-alert
-      v-else-if="loadError"
+      v-if="playerError"
       type="error"
       variant="tonal"
       density="compact"
       class="ma-2"
     >
-      Failed to load video: {{ loadError }}
+      {{ playerError }}
     </v-alert>
     <video
-      v-else-if="blobSrc"
-      controls
-      preload="auto"
-      :src="blobSrc"
+      v-else
+      ref="videoElement"
+      :controls="showControls"
+      :autoplay="autoplay"
+      :muted="muted"
+      preload="metadata"
+      :src="playableSrc"
       :poster="props.poster ?? undefined"
       class="video-player"
+      @timeupdate="onTimeUpdate"
+      @loadedmetadata="onLoadedMetadata"
+      @error="onError"
     >
       Your browser does not support video playback.
     </video>
@@ -91,13 +144,6 @@ onUnmounted(() => {
   border-radius: 4px;
   overflow: hidden;
   min-height: 60px;
-}
-
-.video-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 120px;
 }
 
 .video-player {

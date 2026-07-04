@@ -15,6 +15,7 @@ import de.dlr.shepard.auth.users.daos.MirroredUserDAO;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -54,6 +55,7 @@ class Prov1jAiAgentHeaderTest {
   @Mock MirroredUserDAO mirroredUserDAO;
   @Mock UserDAO userDAO;
   @Mock MirroredUserEnrichmentCache enrichmentCache;
+  @Mock ProvenanceConfigService provenanceConfigService;
 
   MultivaluedMap<String, Object> responseHeaders;
 
@@ -64,7 +66,7 @@ class Prov1jAiAgentHeaderTest {
     MockitoAnnotations.openMocks(this);
     filter = new ProvenanceCaptureFilter();
     filter.provenance = provenance;
-    filter.captureReads = false;
+    filter.provenanceConfigService = provenanceConfigService;
     filter.mirroredUserDAO = mirroredUserDAO;
     filter.userDAO = userDAO;
     filter.enrichmentCache = enrichmentCache;
@@ -72,7 +74,8 @@ class Prov1jAiAgentHeaderTest {
     resolver.lookup = entityAppIdLookup;
     filter.targetEntityResolver = resolver;
 
-    when(provenance.isEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveEnabled()).thenReturn(true);
+    when(provenanceConfigService.effectiveCaptureReads()).thenReturn(false);
     when(request.getSecurityContext()).thenReturn(securityContext);
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn("alice");
