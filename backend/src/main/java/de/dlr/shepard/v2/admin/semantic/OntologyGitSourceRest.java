@@ -110,14 +110,12 @@ public class OntologyGitSourceRest {
     Response denied = guardAdmin(securityContext);
     if (denied != null) return denied;
 
-    List<OntologyGitSource> sources = gitSourceDAO.listAll();
-    List<OntologyGitSourceIO> all = new ArrayList<>(sources.size());
-    for (OntologyGitSource s : sources) all.add(OntologyGitSourceIO.from(s));
-
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    // APISIMP-GIT-SOURCE-IN-MEMORY-PAGING: count + paged fetch pushed to DB
+    long total = gitSourceDAO.count();
+    List<OntologyGitSource> sources = gitSourceDAO.listPaged((long) page * pageSize, pageSize);
+    List<OntologyGitSourceIO> items = new ArrayList<>(sources.size());
+    for (OntologyGitSource s : sources) items.add(OntologyGitSourceIO.from(s));
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
