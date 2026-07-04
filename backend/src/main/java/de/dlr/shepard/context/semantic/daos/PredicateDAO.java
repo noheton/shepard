@@ -71,6 +71,28 @@ public class PredicateDAO extends GenericDAO<Predicate> {
     return out;
   }
 
+  public List<Predicate> listByVocabularyPaged(String vocabularyAppId, long skip, int limit) {
+    if (vocabularyAppId == null || vocabularyAppId.isBlank()) return List.of();
+    String query =
+      "MATCH (p:Predicate {vocabularyAppId: $vid}) " +
+      "RETURN p ORDER BY p.label ASC SKIP $skip LIMIT $limit";
+    List<Predicate> out = new ArrayList<>();
+    for (Predicate p : findByQuery(query, Map.of("vid", vocabularyAppId, "skip", skip, "limit", limit))) {
+      out.add(p);
+    }
+    return out;
+  }
+
+  public long countByVocabulary(String vocabularyAppId) {
+    if (vocabularyAppId == null || vocabularyAppId.isBlank()) return 0L;
+    String query = "MATCH (p:Predicate {vocabularyAppId: $vid}) RETURN count(p) AS c";
+    var result = session.query(query, Map.of("vid", vocabularyAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
   /**
    * All {@code required = true} predicates — the baseline for
    * {@code DataQualityRequirement ANNOTATION_REQUIRED} evaluation.

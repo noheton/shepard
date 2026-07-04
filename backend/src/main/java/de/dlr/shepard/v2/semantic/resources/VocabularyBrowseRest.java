@@ -65,6 +65,8 @@ public class VocabularyBrowseRest {
 
   static final String PROBLEM_TYPE_NOT_FOUND = "/problems/semantic.vocabulary.not-found";
 
+  private static final int MAX_PREDICATES_PER_VOCAB = 2000;
+
   @Inject
   VocabularyDAO vocabularyDAO;
 
@@ -148,7 +150,7 @@ public class VocabularyBrowseRest {
     if (vocab == null) {
       return notFound(vocabId);
     }
-    List<Predicate> rows = predicateDAO.listByVocabulary(vocabId);
+    List<Predicate> rows = predicateDAO.listByVocabularyPaged(vocabId, 0, MAX_PREDICATES_PER_VOCAB);
     List<PredicateIO> all = rows.stream().map(PredicateIO::from).toList();
     int total = all.size();
     int from = (int) Math.min((long) page * pageSize, total);

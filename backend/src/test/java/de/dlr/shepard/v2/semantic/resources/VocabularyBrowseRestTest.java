@@ -108,7 +108,7 @@ class VocabularyBrowseRestTest {
     Response response = rest.listPredicatesForVocabulary("missing-vocab-id", 0, 50);
 
     assertEquals(404, response.getStatus());
-    verify(predicateDAO, never()).listByVocabulary("missing-vocab-id");
+    verify(predicateDAO, never()).listByVocabularyPaged("missing-vocab-id", 0, 2000);
   }
 
   @Test
@@ -117,7 +117,7 @@ class VocabularyBrowseRestTest {
 
     assertEquals(404, response.getStatus());
     verify(vocabularyDAO, never()).findByAppId("   ");
-    verify(predicateDAO, never()).listByVocabulary("   ");
+    verify(predicateDAO, never()).listByVocabularyPaged("   ", 0, 2000);
   }
 
   @Test
@@ -125,14 +125,14 @@ class VocabularyBrowseRestTest {
     Response response = rest.listPredicatesForVocabulary(null, 0, 50);
 
     assertEquals(404, response.getStatus());
-    verify(predicateDAO, never()).listByVocabulary(null);
+    verify(predicateDAO, never()).listByVocabularyPaged(null, 0, 2000);
   }
 
   @Test
   void listPredicatesReturns200WithEmptyListWhenVocabularyHasNoPredicates() {
     String vid = "v-empty";
     when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://example/", "Empty", true));
-    when(predicateDAO.listByVocabulary(vid)).thenReturn(List.of());
+    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(List.of());
 
     Response response = rest.listPredicatesForVocabulary(vid, 0, 50);
 
@@ -148,7 +148,7 @@ class VocabularyBrowseRestTest {
   void listPredicatesReturns200WithPredicatesWhenPresent() {
     String vid = "v-dcterms";
     when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://purl.org/dc/terms/", "Dublin Core Terms", true));
-    when(predicateDAO.listByVocabulary(vid)).thenReturn(List.of(
+    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(List.of(
       predicate("p-creator", "http://purl.org/dc/terms/creator", "Creator", vid, true),
       predicate("p-title",   "http://purl.org/dc/terms/title",   "Title",   vid, false)
     ));
@@ -183,7 +183,7 @@ class VocabularyBrowseRestTest {
     for (int i = 0; i < 5; i++) {
       allPreds.add(predicate("p-" + i, "http://example/p" + i, "P" + i, vid, false));
     }
-    when(predicateDAO.listByVocabulary(vid)).thenReturn(allPreds);
+    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(allPreds);
 
     Response page0 = rest.listPredicatesForVocabulary(vid, 0, 2);
     assertEquals(200, page0.getStatus());
