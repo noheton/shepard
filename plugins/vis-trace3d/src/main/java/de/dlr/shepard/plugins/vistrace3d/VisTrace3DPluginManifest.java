@@ -2,9 +2,9 @@ package de.dlr.shepard.plugins.vistrace3d;
 
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
-import io.quarkus.logging.Log;
 import java.net.URI;
 import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * VIS-T1 phase 1 — Trace3D VIEW_RECIPE plugin manifest.
@@ -56,6 +56,8 @@ import java.util.Optional;
  * </ul>
  */
 public final class VisTrace3DPluginManifest implements PluginManifest {
+
+  private static final Logger LOG = Logger.getLogger(VisTrace3DPluginManifest.class.getName());
 
   private static final String ID = "vis-trace3d";
   private static final String VERSION = "1.0.0-SNAPSHOT";
@@ -117,7 +119,7 @@ public final class VisTrace3DPluginManifest implements PluginManifest {
 
   @Override
   public void onRegister(PluginContext ctx) {
-    Log.infof(
+    LOG.infof(
       "VIS-T1: vis-trace3d plugin v%s active via PluginManifest SPI (id=%s, compat=%s, shape=%s)",
       VERSION,
       ID,
@@ -128,6 +130,6 @@ public final class VisTrace3DPluginManifest implements PluginManifest {
 
   @Override
   public void onUnregister(PluginContext ctx) {
-    Log.debugf("VIS-T1: vis-trace3d plugin onUnregister invoked");
+    LOG.debugf("VIS-T1: vis-trace3d plugin onUnregister invoked");
   }
 }

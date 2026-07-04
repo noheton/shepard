@@ -194,10 +194,11 @@ check "GET /v2/users/me/preferences (no auth → 401)" \
       "$BACKEND_URL/v2/users/me/preferences" \
       "401,403"
 
-# /v2/timeseries-containers/{id}/linked-data-objects — CC1b
+# /v2/containers/{id}/linked-data-objects — CC1b (APISIMP-CONT-LDO-UNIFY: collapsed
+# off the per-kind /v2/timeseries-containers path onto the unified /v2/containers).
 # Need any container id; the ID doesn't have to exist (the auth filter runs first).
-check "GET /v2/timeseries-containers/1/linked-data-objects (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/linked-data-objects" \
+check "GET /v2/containers/1/linked-data-objects (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/linked-data-objects" \
       "401,403"
 
 # /v2/admin/features — A3b
@@ -205,26 +206,19 @@ check "GET /v2/admin/features (no auth → 401)" \
       "$BACKEND_URL/v2/admin/features" \
       "401,403"
 
-# DI1 — safe delete endpoints exist (DELETE without auth → 401, not 404)
-check "DELETE /v2/timeseries-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1" \
-      "401,403" "" DELETE
-check "DELETE /v2/file-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/file-containers/1" \
-      "401,403" "" DELETE
-check "DELETE /v2/structured-data-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/structured-data-containers/1" \
+# DI1 — safe delete endpoint exists (DELETE without auth → 401, not 404).
+# V2CONV container unification dissolved the per-kind DELETE routes
+# (/v2/{timeseries,file,structured-data}-containers/{id}) into the polymorphic
+# DELETE /v2/containers/{appId} (ContainersV2Rest). The container self-describes
+# its kind, so one probe covers all former per-kind routes.
+check "DELETE /v2/containers/1 (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1" \
       "401,403" "" DELETE
 
-# SA-CONT — container-level semantic annotation endpoints exist
-check "GET /v2/timeseries-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/annotations" \
-      "401,403"
-check "GET /v2/file-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/file-containers/1/annotations" \
-      "401,403"
-check "GET /v2/structured-data-containers/1/annotations (no auth → 401)" \
-      "$BACKEND_URL/v2/structured-data-containers/1/annotations" \
+# SA-CONT (APISIMP-SA-CONT-DELETE) — the per-kind container-annotation
+# resources were dissolved into the polymorphic /v2/annotations surface.
+check "GET /v2/annotations (no auth → 401)" \
+      "$BACKEND_URL/v2/annotations" \
       "401,403"
 
 # INST1 — public instance identity (ROR-based)
@@ -233,11 +227,12 @@ check "GET /v2/instance/identity (no auth → 401)" \
       "401,403"
 
 # TS_CHART_VIEW1 — per-container persisted chart-overview selection
-check "GET /v2/timeseries-containers/1/chart-view (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+# (APISIMP-CONT-NS-COLLAPSE-3: collapsed onto the unified /v2/containers path).
+check "GET /v2/containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/chart-view" \
       "401,403"
-check "PATCH /v2/timeseries-containers/1/chart-view (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+check "PATCH /v2/containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1/chart-view" \
       "401,403" "" PATCH
 
 # WATCH1 — Collection -> Container watch links

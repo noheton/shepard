@@ -12,6 +12,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -227,21 +229,42 @@ public class S3FileStorage implements FileStorage {
       reqBuilder.contentType(request.contentType());
     }
 
-    RequestBody body;
+    // Spool the incoming stream to a temp file and upload via
+    // RequestBody.fromFile. This is the AWS-canonical retryable upload shape:
+    // fromFile re-opens the file on every SDK retry attempt, so a transient
+    // error (signature recompute, 100-continue, network blip) never trips the
+    // "Resetting to invalid mark" failure that RequestBody.fromInputStream
+    // raises once more than the SDK's default 128 KiB mark read-limit has been
+    // consumed before a reset. That failure surfaced as repeated HTTP 500s on
+    // large `.svdx` content uploads during the MFFD stringer ingest
+    // (2026-06-25), wedging the importer in an infinite retry loop. fromFile
+    // also lets the SDK stream the bytes without buffering the whole payload
+    // in memory, so it scales to large objects.
+    Path tmp = null;
     try {
-      if (request.sizeBytes() != null) {
-        body = RequestBody.fromInputStream(request.bytes(), request.sizeBytes());
-      } else {
-        body = RequestBody.fromBytes(request.bytes().readAllBytes());
+      tmp = Files.createTempFile("shepard-s3-put-", ".bin");
+      try {
+        Files.copy(request.bytes(), tmp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+      } finally {
+        try {
+          request.bytes().close();
+        } catch (IOException ignored) {
+          // best-effort close of the consumed source stream
+        }
       }
+      s3.putObject(reqBuilder.build(), RequestBody.fromFile(tmp));
     } catch (IOException e) {
-      throw new StorageException("S3 put failed reading input stream: " + e.getMessage(), e);
-    }
-
-    try {
-      s3.putObject(reqBuilder.build(), body);
+      throw new StorageException("S3 put failed spooling input stream: " + e.getMessage(), e);
     } catch (S3Exception e) {
       throw new StorageException("S3 put failed for key '" + key + "': " + e.awsErrorDetails().errorMessage(), e);
+    } finally {
+      if (tmp != null) {
+        try {
+          Files.deleteIfExists(tmp);
+        } catch (IOException cleanup) {
+          Log.warnf("S3FileStorage.put: could not delete temp file %s — %s", tmp, cleanup.getMessage());
+        }
+      }
     }
 
     return new StorageLocator(ID, key);

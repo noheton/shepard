@@ -1,7 +1,7 @@
 import type { ReferencedContainerMeta } from "./dataReference";
 
 export type DataTableElement = {
-  type: "TimeSeries" | "Structured Data" | "File Bundle" | "File" | "Notebook" | "Git" | "Video";
+  type: "TimeSeries" | "Structured Data" | "File Bundle" | "File" | "Notebook" | "Git" | "Video" | "Spatial";
   name: string;
   meta: {
     /** Numeric id for legacy-v1 annotation path; undefined for appId-only kinds (File/Notebook/Git/Video). */
@@ -28,6 +28,10 @@ export type DataTableElement = {
     filename?: string;
     /** FR1b singleton + Notebook: file size in bytes (nullable for pre-FB1a uploads). */
     fileSize?: number | null;
+    /** Spatial (SPATIAL-UNIFY): appId of the SpatialDataContainer behind the reference (viewer target). */
+    spatialContainerAppId?: string | null;
+    /** Spatial (SPATIAL-UNIFY): promotion lifecycle marker — "pending" while the importer streams points. */
+    promotionState?: string | null;
   } & Partial<ReferencedContainerMeta>;
   created: {
     createdBy: string;

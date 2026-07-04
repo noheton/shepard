@@ -13,7 +13,7 @@
 import { useContainerReferencedByCollections } from "~/composables/containers/useContainerReferencedByCollections";
 
 const props = defineProps<{
-  containerId: number;
+  containerId: string | number;
   containerType: string;
 }>();
 
@@ -22,7 +22,7 @@ const props = defineProps<{
 // network request. `refs` is null for unsupported types, [] for true
 // orphans, or the list of referencing collection IDs.
 const emit = defineEmits<{
-  (e: "refs-resolved", payload: { id: number; refs: number[] | null }): void;
+  (e: "refs-resolved", payload: { id: string | number; refs: number[] | null }): void;
 }>();
 
 const { collectionIds, isLoading } = useContainerReferencedByCollections(

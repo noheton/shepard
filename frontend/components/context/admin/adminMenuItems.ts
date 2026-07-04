@@ -31,6 +31,12 @@ export enum AdminFragments {
   INSTANCE_REGISTRY = "instance-registry",
   // J1e
   JUPYTER = "jupyter",
+  // UI-GAP-3
+  CONFIG_OVERVIEW = "config-overview",
+  // MFFD-BATCH-01
+  BATCH_CREATE = "batch-create",
+  // MISSING-aas-ui Slice 3
+  AAS_CONFIG = "aas-config",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -38,6 +44,12 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Feature Toggles",
     fragment: AdminFragments.FEATURE_TOGGLES,
     icon: "mdi-toggle-switch-outline",
+  },
+  // UI-GAP-3
+  {
+    name: "Runtime Config Registry",
+    fragment: AdminFragments.CONFIG_OVERVIEW,
+    icon: "mdi-tune-vertical-variant",
   },
   {
     name: "Plugins",
@@ -167,5 +179,17 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "JupyterHub link-out",
     fragment: AdminFragments.JUPYTER,
     icon: "mdi-jupyter",
+  },
+  // MFFD-BATCH-01
+  {
+    name: "Bulk DataObject creation",
+    fragment: AdminFragments.BATCH_CREATE,
+    icon: "mdi-layers-plus",
+  },
+  // MISSING-aas-ui Slice 3
+  {
+    name: "AAS Integration",
+    fragment: AdminFragments.AAS_CONFIG,
+    icon: "mdi-layers-triple-outline",
   },
 ];

@@ -39,6 +39,7 @@ Operational runbooks for instance admins. Every runbook follows this contract:
 | 12 | [Postgres collapse + restart](12-postgres-collapse-restart.md) | nuclide | Detect collapse → log capture → in-place restart → volume-preserving restart → wipe + restore |
 | 13 | [Full instance reset (preserving users)](13-full-instance-reset.md) | nuclide | Wipe all operational data, preserve Keycloak users + admin config, re-seed LUMEN + MFFD synthetic showcases, verify acceptance gates |
 | 14 | [Role grants + session refresh](14-role-grants.md) | nuclide | Grant `instance-admin` (REST or Cypher); explain why the user must sign out + back in for the new JWT to carry the role |
+| — | [Rollback from snapshot](rollback-from-snapshot.md) | nuclide + operator | Restore affected scope from a V2 Snapshot; cross-substrate order (Neo4j → TimescaleDB → Mongo → Garage) |
 
 ---
 
@@ -94,6 +95,9 @@ Postgres container exited / crash-looping / health check DOWN
 
 Postgres data needs restoring from a pg_dump backup
   → 11-postgres-restore.md (choose scenario: corrupt schema / table drop / full-instance loss / point-in-time)
+
+Data was accidentally mutated / deleted and a Snapshot was taken before the incident
+  → rollback-from-snapshot.md (scope the restore to the snapshot manifest; follow cross-substrate order)
 ```
 
 ---

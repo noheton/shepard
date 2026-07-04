@@ -21,13 +21,9 @@
 import ContainerTypeSelect from "./ContainerTypeSelect.vue";
 import { useSearchContainers } from "./useSearchContainers";
 import type { BasicContainer, ContainerType } from "@dlr-shepard/backend-client";
-import {
-  FileContainerApi,
-  TimeseriesContainerApi,
-  StructuredDataContainerApi,
-  SpatialDataContainerApi,
-} from "@dlr-shepard/backend-client";
+import { SpatialDataContainerApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { safeDeleteContainer } from "~/composables/container/safeDeleteContainer";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { describeContainerType } from "~/utils/containerTypeRegistry";
 import { handleContainerUpdate } from "~/utils/resourceUpdateBus";
@@ -175,21 +171,26 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
   // Use the per-type API; SPATIALDATA + BASIC + HDF5/VIDEO are
   // excluded above by the orphan-check rule, but be defensive here too.
   switch (container.type as ContainerType) {
-    case "FILE":
-      await useShepardApi(FileContainerApi).value.deleteFileContainer({
-        fileContainerId: container.id,
-      });
+    case "FILE": {
+      // V2-SWEEP-003: v2 safe-delete (replaces v1 FileContainerApi.deleteFileContainer)
+      const r = await safeDeleteContainer("file", container.id);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
-    case "TIMESERIES":
-      await useShepardApi(TimeseriesContainerApi).value.deleteTimeseriesContainer({
-        timeseriesContainerId: container.id,
-      });
+    }
+    case "TIMESERIES": {
+      // APISIMP-TSCONT-APPID-KEY: DELETE is keyed on containerAppId; appId is
+      // carried by the wire even though BasicContainer's TS type omits it.
+      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
+      const r = await safeDeleteContainer("timeseries", containerAppId);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
-    case "STRUCTUREDDATA":
-      await useShepardApi(StructuredDataContainerApi).value.deleteStructuredDataContainer({
-        structuredDataContainerId: container.id,
-      });
+    }
+    case "STRUCTUREDDATA": {
+      // V2-SWEEP-003: v2 safe-delete (replaces v1 StructuredDataContainerApi.deleteStructuredDataContainer)
+      const r = await safeDeleteContainer("structured-data", container.id);
+      if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
+    }
     case "SPATIALDATA":
       await useShepardApi(SpatialDataContainerApi).value.deleteSpatialDataContainer({
         spatialDataContainerId: container.id,
@@ -403,6 +404,14 @@ const isSearchEmpty = computed(
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
                   <v-list density="compact">
+                    <!-- V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16):
+                         container detail pages fetch via the v1-generated
+                         `getXContainer({ containerId })`, whose path resolves
+                         ONLY the numeric Neo4j id (the frozen v1 container GET
+                         404s on an appId). Routing on the container appId here
+                         would break the destination page until the container
+                         accessors migrate to a v2 appId-keyed GET. Keep numeric
+                         until then. -->
                     <v-list-item
                       v-for="c in items"
                       :key="c.id"

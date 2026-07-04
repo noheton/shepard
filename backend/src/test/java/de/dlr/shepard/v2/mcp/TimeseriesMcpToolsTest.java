@@ -11,6 +11,11 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
+import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticRepository;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -39,6 +44,8 @@ class TimeseriesMcpToolsTest {
   @Mock TsChannelResolver tsChannelResolver;
   @Mock EntityIdResolver entityIdResolver;
   @Mock McpContextBridge contextBridge;
+  @Mock AnnotatableTimeseriesService annotatableTimeseriesService;
+  @Mock SemanticRepositoryDAO semanticRepositoryDAO;
 
   TimeseriesMcpTools tools;
   McpToolSupport support;
@@ -52,6 +59,8 @@ class TimeseriesMcpToolsTest {
     tools = new TimeseriesMcpTools();
     tools.timeseriesService = timeseriesService;
     tools.tsChannelResolver = tsChannelResolver;
+    tools.annotatableTimeseriesService = annotatableTimeseriesService;
+    tools.semanticRepositoryDAO = semanticRepositoryDAO;
     tools.contextBridge = contextBridge;
     tools.support = support;
     // Default: resolver returns a TimeseriesContainer-labeled node. Tests that
@@ -368,6 +377,67 @@ class TimeseriesMcpToolsTest {
     var root = new ObjectMapper().readTree(json);
     assertEquals(2, root.get("requested").asInt());
     assertEquals(1, root.get("resolved").asInt());
+  }
+
+  // ── create_channel_annotation (APISIMP-MCP-VOCAB-NUMERIC-ARGS) ──────────
+
+  static final String CHANNEL_SHEPARD_ID  = "01930a2b-fe4c-7e3c-9f1d-000000000010";
+  static final String PROP_VOCAB_APP_ID   = "01930a2b-fe4c-7e3c-9f1d-000000000020";
+  static final String VAL_VOCAB_APP_ID    = "01930a2b-fe4c-7e3c-9f1d-000000000021";
+
+  @Test
+  void createChannelAnnotation_happyPath_resolvesAppIdAndCreates() throws Exception {
+    var propRepo = new SemanticRepository(42L);
+    var valRepo  = new SemanticRepository(99L);
+    when(semanticRepositoryDAO.findByAppId(PROP_VOCAB_APP_ID)).thenReturn(propRepo);
+    when(semanticRepositoryDAO.findByAppId(VAL_VOCAB_APP_ID)).thenReturn(valRepo);
+
+    var ann = new SemanticAnnotation();
+    ann.setPropertyIRI("http://example.org/prop");
+    ann.setValueIRI("http://example.org/val");
+    when(annotatableTimeseriesService.createAnnotationForChannel(
+            eq(CONTAINER_OGM_ID), eq(CHANNEL_SHEPARD_ID), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(ann);
+
+    String json = tools.createChannelAnnotation(
+        CONTAINER_APP_ID, CHANNEL_SHEPARD_ID,
+        "http://example.org/prop", PROP_VOCAB_APP_ID,
+        "http://example.org/val",  VAL_VOCAB_APP_ID);
+
+    assertNotNull(json);
+    var root = new ObjectMapper().readTree(json);
+    assertEquals("http://example.org/prop", root.get("propertyIRI").asText());
+    assertEquals("http://example.org/val",  root.get("valueIRI").asText());
+  }
+
+  @Test
+  void createChannelAnnotation_unknownPropVocabAppId_throwsInvalidParams() {
+    when(semanticRepositoryDAO.findByAppId(PROP_VOCAB_APP_ID)).thenReturn(null);
+
+    McpException ex = assertThrows(McpException.class, () ->
+        tools.createChannelAnnotation(
+            CONTAINER_APP_ID, CHANNEL_SHEPARD_ID,
+            "http://example.org/prop", PROP_VOCAB_APP_ID,
+            "http://example.org/val",  VAL_VOCAB_APP_ID));
+
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    assertTrue(ex.getMessage().contains(PROP_VOCAB_APP_ID));
+  }
+
+  @Test
+  void createChannelAnnotation_unknownValVocabAppId_throwsInvalidParams() {
+    var propRepo = new SemanticRepository(42L);
+    when(semanticRepositoryDAO.findByAppId(PROP_VOCAB_APP_ID)).thenReturn(propRepo);
+    when(semanticRepositoryDAO.findByAppId(VAL_VOCAB_APP_ID)).thenReturn(null);
+
+    McpException ex = assertThrows(McpException.class, () ->
+        tools.createChannelAnnotation(
+            CONTAINER_APP_ID, CHANNEL_SHEPARD_ID,
+            "http://example.org/prop", PROP_VOCAB_APP_ID,
+            "http://example.org/val",  VAL_VOCAB_APP_ID));
+
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    assertTrue(ex.getMessage().contains(VAL_VOCAB_APP_ID));
   }
 
   // ── LTTB unit tests ──────────────────────────────────────────────────────

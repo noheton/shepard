@@ -1,60 +1,157 @@
-<script lang="ts" setup>
-import { FileReferenceApi } from "@dlr-shepard/backend-client";
-import ActionButton from "~/components/common/data-table/ActionButton.vue";
-import type {
-  FileType,
-  ShepardFileDataTableItem,
-} from "~/components/context/display-components/file-references/ShepardFileDataTableItem";
-import { mapShepardFilesToDataTableItems } from "~/components/context/display-components/file-references/shepardFileMappingUtil";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { useFetchFileReference } from "~/composables/context/useFetchFileReference";
+<script setup lang="ts">
+/**
+ * VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29 PR-4 — file-reference detail page is
+ * now metadata + Download + Open-as picker. Inline content rendering moved
+ * out: every viewer ships as a VIEW_RECIPE shape consumed through
+ * /shapes/render. See `memory/feedback_file_viewers_as_view_recipe.md` and
+ * `aidocs/16:VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29` for the doctrine.
+ *
+ * Loads the reference through the unified v2 envelope (UX612-C1) — same
+ * shape the videostream + timeseries detail pages use — so the file-kind
+ * discriminator (`fileKind`) is in hand for the picker, and the route param
+ * is the appId throughout (frontend-v2-only rule).
+ */
+import {
+  ReferencesApi,
+  type ShepardFile,
+} from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
+import ViewRecipePicker from "~/components/shapes/ViewRecipePicker.vue";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
-// string ids and hit v2 directly. The remaining numeric-typed composables
-// (useFetchFileReference, etc.) keep the existing as-number cast pending
-// BUG-COLL-APPID-ROUTE-003.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId, fileReferenceId } =
-  routeParams.value as unknown as {
-    collectionId: number;
-    dataObjectId: number;
-    fileReferenceId: number;
-  };
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
-const showFileContentViewerDialog = ref<boolean>(false);
 const showEditDialog = ref<boolean>(false);
-const fileDataTableItems = ref<ShepardFileDataTableItem[]>([]);
-const selectedOid = ref<string>("");
-const selectedFileType = ref<FileType>("unknown");
-const selectedFileName = ref<string>("");
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
-const { fileReference, files } = useFetchFileReference(
-  collectionId,
-  dataObjectId,
-  fileReferenceId,
+
+const {
+  referenceV2,
+  notFound: fileReferenceNotFound,
+  refresh: refreshReferenceV2,
+} = useFetchReferenceV2(() => routeParams.value.fileReferenceId);
+
+interface FileRefView {
+  appId: string;
+  /** Numeric Neo4j id from the v2 envelope. Used by TitleAndMetadataDisplay's
+   *  legacy entity shape; never on the wire. */
+  id: number;
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+  updatedAt: Date | null;
+  updatedBy: string | null;
+  /** "singleton" (FR1b) | "bundle" (FR1a). null defensively. */
+  referenceShape: string | null;
+  /** Discriminator the picker filters on. */
+  fileKind: string | null;
+  /** Singleton payload (when referenceShape === "singleton"). */
+  file: ShepardFile | null;
+  /** Bundle file count, when bundle. */
+  bundleFileCount: number | null;
+}
+
+const fileReference = computed<FileRefView | undefined>(() => {
+  const r = referenceV2.value;
+  if (!r) return undefined;
+  const payload = (r.payload ?? {}) as {
+    file?: ShepardFile | null;
+    files?: ShepardFile[] | null;
+  };
+  const bundleFiles = Array.isArray(payload.files) ? payload.files : null;
+  return {
+    appId: r.appId ?? routeParams.value.fileReferenceId ?? "",
+    id: typeof r.id === "number" ? r.id : 0,
+    name: r.name ?? "",
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    updatedAt: r.updatedAt,
+    updatedBy: r.updatedBy,
+    referenceShape: r.referenceShape ?? null,
+    fileKind: r.fileKind ?? null,
+    file: payload.file ?? null,
+    bundleFileCount: bundleFiles ? bundleFiles.length : null,
+  };
+});
+
+const fileReferenceAppId = computed(() => fileReference.value?.appId);
+const fileReferenceDisplayName = computed(() =>
+  fileReference.value ? `File Reference "${fileReference.value.name}"` : "",
 );
 
-const headers = ref([
-  { title: "Name", key: "name", sortable: true },
-  { title: "Oid", key: "oid", sortable: true },
-  { title: "Created at", key: "createdAt", sortable: true },
-  { title: "", key: "actions" },
-]);
+// ── content URL (signed v2 stream; the picker hands off to /shapes/render,
+//    the Download button is a direct content GET for "I just want the bytes"). ─
 
-const itemsPerPage = 10;
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
-watch(files, () => {
-  fileDataTableItems.value = mapShepardFilesToDataTableItems(files.value);
+const fileContentUrl = computed<string | undefined>(() => {
+  const appId = fileReferenceAppId.value;
+  if (!appId) return undefined;
+  if (fileReference.value?.referenceShape !== "singleton") return undefined;
+  return `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}/content`;
 });
+
+// BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29 (sibling) — restore an inline
+// default viewer for the common quick-look kinds (image, PDF). PR-4 stripped
+// every inline viewer in favour of the picker-only flow; for kinds whose
+// default view is "just show it" the empty picker is poor UX. The
+// ViewRecipePicker stays available below as the "More views" advanced
+// augmentation for richer renderers (URDF, NDT overlay, …).
+const { data: session } = useAuth();
+const accessToken = computed(() => session.value?.accessToken ?? null);
+const showMoreViews = ref(false);
+
+function withAccessToken(url: string): string {
+  const t = accessToken.value;
+  if (!t) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}access_token=${encodeURIComponent(t)}`;
+}
+
+const inlineImageUrl = computed<string | undefined>(() => {
+  if (fileReference.value?.fileKind !== "image") return undefined;
+  if (!fileContentUrl.value) return undefined;
+  return withAccessToken(fileContentUrl.value);
+});
+
+const inlinePdfUrl = computed<string | undefined>(() => {
+  if (fileReference.value?.fileKind !== "pdf") return undefined;
+  if (!fileContentUrl.value) return undefined;
+  return withAccessToken(fileContentUrl.value);
+});
+
+const hasInlineDefaultView = computed(
+  () => !!inlineImageUrl.value || !!inlinePdfUrl.value,
+);
+
+
+// ── metadata helpers ────────────────────────────────────────────────────────
+
+function formatBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+// ── action handlers ─────────────────────────────────────────────────────────
 
 function onAnnotate() {
   showAddAnnotationDialog.value = true;
@@ -68,65 +165,40 @@ function onDelete() {
   showDeleteDialog.value = true;
 }
 
-function deleteFileReference() {
-  if (fileReference.value) {
-    useShepardApi(FileReferenceApi)
-      .value.deleteFileReference({
-        collectionId,
-        dataObjectId,
-        fileReferenceId: fileReference.value.id,
-      })
-      .then(() => {
-        navigateTo(
-          collectionsPath +
-            collectionId +
-            dataObjectsPathFragment +
-            dataObjectId,
-        );
-      })
-      .catch(error => {
-        handleError(error, "deleteFileReference");
-        showDeleteDialog.value = false;
-      });
+function onRenamed(newName: string) {
+  if (fileReference.value) fileReference.value.name = newName;
+  refreshReferenceV2();
+}
+
+function onPickRecipe(payload: { templateAppId: string }) {
+  const focus = fileReferenceAppId.value;
+  if (!focus) return;
+  navigateTo(
+    `/shapes/render?templateAppId=${encodeURIComponent(payload.templateAppId)}` +
+      `&focusShepardId=${encodeURIComponent(focus)}`,
+  );
+}
+
+async function deleteFileReference() {
+  const appId = fileReferenceAppId.value;
+  if (!appId) return;
+  try {
+    await useV2ShepardApi(ReferencesApi).value.deleteReference({ appId });
+    navigateTo(
+      collectionsPath +
+        routeParams.value.collectionId +
+        dataObjectsPathFragment +
+        routeParams.value.dataObjectId,
+    );
+  } catch (error) {
+    handleError(error, "deleteFileReference");
+    showDeleteDialog.value = false;
   }
-}
-
-function onShowFileContentDialog(params: {
-  oid: string;
-  fileType: FileType;
-  fileName: string;
-}) {
-  selectedOid.value = params.oid;
-  selectedFileType.value = params.fileType;
-  selectedFileName.value = params.fileName;
-  showFileContentViewerDialog.value = true;
-}
-
-const fileReferenceDisplayName = computed(() =>
-  fileReference.value ? `File Reference "${fileReference.value.name}"` : '',
-);
-
-function onDownloadFile(params: { filename: string; oid: string }) {
-  const filename = sanitizeFilename(params.filename);
-
-  useShepardApi(FileReferenceApi)
-    .value.getFilePayload({
-      collectionId,
-      dataObjectId,
-      fileReferenceId,
-      oid: params.oid,
-    })
-    .then(response => {
-      downloadFile(response, filename);
-    })
-    .catch(e => {
-      handleError(e, "downloading file");
-    });
 }
 
 watch(fileReference, () => {
   useHead({
-    title: fileReference.value?.name + " | shepard",
+    title: (fileReference.value?.name ?? "File reference") + " | shepard",
   });
 });
 </script>
@@ -144,25 +216,25 @@ watch(fileReference, () => {
               },
               {
                 title: `${collection.name}`,
-                to: collectionsPath + collection.id,
+                to: collectionsPath + routeParams.collectionId,
               },
               {
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  routeParams.dataObjectId,
               },
               {
-                title: `${fileReference?.name}`,
+                title: `${fileReference.name}`,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId +
+                  routeParams.dataObjectId +
                   fileReferencesPathFragment +
-                  fileReferenceId,
+                  routeParams.fileReferenceId,
               },
             ]"
           />
@@ -175,132 +247,186 @@ watch(fileReference, () => {
                   ...fileReference,
                   name: fileReferenceDisplayName,
                   type: 'File',
-                  container: {
-                    title:
-                      fileReference.referencedContainerName ?? 'unknown name',
-                    id: fileReference.fileContainerId,
-                    type: 'FILE',
-                    availability: fileReference.referencedContainerAvailability,
-                  },
                 }"
                 :on-annotate="onAnnotate"
-                :on-delete="onDelete"
-                :on-edit="fileReference.appId ? onEdit : undefined"
+                :on-delete="isAllowedToEditCollection ? onDelete : undefined"
+                :on-edit="
+                  isAllowedToEditCollection && fileReferenceAppId
+                    ? onEdit
+                    : undefined
+                "
                 id-label="ID"
               />
             </v-row>
-            <v-row v-if="fileReference?.appId && dataObject?.appId">
+
+            <!-- Metadata card: file-kind discriminator + size + checksum so the
+                 user knows what they're holding before they pick a recipe. -->
+            <v-row>
               <v-col cols="12" class="d-flex flex-wrap ga-2">
-                <RunKrlPreviewButton
-                  :file-reference="fileReference"
-                  :collection-id="collectionId"
-                  :data-object-id="dataObjectId"
-                  :data-object-app-id="dataObject.appId"
-                  :data-object-path="collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId"
-                  :can-edit="!!isAllowedToEditCollection"
-                />
-                <OpenInSceneGraphButton
-                  :file-reference-name="fileReference.name"
-                  :collection-id="collectionId"
-                  :data-object-id="dataObjectId"
-                  :file-reference-id="fileReferenceId"
-                  :file-reference-app-id="fileReference.appId"
+                <v-chip
+                  v-if="fileReference.fileKind"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-shape-outline"
+                  data-test="file-kind-chip"
+                >
+                  {{ fileReference.fileKind }}
+                </v-chip>
+                <v-chip
+                  v-if="fileReference.referenceShape"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-package-variant-closed"
+                >
+                  {{ fileReference.referenceShape }}
+                </v-chip>
+                <v-chip
+                  v-if="fileReference.file?.fileSize != null"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-database-outline"
+                >
+                  {{ formatBytes(fileReference.file.fileSize) }}
+                </v-chip>
+                <v-chip
+                  v-if="fileReference.file?.md5"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-pound"
+                >
+                  md5:{{ fileReference.file.md5.slice(0, 12) }}…
+                </v-chip>
+                <v-chip
+                  v-if="
+                    fileReference.referenceShape === 'bundle' &&
+                    fileReference.bundleFileCount != null
+                  "
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-folder-multiple"
+                >
+                  {{ fileReference.bundleFileCount }} files
+                </v-chip>
+              </v-col>
+            </v-row>
+
+            <!-- BUG-DO-DETAIL-I-VIDEOPLAYER-2026-06-29 (sibling): inline
+                 quick-look default for common kinds. Image + PDF are the
+                 "just show it" cases; richer kinds (URDF, NDT, …) go through
+                 the picker below. -->
+            <v-row v-if="inlineImageUrl">
+              <v-col cols="12">
+                <v-img
+                  :src="inlineImageUrl"
+                  :alt="fileReference.name"
+                  max-height="600"
+                  contain
+                  data-testid="inline-image-preview"
                 />
               </v-col>
             </v-row>
+
+            <v-row v-if="inlinePdfUrl">
+              <v-col cols="12">
+                <iframe
+                  :src="inlinePdfUrl"
+                  style="width: 100%; height: 600px; border: 1px solid rgba(0,0,0,0.12); border-radius: 4px"
+                  data-testid="inline-pdf-preview"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- SCENEGRAPH-NAV-02: in-context "Open in 3D view / Create 3D view"
+                 affordance for URDF / RDK FileReferences.
+                 `OpenIn3dViewButton` self-qualifies: it fetches annotations and
+                 checks for urn:shepard:urdf:* / urn:shepard:rdk:* predicates or
+                 filename extension, then either routes to the existing
+                 MAPPING_RECIPE play template or mints a new one.
+                 Per "tool entry points are in-context first" (CLAUDE.md). -->
+            <v-row v-if="fileReference.name && fileReferenceAppId">
+              <v-col cols="12">
+                <OpenIn3dViewButton
+                  :file-reference-name="fileReference.name"
+                  :file-reference-app-id="fileReferenceAppId"
+                />
+              </v-col>
+            </v-row>
+
+            <v-row v-if="fileContentUrl">
+              <v-col cols="12" class="d-flex flex-wrap ga-2">
+                <v-btn
+                  :href="fileContentUrl"
+                  download
+                  variant="tonal"
+                  density="comfortable"
+                  prepend-icon="mdi-download-outline"
+                  size="small"
+                >
+                  Download
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  :prepend-icon="showMoreViews ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  data-testid="file-more-views-toggle"
+                  @click="showMoreViews = !showMoreViews"
+                >
+                  {{ showMoreViews ? "Hide more views" : "More views" }}
+                </v-btn>
+              </v-col>
+            </v-row>
+
+            <!-- Picker: ADVANCED when an inline default exists; PRIMARY when
+                 the file-kind has no default quick-look (URDF, KRL, etc.). -->
+            <v-expand-transition>
+              <v-row v-if="showMoreViews || !hasInlineDefaultView">
+                <v-col cols="12">
+                  <div class="text-subtitle-2 mb-2">Open as…</div>
+                  <ViewRecipePicker
+                    :file-kind="fileReference.fileKind"
+                    :focus-shepard-id="fileReferenceAppId"
+                    @select="onPickRecipe"
+                  />
+                </v-col>
+              </v-row>
+            </v-expand-transition>
+
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
+                  v-if="fileReferenceAppId"
                   :annotated="
-                    new AnnotatedReference(
-                      collection.id,
-                      dataObjectId,
-                      fileReferenceId,
-                    )
+                    new AnnotatedReference(fileReferenceAppId, 'FileReference')
                   "
                   :can-delete="!!isAllowedToEditCollection"
                 />
               </v-col>
             </v-row>
-            <v-row>
-              <DataTable
-                :items-per-page="itemsPerPage"
-                :cell-props="{
-                  class: 'text-textbody1',
-                }"
-                :header-props="{
-                  class: 'text-subtitle-2 text-textbody1',
-                }"
-                :headers="headers"
-                :items-for-pagination="fileDataTableItems"
-              >
-                <template
-                  #[`item.name`]="{
-                    value,
-                    item,
-                  }: {
-                    value: ShepardFileDataTableItem['name'];
-                    item: ShepardFileDataTableItem;
-                  }"
-                >
-                  <a
-                    v-if="
-                      item.actions.showDetails.enabled &&
-                      item.actions.showDetails.fileType !== 'unknown'
-                    "
-                    href="#"
-                    class="file-name-link"
-                    @click.prevent="() => onShowFileContentDialog(item.actions.showDetails)"
-                  >{{ value.filename }}</a>
-                  <span v-else>{{ value.filename }}</span>
-                  <span
-                    v-if="value.availability !== 'available'"
-                    class="text-error"
-                  >
-                    ({{ value.availability }})
-                  </span>
-                </template>
-                <template #[`item.createdAt`]="{ value }: { value: Date }">
-                  {{ toShortDateString(value) }}
-                </template>
-                <template
-                  #[`item.actions`]="{
-                    value,
-                  }: {
-                    value: ShepardFileDataTableItem['actions'];
-                  }"
-                >
-                  <ActionContainer>
-                    <ActionButton
-                      v-if="value.download.enabled"
-                      icon="mdi-tray-arrow-down"
-                      aria-label="Download file"
-                      @click="() => onDownloadFile(value.download)"
-                    />
-                    <ActionButton
-                      v-if="
-                        value.showDetails.enabled &&
-                        value.showDetails.fileType !== 'unknown'
-                      "
-                      icon="mdi-eye-outline"
-                      aria-label="View file"
-                      @click="() => onShowFileContentDialog(value.showDetails)"
-                    />
-                  </ActionContainer>
-                </template>
-              </DataTable>
-            </v-row>
           </v-container>
         </v-col>
       </v-row>
+      <!-- UI-404-NICE-EMPTY-STATE-REF-PAGES: 404 on the file reference fetch →
+           honest empty state instead of an eternal spinner. -->
+      <EntityNotFound
+        v-else-if="fileReferenceNotFound"
+        entity-kind="FileReference"
+        :requested-id="routeParams.fileReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
     <EditFileReferenceDialog
-      v-if="showEditDialog && fileReference?.appId"
+      v-if="showEditDialog && fileReferenceAppId && fileReference"
       v-model:show-dialog="showEditDialog"
-      :file-reference-app-id="fileReference.appId"
+      :file-reference-app-id="fileReferenceAppId"
       :current-name="fileReference.name"
-      @saved="(newName) => { if (fileReference) fileReference.name = newName; }"
+      @saved="onRenamed"
     />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
@@ -308,43 +434,11 @@ watch(fileReference, () => {
       @confirmed="deleteFileReference"
     />
     <AddAnnotationDialog
-      v-if="showAddAnnotationDialog"
+      v-if="showAddAnnotationDialog && fileReferenceAppId"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
-        new AnnotatedReference(collectionId, dataObjectId, fileReferenceId)
+        new AnnotatedReference(fileReferenceAppId, 'FileReference')
       "
-    />
-    <FileContentViewerDialog
-      v-if="showFileContentViewerDialog"
-      v-model:show-dialog="showFileContentViewerDialog"
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
-      :file-reference-id="fileReferenceId"
-      :file-type="selectedFileType"
-      :file-name="selectedFileName"
-      :oid="selectedOid"
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.v-table {
-  :deep(.word-wrap-anywhere) {
-    word-wrap: anywhere;
-  }
-
-  :deep(tbody) > tr > td {
-    padding: 20px 24px !important;
-  }
-}
-
-.file-name-link {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-</style>

@@ -1,0 +1,147 @@
+# svdx-csv-ingest.shacl.ttl — SvdxCsvIngestShape, a MAPPING_RECIPE shape.
+#
+# V2CONV-A7 — the convergence of the bespoke `/v2/svdx/ingest` namespace into the
+# generic MAPPING_RECIPE mechanism (aidocs/platform/191 Tier-3, the SVDX sibling
+# of V2CONV-B5's KrlTrajectoryShape).
+#
+# An SVDX CSV ingest is no longer a bespoke `POST /v2/svdx/ingest` call. Instead
+# it is a MAPPING_RECIPE template that BINDS:
+#   • a Beckhoff TwinCAT `.svdx` FileReference (the project recording — its
+#     manifest already parsed on upload by SvdxManifestParser);
+#   • the operator-generated TwinCAT-Scope-Export-Tool `.csv` sibling
+#     FileReference (the tab-delimited per-channel data, resolved to bytes on
+#     demand by the executor);
+#   • the DataObject the derived TimeseriesReference is attached under;
+#   • optionally a TimeseriesContainer to write the channels into (one is minted
+#     in the same Collection when omitted);
+#   • optionally a display name for the derived TimeseriesReference.
+#
+# Materializing this recipe via `POST /v2/mappings/{templateAppId}/materialize`
+# dispatches to the SvdxCsvTransformExecutor (in the fileformat-svdx plugin),
+# which resolves the bound .svdx + .csv FileReferences, parses the CSV via
+# TcScopeCsvParser, mints/uses the TimeseriesContainer, writes each CSV column as
+# a 5-tuple channel into TimescaleDB via the existing TimeseriesService.saveDataPoints
+# path, attaches a NEW TimeseriesReference, and returns a REFERENCE result
+# carrying that derived reference's appId.
+#
+# This is the REFERENCE-direction sibling of the KrlTrajectoryShape (KRL .src +
+# URDF → derived joint-trajectory TimeseriesReference). SVDX mints a derived
+# TimeseriesReference of the welding/process channels; both flow through the same
+# generic TransformExecutor SPI + materialize endpoint.
+#
+# Idempotency: the derived TimeseriesReference name is deterministically built
+# from the two source appIds (`svdx-ingest:<svdxAppId>+<csvAppId>`). Re-materializing
+# with the same pair short-circuits and returns the existing reference.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` field
+# names): http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape
+#
+# Consumed by:
+#   • POST /v2/mappings/{templateAppId}/materialize — resolves this shape IRI
+#     to SvdxCsvTransformExecutor via the fail-soft TransformExecutorRegistry;
+#     runs it; returns TransformResult.reference(derivedTimeseriesReferenceAppId).
+#
+# Cross-refs:
+#   aidocs/platform/191-v2-surface-convergence.md — the dissolution (V2CONV-A7)
+#   aidocs/16-dispatcher-backlog.md — V2CONV-A7-SVDX-REST-DISSOLVE row
+#   plugins/fileformat-svdx/docs/reference.md — the MAPPING_RECIPE ingest flow
+#   backend/src/main/java/de/dlr/shepard/spi/transform/TransformExecutor.java
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix svdx:      <http://semantics.dlr.de/shepard/transform/svdx#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: SvdxCsvIngestRecipe ───────────────────────────────────────
+
+svdx:SvdxCsvIngestRecipe a owl:Class ;
+    rdfs:label "SVDX CSV ingest recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that binds a Beckhoff TwinCAT .svdx FileReference + its TwinCAT-Scope-Export-Tool .csv sibling FileReference (plus the target DataObject + an optional TimeseriesContainer), materialized into a NEW TimeseriesReference of the per-channel data. Replaces the bespoke POST /v2/svdx/ingest endpoint (V2CONV-A7)."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: SvdxCsvIngestShape ────────────────────────────────────────
+
+svdx:SvdxCsvIngestShape a sh:NodeShape ;
+    sh:targetClass svdx:SvdxCsvIngestRecipe ;
+
+    # The dispatch-key IRI MUST appear in the template body's
+    # `mappingRecipeShape` field for the materialize endpoint to route here.
+    rdfs:comment "Bound via mappingRecipeShape = http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape" ;
+
+    # The .svdx FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     svdx:svdxFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     ".svdx FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the Beckhoff TwinCAT .svdx project recording. Bind via materialize role 'svdxFileAppId'." ;
+        sh:order    10 ;
+    ] ;
+
+    # The .csv sibling FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     svdx:csvFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     ".csv (TwinCAT Scope Export) FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the TwinCAT-Scope-Export-Tool .csv sibling. Resolved to bytes on demand by the executor and parsed by TcScopeCsvParser. Bind via materialize role 'csvFileAppId'." ;
+        sh:order    20 ;
+    ] ;
+
+    # The target DataObject appId — REQUIRED (where the derived ref attaches).
+    sh:property [
+        sh:path     svdx:targetDataObjectAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "Target DataObject appId" ;
+        sh:description "appId of the DataObject the derived TimeseriesReference is attached under. Both FileReferences must already be attached to this DataObject; the owning Collection's Write permission gates the materialize call." ;
+        sh:order    30 ;
+    ] ;
+
+    # The TimeseriesContainer appId — OPTIONAL (minted when absent).
+    sh:property [
+        sh:path     svdx:timeseriesContainerAppId ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "TimeseriesContainer appId (optional)" ;
+        sh:description "appId of an existing TimeseriesContainer the derived data points are written into. When omitted, a new container is minted in the same Collection." ;
+        sh:order    40 ;
+    ] ;
+
+    # Display name for the derived TimeseriesReference — OPTIONAL.
+    sh:property [
+        sh:path     svdx:referenceName ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Derived reference name (optional)" ;
+        sh:description "Display name for the derived TimeseriesReference. When omitted, the deterministic idempotency name svdx-ingest:<svdxAppId>+<csvAppId> is used." ;
+        sh:order    50 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting SvdxCsvIngestShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#SvdxCsvIngestShape",
+#   "svdxFileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#   "csvFileReferenceAppId":  "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33",
+#   "targetDataObjectAppId":  "019e7245-1b2c-7d3e-af40-bb22cc33dd44"
+# }
+#
+# Materialize:
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {
+#       "svdxFileAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#       "csvFileAppId":  "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33" } }
+#
+#   → 200 { "outputKind": "REFERENCE",
+#           "derivedReferenceAppId": "019e7247-...",  // the welding TimeseriesReference
+#           "executor": "SvdxCsvTransformExecutor" }

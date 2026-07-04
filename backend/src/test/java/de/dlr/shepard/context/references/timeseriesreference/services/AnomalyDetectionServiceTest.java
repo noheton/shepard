@@ -3,6 +3,7 @@ package de.dlr.shepard.context.references.timeseriesreference.services;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -388,7 +389,7 @@ class AnomalyDetectionServiceTest {
 
   @Test
   void detect_invalidWindowThrows() {
-    when(timeseriesService.getDataPointsByTimeseries(any(), any(), any()))
+    when(timeseriesService.getDataPointsByTimeseries(anyLong(), any(), any()))
       .thenReturn(Collections.emptyList());
 
     AnomalyDetectRequestIO req = new AnomalyDetectRequestIO();
@@ -401,7 +402,7 @@ class AnomalyDetectionServiceTest {
 
   @Test
   void detect_invalidKThrows() {
-    when(timeseriesService.getDataPointsByTimeseries(any(), any(), any()))
+    when(timeseriesService.getDataPointsByTimeseries(anyLong(), any(), any()))
       .thenReturn(Collections.emptyList());
 
     AnomalyDetectRequestIO req = new AnomalyDetectRequestIO();

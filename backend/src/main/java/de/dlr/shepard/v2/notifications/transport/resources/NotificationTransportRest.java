@@ -4,7 +4,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
-import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportListIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportReadIO;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportWriteIO;
 import de.dlr.shepard.v2.notifications.transport.services.NotificationTransportService;
@@ -58,11 +58,15 @@ public class NotificationTransportRest {
   /** RFC 7807 type URI for a missing required field on POST. */
   static final String PROBLEM_TYPE_MISSING_FIELD = "/problems/notifications.transport.missing-field";
 
+  /** RFC 7807 type URI for an unknown transport appId. */
+  static final String PROBLEM_TYPE_NOT_FOUND = "/problems/notifications.transport.not-found";
+
   @Inject
   NotificationTransportService service;
 
   @GET
   @Operation(
+    operationId = "listNotificationTransports",
     summary = "List all configured notification transports.",
     description = "Returns every :NotificationTransport row in the instance, ordered " +
       "by name ascending. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + " +
@@ -72,21 +76,23 @@ public class NotificationTransportRest {
   @APIResponse(
     responseCode = "200",
     description = "Current list of transports (may be empty).",
-    content = @Content(schema = @Schema(implementation = NotificationTransportListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
     List<NotificationTransportReadIO> items = service.listAll()
         .stream()
         .map(NotificationTransportReadIO::from)
         .toList();
-    return Response.ok(new NotificationTransportListIO(items)).build();
+    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size())).build();
   }
 
   // ─── NTF1-BACKEND-CRUD: POST / PATCH / DELETE ───────────────────────────
 
   @POST
   @Operation(
+    operationId = "createNotificationTransport",
     summary = "Create a new notification transport.",
     description = "Creates a :NotificationTransport row. Required fields: `kind` " +
       "(must be a valid TransportKind), `name`. All other fields are optional and " +
@@ -104,6 +110,7 @@ public class NotificationTransportRest {
     description = "kind missing/invalid or name missing (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response create(NotificationTransportWriteIO body) {
     NotificationTransportWriteIO patch = body == null ? new NotificationTransportWriteIO() : body;
@@ -138,6 +145,7 @@ public class NotificationTransportRest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchNotificationTransport",
     summary = "RFC 7396 merge-patch an existing notification transport.",
     description = "Patches the :NotificationTransport identified by appId. RFC 7396 " +
       "semantics: absent = leave alone, explicit null = clear, value = replace. " +
@@ -149,12 +157,14 @@ public class NotificationTransportRest {
     description = "Updated transport.",
     content = @Content(schema = @Schema(implementation = NotificationTransportReadIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No transport with that appId.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patch(@PathParam("appId") String appId, NotificationTransportWriteIO body) {
     Optional<NotificationTransport> found = service.findByAppId(appId);
     if (found.isEmpty()) {
-      return Response.status(Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found",
+          Status.NOT_FOUND, "No notification transport with appId '" + appId + "'.");
     }
     NotificationTransportWriteIO patch = body == null ? new NotificationTransportWriteIO() : body;
 
@@ -176,6 +186,7 @@ public class NotificationTransportRest {
   @DELETE
   @Path("/{appId}")
   @Operation(
+    operationId = "deleteNotificationTransport",
     summary = "Delete a notification transport.",
     description = "Removes the :NotificationTransport row identified by appId. " +
       "No cascade — historical :Activity rows referencing the deleted transport's " +
@@ -183,12 +194,14 @@ public class NotificationTransportRest {
       "Returns 204 on success, 404 when the appId is unknown."
   )
   @APIResponse(responseCode = "204", description = "Transport deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No transport with that appId.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response delete(@PathParam("appId") String appId) {
     boolean deleted = service.deleteByAppId(appId);
     if (!deleted) {
-      return Response.status(Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found",
+          Status.NOT_FOUND, "No notification transport with appId '" + appId + "'.");
     }
     Log.infof("NTF1: DELETE /v2/admin/notifications/transports/%s", appId);
     return Response.noContent().build();

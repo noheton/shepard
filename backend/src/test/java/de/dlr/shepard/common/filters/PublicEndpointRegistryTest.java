@@ -202,6 +202,31 @@ class PublicEndpointRegistryTest {
     assertFalse(isPublic("shepard/api/v2/instance/capabilitiesx"));
   }
 
+  // APISIMP-INSTANCE-REGISTRY-BESPOKE — /v2/instance/registry is the
+  // public read surface for the instance registry (moved from the
+  // misleading /v2/admin/instances path).
+
+  @Test
+  void instanceRegistryIsPublic() {
+    assertTrue(isPublic("shepard/api/v2/instance/registry"));
+    assertTrue(isPublic("shepard/api/v2/instance/registry/"));
+  }
+
+  @Test
+  void instanceRegistrySubpathIsNotPublic() {
+    assertFalse(isPublic("shepard/api/v2/instance/registry/evil"));
+    assertFalse(isPublic("shepard/api/v2/instance/registryx"));
+  }
+
+  @Test
+  void oldAdminInstancesPathIsNoLongerPublic() {
+    // APISIMP-INSTANCE-REGISTRY-BESPOKE: /v2/admin/instances GET moved to
+    // /v2/instance/registry. The admin path now carries only PATCH
+    // (role-protected) — it must NOT be public any more.
+    assertFalse(isPublic("shepard/api/v2/admin/instances"));
+    assertFalse(isPublic("shepard/api/v2/admin/instances/"));
+  }
+
   // BACKEND-VERSIONZ-PROBE — /healthz prefix covers the smallrye-health family
 
   @Test

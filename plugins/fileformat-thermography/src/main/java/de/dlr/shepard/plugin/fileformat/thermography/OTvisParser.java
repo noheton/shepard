@@ -1,5 +1,8 @@
 package de.dlr.shepard.plugin.fileformat.thermography;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
+import de.dlr.shepard.spi.fileparser.FileParserPlugin.ParseContext;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,6 +40,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
  *
  * <p>Reference: aidocs/integrations/114 §1.1 + §4.
  */
+@ApplicationScoped
 public final class OTvisParser implements FileParserPlugin {
 
     /** MIME type that we recognise. Edevis tooling uses {@code application/x-tar}; we also accept generic octet-stream when the extension matches. */

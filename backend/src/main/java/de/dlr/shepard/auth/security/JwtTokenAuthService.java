@@ -253,7 +253,15 @@ public class JwtTokenAuthService {
 
     Set<String> resolvedRoles = resolveDualSourceRoles(username, idpRoles);
 
-    return new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
+    JWTPrincipal jwtPrincipal = new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
+    // BUG-USER-PROVISION-EMAIL-COLLISION: carry the email claim so AuthenticationContext
+    // can pass it to UserService.getCurrentUser as a fallback when the stored username
+    // diverges from the token's preferred_username (e.g. service-account UUID vs. "admin").
+    String emailClaim = body.get("email", String.class);
+    if (emailClaim != null && !emailClaim.isBlank()) {
+      jwtPrincipal.setEmail(emailClaim);
+    }
+    return jwtPrincipal;
   }
 
   /**

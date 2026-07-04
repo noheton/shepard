@@ -8,7 +8,6 @@
 
 import type { SparqlBinding } from "~/composables/context/admin/useSparqlPlayground";
 import { useSparqlPlayground } from "~/composables/context/admin/useSparqlPlayground";
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
 useHead({ title: "SPARQL playground | shepard" });
 
@@ -70,7 +69,12 @@ const showRaw = ref(false);
 </script>
 
 <template>
-  <v-container>
+  <!-- UI-1920-SPARQL-WIDTH: single-column text + query editor. The default
+       v-container max-width is ~1800px at xl/xxl, which stretches query
+       text, prose and the result table to unreadable line-lengths at 1920
+       (and 4K). Cap to a comfortable reading width, centred. No-op at
+       <=1280 where the breakpoint cap is already narrower. -->
+  <v-container style="max-width: 1200px">
     <div class="d-flex flex-column ga-2 mb-4">
       <NuxtLink to="/semantic" class="text-caption">
         <v-icon size="small">mdi-arrow-left</v-icon> Semantic substrate
@@ -184,13 +188,6 @@ const showRaw = ref(false);
       </v-card>
     </template>
 
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="N1f"
-      design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
-      endpoint="/v2/semantic/{repoAppId}/sparql"
-      notes="Backend live since N1f shipped. Table rendering shipped in #64. Full editor / autocomplete queued."
-    />
   </v-container>
 </template>
 

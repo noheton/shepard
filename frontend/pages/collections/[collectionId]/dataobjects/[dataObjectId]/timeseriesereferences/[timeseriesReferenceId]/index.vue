@@ -3,70 +3,121 @@ import type {
   ResponseError,
   SemanticAnnotation,
   Timeseries,
+  TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
-import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
-import type { TimeseriesSeries } from "~/components/common/chart/types";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
-  useFetchTimeseriesReferenceMetrics,
-  type Metrics,
-} from "~/composables/context/useFetchTimeseriesReferencesMetrics";
-import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
-import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
+  ContainersApi,
+  ReferencesApi,
+} from "@dlr-shepard/backend-client";
+import type { TimeseriesSeries } from "~/components/common/chart/types";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
-import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
-import { useFetchTimeseriesAnnotations } from "~/composables/context/useFetchTimeseriesAnnotations";
 import { channelMatchesSearch, filterChannelsBySelection } from "~/utils/timeseriesChannelFilter";
 
 definePageMeta({ layout: "collection" });
 
+// V2CONV — client-side channel summary metrics, computed from the bulk data
+// points the page already fetches. Replaces the v1 per-row metrics N+1.
+interface ChannelMetrics {
+  COUNT?: number;
+  MIN?: number;
+  MAX?: number;
+  MEAN?: number;
+}
+
 interface TimeseriesDataTableItem extends Timeseries {
   isSelected: boolean;
-  // Per-channel summary metrics, fetched lazily after the reference loads.
-  metrics?: Partial<Metrics>;
+  // Per-channel summary metrics, computed client-side from bulk points.
+  metrics?: ChannelMetrics;
   metricsLoading?: boolean;
-  // Per-channel semantic annotations (labels/phases/anomalies on the channel).
+  // Per-channel semantic annotations — no appId-keyed v2 source yet, so this
+  // column renders "—" until a /v2 per-channel annotation endpoint exists
+  // (tracked as REF-EDIT-TS-CHANNEL-ANN in aidocs/16).
   annotations?: SemanticAnnotation[];
   annotationsLoading?: boolean;
+}
+
+// The normalised view this page renders. V2CONV: sourced entirely from the
+// unified GET /v2/references/{appId} entity (kind-agnostic envelope + the
+// per-kind `payload` map) — no numeric Neo4j id is needed or used. This is
+// the structural fix for the L2 eternal-spinner class: the previous page
+// gated render + every sub-fetch on `referenceV2.id`, which is @JsonIgnore-d
+// on the wire and therefore always undefined.
+interface TsRefView {
+  appId: string;
+  id: number;
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+  updatedAt: Date | null;
+  updatedBy: string | null;
+  start: number;
+  end: number;
+  timeseries: Timeseries[];
+  timeseriesContainerId?: number;
+  timeseriesContainerAppId?: string;
+  referencedContainerName?: string;
+  referencedContainerAvailability?: "available" | "deleted" | "forbidden" | "error";
+  timeReference?: string;
+  wallClockOffset?: number | null;
+  wallClockOffsetSource?: string | null;
+  qualityScore?: number | null;
 }
 
 const MaxSelectableItems = 7;
 
 const { routeParams } = useCollectionRouteParams();
-// BUG-COLL-APPID-ROUTE-002: useFetchCollection + useFetchDataObject now take
-// string ids and hit v2 directly. The remaining numeric-typed composables
-// (useFetchTimeseriesReference, etc.) keep the existing as-number cast
-// pending BUG-COLL-APPID-ROUTE-003.
 const collectionIdStr = routeParams.value.collectionId ?? "";
 const dataObjectIdStr = routeParams.value.dataObjectId ?? "";
-const { collectionId, dataObjectId, timeseriesReferenceId } =
-  routeParams.value as unknown as {
-    collectionId: number;
-    dataObjectId: number;
-    timeseriesReferenceId: number;
-  };
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 
-const { timeseriesReference, fetchTimeseriesReference } = useFetchTimeseriesReference(
-  collectionId,
-  dataObjectId,
-  timeseriesReferenceId,
-);
+// V2CONV / UX612-C1: the route param IS the v2 appId (frontend-v2-only rule).
+// Load the reference via GET /v2/references/{appId} and drive the whole page
+// off the returned envelope + payload. No numeric-id resolution — that path
+// is what spun forever (referenceV2.id is @JsonIgnore-d on the wire).
+const { referenceV2, notFound: referenceNotFound, refresh: refreshReferenceV2 } =
+  useFetchReferenceV2(() => routeParams.value.timeseriesReferenceId);
+
+const timeseriesReference = computed<TsRefView | undefined>(() => {
+  const r = referenceV2.value;
+  if (!r) return undefined;
+  const p = (r.payload ?? {}) as Record<string, unknown>;
+  return {
+    appId: r.appId ?? routeParams.value.timeseriesReferenceId ?? "",
+    // Numeric ref id is @JsonIgnore-d on /v2; 0 is a display-only placeholder
+    // (only shown in advanced mode). The page never keys anything off it.
+    id: typeof r.id === "number" ? r.id : 0,
+    name: r.name,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    updatedAt: r.updatedAt,
+    updatedBy: r.updatedBy,
+    start: Number(p.start ?? 0),
+    end: Number(p.end ?? 0),
+    timeseries: (p.timeseries as Timeseries[] | undefined) ?? [],
+    timeseriesContainerId:
+      p.timeseriesContainerId != null ? Number(p.timeseriesContainerId) : undefined,
+    timeseriesContainerAppId: (p.timeseriesContainerAppId as string | undefined) ?? undefined,
+    timeReference: (p.timeReference as string | undefined) ?? undefined,
+    wallClockOffset: (p.wallClockOffset as number | undefined) ?? null,
+    wallClockOffsetSource: (p.wallClockOffsetSource as string | undefined) ?? null,
+    qualityScore: (p.qualityScore as number | undefined) ?? null,
+  };
+});
 
 // TM1a — refresh the reference after a time-reference patch so the panel
 // shows the updated mode / offset immediately.
 async function onTimeReferenceUpdated() {
-  await fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
+  refreshReferenceV2();
 }
 
-// TA1a + AI1b — appId is now typed in the model (TM1a added it to the
-// backend-client TypeScript interface). The cast below is retained for
-// safety when the server returns a pre-TM1a row that omits appId.
+// TA1a + AI1b — the reference appId (the only identity this page needs).
 const timeseriesReferenceAppId = computed<string | undefined>(
-  () => timeseriesReference.value?.appId ?? undefined,
+  () => timeseriesReference.value?.appId,
 );
 const {
   annotations: tsAnnotations,
@@ -87,6 +138,7 @@ function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): strin
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog       = ref<boolean>(false);
+const showEditDialog          = ref<boolean>(false);
 const showVisualize3D        = ref<boolean>(false);
 const showDetectAnomalies    = ref<boolean>(false);
 const canVisualize3D = computed(
@@ -95,12 +147,35 @@ const canVisualize3D = computed(
     !!timeseriesReference.value?.timeseriesContainerId,
 );
 
-// Chart payload — fetched eagerly at setup time so the "Channel Overview"
-// panel is pre-populated. Must live here (not inside onMounted) because
-// useFetchTimeseriesPayload calls useShepardApi → useAuth → inject(), which
-// is only valid in the synchronous setup phase.
-const { timeseriesWithDataPoints: chartPayload, isLoading: chartPayloadLoading } =
-  useFetchTimeseriesPayload(collectionId, dataObjectId, timeseriesReferenceId);
+// ── V2CONV: appId-keyed channel listing + bulk data ──────────────────────
+// The /channels endpoint is appId-keyed. The container appId comes from the
+// v2 reference payload (UX612-C1). Matching the reference's 5-tuple channels
+// against the container's channel shepardIds lets us pull all points in one
+// bulk POST — no numeric-id path, which is what spun forever (L2).
+interface ChannelV2 {
+  shepardId: string;
+  measurement?: string;
+  device?: string;
+  field?: string;
+  location?: string;
+  symbolicName?: string;
+}
+const channelsV2 = ref<ChannelV2[]>([]);
+const containerAppId = computed<string | undefined>(
+  () =>
+    timeseriesReference.value?.timeseriesContainerAppId ??
+    (referenceV2.value?.payload?.timeseriesContainerAppId as string | undefined),
+);
+const channelListingApi = useV2ShepardApi(ContainersApi);
+
+// Resolved container name — fetched from GET /v2/containers/{appId} so the
+// header shows the human-readable name rather than "unknown name (ID: …)".
+const containerName = ref<string | undefined>(undefined);
+
+// Chart payload — the bulk points feeding the Channel Overview chart and the
+// client-side per-channel metrics.
+const chartPayload = ref<TimeseriesWithDataPoints[] | undefined>(undefined);
+const chartPayloadLoading = ref<boolean>(false);
 const chartPayloadFetched = computed(() => chartPayload.value !== undefined);
 
 // Channel Overview series — shows all channels when none are selected;
@@ -192,102 +267,189 @@ const headers = [
   { title: "Annotations", key: "annotations", sortable: false },
 ];
 
-async function fetchMetricsForRow(item: TimeseriesDataTableItem) {
-  item.metricsLoading = true;
-  item.annotationsLoading = true;
-  const containerId = timeseriesReference.value?.timeseriesContainerId;
-  try {
-    const [m, ts] = await Promise.all([
-      useFetchTimeseriesReferenceMetrics(
-        collectionId,
-        dataObjectId,
-        timeseriesReferenceId,
-        item.measurement,
-        item.device,
-        item.location,
-        item.symbolicName,
-        item.field,
-      ),
-      containerId
-        ? useFetchTimeseries(
-            containerId,
-            item.measurement,
-            item.device,
-            item.location,
-            item.symbolicName,
-            item.field,
-          )
-        : Promise.resolve(undefined),
-    ]);
-    if (m) item.metrics = m;
-    if (ts?.id && containerId) {
-      item.annotations = await useFetchTimeseriesAnnotations(containerId, ts.id);
-    } else {
-      item.annotations = [];
+function round(x: number): number {
+  return Math.round(x * 1000) / 1000;
+}
+
+// V2CONV — compute COUNT/MIN/MAX/MEAN per channel client-side from the bulk
+// points already in hand. Replaces the v1 per-row metrics N+1 fetch.
+function applyMetrics(data: TimeseriesWithDataPoints[]) {
+  const byKey = new Map<string, ChannelMetrics>();
+  for (const series of data) {
+    const values = series.points
+      .map(pt => pt.value)
+      .filter((v): v is number => typeof v === "number");
+    if (values.length === 0) {
+      byKey.set(timeseriesKey(series.timeseries), { COUNT: 0 });
+      continue;
     }
-  } finally {
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    for (const v of values) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+      sum += v;
+    }
+    byKey.set(timeseriesKey(series.timeseries), {
+      COUNT: values.length,
+      MIN: round(min),
+      MAX: round(max),
+      MEAN: round(sum / values.length),
+    });
+  }
+  for (const item of timeseriesDataTableItems.value) {
+    item.metrics = byKey.get(timeseriesKey(item));
     item.metricsLoading = false;
+    // No appId-keyed per-channel annotation source yet (REF-EDIT-TS-CHANNEL-ANN).
+    item.annotations = [];
     item.annotationsLoading = false;
   }
 }
 
-watch(timeseriesReference, () => {
-  if (timeseriesReference.value) {
-    timeseriesDataTableItems.value = timeseriesReference.value?.timeseries.map(
-      timeseries => {
-        return { ...timeseries, isSelected: false };
-      },
-    );
-    // Fan out metric fetches in parallel — the backend caps concurrency on
-    // its side, and per-row latency is independent.
-    timeseriesDataTableItems.value.forEach(item => {
-      void fetchMetricsForRow(item);
-    });
+// V2CONV — resolve shepardIds for the reference's channels by matching the
+// payload 5-tuples against the container's v2 channels, then pull every
+// channel's points in one bulk POST.
+async function loadBulkChannelData() {
+  const ref = timeseriesReference.value;
+  const appId = containerAppId.value;
+  if (!ref || !appId || ref.timeseries.length === 0) return;
+  if (channelsV2.value.length === 0) return;
+  const wantKeys = new Set(ref.timeseries.map(ts => timeseriesKey(ts)));
+  const shepardIds = channelsV2.value
+    .filter(ch =>
+      wantKeys.has(
+        timeseriesKey({
+          measurement: ch.measurement ?? "",
+          device: ch.device ?? "",
+          location: ch.location ?? "",
+          symbolicName: ch.symbolicName ?? "",
+          field: ch.field ?? "",
+        } as Timeseries),
+      ),
+    )
+    .map(ch => ch.shepardId)
+    .slice(0, 200);
+  if (shepardIds.length === 0) {
+    chartPayload.value = [];
+    applyMetrics([]);
+    return;
   }
+  chartPayloadLoading.value = true;
+  try {
+    const data = await channelListingApi.value.getContainerBulkChannelData({
+      appId,
+      bulkChannelDataRequest: { shepardIds, start: ref.start, end: ref.end },
+    });
+    chartPayload.value = (data ?? []) as TimeseriesWithDataPoints[];
+    applyMetrics(chartPayload.value);
+  } catch (e) {
+    handleError(e as ResponseError, "loading timeseries channel data");
+    chartPayload.value = [];
+    applyMetrics([]);
+  } finally {
+    chartPayloadLoading.value = false;
+  }
+}
+
+// Resolve the container's v2 channels (shepardId carriers) and name whenever
+// the container appId becomes known.
+watch(
+  containerAppId,
+  async (appId) => {
+    if (!appId) return;
+    try {
+      const [channels, container] = await Promise.all([
+        channelListingApi.value.listContainerChannels({
+          appId,
+          // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+          pageSize: 500,
+        }),
+        channelListingApi.value.getContainer({ appId }).catch(() => undefined),
+      ]);
+      channelsV2.value = channels ?? [];
+      containerName.value = container?.name;
+    } catch {
+      // Best-effort; falls back to no auto-populate.
+      channelsV2.value = [];
+    }
+  },
+  { immediate: true },
+);
+
+// Build the table rows when the reference resolves.
+watch(
+  timeseriesReference,
+  () => {
+    if (!timeseriesReference.value) return;
+    timeseriesDataTableItems.value = timeseriesReference.value.timeseries.map(
+      timeseries => ({ ...timeseries, isSelected: false, metricsLoading: true }),
+    );
+  },
+  { immediate: true },
+);
+
+// Kick off the bulk fetch when either the reference or the channel list lands.
+watch([timeseriesReference, channelsV2], () => {
+  void loadBulkChannelData();
 });
 
 const getSelectedTimeseries = () => {
   return timeseriesDataTableItems.value.filter(item => item.isSelected);
 };
 
-const downloadTimeseries = (filename: string) => {
-  useShepardApi(TimeseriesReferenceApi)
-    .value.exportTimeseriesPayload({
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
-    })
-    .then(response => {
-      downloadFile(response, filename + ".csv");
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "exporting timeseries reference");
-    });
-};
+// V2CONV — build the CSV client-side from the bulk points already fetched
+// (long format: channel,timestamp,value). Replaces the v1 export endpoint,
+// which required the numeric ids that are @JsonIgnore-d on /v2.
+function downloadTimeseries(filename: string) {
+  const data = chartPayload.value;
+  if (!data || data.length === 0) {
+    handleError(
+      new Error("No data points available to export"),
+      "exporting timeseries reference",
+    );
+    return;
+  }
+  const lines = ["channel,timestamp,value"];
+  for (const series of data) {
+    const label = channelLabel(series.timeseries).replace(/"/g, '""');
+    for (const pt of series.points) {
+      lines.push(`"${label}",${pt.timestamp ?? ""},${pt.value ?? ""}`);
+    }
+  }
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  downloadFile(blob, filename + ".csv");
+}
 
 async function deleteTimeseriesReference() {
-  await useShepardApi(TimeseriesReferenceApi)
-    .value.deleteTimeseriesReference({
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
-    })
-    .then(() => {
-      emitSuccess(
-        `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
-      );
-      navigateTo(
-        collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId,
-      );
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "deleting timeseries reference");
-    });
+  const appId = timeseriesReference.value?.appId;
+  if (!appId) return;
+  try {
+    await useV2ShepardApi(ReferencesApi).value.deleteReference({ appId });
+    emitSuccess(
+      `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
+    );
+    navigateTo(
+      collectionsPath +
+        routeParams.value.collectionId +
+        dataObjectsPathFragment +
+        routeParams.value.dataObjectId,
+    );
+  } catch (e) {
+    handleError(e as ResponseError, "deleting timeseries reference");
+  }
 }
 
 const onDelete = () => {
   showDeleteDialog.value = true;
 };
+
+// REF-EDIT-1: re-fetch the reference after an edit so the panel reflects the
+// saved name/start/end. timeseriesReference is a computed off referenceV2, so
+// we refresh the source rather than mutating the (read-only) view.
+function onEditSaved() {
+  refreshReferenceV2();
+}
 
 const onDownload = (name: string) => {
   downloadTimeseries(name);
@@ -304,36 +466,6 @@ watch(timeseriesReference, () => {
     title: timeseriesReference.value?.name + " | shepard",
   });
 });
-
-// ── TS-AXIS-AUTO: fetch v2 channels carrying shepardId for the recipe builder ─
-
-interface ChannelV2 {
-  shepardId: string;
-  measurement?: string;
-  device?: string;
-  field?: string;
-  location?: string;
-  symbolicName?: string;
-}
-
-const channelsV2 = ref<ChannelV2[]>([]);
-
-watch(
-  () => timeseriesReference.value?.timeseriesContainerId,
-  async (containerId) => {
-    if (!containerId) return;
-    try {
-      const data = await $fetch<ChannelV2[]>(
-        `/v2/timeseries-containers/${containerId}/channels`,
-      );
-      channelsV2.value = data ?? [];
-    } catch {
-      // Best-effort; falls back to no auto-populate
-      channelsV2.value = [];
-    }
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -355,19 +487,19 @@ watch(
                 title: dataObject.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId,
+                  routeParams.dataObjectId,
               },
               {
                 title: timeseriesReference.name,
                 to:
                   collectionsPath +
-                  collectionId +
+                  routeParams.collectionId +
                   dataObjectsPathFragment +
-                  dataObjectId +
+                  routeParams.dataObjectId +
                   timeseriesReferencePathFragment +
-                  timeseriesReference.id,
+                  routeParams.timeseriesReferenceId,
               },
             ]"
           />
@@ -378,21 +510,24 @@ watch(
               <TitleAndMetadataDisplay
                 :entity="{
                   ...timeseriesReference,
-                  name: `Timeseries Reference “${timeseriesReference.name}”`,
+                  name: `Timeseries Reference '${timeseriesReference.name}'`,
                   type: 'Timeseries',
                   container: {
                     title:
+                      containerName ??
                       timeseriesReference.referencedContainerName ??
                       'unknown name',
-                    id: timeseriesReference.timeseriesContainerId,
+                    id: timeseriesReference.timeseriesContainerId ?? 0,
                     type: 'TIMESERIES',
                     availability:
                       timeseriesReference.referencedContainerAvailability,
+                    appId: containerAppId,
                   },
                 }"
                 id-label="ID"
                 :on-delete="onDelete"
                 :on-download="onDownload"
+                :on-edit="isAllowedToEditCollection ? () => (showEditDialog = true) : undefined"
               />
             </v-row>
 
@@ -566,7 +701,7 @@ watch(
                     :annotation="ann"
                     :can-delete="false"
                     :annotated-type="
-                      new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)
+                      new AnnotatedReference(timeseriesReferenceAppId ?? '', 'TimeseriesReference')
                     "
                   />
                 </div>
@@ -586,12 +721,13 @@ watch(
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
-                  v-if="isAllowedToEditCollection"
-                  :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                  v-if="isAllowedToEditCollection && timeseriesReferenceAppId"
+                  :annotated="new AnnotatedReference(timeseriesReferenceAppId, 'TimeseriesReference')"
                 />
               </div>
               <SemanticAnnotationList
-                :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                v-if="timeseriesReferenceAppId"
+                :annotated="new AnnotatedReference(timeseriesReferenceAppId, 'TimeseriesReference')"
                 :can-delete="!!isAllowedToEditCollection"
               />
             </section>
@@ -679,16 +815,31 @@ watch(
           </v-container>
         </v-col>
       </v-row>
+      <!-- UX612-C1: 404 on the v2 reference load → honest empty state
+           (UU1 pattern) instead of the former eternal spinner. -->
+      <EntityNotFound
+        v-else-if="referenceNotFound"
+        entity-kind="TimeseriesReference"
+        :requested-id="routeParams.timeseriesReferenceId ?? ''"
+        :parent-route="
+          collectionsPath +
+          routeParams.collectionId +
+          dataObjectsPathFragment +
+          routeParams.dataObjectId
+        "
+      />
       <CenteredLoadingSpinner v-else />
     </v-container>
     <ViewRecipeBuilderDialog
       v-if="timeseriesReference && timeseriesReference.timeseriesContainerId"
       v-model="showVisualize3D"
       :container-id="timeseriesReference.timeseriesContainerId"
+      :container-app-id="containerAppId ?? ''"
       :channels="timeseriesReference.timeseries"
       :channels-v2="channelsV2.length ? channelsV2 : undefined"
       :start-ns="timeseriesReference.start"
       :end-ns="timeseriesReference.end"
+      :data-object-app-id="dataObjectIdStr || undefined"
     />
     <ConfirmDeleteDialog
       v-model:show-dialog="showDeleteDialog"
@@ -699,6 +850,17 @@ watch(
       v-model:show-dialog="showDetectAnomalies"
       :ref-app-id="timeseriesReferenceAppId"
       @annotations-saved="refetchTsAnnotations"
+    />
+    <EditTimeseriesReferenceDialog
+      v-if="timeseriesReferenceAppId && timeseriesReference"
+      v-model:show-dialog="showEditDialog"
+      :timeseries-reference-app-id="timeseriesReferenceAppId"
+      :current-name="timeseriesReference.name"
+      :current-start="timeseriesReference.start"
+      :current-end="timeseriesReference.end"
+      :current-channels="timeseriesReference.timeseries"
+      :available-channels="channelsV2.map(ch => ({ measurement: ch.measurement ?? '', device: ch.device ?? '', location: ch.location ?? '', symbolicName: ch.symbolicName ?? '', field: ch.field ?? '' }))"
+      @saved="onEditSaved"
     />
   </div>
 </template>

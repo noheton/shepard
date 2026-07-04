@@ -1,19 +1,20 @@
 import {
-  NotebookApi,
-  type NotebookReferenceIO,
+  LabJournalApi,
+  type NotebookReference,
+  type PagedResponse,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 export function useFetchNotebooks(dataObjectAppId: string) {
-  const notebooks = ref<NotebookReferenceIO[]>([]);
+  const notebooks = ref<NotebookReference[]>([]);
   const isLoading = ref(false);
 
   function refresh() {
     isLoading.value = true;
-    useV2ShepardApi(NotebookApi)
-      .value.listNotebooks(dataObjectAppId)
-      .then(result => {
-        notebooks.value = result;
+    useV2ShepardApi(LabJournalApi)
+      .value.listNotebooks({ dataObjectAppId })
+      .then((result: PagedResponse) => {
+        notebooks.value = (result.items ?? []) as NotebookReference[];
       })
       .catch(error => {
         handleError(error, "listNotebooks");

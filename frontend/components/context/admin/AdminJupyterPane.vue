@@ -4,7 +4,7 @@ import type { JupyterConfigPatch } from "~/composables/context/admin/useJupyterC
 import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
 
 // J1e — instance-wide JupyterHub link-out configuration.
-// adminMode=true: reads from /v2/admin/jupyter/config (instance-admin
+// adminMode=true: reads from /v2/admin/config/jupyter (instance-admin
 // gated). The pane is only rendered behind isInstanceAdmin so the role
 // check is doubly enforced.
 const { config, isLoading, isSaving, error, refresh, patch } = useJupyterConfig({

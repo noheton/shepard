@@ -178,7 +178,23 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-importer</artifactId>
         </exclusion>
-      </exclusions>
+              <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+        </exclusion>
+</exclusions>
     </dependency>
 
     <!--
@@ -283,6 +299,38 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      MFFD-SPATIAL-FRAME-HANDSHAKE (2026-06-02): the plugin's existing
+      *ServiceTest classes use @QuarkusComponentTest + @InjectMock from
+      io.quarkus.test.junit.QuarkusComponentTest. Those types live in
+      quarkus-junit5-component, which is not transitively pulled by the
+      backend test-jar. Add the dep explicitly so `mvn test-compile`
+      resolves the symbols when this plugin is built standalone (which
+      every agent acceptance gate does — CLAUDE.md "six gates"). Without
+      this dep, the pre-existing baseline tests fail to compile and the
+      gate can't run.
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5-component</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5-mockito</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      EqualsVerifier — used by *IOTest classes to assert the equals/hashCode
+      contract on the IO DTOs (the existing SpatialDataReferenceIOTest and
+      the new SpatialDataContainerIOTest from MFFD-SPATIAL-FRAME-HANDSHAKE).
+    -->
+    <dependency>
+      <groupId>nl.jqno.equalsverifier</groupId>
+      <artifactId>equalsverifier</artifactId>
+      <version>3.19</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

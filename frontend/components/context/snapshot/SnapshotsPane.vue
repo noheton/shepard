@@ -11,7 +11,7 @@
  * Backed by V2b/V2e endpoints via useSnapshots composable.
  */
 
-import type { SnapshotDiffIO, SnapshotIO } from "@dlr-shepard/backend-client";
+import type { SnapshotDiff, Snapshot } from "@dlr-shepard/backend-client";
 import { useRouter } from "vue-router";
 import { useSnapshots } from "~/composables/context/useSnapshots";
 
@@ -36,7 +36,7 @@ const router = useRouter();
  * affordance for "I want to compare two snapshots from this collection";
  * this Compare action is the per-row shortcut to the global tool.
  */
-function compareInSnapshotDiff(snapshot: SnapshotIO) {
+function compareInSnapshotDiff(snapshot: Snapshot) {
   if (!snapshot.appId) return;
   void router.push({
     path: "/snapshots/diff",
@@ -67,9 +67,9 @@ async function submitCreate() {
 // ── Delete dialog ────────────────────────────────────────────────────────────
 
 const showDeleteDialog = ref(false);
-const snapshotToDelete = ref<SnapshotIO | null>(null);
+const snapshotToDelete = ref<Snapshot | null>(null);
 
-function promptDelete(snapshot: SnapshotIO) {
+function promptDelete(snapshot: Snapshot) {
   snapshotToDelete.value = snapshot;
   showDeleteDialog.value = true;
 }
@@ -91,13 +91,13 @@ function cancelDelete() {
 // ── Diff dialog ──────────────────────────────────────────────────────────────
 
 const showDiffDialog = ref(false);
-const diffBase = ref<SnapshotIO | null>(null);
-const diffHead = ref<SnapshotIO | null>(null);
-const diffResult = ref<SnapshotDiffIO | null>(null);
+const diffBase = ref<Snapshot | null>(null);
+const diffHead = ref<Snapshot | null>(null);
+const diffResult = ref<SnapshotDiff | null>(null);
 const isDiffLoading = ref(false);
 
 /** Open the diff picker with snapshot A pre-selected as base. */
-function openDiffPicker(snapshot: SnapshotIO) {
+function openDiffPicker(snapshot: Snapshot) {
   diffBase.value = snapshot;
   diffHead.value = null;
   diffResult.value = null;
@@ -126,14 +126,14 @@ function closeDiff() {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(isoOrNull?: string | null): string {
+function formatDate(isoOrNull?: string | Date | null): string {
   if (!isoOrNull) return "—";
   return new Date(isoOrNull).toLocaleString();
 }
 
-function snapshotLabel(s: SnapshotIO | null): string {
+function snapshotLabel(s: Snapshot | null): string {
   if (!s) return "";
-  return s.name + (s.snapshotCapturedAt ? ` (${formatDate(s.snapshotCapturedAt)})` : "");
+  return (s.name ?? "") + (s.snapshotCapturedAt ? ` (${formatDate(s.snapshotCapturedAt)})` : "");
 }
 
 const nameRules = [
@@ -263,6 +263,14 @@ const nameRules = [
           <v-btn
             variant="text"
             size="x-small"
+            icon="mdi-vector-difference"
+            :aria-label="`Compare snapshots starting from ${snap.name}`"
+            :disabled="!snap.appId"
+            @click="navigateTo({ path: '/snapshots/diff', query: { a: snap.appId } })"
+          />
+          <v-btn
+            variant="text"
+            size="x-small"
             icon="mdi-delete-outline"
             color="error"
             :loading="isSaving"
@@ -368,13 +376,13 @@ const nameRules = [
 
             <div class="d-flex flex-wrap ga-3 align-center">
               <v-chip color="success" variant="tonal" size="small" prepend-icon="mdi-plus">
-                {{ diffResult.added.length }} added
+                {{ diffResult.added?.length ?? 0 }} added
               </v-chip>
               <v-chip color="error" variant="tonal" size="small" prepend-icon="mdi-minus">
-                {{ diffResult.removed.length }} removed
+                {{ diffResult.removed?.length ?? 0 }} removed
               </v-chip>
               <v-chip color="warning" variant="tonal" size="small" prepend-icon="mdi-pencil">
-                {{ diffResult.changed.length }} changed
+                {{ diffResult.changed?.length ?? 0 }} changed
               </v-chip>
               <v-chip variant="tonal" size="small" prepend-icon="mdi-check">
                 {{ diffResult.unchangedCount }} unchanged
@@ -382,11 +390,11 @@ const nameRules = [
             </div>
 
             <!-- Added -->
-            <div v-if="diffResult.added.length > 0">
+            <div v-if="(diffResult.added?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-success mb-1">Added</div>
               <v-chip-group column>
                 <v-chip
-                  v-for="appId in diffResult.added"
+                  v-for="appId in diffResult.added ?? []"
                   :key="appId"
                   color="success"
                   variant="outlined"
@@ -399,11 +407,11 @@ const nameRules = [
             </div>
 
             <!-- Removed -->
-            <div v-if="diffResult.removed.length > 0">
+            <div v-if="(diffResult.removed?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-error mb-1">Removed</div>
               <v-chip-group column>
                 <v-chip
-                  v-for="appId in diffResult.removed"
+                  v-for="appId in diffResult.removed ?? []"
                   :key="appId"
                   color="error"
                   variant="outlined"
@@ -416,11 +424,11 @@ const nameRules = [
             </div>
 
             <!-- Changed -->
-            <div v-if="diffResult.changed.length > 0">
+            <div v-if="(diffResult.changed?.length ?? 0) > 0">
               <div class="text-subtitle-2 text-warning mb-1">Changed</div>
               <v-list density="compact" class="pa-0">
                 <v-list-item
-                  v-for="entry in diffResult.changed"
+                  v-for="entry in diffResult.changed ?? []"
                   :key="entry.entityAppId"
                   class="px-0"
                 >

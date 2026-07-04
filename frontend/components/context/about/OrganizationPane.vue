@@ -105,7 +105,7 @@ const location = computed(() => {
     >
       No organisation has been configured for this instance yet.
       An admin can set one via
-      <code>PATCH /v2/admin/instance/ror</code>
+      <code>PATCH /v2/admin/config/ror</code>
       (or the matching <code>shepard-admin instance ror set</code> CLI).
     </div>
 

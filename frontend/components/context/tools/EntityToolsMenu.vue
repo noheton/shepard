@@ -41,12 +41,18 @@ const props = defineProps<{
    * DO-SHACL / DO-RENDER when null) and the destination prefill.
    */
   attachedTemplateAppId?: string | null;
+  /**
+   * UX612-M1 — `templateKind` of the attached template. DO-RENDER is gated
+   * on `VIEW_RECIPE` (the only kind `POST /v2/shapes/render` accepts).
+   */
+  attachedTemplateKind?: string | null;
 }>();
 
 const router = useRouter();
 
 const buildCtx = computed<ContextToolBuildContext>(() => ({
   attachedTemplateAppId: props.attachedTemplateAppId,
+  attachedTemplateKind: props.attachedTemplateKind,
 }));
 
 const items = computed<ContextToolItem[]>(() =>

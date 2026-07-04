@@ -11,9 +11,18 @@ const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;
 
+// V2-SWEEP-003-2: route param is now an appId (UUID v7); HeaderBar search still
+// routes numeric id (V1-EXCEPTION, SEARCH-V2 will retire it).
 const containerAccessor = new StructuredDataContainerAccessor(containerId);
+const containerAppId = computed<string | null>(
+  () => containerAccessor.container.value?.appId ?? (/^\d+$/.test(containerId) ? null : containerId),
+);
+// Numeric Neo4j id for v1 API calls (getStructuredData) still requiring it.
+const containerNumericId = computed<number>(
+  () => /^\d+$/.test(containerId) ? Number(containerId) : (containerAccessor.container.value?.id ?? 0),
+);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
-  useStructuredDataContainerLinkedDataObjects(containerId);
+  useStructuredDataContainerLinkedDataObjects(containerAppId);
 
 const deleteWarning = computed<string | undefined>(() => {
   const n = linkedDataObjects.value?.length ?? 0;
@@ -28,8 +37,8 @@ onContainerUpdated(() => {
   fetchData();
 });
 
-const fetchData = () => {
-  containerAccessor.fetchData();
+const fetchData = async () => {
+  await containerAccessor.fetchData();
   containerAccessor.fetchItems();
   containerAccessor.fetchRoles();
 };
@@ -66,7 +75,7 @@ function onShowStructuredDataContentDialog(structuredData: StructuredData) {
     useShepardApi(StructuredDataContainerApi)
       .value.getStructuredData({
         oid: structuredData.oid,
-        structuredDataContainerId: containerId,
+        structuredDataContainerId: containerNumericId.value,
       })
       .then(response => {
         if (response.payload) {
@@ -85,7 +94,7 @@ function onDownload(structuredData: StructuredData) {
     useShepardApi(StructuredDataContainerApi)
       .value.getStructuredData({
         oid: structuredData.oid,
-        structuredDataContainerId: containerId,
+        structuredDataContainerId: containerNumericId.value,
       })
       .then(response => {
         const blob = structuredDataToBlob(response);
@@ -130,7 +139,7 @@ useHead({
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <ContainerTitleAndMetadataDisplay
-                :id="containerAccessor.container.value.id"
+                :app-id="containerAppId ?? containerId"
                 :n-items="containerAccessor.items.value.length"
                 :name="containerAccessor.container.value.name"
                 :type-label="'Structured Data Container'"
@@ -192,16 +201,16 @@ useHead({
             #append
           >
             <AddAnnotationButton
-              :annotated="new AnnotatedStructuredDataContainer(containerId)"
+              :annotated="new AnnotatedStructuredDataContainer(containerAppId ?? '')"
             />
           </template>
           <SemanticAnnotationList
-            :annotated="new AnnotatedStructuredDataContainer(containerId)"
+            :annotated="new AnnotatedStructuredDataContainer(containerAppId ?? '')"
             :can-delete="!!containerAccessor.isAllowedToEditData.value"
           />
         </ExpansionPanelItem>
       </ExpansionPanels>
-      <!-- CC1b: Referenced by — wired to GET /v2/structured-data-containers/{id}/linked-data-objects -->
+      <!-- CC1b: Referenced by — wired to GET /v2/containers/{appId}/linked-data-objects (APISIMP-CONT-LDO-UNIFY) -->
       <ExpansionPanels class="mt-4" :default-open="[0]">
         <ExpansionPanelItem
           title="Referenced by"

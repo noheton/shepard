@@ -99,7 +99,7 @@ Link: </v2/>; rel="successor-version"
 X-Shepard-Legacy: true
 
 {
-  "type": "https://shepard.dlr.de/problems/v1-disabled",
+  "type": "/problems/v1-disabled",
   "title": "Legacy v1 surface disabled",
   "status": 410,
   "detail": "The legacy /shepard/api/... surface is disabled on this instance. Migrate to /v2/.",

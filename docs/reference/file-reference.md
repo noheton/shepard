@@ -26,14 +26,29 @@ two-extra-levels in every response).
 | Drop 1 000 camera-capture frames on a DataObject. | [`FileBundleReference`](/reference/file-bundle/) | Multi-file with sub-`FileGroup` structure for "frames 0–249 are sub-run 1, 250–499 are sub-run 2, ...". |
 | Drop a single MP4 video. | `FileReference` (today) or `VideoStreamReference` (when VID1 ships) | Singleton until video lands as its own kind. |
 
-The casual upload UI (FR1b-ui, queued) dispatches by **drag count**:
-- 1 file → `POST /v2/files` (creates a singleton).
-- ≥ 2 files → `POST /v2/bundles` (creates a bundle with one default group).
+The casual upload UI (SINGLETON-FILE-04, **shipped 2026-06-03**)
+defaults to the singleton shape:
 
-A "wrap as bundle" toggle lets a user pre-declare bundle intent for
-the first single file. Conversion direction is **singleton →
-bundle, never bundle → singleton** (the reverse would orphan groups,
-attributes, and dependent annotations).
+- **"One Reference per file"** mode (default) — every selected file
+  lands as its own `FileReference` via `POST /v2/files`. Each Reference
+  name is auto-derived as `<yyyy-mm-dd>-<filename>`.
+- **"Bundle as one Reference"** mode (opt-in toggle) — all selected
+  files share one `FileBundleReference` via the legacy
+  `POST /shepard/api/.../fileReferences` path. Use only when the files
+  genuinely belong together (an image series, a mesh set, the contents
+  of an archive).
+
+Conversion direction is **singleton → bundle, never bundle →
+singleton** (the reverse would orphan groups, attributes, and
+dependent annotations). If a single-file bundle slips through anyway
+(legacy data, an external script), `scripts/audit-single-file-bundles.py`
+flags it and the in-tree migration
+`V23__Split_singleton_bundles_to_FileReferences.java` relabels the row
+in place (preserving its appId so any incoming reference keeps
+resolving). The companion `scripts/backfill-single-file-bundles-to-singletons.py`
+emits a PROV-O `:Activity {kind: 'SINGLETON_FILE_MIGRATION'}` per
+converted row — see the operator runbook at
+[`docs/admin/runbooks/single-file-singletons.md`](/admin/runbooks/single-file-singletons/).
 
 ## Shape
 
@@ -68,11 +83,28 @@ compatibility — see the [API version policy](/architecture/#api-version-policy
 
 | Method | Path | Behaviour |
 |---|---|---|
-| `POST` | `/v2/files?parentDataObjectAppId={do}[&name={n}]` | Upload one file. Multipart body with a single `file` part. If `name` is omitted, the uploaded filename is used as the Reference's name. Returns `201` + the singleton's JSON. |
-| `GET` | `/v2/files/{appId}` | Singleton metadata: `{ appId, name, type: "FileReference", file: { oid, filename, fileSize, md5, createdAt } }`. |
+| `POST` | `/v2/files?parentDataObjectAppId={do}[&name={n}]` | Upload one file. Multipart body with a single `file` part. If `name` is omitted, the uploaded filename is used as the Reference's name. Returns `201` + the singleton's JSON (now including the detected `fileKind`). This is the **binary upload entry** — it is NOT routed through `/v2/references`. |
 | `GET` | `/v2/files/{appId}/content` | The byte stream. Supports HTTP range requests (`Range: bytes=START-END` or `bytes=START-`). Returns `200` with full body when no `Range` header is present; `206 Partial Content` when a satisfiable range is requested; `416 Requested Range Not Satisfiable` for an out-of-bounds range. Multi-range / suffix-range are not supported in FR1b (refused with 416). |
-| `PATCH` | `/v2/files/{appId}` | RFC 7396 merge-patch on the `name` field. Other fields are immutable in FR1b. Body: `{"name": "new name"}`. |
-| `DELETE` | `/v2/files/{appId}` | Hard-delete the Reference and its underlying bytes (Neo4j node soft-deleted; Mongo doc + GridFS blob removed). |
+
+The metadata, rename, delete, and list operations are served by the
+unified [`/v2/references`](/reference/references/) surface (V2CONV-A2):
+
+| Method | Unified path | Behaviour |
+|---|---|---|
+| `GET` | `/v2/references/{appId}` | Metadata as a `ReferenceV2IO`: `kind: "file"`, `referenceShape: "singleton"`, `fileKind` (e.g. `urdf`/`krl`/`pdf`, or null), and `payload.file` = the embedded `ShepardFile`. |
+| `PATCH` | `/v2/references/{appId}` | RFC 7396 merge-patch on the `name` field. Other fields are immutable in FR1b. Body: `{"name": "new name"}`. |
+| `DELETE` | `/v2/references/{appId}` | Hard-delete the Reference and its underlying bytes (Neo4j node soft-deleted; Mongo doc + GridFS blob removed). |
+| `GET` | `/v2/references?kind=file&dataObjectAppId={do}[&fileKind={k}]` | List the singleton FileReferences on a DataObject, optionally filtered by `fileKind`. |
+
+The legacy per-kind `GET\|PATCH\|DELETE /v2/files/{appId}` still work
+(the upload entry's host resource is unchanged), but new callers
+should use the unified surface above.
+
+`fileKind` (V2CONV-A2) is detected at upload time from the original
+filename extension: `.krl`/`.src` → `krl`, `.svdx`, `.otvis`,
+`.urdf`, `.xit`, `.pdf`. Unrecognised extensions yield `null`. It is
+additive and nullable — singletons uploaded before V2CONV-A2 carry
+`fileKind: null`.
 
 Permissions: every endpoint resolves the parent DataObject from the
 singleton and asks the same `PermissionsService` the upstream API

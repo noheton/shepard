@@ -129,6 +129,30 @@ class S3FileStorageTest {
   }
 
   @Test
+  void put_largePayloadIsUploadedViaRetryableBody() throws StorageException {
+    // Regression: a payload larger than the AWS SDK's default 128 KiB mark
+    // read-limit must upload cleanly. The old RequestBody.fromInputStream
+    // path raised "Resetting to invalid mark" on retry once >128 KiB had been
+    // consumed (wedged the MFFD `.svdx` ingest, 2026-06-25). The fromFile
+    // spool path re-opens the file per attempt, so size is irrelevant.
+    when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+      .thenReturn(PutObjectResponse.builder().build());
+
+    byte[] big = new byte[512 * 1024]; // 512 KiB, well over the 128 KiB limit
+    java.util.Arrays.fill(big, (byte) 7);
+    ByteArrayInputStream src = new ByteArrayInputStream(big);
+    StoragePutRequest req = new StoragePutRequest(
+      TEST_CONTAINER, "big.svdx", "application/octet-stream", src, (long) big.length, null
+    );
+
+    StorageLocator locator = storage.put(req);
+
+    assertThat(locator.providerId()).isEqualTo(PROVIDER_ID);
+    assertThat(locator.locator()).startsWith(TEST_CONTAINER + "/");
+    verify(s3).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+  }
+
+  @Test
   void put_throwsStorageExceptionOnS3Error() {
     S3Exception s3ex = buildS3Exception("Forbidden");
     when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
@@ -395,7 +419,12 @@ class S3FileStorageTest {
   }
 
   private static S3Exception buildS3Exception(String errorCode) {
-    return S3Exception.builder()
+    // S3Exception.builder().build() is declared to return AwsServiceException in
+    // AWS SDK v2 (≥2.31); the concrete instance is an S3Exception, so cast.
+    // awsErrorDetails(...) is declared on AwsServiceException.Builder, so the
+    // chained build() is statically typed as AwsServiceException; the runtime
+    // instance is an S3Exception, so the cast is safe.
+    return (S3Exception) S3Exception.builder()
       .message(errorCode)
       .awsErrorDetails(AwsErrorDetails.builder()
         .errorCode(errorCode)

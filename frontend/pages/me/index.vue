@@ -6,7 +6,7 @@ import {
 import SubscriptionsPane from "~/components/context/user/SubscriptionsPane.vue";
 import GitCredentialsPane from "~/components/context/user/GitCredentialsPane.vue";
 import McpPane from "~/components/context/user/McpPane.vue";
-import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
+import AiSettingsPane from "~/components/context/user/AiSettingsPane.vue";
 import SemanticPane from "~/components/context/user/SemanticPane.vue";
 import MyTemplatesPane from "~/components/context/user/MyTemplatesPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
@@ -54,7 +54,7 @@ const landingCards = [
     fragment: UserFragments.AI_SETTINGS,
     icon: "mdi-robot-outline",
     title: "AI Settings",
-    description: "Personal LLM provider config — base URL, model, API key (placeholder).",
+    description: "Per-user LLM provider config — base URL and model. API key unlocks with U2.",
   },
   // ----- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 -----
   {
@@ -86,11 +86,8 @@ const landingCards = [
     <McpPane v-if="routeFragment === UserFragments.MCP" />
     <SubscriptionsPane v-if="routeFragment === UserFragments.SUBSCRIPTIONS" />
     <GitCredentialsPane v-if="routeFragment === UserFragments.GIT_CREDENTIALS" />
-    <!-- placeholder pane (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
-      v-if="routeFragment === UserFragments.AI_SETTINGS"
-      slug="ai-settings"
-    />
+    <!-- PLACEHOLDER-ai-settings shipped 2026-06-26 -->
+    <AiSettingsPane v-if="routeFragment === UserFragments.AI_SETTINGS" />
     <!-- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 — moved from top-level header -->
     <SemanticPane v-if="routeFragment === UserFragments.SEMANTIC" />
     <!-- TPL-ME-BROWSE-1 (2026-05-31) — non-admin browse-mine surface -->

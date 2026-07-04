@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -46,11 +47,19 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Me")
 public class MePreferencesRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/me.preferences.unauthorized";
+
   @Inject
   UserService userService;
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   @GET
   @Operation(
+    operationId = "getPreferences",
     summary = "Get the caller's UI preferences.",
     description = "Returns the per-user preference map. Returns an empty object `{}` when no " +
     "preferences have been set. Keys are open-world strings; values are always strings."
@@ -62,7 +71,8 @@ public class MePreferencesRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getPreferences(@Context SecurityContext sc) {
-    if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (sc.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access user preferences.");
     String username = sc.getUserPrincipal().getName();
     Map<String, String> prefs = userService.getPreferences(username);
     return Response.ok(prefs).build();
@@ -75,6 +85,7 @@ public class MePreferencesRest {
   // Fix lands with the matching CollectionRest / DataObjectRest pattern.
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchPreferences",
     summary = "Partial-update the caller's UI preferences.",
     description = "Applies an RFC 7396 JSON Merge Patch to the caller's preference map. " +
     "Keys with non-null string values are set or updated. Keys with explicit JSON `null` " +
@@ -108,11 +119,11 @@ public class MePreferencesRest {
     ) JsonNode patch,
     @Context SecurityContext sc
   ) {
-    if (sc.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (sc.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access user preferences.");
     if (patch == null || !patch.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)")
-        .build();
+      return problem("/problems/me.preferences.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
     // Build the merge-patch map. Per RFC 7396: null values mean "remove",
@@ -127,9 +138,8 @@ public class MePreferencesRest {
       } else if (value.isTextual()) {
         patchMap.put(field.getKey(), value.asText());
       } else {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("Value for key '" + field.getKey() + "' must be a string or null")
-          .build();
+        return problem("/problems/me.preferences.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+            "Value for key '" + field.getKey() + "' must be a string or null");
       }
     }
 

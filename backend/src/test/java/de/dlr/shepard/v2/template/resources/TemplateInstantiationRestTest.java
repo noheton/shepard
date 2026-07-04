@@ -13,14 +13,19 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.template.services.TemplateInheritanceResolver;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
+import de.dlr.shepard.v2.shapes.validator.JenaShaclValidator;
 import de.dlr.shepard.v2.template.io.TemplateInstantiateRequestIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -41,6 +46,22 @@ class TemplateInstantiationRestTest {
   static final String TMPL_APP_ID = "tmpl-bbb";
   static final String CALLER = "alice";
 
+  /**
+   * A SHACL shape that requires the candidate node to carry at least one
+   * {@code urn:shepard:attribute:propellant} triple.
+   */
+  static final String SHAPE_REQUIRES_PROPELLANT =
+    "@prefix sh: <http://www.w3.org/ns/shacl#> .\n" +
+    "@prefix attr: <urn:shepard:attribute:> .\n" +
+    "<urn:shepard:shape:testShape>\n" +
+    "  a sh:NodeShape ;\n" +
+    "  sh:targetNode <" + TemplateInstantiationRest.INSTANCE_URI + "> ;\n" +
+    "  sh:property [\n" +
+    "    sh:path attr:propellant ;\n" +
+    "    sh:minCount 1 ;\n" +
+    "    sh:message \"propellant is required\" ;\n" +
+    "  ] .\n";
+
   @Mock
   ShepardTemplateDAO templateDAO;
 
@@ -52,6 +73,9 @@ class TemplateInstantiationRestTest {
 
   @Mock
   DataObjectService dataObjectService;
+
+  @Mock
+  SemanticAnnotationV2DAO annotationDAO;
 
   @Mock
   SecurityContext securityContext;
@@ -70,6 +94,9 @@ class TemplateInstantiationRestTest {
     resource.permissionsService = permissionsService;
     resource.dataObjectService = dataObjectService;
     resource.objectMapper = new ObjectMapper();
+    resource.inheritanceResolver = new TemplateInheritanceResolver(templateDAO);
+    resource.shaclValidator = new JenaShaclValidator();
+    resource.annotationDAO = annotationDAO;
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -244,6 +271,349 @@ class TemplateInstantiationRestTest {
     assertTrue(captor.getValue().getAttributes() == null || captor.getValue().getAttributes().isEmpty());
   }
 
+  // ---------- SHACL shape validation ----------
+
+  @Test
+  void returns201WhenShapeIsPresent_andInstanceConforms() {
+    allowWrite();
+    // Template body has a shapeGraph requiring 'propellant', and the attributes include it
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX/LH2\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(200L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+    verify(dataObjectService).createDataObject(eq(COLL_OGM_ID), any());
+  }
+
+  @Test
+  void returns422WhenShapeIsPresent_andInstanceViolates() {
+    allowWrite();
+    // Template body has a shapeGraph requiring 'propellant'; the attributes provided
+    // do NOT include 'propellant' so the shape constraint is violated.
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{\"color\":\"red\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(422, r.getStatus());
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    assertTrue(entity.detail().contains("violates"), "Problem detail should mention violation: " + entity.detail());
+    // DataObject must NOT be created on validation failure
+    verify(dataObjectService, never()).createDataObject(anyLong(), any());
+  }
+
+  @Test
+  void returns201WhenNoShapeGraph() {
+    allowWrite();
+    // Template body has NO shapeGraph field — validation is skipped regardless of attributes
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE",
+      "{\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX\"}}]}");
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(300L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  @Test
+  void returns201WhenShapeGraphIsMalformedTurtle() {
+    allowWrite();
+    // Malformed Turtle → fail-soft: validation is skipped, DataObject is created anyway
+    String body =
+      "{\"shapeGraph\":\"this is not valid turtle @#$%\"," +
+      "\"dataobjects\":[{\"attributes\":{\"color\":\"blue\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(400L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  // ---------- extractShapeGraph unit tests ----------
+
+  @Test
+  void extractShapeGraph_returnsNullWhenBodyIsNull() {
+    assertEquals(null, resource.extractShapeGraph(null));
+  }
+
+  @Test
+  void extractShapeGraph_returnsNullWhenFieldAbsent() {
+    assertEquals(null, resource.extractShapeGraph("{\"dataobjects\":[]}"));
+  }
+
+  @Test
+  void extractShapeGraph_returnsTurtleWhenPresent() {
+    String turtle = "@prefix sh: <http://www.w3.org/ns/shacl#> . <S> a sh:NodeShape .";
+    String body = "{\"shapeGraph\":" + escapeJson(turtle) + "}";
+    assertEquals(turtle, resource.extractShapeGraph(body));
+  }
+
+  // ---------- buildDataTurtle unit tests ----------
+
+  @Test
+  void buildDataTurtle_emptyAttributes_producesValidTurtle() {
+    String turtle = resource.buildDataTurtle(Map.of());
+    assertTrue(turtle.startsWith("<" + TemplateInstantiationRest.INSTANCE_URI + ">"),
+      "Turtle must start with instance URI");
+    assertTrue(turtle.contains("."), "Turtle must end with a period");
+  }
+
+  @Test
+  void buildDataTurtle_withAttributes_containsPredicatesAndValues() {
+    String turtle = resource.buildDataTurtle(Map.of("color", "red"));
+    assertTrue(turtle.contains(TemplateInstantiationRest.ATTR_NS + "color"),
+      "Turtle must contain attribute predicate");
+    assertTrue(turtle.contains("\"red\""), "Turtle must contain quoted value");
+  }
+
+  @Test
+  void buildDataTurtle_escapesDoubleQuotesInValues() {
+    String turtle = resource.buildDataTurtle(Map.of("notes", "say \"hello\""));
+    assertTrue(turtle.contains("\\\"hello\\\""), "Double quotes must be escaped in Turtle literals");
+  }
+
+  // ---------- FORM-422-FIELDS: structured violations[] + caller attributes ----------
+
+  /**
+   * The BTKVS-B2 acceptance slice: a docket shape authored THROUGH the
+   * {@link de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder} DSL with a
+   * {@code sh:pattern} on the Docket-ID; a pattern-violating submitted value
+   * round-trips as a structured {@code violations[]} entry whose {@code path}
+   * is the bare predicate IRI (dictionary-mappable to the form descriptor's
+   * {@code fields[].path}).
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void returns422WithStructuredViolations_onPatternViolatingDocketId() {
+    allowWrite();
+    var shapeBuilder = new de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder();
+    String docketShape = shapeBuilder.toTurtle(
+      new de.dlr.shepard.v2.shapes.builder.ShapeSpec(
+        "urn:btkvs:shape:docket-general",
+        null,
+        false,
+        List.of(
+          new de.dlr.shepard.v2.shapes.builder.PropertyShapeSpec(
+            TemplateInstantiationRest.ATTR_NS + "docket_id",
+            "http://www.w3.org/2001/XMLSchema#string",
+            1,
+            1,
+            null,
+            null,
+            "^[A-Z][0-9]{3}$",
+            null
+          )
+        ),
+        null,
+        TemplateInstantiationRest.INSTANCE_URI
+      )
+    );
+    String body = "{\"shapeGraph\":" + escapeJson(docketShape) + ",\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Docket — general section", "STRUCTURED_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("docket_id", "123")); // violates ^[A-Z][0-9]{3}$
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(422, r.getStatus());
+    ProblemJson entity = (ProblemJson) r.getEntity();
+    Object raw = entity.extensions().get("violations");
+    assertNotNull(raw, "422 problem must carry the violations[] extension");
+    List<Map<String, Object>> violations = (List<Map<String, Object>>) raw;
+    assertEquals(1, violations.size());
+    Map<String, Object> v = violations.get(0);
+    assertEquals(TemplateInstantiationRest.ATTR_NS + "docket_id", v.get("path"),
+      "violations[].path must be the bare predicate IRI (descriptor-mappable)");
+    assertEquals("123", v.get("value"));
+    assertTrue(String.valueOf(v.get("constraint")).contains("PatternConstraintComponent"),
+      "constraint should carry the SHACL component IRI: " + v.get("constraint"));
+    assertNotNull(v.get("message"));
+    verify(dataObjectService, never()).createDataObject(anyLong(), any());
+  }
+
+  @Test
+  void callerAttributesMergeOverTemplateDefaults_andConformingValuePasses() {
+    allowWrite();
+    String body =
+      "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + "," +
+      "\"dataobjects\":[{\"attributes\":{\"propellant\":\"LOX/LH2\",\"bench\":\"P8\"}}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(500L);
+    ArgumentCaptor<DataObjectIO> captor = ArgumentCaptor.forClass(DataObjectIO.class);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), captor.capture())).thenReturn(newDo);
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("propellant", "LOX/CH4")); // caller overrides the template default
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(201, r.getStatus());
+    Map<String, String> attrs = captor.getValue().getAttributes();
+    assertEquals("LOX/CH4", attrs.get("propellant"), "caller value must win per key");
+    assertEquals("P8", attrs.get("bench"), "template defaults must survive for untouched keys");
+  }
+
+  @Test
+  void callerAttributesAloneSatisfyTheShape() {
+    allowWrite();
+    // Template carries the shape but NO default attributes — the form submit
+    // supplies everything (the BTKVS-B2 Streamlit path).
+    String body = "{\"shapeGraph\":" + escapeJson(SHAPE_REQUIRES_PROPELLANT) + ",\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(600L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    TemplateInstantiateRequestIO req = new TemplateInstantiateRequestIO();
+    req.setAttributes(Map.of("propellant", "LOX/LH2"));
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, req, securityContext);
+
+    assertEquals(201, r.getStatus());
+  }
+
+  @Test
+  void normalizePathIri_stripsAngleBrackets() {
+    assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("<urn:x:y>"));
+    assertEquals("urn:x:y", TemplateInstantiationRest.normalizePathIri("urn:x:y"));
+    assertEquals(null, TemplateInstantiationRest.normalizePathIri(null));
+  }
+
+  // ---------- extractAnnotationSeeds unit tests (UI-GAP-4) ----------
+
+  @Test
+  void extractAnnotationSeeds_returnsEmptyWhenBodyIsNull() {
+    assertTrue(resource.extractAnnotationSeeds(null).isEmpty());
+  }
+
+  @Test
+  void extractAnnotationSeeds_returnsEmptyWhenAnnotationsAbsent() {
+    assertTrue(resource.extractAnnotationSeeds("{\"dataobjects\":[{}]}").isEmpty());
+  }
+
+  @Test
+  void extractAnnotationSeeds_returnsAnnotationsFromTemplateBody() {
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"aerospace-manufacturing\"}," +
+      "{\"predicate\":\"urn:shepard:mffd:step-number\",\"value\":\"1\"}" +
+      "]}}";
+    List<Map.Entry<String, String>> seeds = resource.extractAnnotationSeeds(body);
+    assertEquals(2, seeds.size());
+    assertEquals("urn:shepard:domain", seeds.get(0).getKey());
+    assertEquals("aerospace-manufacturing", seeds.get(0).getValue());
+    assertEquals("urn:shepard:mffd:step-number", seeds.get(1).getKey());
+    assertEquals("1", seeds.get(1).getValue());
+  }
+
+  @Test
+  void extractAnnotationSeeds_skipsEntriesWithBlankPredicateOrValue() {
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"\",\"value\":\"v1\"}," +
+      "{\"predicate\":\"urn:ok\",\"value\":\"\"}," +
+      "{\"predicate\":\"urn:good\",\"value\":\"good-value\"}" +
+      "]}}";
+    List<Map.Entry<String, String>> seeds = resource.extractAnnotationSeeds(body);
+    assertEquals(1, seeds.size());
+    assertEquals("urn:good", seeds.get(0).getKey());
+  }
+
+  @Test
+  void annotationSeedsAreWrittenOnCreate() {
+    allowWrite();
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"aerospace-manufacturing\"}," +
+      "{\"predicate\":\"urn:shepard:mffd:process-type\",\"value\":\"AFP Layup\"}" +
+      "]}," +
+      "\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("MFFD AFP Layup", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(700L);
+    newDo.setAppId("do-uuid-1234");
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    assertEquals(201, r.getStatus());
+    ArgumentCaptor<SemanticAnnotation> annCaptor = ArgumentCaptor.forClass(SemanticAnnotation.class);
+    verify(annotationDAO, org.mockito.Mockito.times(2)).createOrUpdate(annCaptor.capture());
+    List<SemanticAnnotation> written = annCaptor.getAllValues();
+    assertEquals("DataObject", written.get(0).getSubjectKind());
+    assertEquals("do-uuid-1234", written.get(0).getSubjectAppId());
+    assertEquals("urn:shepard:domain", written.get(0).getPropertyIRI());
+    assertEquals("aerospace-manufacturing", written.get(0).getValueName());
+    assertEquals("system", written.get(0).getSourceMode());
+    assertEquals(CALLER, written.get(0).getAgentUsername());
+    assertEquals("urn:shepard:mffd:process-type", written.get(1).getPropertyIRI());
+    assertEquals("AFP Layup", written.get(1).getValueName());
+  }
+
+  @Test
+  void annotationSeedFailureDoesNotBlockCreation() {
+    allowWrite();
+    String body =
+      "{\"dataObject\":{\"annotations\":[" +
+      "{\"predicate\":\"urn:shepard:domain\",\"value\":\"test\"}" +
+      "]}," +
+      "\"dataobjects\":[{}]}";
+    ShepardTemplate tmpl = new ShepardTemplate("Recipe", "DATAOBJECT_RECIPE", body);
+    tmpl.setAppId(TMPL_APP_ID);
+    tmpl.setVersion(1);
+    when(templateDAO.findByAppId(TMPL_APP_ID)).thenReturn(Optional.of(tmpl));
+    when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
+    DataObject newDo = fakeDataObject(800L);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID), any(DataObjectIO.class))).thenReturn(newDo);
+    org.mockito.Mockito.doThrow(new RuntimeException("DB error")).when(annotationDAO).createOrUpdate(any());
+
+    Response r = resource.instantiateDataObject(COLL_APP_ID, TMPL_APP_ID, null, securityContext);
+
+    // Secondary write failure must not block the 201
+    assertEquals(201, r.getStatus());
+  }
+
   // ---------- helpers ----------
 
   private void allowWrite() {
@@ -272,5 +642,13 @@ class TemplateInstantiationRestTest {
     d.setName("generated");
     d.setCollection(col);
     return d;
+  }
+
+  /**
+   * Escape a string for embedding as a JSON string value (surrounded by
+   * double-quotes in the caller). Escapes backslashes and double-quotes.
+   */
+  private static String escapeJson(String s) {
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
   }
 }

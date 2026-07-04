@@ -19,8 +19,6 @@ import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.v2.collection.io.ExportUrlIO;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.ByteArrayInputStream;
@@ -47,6 +45,7 @@ class CollectionExportUrlRestTest {
   @Mock FileStorage fileStorage;
   @Mock SecurityContext securityContext;
   @Mock Principal principal;
+  @Mock de.dlr.shepard.storage.PresignTtlValidator ttlValidator;
 
   CollectionExportUrlRest resource;
 
@@ -58,9 +57,11 @@ class CollectionExportUrlRestTest {
     resource.permissionsService = permissionsService;
     resource.exportService = exportService;
     resource.fileStorageRegistry = fileStorageRegistry;
+    resource.ttlValidator = ttlValidator;
 
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
+    when(ttlValidator.effectiveExportTtl()).thenReturn(java.time.Duration.ofMinutes(15));
   }
 
   @Test
@@ -76,7 +77,7 @@ class CollectionExportUrlRestTest {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
     Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(any(), any(), any(), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
   }
 
   @Test
@@ -88,19 +89,17 @@ class CollectionExportUrlRestTest {
   }
 
   @Test
-  void throws503WhenNoActiveStorageProvider() {
+  void returns503WhenNoActiveStorageProvider() {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.empty());
 
-    org.junit.jupiter.api.Assertions.assertThrows(
-      ServiceUnavailableException.class,
-      () -> resource.getExportUrl(COLL_APP_ID, securityContext, null)
-    );
+    Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
+    assertEquals(503, r.getStatus());
   }
 
   @Test
-  void throws503WhenAdapterDoesNotSupportPresignedExport() throws Exception {
+  void returns503WhenAdapterDoesNotSupportPresignedExport() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
@@ -110,10 +109,8 @@ class CollectionExportUrlRestTest {
     when(fileStorage.presignedExportUrl(anyString(), any(byte[].class), anyString(), any()))
       .thenReturn(Optional.empty());
 
-    org.junit.jupiter.api.Assertions.assertThrows(
-      ServiceUnavailableException.class,
-      () -> resource.getExportUrl(COLL_APP_ID, securityContext, null)
-    );
+    Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
+    assertEquals(503, r.getStatus());
   }
 
   @Test
@@ -138,21 +135,19 @@ class CollectionExportUrlRestTest {
   }
 
   @Test
-  void throws500WhenExportBuildFails() throws Exception {
+  void returns500WhenExportBuildFails() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
     when(exportService.exportCollectionByShepardId(eq(COLL_OGM_ID), any()))
       .thenThrow(new IOException("disk full"));
 
-    org.junit.jupiter.api.Assertions.assertThrows(
-      InternalServerErrorException.class,
-      () -> resource.getExportUrl(COLL_APP_ID, securityContext, null)
-    );
+    Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
+    assertEquals(500, r.getStatus());
   }
 
   @Test
-  void throws500WhenStorageThrows() throws Exception {
+  void returns500WhenStorageThrows() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
@@ -162,9 +157,7 @@ class CollectionExportUrlRestTest {
     when(fileStorage.presignedExportUrl(anyString(), any(byte[].class), anyString(), any()))
       .thenThrow(new StorageException("S3 unreachable"));
 
-    org.junit.jupiter.api.Assertions.assertThrows(
-      InternalServerErrorException.class,
-      () -> resource.getExportUrl(COLL_APP_ID, securityContext, null)
-    );
+    Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
+    assertEquals(500, r.getStatus());
   }
 }

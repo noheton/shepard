@@ -13,17 +13,34 @@ import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateFileReference } from "~/composables/references/useCreateFileReference";
+import { useCreateSingletonFileReference } from "~/composables/references/useCreateSingletonFileReference";
+import {
+  REFERENCE_PREDICATE,
+  fetchReferencePrefillAnnotations,
+  findAnnotationByPredicate,
+  parseBundleLayoutHint,
+  resolveFileNamingPlaceholders,
+} from "~/composables/references/useReferenceTemplatePrefill";
 import type { FileRef } from "~/components/context/data-references/create-dialog/DataRef";
 
 interface FileUploadDialogProps {
   collectionId: number;
   dataobjectId: number;
+  /**
+   * When non-null, the dialog can use the two-step singleton upload in singleton mode
+   * (POST /v2/references?kind=file + PUT /v2/references/{appId}/content).
+   * When undefined the dialog auto-fetches the appId from the v1 endpoint
+   * the first time singleton mode is needed.
+   * SINGLETON-FILE-04 / APISIMP-KIND-DISCRIMINATOR-2.
+   */
+  dataObjectAppId?: string;
   createReference: boolean;
   accept?: string;
 }
 
 const props = withDefaults(defineProps<FileUploadDialogProps>(), {
   accept: "*",
+  dataObjectAppId: undefined,
 });
 const emit = defineEmits<{
   (e: "files-uploaded", files: ShepardFile[], containerId: number): void;
@@ -44,7 +61,52 @@ const { addFileReference } = useCreateFileReference(
   () => {},
 );
 
-const collectionAccessor = new CollectionAccessor(props.collectionId);
+// APISIMP-KIND-DISCRIMINATOR-2 — two-step singleton upload. Used when uploadMode === "singleton".
+const { createSingleton } = useCreateSingletonFileReference();
+
+// SINGLETON-FILE-04 — default mode is FR1b singleton-per-file when
+// `createReference === true`. When the parent only wants bytes uploaded
+// (lab-journal markdown embed: `:create-reference="false"`), the
+// singleton path is wrong — the two-step pattern always mints a
+// :SingletonFileReference. Force bundle mode in that case so the dialog
+// falls back to the bytes-only FileContainer upload path.
+//
+//   "singleton" → two-step per file (POST /v2/references?kind=file + PUT .../content).
+//   "bundle"    → legacy FR1a path (one :FileBundleReference holding N files,
+//                 OR — when createReference is false — bytes only, no reference).
+const uploadMode = ref<"singleton" | "bundle">(
+  props.createReference ? "singleton" : "bundle",
+);
+
+// Resolve the parent DataObject's appId for the singleton POST path. The v1
+// endpoint includes appId on the wire even on the upstream-byte-compat
+// surface (one of the few fields where appId leaks through verbatim).
+const dataObjectAppId = ref<string | undefined>(props.dataObjectAppId);
+async function ensureDataObjectAppId(): Promise<string | undefined> {
+  if (dataObjectAppId.value) return dataObjectAppId.value;
+  try {
+    const { data: session } = useAuth();
+    const token = session.value?.accessToken;
+    const base = (useRuntimeConfig().public.backendApiUrl as string).replace(/\/$/, "");
+    const resp = await fetch(
+      `${base}/collections/${props.collectionId}/dataObjects/${props.dataobjectId}`,
+      { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } },
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const body = await resp.json();
+    dataObjectAppId.value = body.appId;
+    return body.appId;
+  } catch (e) {
+    handleError(e, "resolving DataObject appId for singleton upload");
+    return undefined;
+  }
+}
+
+// CollectionAccessor is v2/appId-keyed; the numeric collectionId prop stays
+// for the v1 upload paths. Dialog only opens on /collections/[collectionId]/...
+const collectionAccessor = new CollectionAccessor(
+  String(useRoute().params.collectionId),
+);
 try {
   await collectionAccessor.fetchData();
 } catch {
@@ -62,13 +124,33 @@ const newFileContainerPermissionType = ref<PermissionType>(
 const newReferenceName = ref<string>("");
 const isFileContainerDefault = ref<boolean>(false);
 
+// REF-EDIT-TPL-4 — template-driven bundle name prefill.
+// Fetched once on mount from the parent DataObject's bundleLayout annotation.
+// Stored separately so the file-selection auto-fill can restore it for
+// multi-file bundles (where auto-fill would otherwise leave the name blank).
+const templateBundleName = ref<string>("");
+
+onMounted(async () => {
+  if (!props.dataObjectAppId || uploadMode.value !== "bundle") return;
+  try {
+    const anns = await fetchReferencePrefillAnnotations(props.dataObjectAppId);
+    const ann = findAnnotationByPredicate(anns, REFERENCE_PREDICATE.BUNDLE_LAYOUT);
+    const hint = parseBundleLayoutHint(ann);
+    if (hint?.name) {
+      templateBundleName.value = resolveFileNamingPlaceholders(hint.name);
+      if (!newReferenceName.value) {
+        newReferenceName.value = templateBundleName.value;
+      }
+    }
+  } catch {
+    // fire-and-forget — prefill failure is silent; dialog still opens
+  }
+});
+
 // CC1d: "link" = link to an existing collection container; "create" = create a new one.
 // Default to "link" so the most common case (container already exists) requires zero
 // extra clicks.
 const containerMode = ref<"link" | "create">("link");
-
-// Backwards-compat alias used by createNewFileContainer() and the CC1c name-prefill watch.
-const isCreatingNewFileContainer = computed(() => containerMode.value === "create");
 
 // CC1d: collection-scoped FILE containers for the "Link existing" list.
 const collectionAppId = computed(
@@ -77,7 +159,7 @@ const collectionAppId = computed(
 const { containers: collectionContainers, isLoading: containersLoading } =
   useFetchCollectionContainers(collectionAppId);
 const fileContainersInCollection = computed(() =>
-  collectionContainers.value.filter(c => c.containerType === "FILE"),
+  collectionContainers.value.filter(c => (c.kind ?? "").toUpperCase() === "FILE"),
 );
 
 const uploading = ref<boolean>(false);
@@ -95,9 +177,15 @@ const isAnyFileActive = computed(() =>
   ),
 );
 const isUploadButtonDisabled = computed(() => {
+  if (files.value === undefined) return true;
+  if (Array.isArray(files.value) && files.value.length === 0) return true;
+  // Singleton mode bypasses all FileContainer + per-batch reference-name
+  // requirements — each file becomes its own :SingletonFileReference whose
+  // name is derived from the filename. The only gate is that there's at
+  // least one file selected (checked above).
+  if (uploadMode.value === "singleton") return false;
+  // Bundle mode — preserve existing gating.
   return (
-    files.value === undefined ||
-    (Array.isArray(files.value) && files.value.length === 0) ||
     (props.createReference && !newReferenceName.value) ||
     (containerMode.value === "link" && fileContainerId.value === undefined) ||
     (containerMode.value === "create" && !newFileContainerName.value)
@@ -192,7 +280,7 @@ async function uploadFileWithProgress(
     throw new Error("File container needs to be set!");
   }
   if (!containerAccessor) {
-    containerAccessor = new FileContainerAccessor(fileContainerId.value);
+    containerAccessor = new FileContainerAccessor(String(fileContainerId.value));
   }
   progress.markStarted(index);
   try {
@@ -248,21 +336,89 @@ async function handleFileUpload(): Promise<ShepardFile[]> {
   return uploadedFiles;
 }
 
+/**
+ * APISIMP-KIND-DISCRIMINATOR-2 — singleton upload path.
+ *
+ * For each selected File, uses the two-step pattern:
+ * (1) POST /v2/references?kind=file&dataObjectAppId=… (JSON body {name})
+ *     → creates the metadata node and returns its appId.
+ * (2) PUT /v2/references/{appId}/content?filename=… (octet-stream body)
+ *     → uploads the bytes.
+ * Each pair mints one :SingletonFileReference whose appId resolves
+ * directly to bytes via GET /v2/files/{appId}/content. The Reference
+ * name is derived from the filename (with the standard yyyy-MM-dd date
+ * prefix matching the existing bundle-mode heuristic).
+ *
+ * No FileContainer is involved — singletons live in the shared
+ * `_shepard_files` Mongo namespace.
+ */
+async function handleSingletonSubmit() {
+  const appId = await ensureDataObjectAppId();
+  if (!appId) {
+    handleError("Could not resolve DataObject appId", "singleton upload");
+    return;
+  }
+  const filesArr = Array.isArray(files.value) ? files.value : [];
+  const signal = progress.startBatch(filesArr);
+  const datePrefix = currentDateShortForm();
+  try {
+    for (let i = 0; i < filesArr.length; i += 1) {
+      if (signal.aborted) {
+        progress.markCancelled(i);
+        continue;
+      }
+      const f = filesArr[i]!;
+      progress.markStarted(i);
+      try {
+        const refName = `${datePrefix}-${f.name}`;
+        const created = await createSingleton({
+          parentDataObjectAppId: appId,
+          name: refName,
+          file: f,
+        });
+        if (!created) {
+          progress.markError(i, "Upload returned no appId");
+        } else {
+          progress.markDone(i);
+          successCount.value += 1;
+        }
+      } catch (e) {
+        progress.markError(i, (e as Error).message ?? "Singleton upload failed");
+      }
+    }
+  } finally {
+    progress.finishBatch();
+  }
+  if (successCount.value > 0) {
+    emitSuccess(
+      `${successCount.value} singleton FileReference(s) created from ${filesArr.length} file(s).`,
+    );
+  }
+  // Notify parent (`fileContainerId` is irrelevant for singletons — emit -1
+  // to signal "no container was touched"; consumers that don't use
+  // the second arg can ignore).
+  emit("files-uploaded", [], -1);
+}
+
 async function handleUserSubmit() {
   uploading.value = true;
 
   try {
-    await createNewFileContainer();
-    const uploadedFiles = await handleFileUpload();
-    if (!uploadedFiles || !uploadedFiles.values()) {
-      throw Error("Error in file upload");
-    }
+    if (uploadMode.value === "singleton") {
+      await handleSingletonSubmit();
+    } else {
+      await createNewFileContainer();
+      const uploadedFiles = await handleFileUpload();
+      if (!uploadedFiles || !uploadedFiles.values()) {
+        throw Error("Error in file upload");
+      }
 
-    if (props.createReference) {
-      await createFileReferences(uploadedFiles);
+      if (props.createReference) {
+        await createFileReferences(uploadedFiles);
+      }
+      await updateDefaultFileContainer();
+      emit("files-uploaded", uploadedFiles, fileContainerId.value!);
     }
-    await updateDefaultFileContainer();
-    emit("files-uploaded", uploadedFiles, fileContainerId.value!);
   } catch {
     handleError("Could not upload files", "file upload");
   }
@@ -278,7 +434,11 @@ function updateReferenceNameByFileName() {
     if (files.value.length === 1) {
       newReferenceName.value = `${currentDateShortForm()}-${files.value[0]!.name}`;
     } else {
-      newReferenceName.value = "";
+      // For multi-file bundles: restore the template-prefilled name if the
+      // user hasn't typed anything, otherwise leave their value intact.
+      if (!newReferenceName.value || newReferenceName.value === templateBundleName.value) {
+        newReferenceName.value = templateBundleName.value;
+      }
     }
   }
 }
@@ -292,6 +452,14 @@ watch(
   },
   { deep: true },
 );
+
+// REF-EDIT-TPL-4 — when the user switches to bundle mode, apply the
+// template-prefilled name if one was fetched and the field is still empty.
+watch(uploadMode, (mode: "singleton" | "bundle") => {
+  if (mode === "bundle" && !newReferenceName.value && templateBundleName.value) {
+    newReferenceName.value = templateBundleName.value;
+  }
+});
 
 // CC1c: pre-fill the container name with "<Collection name> — file store" when
 // the user switches to the "Create new" tab. Only fills when the field is still
@@ -314,8 +482,11 @@ watch(containerMode, (mode: "link" | "create") => {
       </template>
       <template #text>
         <div class="d-flex flex-column ga-4">
-          <!-- CC1c: first-time explanation of the Collection / Container duality -->
+          <!-- CC1c: first-time explanation of the Collection / Container duality
+               — but only true in bundle mode (singletons live in the shared
+               `_shepard_files` namespace, not in a per-bundle FileContainer). -->
           <v-alert
+            v-if="uploadMode === 'bundle'"
             type="info"
             variant="tonal"
             density="compact"
@@ -349,7 +520,62 @@ watch(containerMode, (mode: "link" | "create") => {
             @cancel="progress.cancel()"
           />
 
-          <div v-if="!uploading" class="d-flex flex-column ga-1">
+          <!-- SINGLETON-FILE-04: upload-mode toggle. Default is "singleton".
+               Operator opts in to "bundle" only when files genuinely belong
+               together (image series, mesh sets, archive contents). Hidden
+               entirely when createReference === false (lab-journal markdown
+               embeds, which want bytes only, never a Reference). -->
+          <div v-if="!uploading && createReference" class="d-flex flex-column ga-1">
+            <div class="d-flex justify-space-between align-center">
+              <span class="text-textbody1 text-subtitle-2">
+                Upload Shape
+              </span>
+              <v-btn-toggle
+                v-model="uploadMode"
+                color="primary"
+                density="compact"
+                mandatory
+                rounded="lg"
+                variant="outlined"
+                data-testid="upload-mode-toggle"
+              >
+                <v-btn value="singleton" size="small" data-testid="upload-mode-singleton">
+                  <v-icon start size="small">mdi-file-outline</v-icon>
+                  One Reference per file
+                </v-btn>
+                <v-btn value="bundle" size="small" data-testid="upload-mode-bundle">
+                  <v-icon start size="small">mdi-folder-zip-outline</v-icon>
+                  Bundle as one Reference
+                </v-btn>
+              </v-btn-toggle>
+            </div>
+            <v-alert
+              v-if="uploadMode === 'singleton'"
+              density="compact"
+              type="info"
+              variant="tonal"
+              class="mt-1"
+              data-testid="upload-mode-singleton-help"
+            >
+              Each file becomes its own FileReference. Use this when the
+              files are independent (a CAD model, a PDF, a robot URDF,
+              a KRL program).
+            </v-alert>
+            <v-alert
+              v-else
+              density="compact"
+              type="warning"
+              variant="tonal"
+              class="mt-1"
+              data-testid="upload-mode-bundle-help"
+            >
+              All selected files share one FileReference (FileBundle). Use this
+              only when the files genuinely belong together — an image series,
+              a mesh set, the unpacked contents of an archive.
+            </v-alert>
+          </div>
+
+          <div v-if="!uploading && uploadMode === 'bundle'" class="d-flex flex-column ga-1">
             <div class="d-flex justify-space-between align-center">
               <span class="text-textbody1 text-subtitle-2">
                 Storage Location
@@ -437,7 +663,10 @@ watch(containerMode, (mode: "link" | "create") => {
             />
           </div>
 
-          <div v-if="createReference && !uploading" class="d-flex flex-column ga-2">
+          <div
+            v-if="createReference && !uploading && uploadMode === 'bundle'"
+            class="d-flex flex-column ga-2"
+          >
             <div class="d-flex ga-2 align-center">
               <span class="text-textbody1 text-subtitle-2">Reference Name</span>
               <Tooltip>

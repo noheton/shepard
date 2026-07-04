@@ -1,14 +1,13 @@
 /**
- * FE-PROV-INSTANCE-REGISTRY admin composable wrapping
- * GET / PATCH /v2/admin/instances.
+ * APISIMP-INSTANCE-REGISTRY-BESPOKE — admin composable for the instance registry.
  *
  * Pairs with useInstanceRegistry (the lightweight badge-resolver). This
  * composable adds the admin-only mutate path and is the backing store
  * for the AdminInstanceRegistryPane.
  *
  * Wire shape:
- *   GET   -> { instances: RegisteredInstance[] }
- *   PATCH -> body { instances: RegisteredInstance[] | null }
+ *   GET   /v2/instance/registry    -> { instances: RegisteredInstance[] }  (public)
+ *   PATCH /v2/admin/instances      -> body { instances: RegisteredInstance[] | null }  (instance-admin)
  *
  * RFC 7396 atomic-array semantics: sending the full list replaces it.
  * To delete a row, re-PATCH with the row omitted.
@@ -34,7 +33,8 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-const INSTANCE_REGISTRY_URL = "/v2/admin/instances";
+const INSTANCE_REGISTRY_GET_URL = "/v2/instance/registry";
+const INSTANCE_REGISTRY_PATCH_URL = "/v2/admin/instances";
 
 export function useInstanceRegistryAdmin() {
   const instances = ref<RegisteredInstance[]>([]);
@@ -56,7 +56,7 @@ export function useInstanceRegistryAdmin() {
         // ignore — composable may run outside an auth context in tests.
       }
       const response = await fetch(
-        `${v2BaseUrl()}${INSTANCE_REGISTRY_URL}`,
+        `${v2BaseUrl()}${INSTANCE_REGISTRY_GET_URL}`,
         { headers },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -79,7 +79,7 @@ export function useInstanceRegistryAdmin() {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       const response = await fetch(
-        `${v2BaseUrl()}${INSTANCE_REGISTRY_URL}`,
+        `${v2BaseUrl()}${INSTANCE_REGISTRY_PATCH_URL}`,
         {
           method: "PATCH",
           headers: {

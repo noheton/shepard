@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {
-  CreateGitCredentialIO,
-  GitCredentialIO,
-  PatchGitCredentialIO,
+  CreateGitCredential,
+  GitCredential,
+  PatchGitCredential,
 } from "@dlr-shepard/backend-client";
 import { useFetchGitCredentials } from "~/composables/context/useFetchGitCredentials";
 import { useManageGitCredentials } from "~/composables/context/useManageGitCredentials";
@@ -13,20 +13,20 @@ const { create, patch, remove, isSaving, saveError } = useManageGitCredentials()
 const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
-const editingCredential = ref<GitCredentialIO | null>(null);
+const editingCredential = ref<GitCredential | null>(null);
 const deletingAppId = ref<string | null>(null);
 
 const showAddPat = ref(false);
 const showEditPat = ref(false);
 
-const addForm = ref<CreateGitCredentialIO>({
+const addForm = ref<CreateGitCredential>({
   host: "",
   displayName: "",
   username: "",
   pat: "",
 });
 
-const editForm = ref<PatchGitCredentialIO>({
+const editForm = ref<PatchGitCredential>({
   displayName: "",
   username: "",
   pat: "",
@@ -38,7 +38,7 @@ function openAddDialog() {
   showAddDialog.value = true;
 }
 
-function openEditDialog(credential: GitCredentialIO) {
+function openEditDialog(credential: GitCredential) {
   editingCredential.value = credential;
   editForm.value = {
     displayName: credential.displayName ?? "",
@@ -76,7 +76,7 @@ async function submitAdd() {
 
 async function submitEdit() {
   if (!editingCredential.value) return;
-  const body: PatchGitCredentialIO = {
+  const body: PatchGitCredential = {
     displayName: editForm.value.displayName?.trim() || null,
     username: editForm.value.username?.trim() || undefined,
   };

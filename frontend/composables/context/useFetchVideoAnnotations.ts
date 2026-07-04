@@ -1,8 +1,8 @@
 /**
  * VID1b-annotation — fetch VideoAnnotations for a VideoStreamReference.
  *
- * Annotations are served at
- * `/v2/data-objects/{dataObjectAppId}/video-stream-references/{refAppId}/annotations`.
+ * Annotations are served at `/v2/references/{refAppId}/annotations`
+ * (migrated from the per-kind per-DO path per APISIMP-VIDEO-ANNOT-PATH).
  * Uses a raw fetch call with a manually-typed response shape that mirrors
  * VideoAnnotationIO exactly, consistent with the useFetchVideoStreamReferences pattern.
  */
@@ -46,9 +46,7 @@ export function useFetchVideoAnnotations(
       return;
     }
 
-    const url =
-      `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(dataObjectAppId)}` +
-      `/video-stream-references/${encodeURIComponent(refAppId)}/annotations`;
+    const url = `${v2BaseUrl()}/v2/references/${encodeURIComponent(refAppId)}/annotations`;
 
     try {
       const response = await fetch(url, {
@@ -63,7 +61,8 @@ export function useFetchVideoAnnotations(
         handleError(fetchError.value, "listVideoAnnotations");
         return;
       }
-      annotations.value = (await response.json()) as VideoAnnotationIO[];
+      const page = await response.json();
+      annotations.value = (page.items ?? page) as VideoAnnotationIO[];
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Network error";

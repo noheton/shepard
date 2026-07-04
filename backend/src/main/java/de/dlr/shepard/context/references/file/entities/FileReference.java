@@ -84,6 +84,24 @@ public class FileReference extends BasicReference {
   private ShepardFile file;
 
   /**
+   * V2CONV-A2 — additive, nullable file-kind discriminator. Computed
+   * from the original filename extension + mime type at upload time
+   * by {@code SingletonFileReferenceService} (e.g. {@code "krl"},
+   * {@code "svdx"}, {@code "urdf"}, {@code "pdf"}). {@code null} for
+   * singletons uploaded before this field existed and for files with
+   * no recognised kind — read paths null-coalesce per the
+   * schema-additive rule (no migration / backfill needed).
+   *
+   * <p>Surfaced on the {@code /v2/files} 201 response, {@code GET
+   * /v2/files/{appId}}, and the unified {@code GET
+   * /v2/references?kind=file&fileKind=…} filter. A pluggable
+   * {@code FileKindDetector} SPI is deferred (FILEKIND-DETECTOR-SPI in
+   * {@code aidocs/16}); for now the detection lives in a small private
+   * helper on the service.
+   */
+  private String fileKind;
+
+  /**
    * For testing purposes only.
    *
    * @param id identifies the entity

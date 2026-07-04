@@ -68,4 +68,16 @@ describe("formatOption", () => {
     );
     expect(opt.subtitle).toBeUndefined();
   });
+
+  // TEMPLATE-ICONS-2-FE — iconKey passes through into the option so the
+  // autocomplete item slot can render it via <v-icon :icon="opt.iconKey">.
+  it("passes through iconKey when set", () => {
+    const opt = formatOption({ ...sample, iconKey: "mdi-layers" }, "VIEW_RECIPE");
+    expect(opt.iconKey).toBe("mdi-layers");
+  });
+
+  it("normalises a missing iconKey to null", () => {
+    const opt = formatOption({ ...sample, iconKey: undefined }, "VIEW_RECIPE");
+    expect(opt.iconKey).toBeNull();
+  });
 });

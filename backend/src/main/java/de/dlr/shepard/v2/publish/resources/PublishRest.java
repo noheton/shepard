@@ -8,6 +8,7 @@ import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.minter.MinterException;
 import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.services.PublishService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -24,8 +25,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -57,7 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/{kind}/{appId}/publish")
 @RequestScoped
-@Tag(name = "Publish (v2)")
+@Tag(name = "Publish")
 public class PublishRest {
 
   @Inject
@@ -74,6 +73,7 @@ public class PublishRest {
 
   @POST
   @Operation(
+    operationId = "publish",
     summary = "Publish an entity — mint a PID via the active Minter and attach a Publication row.",
     description = "Idempotent on the first call: a re-POST without `?force=true` returns the existing " +
     "Publication. With `?force=true`, a fresh PID is minted and attached as an additional row. " +
@@ -103,13 +103,13 @@ public class PublishRest {
     @Context UriInfo uriInfo
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.kind.unsupported",
+        "/problems/publish.kind.unsupported",
         "Unsupported publishable kind",
         "No publishable kind matches URL segment '" +
         kind +
@@ -124,14 +124,14 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     // Per aidocs/66 §4.1: caller must hold Write OR Manage. AccessType.Write
     // already maps to "Writer or Manager" in PermissionsService#rolesGrantAccess
     // (case Write -> isWriter || isManager). Owner-on-entity counts as
     // manager and is therefore admitted.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     String locatorUrl = absoluteUrl(uriInfo, "/v2/" + k.urlSegment() + "/" + appId);
@@ -143,7 +143,7 @@ public class PublishRest {
       // Entity exists at appId-level but isn't of the requested kind.
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
+        "/problems/publish.entity.wrong-kind",
         "Entity is not of the requested kind",
         nfe.getMessage()
       );
@@ -153,14 +153,14 @@ public class PublishRest {
       // hint pointing at plugins/minter-local/.
       return problem(
         Response.Status.SERVICE_UNAVAILABLE,
-        "https://shepard.dlr.de/problems/publish.minter.not-installed",
+        "/problems/publish.minter.not-installed",
         "No minter installed",
         mnie.getMessage()
       );
     } catch (MinterException me) {
       return problem(
         Response.Status.INTERNAL_SERVER_ERROR,
-        "https://shepard.dlr.de/problems/publish.minter.failed",
+        "/problems/publish.minter.failed",
         "Active minter failed",
         me.getMessage()
       );
@@ -172,6 +172,7 @@ public class PublishRest {
 
   @DELETE
   @Operation(
+    operationId = "retirePublication",
     summary = "Retire a publication — mark the entity's most-recent :Publication as retired.",
     description = "Sets `digitalObjectMutability = 'retired'` on the most-recent `:Publication` row attached to " +
     "the entity. The row is never deleted — KIP records are append-only per the HMC spec. " +
@@ -193,13 +194,13 @@ public class PublishRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "/problems/publish.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
 
     var kindOpt = kindRegistry.bySegment(kind);
     if (kindOpt.isEmpty()) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.kind.unsupported",
+        "/problems/publish.kind.unsupported",
         "Unsupported publishable kind",
         "No publishable kind matches URL segment '" +
         kind +
@@ -214,10 +215,10 @@ public class PublishRest {
     try {
       ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "/problems/publish.entity.not-found", "Entity not found", "No entity with appId '" + appId + "'.");
     }
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "/problems/publish.permission.denied", "Permission denied", "Caller lacks Write/Manage permission on entity '" + appId + "'.");
     }
 
     boolean retired;
@@ -226,7 +227,7 @@ public class PublishRest {
     } catch (NotFoundException nfe) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
+        "/problems/publish.entity.wrong-kind",
         "Entity is not of the requested kind",
         nfe.getMessage()
       );
@@ -235,7 +236,7 @@ public class PublishRest {
     if (!retired) {
       return problem(
         Response.Status.NOT_FOUND,
-        "https://shepard.dlr.de/problems/publish.publication.not-found",
+        "/problems/publish.publication.not-found",
         "No Publication for this entity",
         "Entity with appId '" + appId + "' has no Publication attached — publish first."
       );
@@ -266,11 +267,7 @@ public class PublishRest {
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("type", type);
-    body.put("title", title);
-    body.put("status", status.getStatusCode());
-    body.put("detail", detail);
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

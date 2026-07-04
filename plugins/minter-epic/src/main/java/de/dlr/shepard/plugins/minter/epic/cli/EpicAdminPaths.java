@@ -6,8 +6,8 @@ package de.dlr.shepard.plugins.minter.epic.cli;
  */
 final class EpicAdminPaths {
 
-  /** {@code GET / PATCH /v2/admin/minters/epic/config}. */
-  static final String CONFIG = "/v2/admin/minters/epic/config";
+  /** {@code GET / PATCH /v2/admin/config/minter-epic} (V2CONV-A7 generic surface). */
+  static final String CONFIG = "/v2/admin/config/minter-epic";
 
   /** {@code POST / DELETE /v2/admin/minters/epic/credential}. */
   static final String CREDENTIAL = "/v2/admin/minters/epic/credential";

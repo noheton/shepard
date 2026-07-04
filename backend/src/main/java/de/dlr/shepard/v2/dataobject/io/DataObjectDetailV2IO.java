@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +34,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties({"id", "collectionId", "referenceIds", "successorIds",
+  "predecessorIds", "childrenIds", "parentId", "incomingIds"})
 @Schema(
   name = "DataObjectDetail",
   description = "Full DataObject detail response, extends DataObjectIO with typed " +
@@ -117,7 +120,7 @@ public class DataObjectDetailV2IO extends DataObjectIO {
   /**
    * API1 — appIds (UUID v7) of the {@code :TimeseriesReference} nodes attached to
    * this DataObject. Use a value here to navigate to the linked timeseries container
-   * via {@code GET /v2/timeseries-containers/{appId}}. Null (omitted from JSON) when
+   * via {@code GET /v2/containers/{appId}}. Null (omitted from JSON) when
    * no timeseries references exist.
    *
    * <p>Unlike the parent-class {@link DataObjectIO#getReferenceIds()} long array —
@@ -129,7 +132,7 @@ public class DataObjectDetailV2IO extends DataObjectIO {
     readOnly = true,
     nullable = true,
     description = "appIds (UUID v7) of TimeseriesReference nodes on this DataObject. " +
-      "Use with GET /v2/timeseries-containers/{appId} to reach the container. " +
+      "Use with GET /v2/containers/{appId} to reach the container. " +
       "Null when none exist."
   )
   @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -171,39 +174,29 @@ public class DataObjectDetailV2IO extends DataObjectIO {
     for (BasicReference ref : dataObject.getReferences()) {
       if (ref.isDeleted()) continue;
 
-      long refId = ref.getShepardId() != null ? ref.getShepardId() : (ref.getId() != null ? ref.getId() : -1L);
       String refAppId = ref.getAppId();
 
       if (ref instanceof TimeseriesReference tr) {
         if (tr.getTimeseriesContainer() != null) {
-          long cId = tr.getTimeseriesContainer().getId() != null ? tr.getTimeseriesContainer().getId() : -1L;
           timeseries.add(new ContainerRefIO(
             tr.getTimeseriesContainer().getAppId(),
             tr.getTimeseriesContainer().getName(),
-            cId,
-            refId,
             refAppId
           ));
         }
       } else if (ref instanceof FileBundleReference fbr) {
         if (fbr.getFileContainer() != null) {
-          long cId = fbr.getFileContainer().getId() != null ? fbr.getFileContainer().getId() : -1L;
           files.add(new ContainerRefIO(
             fbr.getFileContainer().getAppId(),
             fbr.getFileContainer().getName(),
-            cId,
-            refId,
             refAppId
           ));
         }
       } else if (ref instanceof StructuredDataReference sdr) {
         if (sdr.getStructuredDataContainer() != null) {
-          long cId = sdr.getStructuredDataContainer().getId() != null ? sdr.getStructuredDataContainer().getId() : -1L;
           structuredData.add(new ContainerRefIO(
             sdr.getStructuredDataContainer().getAppId(),
             sdr.getStructuredDataContainer().getName(),
-            cId,
-            refId,
             refAppId
           ));
         }

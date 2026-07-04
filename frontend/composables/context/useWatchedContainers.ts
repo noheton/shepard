@@ -19,10 +19,6 @@ export interface WatchDto {
   watchAppId: string;
   containerKind: WatchedContainerKind;
   containerAppId: string;
-  /** Legacy long id of the resolved container — needed because the
-   *  container detail pages are still on the v1 long-id route shape.
-   *  Null when the container is missing or the caller lacks Read. */
-  containerOgmId?: number | null;
   containerName?: string;
   containerAvailability?: ContainerAvailability;
   since?: number;

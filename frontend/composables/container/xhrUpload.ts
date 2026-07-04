@@ -176,12 +176,36 @@ export async function xhrUploadPresignedPut(args: {
   contentType: string;
   options?: XhrUploadOptions;
 }): Promise<void> {
-  return runXhr<void>({
+  return runXhr<undefined>({
     method: "PUT",
     url: args.url,
     body: args.file,
     headers: { "Content-Type": args.contentType },
     responseType: "void",
+    ...args.options,
+  });
+}
+
+/**
+ * APISIMP-VIDEO-STREAMREF-PATH — authenticated raw PUT.
+ *
+ * Sends raw file bytes as the request body (no multipart) with an
+ * Authorization header. Used for the unified PUT /v2/references/{appId}/content
+ * step in the two-step video (and file) upload pattern.
+ */
+export async function xhrUploadRawPut<T = unknown>(args: {
+  url: string;
+  file: File;
+  contentType: string;
+  authorization: string;
+  options?: XhrUploadOptions;
+}): Promise<T> {
+  return runXhr<T>({
+    method: "PUT",
+    url: args.url,
+    body: args.file,
+    headers: { "Content-Type": args.contentType, Authorization: args.authorization },
+    responseType: "json",
     ...args.options,
   });
 }

@@ -6,8 +6,11 @@
  * not hash-fragment-based, because `/tools` aggregates standalone routes
  * rather than fragments of one big page).
  *
- * Also exports a tiny appId-shape validator used by `/scene-graphs/index.vue`
- * (SCENEGRAPH-NAV-01) so a typo doesn't fire a backend request.
+ * V2CONV-B4: the `/scene-graphs` Tools tile was removed when the bespoke
+ * scene-graph subsystem dissolved into the MAPPING_RECIPE mechanism — the 3D
+ * view is now reached in-context from a URDF FileReference detail page
+ * ("Create / Open 3D view"), per the "tool entry points are in-context first"
+ * rule.
  */
 
 export interface ToolTile {
@@ -49,31 +52,28 @@ export const TOOLS_TILES: ToolTile[] = [
     icon: "mdi-vector-difference",
   },
   {
-    to: "/scene-graphs",
-    title: "Scene graphs",
-    description: "Coordinate-frame trees + joints for digital twins.",
-    icon: "mdi-graph-outline",
-  },
-  {
     to: "/shapes/render",
     title: "Shapes render playground",
     description: "Render URDF / mesh / spatial-shape previews.",
     icon: "mdi-cube-scan",
   },
+  {
+    to: "/tools/form-preview",
+    title: "Form preview",
+    description:
+      "Compile a data-kind template's SHACL shape into its form descriptor (BTKVS-B2).",
+    icon: "mdi-form-select",
+  },
+  {
+    to: "/aas/shells",
+    title: "AAS Shells",
+    description:
+      "Browse Collections as IDTA AAS v3 Asset Administration Shells (AAS1a/AAS1b).",
+    icon: "mdi-layers-triple-outline",
+  },
 ];
 
-/**
- * Loose appId shape check — UUID v7 is 36 chars, lowercase hex + hyphens.
- * Used by the scene-graphs "Open by appId" form to short-circuit obvious
- * typos before round-tripping to the backend.
- *
- * Intentionally loose (doesn't enforce v7-specific bits) — we just want
- * "is this plausibly an appId" not "is this a cryptographically valid v7".
- */
-export function isPlausibleAppId(input: string | null | undefined): boolean {
-  if (!input) return false;
-  const trimmed = input.trim().toLowerCase();
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
-    trimmed,
-  );
-}
+// UU2 (2026-05-31): `isPlausibleAppId` lives in `utils/idShape.ts` (which
+// also exports `isNumericLegacyId` for the stale-URL hint). Explicit
+// importers used to take this from here — they now import from `./idShape`
+// directly. Nuxt auto-import sees only one source, no duplicate warning.

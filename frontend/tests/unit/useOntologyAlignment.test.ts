@@ -88,7 +88,7 @@ describe("useOntologyAlignment — refresh()", () => {
     const { alignments, refresh } = useOntologyAlignment();
     await refresh();
     expect(alignments.value).toHaveLength(2);
-    mockFetchOk([sample[0]]);
+    mockFetchOk([sample[0]!]);
     await refresh();
     expect(alignments.value).toHaveLength(1);
     expect(alignments.value[0]?.shepardConcept).toBe("Collection");

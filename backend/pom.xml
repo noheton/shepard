@@ -76,6 +76,10 @@
          strictly the validation engine. See
          aidocs/semantics/48 §3 + aidocs/95 §11. -->
     <jena.version>5.4.0</jena.version>
+    <!-- Apache POI (Apache-2.0) — xlsx writer for the shape-driven Excel
+         export (BTKVS-C1-EXCEL-EXPORT, doc 125 §6/D5). poi-ooxml pulls the
+         trimmed poi-ooxml-lite schema jar, not the full ooxml-schemas. -->
+    <poi.version>5.4.1</poi.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -85,6 +89,46 @@
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>42.7.11</version>
+      </dependency>
+      <!-- SECURITY (Trivy image scan, HIGH): the Eclipse Angus Mail RI
+           (org.eclipse.angus:jakarta.mail) bundles the SMTP provider
+           org.eclipse.angus:smtp. Version 2.0.3 carries CVE-2025-7962
+           (SMTP injection via CR/LF), fixed in 2.0.4. Pin the whole RI
+           (jakarta.mail + smtp) to 2.0.4 so the embedded smtp artifact
+           Trivy reads from the jar metadata reports the fixed version. -->
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>jakarta.mail</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>smtp</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <!-- SECURITY (Trivy image scan, HIGH): org.apache.thrift:libthrift
+           0.21.0 is pulled transitively (via the Angus activation chain).
+           0.21.0 carries CVE-2026-43869 (TSSLTransportFactory hostname
+           verification bypass / cert host mismatch), fixed in 0.23.0. -->
+      <dependency>
+        <groupId>org.apache.thrift</groupId>
+        <artifactId>libthrift</artifactId>
+        <version>0.23.0</version>
+      </dependency>
+      <!-- QUARKUS-PLATFORM-BUMP: Netty 4.1.130 (shipped by Quarkus 3.27.2) has
+           CRITICAL/HIGH CVEs (CVE-2025-24970, CVE-2025-25193 and related
+           netty-codec-* advisories) flagged by Trivy image scans. Quarkus 3.27.2
+           itself has no self-CVE on quarkus-vertx-http — all findings are in the
+           transitive Netty stack. Pinning netty-bom 4.1.133.Final here (ahead of
+           the Quarkus BOM) overrides all io.netty:* versions to the fixed release
+           without a full Quarkus platform bump and the attendant JUnit 6 migration.
+           See aidocs/34 row QUARKUS-PLATFORM-BUMP and aidocs/16 for context. -->
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>4.1.133.Final</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
@@ -127,7 +171,8 @@
     <dependency>
       <groupId>org.eclipse.angus</groupId>
       <artifactId>jakarta.mail</artifactId>
-      <version>2.0.3</version>
+      <!-- 2.0.4: CVE-2025-7962 (SMTP injection) fix; see dependencyManagement note. -->
+      <version>2.0.4</version>
     </dependency>
     <!-- T1f — YAML import/export for ShepardTemplate portability (aidocs/16 T1f).
          Version managed by the Quarkus BOM. -->
@@ -310,6 +355,19 @@
       </exclusions>
     </dependency>
     <dependency>
+      <!-- Apache POI xlsx writer/reader (Apache-2.0). BTKVS-C1-EXCEL-EXPORT
+           (doc 125 §6/D5): the shape-driven Excel export walks the
+           urn:btkvs:cell-mapping / urn:btkvs:sheet annotations on a data-kind
+           template's shapeGraph and writes the focused DataObject's attribute
+           values into the mapped workbook cells. Retires the BT-KVS group's
+           xlwings (requires-a-running-Excel) tooling server-side. poi-ooxml
+           depends on poi-ooxml-lite (the trimmed XML-schema jar), keeping the
+           transitive weight to poi + xmlbeans + commons-compress. -->
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons.version}</version>
@@ -392,7 +450,7 @@
       <version>0.24.0</version>
     </dependency>
     <!-- DX1 — ShepardTestStack testcontainer support (aidocs/16 DX1).
-         All versions managed by the Quarkus BOM (3.27.2 → testcontainers 1.21.4).
+         Versions managed by the Quarkus BOM (quarkus.platform.version).
          No explicit <version> needed here. -->
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -428,6 +486,17 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
+    </dependency>
+    <!-- MFFD-NDT-QUALITY-1 — TIFF reader for thermography frame analysis.
+         Stock Java ImageIO does not handle 16-bit greyscale TIFFs that
+         Edevis OTvis / FLIR cameras emit. TwelveMonkeys ships a self-
+         registering SPI for ImageIO.getImageReadersByFormatName("TIFF")
+         so the call sites stay vendor-free.
+         Apache-2.0 licensed; no transitive CVEs >= 7.0 as of 2026-06-02. -->
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>3.10.1</version>
     </dependency>
   </dependencies>
   <build>
@@ -1122,6 +1191,121 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          MFFD-RENDER-NDT-GRID slice 1 — `shepard-plugin-vis-ndt-grid`.
+          Capability manifest + NdtGridShape SHACL classpath resource at
+          `/shapes/ndt-grid.shacl.ttl`. Surfaces `vis-ndt-grid` in
+          `GET /v2/admin/plugins`. No CDI beans, no @Path resources, no
+          sidecars in slice 1 — no quarkus.index-dependency entry needed.
+          Slice 2 (NdtGridTransformExecutor) will add the TransformExecutor
+          SPI; slice 3 (NdtGridView.vue) adds the frontend renderer.
+          See aidocs/16 MFFD-RENDER-NDT-GRID + aidocs/44 MFFD tracker.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-ndt-grid</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          MFFD-RENDER-AFP-THERMO-OVERLAY slice 1 — `shepard-plugin-vis-afp-thermo-overlay`.
+          Capability manifest + AfpThermoOverlayShape SHACL classpath resource at
+          `/shapes/afp-thermo-overlay.shacl.ttl`. Surfaces `vis-afp-thermo-overlay`
+          in `GET /v2/admin/plugins`. No CDI beans, no @Path resources, no sidecars
+          in slice 1 — no quarkus.index-dependency entry needed.
+          See aidocs/16 MFFD-RENDER-AFP-THERMO-OVERLAY.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-vis-afp-thermo-overlay</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          V2CONV-A6 — `shepard-plugin-krl-interpreter`. Extracts the
+          KRL trajectory interpret subsystem from backend core into a
+          drop-in Tier-1 plugin JAR. The plugin carries:
+            * `KrlInterpreterPluginManifest` SPI entry → surfaces
+              `krl-interpreter` in `GET /v2/admin/plugins`.
+            * `KrlTrajectoryTransformExecutor` ServiceLoader SPI entry
+              → routes MAPPING_RECIPE materializations for the
+              KrlTrajectoryShape IRI.
+            * `KrlInterpreterConfig`, `KrlSidecarClient`,
+              `KrlTrajectoryService` CDI beans → discovered via
+              `quarkus.index-dependency.shepard-plugin-krl-interpreter.*`
+              in `application.properties`.
+          See aidocs/16 V2CONV-A6 + aidocs/platform/191 §3.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-krl-interpreter</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          V2CONV-A6 — `shepard-plugin-fileformat-svdx`. Upgraded from Tier-0
+          (standalone pure-Java parser, always-on backend compile dep) to
+          Tier-1 (backend dep, with-plugins profile). The plugin now carries:
+            * SvdxIngestRest    — @Path /v2/svdx REST resource
+            * SvdxCsvIngestionService — @ApplicationScoped CDI bean
+            * SvdxIngestRequest/ResponseIO — Lombok IO records
+            * SvdxPluginManifest — surfaces `fileformat-svdx` in
+                `GET /v2/admin/plugins`.
+          CDI beans discovered via
+          `quarkus.index-dependency.shepard-plugin-fileformat-svdx.*`
+          in `application.properties`. Dissolves the bespoke in-core
+          `de.dlr.shepard.v2.svdx.*` surface (V2CONV-A6).
+          See aidocs/16 V2CONV-A6 + aidocs/platform/191 §3.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-svdx</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          V2CONV-A6 — `shepard-plugin-fileformat-thermography`. Upgraded from
+          Tier-0 (standalone always-on backend compile dep) to Tier-1
+          (backend dep, with-plugins profile). The plugin now carries:
+            * ThermographyV2Rest   — @Path /v2/thermography REST resource
+            * ThermographyAnalysisService — @RequestScoped CDI bean
+            * OtvisFrameRenderService    — @RequestScoped CDI bean
+            * ThermographyMetrics        — pure-math helper
+            * IO records (AnalyzeRequestIO, AnalyzeResultIO,
+                          OtvisFramesIO, PlateHeatmapIO)
+            * ThermographyPluginManifest — surfaces `fileformat-thermography`
+                in `GET /v2/admin/plugins`.
+          CDI beans discovered via
+          `quarkus.index-dependency.shepard-plugin-fileformat-thermography.*`
+          in `application.properties`. Dissolves the bespoke in-core
+          `de.dlr.shepard.v2.thermography.*` surface (V2CONV-A6).
+          See aidocs/16 V2CONV-A6 + aidocs/platform/191 §3.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-thermography</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          CAD file format metadata parser — STEP ISO 10303-21, Dassault 3DXML,
+          JT (ISO 14306) detection, OBJ mesh statistics. Emits
+          urn:shepard:cad:* + urn:shepard:mffd:cad:* annotations on upload.
+          No REST endpoints in phase 1; PluginManifest SPI entry surfaces the
+          plugin in GET /v2/admin/plugins. See plugins/fileformat-cad/docs/.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-cad</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          PARSER-SPI-WIRE-1 — `shepard-plugin-fileformat-robotics`. Wired
+          into the with-plugins profile so the RdkTextScrapeParser
+          (@ApplicationScoped FileParserPlugin) is discovered by the
+          FileParserRegistry CDI Instance<FileParserPlugin> at build time.
+          quarkus.index-dependency.* is set in application.properties.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-fileformat-robotics</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           JANDEX-HANG-FIX-2026-05-29 — `shepard-admin` (the CLI module)
           is added at **default (compile) scope** so Quarkus' Jandex
           composite index can resolve the `AdminCliCommandProvider`
@@ -1163,6 +1347,39 @@
           <version>${revision}</version>
         </dependency>
       </dependencies>
+    </profile>
+
+    <!--
+      bootstrap-testjar — produces backend:jar:tests WITHOUT the handful of test
+      sources that reference in-plugin packages (git adapters, spatialdata).
+      Those 4 tests can only compile once their plugins are on the classpath, but
+      the plugins themselves test-depend on backend:jar:tests — a bootstrap cycle.
+      scripts/install-plugins.sh activates this profile (-DbootstrapTestjar) to
+      build the test-jar first (excluding the 4), so the plugins can resolve it;
+      the real CI test run (no -DbootstrapTestjar, all plugins present) compiles
+      and runs all of them normally. Activated only when -DbootstrapTestjar is set.
+    -->
+    <profile>
+      <id>bootstrap-testjar</id>
+      <activation>
+        <property><name>bootstrapTestjar</name></property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>${compiler-plugin.version}</version>
+            <configuration>
+              <testExcludes>
+                <exclude>**/context/references/git/services/GitArtifactCacheQuarkusTest.java</exclude>
+                <exclude>**/data/model/GeometryBuilderTest.java</exclude>
+                <exclude>**/integrationtests/SpatialDataIT.java</exclude>
+                <exclude>**/integrationtests/SpatialDataReferenceIT.java</exclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

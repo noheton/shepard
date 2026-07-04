@@ -24,6 +24,9 @@ import AdminNotificationsPane from "~/components/context/admin/AdminNotification
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
 import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
+import AdminConfigOverviewPane from "~/components/context/admin/AdminConfigOverviewPane.vue";
+import AdminAiConfigPane from "~/components/context/admin/AdminAiConfigPane.vue";
+import AasAdminConfigPane from "~/components/context/admin/AasAdminConfigPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
@@ -65,6 +68,14 @@ const landingCards = [
     icon: "mdi-toggle-switch-outline",
     title: "Feature Toggles",
     description: "Flip runtime feature flags without a restart.",
+  },
+  // UI-GAP-3
+  {
+    fragment: AdminFragments.CONFIG_OVERVIEW,
+    icon: "mdi-tune-vertical-variant",
+    title: "Runtime Config Registry",
+    description:
+      "Inspect all registered runtime-configurable features — current JSON shape per feature, with links to bespoke panes.",
   },
   {
     fragment: AdminFragments.PLUGINS,
@@ -202,7 +213,7 @@ const landingCards = [
     fragment: AdminFragments.AI_CONFIG,
     icon: "mdi-robot-outline",
     title: "AI configuration",
-    description: "Per-instance LLM fallback (designed; ships with AI1a).",
+    description: "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, EMBEDDING, …). PATCH body keyed by capability name.",
   },
   {
     fragment: AdminFragments.BACKUP,
@@ -230,6 +241,28 @@ const landingCards = [
     title: "JupyterHub link-out",
     description: "Gate the per-notebook 'Open in JupyterHub' action. Set the hub URL and flip the master switch.",
   },
+  // MFFD-AF-TRACK-MAPPING — see aidocs/integrations/118
+  {
+    fragment: "mffd-process-chain",
+    icon: "mdi-graph-outline",
+    title: "MFFD process-chain mapping",
+    description: "Apply a YAML mapping of cross-process Predecessor edges (tapelaying → bridgewelding → NDT → cleats).",
+    path: "/admin/mffd-process-chain",
+  },
+  // MFFD-BATCH-01
+  {
+    fragment: AdminFragments.BATCH_CREATE,
+    icon: "mdi-layers-plus",
+    title: "Bulk DataObject creation",
+    description: "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item results. For MFFD-scale imports.",
+  },
+  // MISSING-aas-ui Slice 3
+  {
+    fragment: AdminFragments.AAS_CONFIG,
+    icon: "mdi-layers-triple-outline",
+    title: "AAS Integration",
+    description: "Configure the IDTA Asset Administration Shell integration: enable/disable, set IDTA Registry URL and API key, set the instance base URL embedded in Shell descriptors.",
+  },
 ];
 </script>
 
@@ -251,6 +284,10 @@ const landingCards = [
     />
     <FeatureTogglesPane
       v-if="routeFragment === AdminFragments.FEATURE_TOGGLES"
+    />
+    <!-- UI-GAP-3: config registry overview -->
+    <AdminConfigOverviewPane
+      v-if="routeFragment === AdminFragments.CONFIG_OVERVIEW"
     />
     <PluginsAdminPane v-if="routeFragment === AdminFragments.PLUGINS" />
     <AdminMetricsCard
@@ -312,11 +349,9 @@ const landingCards = [
     <AdminUserGitPane
       v-if="routeFragment === AdminFragments.USERS_GIT"
     />
+    <!-- PLACEHOLDER-REPLACE-AI-CONFIG: real pane shipped 2026-06-26 -->
+    <AdminAiConfigPane v-if="routeFragment === AdminFragments.AI_CONFIG" />
     <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
-    <PlaceholderFragmentPane
-      v-if="routeFragment === AdminFragments.AI_CONFIG"
-      slug="ai-config"
-    />
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"
@@ -333,5 +368,12 @@ const landingCards = [
     <AdminJupyterPane
       v-if="routeFragment === AdminFragments.JUPYTER"
     />
+    <!-- MFFD-BATCH-01: bulk DataObject create (PLACEHOLDER-REPLACE-MFFD-BATCH-01-UI) -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.BATCH_CREATE"
+      slug="batch-create"
+    />
+    <!-- MISSING-aas-ui Slice 3: AAS admin config pane -->
+    <AasAdminConfigPane v-if="routeFragment === AdminFragments.AAS_CONFIG" />
   </PaneLayout>
 </template>

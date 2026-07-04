@@ -8,8 +8,8 @@ import {
 import type { Ref } from "vue";
 import { useShepardApi } from "./common/api/useShepardApi";
 
-export abstract class ShepardObjectAccessor {
-  id: number;
+export abstract class ShepardObjectAccessor<TId extends number | string = number> {
+  id: TId;
   roles: Ref<Roles | undefined>;
   permissions: Ref<Permissions | undefined>;
   owner: Ref<User | undefined>;
@@ -22,7 +22,7 @@ export abstract class ShepardObjectAccessor {
     return !!this.roles.value?.owner || !!this.roles.value?.manager;
   });
 
-  constructor(id: number) {
+  constructor(id: TId) {
     this.id = id;
     this.roles = ref<Roles>();
     this.permissions = ref();
@@ -56,7 +56,9 @@ export abstract class ShepardObjectAccessor {
   }
 }
 
-export abstract class ContainerAccessor extends ShepardObjectAccessor {
+// V2-SWEEP-003-2: changed TId to string — container routes now carry UUID-v7 appId
+// or numeric string (V1-EXCEPTION). Accessors detect via /^\d+$/ and branch.
+export abstract class ContainerAccessor extends ShepardObjectAccessor<string> {
   isAllowedToDelete: ComputedRef<boolean> = computed(() => {
     return !!this.roles.value?.owner;
   });

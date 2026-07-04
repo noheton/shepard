@@ -6,7 +6,7 @@ import { AdminFragments } from "./adminMenuItems";
  *
  * Surfaces:
  *   1. Current :LegacyV1Config.enabled state with a toggle that
- *      PATCHes /v2/admin/legacy/v1/config (RFC 7396 merge-patch).
+ *      PATCHes /v2/admin/config/legacy-v1 (RFC 7396 merge-patch).
  *   2. Live in-memory hit counters from /v2/admin/legacy/v1/stats:
  *      total hits, top endpoints, top principals, first/most-recent
  *      hit timestamps.
@@ -15,8 +15,8 @@ import { AdminFragments } from "./adminMenuItems";
  *      know they're about to 410 live traffic.
  *
  * Backend endpoints (all @RolesAllowed instance-admin):
- *   - GET    /v2/admin/legacy/v1/config
- *   - PATCH  /v2/admin/legacy/v1/config  (Content-Type:
+ *   - GET    /v2/admin/config/legacy-v1
+ *   - PATCH  /v2/admin/config/legacy-v1  (Content-Type:
  *            application/merge-patch+json; body {"enabled": bool})
  *   - GET    /v2/admin/legacy/v1/stats?topN=N
  */
@@ -82,7 +82,7 @@ async function loadConfig() {
       fetchError.value = "No session token available — sign in again.";
       return;
     }
-    const res = await fetch(`${getV2BaseUrl()}/v2/admin/legacy/v1/config`, { headers });
+    const res = await fetch(`${getV2BaseUrl()}/v2/admin/config/legacy-v1`, { headers });
     if (res.ok) {
       cfg.value = (await res.json()) as ConfigDto;
     } else {
@@ -138,7 +138,7 @@ async function applyPatch(enabled: boolean) {
       return;
     }
     headers.set("Content-Type", "application/merge-patch+json");
-    const res = await fetch(`${getV2BaseUrl()}/v2/admin/legacy/v1/config`, {
+    const res = await fetch(`${getV2BaseUrl()}/v2/admin/config/legacy-v1`, {
       method: "PATCH",
       headers,
       body: JSON.stringify({ enabled }),

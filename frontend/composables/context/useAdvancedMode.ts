@@ -16,7 +16,9 @@ export function useAdvancedMode() {
     if (loaded) return;
     loaded = true;
     try {
-      const prefs = await api.value.getPreferences();
+      // V2-SWEEP-001-CLIENT-REGEN: getPreferences now returns `object`; the
+      // preferences map is a flat string→string bag keyed by PREF_KEY.
+      const prefs = (await api.value.getPreferences()) as Record<string, string>;
       advancedMode.value = prefs[PREF_KEY] === "true";
     } catch {
       advancedMode.value = false;
@@ -40,7 +42,7 @@ export function useAdvancedMode() {
       isSaving.value = false;
     }, 5000);
     try {
-      await api.value.patchPreferences({ [PREF_KEY]: enabled ? "true" : "false" });
+      await api.value.patchPreferences({ body: { [PREF_KEY]: enabled ? "true" : "false" } });
     } catch (error) {
       advancedMode.value = previous; // revert
       handleError(error, "saving advanced mode preference");

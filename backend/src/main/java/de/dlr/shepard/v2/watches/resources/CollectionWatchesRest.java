@@ -1,5 +1,7 @@
 package de.dlr.shepard.v2.watches.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.watches.io.CreateWatchIO;
 import de.dlr.shepard.v2.watches.io.WatchIO;
 import de.dlr.shepard.v2.watches.services.WatchService;
@@ -7,14 +9,19 @@ import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
@@ -22,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -44,14 +52,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection watched containers (WATCH1)")
+@Tag(name = "Collections")
 public class CollectionWatchesRest {
 
   @Inject
   WatchService service;
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   @GET
   @Operation(
+    operationId = "listWatchedContainers",
     summary = "List containers this Collection is watching (WATCH1).",
     description =
       "Returns one `WatchIO` row per `:Watch` edge attached to the " +
@@ -75,24 +89,38 @@ public class CollectionWatchesRest {
       "Auth: Read on the Collection. The per-container availability check " +
       "filters out container details the caller can't see, but the watch " +
       "row itself is always returned so the operator knows the link exists.\n\n" +
+      "Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
+      "(1–200) to receive a slice. Omit both to return all watches. " +
+      "`X-Total-Count` header carries the total before paging.\n\n" +
       "Next step: `POST /v2/collections/{collectionAppId}/watched-containers` " +
       "to add a watch, or click the target container's appId in the UI."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of watches (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = WatchIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
-  public Response list(@PathParam("collectionAppId") @NotBlank String collectionAppId) {
-    List<WatchIO> result = service.list(collectionAppId);
-    return Response.ok(result).build();
+  public Response list(
+      @PathParam("collectionAppId") @NotBlank String collectionAppId,
+      @Parameter(description = "Zero-based page index (default 0).")
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size, 1–200 (default 50).")
+      @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
+    List<WatchIO> all = service.list(collectionAppId);
+    long total = all.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+        .build();
   }
 
   @POST
   @Operation(
+    operationId = "createWatchedContainer",
     summary = "Add a Watch link from a Collection to a Container (WATCH1).",
     description =
       "Creates a `:Watch` edge from the Collection identified by " +
@@ -136,9 +164,8 @@ public class CollectionWatchesRest {
   ) {
     if (body == null || body.containerKind() == null || body.containerAppId() == null
         || body.containerAppId().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"containerKind and containerAppId are required\"}")
-        .build();
+      return problem("/problems/watches.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "containerKind and containerAppId are required");
     }
     WatchIO out = service.create(collectionAppId, body.containerKind(), body.containerAppId());
     return Response.status(Response.Status.CREATED).entity(out).build();
@@ -147,6 +174,7 @@ public class CollectionWatchesRest {
   @DELETE
   @Path("{watchAppId}")
   @Operation(
+    operationId = "deleteWatchedContainer",
     summary = "Remove a Watch link by its appId (WATCH1).",
     description =
       "Deletes the `:Watch` edge identified by `watchAppId` from the " +

@@ -100,7 +100,7 @@ HTTP/1.1 404 Not Found
 Content-Type: application/problem+json
 
 {
-  "type": "https://shepard.dlr.de/problems/kip.pid.not-found",
+  "type": "/problems/kip.pid.not-found",
   "title": "KIP record not found for PID suffix",
   "status": 404,
   "detail": "No :Publication row matches the requested PID."

@@ -1,0 +1,120 @@
+# scene-graph-play.shacl.ttl — SceneGraphPlayShape, a MAPPING_RECIPE shape.
+#
+# V2CONV-B4 — the dissolution of the bespoke `/v2/scene-graphs/*` namespace
+# into the generic MAPPING_RECIPE mechanism (aidocs/platform/191 decision #2).
+#
+# A scene-graph is no longer a stored frames/joints graph in Neo4j. Instead it
+# is a MAPPING_RECIPE template that BINDS:
+#   • a URDF FileReference (the kinematic tree — parsed on demand, the single
+#     source of truth for links + joints + transforms);
+#   • an optional joint TimeseriesReference (the joint values over time);
+#   • a channel→joint binding map (which TS channel drives which URDF joint).
+#
+# Materializing this recipe via `POST /v2/mappings/{templateAppId}/materialize`
+# dispatches to the `SceneGraphPlayTransformExecutor` (this plugin), which
+# resolves + parses the URDF, reads the binding plan, and returns a VIEW result
+# (the "play envelope": frame tree + joint binding plan) the Trace3D-family
+# renderer plays back.
+#
+# This is the transform-direction sibling of the Trace3DViewShape (the view
+# direction). Trace3D renders a colour-mapped end-effector path from X/Y/Z
+# channels; SceneGraphPlay plays a full articulated robot from a URDF + joint
+# channels. Both flow through the same Three.js renderer family.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` field
+# names): http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape
+#
+# Consumed by:
+#   • POST /v2/mappings/{templateAppId}/materialize — resolves this shape IRI
+#     to SceneGraphPlayTransformExecutor via the fail-soft
+#     TransformExecutorRegistry; runs it; returns TransformResult.view(envelope).
+#   • POST /v2/shapes/validate — the Jena SHACL validator accepts this shape as
+#     one of the allow-listed MAPPING_RECIPE concretions.
+#   • frontend OpenIn3dViewButton.vue → useSceneGraphPlay.ts — creates/opens a
+#     MAPPING_RECIPE targeting this shape on a URDF FileReference detail page.
+#
+# Cross-refs:
+#   aidocs/platform/191-v2-surface-convergence.md §decision-2 — the dissolution
+#   aidocs/16-dispatcher-backlog.md — V2CONV-B4 row
+#   docs/reference/scene-graph.md — the MAPPING_RECIPE scene-graph view
+#   backend/src/main/java/de/dlr/shepard/spi/transform/TransformExecutor.java
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix scenegraph:<http://semantics.dlr.de/shepard/transform/scenegraph#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: SceneGraphPlayRecipe ──────────────────────────────────────
+
+scenegraph:SceneGraphPlayRecipe a owl:Class ;
+    rdfs:label "Scene-graph play recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that binds a URDF FileReference (kinematic tree, parsed on demand) plus an optional joint TimeseriesReference and channel->joint binding map, materialized into a play envelope the Trace3D-family renderer plays back. Replaces the bespoke :DigitalTwinScene stored graph (V2CONV-B4)."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: SceneGraphPlayShape ───────────────────────────────────────
+
+scenegraph:SceneGraphPlayShape a sh:NodeShape ;
+    sh:targetClass scenegraph:SceneGraphPlayRecipe ;
+
+    # The dispatch-key IRI MUST appear in the template body's
+    # `mappingRecipeShape` field for the materialize endpoint to route here.
+    rdfs:comment "Bound via mappingRecipeShape = http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape" ;
+
+    # The URDF FileReference appId — REQUIRED. The single source of truth for
+    # the kinematic tree. Must resolve to a singleton FR1b carrying URDF XML.
+    sh:property [
+        sh:path     scenegraph:urdfFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "URDF FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the robot's URDF XML. Parsed on demand by the executor — never a stored graph. Resolves to bytes via GET /v2/files/{appId}/content." ;
+        sh:order    10 ;
+    ] ;
+
+    # The joint TimeseriesReference appId — OPTIONAL. When present, the play
+    # envelope carries the binding plan so the renderer animates the robot.
+    sh:property [
+        sh:path     scenegraph:jointTimeseriesReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Joint TimeseriesReference appId" ;
+        sh:description "Optional appId of a TimeseriesReference whose channels carry the joint values over time. Omitted = static pose (URDF default joint positions). Present = animated playback driven by jointChannelBindings." ;
+        sh:order    20 ;
+    ] ;
+
+    # The channel->joint binding map — OPTIONAL (required in practice when a
+    # joint TS reference is bound). A JSON array of { joint, channelSelector }.
+    sh:property [
+        sh:path     scenegraph:jointChannelBindings ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Joint -> channel bindings" ;
+        sh:description "Optional JSON array binding each URDF joint name to a TimeseriesChannel selector, e.g. [{\"joint\":\"joint_1\",\"channelSelector\":\"{...,field:joint_1}\"}]. Pre TS-ID migration (aidocs/platform/87) the selector is the 5-tuple JSON; post-migration a single shepardId string." ;
+        sh:order    30 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting SceneGraphPlayShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#SceneGraphPlayShape",
+#   "urdfFileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#   "jointTimeseriesReferenceAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33",
+#   "jointChannelBindings": "[{\"joint\":\"joint_1\",\"channelSelector\":\"{...,\\\"field\\\":\\\"j1\\\"}\"}]"
+# }
+#
+# Materialize:
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {
+#       "urdfFileAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#       "jointTimeseriesAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33" } }
+#
+#   → 200 { "outputKind": "VIEW", "viewModel": { "kind": "scene-graph-play",
+#           "robotName": "...", "frames": [...], "joints": [...],
+#           "jointChannelBindings": [...], "urdfFileReferenceAppId": "..." } }

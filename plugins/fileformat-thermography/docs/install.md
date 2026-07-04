@@ -49,9 +49,37 @@ No external services, no sidecar containers, no compose changes.
 
 ## Runtime configuration
 
+### Tier-1 OTvis parser
+
 No runtime configuration knobs in tier-1. Tier-2 will add a
 `:ThermographyConfig` admin singleton for the frame-extraction
 buffer-size + output-format settings.
+
+### MFFD-NDT-QUALITY-1 — analysis defaults (2026-06-02)
+
+The NDT quality-score + plate-heatmap surface lives in this plugin
+(`ThermographyAnalysisService` + `ThermographyHeatmapRenderer`). Viewing
+flows through the generic `POST /v2/shapes/render` endpoint
+(V2CONV-A7-THERMO — no bespoke `/v2/thermography/*` REST). Analysis runs at
+upload time; it exposes three deploy-time keys:
+
+| Key | Default | Effect |
+|---|---|---|
+| `shepard.v2.thermography.threshold-c` | `80.0` | Denominator for `quality-score = 1 − maxPeakDeltaC/threshold`. Operators on cooler-running processes can lower this (e.g. 60.0 for thermoplastic stamping) so the chip flips amber earlier. |
+| `shepard.v2.thermography.grid-width` | `64` | Plate-heatmap horizontal resolution in cells. 64 is the sweet spot for MFFD upper-shell TIFFs (1024×768 → ~16 px/cell). |
+| `shepard.v2.thermography.grid-height` | `64` | Plate-heatmap vertical resolution in cells. |
+
+Callers may override per-request via the `AnalyzeRequestIO` body
+(`thresholdC`, `gridWidth`, `gridHeight`). A future
+`:ThermographyConfig` admin singleton (queued as
+`MFFD-NDT-ADMIN-CONFIG-1`) will let operators flip these at runtime
+without a redeploy.
+
+### Dependency added (2026-06-02)
+
+`com.twelvemonkeys.imageio:imageio-tiff:3.10.1` (Apache-2.0) was added
+to `backend/pom.xml` for the TIFF decoder path. Stock Java ImageIO
+cannot read the 16-bit grayscale TIFFs Edevis/FLIR cameras emit.
 
 ## Wire-up (when backend Jandex hang clears)
 

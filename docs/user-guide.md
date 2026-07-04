@@ -100,6 +100,7 @@ Effective access is therefore:
 
 Step-by-step walkthroughs for common tasks:
 
+- [MFFD digital-thread tour](help/mffd-tour.md) — a 10-minute guided walk through the MFFD showcase data (live links)
 - [Plot timeseries data](help/timeseries-plotting.md) — interactive charts, zoom/pan, channel selection, container-level previews
 - [Explore collection lineage](help/collection-lineage.md) — parent/child and predecessor/successor graph
 - [Trace dataset provenance](help/provenance-tracing.md) — who acted on a dataset and when

@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.collection.resources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,6 +22,9 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.v2.collection.io.CollectionV2IO;
+import de.dlr.shepard.v2.collection.io.CreateCollectionV2IO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -84,7 +88,7 @@ class CollectionV2RestTest {
   // ── list ──────────────────────────────────────────────────────────────────
 
   @Test
-  void listReturns200WithRows() {
+  void listReturns200WithPagedEnvelope() {
     Collection c = new Collection();
     c.setShepardId(COLL_OGM_ID);
     c.setAppId(COLL_APP_ID);
@@ -95,20 +99,49 @@ class CollectionV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<CollectionIO> body = (List<CollectionIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(COLL_APP_ID, body.get(0).getAppId());
+    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertEquals(1, body.items().size());
+    assertEquals(COLL_APP_ID, body.items().get(0).getAppId());
+    // X-Total-Count header kept during deprecation window
+    assertEquals("1", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
-  void listClampsOversizeRequestToMax200() {
+  void listReturnsEmptyPagedEnvelopeWhenNoCollections() {
     when(collectionService.getAllCollections(any())).thenReturn(List.of());
-    // Asking for 500 must not blow through the 200 cap server-side.
-    Response r = resource.list(null, 0, 500);
+
+    Response r = resource.list(null, 0, 50);
+
     assertEquals(200, r.getStatus());
-    // The QueryParamHelper inside is opaque to the test; we exercise that
-    // the call completes and the response code is correct. The cap itself
-    // is a defensive measure — a unit-level slice of it covered above.
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CollectionV2IO> body = (PagedResponseIO<CollectionV2IO>) r.getEntity();
+    assertEquals(0, body.total());
+    assertEquals(0, body.items().size());
+  }
+
+  @Test
+  void list_pageSizeParam_hasMinConstraint() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize must have @Min constraint");
+    assertEquals(1L, param.getAnnotation(jakarta.validation.constraints.Min.class).value(), "pageSize @Min must be 1");
+  }
+
+  @Test
+  void list_pageSizeParam_hasMaxConstraint() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    assertNotNull(param.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize must have @Max constraint");
+    assertEquals(200L, param.getAnnotation(jakarta.validation.constraints.Max.class).value(), "pageSize @Max must be 200");
   }
 
   // ── get ────────────────────────────────────────────────────────────────────
@@ -118,7 +151,7 @@ class CollectionV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
     Response r = resource.get(COLL_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(any()), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
   }
 
   @Test
@@ -163,20 +196,45 @@ class CollectionV2RestTest {
 
   @Test
   void createReturns201WithMintedAppId() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("new collection");
 
     Collection created = new Collection();
     created.setShepardId(99L);
     created.setAppId("018f9c5a-9999-7000-a000-000000000099");
     created.setName("new collection");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
     assertEquals(201, r.getStatus());
     CollectionIO io = (CollectionIO) r.getEntity();
     assertEquals("018f9c5a-9999-7000-a000-000000000099", io.getAppId());
+  }
+
+  @Test
+  void createWithDefaultFileContainerAppId_translatesFieldToCollectionIO() {
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
+    body.setName("with default fc");
+    body.setDefaultFileContainerAppId("018f9c5a-fc00-7000-a000-000000000001");
+
+    Collection created = new Collection();
+    created.setShepardId(55L);
+    created.setAppId("018f9c5a-5555-7000-a000-000000000055");
+    created.setName("with default fc");
+
+    // Capture the CollectionIO that the service receives to verify appId translation.
+    org.mockito.ArgumentCaptor<CollectionIO> captor = org.mockito.ArgumentCaptor.forClass(CollectionIO.class);
+    when(collectionService.createCollection(captor.capture())).thenReturn(created);
+
+    Response r = resource.create(body);
+
+    assertEquals(201, r.getStatus());
+    assertEquals("018f9c5a-fc00-7000-a000-000000000001",
+      captor.getValue().getDefaultFileContainerAppId(),
+      "defaultFileContainerAppId must be translated into the CollectionIO passed to the service");
+    assertEquals(null, captor.getValue().getDefaultFileContainerId(),
+      "defaultFileContainerId must NOT be set (v2 input does not carry the legacy Long)");
   }
 
   // ── patch ─────────────────────────────────────────────────────────────────
@@ -246,7 +304,7 @@ class CollectionV2RestTest {
 
   @Test
   void createWithPromptLogModePersistsIt() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("with prompt log mode");
     body.setPromptLogMode("BODY_RAW");
 
@@ -255,7 +313,7 @@ class CollectionV2RestTest {
     created.setAppId("018f9c5a-8888-7000-a000-000000000088");
     created.setName("with prompt log mode");
     created.setPromptLogMode("BODY_RAW");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
@@ -329,7 +387,7 @@ class CollectionV2RestTest {
 
   @Test
   void createWithHeroImageUrlPersistsIt() {
-    CollectionIO body = new CollectionIO();
+    CreateCollectionV2IO body = new CreateCollectionV2IO();
     body.setName("with hero");
     body.setHeroImageUrl("https://example.com/banner.jpg");
 
@@ -338,7 +396,7 @@ class CollectionV2RestTest {
     created.setAppId("018f9c5a-7777-7000-a000-000000000077");
     created.setName("with hero");
     created.setHeroImageUrl("https://example.com/banner.jpg");
-    when(collectionService.createCollection(body)).thenReturn(created);
+    when(collectionService.createCollection(any())).thenReturn(created);
 
     Response r = resource.create(body);
 
@@ -477,5 +535,45 @@ class CollectionV2RestTest {
     assertNotNull(methodPath, "get(...) must carry an @Path annotation");
     assertEquals("/{collectionAppId}", methodPath.value(),
       "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
+  }
+
+  // ─── APISIMP-REMAINING-PARAMS reflection guards ────────────────────────────
+
+  @Test
+  void list_nameParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "name".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.name must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.name must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.name");
+  }
+
+  // ─── APISIMP-COLLECTION-LIST-BUNDLE-SIZE-PAGESIZE reflection guards ────────
+
+  @Test
+  void list_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "page".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.page must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.page");
+  }
+
+  @Test
+  void list_pageSizeParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.pageSize");
   }
 }

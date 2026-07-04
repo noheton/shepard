@@ -11,17 +11,41 @@ import type {
 } from "~/components/context/display-components/file-references/fileReferenceTypes";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+// BUG-COLL-APPID-ROUTE-007-REFPAGE: accept the numeric ids as a plain number, a
+// Ref, or a getter and resolve them at fetch time. The reference detail page's
+// route params are now the v2 appId (UUID), so the NUMERIC ids these v1
+// `/shepard/api/...` endpoints require only become available once the loaded v2
+// entities resolve. The composable defers its first fetch until all three ids
+// are present and re-fetches when they appear.
 export function useFetchFileReference(
-  collectionId: number,
-  dataObjectId: number,
-  fileReferenceId: number,
+  collectionIdInput: MaybeRefOrGetter<number | undefined>,
+  dataObjectIdInput: MaybeRefOrGetter<number | undefined>,
+  fileReferenceIdInput: MaybeRefOrGetter<number | undefined>,
 ) {
   const fileReference = ref<FileReferenceWithContainerMeta | undefined>(
     undefined,
   );
   const files = ref<FileMeta[]>([]);
+  // UU1 — UI-404-NICE-EMPTY-STATE: 404 → render `EntityNotFound`, not a toast.
+  const notFound = ref<boolean>(false);
 
-  async function fetchFileReference() {
+  function ids():
+    | { collectionId: number; dataObjectId: number; fileReferenceId: number }
+    | undefined {
+    const collectionId = toValue(collectionIdInput);
+    const dataObjectId = toValue(dataObjectIdInput);
+    const fileReferenceId = toValue(fileReferenceIdInput);
+    if (collectionId == null || dataObjectId == null || fileReferenceId == null)
+      return undefined;
+    return { collectionId, dataObjectId, fileReferenceId };
+  }
+
+  async function fetchFileReference(
+    collectionId: number,
+    dataObjectId: number,
+    fileReferenceId: number,
+  ) {
+    notFound.value = false;
     useShepardApi(FileReferenceApi)
       .value.getFileReference({
         collectionId,
@@ -38,8 +62,12 @@ export function useFetchFileReference(
         };
       })
       .catch(error => {
-        handleError(error, "getFileReference");
         fileReference.value = undefined;
+        if ((error as ResponseError)?.response?.status === 404) {
+          notFound.value = true;
+          return;
+        }
+        handleError(error, "getFileReference");
       });
   }
 
@@ -64,7 +92,11 @@ export function useFetchFileReference(
       });
   }
 
-  async function fetchReferencedFiles(): Promise<ShepardFile[]> {
+  async function fetchReferencedFiles(
+    collectionId: number,
+    dataObjectId: number,
+    fileReferenceId: number,
+  ): Promise<ShepardFile[]> {
     return useShepardApi(FileReferenceApi)
       .value.getFiles({
         collectionId,
@@ -89,13 +121,19 @@ export function useFetchFileReference(
   }
 
   watch(fileReference, async () => {
+    const resolved = ids();
     if (
+      resolved &&
       fileReference.value &&
       !isDeleted(fileReference.value.fileContainerId) &&
       fileReference.value.referencedContainerAvailability === "available"
     ) {
       const [referencedFiles, existingFiles] = await Promise.all([
-        fetchReferencedFiles(),
+        fetchReferencedFiles(
+          resolved.collectionId,
+          resolved.dataObjectId,
+          resolved.fileReferenceId,
+        ),
         fetchExistingFilesInContainer(fileReference.value.fileContainerId),
       ]);
 
@@ -112,7 +150,16 @@ export function useFetchFileReference(
     }
   });
 
-  fetchFileReference();
+  // Fetch once all ids are resolvable; re-fetch when they first appear (the
+  // route-param-is-appId case where the numeric ids arrive after the v2 load).
+  watch(ids, resolved => {
+    if (resolved)
+      fetchFileReference(
+        resolved.collectionId,
+        resolved.dataObjectId,
+        resolved.fileReferenceId,
+      );
+  }, { immediate: true });
 
-  return { fileReference, files };
+  return { fileReference, files, notFound };
 }

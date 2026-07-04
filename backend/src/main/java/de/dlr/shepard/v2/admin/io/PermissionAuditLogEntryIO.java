@@ -18,8 +18,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "PermissionAuditLogEntry")
 public class PermissionAuditLogEntryIO {
 
-  @Schema(required = true, description = "Auto-incremented row id.")
-  private long id;
+  @Schema(required = true, description = "Stable UUID identifying this audit-log row.")
+  private String appId;
 
   @Schema(required = true, description = "UTC timestamp when the change was recorded.")
   private String occurredAt;

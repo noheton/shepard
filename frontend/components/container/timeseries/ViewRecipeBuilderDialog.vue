@@ -2,14 +2,22 @@
 import type { Timeseries } from "@dlr-shepard/backend-client";
 import Trace3DChannelPicker from "./Trace3DChannelPicker.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "./Trace3DChannelPicker.vue";
+import { useFetchUrdfOptions, type ReferenceOption } from "~/composables/useFetchReferenceOptions";
 
 const props = defineProps<{
   containerId: number;
+  containerAppId: string;
   channels: Timeseries[];
   /** v2 channel list carrying shepardId for auto-populate and annotation save. */
   channelsV2?: ChannelV2[];
   startNs: number;
   endNs: number;
+  /**
+   * appId of the parent DataObject — used to populate the URDF reference picker
+   * with FileReferences whose name ends .urdf. Optional: when absent the picker
+   * degrades to a free-text appId input.
+   */
+  dataObjectAppId?: string;
 }>();
 
 const open = defineModel<boolean>({ default: false });
@@ -20,10 +28,21 @@ const open = defineModel<boolean>({ default: false });
 type RendererKind = "trace-3d" | "urdf" | "thermography";
 const rendererKind = ref<RendererKind>("trace-3d");
 
-// URDF binding state — when rendererKind === "urdf", the dialog asks for a
-// URDF source URL (signed Garage URL or a path under /urdf-samples/).
-const urdfUrl = ref<string>("/urdf-samples/two-link-arm.urdf");
-const urdfPackagePath = ref<string>("");
+// URDF binding state — when rendererKind === "urdf", the picker selects the
+// FileReference appId of the .urdf singleton. UI-PATHS-FROM-REFERENCES rule:
+// no raw URL/path; the render page resolves bytes via GET /v2/files/{appId}/content
+// and the mesh package root from the urn:shepard:urdf:package-path annotation.
+//
+// Type is string | ReferenceOption | null because v-combobox returns the
+// full ReferenceOption when a list item is selected, but a plain string when
+// the user types free text. resolveUrdfAppId() normalises both.
+const urdfFileAppId = ref<string | ReferenceOption | null>("");
+
+// URDF-REF-PICKER: scoped to FileReferences with .urdf names for the parent
+// DataObject. v-combobox still accepts free-text appId when no context.
+const { options: urdfOptions, isLoading: urdfLoading } = useFetchUrdfOptions(
+  () => props.dataObjectAppId,
+);
 
 const pickerRef = ref<InstanceType<typeof Trace3DChannelPicker> | null>(null);
 const canOpen = ref(false);
@@ -68,7 +87,7 @@ async function saveAnnotations() {
     );
     if (!ch?.shepardId) continue;
     await $fetch(
-      `/v2/timeseries-containers/${props.containerId}/channels/${ch.shepardId}/annotations`,
+      `/v2/containers/${props.containerAppId}/channels/${ch.shepardId}/annotations`,
       { method: "POST", body: { value: role } },
     ).catch(() => {});
   }
@@ -87,9 +106,13 @@ function openTrace3D() {
   if (sel.rot_b) roles.rot_b = sel.rot_b;
   if (sel.rot_c) roles.rot_c = sel.rot_c;
 
+  // UX612-C2: the render page's channel endpoints are appId-keyed
+  // (APISIMP-TSCONT-APPID-KEY) — carry the container appId through the
+  // handoff. The numeric containerId remains for legacy bookmarks only.
   navigateTo({
     path: "/shapes/render",
     query: {
+      ...(props.containerAppId ? { containerAppId: props.containerAppId } : {}),
       containerId: String(props.containerId),
       startNs:    String(props.startNs),
       endNs:      String(props.endNs),
@@ -100,17 +123,32 @@ function openTrace3D() {
 }
 
 // ── open URDF render page ────────────────────────────────────────────────────
+// V2-SWEEP Wave 2: the render link carries the FileReference appId only —
+// the backend/content endpoint resolves the actual bytes (and the mesh
+// package root from the reference's annotations). No raw URL/path on the
+// query string. The numeric `containerId` rides the documented TS-ID
+// exception (v2 timeseries-container content endpoints are still numeric
+// pending aidocs/platform/87).
+
+/** Normalises v-combobox value (ReferenceOption or free-text string) to a plain appId. */
+function resolveUrdfAppId(): string {
+  const v = urdfFileAppId.value;
+  if (!v) return "";
+  if (typeof v === "string") return v.trim();
+  return (v as ReferenceOption).appId.trim();
+}
+
 function openUrdf() {
-  if (!urdfUrl.value.trim()) return;
+  const appId = resolveUrdfAppId();
+  if (!appId) return;
   navigateTo({
     path: "/shapes/render",
     query: {
-      renderer:    "urdf",
-      urdfUrl:     encodeURIComponent(urdfUrl.value.trim()),
-      packagePath: encodeURIComponent(urdfPackagePath.value.trim()),
-      containerId: String(props.containerId),
-      startNs:     String(props.startNs),
-      endNs:       String(props.endNs),
+      renderer:      "urdf",
+      urdfFileAppId: appId,
+      containerId:   String(props.containerId),
+      startNs:       String(props.startNs),
+      endNs:         String(props.endNs),
     },
   });
 }
@@ -136,7 +174,7 @@ function openThermography() {
 
 const canOpenAny = computed(() =>
   (rendererKind.value === "trace-3d" && canOpen.value) ||
-  (rendererKind.value === "urdf" && urdfUrl.value.trim().length > 0) ||
+  (rendererKind.value === "urdf" && resolveUrdfAppId().length > 0) ||
   (rendererKind.value === "thermography"),
 );
 </script>
@@ -177,6 +215,7 @@ const canOpenAny = computed(() =>
           :key="openCount"
           ref="pickerRef"
           :container-id="containerId"
+          :container-app-id="containerAppId"
           :channels="resolvedChannels"
           @update:can-confirm="canOpen = $event"
           @save-annotations-requested="saveAnnotations"
@@ -184,25 +223,29 @@ const canOpenAny = computed(() =>
 
         <div v-else-if="rendererKind === 'urdf'" class="d-flex flex-column ga-3">
           <div class="text-caption text-medium-emphasis">
-            Render a robot description (URDF) in the browser. The default sample
-            is a two-link demo arm; replace with a signed Garage URL of a real
-            URDF FileReference to render your own robot.
+            Render a robot description (URDF) in the browser. Pick a
+            <code>.urdf</code> FileReference from the list, or paste an appId
+            directly. The renderer resolves bytes and mesh paths from the
+            reference — no raw file paths needed.
           </div>
-          <v-text-field
-            v-model="urdfUrl"
-            label="URDF source URL"
+          <!-- URDF-REF-PICKER: v-combobox backed by .urdf FileReferences on the
+               parent DataObject. Free-text fallback: the user can paste an appId
+               when no DataObject context is available or the file isn't listed. -->
+          <v-combobox
+            v-model="urdfFileAppId"
+            :items="urdfOptions"
+            :loading="urdfLoading"
+            item-value="appId"
+            item-title="label"
+            label="URDF FileReference"
             density="compact"
             variant="outlined"
-            hint="Signed URL of the .urdf file, or a static path under /urdf-samples/."
+            placeholder="pick a .urdf reference or paste an appId"
+            hint="Select from the list or paste the UUID of the .urdf FileReference."
             persistent-hint
-          />
-          <v-text-field
-            v-model="urdfPackagePath"
-            label="Mesh package path (optional)"
-            density="compact"
-            variant="outlined"
-            hint="Root used to resolve `package://` mesh URIs."
-            persistent-hint
+            clearable
+            spellcheck="false"
+            data-testid="urdf-ref-combobox"
           />
         </div>
 

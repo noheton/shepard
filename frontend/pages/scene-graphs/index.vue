@@ -1,245 +1,168 @@
 <script setup lang="ts">
 /**
- * Scene graphs landing — SCENEGRAPH-NAV-01 → SCENEGRAPH-LIST-1.
+ * SCENE-GRAPHS-INDEX-2026-06-29 — top-level `/scene-graphs` listing.
  *
- * Sibling to `/scene-graphs/[appId]` (SCENEGRAPH-REST-1-UI). A 1-click
- * destination from the top-level Tools menu (TOOLS-NAV-01).
+ * V2CONV-B4 dissolved the bespoke stored `/v2/scene-graphs/*` namespace
+ * into the generic MAPPING_RECIPE mechanism — every scene-graph play
+ * recipe is now a `ShepardTemplate{ templateKind: "MAPPING_RECIPE",
+ * mappingRecipeShape: SCENE_GRAPH_PLAY_SHAPE_IRI }`. The play page lives
+ * at `/scene-graphs/play/{templateAppId}` (already shipped); this page
+ * surfaces the index a user reaches by clicking "Scene graphs" from
+ * the Tools menu or by typing /scene-graphs.
  *
- * Wire shape: `GET /v2/scene-graphs?page=<n>&size=<m>` (C1, shipped
- * 2026-05-30 as `db241cff2`) returns `{ items[], total, page, size }`.
- * We render via `v-data-table-server` for proper server-side pagination
- * and degrade to the existing help card when the catalogue is empty.
+ * Backend list endpoint: `GET /v2/templates?templateKind=MAPPING_RECIPE`.
+ * We filter client-side on `mappingRecipeShape === SCENE_GRAPH_PLAY_SHAPE_IRI`
+ * (the field lives inside the template's stringified `body`).
  *
- * The open-by-appId form lives below the table as a power-user shortcut —
- * still respecting the "UI never asks for paths/URLs" rule (appId is a
- * stable identity handle, not a path or URL).
+ * Empty state points the user to the in-context creation flow on a URDF
+ * FileReference detail page ("Open in 3D view") per the
+ * "Tools entry points are in-context first" CLAUDE.md rule.
  */
-
-import { isPlausibleAppId } from "~/utils/toolsLanding";
-import {
-  formatEpochMillis,
-  resolveLandingBranch,
-} from "~/utils/sceneGraphsLanding";
-// II3 (ui-scrutinizer-2026-05-30): row appId rendering moved to
-// `<CopyableAppIdChip>` — bare `truncateAppId` no longer imported here.
-import { useSceneGraph, type SceneListItem } from "~/composables/useSceneGraph";
-
-const router = useRouter();
-const { fetchScene, list, error: sceneError } = useSceneGraph();
-
-// ── List state (SCENEGRAPH-LIST-1) ──────────────────────────────────────────
-
-const rows = ref<SceneListItem[]>([]);
-const totalRows = ref(0);
-const page = ref(1); // v-data-table-server is 1-based; backend is 0-based.
-const itemsPerPage = ref(25);
-const listLoading = ref(false);
-const listError = ref<string | null>(null);
-
-const headers = [
-  { title: "Name", key: "name", sortable: false },
-  { title: "# frames", key: "frameCount", sortable: false, align: "end" as const },
-  { title: "# joints", key: "jointCount", sortable: false, align: "end" as const },
-  { title: "Updated", key: "updatedAt", sortable: false },
-  { title: "AppId", key: "appId", sortable: false },
-];
-
-async function loadPage(opts: { page: number; itemsPerPage: number }): Promise<void> {
-  listLoading.value = true;
-  listError.value = null;
-  const result = await list({
-    page: Math.max(0, opts.page - 1),
-    size: opts.itemsPerPage,
-  });
-  if (result) {
-    rows.value = result.items ?? [];
-    totalRows.value = result.total ?? 0;
-  } else {
-    rows.value = [];
-    totalRows.value = 0;
-    listError.value =
-      sceneError.value?.message ?? "Could not load scene graphs.";
-  }
-  listLoading.value = false;
-}
-
-const landingBranch = computed(() =>
-  resolveLandingBranch(totalRows.value, listLoading.value, listError.value),
-);
-
-// II3 (ui-scrutinizer-2026-05-30): copy-to-clipboard moved into the
-// shared `<CopyableAppIdChip>` component — no inline copy fn required.
-
-// ── Open-by-appId fallback (power user shortcut) ───────────────────────────
-
-const openByAppId = ref("");
-const openError = ref<string | null>(null);
-const opening = ref(false);
-
-async function openScene() {
-  const id = openByAppId.value.trim();
-  if (!id) {
-    openError.value = "Enter a scene appId.";
-    return;
-  }
-  if (!isPlausibleAppId(id)) {
-    openError.value = "That doesn't look like a UUID — expected 8-4-4-4-12 hex.";
-    return;
-  }
-  openError.value = null;
-  opening.value = true;
-  try {
-    const scene = await fetchScene(id);
-    if (scene) {
-      await router.push(`/scene-graphs/${id}`);
-    } else {
-      openError.value = "No scene found with that appId, or you lack access.";
-    }
-  } finally {
-    opening.value = false;
-  }
-}
+import { TemplatesApi, type ShepardTemplate } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { SCENE_GRAPH_PLAY_SHAPE_IRI } from "~/composables/useSceneGraphPlay";
 
 useHead({ title: "Scene graphs | shepard" });
+
+interface SceneGraphRow {
+  appId: string;
+  name: string;
+  description?: string | null;
+  createdAt?: string | null;
+  createdBy?: string | null;
+  urdfFileReferenceAppId?: string | null;
+}
+
+const rows = ref<SceneGraphRow[]>([]);
+const isLoading = ref(true);
+const loadError = ref<string | null>(null);
+
+const templatesApi = useV2ShepardApi(TemplatesApi);
+
+function parseRecipeBody(body: string | null | undefined): Record<string, unknown> | null {
+  if (!body) return null;
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function toRow(t: ShepardTemplate): SceneGraphRow | null {
+  const parsed = parseRecipeBody((t as unknown as { body?: string | null }).body);
+  if (!parsed) return null;
+  if (parsed.mappingRecipeShape !== SCENE_GRAPH_PLAY_SHAPE_IRI) return null;
+  return {
+    appId: t.appId,
+    name: t.name,
+    description: (t as unknown as { description?: string | null }).description ?? null,
+    createdAt: (t as unknown as { createdAt?: string | null }).createdAt ?? null,
+    createdBy: (t as unknown as { createdBy?: string | null }).createdBy ?? null,
+    urdfFileReferenceAppId:
+      (parsed.urdfFileReferenceAppId as string | undefined) ?? null,
+  };
+}
+
+async function refresh() {
+  isLoading.value = true;
+  loadError.value = null;
+  try {
+    const page = await templatesApi.value.listTemplates({
+      kind: "MAPPING_RECIPE",
+      includeRetired: false,
+      pageSize: 200,
+    });
+    const items = (page.items ?? []) as ShepardTemplate[];
+    rows.value = items
+      .map(toRow)
+      .filter((r): r is SceneGraphRow => r !== null);
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : "Failed to load templates.";
+    handleError(e, "list scene-graph play recipes");
+    rows.value = [];
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+refresh();
 </script>
 
 <template>
-  <v-container class="pa-6" style="max-width: 1100px">
+  <v-container class="pa-6" fluid style="max-width: 2400px; margin: 0 auto">
     <h1 class="text-h4 mb-2">Scene graphs</h1>
     <p class="text-body-1 text-medium-emphasis mb-6">
-      Coordinate-frame trees + joints describing a digital twin or robot model.
-      Scenes are created from URDF / RDK uploads, or directly via
-      <code>POST /v2/scene-graphs</code> from the API.
+      Scene-graph play recipes — MAPPING_RECIPE templates targeting
+      <code>SceneGraphPlayShape</code> that bind a URDF FileReference (the
+      kinematic tree) and optionally a joint TimeseriesReference for playback.
     </p>
 
     <v-alert
-      v-if="landingBranch === 'error'"
+      v-if="loadError"
       type="error"
       variant="tonal"
       class="mb-4"
-      data-testid="scene-graphs-list-error"
+      data-testid="scene-graphs-error"
     >
-      {{ listError }}
+      {{ loadError }}
     </v-alert>
 
-    <v-card
-      v-if="landingBranch === 'table'"
-      variant="outlined"
-      class="mb-6"
-      data-testid="scene-graphs-list-card"
-    >
-      <v-data-table-server
-        v-model:items-per-page="itemsPerPage"
-        v-model:page="page"
-        :headers="headers"
+    <v-card variant="outlined">
+      <v-data-table
+        v-if="!isLoading && rows.length > 0"
         :items="rows"
-        :items-length="totalRows"
-        :loading="listLoading"
-        :items-per-page-options="[10, 25, 50, 100]"
-        item-value="appId"
+        :headers="[
+          { title: 'Name', key: 'name' },
+          { title: 'URDF FileReference', key: 'urdfFileReferenceAppId' },
+          { title: 'Created', key: 'createdAt' },
+          { title: 'By', key: 'createdBy' },
+          { title: '', key: 'actions', sortable: false, align: 'end' },
+        ]"
+        :items-per-page="50"
         density="comfortable"
-        data-testid="scene-graphs-list-table"
-        @update:options="loadPage"
+        data-testid="scene-graphs-table"
       >
-        <template #[`item.name`]="{ item }">
-          <a
-            class="scene-row-link"
-            :href="`/scene-graphs/${item.appId}`"
-            data-testid="scene-graphs-row-name"
-            @click.prevent="router.push(`/scene-graphs/${item.appId}`)"
+        <template #[`item.urdfFileReferenceAppId`]="{ item }">
+          <code v-if="item.urdfFileReferenceAppId" class="text-caption">{{
+            item.urdfFileReferenceAppId
+          }}</code>
+          <span v-else class="text-medium-emphasis">—</span>
+        </template>
+        <template #[`item.createdAt`]="{ item }">
+          <span v-if="item.createdAt" class="text-caption">{{
+            new Date(item.createdAt).toISOString().slice(0, 10)
+          }}</span>
+          <span v-else class="text-medium-emphasis">—</span>
+        </template>
+        <template #[`item.actions`]="{ item }">
+          <v-btn
+            :to="`/scene-graphs/play/${item.appId}`"
+            variant="tonal"
+            size="small"
+            prepend-icon="mdi-play"
+            :data-testid="`scene-graph-play-${item.appId}`"
           >
-            {{ item.name?.trim() || "(unnamed scene)" }}
-          </a>
+            Open
+          </v-btn>
         </template>
-        <template #[`item.updatedAt`]="{ item }">
-          {{ formatEpochMillis(item.updatedAt ?? item.createdAt) }}
-        </template>
-        <template #[`item.appId`]="{ item }">
-          <!-- II3 (ui-scrutinizer-2026-05-30): unified click-to-copy chip
-               replacing the bare span. Same affordance now appears in
-               GitCredentialsPane + the predicate-detail sample table. -->
-          <CopyableAppIdChip
-            :app-id="item.appId"
-            testid="scene-graphs-row-appid"
-          />
-        </template>
-      </v-data-table-server>
-    </v-card>
+      </v-data-table>
 
-    <v-card
-      v-if="landingBranch === 'help'"
-      variant="outlined"
-      class="mb-6"
-      data-testid="scene-graphs-empty-card"
-    >
-      <v-card-title>No scenes yet</v-card-title>
-      <v-card-text>
-        <ul class="ml-4">
-          <li>
-            Upload a URDF file as a FileReference, then use its "Open in
-            scene viewer" action.
-          </li>
-          <li>
-            Drop an RDK package into a Collection; the RDK importer mints a
-            scene per robot.
-          </li>
-          <li>
-            From the API:
-            <code>POST /v2/scene-graphs</code> with an empty body returns a
-            new <code>appId</code> you can paste below.
-          </li>
-        </ul>
-      </v-card-text>
-    </v-card>
+      <div
+        v-else-if="isLoading"
+        class="d-flex align-center justify-center pa-12"
+        data-testid="scene-graphs-loading"
+      >
+        <v-progress-circular indeterminate color="primary" />
+      </div>
 
-    <v-expansion-panels variant="accordion" class="mb-2">
-      <v-expansion-panel data-testid="scene-graphs-open-by-appid-panel">
-        <v-expansion-panel-title>Open by appId</v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <v-form @submit.prevent="openScene">
-            <v-text-field
-              v-model="openByAppId"
-              label="Scene appId (UUID v7)"
-              placeholder="0197b6a2-…"
-              density="compact"
-              variant="outlined"
-              hide-details="auto"
-              :error-messages="openError ? [openError] : []"
-              :loading="opening"
-              data-testid="scene-graphs-open-by-appid-input"
-              autocomplete="off"
-            />
-            <div class="mt-3">
-              <v-btn
-                color="primary"
-                type="submit"
-                :disabled="opening"
-                data-testid="scene-graphs-open-by-appid-submit"
-              >
-                Open scene
-              </v-btn>
-            </div>
-          </v-form>
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+      <v-empty-state
+        v-else
+        icon="mdi-cube-scan"
+        title="No scene-graph play recipes yet"
+        text="Open a URDF FileReference and use 'Open in 3D view' to create one."
+        data-testid="scene-graphs-empty"
+      />
+    </v-card>
   </v-container>
 </template>
-
-<style scoped>
-.scene-row-link {
-  color: inherit;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.scene-row-link:hover {
-  text-decoration: underline;
-}
-
-.appid-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85em;
-  cursor: copy;
-}
-</style>

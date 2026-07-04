@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.importer.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.importer.entities.ImportLock;
 import de.dlr.shepard.v2.importer.io.ImportLockIO;
 import de.dlr.shepard.v2.importer.io.ImportLockIO.AbandonRequestIO;
@@ -53,8 +54,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import (IMP1)")
+@Tag(name = "Import")
 public class ImportLockV2Rest {
+
+  private static final String PT_BAD_REQUEST  = "/problems/import-lock.bad-request";
+  private static final String PT_NOT_FOUND    = "/problems/import-lock.not-found";
+  private static final String PT_CONFLICT     = "/problems/import-lock.conflict";
+  private static final String PT_UNAUTHORIZED = "/problems/import-lock.unauthorized";
 
   @Inject
   ImportLockService lockService;
@@ -63,6 +69,7 @@ public class ImportLockV2Rest {
 
   @GET
   @Operation(
+    operationId = "getCurrent",
     summary = "Get current import lock status (IMP-LOCK)",
     description =
       "Returns the most recent import lock regardless of status, so callers can tell " +
@@ -88,6 +95,7 @@ public class ImportLockV2Rest {
 
   @POST
   @Operation(
+    operationId = "acquire",
     summary = "Acquire an import lock (IMP-LOCK)",
     description =
       "Creates a new RUNNING import lock for the specified collection. " +
@@ -109,16 +117,14 @@ public class ImportLockV2Rest {
 
     if (body == null || body.targetCollectionAppId() == null
         || body.targetCollectionAppId().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("targetCollectionAppId is required")
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST,
+        "targetCollectionAppId is required");
     }
 
     ImportLock lock = lockService.acquire(body.targetCollectionAppId(), caller);
     if (lock == null) {
-      return Response.status(Response.Status.CONFLICT)
-        .entity("A fresh import lock already exists — wait for it to complete or become stale")
-        .build();
+      return problem(PT_CONFLICT, "Lock already exists", Response.Status.CONFLICT,
+        "A fresh import lock already exists — wait for it to complete or become stale");
     }
     return Response.status(Response.Status.CREATED)
       .entity(LockStatusIO.from(lock))
@@ -130,6 +136,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/heartbeat")
   @Operation(
+    operationId = "heartbeat",
     summary = "Extend import lock heartbeat (IMP-LOCK)",
     description =
       "Updates lastHeartbeatAt to now for the specified RUNNING lock. " +
@@ -153,9 +160,8 @@ public class ImportLockV2Rest {
     ImportLock lock = lockService.heartbeat(lockId);
     if (lock == null) {
       // Could be not-found or wrong-status — return 404 as the more useful signal.
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Lock not found or not in RUNNING status: " + lockId)
-        .build();
+      return problem(PT_NOT_FOUND, "Lock not found", Response.Status.NOT_FOUND,
+        "Lock not found or not in RUNNING status: " + lockId);
     }
     return Response.ok(LockStatusIO.from(lock)).build();
   }
@@ -165,6 +171,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/release")
   @Operation(
+    operationId = "release",
     summary = "Release import lock on completion (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to COMPLETED status (normal import completion). " +
@@ -185,9 +192,8 @@ public class ImportLockV2Rest {
 
     ImportLock lock = lockService.release(lockId);
     if (lock == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Lock not found or not in RUNNING status: " + lockId)
-        .build();
+      return problem(PT_NOT_FOUND, "Lock not found", Response.Status.NOT_FOUND,
+        "Lock not found or not in RUNNING status: " + lockId);
     }
     return Response.ok(LockStatusIO.from(lock)).build();
   }
@@ -197,6 +203,7 @@ public class ImportLockV2Rest {
   @POST
   @Path("/{lockId}/abandon")
   @Operation(
+    operationId = "abandon",
     summary = "Abandon import lock on error (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to FAILED status with an error description. " +
@@ -219,16 +226,14 @@ public class ImportLockV2Rest {
     if (caller(sc) == null) return unauthorized();
 
     if (body == null || body.errorMessage() == null || body.errorMessage().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("errorMessage is required")
-        .build();
+      return problem(PT_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST,
+        "errorMessage is required");
     }
 
     ImportLock lock = lockService.abandon(lockId, body.errorMessage());
     if (lock == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Lock not found or not in RUNNING status: " + lockId)
-        .build();
+      return problem(PT_NOT_FOUND, "Lock not found", Response.Status.NOT_FOUND,
+        "Lock not found or not in RUNNING status: " + lockId);
     }
     return Response.ok(LockStatusIO.from(lock)).build();
   }
@@ -239,6 +244,7 @@ public class ImportLockV2Rest {
   @Path("/{lockId}")
   @RolesAllowed("instance-admin")
   @Operation(
+    operationId = "cancel",
     summary = "Admin cancel an import lock (IMP-LOCK)",
     description =
       "Transitions a RUNNING lock to CANCELLED status. " +
@@ -262,20 +268,25 @@ public class ImportLockV2Rest {
 
     ImportLock lock = lockService.cancel(lockId);
     if (lock == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity("Lock not found: " + lockId)
-        .build();
+      return problem(PT_NOT_FOUND, "Lock not found", Response.Status.NOT_FOUND,
+        "Lock not found: " + lockId);
     }
     return Response.ok(LockStatusIO.from(lock)).build();
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
+
   private static String caller(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
   }
 
   private static Response unauthorized() {
-    return Response.status(Response.Status.UNAUTHORIZED).build();
+    return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED,
+      "authentication required");
   }
 }

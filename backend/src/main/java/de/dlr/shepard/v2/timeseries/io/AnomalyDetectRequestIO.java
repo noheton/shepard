@@ -49,7 +49,7 @@ public class AnomalyDetectRequestIO {
    * with label {@code "anomaly"}, {@code aiGenerated=true}, and
    * confidence = min(1.0, maxZScore / (2 * k)). Requires Write
    * permission on the parent DataObject (the same permission gate as
-   * {@link de.dlr.shepard.v2.timeseries.resources.TimeseriesAnnotationRest#create}).
+   * {@link de.dlr.shepard.v2.references.resources.ReferenceAnnotationRest#create}).
    * Default: false.
    */
   @Schema(description = "If true, persist a TimeseriesAnnotation per detected interval (label 'anomaly', aiGenerated=true). Requires Write permission. Default: false.", defaultValue = "false")

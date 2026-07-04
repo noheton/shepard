@@ -25,6 +25,8 @@ import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StorageNotFoundException;
+import de.dlr.shepard.storage.StoragePutRequest;
+import de.dlr.shepard.storage.StorageQuotaExceededException;
 import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -32,11 +34,21 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -298,15 +310,16 @@ public class FileContainerService extends AbstractContainerService<FileContainer
         result = fcr.file();
         sha256 = fcr.sha256();
       } else {
-        // Non-GridFS adapters require presigned upload URLs.
-        // Use POST /v2/file-containers/{containerAppId}/upload-url to
-        // obtain a presigned S3 URL, PUT bytes directly, then call
-        // POST .../upload-url/commit to register the file.
-        throw new ServiceUnavailableException(
-          "Direct upload is not supported for provider '" + adapter.id() +
-          "'. Use the presigned upload URL endpoint: " +
-          "POST /v2/file-containers/{containerAppId}/upload-url"
-        );
+        // STORAGE-SPI-UNIFY-PUT: non-GridFS adapters (S3, Garage-direct)
+        // store server-side through the SPI's put(). The presigned
+        // upload-url endpoint stays available as a bytes-bypass
+        // alternative, but direct multipart upload now works for
+        // object stores too. md5 is computed while streaming so FB1a
+        // bookkeeping is populated; the oid is derived from the
+        // returned locator so getFile() round-trips to the same key.
+        result = storeViaSpi(adapter, fileContainer.getMongoId(), fileName, inputStream, declaredSize);
+        // sha256 left null on the non-GridFS path — recordPayloadVersion
+        // tolerates a null digest (it only versions GridFS SHA-256).
       }
       if (result != null) {
         result.setProviderId(adapter.id());
@@ -539,6 +552,18 @@ public class FileContainerService extends AbstractContainerService<FileContainer
   }
 
   /**
+   * CC1b (appId variant) — return the list of non-deleted DataObjects that
+   * reference this FileContainer, keyed by appId. Does not perform a
+   * permission check — callers must call {@link #getContainerByAppId(String)} first.
+   *
+   * @param containerAppId UUID v7 appId of the FileContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
+    return fileContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  /**
    * FS1c — generate a presigned GET URL so the caller can download
    * bytes directly from the storage backend.
    *
@@ -562,6 +587,80 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    * uses the {@code ":"} separator; all other adapters use {@code "/"}
    * to match their {@code containerMongoId/uuid} key format.
    */
+  /**
+   * STORAGE-SPI-UNIFY-PUT / STORAGE-SPI-PUT-SIZEFIX — server-side store
+   * through a non-GridFS adapter's {@link FileStorage#put}.
+   *
+   * <p>Spools the (MD5-digesting) stream to a temp file first, then hands
+   * the adapter the <em>actual</em> file length rather than a possibly-wrong
+   * {@code declaredSize} (which, on the multipart / Content-Length paths,
+   * can disagree with the bytes the stream yields and make S3
+   * {@code PutObject} reject the request with "fewer bytes than the
+   * specified content-length"). A temp file (not a heap buffer) keeps this
+   * safe for large uploads; the temp file is deleted in a {@code finally}.
+   * Derives the oid from the returned locator's key segment so
+   * {@link #getFile} (which rebuilds the locator as
+   * {@code containerMongoId + "/" + oid}) finds the exact same key. Returns
+   * a metadata-only {@link ShepardFile}; the caller stamps
+   * {@code providerId}. See {@code FileStorageService.storeViaSpi} for the
+   * full rationale (this is the {@code FileContainerService} sibling).
+   */
+  private ShepardFile storeViaSpi(
+    FileStorage adapter, String containerMongoId, String fileName, InputStream inputStream, long declaredSize) {
+    MessageDigest md5Digest;
+    try {
+      md5Digest = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new ServiceUnavailableException("MD5 unavailable for storage md5 bookkeeping: " + e.getMessage());
+    }
+
+    Path tmp = null;
+    try {
+      tmp = Files.createTempFile("shepard-spi-put-", ".bin");
+      long actualSize;
+      try (DigestInputStream digesting = new DigestInputStream(inputStream, md5Digest);
+           OutputStream out = Files.newOutputStream(tmp)) {
+        digesting.transferTo(out);
+        actualSize = Files.size(tmp);
+      }
+      String md5 = HexFormat.of().formatHex(md5Digest.digest());
+
+      StorageLocator locator;
+      try (InputStream fileStream = new BufferedInputStream(Files.newInputStream(tmp))) {
+        StoragePutRequest put = new StoragePutRequest(containerMongoId, fileName, null, fileStream, actualSize, null);
+        locator = adapter.put(put);
+      } catch (StorageQuotaExceededException qee) {
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' quota exceeded: " + qee.getMessage());
+      } catch (StorageException se) {
+        Log.errorf("FileContainerService.createFile: SPI put failed on container=%s adapter=%s — %s",
+          containerMongoId, adapter.id(), se.getMessage());
+        throw new ServiceUnavailableException(
+          "Storage provider '" + adapter.id() + "' failed to store file: " + se.getMessage());
+      }
+
+      String key = locator.locator();
+      String prefix = containerMongoId + "/";
+      String oid = key.startsWith(prefix)
+        ? key.substring(prefix.length())
+        : (key.lastIndexOf('/') >= 0 ? key.substring(key.lastIndexOf('/') + 1) : key);
+      ShepardFile file = new ShepardFile(oid, new Date(), fileName, md5);
+      file.setFileSize(actualSize);
+      return file;
+    } catch (IOException ioe) {
+      throw new ServiceUnavailableException(
+        "Storage provider '" + adapter.id() + "' failed to spool upload bytes: " + ioe.getMessage());
+    } finally {
+      if (tmp != null) {
+        try {
+          Files.deleteIfExists(tmp);
+        } catch (IOException cleanup) {
+          Log.warnf("FileContainerService.storeViaSpi: could not delete temp file %s — %s", tmp, cleanup.getMessage());
+        }
+      }
+    }
+  }
+
   private static StorageLocator buildLocatorForRow(String providerId, String containerMongoId, String oid) {
     if (GridFsFileStorage.ID.equals(providerId)) {
       return new StorageLocator(providerId, containerMongoId + GridFsFileStorage.LOCATOR_SEPARATOR + oid);

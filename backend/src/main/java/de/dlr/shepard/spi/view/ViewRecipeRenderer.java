@@ -1,5 +1,6 @@
 package de.dlr.shepard.spi.view;
 
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -97,6 +98,40 @@ public interface ViewRecipeRenderer {
    *         logs at WARN and surfaces an HTTP 500
    */
   RenderResponse render(RenderRequest req);
+
+  /**
+   * V2CONV-A1 — the IANA media types this renderer can emit as bytes via
+   * {@link #renderMedia(RenderRequest, String)}, beyond the always-available
+   * {@code application/json} view-model from {@link #render(RenderRequest)}.
+   *
+   * <p>Content-negotiated {@code POST /v2/shapes/render} consults this set
+   * against the caller's {@code Accept} header: a renderer that can produce a
+   * heatmap PNG returns {@code {"image/png"}}; a mesh renderer returns
+   * {@code {"model/gltf+json"}}; etc. Default is empty (JSON view-model only),
+   * so existing renderers need no change.
+   *
+   * @return the non-JSON media types this renderer can emit; never null
+   */
+  default Set<String> producibleMedia() {
+    return Set.of();
+  }
+
+  /**
+   * V2CONV-A1 — render the focus to bytes of the requested media type.
+   *
+   * <p>Called by the dispatcher only when {@code acceptMediaType} is one of this
+   * renderer's {@link #producibleMedia()}. Return {@link Optional#empty()} to
+   * fall back to the JSON view-model. Default returns empty so the binary path
+   * is strictly opt-in.
+   *
+   * @param req             the dispatch request — never null
+   * @param acceptMediaType the concrete media type the caller asked for (one of
+   *                        {@link #producibleMedia()})
+   * @return the rendered media, or empty to fall back to the JSON view-model
+   */
+  default Optional<RenderedMedia> renderMedia(RenderRequest req, String acceptMediaType) {
+    return Optional.empty();
+  }
 
   /**
    * Human-readable name surfaced in startup logs and the future

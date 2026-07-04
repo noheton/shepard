@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.admin.jupyter.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
 import de.dlr.shepard.v2.admin.jupyter.io.JupyterConfigIO;
 import de.dlr.shepard.v2.admin.jupyter.services.JupyterConfigService;
@@ -27,12 +28,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * which means every authenticated user needs to discover the
  * {@code enabled} + {@code hubUrl} pair, but only an
  * {@code instance-admin} can mutate it. This resource exposes the
- * read view to non-admins; {@link JupyterConfigRest} keeps the
- * full GET/PATCH surface for admins.
+ * read view to non-admins; the generic
+ * {@code GET|PATCH /v2/admin/config/jupyter} surface (V2CONV-A4) keeps
+ * the full admin GET/PATCH for admins.
  *
  * <p>The two endpoints return byte-identical JSON shapes
  * ({@link JupyterConfigIO}). The split is purely an authorisation
- * concern: {@code /v2/admin/jupyter/config} requires the
+ * concern: {@code /v2/admin/config/jupyter} requires the
  * {@code instance-admin} role; {@code /v2/jupyter/config} requires
  * only an authenticated principal.
  *
@@ -47,14 +49,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Jupyter")
 public class JupyterConfigPublicRest {
 
+  private static final String PT_UNAUTHORIZED = "/problems/jupyter.config.unauthorized";
+
   @Inject
   JupyterConfigService service;
 
   @GET
   @Operation(
+    operationId = "getJupyterConfig",
     summary = "Read the public JupyterHub link-out config (any authenticated user).",
     description =
-      "Returns the same `{enabled, hubUrl}` shape as `GET /v2/admin/jupyter/config` " +
+      "Returns the same `{enabled, hubUrl}` shape as `GET /v2/admin/config/jupyter` " +
       "without the instance-admin role gate. Used by the unified data-references " +
       "frontend table to decide whether to render the 'Open in JupyterHub' action " +
       "on `.ipynb` rows.\n\n" +
@@ -68,9 +73,15 @@ public class JupyterConfigPublicRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getConfig(@Context SecurityContext sc) {
     if (sc.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PT_UNAUTHORIZED, "Authentication required",
+          Response.Status.UNAUTHORIZED, "Authentication is required to read the JupyterHub config.");
     }
     JupyterConfig cfg = service.current();
     return Response.ok(JupyterConfigIO.from(cfg, service.getDefaultHubUrl())).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

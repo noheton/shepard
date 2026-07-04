@@ -27,9 +27,17 @@ services:
       # application.properties.  Operators opt out via
       # shepard.plugins.spatiotemporal.enabled=false.
       SHEPARD_AUTOCONVERT_INT: ${SHEPARD_AUTOCONVERT_INT}
+      # BTKVS-A2 operator decision 2026-05-29: override the application.properties
+      # default (/var/lib/shepard/ontologies/) with a path under a writable bind-
+      # mount so the live N1c2 admin upload endpoint can persist user bundles.
+      SHEPARD_SEMANTIC_INTERNAL_USER_BUNDLES_DIR: /data/shepard/semantic-bundles/
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
       - /opt/shepard/backend/config:/home/default/.shepard
+      # BTKVS-A2: writable mount for user-uploaded semantic vocabulary bundles
+      # (N1c2 /v2/admin/semantic/ontologies). Host dir created on first compose
+      # up; persists across container recreate.
+      - /opt/shepard/backend/semantic-bundles:/data/shepard/semantic-bundles
     depends_on:
       - neo4j
       - mongodb

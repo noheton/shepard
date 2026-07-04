@@ -145,17 +145,43 @@ describe("useFetchCollection — BUG-COLL-APPID-ROUTE-002", () => {
     expect(isAllowedToEditCollection.value).toBe(true);
   });
 
-  it("sets isError=true on HTTP 404 and clears collection", async () => {
+  // UU1 — UI-404-NICE-EMPTY-STATE (2026-05-31): 404 sets `notFound=true`
+  // and leaves `isError=false` (the page renders `EntityNotFound`, not the
+  // red toast). Non-404 errors still set `isError=true` + call `handleError`.
+  it("sets notFound=true (not isError) on HTTP 404 and clears collection", async () => {
     mockFetchStatus(404);
     const { useFetchCollection } = await import(
       "~/composables/context/useFetchCollection"
     );
-    const { collection, isError, isLoading } = useFetchCollection(APP_ID);
+    const { collection, isError, notFound, isLoading } =
+      useFetchCollection(APP_ID);
+    await flush();
+
+    expect(collection.value).toBeUndefined();
+    expect(notFound.value).toBe(true);
+    expect(isError.value).toBe(false);
+    expect(isLoading.value).toBe(false);
+    expect(
+      (globalThis as unknown as { handleError: ReturnType<typeof vi.fn> })
+        .handleError,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("sets isError=true (not notFound) on HTTP 500 and DOES call handleError", async () => {
+    mockFetchStatus(500);
+    const { useFetchCollection } = await import(
+      "~/composables/context/useFetchCollection"
+    );
+    const { collection, isError, notFound } = useFetchCollection(APP_ID);
     await flush();
 
     expect(collection.value).toBeUndefined();
     expect(isError.value).toBe(true);
-    expect(isLoading.value).toBe(false);
+    expect(notFound.value).toBe(false);
+    expect(
+      (globalThis as unknown as { handleError: ReturnType<typeof vi.fn> })
+        .handleError,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it("handles missing access token without throwing", async () => {

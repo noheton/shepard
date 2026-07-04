@@ -35,6 +35,41 @@ public class FileGroupDAO extends GenericDAO<FileGroup> {
   }
 
   /**
+   * @param bundleAppId the parent {@code FileBundleReference}'s appId.
+   * @param page zero-based page index.
+   * @param pageSize maximum items per page (server cap 200).
+   * @return one page of groups under that bundle, ordered by {@code index} asc.
+   */
+  public List<FileGroup> findByBundleAppId(String bundleAppId, int page, int pageSize) {
+    int capped = Math.min(pageSize, 200);
+    String query =
+      "MATCH (b:FileBundleReference {appId: $aid})-[:HAS_GROUP]->(g:FileGroup) " +
+      "OPTIONAL MATCH (g)-[:has_payload]->(f:ShepardFile) " +
+      "WITH g, collect(DISTINCT f) AS gf " +
+      "RETURN g, gf, [(g)-[r_g:has_payload]->(f) | [r_g, f]] AS rels " +
+      "ORDER BY coalesce(g.index, 0) ASC " +
+      "SKIP $skip LIMIT $limit";
+    var queryResult = findByQuery(query, Map.of("aid", bundleAppId, "skip", (long) page * capped, "limit", (long) capped));
+    return StreamSupport.stream(queryResult.spliterator(), false).toList();
+  }
+
+  /**
+   * @param bundleAppId the parent {@code FileBundleReference}'s appId.
+   * @return total count of groups (including soft-deleted ones that the
+   *   main Cypher also returns), matching the unbounded list semantics.
+   */
+  public long countByBundleAppId(String bundleAppId) {
+    String query =
+      "MATCH (:FileBundleReference {appId: $aid})-[:HAS_GROUP]->(g:FileGroup) " +
+      "RETURN count(g) AS total";
+    var result = session.query(query, Map.of("aid", bundleAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object v = iter.next().get("total");
+    return v instanceof Number ? ((Number) v).longValue() : 0L;
+  }
+
+  /**
    * @param appId the FileGroup's own appId.
    * @return the row, or {@code null} when no match.
    */

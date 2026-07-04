@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Framed as "fork-v2 wire-shape proof" not "v5 wire-shape proof":
  * the AI1b endpoint
- * {@code POST /v2/timeseries-references/{refAppId}/detect-anomalies}
+ * {@code POST /v2/references/{appId}/detect-anomalies}
  * is fork-added, not upstream v5.2.0. The byte-stability bar is the
  * same (no breaking change to existing fork callers); only the
  * framing is honest.

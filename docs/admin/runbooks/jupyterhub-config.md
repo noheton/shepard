@@ -25,8 +25,8 @@ When both knobs resolve truthy, the button opens
 ## Wire shape
 
 ```http
-GET    /v2/admin/jupyter/config    → 200 { enabled, hubUrl }
-PATCH  /v2/admin/jupyter/config    → RFC 7396 merge-patch (instance-admin)
+GET    /v2/admin/config/jupyter    → 200 { enabled, hubUrl }   (V2CONV-A4; was /v2/admin/jupyter/config)
+PATCH  /v2/admin/config/jupyter    → RFC 7396 merge-patch (instance-admin)
 GET    /v2/jupyter/config          → 200 same shape (any authenticated user)
 ```
 
@@ -94,7 +94,7 @@ curl -X PATCH \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/merge-patch+json" \
   -d '{"enabled": true, "hubUrl": "https://hub.example.org"}' \
-  https://shepard-api.example.org/v2/admin/jupyter/config
+  https://shepard-api.example.org/v2/admin/config/jupyter
 ```
 
 ### Via deploy-time properties (seed-only)

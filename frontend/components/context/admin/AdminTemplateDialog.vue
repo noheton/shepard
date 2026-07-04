@@ -1,15 +1,29 @@
 <script setup lang="ts">
 import {
-  ShepardTemplateApi,
-  type ShepardTemplateIO,
-  type CreateShepardTemplateIO,
+  TemplatesApi,
+  type ShepardTemplate,
+  type CreateShepardTemplate,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { editorStateFromTemplateBody } from "~/utils/templateShapeDsl";
+import TemplateShapeEditor from "~/components/shapes/TemplateShapeEditor.vue";
 
 const props = defineProps<{
   modelValue: boolean;
   /** When set, we are editing an existing template (PATCH). Omit for create (POST). */
-  template?: ShepardTemplateIO | null;
+  template?: ShepardTemplate | null;
+  /**
+   * The full list of templates (used to scope the parent picker to same-kind,
+   * non-retired templates and to exclude self + descendants — cycle prevention
+   * in the UI). Design: aidocs/integrations/123.
+   */
+  allTemplates?: ShepardTemplate[];
+  /**
+   * V2CONV-B6-SHACLPREFILL — when set (from ?targetEntityAppId query param),
+   * the visual editor auto-fetches the DataObject's RDF and pre-fills the
+   * validate data-graph textarea.
+   */
+  focusAppId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -32,11 +46,77 @@ const templateKind = ref("DATAOBJECT_RECIPE");
 const description = ref<string>("");
 const tags = ref<string[]>([]);
 const body = ref("{}");
+// TEMPLATE-ICONS-2-FE — admin-settable MDI name. Empty string clears.
+const iconKey = ref<string>("");
+// TPL-INHERIT — appId of the parent template this template extends (null = root).
+const parentTemplateAppId = ref<string | null>(null);
+// The flattened (inherited+own) body, fetched when a parent is selected.
+const inheritedBody = ref<string | null>(null);
+const inheritedLoading = ref(false);
+// V2CONV-B6 — body authoring mode. "visual" = the SHACL shape editor;
+// "raw" = the JSON DSL textarea (the original surface, kept for power users
+// and for bodies the visual editor can't reopen).
+const bodyMode = ref<"visual" | "raw">("visual");
 
 const isEdit = computed(() => !!props.template);
 const dialogTitle = computed(() =>
   isEdit.value ? "Edit Template (creates new version)" : "New Template",
 );
+
+/**
+ * Compute the appIds that must NOT be selectable as a parent: self and every
+ * descendant of self (selecting one would create a cycle). Walks child→parent
+ * edges over allTemplates. Design: aidocs/integrations/123 §4.
+ */
+const forbiddenParentAppIds = computed<Set<string>>(() => {
+  const forbidden = new Set<string>();
+  const selfAppId = props.template?.appId;
+  if (!selfAppId) return forbidden;
+  forbidden.add(selfAppId);
+  const all = props.allTemplates ?? [];
+  // Repeatedly add any template whose parent is already forbidden (its descendants).
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const t of all) {
+      if (
+        t.parentTemplateAppId &&
+        forbidden.has(t.parentTemplateAppId) &&
+        !forbidden.has(t.appId)
+      ) {
+        forbidden.add(t.appId);
+        changed = true;
+      }
+    }
+  }
+  return forbidden;
+});
+
+/** Candidate parents: same-kind, non-retired, not self/descendant. */
+const parentCandidates = computed(() => {
+  const all = props.allTemplates ?? [];
+  return all
+    .filter(
+      (t) =>
+        t.templateKind === templateKind.value &&
+        !t.retired &&
+        !forbiddenParentAppIds.value.has(t.appId),
+    )
+    .map((t) => ({
+      title: `${t.name} (v${t.version})`,
+      value: t.appId,
+    }));
+});
+
+/** Pretty-printed inherited field set for the read-only preview. */
+const inheritedPretty = computed(() => {
+  if (!inheritedBody.value) return "";
+  try {
+    return JSON.stringify(JSON.parse(inheritedBody.value), null, 2);
+  } catch {
+    return inheritedBody.value;
+  }
+});
 
 // Reset and populate fields whenever dialog opens or template prop changes
 watch(
@@ -44,22 +124,64 @@ watch(
   (open) => {
     if (open) {
       saveError.value = null;
+      inheritedBody.value = null;
       if (props.template) {
         name.value = props.template.name;
         templateKind.value = props.template.templateKind;
         description.value = props.template.description ?? "";
         tags.value = props.template.tags ? [...props.template.tags] : [];
         body.value = props.template.body;
+        iconKey.value = props.template.iconKey ?? "";
+        parentTemplateAppId.value = props.template.parentTemplateAppId ?? null;
+        // V2CONV-B6 — reopen in the visual editor only if the stored body
+        // carries an `editorState` it produced; otherwise drop to raw JSON.
+        bodyMode.value = editorStateFromTemplateBody(props.template.body) ? "visual" : "raw";
+        if (parentTemplateAppId.value) void refreshInherited();
       } else {
         name.value = "";
         templateKind.value = "DATAOBJECT_RECIPE";
         description.value = "";
         tags.value = [];
         body.value = "{}";
+        iconKey.value = "";
+        parentTemplateAppId.value = null;
+        bodyMode.value = "visual";
       }
     }
   },
 );
+
+// When the parent changes, refresh the inherited-fields preview.
+watch(parentTemplateAppId, (v) => {
+  if (v) void refreshInherited();
+  else inheritedBody.value = null;
+});
+
+/**
+ * Fetch the flattened (inherited) body of the SELECTED PARENT so the editor can
+ * show the admin what fields the child will inherit. Visible in both basic and
+ * advanced mode (advanced is a strict superset). Design: aidocs/integrations/123.
+ */
+async function refreshInherited() {
+  if (!parentTemplateAppId.value) {
+    inheritedBody.value = null;
+    return;
+  }
+  inheritedLoading.value = true;
+  try {
+    const api = useV2ShepardApi(TemplatesApi).value;
+    const flattenedParent = await api.getTemplate({
+      appId: parentTemplateAppId.value,
+      flatten: true,
+    });
+    inheritedBody.value = flattenedParent.body;
+  } catch (error) {
+    inheritedBody.value = null;
+    handleError(error, "fetching inherited template fields");
+  } finally {
+    inheritedLoading.value = false;
+  }
+}
 
 function close() {
   emit("update:modelValue", false);
@@ -69,22 +191,29 @@ async function save() {
   saveError.value = null;
   isSaving.value = true;
   try {
-    const api = useV2ShepardApi(ShepardTemplateApi).value;
-    const payload: CreateShepardTemplateIO = {
+    const api = useV2ShepardApi(TemplatesApi).value;
+    const payload: CreateShepardTemplate = {
       name: name.value.trim(),
       templateKind: templateKind.value,
       body: body.value.trim(),
       description: description.value.trim() || null,
       tags: tags.value.length > 0 ? [...tags.value] : null,
+      // TEMPLATE-ICONS-2-FE — empty string clears (server resets to null).
+      iconKey: iconKey.value.trim(),
+      // TPL-INHERIT — empty string clears the parent (template becomes a root).
+      parentTemplateAppId: parentTemplateAppId.value ?? "",
     };
 
     if (isEdit.value && props.template) {
+      // PATCH omits templateKind (immutable across versions — PatchShepardTemplate
+      // has no such field). Everything else mirrors the create payload.
+      const { templateKind: _kind, ...patchPayload } = payload;
       await api.patchTemplate({
         appId: props.template.appId,
-        patchShepardTemplateIO: payload,
+        patchShepardTemplate: patchPayload,
       });
     } else {
-      await api.createTemplate({ createShepardTemplateIO: payload });
+      await api.createTemplate({ createShepardTemplate: payload });
     }
 
     emit("saved");
@@ -102,7 +231,8 @@ async function save() {
 <template>
   <v-dialog
     :model-value="modelValue"
-    max-width="700"
+    max-width="1100"
+    scrollable
     @update:model-value="(v) => emit('update:modelValue', v)"
   >
     <v-card>
@@ -149,6 +279,58 @@ async function save() {
             />
           </v-col>
 
+          <!-- TPL-INHERIT — parent-template picker (appId-keyed, cycle-safe). -->
+          <v-col cols="12">
+            <v-autocomplete
+              v-model="parentTemplateAppId"
+              label="Extends (parent template, optional)"
+              :items="parentCandidates"
+              item-title="title"
+              item-value="value"
+              clearable
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-file-tree"
+              :hint="
+                parentTemplateAppId
+                  ? 'This template inherits the parent\'s fields; your own fields override on collision.'
+                  : 'Leave empty for a root template. Only same-kind, non-cyclic templates are listed.'
+              "
+              persistent-hint
+              data-test="template-parent-picker"
+            />
+          </v-col>
+
+          <!-- TPL-INHERIT — inherited fields, read-only, distinct from own fields. -->
+          <v-col v-if="parentTemplateAppId" cols="12">
+            <v-card variant="tonal" color="primary" class="pa-3">
+              <div class="d-flex align-center mb-1">
+                <v-icon icon="mdi-file-tree" size="small" class="mr-2" />
+                <span class="text-caption font-weight-medium">
+                  Inherited fields (read-only — from parent, overridable by your Body)
+                </span>
+                <v-progress-circular
+                  v-if="inheritedLoading"
+                  indeterminate
+                  size="16"
+                  width="2"
+                  class="ml-2"
+                />
+              </div>
+              <v-textarea
+                :model-value="inheritedPretty"
+                readonly
+                rows="5"
+                auto-grow
+                variant="outlined"
+                density="compact"
+                font-family="monospace"
+                hide-details
+                data-test="template-inherited-preview"
+              />
+            </v-card>
+          </v-col>
+
           <v-col cols="12">
             <v-textarea
               v-model="description"
@@ -158,6 +340,39 @@ async function save() {
               variant="outlined"
               density="compact"
             />
+          </v-col>
+
+          <v-col cols="12" sm="6">
+            <v-text-field
+              v-model="iconKey"
+              label="Icon (MDI name, optional)"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-shape-outline"
+              :hint="
+                iconKey.trim()
+                  ? `Preview shown to the right. Leave empty for per-kind default.`
+                  : `e.g. mdi-layers. Leave empty for per-kind default. Browse names at materialdesignicons.com.`
+              "
+              persistent-hint
+              clearable
+              data-test="template-icon-key-field"
+            />
+          </v-col>
+
+          <v-col cols="12" sm="6" class="d-flex align-center justify-center">
+            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center" min-width="80">
+              <span class="text-caption text-medium-emphasis">Preview</span>
+              <v-icon
+                :icon="iconKey.trim() || 'mdi-circle-medium'"
+                size="x-large"
+                class="mt-1"
+                data-test="template-icon-preview"
+              />
+              <span class="text-caption text-medium-emphasis mt-1">
+                {{ iconKey.trim() || "(default)" }}
+              </span>
+            </v-card>
           </v-col>
 
           <v-col cols="12">
@@ -174,18 +389,45 @@ async function save() {
             />
           </v-col>
 
+          <!-- V2CONV-B6 — body authoring: visual SHACL shape editor or raw JSON. -->
           <v-col cols="12">
+            <div class="d-flex align-center mb-2">
+              <span class="text-subtitle-2">Body (template shape)</span>
+              <v-spacer />
+              <v-btn-toggle
+                v-model="bodyMode"
+                mandatory
+                density="compact"
+                variant="outlined"
+                color="primary"
+                data-test="template-body-mode"
+              >
+                <v-btn value="visual" size="small" prepend-icon="mdi-palette-outline">Visual</v-btn>
+                <v-btn value="raw" size="small" prepend-icon="mdi-code-json">Raw JSON</v-btn>
+              </v-btn-toggle>
+            </div>
+
+            <TemplateShapeEditor
+              v-if="bodyMode === 'visual'"
+              :body="body"
+              :focus-app-id="focusAppId"
+              data-test="template-visual-editor"
+              @update:body="(b) => (body = b)"
+            />
+
             <v-textarea
+              v-else
               v-model="body"
-              label="Body (JSON DSL)"
+              label="Body (JSON DSL — your own fields; override inherited keys here)"
               required
               :rules="[(v) => !!v || 'Body is required']"
-              rows="8"
+              rows="10"
               variant="outlined"
               density="compact"
               font-family="monospace"
-              hint="JSON DSL per aidocs/54 §7"
+              hint="JSON DSL per aidocs/54 §7. Fields here override the inherited fields above. The visual editor stores its state under `editorState` + the compiled `shapeGraph`."
               persistent-hint
+              data-test="template-raw-body"
             />
           </v-col>
         </v-row>
@@ -201,6 +443,7 @@ async function save() {
           variant="tonal"
           :loading="isSaving"
           :disabled="!name.trim() || !body.trim()"
+          data-test="template-save"
           @click="save"
         >
           {{ isEdit ? "Save (new version)" : "Create" }}

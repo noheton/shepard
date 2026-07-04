@@ -1,7 +1,7 @@
 /**
  * UX-PIN1 — Fetch the v2 channel listing for a TimeseriesContainer.
  *
- * The v2 endpoint (`/v2/timeseries-containers/{id}/channels`) returns
+ * The v2 endpoint (`/v2/containers/{id}/channels`) returns
  * `TimeseriesChannelV2IO` which includes `shepardId` alongside the legacy
  * 5-tuple.  The v1 `getTimeseriesOfContainer` endpoint does NOT include
  * `shepardId` (frozen by V1WireFidelityTest).
@@ -15,6 +15,7 @@ import { ref } from "vue";
 interface ChannelV2 {
   shepardId: string;
   id: number;
+  /** @deprecated Numeric Postgres FK on the v2 wire — APISIMP-TSCHANNEL-CONTAINER-ID. Use containerAppId once available. Currently unused by this composable. */
   containerId: number;
   measurement: string;
   device: string;
@@ -34,7 +35,7 @@ function tupleKey(
   return `${n(m)}|${n(d)}|${n(l)}|${n(sn)}|${n(f)}`;
 }
 
-export function useFetchV2Channels(containerId: number) {
+export function useFetchV2Channels(containerAppId: string) {
   // useRuntimeConfig and useAuth must be called inside the composable
   // function body (inside the Vue composition context, not at module scope).
   const { public: publicConfig } = useRuntimeConfig();
@@ -58,7 +59,8 @@ export function useFetchV2Channels(containerId: number) {
     loading.value = true;
     try {
       const res = await fetch(
-        `${v2Base()}/v2/timeseries-containers/${containerId}/channels?size=2000`,
+        // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=500`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;

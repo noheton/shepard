@@ -1,11 +1,11 @@
 <script setup lang="ts">
-// /shapes/validate — minimal SHACL validation playground.
+// /shapes/validate — SHACL validation playground.
 // Backed by POST /v2/shapes/validate (Jena SHACL).
 // Two textareas (data graph + shape graph, both Turtle); a Run button;
-// the validation report JSON below.
+// a structured violation report below.
 
-import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 import { extractShapeGraphFromTemplateBody } from "~/utils/shaclTemplateBody";
+import { parseShaclReport, severityColor, severityIcon } from "~/utils/shaclValidateReport";
 import { buildDataObjectRdfUrl, shouldFetchDataObjectRdf } from "~/utils/shaclPrefill";
 
 useHead({ title: "SHACL playground | shepard" });
@@ -66,7 +66,7 @@ ex:PersonShape a sh:NodeShape ;
     sh:minInclusive 0 ;
   ] .`,
 );
-const result = ref<unknown>(null);
+const result = ref<ReturnType<typeof parseShaclReport> | null>(null);
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 
@@ -176,9 +176,9 @@ async function validate() {
       return;
     }
     try {
-      result.value = JSON.parse(body);
+      result.value = parseShaclReport(JSON.parse(body));
     } catch {
-      result.value = body;
+      error.value = `Unexpected response: ${body}`;
     }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : String(e);
@@ -276,27 +276,89 @@ async function validate() {
     <v-alert v-if="error" type="error" class="mt-3" variant="tonal">
       <pre class="text-caption">{{ error }}</pre>
     </v-alert>
-    <v-card v-if="result" variant="outlined" class="mt-3">
-      <v-card-title class="text-subtitle-1">Validation report</v-card-title>
-      <v-card-text>
-        <pre class="text-caption shacl-result">{{ JSON.stringify(result, null, 2) }}</pre>
+    <!-- Structured SHACL validation report (UI-GAP-6) -->
+    <v-card v-if="result" variant="outlined" class="mt-3" data-testid="shacl-report">
+      <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
+        Validation report
+        <v-chip
+          v-if="result.conforms"
+          color="success"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-check-circle"
+          data-testid="shacl-conforms-chip"
+        >CONFORMS</v-chip>
+        <v-chip
+          v-else
+          color="error"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-close-circle"
+          data-testid="shacl-violations-chip"
+        >{{ result.findings.length }} violation{{ result.findings.length === 1 ? "" : "s" }}</v-chip>
+      </v-card-title>
+      <v-card-text class="pa-0">
+        <v-alert
+          v-if="result.parseError"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="ma-3"
+          data-testid="shacl-parse-error"
+        >
+          <strong>Parse error:</strong> {{ result.parseError }}
+        </v-alert>
+        <v-alert
+          v-if="result.engineError"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="ma-3"
+          data-testid="shacl-engine-error"
+        >
+          <strong>Engine error:</strong> {{ result.engineError }}
+        </v-alert>
+        <v-data-table
+          v-if="result.findings.length > 0"
+          :items="result.findings"
+          :headers="[
+            { title: 'Severity', key: 'severity', width: 110 },
+            { title: 'Focus node', key: 'focusNode' },
+            { title: 'Path', key: 'resultPath' },
+            { title: 'Message', key: 'message' },
+            { title: 'Value', key: 'value' },
+          ]"
+          density="compact"
+          :items-per-page="25"
+          data-testid="shacl-findings-table"
+        >
+          <template #[`item.severity`]="{ item }">
+            <v-chip
+              :color="severityColor(item.severity)"
+              :prepend-icon="severityIcon(item.severity)"
+              size="x-small"
+              variant="tonal"
+            >{{ item.severity }}</v-chip>
+          </template>
+          <template #[`item.focusNode`]="{ item }">
+            <code class="text-caption">{{ item.focusNode ?? "—" }}</code>
+          </template>
+          <template #[`item.resultPath`]="{ item }">
+            <code v-if="item.resultPath" class="text-caption">{{ item.resultPath }}</code>
+            <span v-else class="text-medium-emphasis">—</span>
+          </template>
+          <template #[`item.value`]="{ item }">
+            <code v-if="item.value" class="text-caption">{{ item.value }}</code>
+            <span v-else class="text-medium-emphasis">—</span>
+          </template>
+        </v-data-table>
+        <p
+          v-else-if="result.conforms"
+          class="text-body-2 text-medium-emphasis pa-4"
+          data-testid="shacl-conforms-msg"
+        >No violations — the data graph satisfies all shapes.</p>
       </v-card-text>
     </v-card>
-    <PlaceholderImplStatus
-      backend="shipped"
-      backlog-row="SHAPES-V"
-      design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
-      endpoint="/v2/shapes/validate"
-      notes="Backend live. UI is intentionally minimal — full editor / SHACL-shape library queued under SHAPES-V-UI."
-    />
   </v-container>
 </template>
 
-<style scoped>
-.shacl-result {
-  max-height: 500px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-</style>

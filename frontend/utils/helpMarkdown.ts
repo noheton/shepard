@@ -300,6 +300,11 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         fetchPath: "/docs/user-guide.md",
       },
       {
+        page: "help/mffd-tour",
+        title: "MFFD digital-thread tour",
+        fetchPath: "/docs/help/mffd-tour.md",
+      },
+      {
         page: "architecture",
         title: "Architecture",
         fetchPath: "/docs/architecture.md",

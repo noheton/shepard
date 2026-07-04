@@ -1,126 +1,116 @@
 /**
- * TS-SEMANTIC-REST — unit tests for {@link AnnotatedChannel}, the wrapper
- * over `/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations`.
+ * V2UI-CHANNEL-ANNO-CLIENT — unit tests for {@link AnnotatedChannel}, the typed-client
+ * wrapper over `TimeseriesChannelAnnotationsApi` (listChannelAnnotations /
+ * createChannelAnnotation / deleteChannelAnnotation).
  *
- * Covers URL construction, the GET-404→[] swallow (pre-TS-SEMANTIC-01
- * channels), and the create / delete happy paths.
+ * Covers: list happy-path + 404-swallow, delete via appId lookup, create
+ * forwarding, and missing-appId guard on delete-without-fetch.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
-import { AnnotatedChannel } from "../../composables/annotated";
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
+}));
 
-const TOKEN = "fake-jwt-token";
+const mockList = vi.fn();
+const mockCreate = vi.fn();
+const mockDelete = vi.fn();
 
 beforeEach(() => {
-  // useAuth() override — annotated.ts reads `accessToken` for the Bearer header.
-  (globalThis as unknown as { useAuth: () => unknown }).useAuth = () => ({
-    data: ref({ accessToken: TOKEN }),
-  });
-  (globalThis as unknown as { useRuntimeConfig: () => unknown }).useRuntimeConfig =
-    () => ({
-      public: { backendApiUrl: "https://api.example.com/shepard/api" },
+  vi.clearAllMocks();
+  (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
+    ref({
+      listChannelAnnotations: mockList,
+      createChannelAnnotation: mockCreate,
+      deleteChannelAnnotation: mockDelete,
+    }),
+  );
+});
+
+const CONTAINER = "01928eaa-0000-7000-8000-000000000042";
+const CHANNEL = "01928eaa-1234-7000-9000-aaaaaaaaaaaa";
+const ANNO_APP_ID = "0192anno-0000-7000-8000-000000000001";
+const ANNO: { id: number; appId: string; propertyIRI: string; valueIRI: string } = {
+  id: 5,
+  appId: ANNO_APP_ID,
+  propertyIRI: "http://example.org/prop",
+  valueIRI: "http://example.org/val",
+};
+
+describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", () => {
+  it("fetchAnnotations delegates to listChannelAnnotations with containerAppId + channelShepardId", async () => {
+    mockList.mockResolvedValue([ANNO]);
+    const { AnnotatedChannel } = await import("~/composables/annotated");
+
+    const out = await new AnnotatedChannel(CONTAINER, CHANNEL).fetchAnnotations();
+
+    expect(mockList).toHaveBeenCalledWith({
+      appId: CONTAINER,
+      channelShepardId: CHANNEL,
     });
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-function mockFetchOnce(response: Partial<Response> & { ok: boolean; status?: number; jsonBody?: unknown }) {
-  const fetchMock = vi.fn().mockResolvedValue({
-    ok: response.ok,
-    status: response.status ?? (response.ok ? 200 : 500),
-    json: async () => response.jsonBody ?? null,
-  } as unknown as Response);
-  globalThis.fetch = fetchMock as unknown as typeof fetch;
-  return fetchMock;
-}
-
-describe("AnnotatedChannel — TS-SEMANTIC-REST wrapper", () => {
-  it("derives the v2 base URL from backendApiUrl by stripping /shepard/api", async () => {
-    const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(42, "01928eaa-1234-7000-9000-aaaaaaaaaaaa");
-    await a.fetchAnnotations();
-    const url = String(fetchMock.mock.calls[0]![0]);
-    expect(url).toBe(
-      "https://api.example.com/v2/timeseries-containers/42/channels/01928eaa-1234-7000-9000-aaaaaaaaaaaa/annotations",
-    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ id: 5, propertyIRI: "http://example.org/prop" });
   });
 
-  it("URL-encodes the channelShepardId path segment", async () => {
-    const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    // unusual id with slash/colon to prove encoding
-    const a = new AnnotatedChannel(7, "foo/bar:baz");
-    await a.fetchAnnotations();
-    const url = String(fetchMock.mock.calls[0]![0]);
-    expect(url).toContain("/channels/foo%2Fbar%3Abaz/annotations");
-  });
+  it("fetchAnnotations swallows 404 into empty list (pre-TS-SEMANTIC-01 channels)", async () => {
+    mockList.mockRejectedValue({ response: { status: 404 } });
+    const { AnnotatedChannel } = await import("~/composables/annotated");
 
-  it("attaches the Bearer token from useAuth", async () => {
-    const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(1, "sid");
-    await a.fetchAnnotations();
-    const init = fetchMock.mock.calls[0]![1] as RequestInit;
-    expect((init.headers as Record<string, string>).Authorization).toBe(
-      `Bearer ${TOKEN}`,
-    );
-  });
+    const out = await new AnnotatedChannel(CONTAINER, CHANNEL).fetchAnnotations();
 
-  it("swallows a GET 404 into an empty list (pre-TS-SEMANTIC-01 channels)", async () => {
-    mockFetchOnce({ ok: false, status: 404 });
-    const a = new AnnotatedChannel(1, "sid-missing");
-    const out = await a.fetchAnnotations();
     expect(out).toEqual([]);
   });
 
-  it("re-throws on non-404 errors", async () => {
-    mockFetchOnce({ ok: false, status: 500 });
-    const a = new AnnotatedChannel(1, "sid");
-    await expect(a.fetchAnnotations()).rejects.toThrow(/HTTP 500/);
+  it("fetchAnnotations re-throws non-404 errors", async () => {
+    mockList.mockRejectedValue({ response: { status: 500 } });
+    const { AnnotatedChannel } = await import("~/composables/annotated");
+
+    await expect(
+      new AnnotatedChannel(CONTAINER, CHANNEL).fetchAnnotations(),
+    ).rejects.toMatchObject({ response: { status: 500 } });
   });
 
-  it("POST add — sends JSON body and returns the created annotation", async () => {
-    const created = { id: 999, propertyIRI: "p", valueIRI: "v" };
-    const fetchMock = mockFetchOnce({ ok: true, status: 201, jsonBody: created });
-    const a = new AnnotatedChannel(3, "sid-3");
-    const out = await a.addAnnotation({
-      propertyIRI: "p",
-      valueIRI: "v",
-      propertyRepositoryId: 1,
-      valueRepositoryId: 1,
-    } as unknown as Parameters<typeof a.addAnnotation>[0]);
-    expect(out).toEqual(created);
-    const init = fetchMock.mock.calls[0]![1] as RequestInit;
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toMatchObject({
-      propertyIRI: "p",
-      valueIRI: "v",
+  it("deleteAnnotation uses cached appId from fetchAnnotations", async () => {
+    mockList.mockResolvedValue([ANNO]);
+    mockDelete.mockResolvedValue(undefined);
+    const { AnnotatedChannel } = await import("~/composables/annotated");
+
+    const a = new AnnotatedChannel(CONTAINER, CHANNEL);
+    await a.fetchAnnotations();
+    await a.deleteAnnotation(5);
+
+    expect(mockDelete).toHaveBeenCalledWith({
+      appId: CONTAINER,
+      channelShepardId: CHANNEL,
+      annotationAppId: ANNO_APP_ID,
     });
   });
 
-  it("DELETE — targets {annotationId} subpath", async () => {
-    const fetchMock = mockFetchOnce({ ok: true, status: 204 });
-    const a = new AnnotatedChannel(3, "sid-3");
-    await a.deleteAnnotation(777);
-    const url = String(fetchMock.mock.calls[0]![0]);
-    expect(url).toMatch(/\/channels\/sid-3\/annotations\/777$/);
-    const init = fetchMock.mock.calls[0]![1] as RequestInit;
-    expect(init.method).toBe("DELETE");
+  it("deleteAnnotation throws if appId not cached (fetchAnnotations not called)", async () => {
+    const { AnnotatedChannel } = await import("~/composables/annotated");
+
+    await expect(
+      new AnnotatedChannel(CONTAINER, CHANNEL).deleteAnnotation(999),
+    ).rejects.toThrow(/No appId cached/);
   });
 
-  it("uses backendV2ApiUrl override when explicitly set", async () => {
-    (globalThis as unknown as { useRuntimeConfig: () => unknown }).useRuntimeConfig =
-      () => ({
-        public: {
-          backendApiUrl: "https://api.example.com/shepard/api",
-          backendV2ApiUrl: "https://v2.example.com",
-        },
-      });
-    const fetchMock = mockFetchOnce({ ok: true, jsonBody: [] });
-    const a = new AnnotatedChannel(9, "sid-9");
-    await a.fetchAnnotations();
-    const url = String(fetchMock.mock.calls[0]![0]);
-    expect(url).toMatch(/^https:\/\/v2\.example\.com\/v2\//);
+  it("addAnnotation delegates to createChannelAnnotation and returns result", async () => {
+    const created = { id: 7, appId: "new-appid", propertyIRI: "p", valueIRI: "v" };
+    mockCreate.mockResolvedValue(created);
+    const { AnnotatedChannel } = await import("~/composables/annotated");
+
+    const body = { propertyIRI: "p", valueIRI: "v", propertyRepositoryId: 1, valueRepositoryId: 2 };
+    const out = await new AnnotatedChannel(CONTAINER, CHANNEL).addAnnotation(
+      body as Parameters<InstanceType<typeof AnnotatedChannel>["addAnnotation"]>[0],
+    );
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      appId: CONTAINER,
+      channelShepardId: CHANNEL,
+      semanticAnnotation: body,
+    });
+    expect(out).toEqual(created);
   });
 });

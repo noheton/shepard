@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.users.resources;
 
 import de.dlr.shepard.auth.users.services.UserAvatarService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -30,24 +31,28 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Me")
 public class UserAvatarByAppIdRest {
 
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/user-avatar.not-found";
+
   @Inject
   UserAvatarService avatarService;
 
   @GET
   @Produces("image/*")
-  @Operation(summary = "Get a user's avatar. No authentication required; returns 404 if none uploaded.")
+  @Operation(operationId = "getUserAvatar", summary = "Get a user's avatar. No authentication required; returns 404 if none uploaded.")
   @APIResponse(responseCode = "200", description = "Avatar bytes.")
   @APIResponse(responseCode = "404", description = "No avatar for this user.")
   public Response getAvatar(@PathParam("appId") String appId) {
     Document doc = avatarService.find(appId);
     if (doc == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Avatar not found",
+        Response.Status.NOT_FOUND, "no avatar uploaded for user " + appId);
     }
 
     Binary binary = doc.get("data", Binary.class);
     String mimeType = doc.getString("mimeType");
     if (binary == null || mimeType == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Avatar not found",
+        Response.Status.NOT_FOUND, "no avatar uploaded for user " + appId);
     }
 
     byte[] data = binary.getData();
@@ -56,5 +61,10 @@ public class UserAvatarByAppIdRest {
     return Response.ok(stream, mimeType)
         .header("Cache-Control", "max-age=3600, must-revalidate")
         .build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

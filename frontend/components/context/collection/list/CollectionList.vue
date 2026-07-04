@@ -3,6 +3,7 @@ import type { Collection } from "@dlr-shepard/backend-client";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { useProjectMembership } from "~/composables/context/useProjectMembership";
 import { descriptionPreview, toShortDateString } from "~/utils/helpers";
 import { useDoCountChip } from "~/utils/doCountChip";
 
@@ -18,6 +19,12 @@ const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { advancedMode } = useAdvancedMode();
+// PROJ-BADGE-1 — Project chip on Collection rows that carry urn:shepard:project = "true".
+const { isProject: isCollectionProject } = useProjectMembership();
+
+function rowAppId(item: Collection): string | null {
+  return (item as unknown as { appId?: string | null }).appId ?? null;
+}
 
 // UI-011: Description preview chars in the list cell.
 const DESCRIPTION_PREVIEW_CHARS = 120;
@@ -25,6 +32,13 @@ const DESCRIPTION_PREVIEW_CHARS = 120;
 // LIC1: defensive accessor — Collection client model may not yet expose accessRights.
 function rowAccessRights(item: Collection): string | null {
   return (item as unknown as { accessRights?: string | null }).accessRights ?? null;
+}
+
+// UX-WALK-2026-05-29-08: defensive accessor for permissionType, which is always
+// populated (Public / PublicReadable / Private). Used as the fallback chip when
+// accessRights (FAIR metadata) is absent.
+function rowPermissionType(item: Collection): string | null {
+  return (item as unknown as { permissionType?: string | null }).permissionType ?? null;
 }
 
 // Headers are computed so we can hide the numeric ID column when the user
@@ -145,13 +159,23 @@ function onPageChange(page: number) {
     <template #item="rowProps">
       <v-data-table-row
         v-bind="rowProps"
-        @click="router.push(collectionsPath + rowProps.item.id)"
+        @click="router.push(collectionsPath + (rowProps.item.appId ?? rowProps.item.id))"
       >
         <template v-if="advancedMode" #[`item.id`]>
           <span data-testid="collection-row-id">{{ rowProps.item.id }}</span>
         </template>
         <template #[`item.name`]>
           {{ rowProps.item.name }}
+          <!-- PROJ-BADGE-1 — Project chip when this Collection carries urn:shepard:project = "true". -->
+          <v-chip
+            v-if="isCollectionProject(rowAppId(rowProps.item))"
+            size="x-small"
+            variant="tonal"
+            color="primary"
+            class="ml-2"
+            prepend-icon="mdi-folder-multiple"
+            data-testid="collection-row-project-chip"
+          >Project</v-chip>
           <span
             v-if="(rowProps.item as any).importedFrom"
             class="text-caption text-medium-emphasis ml-2"
@@ -159,11 +183,19 @@ function onPageChange(page: number) {
           >({{ (rowProps.item as any).importedFrom }})</span>
         </template>
         <template #[`item.accessRights`]>
+          <!-- UX-WALK-2026-05-29-08: prefer the FAIR accessRights chip; fall back to
+               a PermissionType chip (Open / Shared / Restricted) when FAIR metadata
+               is not yet set. The column is never a bare `—`. -->
           <AccessRightsChip
             v-if="rowAccessRights(rowProps.item)"
             :access-rights="rowAccessRights(rowProps.item)!"
           />
-          <span v-else class="text-disabled">—</span>
+          <PermissionTypeChip
+            v-else-if="rowPermissionType(rowProps.item)"
+            :permission-type="rowPermissionType(rowProps.item)"
+            data-testid="collection-row-permission-type-chip"
+          />
+          <span v-else class="text-disabled" aria-hidden="true">—</span>
         </template>
         <template #[`item.description`]>
           <span

@@ -56,6 +56,13 @@ export interface ContextToolItem {
  */
 export interface ContextToolBuildContext {
   attachedTemplateAppId?: string | null;
+  /**
+   * UX612-M1 — `templateKind` of the attached template (resolved by the
+   * detail page via GET /v2/templates/{appId}). `POST /v2/shapes/render`
+   * accepts only VIEW_RECIPE templates (422 otherwise), so the DO-RENDER
+   * gate checks the kind, not mere template presence.
+   */
+  attachedTemplateKind?: string | null;
 }
 
 /**
@@ -119,6 +126,21 @@ export const COLLECTION_CONTEXT_TOOLS: ContextToolItem[] = [
       scope: "collection",
     }),
   },
+  {
+    // V2CONV-B6-POLISH Item 4 — in-context "create template" affordance.
+    // Routes to the admin templates page with a prefill hint so the dialog
+    // opens pre-populated with this Collection's scope.
+    id: "coll-create-template",
+    title: "Create template for this Collection",
+    subtitle: "Open the template editor pre-scoped to this Collection kind.",
+    icon: "mdi-file-code-outline",
+    path: "/admin/templates",
+    buildQuery: (appId) => ({
+      newTemplate: "1",
+      targetEntityAppId: appId,
+      scope: "collection",
+    }),
+  },
 ];
 
 /**
@@ -173,22 +195,43 @@ export const DATA_OBJECT_CONTEXT_TOOLS: ContextToolItem[] = [
     // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
     enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
   },
+  // FORM-UX-ACTIONBUTTON — the former `do-render` ("Render view") entry is
+  // ABSORBED by `ActionMenuButton.vue` ("View as …" group, fed by
+  // GET /v2/shapes/applicable). The VIEW_RECIPE gate the UX612-M1 fix
+  // expressed client-side here is now owned server-side by the
+  // applicable-discovery endpoint; keeping both buttons would duplicate
+  // the affordance.
   {
-    id: "do-render",
-    title: "Render view",
-    subtitle: "Project a VIEW_RECIPE template onto this DataObject.",
-    icon: "mdi-cube-scan",
-    path: "/shapes/render",
+    // V2CONV-B6-POLISH Item 4 — in-context "create template" affordance.
+    // Routes to the admin templates page with a prefill hint so the dialog
+    // opens pre-populated with this DataObject's kind/scope as the target class.
+    id: "do-create-template",
+    title: "Create template for this DataObject",
+    subtitle: "Open the template editor pre-scoped to this DataObject kind.",
+    icon: "mdi-file-code-outline",
+    path: "/admin/templates",
+    buildQuery: (appId) => ({
+      newTemplate: "1",
+      targetEntityAppId: appId,
+      scope: "data-object",
+    }),
+  },
+  {
+    // UI-GAP-1 — in-context "Materialize" entry for DataObjects whose attached
+    // template is a MAPPING_RECIPE (V2CONV-B3). Only visible when the kind is
+    // MAPPING_RECIPE so the button doesn't clutter DataObjects with VIEW_RECIPE /
+    // DATAOBJECT_RECIPE templates that this executor cannot handle.
+    id: "do-materialize",
+    title: "Materialize mapping recipe",
+    subtitle: "Run the attached MAPPING_RECIPE template and derive a new reference or view.",
+    icon: "mdi-cog-play-outline",
+    path: "/tools/materialize-mapping",
     buildQuery: (appId, ctx) => {
-      const out: Record<string, string> = {
-        focusShepardId: appId,
-        scope: "data-object",
-      };
+      const out: Record<string, string> = { focusDataObjectAppId: appId };
       if (ctx?.attachedTemplateAppId) out.templateAppId = ctx.attachedTemplateAppId;
       return out;
     },
-    // TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — only render when a template is attached.
-    enabledWhen: (ctx) => Boolean(ctx.attachedTemplateAppId),
+    enabledWhen: (ctx) => ctx.attachedTemplateKind === "MAPPING_RECIPE",
   },
 ];
 

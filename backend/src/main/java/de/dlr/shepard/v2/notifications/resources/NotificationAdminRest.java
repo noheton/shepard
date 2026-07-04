@@ -1,7 +1,9 @@
 package de.dlr.shepard.v2.notifications.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.io.NotificationIO;
+import de.dlr.shepard.v2.notifications.io.NotificationTestDeliveryIO;
 import de.dlr.shepard.v2.notifications.io.TestNotificationIO;
 import de.dlr.shepard.v2.notifications.services.NotificationService;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
@@ -48,9 +50,14 @@ public class NotificationAdminRest {
   @Inject
   NotificationTransportRegistry transportRegistry;
 
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/notifications.not-found";
+  private static final String PROBLEM_TYPE_SERVICE_UNAVAILABLE = "/problems/notifications.service-unavailable";
+  private static final String PROBLEM_TYPE_BAD_GATEWAY = "/problems/notifications.bad-gateway";
+
   @POST
   @Path("/test")
   @Operation(
+    operationId = "sendTest",
     summary = "Send a test in-app notification.",
     description = "Publishes a test notification to validate that the notification system is working. " +
     "The notification appears in the target audience's bell panel within one poll cycle (~30 seconds). " +
@@ -59,10 +66,31 @@ public class NotificationAdminRest {
   )
   @APIResponse(
     responseCode = "201",
-    description = "Test notification published.",
+    description = "Test notification published (in-app path).",
     content = @Content(schema = @Schema(implementation = NotificationIO.class))
   )
+  @APIResponse(
+    responseCode = "200",
+    description = "Test notification delivered via transport.",
+    content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
+  @APIResponse(
+    responseCode = "404",
+    description = "transportId does not resolve.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "502",
+    description = "Transport returned failure.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
+  @APIResponse(
+    responseCode = "503",
+    description = "No sender registered for this transport kind.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   public Response sendTest(
     @RequestBody(
       required = true,
@@ -119,7 +147,7 @@ public class NotificationAdminRest {
     String appId = body.getTransportId();
     Optional<NotificationTransport> found = transportService.findByAppId(appId);
     if (found.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Transport not found", Response.Status.NOT_FOUND, "no transport with appId=" + appId);
     }
     NotificationTransport transport = found.get();
     var sender = transportRegistry.resolve(transport);
@@ -127,8 +155,7 @@ public class NotificationAdminRest {
       Log.warnf("NTF1: no registered sender for transport appId=%s kind=%s",
           transport.getAppId(), transport.getKind());
       recordTestOutcome(transport, "FAIL", "no registered sender for kind=" + transport.getKind());
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-          .entity("no registered sender for kind=" + transport.getKind()).build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "No sender registered", Response.Status.SERVICE_UNAVAILABLE, "no registered sender for kind=" + transport.getKind());
     }
 
     NotificationMessage msg = new NotificationMessage(
@@ -142,16 +169,19 @@ public class NotificationAdminRest {
     } catch (RuntimeException e) {
       Log.warnf(e, "NTF1: sender for kind=%s threw — treating as failure", transport.getKind());
       recordTestOutcome(transport, "FAIL", e.getMessage());
-      return Response.status(Response.Status.BAD_GATEWAY)
-          .entity("transport send threw: " + e.getMessage()).build();
+      return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send threw: " + e.getMessage());
     }
     if (ok) {
       recordTestOutcome(transport, "OK", "delivered");
-      return Response.ok().entity("delivered via " + transport.getKind()).build();
+      return Response.ok(new NotificationTestDeliveryIO("delivered", transport.getKind())).build();
     }
     recordTestOutcome(transport, "FAIL", "sender returned false (see backend logs)");
-    return Response.status(Response.Status.BAD_GATEWAY)
-        .entity("transport send returned false").build();
+    return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send returned false");
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /** Persist last-test fields on the transport row. Best-effort — never throws. */

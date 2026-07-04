@@ -19,8 +19,9 @@ const SAMPLE_APP_ID = "0197b6a2-7b4c-7000-8a3b-1234567890ab";
 // ── COLLECTION_CONTEXT_TOOLS ───────────────────────────────────────────────
 
 describe("COLLECTION_CONTEXT_TOOLS", () => {
-  it("exposes the two Collection-scope tool entries (SPARQL + Vocab)", () => {
+  it("exposes the three Collection-scope tool entries (SPARQL + Vocab + Create Template)", () => {
     expect(COLLECTION_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
+      "coll-create-template",
       "coll-sparql",
       "coll-vocab",
     ]);
@@ -54,14 +55,27 @@ describe("COLLECTION_CONTEXT_TOOLS", () => {
     expect(q.usedBy).toBe(SAMPLE_APP_ID);
     expect(q.scope).toBe("collection");
   });
+
+  it("coll-create-template routes to /admin/templates with newTemplate=1 + scope", () => {
+    const t = COLLECTION_CONTEXT_TOOLS.find(x => x.id === "coll-create-template")!;
+    expect(t.path).toBe("/admin/templates");
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.newTemplate).toBe("1");
+    expect(q.targetEntityAppId).toBe(SAMPLE_APP_ID);
+    expect(q.scope).toBe("collection");
+  });
 });
 
 // ── DATA_OBJECT_CONTEXT_TOOLS ──────────────────────────────────────────────
 
 describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
-  it("exposes the four DataObject-scope tool entries", () => {
+  it("exposes the five DataObject-scope tool entries (do-render absorbed by ActionMenuButton)", () => {
+    // FORM-UX-ACTIONBUTTON — the former "do-render" entry moved into the
+    // unified ActionMenuButton ("View as …", fed by /v2/shapes/applicable).
+    // UI-GAP-1 added "do-materialize" gated on MAPPING_RECIPE kind.
     expect(DATA_OBJECT_CONTEXT_TOOLS.map(t => t.id).sort()).toEqual([
-      "do-render",
+      "do-create-template",
+      "do-materialize",
       "do-shacl",
       "do-sparql",
       "do-vocab",
@@ -95,16 +109,6 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     expect(q.scope).toBe("data-object");
   });
 
-  it("do-render routes to /shapes/render with focusShepardId (existing param name)", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(t.path).toBe("/shapes/render");
-    const q = t.buildQuery(SAMPLE_APP_ID);
-    // The /shapes/render page already reads `focusShepardId` from the
-    // query string into its template-render form. We MUST use that
-    // exact param name — not `focusAppId` — or the prefill won't fire.
-    expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
-  });
-
   // ── TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — conditional rendering ─────────
 
   it("do-shacl is hidden when no template is attached (enabledWhen=false)", () => {
@@ -119,10 +123,14 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     expect(t.enabledWhen!({ attachedTemplateAppId: "tpl-001" })).toBe(true);
   });
 
-  it("do-render is hidden when no template is attached", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    expect(t.enabledWhen).toBeDefined();
-    expect(t.enabledWhen!({ attachedTemplateAppId: null })).toBe(false);
+  it("do-shacl stays presence-gated (validation works for any template kind)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-shacl")!;
+    expect(
+      t.enabledWhen!({
+        attachedTemplateAppId: "tpl-001",
+        attachedTemplateKind: "DATAOBJECT_RECIPE",
+      }),
+    ).toBe(true);
   });
 
   it("do-shacl prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
@@ -132,18 +140,63 @@ describe("DATA_OBJECT_CONTEXT_TOOLS", () => {
     expect(q.focusAppId).toBe(SAMPLE_APP_ID);
   });
 
-  it("do-render prefills templateAppId when attachedTemplateAppId is passed in ctx", () => {
-    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-render")!;
-    const q = t.buildQuery(SAMPLE_APP_ID, { attachedTemplateAppId: "tpl-002" });
-    expect(q.templateAppId).toBe("tpl-002");
-    expect(q.focusShepardId).toBe(SAMPLE_APP_ID);
-  });
-
   it("do-sparql + do-vocab have no gate (enabledWhen undefined) and always render", () => {
     const sparql = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-sparql")!;
     const vocab  = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-vocab")!;
     expect(sparql.enabledWhen).toBeUndefined();
     expect(vocab.enabledWhen).toBeUndefined();
+  });
+
+  it("do-create-template routes to /admin/templates with newTemplate=1 + scope", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-create-template")!;
+    expect(t.path).toBe("/admin/templates");
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.newTemplate).toBe("1");
+    expect(q.targetEntityAppId).toBe(SAMPLE_APP_ID);
+    expect(q.scope).toBe("data-object");
+  });
+
+  it("do-create-template has no enabledWhen gate (always visible)", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-create-template")!;
+    expect(t.enabledWhen).toBeUndefined();
+  });
+
+  // ── UI-GAP-1 — do-materialize ──────────────────────────────────────────
+
+  it("do-materialize routes to /tools/materialize-mapping", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.path).toBe("/tools/materialize-mapping");
+  });
+
+  it("do-materialize is hidden when attachedTemplateKind is not MAPPING_RECIPE", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.enabledWhen).toBeDefined();
+    expect(t.enabledWhen!({})).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: null })).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: "VIEW_RECIPE" })).toBe(false);
+    expect(t.enabledWhen!({ attachedTemplateKind: "DATAOBJECT_RECIPE" })).toBe(false);
+  });
+
+  it("do-materialize is visible when attachedTemplateKind is MAPPING_RECIPE", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    expect(t.enabledWhen!({ attachedTemplateKind: "MAPPING_RECIPE" })).toBe(true);
+  });
+
+  it("do-materialize buildQuery carries focusDataObjectAppId", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    const q = t.buildQuery(SAMPLE_APP_ID);
+    expect(q.focusDataObjectAppId).toBe(SAMPLE_APP_ID);
+    expect(q.templateAppId).toBeUndefined();
+  });
+
+  it("do-materialize buildQuery prefills templateAppId when ctx has attachedTemplateAppId", () => {
+    const t = DATA_OBJECT_CONTEXT_TOOLS.find(x => x.id === "do-materialize")!;
+    const q = t.buildQuery(SAMPLE_APP_ID, {
+      attachedTemplateAppId: "tpl-mapping-001",
+      attachedTemplateKind: "MAPPING_RECIPE",
+    });
+    expect(q.focusDataObjectAppId).toBe(SAMPLE_APP_ID);
+    expect(q.templateAppId).toBe("tpl-mapping-001");
   });
 });
 

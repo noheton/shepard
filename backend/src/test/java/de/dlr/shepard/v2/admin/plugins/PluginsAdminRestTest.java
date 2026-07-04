@@ -15,8 +15,8 @@ import de.dlr.shepard.plugin.PluginManifest;
 import de.dlr.shepard.plugin.PluginRegistry;
 import de.dlr.shepard.v2.admin.plugins.io.PluginDependencyIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginEntryIO;
-import de.dlr.shepard.v2.admin.plugins.io.PluginListIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginPatchIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -82,10 +82,11 @@ class PluginsAdminRestTest {
     Response r = resource.list();
 
     assertEquals(200, r.getStatus());
-    PluginListIO body = (PluginListIO) r.getEntity();
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PluginEntryIO> body = (PagedResponseIO<PluginEntryIO>) r.getEntity();
     assertNotNull(body);
-    assertNotNull(body.plugins());
-    assertTrue(body.plugins().isEmpty());
+    assertNotNull(body.items());
+    assertTrue(body.items().isEmpty());
   }
 
   @Test
@@ -105,17 +106,21 @@ class PluginsAdminRestTest {
     Response r = resource.list();
 
     assertEquals(200, r.getStatus());
-    PluginListIO body = (PluginListIO) r.getEntity();
-    assertEquals(2, body.plugins().size());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PluginEntryIO> body = (PagedResponseIO<PluginEntryIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(2, body.total());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
 
-    PluginEntryIO unhideRow = body.plugins().get(0);
+    PluginEntryIO unhideRow = body.items().get(0);
     assertEquals("unhide", unhideRow.id());
     assertEquals("1.0.0", unhideRow.version());
     assertEquals(">=5.2.0,<6", unhideRow.shepardCompatibility());
     assertFalse(unhideRow.enabled(), "registry.isEnabled returned false → enabled=false in IO");
     assertNull(unhideRow.sourcePath(), "build-classpath plugin surfaces sourcePath=null");
 
-    PluginEntryIO hdfRow = body.plugins().get(1);
+    PluginEntryIO hdfRow = body.items().get(1);
     assertEquals("hdf-hsds", hdfRow.id());
     assertTrue(hdfRow.enabled());
     assertTrue(hdfRow.sourcePath().endsWith("shepard-plugin-hdf-hsds-0.3.0.jar"));
@@ -133,9 +138,10 @@ class PluginsAdminRestTest {
     Response r = resource.list();
 
     assertEquals(200, r.getStatus());
-    PluginListIO body = (PluginListIO) r.getEntity();
-    assertEquals(1, body.plugins().size());
-    PluginEntryIO io = body.plugins().get(0);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PluginEntryIO> body = (PagedResponseIO<PluginEntryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    PluginEntryIO io = body.items().get(0);
 
     assertEquals("Rich Plugin", io.title());
     assertEquals("A plugin with all the new PM1c metadata filled in.", io.description());
@@ -165,7 +171,8 @@ class PluginsAdminRestTest {
 
     Response r = resource.list();
 
-    PluginEntryIO io = ((PluginListIO) r.getEntity()).plugins().get(0);
+    @SuppressWarnings("unchecked")
+    PluginEntryIO io = ((PagedResponseIO<PluginEntryIO>) r.getEntity()).items().get(0);
     assertEquals("bare", io.title(), "title defaults to id, surfaced non-null");
     assertNull(io.description(), "blank description collapses to null");
     assertNull(io.homepageUrl(), "Optional.empty collapses to null");

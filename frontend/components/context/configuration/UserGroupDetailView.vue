@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  instanceOfUser,
-  type User,
-  type UserGroup,
-} from "@dlr-shepard/backend-client";
+import { instanceOfUser, type User } from "@dlr-shepard/backend-client";
 import {
   SearchType,
   type Member,
@@ -13,8 +9,9 @@ import {
   UserGroupMemberRole,
   type UserGroupMemberPermissions,
 } from "~/composables/context/configuration/useHandleUserGroupMembers";
+import type { UserGroupV2 } from "~/composables/context/useUserGroupsV2";
 
-const { userGroup } = defineProps<{ userGroup: UserGroup }>();
+const { userGroup } = defineProps<{ userGroup: UserGroupV2 }>();
 const emit = defineEmits(["back"]);
 
 const showUserRemoveConfirmDialog = ref<boolean>(false);
@@ -82,7 +79,7 @@ async function onConfirmDeleteUserGroup() {
   <ConfigurationPane :title="userGroup.name">
     <template #metadata>
       <MetadataColumn>
-        <MetadataTextField label="ID" :text="userGroup.id.toString()" />
+        <MetadataTextField label="ID" :text="userGroup.appId" />
       </MetadataColumn>
 
       <v-col v-if="isAllowedToEditOwnership" class="text-right">

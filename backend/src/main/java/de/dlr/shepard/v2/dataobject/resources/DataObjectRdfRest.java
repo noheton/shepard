@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.dataobject.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -77,8 +78,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/data-objects")
 @RequestScoped
 @Authenticated
-@Tag(name = "DataObjects (v2)")
+@Tag(name = "DataObjects")
 public class DataObjectRdfRest {
+
+  static final String PT_UNAUTHORIZED = "/problems/data-objects.rdf.unauthorized";
+  static final String PT_NOT_FOUND = "/problems/data-objects.rdf.not-found";
+  static final String PT_FORBIDDEN = "/problems/data-objects.rdf.forbidden";
 
   // ─── namespace constants (mirrored from M4iDataObjectRenderer to keep
   //     the Turtle prefix set identical to the JSON-LD flavour) ─────────
@@ -103,6 +108,7 @@ public class DataObjectRdfRest {
   @Path("/{appId}/rdf")
   @Produces("text/turtle")
   @Operation(
+    operationId = "getRdf",
     summary = "Return a Turtle subgraph for the DataObject (SHACL focus node).",
     description =
       "Serialises the DataObject + first-level neighbors + direct semantic " +
@@ -126,16 +132,19 @@ public class DataObjectRdfRest {
   ) {
     String caller = sc != null && sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null || caller.isBlank()) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(Response.Status.UNAUTHORIZED, PT_UNAUTHORIZED, "Authentication required",
+          "Authentication is required to retrieve the RDF subgraph.");
     }
 
     DataObject d = dataObjectDAO.findByAppId(appId);
     if (d == null || d.isDeleted()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, PT_NOT_FOUND, "DataObject not found",
+          "No DataObject with appId '" + appId + "' exists.");
     }
 
     if (!permissionsService.isAccessAllowedForDataObjectAppId(appId, AccessType.Read, caller)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, PT_FORBIDDEN, "Access denied",
+          "Caller '" + caller + "' lacks Read permission on DataObject '" + appId + "'.");
     }
 
     // Annotation lookup is a separate DAO hop (see M4iDataObjectRenderer
@@ -155,6 +164,11 @@ public class DataObjectRdfRest {
     return Response.ok(turtle, "text/turtle")
       .header("Cache-Control", "max-age=60, must-revalidate")
       .build();
+  }
+
+  private static Response problem(Response.Status status, String type, String title, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   // ─── pure Turtle builder (unit-testable) ────────────────────────────

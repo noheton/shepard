@@ -1,5 +1,6 @@
 /**
- * ROR1 composable wrapping `GET/PATCH /v2/admin/instance/ror`.
+ * ROR1 composable wrapping `GET/PATCH /v2/admin/config/ror`
+ * (V2CONV-A4 generic admin-config surface; was /v2/admin/instance/ror).
  *
  * Raw `fetch` rather than a generated client because the
  * `@dlr-shepard/backend-client` regeneration for the ROR1 admin
@@ -34,7 +35,7 @@ export function useInstanceRorConfig() {
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const url = `${v2BaseUrl()}/v2/admin/instance/ror`;
+      const url = `${v2BaseUrl()}/v2/admin/config/ror`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -61,7 +62,7 @@ export function useInstanceRorConfig() {
     try {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
-      const url = `${v2BaseUrl()}/v2/admin/instance/ror`;
+      const url = `${v2BaseUrl()}/v2/admin/config/ror`;
       const body: Record<string, string | null> = {};
       if (rorId !== undefined) body.rorId = rorId;
       if (organizationName !== undefined) body.organizationName = organizationName;

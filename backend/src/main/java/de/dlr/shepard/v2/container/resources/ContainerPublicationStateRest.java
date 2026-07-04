@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.container.resources;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.collection.io.PublicationStateIO;
@@ -52,8 +53,11 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Container lifecycle (v2)")
+@Tag(name = "Containers")
 public class ContainerPublicationStateRest {
+
+  private static final String PT_NOT_FOUND = "/problems/container-publication-state.not-found";
+  private static final String PT_UNAUTHORIZED = "/problems/container-publication-state.unauthorized";
 
   private static final Set<String> VALID_STATES = Set.of(
     "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"
@@ -77,6 +81,7 @@ public class ContainerPublicationStateRest {
 
   @GET
   @Operation(
+    operationId = "getContainerPublicationState",
     summary = "Read the current publication state of a Container.",
     description =
       "Returns the container's `status` and a convenience `archived` boolean. " +
@@ -88,18 +93,26 @@ public class ContainerPublicationStateRest {
     description = "Current publication state.",
     content = @Content(schema = @Schema(implementation = PublicationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Container with that appId.")
   public Response get(
     @PathParam("containerAppId") String containerAppId,
     @Context SecurityContext sc
   ) {
     Long ogmId = resolveOrNull(containerAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Container not found",
+      Response.Status.NOT_FOUND, "no Container with appId '" + containerAppId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return Response.status(Response.Status.FORBIDDEN)
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/container-publication-state.forbidden",
+          "Read access required", 403,
+          "caller lacks Read on Container '" + containerAppId + "'", null))
+        .build();
     }
     String status = readContainerStatus(ogmId);
     return Response.ok(PublicationStateIO.of(status)).build();
@@ -107,6 +120,7 @@ public class ContainerPublicationStateRest {
 
   @PATCH
   @Operation(
+    operationId = "patchContainerPublicationState",
     summary = "Flip the publication state of a Container (Owner or instance-admin only).",
     description =
       "Sets the container's `status` to one of DRAFT, IN_REVIEW, READY, " +
@@ -132,14 +146,19 @@ public class ContainerPublicationStateRest {
   ) {
     if (body == null || body.getState() == null || !VALID_STATES.contains(body.getState())) {
       return Response.status(Response.Status.BAD_REQUEST)
-        .entity(Map.of("error", "state must be one of " + VALID_STATES))
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/publication-state.invalid",
+          "Invalid publication state", 400,
+          "state must be one of " + VALID_STATES, null))
         .build();
     }
     Long ogmId = resolveOrNull(containerAppId);
-    if (ogmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId == null) return problem(PT_NOT_FOUND, "Container not found",
+      Response.Status.NOT_FOUND, "no Container with appId '" + containerAppId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     boolean isInstanceAdmin = sc.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
     boolean isManager = permissionsService.isAccessTypeAllowedForUser(
@@ -147,9 +166,11 @@ public class ContainerPublicationStateRest {
     );
     if (!isInstanceAdmin && !isManager) {
       return Response.status(Response.Status.FORBIDDEN)
-        .entity(Map.of("error",
+        .type("application/problem+json")
+        .entity(new ProblemJson("/problems/publication-state.forbidden",
+          "Insufficient permission", 403,
           "Only the Container owner (Manage permission) or an instance-admin " +
-          "may flip publication-state."))
+          "may flip publication-state.", null))
         .build();
     }
     writeContainerStatus(ogmId, body.getState());
@@ -187,5 +208,10 @@ public class ContainerPublicationStateRest {
       " SET c.status = $state, c.updatedAt = timestamp()",
       params
     );
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

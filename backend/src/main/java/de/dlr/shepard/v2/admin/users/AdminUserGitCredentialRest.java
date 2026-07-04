@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -51,8 +53,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Admin — git credential preseed")
+@Tag(name = "Admin")
 public class AdminUserGitCredentialRest {
+
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/admin-git-credentials.bad-request";
+  private static final String PROBLEM_TYPE_NOT_FOUND = "/problems/admin-git-credentials.not-found";
+  private static final String PROBLEM_TYPE_SERVICE_UNAVAILABLE = "/problems/admin-git-credentials.service-unavailable";
 
   @Inject
   UserService userService;
@@ -96,14 +102,12 @@ public class AdminUserGitCredentialRest {
     }
   }
 
-  /** ADM-USR-GIT-BACKEND-1 — list envelope. */
-  public record AdminGitCredentialListIO(List<AdminGitCredentialListItemIO> items) {}
-
   /** ADM-USR-GIT-BACKEND-1 — rotate body: caller supplies a fresh PAT. */
   public record AdminGitCredentialRotateIO(String newPat) {}
 
   @POST
   @Operation(
+    operationId = "preseedGitCredential",
     summary = "Preseed a git credential for another user (admin-only).",
     description = "Creates or replaces a git credential for the named user. " +
     "If a credential for the same host already exists, it is overwritten. " +
@@ -130,24 +134,28 @@ public class AdminUserGitCredentialRest {
     ) AdminGitCredentialIO body
   ) {
     if (body == null || body.host() == null || body.host().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"host is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "host is required");
     }
     if (body.username() == null || body.username().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"username is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "username is required");
     }
     if (body.pat() == null || body.pat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("{\"error\":\"pat is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "pat is required");
     }
 
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
 
     byte[] key = resolveKey();
     if (key == null) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\":\"shepard.secrets.encryption-key is not configured — git credentials cannot be stored\"}")
-        .build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "Encryption key not configured",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "shepard.secrets.encryption-key is not configured — git credentials cannot be stored");
     }
 
     String encryptedPat = AesGcmCipher.encrypt(body.pat(), key);
@@ -193,6 +201,7 @@ public class AdminUserGitCredentialRest {
 
   @GET
   @Operation(
+    operationId = "listGitCredentials",
     summary = "List a user's git credentials (admin-only).",
     description =
       "Returns the discovery metadata for every credential the named user " +
@@ -207,14 +216,15 @@ public class AdminUserGitCredentialRest {
   @APIResponse(
     responseCode = "200",
     description = "List of credentials (may be empty).",
-    content = @Content(schema = @Schema(implementation = AdminGitCredentialListIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AdminGitCredentialListItemIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
   @APIResponse(responseCode = "404", description = "No user with that username.")
   public Response list(@PathParam(Constants.USERNAME) String targetUsername) {
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
     List<GitCredential> stored = gitCredentialDAO.findAllByUser(targetUsername);
     List<AdminGitCredentialListItemIO> items = new ArrayList<>(stored == null ? 0 : stored.size());
@@ -223,12 +233,13 @@ public class AdminUserGitCredentialRest {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    return Response.ok(new AdminGitCredentialListIO(items)).build();
+    return Response.ok(items).build();
   }
 
   @POST
   @Path("/{appId}/rotate")
   @Operation(
+    operationId = "rotate",
     summary = "Rotate a git credential's PAT (admin-only).",
     description =
       "Replaces the encrypted PAT on the named credential and stamps " +
@@ -254,25 +265,32 @@ public class AdminUserGitCredentialRest {
     ) AdminGitCredentialRotateIO body
   ) {
     if (body == null || body.newPat() == null || body.newPat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"newPat is required\"}").build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing required field",
+        Response.Status.BAD_REQUEST, "newPat is required");
     }
     if (userService.getUserOptional(targetUsername).isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
+          Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
     GitCredential existing = gitCredentialDAO.findByUserAndAppId(targetUsername, credAppId);
     if (existing == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Credential not found",
+          Response.Status.NOT_FOUND, "No git credential with appId '" + credAppId + "' under user '" + targetUsername + "'.");
     }
     byte[] key = resolveKey();
     if (key == null) {
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .entity("{\"error\":\"shepard.secrets.encryption-key is not configured — git credentials cannot be stored\"}")
-        .build();
+      return problem(PROBLEM_TYPE_SERVICE_UNAVAILABLE, "Encryption key not configured",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "shepard.secrets.encryption-key is not configured — git credentials cannot be stored");
     }
     String encrypted = AesGcmCipher.encrypt(body.newPat(), key);
     gitCredentialDAO.rotateByUserAndAppId(targetUsername, credAppId, encrypted);
     return Response.noContent().build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private byte[] resolveKey() {

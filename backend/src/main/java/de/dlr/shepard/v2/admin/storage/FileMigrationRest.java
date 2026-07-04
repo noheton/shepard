@@ -4,6 +4,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.migration.FileMigrationService;
 import de.dlr.shepard.storage.migration.FileMigrationState;
+import de.dlr.shepard.v2.admin.storage.io.FileMigrationRollbackResultIO;
 import de.dlr.shepard.v2.admin.storage.io.FileMigrationStateIO;
 import de.dlr.shepard.v2.admin.storage.io.FileMigrationTriggerIO;
 import io.quarkus.logging.Log;
@@ -62,6 +63,7 @@ public class FileMigrationRest {
 
   @POST
   @Operation(
+    operationId = "trigger",
     summary = "Trigger a file-storage migration.",
     description = "Copies every ShepardFile whose providerId equals sourceProviderId to the " +
     "targetProviderId adapter, then flips the providerId in Neo4j. Migration runs in the " +
@@ -79,6 +81,7 @@ public class FileMigrationRest {
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid adapter ids or migration already running.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response trigger(FileMigrationTriggerIO body) {
     if (body == null
@@ -100,6 +103,7 @@ public class FileMigrationRest {
   @GET
   @Path("/status")
   @Operation(
+    operationId = "status",
     summary = "Get the current file-storage migration status.",
     description = "Returns the in-memory state of the most recent migration job (IDLE when none " +
     "has been triggered since the last restart)."
@@ -109,6 +113,7 @@ public class FileMigrationRest {
     description = "Current migration state.",
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response status() {
     return Response.ok(FileMigrationStateIO.from(migrationService.getState())).build();
@@ -117,6 +122,7 @@ public class FileMigrationRest {
   @POST
   @Path("/rollback/{appId}")
   @Operation(
+    operationId = "rollback",
     summary = "Roll back a single file's storage-adapter swap.",
     description =
       "FS1e3 — per-file rollback. Re-writes the file's bytes from the current adapter (providerId) " +
@@ -131,7 +137,8 @@ public class FileMigrationRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Rollback succeeded — providerId restored, bookkeeping cleared."
+    description = "Rollback succeeded — providerId restored, bookkeeping cleared.",
+    content = @Content(schema = @Schema(implementation = FileMigrationRollbackResultIO.class))
   )
   @APIResponse(
     responseCode = "404",
@@ -141,6 +148,7 @@ public class FileMigrationRest {
     responseCode = "409",
     description = "The :ShepardFile has nothing to roll back (previousProviderId is null)."
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "500", description = "Storage adapter failure during rollback.")
   public Response rollback(
@@ -156,10 +164,7 @@ public class FileMigrationRest {
     try {
       migrationService.rollbackOne(appId);
       Log.infof("FileMigrationRest: per-file rollback succeeded — appId=%s", appId);
-      return Response.ok(java.util.Map.of(
-        "appId", appId,
-        "status", "ROLLED_BACK"
-      )).build();
+      return Response.ok(new FileMigrationRollbackResultIO(appId, "ROLLED_BACK")).build();
     } catch (IllegalArgumentException e) {
       // Unknown appId → 404
       Log.infof("FileMigrationRest: rollback rejected (unknown appId=%s) — %s", appId, e.getMessage());

@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.bundle.io;
 
-import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.v2.references.io.BasicReferenceV2IO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.FileGroupIO;
@@ -37,13 +37,22 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "FileBundleReference")
-public class FileBundleReferenceIO extends BasicReferenceIO {
+public class FileBundleReferenceIO extends BasicReferenceV2IO {
 
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;
 
   @Schema(readOnly = true, nullable = true, description = "Mongo ObjectId of the underlying FileContainer.")
   private String containerMongoId;
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "appId (UUID v7) of the underlying FileContainer. Use this to address payload bytes " +
+      "via the unified /v2/containers/{appId}/payload/... endpoints (APISIMP-CONT-NS-COLLAPSE)."
+  )
+  private String containerAppId;
 
   @Schema(
     readOnly = true,
@@ -55,6 +64,7 @@ public class FileBundleReferenceIO extends BasicReferenceIO {
     super(src);
     this.appId = src.getAppId();
     this.containerMongoId = src.getFileContainer() != null ? src.getFileContainer().getMongoId() : null;
+    this.containerAppId = src.getFileContainer() != null ? src.getFileContainer().getAppId() : null;
     if (src.getGroups() != null) {
       this.groups = src.getGroups().stream()
         .sorted(Comparator.comparingInt((FileGroup g) -> g.getIndex() == null ? 0 : g.getIndex()))

@@ -8,17 +8,23 @@ import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.vocabularies.io.PersonalVocabularyRequestIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
 import io.quarkus.logging.Log;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -27,6 +33,7 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -85,6 +92,7 @@ public class PersonalVocabularyRest {
 
   @POST
   @Operation(
+    operationId = "createVocabularyTerm",
     summary = "Mint a personal vocabulary.",
     description = "Creates a :Vocabulary node with type=PERSONAL scoped to the calling user. " +
       "URI format: urn:shepard:personal:<userAppId>:<name>. " +
@@ -97,6 +105,7 @@ public class PersonalVocabularyRest {
     content = @Content(schema = @Schema(implementation = VocabularyIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid name (must match [a-z0-9][a-z0-9_-]{0,63}).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Feature disabled by operator (personalVocabulariesEnabled=false).")
   @APIResponse(responseCode = "409", description = "A personal vocabulary with this name already exists for the caller.")
   public Response create(PersonalVocabularyRequestIO body) {
@@ -162,24 +171,41 @@ public class PersonalVocabularyRest {
 
   @GET
   @Operation(
+    operationId = "listVocabularyTerms",
     summary = "List the caller's personal vocabularies.",
-    description = "Returns all :Vocabulary nodes with type=PERSONAL owned by the calling user. " +
-      "Returns an empty list when the feature is disabled or the user has no personal vocabularies."
+    description = "Returns :Vocabulary nodes with type=PERSONAL owned by the calling user. " +
+      "Returns an empty list when the feature is disabled or the user has no personal vocabularies.\n\n" +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total count before paging (kept during deprecation window)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of personal vocabularies for the calling user (may be empty).",
-    content = @Content(schema = @Schema(implementation = VocabularyIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
-  public Response list() {
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response list(
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     String username = authCtx.getCurrentUserName();
     User user = username == null ? null : userDAO.find(username);
     if (user == null || user.getAppId() == null || user.getAppId().isBlank()) {
-      return Response.ok(List.of()).build();
+      return Response.ok(new PagedResponseIO<>(List.of(), 0L, page, pageSize))
+        .header("X-Total-Count", 0L)
+        .build();
     }
     List<Vocabulary> vocabs = vocabDAO.listPersonalByOwner(user.getAppId());
-    List<VocabularyIO> result = vocabs.stream().map(VocabularyIO::from).toList();
-    return Response.ok(result).build();
+    List<VocabularyIO> all = vocabs.stream().map(VocabularyIO::from).toList();
+
+    long total = all.size();
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to   = (int) Math.min((long) from + pageSize, total);
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────

@@ -51,7 +51,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     title: "SQL-over-HTTP for timeseries",
     subtitle:
       "Runtime caps for the bulk-read SQL endpoint (POST /v2/sql/timeseries). Flip max-rows and max-duration without a restart.",
-    endpoint: "/v2/admin/sql-timeseries/config",
+    endpoint: "/v2/admin/config/sql-timeseries",
     backlogRow: "P10c",
     designDoc: "aidocs/platform/29-p10-implementation-design.md",
     backend: "shipped",
@@ -114,15 +114,18 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     backend: "partial",
   },
   {
+    // PLACEHOLDER-REPLACE-AI-CONFIG (2026-06-26): real pane shipped as
+    // AdminAiConfigPane.vue; registry entry retained so the
+    // EXPECTED_PLACEHOLDER_COUNT contract holds.
     slug: "ai-config",
     surface: "admin",
     title: "AI configuration",
     subtitle:
-      "Per-instance LLM provider fallback (base URL, model, API key). Resolution rule: user-key → admin-fallback → hidden. Designed; not yet shipped.",
-    endpoint: null,
-    backlogRow: "AI1a",
+      "Per-instance LLM capability slot configs (TEXT, FAST_TEXT, IMAGE_GEN, VISION, EMBEDDING, STRUCTURED, TRANSCRIPTION, MODERATION). PATCH body keyed by capability name. Real pane shipped 2026-06-26 — calls GET/PATCH /v2/admin/config/ai.",
+    endpoint: "/v2/admin/config/ai",
+    backlogRow: "APISIMP-AI-ADMIN-REST",
     designDoc: "aidocs/integrations/97-shepard-plugin-ai-design.md",
-    backend: "designed",
+    backend: "shipped",
   },
   {
     slug: "backup",
@@ -175,7 +178,7 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "route",
     title: "HDF container browser",
     subtitle:
-      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/hdf-containers/{id}/file works today.",
+      "Browse HDF5 datasets stored in the HSDS sidecar. Currently a placeholder — download via /v2/containers/{appId}/file works today.",
     endpoint: null,
     backlogRow: "A5",
     designDoc: "aidocs/data/35-hdf5-hsds-implementation-design.md",
@@ -214,6 +217,19 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
     backend: "shipped",
   },
+  // MFFD-BATCH-01: batch DataObject create — backend shipped; full UI TBD
+  {
+    slug: "batch-create",
+    surface: "admin",
+    title: "Bulk DataObject creation",
+    subtitle:
+      "POST /v2/data-objects/batch — create up to 500 DataObjects in one call with HTTP 207 per-item result. " +
+      "Designed for MFFD-scale imports (17 600+ DataObjects). Full UI pending; use the REST surface directly today.",
+    endpoint: null,
+    backlogRow: "MFFD-BATCH-01",
+    designDoc: "aidocs/16-dispatcher-backlog.md",
+    backend: "shipped",
+  },
   // PLACEHOLDER-REPLACE-TPL3a-lite shipped 2026-05-31 → AdminOntologyAlignmentPane
   // PLACEHOLDER-REPLACE-FE-PROV-INSTANCE-REGISTRY shipped 2026-05-31 → AdminInstanceRegistryPane
   // TS-SEMANTIC-REST
@@ -222,8 +238,8 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "route",
     title: "Channel Annotations",
     subtitle:
-      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations.",
-    endpoint: "/v2/timeseries-containers/{containerId}/channels/{channelShepardId}/annotations",
+      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/containers/{containerAppId}/channels/{channelShepardId}/annotations.",
+    endpoint: "/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations",
     backlogRow: "TS-SEMANTIC-REST",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",

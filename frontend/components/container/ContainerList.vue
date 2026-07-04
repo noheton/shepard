@@ -96,9 +96,10 @@ watchEffect(() => {
   }
 });
 
-function onRefsResolved(payload: { id: number; refs: number[] | null }) {
-  refsById.set(payload.id, payload.refs);
-  emit("refs-resolved", payload);
+function onRefsResolved(payload: { id: string | number; refs: number[] | null }) {
+  const numericId = Number(payload.id);
+  if (!Number.isNaN(numericId)) refsById.set(numericId, payload.refs);
+  emit("refs-resolved", { id: numericId, refs: payload.refs });
 }
 
 // ── Sizebar column (d) ──────────────────────────────────────────────────────
@@ -216,7 +217,9 @@ function onPageChange(page: number) {
 }
 
 function detailLinkFor(item: BasicContainer): string {
-  return containersPath + describeContainerType(item.type).urlSegment + item.id;
+  // V2-SWEEP-003-2: file/timeseries/structured accessors now handle both appId (v2 GET)
+  // and numeric (V1-EXCEPTION for HeaderBar search). Other kinds fall back to numeric.
+  return containersPath + describeContainerType(item.type).urlSegment + (item.appId ?? item.id);
 }
 
 function onRequestBulkDelete() {
@@ -393,7 +396,7 @@ defineExpose({ clearSelection: () => { selectedIds.value = []; } });
                partition can read it without a second fetch. -->
           <template #[`item.referencedBy`]>
             <ContainerReferencedByCell
-              :container-id="rowProps.item.id"
+              :container-id="rowProps.item.appId ?? rowProps.item.id"
               :container-type="rowProps.item.type"
               @refs-resolved="onRefsResolved"
             />

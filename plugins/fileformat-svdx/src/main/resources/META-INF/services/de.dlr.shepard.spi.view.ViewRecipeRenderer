@@ -1,0 +1,12 @@
+# VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29 PR-3 / SVDX-PARSED-CONTENT-SHAPE-2026-06-29.
+#
+# ViewRecipeRenderer for the SvdxChannelChartShape VIEW_RECIPE — projects the
+# urn:shepard:svdx:* SemanticAnnotations the SvdxManifestParser emits on upload
+# into a structured channel catalogue. Sibling to the SvdxCsvTransformExecutor
+# (MAPPING_RECIPE that mints a TimeseriesReference from a paired .csv); this
+# VIEW_RECIPE renders the channel inventory from the manifest alone, no .csv
+# required.
+#
+# Dispatched by ViewRecipeRendererRegistry for shape IRI
+# http://semantics.dlr.de/shepard-ui/svdx#SvdxChannelChartShape.
+de.dlr.shepard.plugin.fileformat.svdx.render.SvdxChannelChartRenderer

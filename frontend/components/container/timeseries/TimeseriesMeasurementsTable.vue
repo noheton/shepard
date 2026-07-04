@@ -14,6 +14,7 @@ interface AnnotatedTimeseries extends TimeseriesEntity {
 const props = defineProps<{
   measurements: TimeseriesEntity[];
   containerId: number;
+  containerAppId: string;
   isAllowedToEditData: boolean;
   /** Optional: absolute path to this container's page, stored with pins for navigation. */
   containerPath?: string;
@@ -21,7 +22,7 @@ const props = defineProps<{
 
 // UX-PIN1 — pin/unpin support
 const { pin, unpin, isPinned } = usePinnedChannels();
-const { resolveShepardId } = useFetchV2Channels(props.containerId);
+const { resolveShepardId } = useFetchV2Channels(props.containerAppId);
 
 /**
  * Human-readable label for a channel, matching the format used in
@@ -44,6 +45,7 @@ function togglePin(ch: TimeseriesEntity) {
     pin({
       shepardId,
       containerId: props.containerId,
+      containerAppId: props.containerAppId,
       channelName: channelLabel(ch),
       containerPath: props.containerPath,
     });
@@ -52,6 +54,11 @@ function togglePin(ch: TimeseriesEntity) {
 
 function channelShepardId(ch: TimeseriesEntity): string | null {
   return resolveShepardId(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field);
+}
+
+// Called only inside v-if="channelShepardId(item)" blocks — sid is always truthy here.
+function annotatedFor(ch: TimeseriesEntity): Annotated {
+  return new AnnotatedChannel(props.containerAppId, channelShepardId(ch)!);
 }
 
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
@@ -111,12 +118,12 @@ const itemsPerPage = 10;
           <!-- inline channel chart -->
           <ChannelPreviewChart
             :channel="item"
-            :container-id="containerId"
+            :container-app-id="containerAppId"
             :channel-shepard-id="channelShepardId(item)"
           />
 
-          <!-- annotations -->
-          <v-table>
+          <!-- annotations: only for v2 channels that have a shepardId -->
+          <v-table v-if="channelShepardId(item)">
             <tbody>
               <tr class="semantic-row">
                 <td
@@ -134,7 +141,7 @@ const itemsPerPage = 10;
                 </td>
                 <td class="annotation-list">
                   <SemanticAnnotationList
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :can-delete="isAllowedToEditData"
                     @annotations="annotations => (item.annotations.value = annotations)"
                   />
@@ -145,7 +152,7 @@ const itemsPerPage = 10;
                        one click. Pre-fills from symbolicName for best UX. UI18 -->
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :prefill="item.symbolicName ?? undefined"
                     filter-vocab="qudt"
                     button-icon="mdi-ruler"
@@ -153,7 +160,7 @@ const itemsPerPage = 10;
                   />
                   <AddAnnotationButton
                     v-if="isAllowedToEditData"
-                    :annotated="new AnnotatedTimeseries(item)"
+                    :annotated="annotatedFor(item)"
                     :prefill="item.symbolicName ?? undefined"
                   />
                 </td>
