@@ -10,15 +10,22 @@ import de.dlr.shepard.context.references.structureddata.entities.StructuredDataR
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -207,6 +214,52 @@ public class StructuredDataReferenceKindHandler implements ReferenceKindHandler 
     ref.addStructuredData(created);
     structuredDataReferenceDAO.createOrUpdate(ref);
     return toIO(ref);
+  }
+
+  /**
+   * SDR-CONTENT-V2: stream all payload items referenced by this
+   * StructuredDataReference as a JSON array.
+   *
+   * <p>Each element in the array is the parsed JSON document that was uploaded
+   * via {@code PUT /v2/references/{appId}/content} for the given oid. Items
+   * that fail to load (e.g. orphaned oid) are silently skipped with a WARN log.
+   *
+   * <p>Returns an empty array ({@code []}) when the reference has no items or
+   * has no linked container.
+   */
+  @Override
+  public Response downloadContent(String appId, String rangeHeader) {
+    StructuredDataReference ref = structuredDataReferenceDAO.findByAppId(appId);
+    if (ref == null || ref.isDeleted()) {
+      throw new NotFoundException("No StructuredDataReference with appId " + appId);
+    }
+    StructuredDataContainer container = ref.getStructuredDataContainer();
+    List<StructuredData> nodes = ref.getStructuredDatas();
+    if (container == null || nodes == null || nodes.isEmpty()) {
+      return Response.ok("[]", MediaType.APPLICATION_JSON).build();
+    }
+    ObjectMapper mapper = new ObjectMapper();
+    ArrayNode array = mapper.createArrayNode();
+    for (StructuredData node : nodes) {
+      try {
+        StructuredDataPayload sdp = structuredDataContainerService.getStructuredData(
+          container.getId(), node.getOid());
+        if (sdp == null || sdp.getPayload() == null) continue;
+        ObjectNode item = mapper.createObjectNode();
+        item.put("oid", node.getOid());
+        if (node.getName() != null) item.put("name", node.getName());
+        if (node.getCreatedAt() != null) {
+          item.put("createdAt", node.getCreatedAt().toInstant().toString());
+        }
+        JsonNode payloadNode = mapper.readTree(sdp.getPayload());
+        item.set("payload", payloadNode);
+        array.add(item);
+      } catch (Exception e) {
+        Log.warnf("SDR-CONTENT-V2: failed to load oid=%s for ref=%s: %s",
+          node.getOid(), appId, e.getMessage());
+      }
+    }
+    return Response.ok(array.toString(), MediaType.APPLICATION_JSON).build();
   }
 
   @Override
