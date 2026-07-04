@@ -1,11 +1,24 @@
 <script lang="ts" setup>
-import { StructuredDataReferenceApi } from "@dlr-shepard/backend-client";
+/**
+ * REFS-V2-PANELS-2 — migrate SDR detail page to the unified v2 envelope
+ * (same shape as FileReference + TimeseriesReference pages). Fixes the
+ * eternal-spinner regression for v2-navigated users caused by resolveNumericId
+ * returning undefined for UUID route params.
+ *
+ * Structured data CONTENT items (the JSON payloads) still require v1-only
+ * endpoints (GET /shepard/api/…/structuredDataPayload + getAllStructuredDatas).
+ * Those calls need the numeric structuredDataContainerId that the v2 wire
+ * shape intentionally suppresses. Content rendering is tracked as SDR-CONTENT-V2
+ * in aidocs/16-dispatcher-backlog.md.
+ */
+import {
+  ContainersApi,
+  ReferencesApi,
+} from "@dlr-shepard/backend-client";
 import ActionButton from "~/components/common/data-table/ActionButton.vue";
 import type { StructuredDataDataTableItem } from "~/components/context/display-components/structured-data-references/structuredDataDataTableItem";
-import { mapStructuredDataListToDataTableItems } from "~/components/context/display-components/structured-data-references/structuredDataMappingUtil";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { useFetchStructuredDataReference } from "~/composables/context/useFetchStructuredDataReference";
-import { resolveNumericId } from "~/utils/collectionRouteParams";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 
 definePageMeta({ layout: "collection" });
 
@@ -26,29 +39,99 @@ const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionIdStr);
 const { dataObject } = useFetchDataObject(collectionIdStr, dataObjectIdStr);
 
-// BUG-COLL-APPID-ROUTE-007-REFPAGE: resolve numeric ids from the loaded v2
-// entities; defer all v1 calls until both are available. UUID route params
-// must never be cast directly to numbers for v1 endpoints.
-const collectionNumericId = computed(() =>
-  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
-);
-const dataObjectNumericId = computed(() =>
-  resolveNumericId(dataObject.value?.id, routeParams.value.dataObjectId),
-);
-const structuredDataReferenceNumericId = computed(() =>
-  resolveNumericId(undefined, routeParams.value.structuredDataReferenceId),
+// UX612-C1: load the reference via the unified v2 envelope — same shape the
+// FileReference and TimeseriesReference detail pages use. Route param IS the
+// appId (frontend-v2-only rule); no numeric-id resolution needed or wanted.
+const {
+  referenceV2,
+  notFound: structuredDataReferenceNotFound,
+  refresh: refreshReferenceV2,
+} = useFetchReferenceV2(() => routeParams.value.structuredDataReferenceId);
+
+// Container metadata: numeric containerId is suppressed in BasicContainerV2IO
+// (@JsonIgnoreProperties({"id"})). Fetch the human-readable container name via
+// GET /v2/containers/{appId} using the containerAppId from the v2 payload.
+const containersApi = useV2ShepardApi(ContainersApi);
+
+const containerMeta = ref<{
+  name: string | undefined;
+  availability: "available" | "deleted" | "forbidden" | "error";
+} | undefined>(undefined);
+
+const containerAppId = computed<string | undefined>(() => {
+  const p = referenceV2.value?.payload;
+  if (!p) return undefined;
+  return (p as { structuredDataContainerAppId?: string }).structuredDataContainerAppId ?? undefined;
+});
+
+watch(
+  containerAppId,
+  async appId => {
+    if (!appId) {
+      containerMeta.value = undefined;
+      return;
+    }
+    try {
+      const c = await containersApi.value.getContainer({ appId });
+      containerMeta.value = { name: c.name, availability: "available" };
+    } catch (e) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      containerMeta.value = {
+        name: undefined,
+        availability:
+          status === 403 ? "forbidden" : status === 404 ? "deleted" : "error",
+      };
+    }
+  },
+  { immediate: true },
 );
 
-const {
-  structuredDataReference,
-  structuredData,
-  refreshStructuredData,
-  notFound: structuredDataReferenceNotFound,
-} = useFetchStructuredDataReference(
-  collectionNumericId,
-  dataObjectNumericId,
-  structuredDataReferenceNumericId,
-);
+interface SdrView {
+  appId: string;
+  /** Numeric Neo4j id — @JsonIgnore-d on v2 wire; 0 is a display-only placeholder. */
+  id: number;
+  name: string;
+  createdAt: Date;
+  createdBy: string;
+  updatedAt: Date | null;
+  updatedBy: string | null;
+  /** UUID of the backing StructuredDataContainer; null when absent in payload. */
+  structuredDataContainerAppId: string | null;
+  /**
+   * Numeric container id — unavailable from v2. Kept as 0; StructuredDataViewerDialog
+   * guards on !props.structuredDataContainerId (0 → save is a no-op), so the
+   * edit affordance is safely disabled pending SDR-CONTENT-V2.
+   */
+  structuredDataContainerId: number;
+  referencedContainerName: string | undefined;
+  referencedContainerAvailability:
+    | "available"
+    | "deleted"
+    | "forbidden"
+    | "error";
+}
+
+const structuredDataReference = computed<SdrView | undefined>(() => {
+  const r = referenceV2.value;
+  if (!r) return undefined;
+  const p = (r.payload ?? {}) as {
+    structuredDataContainerAppId?: string | null;
+  };
+  return {
+    appId: r.appId ?? routeParams.value.structuredDataReferenceId ?? "",
+    id: typeof r.id === "number" ? r.id : 0,
+    name: r.name ?? "",
+    createdAt: r.createdAt,
+    createdBy: r.createdBy,
+    updatedAt: r.updatedAt,
+    updatedBy: r.updatedBy,
+    structuredDataContainerAppId: p.structuredDataContainerAppId ?? null,
+    structuredDataContainerId: 0,
+    referencedContainerName: containerMeta.value?.name,
+    referencedContainerAvailability:
+      containerMeta.value?.availability ?? "available",
+  };
+});
 
 const headers = ref([
   { title: "Name", key: "name", sortable: true },
@@ -56,12 +139,6 @@ const headers = ref([
   { title: "Created at", key: "createdAt", sortable: true },
   { title: "", key: "actions" },
 ]);
-
-watch(structuredData, () => {
-  structuredDataDataTableItems.value = mapStructuredDataListToDataTableItems(
-    structuredData.value,
-  );
-});
 
 function onAnnotate() {
   showAddAnnotationDialog.value = true;
@@ -73,31 +150,6 @@ function onEdit() {
 
 function onDelete() {
   showDeleteDialog.value = true;
-}
-
-function deleteStructuredDataReference() {
-  const c = collectionNumericId.value;
-  const d = dataObjectNumericId.value;
-  if (structuredDataReference.value && c && d) {
-    useShepardApi(StructuredDataReferenceApi)
-      .value.deleteStructuredDataReference({
-        collectionId: c,
-        dataObjectId: d,
-        structuredDataReferenceId: structuredDataReference.value.id,
-      })
-      .then(() => {
-        navigateTo(
-          collectionsPath +
-            routeParams.value.collectionId +
-            dataObjectsPathFragment +
-            routeParams.value.dataObjectId,
-        );
-      })
-      .catch(error => {
-        handleError(error, "deleteStructuredDataReference");
-        showDeleteDialog.value = false;
-      });
-  }
 }
 
 function onShowStructuredDataContentDialog(structuredDataPayload: string) {
@@ -115,21 +167,19 @@ function onEditStructuredDataContent(payload: string, name: string) {
 }
 
 async function onStructuredDataSaved() {
-  await refreshStructuredData();
+  refreshReferenceV2();
 }
 
 /**
- * UI-SDREF-NO-CONTENT-001 — download the structured-data payload as a
- * JSON file. The payload is already on the page (fetched alongside the
- * reference); no extra REST round-trip needed.
+ * UI-SDREF-NO-CONTENT-001 — download the structured-data payload as a JSON
+ * file. Items are currently loaded from the v1 fallback list; this handler
+ * stays for when SDR-CONTENT-V2 wires up the v2 content fetch.
  */
 function onDownloadStructuredData(params: {
   filename: string;
   payload: string;
 }) {
   try {
-    // Pretty-print when the payload parses as JSON; otherwise download
-    // the raw bytes the backend returned.
     let body = params.payload;
     try {
       body = JSON.stringify(JSON.parse(params.payload), null, 2);
@@ -140,6 +190,23 @@ function onDownloadStructuredData(params: {
     downloadFile(blob, sanitizeFilename(params.filename));
   } catch (e) {
     handleError(e as Error, "downloading structured data");
+  }
+}
+
+async function deleteStructuredDataReference() {
+  const appId = structuredDataReference.value?.appId;
+  if (!appId) return;
+  try {
+    await useV2ShepardApi(ReferencesApi).value.deleteReference({ appId });
+    navigateTo(
+      collectionsPath +
+        routeParams.value.collectionId +
+        dataObjectsPathFragment +
+        routeParams.value.dataObjectId,
+    );
+  } catch (error) {
+    handleError(error, "deleteStructuredDataReference");
+    showDeleteDialog.value = false;
   }
 }
 
@@ -196,15 +263,18 @@ watch(structuredDataReference, () => {
                   ...structuredDataReference,
                   name: `Structured Data Reference '${structuredDataReference.name}'`,
                   type: 'Structured Data',
-                  container: {
-                    title:
-                      structuredDataReference.referencedContainerName ??
-                      'unknown name',
-                    id: structuredDataReference.structuredDataContainerId,
-                    type: 'STRUCTUREDDATA',
-                    availability:
-                      structuredDataReference.referencedContainerAvailability,
-                  },
+                  container: structuredDataReference.structuredDataContainerAppId
+                    ? {
+                        title:
+                          structuredDataReference.referencedContainerName ??
+                          'unknown name',
+                        id: 0,
+                        type: 'STRUCTUREDDATA',
+                        availability:
+                          structuredDataReference.referencedContainerAvailability,
+                        appId: structuredDataReference.structuredDataContainerAppId,
+                      }
+                    : undefined,
                 }"
                 :on-annotate="onAnnotate"
                 :on-edit="structuredDataReference.appId && isAllowedToEditCollection ? onEdit : undefined"
@@ -226,6 +296,9 @@ watch(structuredDataReference, () => {
                 />
               </v-col>
             </v-row>
+            <!-- SDR-CONTENT-V2: structured data payload items require a v2
+                 GET /v2/references/{appId}/content endpoint not yet implemented
+                 for kind=structured-data. Table renders empty until that ships. -->
             <v-row>
               <DataTable
                 :items-per-page="itemsPerPage"
@@ -338,7 +411,7 @@ watch(structuredDataReference, () => {
       v-model:show-dialog="showEditDialog"
       :structured-data-reference-app-id="structuredDataReference.appId"
       :current-name="structuredDataReference.name"
-      @saved="(newName) => { if (structuredDataReference) structuredDataReference.name = newName; }"
+      @saved="(newName) => { refreshReferenceV2(); void newName; }"
     />
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
