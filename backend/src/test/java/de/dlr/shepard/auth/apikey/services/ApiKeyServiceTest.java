@@ -360,11 +360,11 @@ public class ApiKeyServiceTest extends BaseTestCase {
     );
     // And the signed JWT must carry the `roles` claim the authz reads
     // (Constants.ROLES = "roles") — decode it directly from the signed JWS.
-    var claims = io.jsonwebtoken.Jwts.parserBuilder()
-      .setSigningKey(pkiHelper.getPrivateKey())
+    var claims = io.jsonwebtoken.Jwts.parser()
+      .verifyWith(pkiHelper.getPublicKey())
       .build()
-      .parseClaimsJws(actual.getJws())
-      .getBody();
+      .parseSignedClaims(actual.getJws())
+      .getPayload();
     Object rolesClaim = claims.get("roles");
     org.junit.jupiter.api.Assertions.assertTrue(
       rolesClaim instanceof java.util.Collection<?> col && col.contains("quality-engineer"),
